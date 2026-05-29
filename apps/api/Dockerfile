@@ -29,4 +29,10 @@ COPY --from=build /workspace/libs/temporal-sandbox/_output/dist /workspace/libs/
 COPY --from=build /workspace/apps/api/_output/dist/index.js _output/dist/index.js
 COPY --from=build /workspace/apps/api/_output/workflows/ _output/workflows/
 
+# 컨테이너를 root로 돌리면 앱 침해 시 컨테이너 root까지 노출된다.
+# node:24-slim에 내장된 비-root node(uid 1000)로 떨어뜨린다.
+# 단, 로거(LOG_DIRECTORY=/app/logs)는 USER 전환 후 디렉터리를 직접 만들 수 없으므로 미리 만들어 소유권을 넘긴다.
+RUN mkdir -p /app/logs && chown -R node:node /app/logs /workspace
+USER node
+
 CMD ["node", "_output/dist/index.js"]

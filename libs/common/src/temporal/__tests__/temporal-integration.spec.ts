@@ -52,6 +52,7 @@ describe('TemporalClientModule.forRootAsync', () => {
         const { TemporalClientModule } = await import('../temporal-client.module')
         const { getTemporalClientToken, getTemporalConnectionToken } =
             await import('../temporal.tokens')
+        const { Client, Connection } = await import('@temporalio/client')
         const { Test } = await import('@nestjs/testing')
 
         const moduleRef = await Test.createTestingModule({
@@ -59,8 +60,8 @@ describe('TemporalClientModule.forRootAsync', () => {
         }).compile()
 
         try {
-            expect(moduleRef.get(getTemporalConnectionToken())).toBeDefined()
-            expect(moduleRef.get(getTemporalClientToken())).toBeDefined()
+            expect(moduleRef.get(getTemporalConnectionToken())).toBeInstanceOf(Connection)
+            expect(moduleRef.get(getTemporalClientToken())).toBeInstanceOf(Client)
         } finally {
             await moduleRef.close()
         }
@@ -70,6 +71,7 @@ describe('TemporalClientModule.forRootAsync', () => {
         const { TemporalClientModule } = await import('../temporal-client.module')
         const { getTemporalClientToken, getTemporalConnectionToken } =
             await import('../temporal.tokens')
+        const { Client, Connection } = await import('@temporalio/client')
         const { Test } = await import('@nestjs/testing')
 
         const moduleRef = await Test.createTestingModule({
@@ -77,8 +79,8 @@ describe('TemporalClientModule.forRootAsync', () => {
         }).compile()
 
         try {
-            expect(moduleRef.get(getTemporalConnectionToken('orders'))).toBeDefined()
-            expect(moduleRef.get(getTemporalClientToken('orders'))).toBeDefined()
+            expect(moduleRef.get(getTemporalConnectionToken('orders'))).toBeInstanceOf(Connection)
+            expect(moduleRef.get(getTemporalClientToken('orders'))).toBeInstanceOf(Client)
         } finally {
             await moduleRef.close()
         }
@@ -119,8 +121,8 @@ describe('TemporalClientModule.forRootAsync', () => {
         }).compile()
 
         try {
-            // useFactory는 두 제공자(connection, client)에 연결되어 있어 같은 주입 주소로 두 번 실행된다.
-            expect(calls).toEqual([address, address])
+            // useFactory는 내부 config 제공자 하나에만 연결되어 모듈 초기화당 한 번만 실행된다.
+            expect(calls).toEqual([address])
         } finally {
             await moduleRef.close()
         }
@@ -149,7 +151,6 @@ describe('TemporalClientModule.forRootAsync', () => {
         await expect(moduleRef.close()).resolves.toBeUndefined()
 
         expect(fakeConnection.close).toHaveBeenCalled()
-        // 종료 후 레지스트리도 비워진다.
         expect(registry.list()).toEqual([])
     })
 })

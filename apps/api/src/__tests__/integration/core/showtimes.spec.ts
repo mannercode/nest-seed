@@ -1,5 +1,5 @@
 import type { ShowtimeDto, ShowtimesService } from 'core'
-import { DateUtil, pickIds } from '@mannercode/common'
+import { DateUtil, ensure, pickIds } from '@mannercode/common'
 import { nullObjectId, oid } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
 import { buildCreateShowtimeDto, createShowtimes, Errors, type AppTestContext } from '../helpers'
@@ -37,6 +37,33 @@ describe('ShowtimesService', () => {
 
             expect(count).toBe(createDtos.length)
         })
+
+        it('입력한 상영 시간을 DB에 저장한다', async () => {
+            const createDtos = [
+                buildCreateShowtimeDto({
+                    sagaId: oid(0x1),
+                    movieId: oid(0x2),
+                    theaterId: oid(0x3),
+                    startTime: new Date('2020-01-01T12:00'),
+                    endTime: new Date('2020-01-01T14:00')
+                })
+            ]
+
+            await showtimesService.createMany(createDtos)
+
+            const saved = await showtimesService.search({ sagaIds: [oid(0x1)] })
+
+            expect(saved).toHaveLength(createDtos.length)
+            expect(saved).toEqual([
+                {
+                    id: expect.any(String),
+                    movieId: oid(0x2),
+                    theaterId: oid(0x3),
+                    startTime: new Date('2020-01-01T12:00'),
+                    endTime: new Date('2020-01-01T14:00')
+                }
+            ])
+        })
     })
 
     describe('getMany', () => {
@@ -52,7 +79,11 @@ describe('ShowtimesService', () => {
         })
 
         it('상영 시간 ID 목록 중 하나라도 없으면 404를 던진다', async () => {
-            const promise = showtimesService.getMany([nullObjectId])
+            const [existingShowtime] = await createShowtimes(fix, [
+                { startTime: new Date('2000-01-01T12:00') }
+            ])
+
+            const promise = showtimesService.getMany([ensure(existingShowtime).id, nullObjectId])
 
             await expect(promise).rejects.toMatchObject({
                 message: Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]).message,
@@ -83,11 +114,11 @@ describe('ShowtimesService', () => {
                     { startTime: new Date('2020-01-03T12:00') }
                 ])
 
-                showtimeForSaga = createdShowtimes[0]
-                showtimeForMovie = createdShowtimes[1]
-                showtimeForTheater = createdShowtimes[2]
-                showtimeInRangeA = createdShowtimes[3]
-                showtimeInRangeB = createdShowtimes[4]
+                showtimeForSaga = ensure(createdShowtimes[0])
+                showtimeForMovie = ensure(createdShowtimes[1])
+                showtimeForTheater = ensure(createdShowtimes[2])
+                showtimeInRangeA = ensure(createdShowtimes[3])
+                showtimeInRangeB = ensure(createdShowtimes[4])
             })
 
             it('사가 식별자 목록으로 필터링한다', async () => {

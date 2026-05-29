@@ -1,3 +1,4 @@
+import { ensure } from '@mannercode/common'
 import { UserAuthenticationService } from '..'
 
 describe('UserAuthenticationService', () => {
@@ -43,7 +44,7 @@ describe('UserAuthenticationService', () => {
     })
 
     describe('findUserByCredentials의 타이밍 평탄화', () => {
-        it('이메일이 없어도 validate를 호출해 응답 시간을 평탄화한다', async () => {
+        it('이메일이 없어도 validate를 호출하고 null을 반환한다', async () => {
             const repo = { findByEmailWithPassword: jest.fn().mockResolvedValue(null) }
             const svc = new UserAuthenticationService(repo as any, {} as any)
             const validateSpy = jest.spyOn(svc, 'validate')
@@ -56,7 +57,7 @@ describe('UserAuthenticationService', () => {
             expect(result).toBeNull()
             expect(validateSpy).toHaveBeenCalledTimes(1)
             // 더미 해시와 비교했는지 확인 (bcrypt 형식이지만 실제 고객 해시는 아님).
-            const [, hashArg] = validateSpy.mock.calls[0]
+            const [, hashArg] = ensure(validateSpy.mock.calls[0])
             expect(typeof hashArg).toBe('string')
             expect(hashArg.startsWith('$2')).toBe(true)
         })
@@ -75,7 +76,7 @@ describe('UserAuthenticationService', () => {
 
             expect(result).toBeNull()
             expect(validateSpy).toHaveBeenCalledTimes(1)
-            expect(validateSpy.mock.calls[0][1]).toBe(realHash)
+            expect(ensure(validateSpy.mock.calls[0])[1]).toBe(realHash)
         })
     })
 })

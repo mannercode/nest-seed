@@ -73,7 +73,6 @@ describe('HttpSuccessLoggerInterceptor', () => {
 
             await fix.httpClient.get('/exclude-path').ok({ result: 'success' })
 
-            // 빈 제외 배열이면 모든 경로가 로깅된다.
             expect(fix.spyVerbose).toHaveBeenCalledTimes(1)
         })
 

@@ -92,7 +92,7 @@ describe('CrudRepository', () => {
             samples = toDtos(docs)
         })
 
-        it('올바른 페이지네이션으로 항목을 반환한다', async () => {
+        it('page와 size에 해당하는 구간을 반환한다', async () => {
             const page = 3
             const size = 5
             const { items, ...pagination } = await fix.repository.findWithPagination({
@@ -135,7 +135,7 @@ describe('CrudRepository', () => {
             await expect(promise).rejects.toThrow(fix.BadRequestException)
         })
 
-        it('size가 maxLimit을 초과하면 BadRequestException을 던진다', async () => {
+        it('size가 maxSize를 초과하면 BadRequestException을 던진다', async () => {
             const size = maxSizeValue + 1
 
             const promise = fix.repository.findWithPagination({ pagination: { size } })
@@ -175,18 +175,26 @@ describe('CrudRepository', () => {
             ])
         })
 
-        it('필터가 비어 있으면 soft-deleted 문서는 total에 포함되고 items에서는 제외된다', async () => {
-            const doc = fix.repository.newDocument()
-            doc.name = 'soft-deleted'
-            await doc.save()
-            await fix.repository.deleteById(doc.id)
+        describe('soft-deleted 문서가 있을 때', () => {
+            beforeEach(async () => {
+                const doc = fix.repository.newDocument()
+                doc.name = 'soft-deleted'
+                await doc.save()
+                await fix.repository.deleteById(doc.id)
+            })
 
-            const { items, total } = await fix.repository.findWithPagination({ pagination: {} })
+            it('필터가 비어 있으면 total에 삭제된 문서를 포함한다', async () => {
+                const { total } = await fix.repository.findWithPagination({ pagination: {} })
 
-            // total은 estimatedDocumentCount로 모든 행(삭제 포함)을 센다.
-            expect(total).toBeGreaterThanOrEqual(samples.length + 1)
-            // items에는 삭제된 문서가 안 들어간다.
-            expect(toDtos(items).find((d) => d.name === 'soft-deleted')).toBeUndefined()
+                // total은 estimatedDocumentCount로 모든 행(삭제 포함)을 센다.
+                expect(total).toBeGreaterThanOrEqual(samples.length + 1)
+            })
+
+            it('items에서는 삭제된 문서를 제외한다', async () => {
+                const { items } = await fix.repository.findWithPagination({ pagination: {} })
+
+                expect(toDtos(items).find((d) => d.name === 'soft-deleted')).toBeUndefined()
+            })
         })
 
         it('필터가 비어 있으면 estimatedDocumentCount만 호출되고 countDocuments는 호출되지 않는다', async () => {
@@ -229,8 +237,9 @@ describe('CrudRepository', () => {
         })
 
         it('id에 중복이 있어도 true를 반환한다', async () => {
-            const [first] = samples
-            const exists = await fix.repository.allExist([first.id, first.id])
+            const id = samples[0]?.id
+            if (id === undefined) throw new Error('samples must not be empty')
+            const exists = await fix.repository.allExist([id, id])
 
             expect(exists).toBe(true)
         })
@@ -329,15 +338,32 @@ describe('CrudRepository', () => {
             await expect(promise).rejects.toThrow(fix.NotFoundException)
         })
 
-        it('중복된 id가 입력되면 중복을 제거하고 한 번만 반환한다 (warn 로그 남김)', async () => {
-            const [first] = samples
-            const { Logger } = await import('@nestjs/common')
-            const warnSpy = jest.spyOn(Logger, 'warn').mockImplementation()
+        describe('중복된 id가 입력되었을 때', () => {
+            let duplicatedId: string
+            let warnSpy: jest.SpyInstance
 
-            const docs = await fix.repository.getByIds([first.id, first.id])
+            beforeEach(async () => {
+                const id = samples[0]?.id
+                if (id === undefined) throw new Error('samples must not be empty')
+                duplicatedId = id
 
-            expect(docs).toHaveLength(1)
-            expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Duplicate IDs detected'))
+                const { Logger } = await import('@nestjs/common')
+                warnSpy = jest.spyOn(Logger, 'warn').mockImplementation()
+            })
+
+            it('중복을 제거하고 한 번만 반환한다', async () => {
+                const docs = await fix.repository.getByIds([duplicatedId, duplicatedId])
+
+                expect(docs).toHaveLength(1)
+            })
+
+            it('경고 로그를 남긴다', async () => {
+                await fix.repository.getByIds([duplicatedId, duplicatedId])
+
+                expect(warnSpy).toHaveBeenCalledWith(
+                    expect.stringContaining('Duplicate IDs detected')
+                )
+            })
         })
     })
 

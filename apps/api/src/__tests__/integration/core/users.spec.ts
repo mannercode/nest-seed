@@ -36,7 +36,7 @@ describe('UsersService', () => {
         })
 
         it(
-            '같은 이메일로 동시 요청이 와도 1개만 201, 나머지는 409여야 한다 (500 노출 금지)',
+            '같은 이메일로 동시에 요청해도 하나만 201을 반환하고 나머지는 409를 반환한다',
             async () => {
                 const email = 'race@mail.com'
                 const count = 10
@@ -59,6 +59,9 @@ describe('UsersService', () => {
 
                 expect(createdCount).toBe(1)
                 expect(conflictCount).toBe(count - 1)
+                // 동시 삽입의 중복 키 오류는 409로 변환되어야 한다.
+                // 500이 새어 나오면 변환 누락이므로
+                // 201/409 외 상태가 하나도 없음을 함께 단언한다.
                 expect(otherStatuses).toEqual([])
             },
             30 * 1000

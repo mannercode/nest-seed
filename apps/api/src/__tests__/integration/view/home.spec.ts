@@ -1,4 +1,4 @@
-import { DateUtil } from '@mannercode/common'
+import { DateUtil, ensure } from '@mannercode/common'
 import { createMovie, createShowtimes, createTheater, type AppTestContext } from '../helpers'
 
 type HomeResponse = {
@@ -7,6 +7,8 @@ type HomeResponse = {
         upcomingShowtimes: { id: string; theater: { id: string; name: string } }[]
     }[]
 }
+
+type ShowtimeFixture = NonNullable<Awaited<ReturnType<typeof createShowtimes>>[number]>
 
 describe('UserHomeView', () => {
     let fix: AppTestContext
@@ -33,47 +35,95 @@ describe('UserHomeView', () => {
             expect(body).toEqual({ movies: [] })
         })
 
-        it('영화 카드에 가까운 상영을 시간순으로 최대 3개까지 포함한다', async () => {
-            const movie = await createMovie(fix, { title: 'Home Movie' })
-            const theaterA = await createTheater(fix, { name: 'Home Theater A' })
-            const theaterB = await createTheater(fix, { name: 'Home Theater B' })
+        describe('가까운 상영이 여러 개 있을 때', () => {
+            let theaterA: Awaited<ReturnType<typeof createTheater>>
+            let theaterB: Awaited<ReturnType<typeof createTheater>>
+            let pastShowtime: ShowtimeFixture
+            let s1: ShowtimeFixture
+            let s2: ShowtimeFixture
+            let s3: ShowtimeFixture
+            let s4: ShowtimeFixture
 
-            const now = new Date()
-            const past = DateUtil.add({ base: now, days: -1 })
-            const t1 = DateUtil.add({ base: now, days: 1 })
-            const t2 = DateUtil.add({ base: now, days: 2 })
-            const t3 = DateUtil.add({ base: now, days: 3 })
-            const t4 = DateUtil.add({ base: now, days: 4 })
+            beforeEach(async () => {
+                const movie = await createMovie(fix, { title: 'Home Movie' })
+                theaterA = await createTheater(fix, { name: 'Home Theater A' })
+                theaterB = await createTheater(fix, { name: 'Home Theater B' })
 
-            const [pastShowtime] = await createShowtimes(fix, [
-                { movieId: movie.id, startTime: past, theaterId: theaterA.id }
-            ])
-            const [s1] = await createShowtimes(fix, [
-                { movieId: movie.id, startTime: t1, theaterId: theaterA.id }
-            ])
-            const [s2] = await createShowtimes(fix, [
-                { movieId: movie.id, startTime: t2, theaterId: theaterB.id }
-            ])
-            const [s3] = await createShowtimes(fix, [
-                { movieId: movie.id, startTime: t3, theaterId: theaterA.id }
-            ])
-            await createShowtimes(fix, [
-                { movieId: movie.id, startTime: t4, theaterId: theaterB.id }
-            ])
+                const now = new Date()
+                const past = DateUtil.add({ base: now, days: -1 })
+                const t1 = DateUtil.add({ base: now, days: 1 })
+                const t2 = DateUtil.add({ base: now, days: 2 })
+                const t3 = DateUtil.add({ base: now, days: 3 })
+                const t4 = DateUtil.add({ base: now, days: 4 })
 
-            const { body } = await fix.httpClient.get('/views/user-app/home').ok()
-            const home = body as HomeResponse
+                pastShowtime = ensure(
+                    (
+                        await createShowtimes(fix, [
+                            { movieId: movie.id, startTime: past, theaterId: theaterA.id }
+                        ])
+                    )[0]
+                )
+                s1 = ensure(
+                    (
+                        await createShowtimes(fix, [
+                            { movieId: movie.id, startTime: t1, theaterId: theaterA.id }
+                        ])
+                    )[0]
+                )
+                s2 = ensure(
+                    (
+                        await createShowtimes(fix, [
+                            { movieId: movie.id, startTime: t2, theaterId: theaterB.id }
+                        ])
+                    )[0]
+                )
+                s3 = ensure(
+                    (
+                        await createShowtimes(fix, [
+                            { movieId: movie.id, startTime: t3, theaterId: theaterA.id }
+                        ])
+                    )[0]
+                )
+                s4 = ensure(
+                    (
+                        await createShowtimes(fix, [
+                            { movieId: movie.id, startTime: t4, theaterId: theaterB.id }
+                        ])
+                    )[0]
+                )
+            })
 
-            expect(home.movies).toHaveLength(1)
-            const card = home.movies[0]
-            expect(card.movie.title).toBe('Home Movie')
-            expect(card.upcomingShowtimes.map((s) => s.id)).toEqual([s1.id, s2.id, s3.id])
-            expect(card.upcomingShowtimes.map((s) => s.id)).not.toContain(pastShowtime.id)
-            expect(card.upcomingShowtimes.map((s) => s.theater.name)).toEqual([
-                theaterA.name,
-                theaterB.name,
-                theaterA.name
-            ])
+            it('가까운 상영을 시작 시각순으로 정렬한다', async () => {
+                const { body } = await fix.httpClient.get('/views/user-app/home').ok()
+                const home = body as HomeResponse
+
+                const card = ensure(home.movies[0])
+                expect(card.upcomingShowtimes.map((s) => s.id)).toEqual([s1.id, s2.id, s3.id])
+                expect(card.upcomingShowtimes.map((s) => s.theater.name)).toEqual([
+                    theaterA.name,
+                    theaterB.name,
+                    theaterA.name
+                ])
+            })
+
+            it('영화당 상영을 최대 3개까지만 포함한다', async () => {
+                const { body } = await fix.httpClient.get('/views/user-app/home').ok()
+                const home = body as HomeResponse
+
+                expect(home.movies).toHaveLength(1)
+                const card = ensure(home.movies[0])
+                expect(card.movie.title).toBe('Home Movie')
+                expect(card.upcomingShowtimes).toHaveLength(3)
+                expect(card.upcomingShowtimes.map((s) => s.id)).not.toContain(s4.id)
+            })
+
+            it('이미 지난 상영은 카드에서 제외한다', async () => {
+                const { body } = await fix.httpClient.get('/views/user-app/home').ok()
+                const home = body as HomeResponse
+
+                const card = ensure(home.movies[0])
+                expect(card.upcomingShowtimes.map((s) => s.id)).not.toContain(pastShowtime.id)
+            })
         })
     })
 })

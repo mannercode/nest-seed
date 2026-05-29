@@ -81,12 +81,12 @@ describe('JwtAuthService', () => {
             expect(after.familyId).toBe(before.familyId)
         })
 
-        it('형식이 깨진 토큰은 jwt malformed로 거부된다', async () => {
+        it('형식이 깨진 토큰은 jwt malformed로 거부한다', async () => {
             const promise = fix.jwtService.refreshAuthTokens('invalid-token')
             await expect(promise).rejects.toThrow('jwt malformed')
         })
 
-        it('만료된 토큰은 401(token expired)로 거부된다', async () => {
+        it('만료된 토큰은 401(token expired)로 거부한다', async () => {
             // 픽스처 TTL(3000ms)보다 길게 기다려 부하 환경에서도 만료를 보장한다.
             await sleep(4000)
             const promise = fix.jwtService.refreshAuthTokens(refreshToken)
@@ -211,7 +211,7 @@ describe('JwtAuthService', () => {
             const tokens = await fix.jwtService.refreshAuthTokens(refreshToken)
             const after = new JwtService().decode<Record<string, unknown>>(tokens.refreshToken)
 
-            // iat/exp/jti는 새 서명에서 다시 생성되므로 같지 않는다.
+            // iat/exp/jti는 새 서명에서 다시 생성되므로 같지 않다.
             expect(after.jti).not.toBe(before.jti)
             expect(after.iat).not.toBe(undefined)
             expect(after.exp).not.toBe(undefined)
@@ -274,7 +274,7 @@ describe('JwtAuthService', () => {
             )
         })
 
-        it('형식이 깨진 토큰을 폐기하면 검증 예외가 그대로 전파된다', async () => {
+        it('형식이 깨진 토큰을 폐기하면 검증 예외를 그대로 전파한다', async () => {
             await expect(fix.jwtService.revokeRefreshToken('garbage')).rejects.toThrow(
                 'jwt malformed'
             )
@@ -282,7 +282,7 @@ describe('JwtAuthService', () => {
             expect(fix.events.find((e) => e.type === 'verify.failed')).toBeUndefined()
         })
 
-        it('만료된 토큰을 폐기하면 401(token expired)이 전파된다', async () => {
+        it('만료된 토큰을 폐기하면 401(token expired)을 전파한다', async () => {
             const { refreshToken } = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
             await sleep(4000)
             await expect(fix.jwtService.revokeRefreshToken(refreshToken)).rejects.toThrow(
@@ -464,7 +464,7 @@ describe('JwtAuthService', () => {
             expect(rotated.refreshToken).toEqual(expect.any(String))
         })
 
-        it('sub가 없는 토큰도 재사용되면 family가 폐기된다', async () => {
+        it('sub가 없는 토큰도 재사용되면 family를 폐기한다', async () => {
             const tokens = await fix.jwtService.generateAuthTokens({ email: 'no-sub@x' })
             const rotated = await fix.jwtService.refreshAuthTokens(tokens.refreshToken)
 

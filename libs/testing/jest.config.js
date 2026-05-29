@@ -10,7 +10,7 @@ const tsJestPreset = createDefaultPreset({ tsconfig: tsconfigPath })
 module.exports = {
     ...baseConfig,
     ...tsJestPreset,
-    roots: ['<rootDir>/src'],
-    // 많은 헬퍼가 libs/common 사용자 코드를 통해 간접 호출되므로 coverage는 잠시 비활성화한다.
-    collectCoverageFrom: []
+    // 이 워크스페이스 test 스크립트는 의도적으로 --coverage를 붙이지 않는다.
+    // 헬퍼 대부분이 libs/common 사용자 코드를 통해 간접 검증되기 때문이다.
+    roots: ['<rootDir>/src']
 }

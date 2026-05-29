@@ -12,7 +12,7 @@ import {
     getTemporalClientToken,
     getTemporalConnectionToken
 } from './temporal.tokens'
-import { TemporalClientModuleAsyncOptions } from './temporal.types'
+import { TemporalClientConfig, TemporalClientModuleAsyncOptions } from './temporal.types'
 
 export function InjectTemporalClient(name?: string): ParameterDecorator {
     return Inject(getTemporalClientToken(name))
@@ -49,11 +49,24 @@ export class TemporalClientModule {
     ): DynamicModule {
         const name = clientName ?? DEFAULT_TEMPORAL_CLIENT_NAME
 
+        // connection과 client 두 제공자가 같은 config를 필요로 한다.
+        // 각자 `useFactory`를 부르면 호출자의 팩토리(예: 비동기 설정 조회)가 두 번 실행된다.
+        // 그래서 config를 한 번만 해석하는 내부 제공자를 두고 둘 다 그 결과를 주입받는다.
+        const configToken = `TemporalClientConfig_${name}`
+
+        const configProvider: Provider = {
+            inject: options.inject ?? [],
+            provide: configToken,
+            useFactory: (...args: any[]) => options.useFactory(...args)
+        }
+
         const connectionProvider: Provider = {
-            inject: [TemporalConnectionRegistry, ...(options.inject ?? [])],
+            inject: [TemporalConnectionRegistry, configToken],
             provide: getTemporalConnectionToken(name),
-            useFactory: async (registry: TemporalConnectionRegistry, ...args: any[]) => {
-                const config = await options.useFactory(...args)
+            useFactory: async (
+                registry: TemporalConnectionRegistry,
+                config: TemporalClientConfig
+            ) => {
                 const connection = await Connection.connect({ address: config.address })
                 registry.add(connection)
                 return connection
@@ -61,19 +74,22 @@ export class TemporalClientModule {
         }
 
         const clientProvider: Provider = {
-            inject: [getTemporalConnectionToken(name), ...(options.inject ?? [])],
+            inject: [getTemporalConnectionToken(name), configToken],
             provide: getTemporalClientToken(name),
-            useFactory: async (connection: Connection, ...args: any[]) => {
-                const config = await options.useFactory(...args)
-                return new Client({ connection, namespace: config.namespace })
-            }
+            useFactory: (connection: Connection, config: TemporalClientConfig) =>
+                new Client({ connection, namespace: config.namespace })
         }
 
         return {
             exports: [clientProvider],
             global: true,
             module: TemporalClientModule,
-            providers: [TemporalConnectionRegistry, connectionProvider, clientProvider]
+            providers: [
+                TemporalConnectionRegistry,
+                configProvider,
+                connectionProvider,
+                clientProvider
+            ]
         }
     }
 }

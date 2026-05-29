@@ -133,8 +133,8 @@ describe('orderBy', () => {
 
     it('키 추출 함수와 방향 하나로 정렬한다', () => {
         const result = orderBy(items, (i) => i.age, 'desc')
-        expect(result[0].age).toBe(30)
-        expect(result[2].age).toBe(20)
+        expect(result[0]?.age).toBe(30)
+        expect(result[2]?.age).toBe(20)
     })
 
     it('방향을 지정하지 않으면 오름차순으로 정렬한다', () => {
@@ -227,13 +227,13 @@ describe('isEqual', () => {
         expect(() => isEqual(a, b)).toThrow(RangeError)
     })
 
-    it('두 Date는 시각이 달라도 같다고 판정된다 (얕은 비교 한계)', () => {
-        // Date는 own enumerable 키가 없으므로 둘 다 Object.keys = []이다. 그래서 같다고 판정된다.
+    it('두 Date는 시각이 달라도 같다고 판정한다 (얕은 비교 한계)', () => {
+        // Date는 own enumerable 키가 없어 양쪽 Object.keys가 모두 []이다.
         expect(isEqual(new Date(0), new Date(1))).toBe(true)
     })
 
-    it('두 Map은 내용이 달라도 같다고 판정된다 (얕은 비교 한계)', () => {
-        // Map도 own enumerable 키가 없어 같다고 판정된다.
+    it('두 Map은 내용이 달라도 같다고 판정한다 (얕은 비교 한계)', () => {
+        // Map도 own enumerable 키가 없다.
         expect(isEqual(new Map([['a', 1]]), new Map([['b', 2]]))).toBe(true)
     })
 })

@@ -1,11 +1,12 @@
-import { DateUtil, pickIds } from '@mannercode/common'
+import { DateUtil, ensure, pickIds } from '@mannercode/common'
 import { nullObjectId, oid, step } from '@mannercode/testing'
 import {
     TicketStatus,
     type MovieDto,
     type ShowtimeDto,
     type TheaterDto,
-    type TicketDto
+    type TicketDto,
+    type UserDto
 } from 'core'
 import { Errors, type AppTestContext } from '../helpers'
 import { createAllResources } from './booking.utils'
@@ -22,6 +23,7 @@ describe('BookingService', () => {
     describe('고객 예매 흐름', () => {
         let movie: MovieDto
         let accessToken: string
+        let user: UserDto
 
         const locations = [
             { latitude: 30.0, longitude: 130.0 },
@@ -42,6 +44,7 @@ describe('BookingService', () => {
             const resources = await createAllResources(fix, locations, startTimes)
             movie = resources.movie
             accessToken = resources.accessToken
+            user = resources.user
         })
 
         it('극장, 상영일, 상영 시간, 티켓을 차례로 조회해 티켓을 보유한다', async () => {
@@ -109,6 +112,14 @@ describe('BookingService', () => {
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body({ ticketIds })
                     .noContent()
+
+                const { TicketHoldingService } = await import('core')
+                const ticketHoldingService = fix.module.get(TicketHoldingService)
+                const heldTicketIds = await ticketHoldingService.searchHeldTicketIds(
+                    showtime.id,
+                    user.id
+                )
+                expect(heldTicketIds.sort()).toEqual([...ticketIds].sort())
             })
         })
     })
@@ -120,7 +131,7 @@ describe('BookingService', () => {
         it('티켓이 이미 다른 고객에게 보유되어 있으면 409를 반환한다', async () => {
             const resources = await createAllResources(fix, locations, startTimes)
             const accessToken = resources.accessToken
-            const showtimeId = resources.showtimes[0].id
+            const showtimeId = ensure(resources.showtimes[0]).id
             const ticketIds = pickIds(resources.tickets.slice(0, 2))
 
             const { holdTickets } = await import('../helpers')
@@ -144,7 +155,6 @@ describe('BookingService', () => {
 
     describe('GET /booking/movies/:movieId/theaters/:theaterId/showdates/:showdate/showtimes', () => {
         // `parseShowdate`는 형식이 다르거나 달력에 없는 날짜일 때 거절한다.
-        // 두 경우 모두 400으로 응답하는지 확인한다.
         const movieId = nullObjectId
         const theaterId = nullObjectId
 

@@ -10,7 +10,7 @@ describe('Health', () => {
 
     afterEach(() => fix.teardown())
 
-    it('GET /health → 200 (mongo+redis up)', async () => {
+    it('mongo와 redis가 정상이면 200과 상태 정보를 반환한다', async () => {
         const { body } = await fix.httpClient.get('/health').ok()
 
         expect(body).toEqual({

@@ -85,7 +85,7 @@ describe('TheatersService', () => {
             await fix.httpClient.delete(`/theaters/${theater.id}`).noContent()
         })
 
-        it('삭제 후에는 조회 시 404가 반환된다', async () => {
+        it('삭제한 뒤 조회하면 404를 반환한다', async () => {
             const theater = await createTheater(fix)
 
             await fix.httpClient.delete(`/theaters/${theater.id}`).noContent()

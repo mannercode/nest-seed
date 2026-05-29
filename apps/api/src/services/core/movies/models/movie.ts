@@ -85,7 +85,15 @@ export class Movie extends CrudSchema {
     })
     rating: MovieRating
 
-    @Prop({ default: defaults.releaseDate })
+    @Prop({
+        default: defaults.releaseDate,
+        validate: {
+            message: 'Published movies must have a release date',
+            validator(this: Movie, value: Date) {
+                return !this.isPublished || value.getTime() !== defaults.releaseDate.getTime()
+            }
+        }
+    })
     releaseDate: Date
 
     @Prop({ default: defaults.title, required })

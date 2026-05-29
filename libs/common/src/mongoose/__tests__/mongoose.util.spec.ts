@@ -86,7 +86,7 @@ describe('QueryBuilder', () => {
             expect(builder.build({ allowEmpty: true })).toEqual({})
         })
 
-        it('0, false, 빈 문자열처럼 null이나 undefined가 아닌 값은 조건에 추가된다', () => {
+        it('0, false, 빈 문자열처럼 null이나 undefined가 아닌 값은 조건에 추가한다', () => {
             builder.addEquals('name', 0 as any)
             expect(builder.build({})).toEqual({ name: 0 })
 
@@ -163,7 +163,7 @@ describe('QueryBuilder', () => {
             expect(builder.build({})).toEqual({ name: new RegExp('^test') })
         })
 
-        it('정규식 메타문자가 포함된 값도 escape되어 정규식 주입을 차단한다', () => {
+        it('정규식 메타문자가 포함된 값도 이스케이프해 정규식 주입을 차단한다', () => {
             builder.addRegex('name', '.*')
             // .* 메타문자가 그대로 들어가면 모든 값에 매칭되겠지만, escape되어 리터럴로 처리된다.
             expect(builder.build({})).toEqual({ name: new RegExp('\\.\\*', 'i') })
@@ -200,7 +200,7 @@ describe('QueryBuilder', () => {
             expect(builder.build({ allowEmpty: true })).toEqual({})
         })
 
-        it('start와 end가 같으면 $gte와 $lte 모두 같은 값으로 빌드된다', () => {
+        it('start와 end가 같으면 $gte와 $lte를 같은 값으로 추가한다', () => {
             const sameDate = new Date('2023-06-15T12:00:00Z')
             builder.addRange('createdAt', { end: sameDate, start: sameDate })
 

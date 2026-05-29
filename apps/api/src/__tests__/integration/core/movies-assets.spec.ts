@@ -1,6 +1,6 @@
 import type { MovieDto } from 'core'
 import type { AssetPresignedUploadDto, AssetsService } from 'infrastructure'
-import { Require } from '@mannercode/common'
+import { ensure, Require } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
 import {
     buildCreateAssetDto,
@@ -99,7 +99,7 @@ describe('MoviesAssets', () => {
             })
 
             it('에셋 URL이 무효화된다', async () => {
-                const [asset] = await assetsService.getMany([assetId])
+                const asset = ensure((await assetsService.getMany([assetId]))[0])
                 Require.defined(asset.download)
 
                 await fix.httpClient.delete(`/movies/${movie.id}/assets/${assetId}`).noContent()
@@ -151,7 +151,7 @@ describe('MoviesAssets', () => {
                     .ok(expect.objectContaining({ imageUrls: [expect.any(String)] }))
             })
 
-            it('두 번 호출해도 같은 204 응답을 반환한다', async () => {
+            it('두 번 호출해도 204를 반환한다', async () => {
                 await fix.httpClient
                     .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
                     .noContent()
@@ -159,6 +159,10 @@ describe('MoviesAssets', () => {
                 await fix.httpClient
                     .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
                     .noContent()
+
+                await fix.httpClient
+                    .get(`/movies/${movie.id}`)
+                    .ok(expect.objectContaining({ imageUrls: [expect.any(String)] }))
             })
         })
 

@@ -64,7 +64,7 @@ describe('Checksum', () => {
 
             expect(checksum).toEqual({
                 algorithm: 'sha256',
-                // 빈 입력에 대한 SHA-256 표준 해시값.
+                // printf '' | openssl dgst -sha256 -binary | base64 결과
                 base64: '47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU='
             })
         })

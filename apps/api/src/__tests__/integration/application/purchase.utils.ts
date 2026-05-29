@@ -1,5 +1,5 @@
 import type { CreatePurchaseDto } from 'application'
-import { DateUtil, pickIds } from '@mannercode/common'
+import { DateUtil, ensure, pickIds } from '@mannercode/common'
 import { oid, type TestContext } from '@mannercode/testing'
 import { PurchaseItemType, type TicketDto } from 'core'
 import {
@@ -26,7 +26,7 @@ export async function createShowtimeAndTickets(ctx: TestContext) {
     const config = ctx.module.get(AppConfigService)
     const startTime = DateUtil.add({ minutes: config.ticket.purchaseCutoffMinutes + 1 })
 
-    const [showtime] = await createShowtimes(ctx, [{ startTime }])
+    const showtime = ensure((await createShowtimes(ctx, [{ startTime }]))[0])
 
     const createTicketDtos = Array.from({ length: 10 }, () => ({ showtimeId: showtime.id }))
 
@@ -45,7 +45,7 @@ export async function holdTickets(ctx: TestContext, tickets: TicketDto[]) {
     await ticketHoldingService.holdTickets(
         buildHoldTicketsDto({
             userId,
-            showtimeId: tickets[0].showtimeId,
+            showtimeId: ensure(tickets[0]).showtimeId,
             ticketIds: pickIds(tickets)
         })
     )

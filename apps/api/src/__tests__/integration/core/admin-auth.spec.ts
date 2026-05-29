@@ -74,9 +74,17 @@ describe('AdminAuthentication', () => {
     })
 
     describe('POST /admins/logout', () => {
-        it('204를 반환하고 같은 refresh 토큰을 다시 쓰면 401이다', async () => {
-            const { refreshToken } = await loginAdmin(fix, credentials)
+        let refreshToken: string
 
+        beforeEach(async () => {
+            ;({ refreshToken } = await loginAdmin(fix, credentials))
+        })
+
+        it('로그아웃하면 204를 반환한다', async () => {
+            await fix.httpClient.post('/admins/logout').body({ refreshToken }).noContent()
+        })
+
+        it('로그아웃한 refresh 토큰을 다시 쓰면 401을 던진다', async () => {
             await fix.httpClient.post('/admins/logout').body({ refreshToken }).noContent()
 
             await fix.httpClient

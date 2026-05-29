@@ -21,7 +21,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         purchaseRecord.userId = createDto.userId
         purchaseRecord.paymentId = createDto.paymentId
         purchaseRecord.totalPrice = createDto.totalPrice
-        purchaseRecord.purchaseItems = createDto.purchaseItems.map((item) => ({ ...item }))
+        purchaseRecord.purchaseItems = createDto.purchaseItems
 
         await purchaseRecord.save()
 

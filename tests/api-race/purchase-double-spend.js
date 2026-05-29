@@ -5,83 +5,22 @@
  * 그다음 각 사용자가 각자의 쌍에 대해 결제 요청 여러 건을 동시에 보낸다.
  * 그룹마다 정확히 한 요청만 2xx로 성공하고, 나머지는 4xx(409 AlreadySold 또는 400 NotHeld)이다.
  *
+ * 성공 응답은 한 번 더 검증한다. 2xx만으로는 결제가 실제로 영속됐는지 알 수 없으므로,
+ * 승자의 구매 기록을 `GET /purchases/:id`로 읽어 들여 결제 하나가 실제로 만들어졌는지 확인한다.
+ *
  * 영화, 극장, 사용자 계정은 회차 바깥에서 한 번만 만든다.
  * 매 회차마다 상영, 티켓, 선점, 경쟁만 새로 실행한다.
  *
- * 어떤 그룹의 성공 응답 수가 1이 아니거나, 5xx가 발생하거나, 응답한 복제본 수가 두 개보다 적으면 실패로 본다.
+ * 어떤 그룹의 성공 응답 수가 1이 아니거나, 승자 구매 기록이 영속되지 않았거나,
+ * 5xx가 발생하거나, 응답한 복제본 수가 두 개보다 적으면 실패로 본다.
  */
 
-const http = require('http')
-const { readPositiveInt, request, SERVER_URL } = require('./race-common')
+const { readPositiveInt, request, SERVER_URL, waitForSagaSuccess } = require('./race-common')
 
 const USER_GROUPS = readPositiveInt('PURCHASE_USER_GROUPS', 5)
 const PURCHASES_PER_GROUP = readPositiveInt('PURCHASE_CLIENT_COUNT', 50)
 const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 150)
 const SHOWTIME_DEADLINE_MS = readPositiveInt('SHOWTIME_DEADLINE_MS', 60_000)
-
-function waitForSagaSuccess(sagaId) {
-    const url = new URL('/showtime-creation/event-stream', SERVER_URL)
-    const agent = new http.Agent({ keepAlive: false })
-    return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => {
-            agent.destroy()
-            reject(new Error(`saga ${sagaId} did not finish in ${SHOWTIME_DEADLINE_MS}ms`))
-        }, SHOWTIME_DEADLINE_MS)
-
-        const req = http.request(
-            {
-                agent,
-                hostname: url.hostname,
-                port: url.port,
-                path: url.pathname,
-                method: 'GET',
-                headers: {
-                    accept: 'text/event-stream',
-                    ...(process.env.ADMIN_ACCESS_TOKEN
-                        ? { authorization: `Bearer ${process.env.ADMIN_ACCESS_TOKEN}` }
-                        : {})
-                }
-            },
-            (res) => {
-                let buffer = ''
-                res.setEncoding('utf8')
-                res.on('data', (chunk) => {
-                    buffer += chunk
-                    let idx
-                    while ((idx = buffer.indexOf('\n\n')) !== -1) {
-                        const frame = buffer.slice(0, idx)
-                        buffer = buffer.slice(idx + 2)
-                        const dataLine = frame.split('\n').find((line) => line.startsWith('data:'))
-                        if (!dataLine) continue
-                        try {
-                            const event = JSON.parse(dataLine.slice('data:'.length).trim())
-                            if (event.sagaId !== sagaId) continue
-                            if (event.status === 'succeeded') {
-                                clearTimeout(timer)
-                                res.destroy()
-                                agent.destroy()
-                                resolve()
-                                return
-                            }
-                            if (event.status === 'failed' || event.status === 'error') {
-                                clearTimeout(timer)
-                                res.destroy()
-                                agent.destroy()
-                                reject(new Error(`saga ${sagaId} status=${event.status}`))
-                                return
-                            }
-                        } catch {
-                            /* 무시 */
-                        }
-                    }
-                })
-                res.on('error', reject)
-            }
-        )
-        req.on('error', reject)
-        req.end()
-    })
-}
 
 async function setupMovieTheater() {
     const movie = await request('POST', '/movies', {
@@ -124,7 +63,7 @@ async function createShowtimeTickets(movieId, theaterId, startTimeOffsetMs) {
         body: { movieId, theaterIds: [theaterId], durationInMinutes: 120, startTimes: [startTime] }
     })
     if (created.status !== 202) throw new Error(`showtime: ${created.status}`)
-    await waitForSagaSuccess(created.body.sagaId)
+    await waitForSagaSuccess(created.body.sagaId, SHOWTIME_DEADLINE_MS)
 
     const search = await request('POST', '/showtime-creation/showtimes/search', {
         body: { theaterIds: [theaterId] }
@@ -234,6 +173,26 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
                 )
             }
             throw new Error(`iter ${iteration} group ${g}: ${slot.other.length} unexpected`)
+        }
+
+        // read-back: 승자 구매 기록이 실제로 영속됐는지 확인한다.
+        // 2xx 응답 하나만으로는 결제가 만들어졌는지(phantom 성공이 아닌지) 구분하지 못한다.
+        const winner = results.find((r) => r.group === g && r.status >= 200 && r.status < 300)
+        if (!winner.body || !winner.body.id) {
+            throw new Error(`iter ${iteration} group ${g}: success response has no purchase id`)
+        }
+        const readBack = await request('GET', `/purchases/${winner.body.id}`)
+        if (readBack.status !== 200 || readBack.body?.id !== winner.body.id) {
+            throw new Error(
+                `iter ${iteration} group ${g}: purchase ${winner.body.id} not persisted ` +
+                    `(read-back status=${readBack.status})`
+            )
+        }
+        if (readBack.body.paymentId !== winner.body.paymentId) {
+            throw new Error(
+                `iter ${iteration} group ${g}: persisted paymentId ${readBack.body.paymentId} ` +
+                    `!= response ${winner.body.paymentId}`
+            )
         }
     }
 

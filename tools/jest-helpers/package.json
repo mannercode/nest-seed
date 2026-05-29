@@ -2,5 +2,8 @@
     "name": "@mannercode/jest-helpers",
     "version": "0.0.1",
     "private": true,
-    "main": "./index.js"
+    "main": "./index.js",
+    "dependencies": {
+        "@aws-sdk/client-s3": "3.1053.0"
+    }
 }

@@ -1,3 +1,8 @@
 process.env.NODE_ENV = 'development'
 
-void import('./bootstrap').then(({ bootstrap }) => bootstrap())
+import('./bootstrap')
+    .then(({ bootstrap }) => bootstrap())
+    .catch((err: unknown) => {
+        console.error(err)
+        process.exit(1)
+    })

@@ -9,12 +9,12 @@ describe('createTestContext', () => {
     })
     afterEach(() => fix.teardown())
 
-    it('대체 지정한 제공자는 mock 서비스로 바뀐다', async () => {
+    it('override로 지정한 제공자가 모의 서비스로 교체된다', async () => {
         const message = fix.sampleService.getMessage()
         expect(message).toEqual({ message: 'This is Mock' })
     })
 
-    it('HTTP 라우팅이 컨텍스트를 통해 정상 동작한다', async () => {
+    it('테스트 컨텍스트의 httpClient로 GET 요청을 보내면 라우팅된 응답을 반환한다', async () => {
         await fix.httpClient.get('/message/value').ok({ received: 'value' })
     })
 })

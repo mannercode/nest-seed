@@ -1,6 +1,6 @@
 import type { SchedulerRegistry } from '@nestjs/schedule'
-import type { AssetDto, AssetsService } from 'infrastructure'
-import { Checksum, pickIds, sleep } from '@mannercode/common'
+import type { AssetDto, AssetPresignedUploadDto, AssetsService } from 'infrastructure'
+import { Checksum, ensure, pickIds, S3ObjectService, sleep } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
 import {
@@ -61,16 +61,22 @@ describe('AssetsService', () => {
             expect(uploadRes.ok).toBe(true)
         })
 
-        it('업로드 URL이 만료된 후에는 업로드를 거부한다', async () => {
-            await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 1 })
+        describe('업로드 URL이 만료되었을 때', () => {
+            let uploadRequest: AssetPresignedUploadDto
 
-            const createDto = buildCreateAssetDto(file)
-            const uploadRequest = await assetsService.create(createDto)
+            beforeEach(async () => {
+                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 1 })
 
-            await sleep(1500)
+                const createDto = buildCreateAssetDto(file)
+                uploadRequest = await assetsService.create(createDto)
 
-            const uploadRes = await uploadAsset(file.path, uploadRequest)
-            expect(uploadRes.ok).toBe(false)
+                await sleep(1500)
+            })
+
+            it('업로드를 거부한다', async () => {
+                const uploadRes = await uploadAsset(file.path, uploadRequest)
+                expect(uploadRes.ok).toBe(false)
+            })
         })
     })
 
@@ -179,7 +185,8 @@ describe('AssetsService', () => {
             })
 
             it('반환된 다운로드 URL로 받은 파일이 원본과 체크섬이 일치한다', async () => {
-                const [fetchedAsset] = await assetsService.getMany([assets[0].id])
+                const fetchedAssets = await assetsService.getMany([ensure(assets[0]).id])
+                const fetchedAsset = ensure(fetchedAssets[0])
 
                 const buffer = await downloadAsset(fetchedAsset)
 
@@ -212,18 +219,20 @@ describe('AssetsService', () => {
             })
 
             it('삭제 후에는 조회 시 404가 반환된다', async () => {
-                await assetsService.deleteMany([assets[0].id])
+                await assetsService.deleteMany([ensure(assets[0]).id])
 
-                await expect(assetsService.getMany([assets[0].id])).rejects.toMatchObject({
+                await expect(assetsService.getMany([ensure(assets[0]).id])).rejects.toMatchObject({
                     status: HttpStatus.NOT_FOUND
                 })
             })
 
             it('삭제하면 다운로드 URL이 무효화된다', async () => {
-                await assetsService.deleteMany([assets[0].id])
+                await assetsService.deleteMany([ensure(assets[0]).id])
 
-                const { download } = assets[0]
-                const response = await fetch(download ? download.url : '')
+                const { download } = ensure(assets[0])
+                if (null === download) throw new Error('download must have value')
+
+                const response = await fetch(download.url)
                 expect(response.status).toBe(404)
             })
         })
@@ -238,7 +247,7 @@ describe('AssetsService', () => {
 
         it('S3 객체 일부를 삭제하지 못하면 경고를 남기고 첫 오류를 던진다', async () => {
             const asset = await uploadAndFinalizeAsset(fix, file)
-            const s3Service = (assetsService as any).s3Service
+            const s3Service = fix.module.get<S3ObjectService>(S3ObjectService.getName())
             jest.spyOn(s3Service, 'deleteObject').mockRejectedValueOnce(new Error('s3 down'))
 
             const { Logger } = await import('@nestjs/common')
@@ -250,9 +259,7 @@ describe('AssetsService', () => {
                 'partial S3 delete failure; DB rows retained for retry',
                 expect.objectContaining({ failedCount: 1 })
             )
-            // DB 행은 그대로 남는다.
-            // 다음 정리 작업이 같은 자산을 다시 가져와 재시도할 수 있다.
-            await expect(assetsService.getMany([asset.id])).resolves.toBeDefined()
+            await expect(assetsService.getMany([asset.id])).resolves.toHaveLength(1)
         })
     })
 

@@ -14,7 +14,7 @@ describe('PaginationDto', () => {
     afterEach(() => fix.teardown())
 
     describe('HTTP 컨트롤러', () => {
-        it('유효한 쿼리는 PaginationDto로 처리된다', async () => {
+        it('유효한 쿼리를 PaginationDto로 변환해 응답한다', async () => {
             const page = 2
             const size = 3
             const query = { size, orderby: 'name:asc', page }
@@ -25,7 +25,7 @@ describe('PaginationDto', () => {
             await fix.httpClient.get('/pagination').query(query).ok(expectedResponse)
         })
 
-        it('orderby name="0"처럼 비어 있지 않은 문자열은 정상 처리된다', async () => {
+        it('orderby name="0"처럼 비어 있지 않은 문자열도 그대로 파싱한다', async () => {
             await fix.httpClient
                 .get('/pagination')
                 .query({ orderby: '0:asc' })
@@ -53,7 +53,7 @@ describe('PaginationDto', () => {
                 .badRequest(CommonErrors.Pagination.DirectionInvalid())
         })
 
-        it('field와 direction 양옆의 공백은 잘라낸 뒤 처리된다', async () => {
+        it('field와 direction 양옆의 공백은 잘라낸 뒤 파싱한다', async () => {
             await fix.httpClient
                 .get('/pagination')
                 .query({ orderby: '  name  :  asc  ' })

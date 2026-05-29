@@ -12,7 +12,7 @@ describe('extractRootMessage', () => {
         expect(extractRootMessage(outer)).toBe('root cause')
     })
 
-    it('SuppressedError가 있으면 suppressed 메시지를 우선한다', () => {
+    it('SuppressedError가 있으면 억제된 원본 메시지를 우선한다', () => {
         const original = new Error('movie not found')
         const disposal = new Error('Connection is closed')
         // ESM SuppressedError 흉내. 실제 런타임이 같은 형태의 객체를 만든다.
@@ -23,7 +23,7 @@ describe('extractRootMessage', () => {
         expect(extractRootMessage(suppressed)).toBe('movie not found')
     })
 
-    it('suppressed와 cause가 모두 있으면 suppressed를 우선한다', () => {
+    it('억제된 쪽과 cause가 모두 있으면 억제된 쪽을 우선한다', () => {
         const suppressedLeaf = new Error('suppressed leaf')
         const causeLeaf = new Error('cause leaf')
         const wrapper = Object.assign(new Error('wrapper'), {

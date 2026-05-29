@@ -87,9 +87,17 @@ describe('UserAuthentication', () => {
     })
 
     describe('POST /users/logout', () => {
-        it('로그아웃하면 204를 반환하고 이후 리프레시가 차단된다', async () => {
-            const { refreshToken } = await loginUser(fix, credentials)
+        let refreshToken: string
 
+        beforeEach(async () => {
+            ;({ refreshToken } = await loginUser(fix, credentials))
+        })
+
+        it('로그아웃하면 204를 반환한다', async () => {
+            await fix.httpClient.post('/users/logout').body({ refreshToken }).noContent()
+        })
+
+        it('로그아웃 후에는 같은 토큰의 리프레시를 차단한다', async () => {
             await fix.httpClient.post('/users/logout').body({ refreshToken }).noContent()
 
             await fix.httpClient

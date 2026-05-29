@@ -1,4 +1,4 @@
-import { Checksum, omit } from '@mannercode/common'
+import { Checksum, ensure, omit } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
 import { MovieDefaults, MovieGenre, MovieRating, type MovieDto } from 'core'
 import {
@@ -49,15 +49,21 @@ describe('MoviesService', () => {
             await fix.httpClient.get(`/movies/${movie.id}`).ok(movie)
         })
 
-        it('영화에 이미지가 있으면 imageUrls로 다운로드할 수 있다', async () => {
-            const asset = await uploadAndFinalizeAsset(fix, testAssets.image)
-            const movie = await createMovie(fix, { assetIds: [asset.id] })
+        describe('이미지가 있을 때', () => {
+            let movie: MovieDto
 
-            const response = await fetch(movie.imageUrls[0])
-            expect(response.ok).toBe(true)
+            beforeEach(async () => {
+                const asset = await uploadAndFinalizeAsset(fix, testAssets.image)
+                movie = await createMovie(fix, { assetIds: [asset.id] })
+            })
 
-            const buffer = Buffer.from(await response.bytes())
-            expect(testAssets.image.checksum).toEqual(Checksum.fromBuffer(buffer))
+            it('imageUrls로 이미지를 다운로드할 수 있다', async () => {
+                const response = await fetch(ensure(movie.imageUrls[0]))
+                expect(response.ok).toBe(true)
+
+                const buffer = Buffer.from(await response.bytes())
+                expect(testAssets.image.checksum).toEqual(Checksum.fromBuffer(buffer))
+            })
         })
 
         it('ID에 해당하는 영화가 없으면 404를 반환한다', async () => {
@@ -138,7 +144,7 @@ describe('MoviesService', () => {
             it('이미지 URL이 무효화된다', async () => {
                 await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
 
-                const response = await fetch(movie.imageUrls[0])
+                const response = await fetch(ensure(movie.imageUrls[0]))
                 expect(response.status).toBe(404)
             })
         })
@@ -200,9 +206,12 @@ describe('MoviesService', () => {
         })
 
         const buildExpectedPage = (movies: MovieDto[]) => {
-            movies.forEach((movie) => (movie.imageUrls = expect.any(Array)))
+            const expectedItems = movies.map((movie) => ({
+                ...movie,
+                imageUrls: movie.id === movieA1.id ? [expect.any(String)] : []
+            }))
             return {
-                items: expect.arrayContaining(movies),
+                items: expect.arrayContaining(expectedItems),
                 page: expect.any(Number),
                 size: expect.any(Number),
                 total: movies.length

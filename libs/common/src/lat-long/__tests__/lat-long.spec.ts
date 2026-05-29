@@ -119,7 +119,7 @@ describe('LatLong', () => {
                 .badRequest(LatLongErrors.OutOfRange(expect.any(Array)))
         })
 
-        it('지수 표기법(1.23e-5)은 형식 오류로 거부된다', async () => {
+        it('지수 표기법(1.23e-5)은 형식 오류로 거부한다', async () => {
             // 정규식이 e를 허용하지 않으므로 거부된다.
             await fix.httpClient
                 .get('/latLong')

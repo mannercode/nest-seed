@@ -16,16 +16,16 @@ describe('Crud Delete', () => {
         })
         afterEach(() => fix.teardown())
 
-        it('새 문서는 deletedAt이 null로 저장된다', async () => {
+        it('새 문서는 deletedAt을 null로 저장한다', async () => {
             expect(createdDoc).toMatchObject({ deletedAt: null })
         })
 
-        it('Model.create로 만든 문서도 deletedAt이 null이다', async () => {
+        it('Model.create로 만든 문서도 deletedAt을 null로 저장한다', async () => {
             const doc = await fix.model.create({ name: 'created' })
             expect(doc.deletedAt).toBeNull()
         })
 
-        it('insertMany로 만든 문서도 deletedAt이 null이다', async () => {
+        it('insertMany로 만든 문서도 deletedAt을 null로 저장한다', async () => {
             await fix.model.insertMany([{ name: 'a' }, { name: 'b' }])
 
             const docs = await fix.model.find({})
@@ -81,12 +81,12 @@ describe('Crud Delete', () => {
         })
 
         describe('deleteOne의 반환값', () => {
-            it('삭제 성공 시 deletedCount는 1이다', async () => {
+            it('삭제에 성공하면 deletedCount로 1을 반환한다', async () => {
                 const result = await fix.model.deleteOne({ _id: createdDoc._id })
                 expect(result).toMatchObject({ deletedCount: 1 })
             })
 
-            it('일치하는 문서가 없으면 deletedCount는 0이다', async () => {
+            it('일치하는 문서가 없으면 deletedCount로 0을 반환한다', async () => {
                 await fix.model.deleteOne({ _id: createdDoc._id })
                 const result = await fix.model.deleteOne({ _id: createdDoc._id })
                 expect(result).toMatchObject({ deletedCount: 0 })

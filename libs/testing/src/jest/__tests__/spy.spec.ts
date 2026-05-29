@@ -1,6 +1,7 @@
 import * as Module from './spy.fixture'
 
-// Jest.spyOn은 객체 메서드를 감시하면서 기존 구현을 유지하거나 mock 구현으로 바꾼다.
+// 정적 import 대상은 모듈 로드 시점에 이미 바인딩되므로, 동적 import로 가져온 대상은
+// 별도 it로 나눠 import 이후에 spyOn을 거는 순서를 보여준다.
 describe('jest.spyOn', () => {
     it('모듈 함수에 감시자를 건다', () => {
         const mockFunc = jest.spyOn(Module, 'getGreeting')

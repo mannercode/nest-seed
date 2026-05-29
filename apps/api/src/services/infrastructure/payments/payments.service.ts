@@ -1,4 +1,4 @@
-import { mapDocToDto } from '@mannercode/common'
+import { ensure, mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { CreatePaymentDto, PaymentDto } from './dtos'
 import { Payment } from './models'
@@ -25,7 +25,7 @@ export class PaymentsService {
     }
 
     private toDto(payment: Payment) {
-        return this.toDtos([payment])[0]
+        return ensure(this.toDtos([payment])[0])
     }
 
     private toDtos(payments: Payment[]) {

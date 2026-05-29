@@ -1,4 +1,5 @@
 import type { WatchRecordDto, WatchRecordsService } from 'core'
+import { ensure } from '@mannercode/common'
 import { oid } from '@mannercode/testing'
 import { buildCreateWatchRecordDto, createWatchRecord, type AppTestContext } from '../helpers'
 
@@ -43,9 +44,11 @@ describe('WatchRecordsService', () => {
             total: expectedRecords.length
         })
 
-        it('userId로 필터링한다', async () => {
+        it('userId가 일치하는 기록만 반환한다', async () => {
             const recordsPage = await watchRecordsService.searchPage({ userId })
-            expect(recordsPage).toEqual(buildExpectedPage([watchRecords[0], watchRecords[1]]))
+            expect(recordsPage).toEqual(
+                buildExpectedPage([ensure(watchRecords[0]), ensure(watchRecords[1])])
+            )
         })
     })
 })

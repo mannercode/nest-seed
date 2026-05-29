@@ -40,56 +40,84 @@ describe('S3ObjectService', () => {
             expect(presigned).toEqual({ fields: expect.any(Object), url: expect.any(String) })
         })
 
-        it('Content-Disposition 필드를 지원한다', async () => {
+        describe('Content-Disposition 필드를 지정했을 때', () => {
             const contentDisposition = 'attachment; filename="sample.txt"'
-            const presigned = await fix.s3Service.presignUploadPost({
-                contentDisposition,
-                contentType: 'text/plain',
-                expiresInSec: 60,
-                key: 'content-disposition.txt'
+            const uploadBody = Buffer.from('hello')
+            let presigned: { fields: Record<string, string>; url: string }
+
+            beforeEach(async () => {
+                presigned = await fix.s3Service.presignUploadPost({
+                    contentDisposition,
+                    contentType: 'text/plain',
+                    expiresInSec: 60,
+                    key: 'content-disposition.txt'
+                })
             })
 
-            expect(presigned.fields).toEqual(
-                expect.objectContaining({ 'Content-Disposition': contentDisposition })
-            )
+            it('필드에 Content-Disposition을 포함한다', () => {
+                expect(presigned.fields).toEqual(
+                    expect.objectContaining({ 'Content-Disposition': contentDisposition })
+                )
+            })
 
-            const uploadBody = Buffer.from('hello')
-            const okForm = buildPresignedPostForm(presigned.fields, uploadBody, 'text/plain')
-            const okResponse = await fetch(presigned.url, { body: okForm, method: 'POST' })
-            expect(okResponse.ok).toBe(true)
+            it('필드가 일치하면 업로드를 허용한다', async () => {
+                const form = buildPresignedPostForm(presigned.fields, uploadBody, 'text/plain')
 
-            const badForm = buildPresignedPostForm(
-                { ...presigned.fields, 'Content-Disposition': 'inline; filename="other.txt"' },
-                uploadBody,
-                'text/plain'
-            )
-            const badResponse = await fetch(presigned.url, { body: badForm, method: 'POST' })
-            expect(badResponse.ok).toBe(false)
+                const response = await fetch(presigned.url, { body: form, method: 'POST' })
+
+                expect(response.ok).toBe(true)
+            })
+
+            it('필드가 변조되면 업로드를 거부한다', async () => {
+                const form = buildPresignedPostForm(
+                    { ...presigned.fields, 'Content-Disposition': 'inline; filename="other.txt"' },
+                    uploadBody,
+                    'text/plain'
+                )
+
+                const response = await fetch(presigned.url, { body: form, method: 'POST' })
+
+                expect(response.ok).toBe(false)
+            })
         })
 
-        it('메타데이터 필드를 지원한다', async () => {
-            const presigned = await fix.s3Service.presignUploadPost({
-                expiresInSec: 60,
-                key: 'meta.txt',
-                metadata: { checksum: 'abc123' }
+        describe('메타데이터 필드를 지정했을 때', () => {
+            const uploadBody = Buffer.from('hello')
+            let presigned: { fields: Record<string, string>; url: string }
+
+            beforeEach(async () => {
+                presigned = await fix.s3Service.presignUploadPost({
+                    expiresInSec: 60,
+                    key: 'meta.txt',
+                    metadata: { checksum: 'abc123' }
+                })
             })
 
-            expect(presigned.fields).toEqual(
-                expect.objectContaining({ 'x-amz-meta-checksum': 'abc123' })
-            )
+            it('필드에 메타데이터를 포함한다', () => {
+                expect(presigned.fields).toEqual(
+                    expect.objectContaining({ 'x-amz-meta-checksum': 'abc123' })
+                )
+            })
 
-            const uploadBody = Buffer.from('hello')
-            const okForm = buildPresignedPostForm(presigned.fields, uploadBody, 'text/plain')
-            const okResponse = await fetch(presigned.url, { body: okForm, method: 'POST' })
-            expect(okResponse.ok).toBe(true)
+            it('필드가 일치하면 업로드를 허용한다', async () => {
+                const form = buildPresignedPostForm(presigned.fields, uploadBody, 'text/plain')
 
-            const badForm = buildPresignedPostForm(
-                { ...presigned.fields, 'x-amz-meta-checksum': 'mismatch' },
-                uploadBody,
-                'text/plain'
-            )
-            const badResponse = await fetch(presigned.url, { body: badForm, method: 'POST' })
-            expect(badResponse.ok).toBe(false)
+                const response = await fetch(presigned.url, { body: form, method: 'POST' })
+
+                expect(response.ok).toBe(true)
+            })
+
+            it('필드가 변조되면 업로드를 거부한다', async () => {
+                const form = buildPresignedPostForm(
+                    { ...presigned.fields, 'x-amz-meta-checksum': 'mismatch' },
+                    uploadBody,
+                    'text/plain'
+                )
+
+                const response = await fetch(presigned.url, { body: form, method: 'POST' })
+
+                expect(response.ok).toBe(false)
+            })
         })
 
         describe('업로드 크기 제한이 있는 프리사인드 POST', () => {
@@ -125,18 +153,25 @@ describe('S3ObjectService', () => {
 
                 expect(response.ok).toBe(false)
             })
+        })
 
-            it('contentLength가 일치하지 않으면 실패한다', async () => {
-                const { fields, url } = await fix.s3Service.presignUploadPost({
+        describe('업로드 크기 상한이 본문보다 작은 프리사인드 POST', () => {
+            const uploadBody = Buffer.from('hello')
+            let presigned: { fields: Record<string, string>; url: string }
+
+            beforeEach(async () => {
+                presigned = await fix.s3Service.presignUploadPost({
                     contentType: 'text/plain',
                     expiresInSec: 60,
                     key: 'key.txt',
                     maxContentLength: uploadBody.byteLength - 1
                 })
+            })
 
-                const form = buildPresignedPostForm(fields, uploadBody, 'text/plain')
+            it('contentLength가 상한을 넘으면 실패한다', async () => {
+                const form = buildPresignedPostForm(presigned.fields, uploadBody, 'text/plain')
 
-                const response = await fetch(url, { body: form, method: 'POST' })
+                const response = await fetch(presigned.url, { body: form, method: 'POST' })
 
                 expect(response.ok).toBe(false)
             })
@@ -327,6 +362,16 @@ describe('S3ObjectService', () => {
 
             expect(result).toEqual({ key, status: HttpStatus.NO_CONTENT })
         })
+
+        it('삭제하면 객체가 실제로 사라진다', async () => {
+            const key = 'foo/data3.json'
+            await uploadObject(fix.s3Service, key, 'upload body')
+
+            await fix.s3Service.deleteObject(key)
+
+            const isCompleted = await fix.s3Service.isUploadComplete({ key })
+            expect(isCompleted).toBe(false)
+        })
     })
 
     describe('listObjects', () => {
@@ -433,16 +478,24 @@ describe('S3ObjectService', () => {
 
             const { contents } = await fix.s3Service.listObjects({})
 
-            expect(contents[0].eTag).toBe('abc123')
+            expect(contents[0]?.eTag).toBe('abc123')
         })
     })
 
-    it('putObject가 생성하는 키 10000개에 중복이 없다', async () => {
-        // putObject 내부에서 randomUUID로 키를 생성한다. 여기서는 키 생성기를 직접 검증한다.
-        const { randomUUID } = await import('crypto')
-        const ids = new Set<string>()
-        for (let i = 0; i < 10000; i++) ids.add(randomUUID())
-        expect(ids.size).toBe(10000)
+    it('putObject를 여러 번 호출하면 매번 서로 다른 키를 반환한다', async () => {
+        const object = {
+            contentType: 'text/plain',
+            data: Buffer.from('body'),
+            filename: 'file.txt'
+        }
+        const count = 200
+
+        const results = await Promise.all(
+            Array.from({ length: count }, () => fix.s3Service.putObject(object))
+        )
+        const keys = new Set(results.map((result) => result.key))
+
+        expect(keys.size).toBe(count)
     })
 
     describe('onModuleDestroy', () => {

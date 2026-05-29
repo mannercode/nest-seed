@@ -1,5 +1,5 @@
 import type { HoldTicketsDto, TicketHoldingService } from 'core'
-import { sleep } from '@mannercode/common'
+import { CacheService, sleep } from '@mannercode/common'
 import { oid } from '@mannercode/testing'
 import { buildHoldTicketsDto, overrideConfigGetter, type AppTestContext } from '../helpers'
 
@@ -47,7 +47,7 @@ describe('TicketHoldingService', () => {
                 expect(isHeld).toBe(false)
             })
 
-            it('같은 고객이 다른 티켓을 잡으면 이전 보유는 해제된다', async () => {
+            it('같은 고객이 다른 티켓을 잡으면 이전 보유를 해제한다', async () => {
                 const newHoldDto = buildHoldTicketsDto({
                     userId,
                     ticketIds: [oid(0xb0), oid(0xb1)]
@@ -77,7 +77,7 @@ describe('TicketHoldingService', () => {
         })
 
         it(
-            '여러 고객이 동시에 보유를 시도하면 상영 시간 하나당 한 명만 성공한다',
+            '여러 고객이 동시에 보유를 시도하면 상영 한 건당 한 명만 성공한다',
             async () => {
                 const ticketIds = Array.from({ length: 5 }, (_, i) => oid(0x2000 + i))
                 const userIds = Array.from({ length: 10 }, (_, i) => oid(0x3000 + i))
@@ -175,7 +175,9 @@ describe('TicketHoldingService', () => {
             const holdDto = buildHoldTicketsDto()
             await ticketHoldingService.holdTickets(holdDto)
 
-            const cacheService = (ticketHoldingService as any).cacheService
+            const cacheService = fix.module.get<CacheService>(
+                CacheService.getName('ticket-holding')
+            )
             const realDelete = cacheService.delete.bind(cacheService)
             let calls = 0
             jest.spyOn(cacheService, 'delete').mockImplementation((key: any) => {

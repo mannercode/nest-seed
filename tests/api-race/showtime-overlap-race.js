@@ -9,82 +9,22 @@
  * 둘 이상이 succeeded이거나, 아무도 성공하지 못하거나, 시간 안에 사가가 종료 상태에 도달하지 못하면 실패로 본다.
  */
 
-const http = require('http')
-const { readPositiveInt, request, SERVER_URL } = require('./race-common')
+const {
+    readPositiveInt,
+    request,
+    SERVER_URL,
+    openEventStream,
+    waitUntil
+} = require('./race-common')
 
 const OVERLAP_COUNT = readPositiveInt('OVERLAP_COUNT', 5)
 const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 300)
 const SAGA_DEADLINE_MS = readPositiveInt('SAGA_DEADLINE_MS', 300_000)
 
-function openSseCollector() {
-    const url = new URL('/showtime-creation/event-stream', SERVER_URL)
-    const agent = new http.Agent({ keepAlive: false })
-    const events = []
-    let done = false
-
-    const connected = new Promise((resolve, reject) => {
-        const req = http.request(
-            {
-                agent,
-                hostname: url.hostname,
-                port: url.port,
-                path: url.pathname,
-                method: 'GET',
-                headers: {
-                    accept: 'text/event-stream',
-                    ...(process.env.ADMIN_ACCESS_TOKEN
-                        ? { authorization: `Bearer ${process.env.ADMIN_ACCESS_TOKEN}` }
-                        : {})
-                }
-            },
-            (res) => {
-                if (res.statusCode !== 200) {
-                    reject(new Error(`SSE status ${res.statusCode}`))
-                    return
-                }
-                res.setEncoding('utf8')
-                let buffer = ''
-                res.on('data', (chunk) => {
-                    if (done) return
-                    buffer += chunk
-                    let idx
-                    while ((idx = buffer.indexOf('\n\n')) !== -1) {
-                        const frame = buffer.slice(0, idx)
-                        buffer = buffer.slice(idx + 2)
-                        const dataLine = frame.split('\n').find((line) => line.startsWith('data:'))
-                        if (!dataLine) continue
-                        try {
-                            events.push(JSON.parse(dataLine.slice('data:'.length).trim()))
-                        } catch {
-                            /* 무시 */
-                        }
-                    }
-                })
-                resolve({ res, req, agent })
-            }
-        )
-        req.on('error', reject)
-        req.end()
-    })
-
-    const close = async () => {
-        done = true
-        const { res, req, agent: a } = await connected
-        res.destroy()
-        req.destroy()
-        a.destroy()
-    }
-
-    return { connected, events, close }
-}
-
-async function waitUntil(predicate, { timeoutMs, intervalMs = 100 } = {}) {
-    const start = Date.now()
-    while (!predicate()) {
-        if (Date.now() - start > timeoutMs) return false
-        await new Promise((r) => setTimeout(r, intervalMs))
-    }
-    return true
+// 모든 쌍이 겹치려면 처음/끝 쌍의 겹침 120m - (OVERLAP_COUNT-1)×10m가 양수여야 한다(OVERLAP_COUNT ≤ 12).
+// 더 크게 잡으면 일부 쌍이 겹치지 않아 둘 이상이 성공할 수 있고, 그러면 잘못된 전제를 테스트하게 된다.
+if (OVERLAP_COUNT > 12) {
+    throw new Error(`OVERLAP_COUNT는 12 이하여야 모든 쌍이 겹친다. 받은 값: ${OVERLAP_COUNT}`)
 }
 
 async function setupFixture() {
@@ -120,11 +60,16 @@ async function setupFixture() {
 }
 
 async function runInner(iteration, movieId, theaterId, sse, baseOffsetMs) {
+    // collector는 회차 전체에 걸쳐 한 번만 열어 두므로, 직전 회차의 종료된 사가 이벤트가 계속 쌓인다.
+    // 회차 시작 시 비워, outcomeOf의 선형 스캔이 회차마다 O(이번 사가 수)로 유지되게 한다.
+    // 직전 회차는 모든 사가가 종료 상태에 도달한 뒤에야 끝났으므로 비워도 잃을 정보가 없다.
+    sse.events.length = 0
+
     // N개의 사가를 만들고, startTime은 10분씩 어긋나며 각 길이는 120분이다.
     // 즉 사가들은 base, base+10m, base+20m, ..., base+(N-1)×10m에 위치한다.
     // 마지막 사가는 base + (N-1)×10m + 120m에 끝난다.
     // 모든 쌍이 겹친다.
-    // 인접 쌍은 110m 겹치고, 처음/끝 쌍은 120m - (N-1)×10m만큼 겹친다(N <= 13이면 양수).
+    // 인접 쌍은 110m 겹치고, 처음/끝 쌍은 120m - (N-1)×10m만큼 겹친다(OVERLAP_COUNT ≤ 12라 양수, 위에서 강제).
     const base = new Date(Date.now() + 24 * 60 * 60 * 1000 + baseOffsetMs)
     base.setUTCSeconds(0, 0)
     base.setUTCMinutes(0)
@@ -192,7 +137,7 @@ async function main() {
     console.log(`[overlap] server=${SERVER_URL} overlap=${OVERLAP_COUNT} inner=${INNER_ITERATIONS}`)
 
     const { movieId, theaterId } = await setupFixture()
-    const sse = openSseCollector()
+    const sse = openEventStream()
     await sse.connected
 
     // 각 회차는 대략 OVERLAP_COUNT × 10min + 120min 길이의 시간 범위를 사용한다.

@@ -1,4 +1,4 @@
-import { isDuplicateKeyError, mapDocToDto } from '@mannercode/common'
+import { ensure, isDuplicateKeyError, mapDocToDto } from '@mannercode/common'
 import { ConflictException, Injectable } from '@nestjs/common'
 import {
     CreateUserDto,
@@ -89,7 +89,7 @@ export class UsersService {
     }
 
     private toDto(user: User) {
-        return this.toDtos([user])[0]
+        return ensure(this.toDtos([user])[0])
     }
 
     private toDtos(users: User[]) {

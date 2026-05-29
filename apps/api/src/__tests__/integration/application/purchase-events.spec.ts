@@ -26,7 +26,7 @@ describe('PurchaseEvents 구독자', () => {
 
     afterEach(() => fix.teardown())
 
-    it('ticketPurchased 이벤트는 알림 구독자와 로그 구독자 모두에 도달한다', async () => {
+    it('ticketPurchased 이벤트는 알림 구독자와 로그 구독자 모두에 전달한다', async () => {
         const { waitFor } = await import('./purchase-events.utils')
         const userId = 'user-1'
         const ticketIds = ['t1', 't2']
@@ -43,7 +43,7 @@ describe('PurchaseEvents 구독자', () => {
         expect(countLogCalls(logSpy, PURCHASED_LOG)).toBe(1)
     })
 
-    it('ticketPurchaseCanceled 이벤트는 로그 구독자에만 도달한다', async () => {
+    it('ticketPurchaseCanceled 이벤트는 로그 구독자에만 전달한다', async () => {
         const { waitFor } = await import('./purchase-events.utils')
         const userId = 'user-2'
         const ticketIds = ['t3']

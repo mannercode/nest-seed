@@ -35,13 +35,13 @@
         "prepare-files": "touch ${localEnv:HOME}/.claude.json",
         "prepare-network": "docker network create ${localWorkspaceFolderBasename} 2>/dev/null || true"
     },
-    "postCreateCommand": { "husky": "husky", "install": "npm install" },
+    "postCreateCommand": { "install": "npm install" },
     "postStartCommand": {
         "infra": "bash infra/reset.sh",
         "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null"
     },
     "waitFor": "postStartCommand",
-    "forwardPorts": [3000, 3100, 5010, 5020],
+    "forwardPorts": [3000, 3100, 3200, 5010, 5020],
     "customizations": {
         "vscode": {
             "extensions": [

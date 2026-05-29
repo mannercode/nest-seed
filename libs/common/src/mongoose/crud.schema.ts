@@ -106,7 +106,7 @@ export function createCrudSchema<T>(cls: Type<T>): Schema<T> {
         // `bulkWrite`는 소프트 삭제 미들웨어를 거치지 않는다.
         // 그래서 각 연산의 필터에 `deletedAt: null`을 직접 추가하고, 삭제 계열 연산은 update로 바꿔서 같은 효과를 낸다.
         schema.pre('bulkWrite', function (ops) {
-            for (const op of ops) {
+            for (const [i, op] of ops.entries()) {
                 if ('updateOne' in op) {
                     op.updateOne.filter = { ...op.updateOne.filter, deletedAt: null }
                 } else if ('updateMany' in op) {
@@ -114,18 +114,19 @@ export function createCrudSchema<T>(cls: Type<T>): Schema<T> {
                 } else if ('replaceOne' in op) {
                     op.replaceOne.filter = { ...op.replaceOne.filter, deletedAt: null }
                 } else if ('deleteOne' in op) {
-                    const filter = op.deleteOne.filter
-                    delete (op as any).deleteOne
-                    ;(op as any).updateOne = {
-                        filter: { ...filter, deletedAt: null },
-                        update: { deletedAt: new Date() }
+                    // 삭제 계열은 연산 종류 자체가 바뀌므로 필터만 손대지 못하고 같은 자리를 update 연산으로 교체한다.
+                    ops[i] = {
+                        updateOne: {
+                            filter: { ...op.deleteOne.filter, deletedAt: null },
+                            update: { deletedAt: new Date() }
+                        }
                     }
                 } else if ('deleteMany' in op) {
-                    const filter = op.deleteMany.filter
-                    delete (op as any).deleteMany
-                    ;(op as any).updateMany = {
-                        filter: { ...filter, deletedAt: null },
-                        update: { deletedAt: new Date() }
+                    ops[i] = {
+                        updateMany: {
+                            filter: { ...op.deleteMany.filter, deletedAt: null },
+                            update: { deletedAt: new Date() }
+                        }
                     }
                 }
             }

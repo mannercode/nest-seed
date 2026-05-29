@@ -26,8 +26,9 @@ describe('DateTimeRange', () => {
 
             const errors = validateSync(instance)
             expect(errors.length).toBeGreaterThan(0)
-            expect(errors[0].property).toBe('start')
-            expect(errors[0].constraints?.isDate).toBeDefined()
+            const [firstError] = errors
+            expect(firstError?.property).toBe('start')
+            expect(firstError?.constraints?.isDate).toBeDefined()
         })
     })
 

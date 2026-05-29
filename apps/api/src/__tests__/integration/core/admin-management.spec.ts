@@ -132,7 +132,7 @@ describe('Root + Admin lifecycle', () => {
                 .ok(expect.objectContaining({ email: adminCredentials.email, name: 'renamed' }))
         })
 
-        it('자기 password를 바꾸면 새 password로 로그인된다', async () => {
+        it('자기 password를 바꾸면 새 password로 로그인할 수 있다', async () => {
             await createAdmin(fix, adminCredentials)
             const { accessToken } = await loginAdmin(fix, adminCredentials)
 
@@ -152,7 +152,7 @@ describe('Root + Admin lifecycle', () => {
             await fix.httpClient.patch('/admins/me').body({ name: 'x' }).unauthorized()
         })
 
-        it('email 변경도 반영된다', async () => {
+        it('email을 변경하면 변경된 email을 반환한다', async () => {
             await createAdmin(fix, adminCredentials)
             const { accessToken } = await loginAdmin(fix, adminCredentials)
 

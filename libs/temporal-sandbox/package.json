@@ -1,5 +1,7 @@
 {
     "name": "@mannercode/temporal-sandbox",
+    "version": "0.0.1",
+    "private": true,
     "main": "_output/dist/index.js",
     "types": "_output/dist/index.d.ts",
     "scripts": {

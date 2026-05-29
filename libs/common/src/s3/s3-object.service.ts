@@ -10,7 +10,7 @@ import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { Injectable, OnModuleDestroy } from '@nestjs/common'
 import { randomUUID } from 'crypto'
-import { HttpUtil, defaultTo } from '../utils'
+import { HttpUtil, defaultTo, getByPath } from '../utils'
 import {
     S3DeleteObjectResult,
     S3ListObjectsOptions,
@@ -22,6 +22,11 @@ import {
     S3PresignPostUploadResult,
     S3UploadCompleteOptions
 } from './s3-object.types'
+
+// S3의 `content-length-range` 조건은 하한과 상한을 함께 요구한다.
+// 호출자가 하한만 지정하면 상한 자리를 채워야 하는데, 정책상 상한을 두지 않으려는 경우다.
+// 그래서 AWS 한도가 아니라 "사실상 무제한"을 뜻하는 큰 값을 상한으로 둔다.
+const UNBOUNDED_CONTENT_LENGTH = 1024 * 1024 * 1024 * 1024 // 1 TiB
 
 @Injectable()
 export class S3ObjectService implements OnModuleDestroy {
@@ -39,7 +44,9 @@ export class S3ObjectService implements OnModuleDestroy {
             new DeleteObjectCommand({ Bucket: this.bucket, Key: key })
         )
 
-        return { key, status: defaultTo($metadata.httpStatusCode, 200) }
+        // S3 삭제 성공 응답은 204 No Content이다.
+        // SDK가 status를 비워 보내는 드문 경우에도 200 같은 엉뚱한 값을 지어내지 않도록 204로 채운다.
+        return { key, status: defaultTo($metadata.httpStatusCode, 204) }
     }
 
     async isUploadComplete(options: S3UploadCompleteOptions): Promise<boolean> {
@@ -59,8 +66,8 @@ export class S3ObjectService implements OnModuleDestroy {
             if (expected && !actual) return false
 
             return true
-        } catch (error: any) {
-            if (error?.$metadata?.httpStatusCode === 404) {
+        } catch (error: unknown) {
+            if (getByPath(error, '$metadata.httpStatusCode') === 404) {
                 return false
             }
 
@@ -163,7 +170,7 @@ export class S3ObjectService implements OnModuleDestroy {
             conditions.push([
                 'content-length-range',
                 defaultTo(minContentLength, 0),
-                defaultTo(maxContentLength, 1024 * 1024 * 1024 * 1024)
+                defaultTo(maxContentLength, UNBOUNDED_CONTENT_LENGTH)
             ])
         }
 
@@ -200,5 +207,5 @@ export class S3ObjectService implements OnModuleDestroy {
  * 예: `application/json`과 `application/json; charset=utf-8`은 같다고 본다.
  */
 function normalizeContentType(v?: string) {
-    return v?.split(';', 1)[0].trim().toLowerCase()
+    return v?.replace(/;.*/, '').trim().toLowerCase()
 }

@@ -11,8 +11,7 @@
  * 어떤 그룹의 204 응답 수가 1이 아니거나, 5xx가 발생하거나, 응답한 복제본 수가 두 개보다 적으면 실패로 본다.
  */
 
-const http = require('http')
-const { readPositiveInt, request, SERVER_URL } = require('./race-common')
+const { readPositiveInt, request, SERVER_URL, waitForSagaSuccess } = require('./race-common')
 
 const TICKET_GROUPS = readPositiveInt('HOLD_TICKET_GROUPS', 5)
 const USERS_PER_GROUP = readPositiveInt('HOLD_CLIENT_COUNT', 50)
@@ -20,70 +19,6 @@ const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 200)
 const SHOWTIME_DEADLINE_MS = readPositiveInt('SHOWTIME_DEADLINE_MS', 60_000)
 
 const TOTAL_USERS = TICKET_GROUPS * USERS_PER_GROUP
-
-function waitForSagaSuccess(sagaId) {
-    const url = new URL('/showtime-creation/event-stream', SERVER_URL)
-    const agent = new http.Agent({ keepAlive: false })
-    return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => {
-            agent.destroy()
-            reject(new Error(`saga ${sagaId} did not finish in ${SHOWTIME_DEADLINE_MS}ms`))
-        }, SHOWTIME_DEADLINE_MS)
-
-        const req = http.request(
-            {
-                agent,
-                hostname: url.hostname,
-                port: url.port,
-                path: url.pathname,
-                method: 'GET',
-                headers: {
-                    accept: 'text/event-stream',
-                    ...(process.env.ADMIN_ACCESS_TOKEN
-                        ? { authorization: `Bearer ${process.env.ADMIN_ACCESS_TOKEN}` }
-                        : {})
-                }
-            },
-            (res) => {
-                let buffer = ''
-                res.setEncoding('utf8')
-                res.on('data', (chunk) => {
-                    buffer += chunk
-                    let idx
-                    while ((idx = buffer.indexOf('\n\n')) !== -1) {
-                        const frame = buffer.slice(0, idx)
-                        buffer = buffer.slice(idx + 2)
-                        const dataLine = frame.split('\n').find((line) => line.startsWith('data:'))
-                        if (!dataLine) continue
-                        try {
-                            const event = JSON.parse(dataLine.slice('data:'.length).trim())
-                            if (event.sagaId !== sagaId) continue
-                            if (event.status === 'succeeded') {
-                                clearTimeout(timer)
-                                res.destroy()
-                                agent.destroy()
-                                resolve()
-                                return
-                            }
-                            if (event.status === 'failed' || event.status === 'error') {
-                                clearTimeout(timer)
-                                res.destroy()
-                                agent.destroy()
-                                reject(new Error(`saga ${sagaId} status=${event.status}`))
-                                return
-                            }
-                        } catch {
-                            /* 무시 */
-                        }
-                    }
-                })
-                res.on('error', reject)
-            }
-        )
-        req.on('error', reject)
-        req.end()
-    })
-}
 
 async function setupMovieTheater() {
     const movie = await request('POST', '/movies', {
@@ -126,7 +61,7 @@ async function createShowtimeTickets(movieId, theaterId, startTimeOffsetMs) {
         body: { movieId, theaterIds: [theaterId], durationInMinutes: 120, startTimes: [startTime] }
     })
     if (created.status !== 202) throw new Error(`showtime: ${created.status}`)
-    await waitForSagaSuccess(created.body.sagaId)
+    await waitForSagaSuccess(created.body.sagaId, SHOWTIME_DEADLINE_MS)
 
     const search = await request('POST', '/showtime-creation/showtimes/search', {
         body: { theaterIds: [theaterId] }

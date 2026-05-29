@@ -144,7 +144,7 @@ describe('createWinstonLogger', () => {
         consoleLogger.close()
     })
 
-    it('contextType이 service이면 SERVICE 라벨을 쓰고 아니면 기본 포맷을 쓴다', async () => {
+    it('contextType이 service이면 SERVICE 라벨을 쓴다', async () => {
         const consoleLogger = createWinstonLogger({
             consoleLogLevel: 'info',
             daysToKeepLogs: '1d',
@@ -154,15 +154,31 @@ describe('createWinstonLogger', () => {
 
         const { getOutput } = spyConsoleTransport(consoleLogger)
 
-        // service 포맷 경로이다.
         consoleLogger.info('Foo.bar', { contextType: 'service', x: 1 })
-        // contextType이 없는 기본 포맷 경로이다.
-        consoleLogger.info('plain message', { other: 'value' })
         await sleep(200)
 
         const output = getOutput()
         expect(output).toContain('SERVICE')
         expect(output).toContain('Foo.bar')
+
+        consoleLogger.close()
+    })
+
+    it('contextType이 없으면 기본 포맷을 쓴다', async () => {
+        const consoleLogger = createWinstonLogger({
+            consoleLogLevel: 'info',
+            daysToKeepLogs: '1d',
+            directory: tempDir,
+            fileLogLevel: 'silent'
+        })
+
+        const { getOutput } = spyConsoleTransport(consoleLogger)
+
+        consoleLogger.info('plain message', { other: 'value' })
+        await sleep(200)
+
+        const output = getOutput()
+        expect(output).not.toContain('SERVICE')
         expect(output).toContain('plain message')
         expect(output).toContain('other')
 

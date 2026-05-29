@@ -69,9 +69,9 @@ export function orderBy<T>(
     const orderArr = Array.isArray(orders) ? orders : [orders]
     const fns = keyArr.map((k) => (typeof k === 'function' ? k : (item: T) => item[k]))
     return [...arr].sort((a, b) => {
-        for (let i = 0; i < fns.length; i++) {
-            const va = fns[i](a)
-            const vb = fns[i](b)
+        for (const [i, fn] of fns.entries()) {
+            const va = fn(a)
+            const vb = fn(b)
             const dir = orderArr[i] === 'desc' ? -1 : 1
             if (va < vb) return -1 * dir
             if (va > vb) return 1 * dir

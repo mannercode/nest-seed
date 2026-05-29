@@ -14,7 +14,7 @@ RUN set -Eeu; \
     $SHELL_FORMATTER; \
     rm -rf /var/lib/apt/lists/*; \
     curl -fsSL "https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar" -o /opt/plantuml.jar; \
-    npm i -g npm-check-updates husky @commitlint/cli @anthropic-ai/claude-code playwright@1.60.0; \
+    npm i -g npm@11.15.0 npm-check-updates @commitlint/cli @anthropic-ai/claude-code playwright@1.60.0; \
     npm cache clean --force
 
 # features/docker-outside-of-docker에 포함된 buildx는 ECR 푸시 중 TLS 버그로 죽는다.

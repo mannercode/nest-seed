@@ -77,12 +77,12 @@ describe('withTestId', () => {
 })
 
 describe('oid', () => {
-    it('oid(1)은 24자리 16진수 "000000000000000000000001"로 채워진다', async () => {
+    it('숫자를 24자리 16진수 문자열로 채워 반환한다', async () => {
         const { oid } = await import('../utils')
         expect(oid(1)).toBe('000000000000000000000001')
     })
 
-    it('oid(0xff)는 24자리 16진수 문자열로 채워진다', async () => {
+    it('여러 자리 값도 24자리 16진수 문자열로 채워 반환한다', async () => {
         const { oid } = await import('../utils')
         expect(oid(0xff)).toBe('0000000000000000000000ff')
     })

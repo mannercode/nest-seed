@@ -22,11 +22,11 @@ export async function getJson<T>(path: string): Promise<T> {
     if (!response.ok) {
         const code =
             parsed && typeof parsed === 'object' && 'code' in parsed
-                ? String((parsed as { code: unknown }).code)
+                ? String(parsed.code)
                 : undefined
         const message =
             parsed && typeof parsed === 'object' && 'message' in parsed
-                ? String((parsed as { message: unknown }).message)
+                ? String(parsed.message)
                 : `GET ${path} failed with ${response.status}`
         throw new ApiError(response.status, code, message)
     }

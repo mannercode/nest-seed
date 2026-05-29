@@ -12,83 +12,31 @@
  * 어떤 클라이언트가 어떤 사가의 succeeded 이벤트를 놓치거나, SSE 클라이언트들이 한 복제본에만 연결되어 복제본 사이 전달이 검증되지 않으면 실패로 본다.
  */
 
-const http = require('http')
-const { readPositiveInt, request, SERVER_URL } = require('./race-common')
+const {
+    readPositiveInt,
+    request,
+    SERVER_URL,
+    openEventStream,
+    waitUntil
+} = require('./race-common')
 
 const SSE_CLIENT_COUNT = readPositiveInt('SSE_CLIENT_COUNT', 100)
 const SAGAS_PER_INNER = readPositiveInt('SAGAS_PER_INNER', 10)
 const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 150)
 const DEADLINE_MS = readPositiveInt('SSE_DEADLINE_MS', 300_000)
 
-function openSseClient(clientId) {
-    const url = new URL('/showtime-creation/event-stream', SERVER_URL)
-    const agent = new http.Agent({ keepAlive: false })
-    const events = []
-    let replicaId
-
-    const connected = new Promise((resolve, reject) => {
-        const req = http.request(
-            {
-                agent,
-                hostname: url.hostname,
-                port: url.port,
-                path: url.pathname,
-                method: 'GET',
-                headers: {
-                    accept: 'text/event-stream',
-                    ...(process.env.ADMIN_ACCESS_TOKEN
-                        ? { authorization: `Bearer ${process.env.ADMIN_ACCESS_TOKEN}` }
-                        : {})
-                }
-            },
-            (res) => {
-                if (res.statusCode !== 200) {
-                    reject(new Error(`SSE client ${clientId} got status ${res.statusCode}`))
-                    return
-                }
-                replicaId = res.headers['x-replica-id']
-                res.setEncoding('utf8')
-                let buffer = ''
-                res.on('data', (chunk) => {
-                    buffer += chunk
-                    let idx
-                    while ((idx = buffer.indexOf('\n\n')) !== -1) {
-                        const frame = buffer.slice(0, idx)
-                        buffer = buffer.slice(idx + 2)
-                        const dataLine = frame.split('\n').find((line) => line.startsWith('data:'))
-                        if (!dataLine) continue
-                        const payload = dataLine.slice('data:'.length).trim()
-                        try {
-                            events.push(JSON.parse(payload))
-                        } catch {
-                            events.push({ raw: payload })
-                        }
-                    }
-                })
-                resolve({ res, req, agent })
-            }
-        )
-        req.on('error', reject)
-        req.end()
+// 정상 동작이면 모든 data: 프레임은 유효한 JSON이다.
+// 파싱 실패는 서버 직렬화나 스트림 손상 같은 실제 결함을 뜻한다.
+// 그래서 raw로 삼키지 않고 어떤 페이로드가 깨졌는지 드러내며 즉시 실패시킨다.
+function openStrictSseClient(clientId) {
+    return openEventStream({
+        label: `client ${clientId}`,
+        onParseError: (payload, e) => {
+            throw new Error(
+                `SSE client ${clientId} JSON parse failed: ${e.message} (payload=${payload.slice(0, 100)})`
+            )
+        }
     })
-
-    const close = async () => {
-        const { res, req, agent: a } = await connected
-        res.destroy()
-        req.destroy()
-        a.destroy()
-    }
-
-    return { clientId, connected, events, close, getReplicaId: () => replicaId }
-}
-
-async function waitUntil(predicate, { timeoutMs, intervalMs = 50 } = {}) {
-    const start = Date.now()
-    while (!predicate()) {
-        if (Date.now() - start > timeoutMs) return false
-        await new Promise((r) => setTimeout(r, intervalMs))
-    }
-    return true
 }
 
 async function setupFixture() {
@@ -125,7 +73,7 @@ async function setupFixture() {
 
 async function runInner(movieId, theaterId, iteration, baseOffsetMs) {
     // 회차마다 새 SSE 클라이언트 묶음을 연다.
-    const clients = Array.from({ length: SSE_CLIENT_COUNT }, (_, i) => openSseClient(i))
+    const clients = Array.from({ length: SSE_CLIENT_COUNT }, (_, i) => openStrictSseClient(i))
     await Promise.all(clients.map((c) => c.connected))
 
     const replicaSet = new Set(clients.map((c) => c.getReplicaId()).filter(Boolean))
@@ -176,10 +124,10 @@ async function runInner(movieId, theaterId, iteration, baseOffsetMs) {
 
     if (!ok) {
         const missing = []
-        for (const c of clients) {
+        for (const [clientId, c] of clients.entries()) {
             for (const sagaId of sagaIds) {
                 if (!c.events.some((e) => e && e.sagaId === sagaId && e.status === 'succeeded')) {
-                    missing.push({ client: c.clientId, sagaId, replicaId: c.getReplicaId() })
+                    missing.push({ client: clientId, sagaId, replicaId: c.getReplicaId() })
                 }
             }
         }

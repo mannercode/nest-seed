@@ -16,7 +16,7 @@ describe('AppendOnly', () => {
     afterEach(() => fix.teardown())
 
     describe('AppendOnlySchema', () => {
-        it('새 문서는 저장된다', () => {
+        it('새 문서를 저장한다', () => {
             expect(createdDoc.id).toBeDefined()
             expect(createdDoc.name).toBe('name')
         })

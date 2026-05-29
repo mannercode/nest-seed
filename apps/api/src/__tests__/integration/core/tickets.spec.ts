@@ -1,4 +1,4 @@
-import { pickIds } from '@mannercode/common'
+import { ensure, pickIds } from '@mannercode/common'
 import { oid } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
 import { TicketStatus, type TicketDto, type TicketsService } from 'core'
@@ -24,6 +24,32 @@ describe('TicketsService', () => {
 
             expect(count).toBe(createDtos.length)
         })
+
+        it('티켓을 DB에 저장한다', async () => {
+            const sagaId = oid(0x1)
+            const createDto = buildCreateTicketDto({
+                sagaId,
+                movieId: oid(0x2),
+                theaterId: oid(0x3),
+                showtimeId: oid(0x4),
+                seat: { block: '2b', row: '2r', seatNumber: 2 },
+                status: TicketStatus.Available
+            })
+
+            await ticketsService.createMany([createDto])
+
+            const tickets = await ticketsService.search({ sagaIds: [sagaId] })
+            expect(tickets).toEqual([
+                {
+                    id: expect.any(String),
+                    movieId: createDto.movieId,
+                    theaterId: createDto.theaterId,
+                    showtimeId: createDto.showtimeId,
+                    seat: createDto.seat,
+                    status: createDto.status
+                }
+            ])
+        })
     })
 
     describe('search', () => {
@@ -45,10 +71,10 @@ describe('TicketsService', () => {
                     { showtimeId }
                 ])
 
-                ticketForSaga = createdTickets[0]
-                ticketForMovie = createdTickets[1]
-                ticketForTheater = createdTickets[2]
-                ticketForShowtime = createdTickets[3]
+                ticketForSaga = ensure(createdTickets[0])
+                ticketForMovie = ensure(createdTickets[1])
+                ticketForTheater = ensure(createdTickets[2])
+                ticketForShowtime = ensure(createdTickets[3])
             })
 
             it('사가 식별자 목록으로 필터링한다', async () => {
@@ -103,10 +129,12 @@ describe('TicketsService', () => {
         })
 
         it('일부 티켓이 이미 목표 상태이면 409로 거절한다', async () => {
-            const [first, second] = await createTickets(fix, [
+            const createdTickets = await createTickets(fix, [
                 { status: TicketStatus.Available },
                 { status: TicketStatus.Sold }
             ])
+            const first = ensure(createdTickets[0])
+            const second = ensure(createdTickets[1])
 
             const promise = ticketsService.updateStatusMany(
                 [first.id, second.id],

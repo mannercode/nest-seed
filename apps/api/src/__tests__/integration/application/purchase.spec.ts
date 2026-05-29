@@ -1,5 +1,6 @@
-import { pickIds } from '@mannercode/common'
+import { ensure, pickIds } from '@mannercode/common'
 import { TicketStatus, type TicketDto } from 'core'
+import { PaymentStatus } from 'infrastructure'
 import {
     Errors,
     getPayments,
@@ -52,7 +53,7 @@ describe('PurchaseService', () => {
 
                 const payments = await getPayments(fix, [purchaseRecord.paymentId])
 
-                expect(payments[0].amount).toEqual(purchaseRecord.totalPrice)
+                expect(ensure(payments[0]).amount).toEqual(purchaseRecord.totalPrice)
             })
 
             it('구매하면 티켓 상태가 판매 완료로 바뀐다', async () => {
@@ -130,15 +131,39 @@ describe('PurchaseService', () => {
                     const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
                     const paymentsService = fix.module.get(PaymentsService)
 
-                    const deletePurchaseRecordSpy = jest.spyOn(purchaseRecordsService, 'deleteMany')
-                    const cancelPaymentSpy = jest.spyOn(paymentsService, 'cancel')
+                    // 보상으로 결제와 구매 기록이 정리되므로 그 식별자를 알 수 없다.
+                    // 그래서 생성 시점에 실제 반환값을 그대로 통과시키며 id만 가로채 둔다.
+                    let paymentId: string
+                    let purchaseRecordId: string
+                    const createPayment = paymentsService.create.bind(paymentsService)
+                    jest.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
+                        const payment = await createPayment(dto)
+                        paymentId = payment.id
+                        return payment
+                    })
+                    const createPurchaseRecord =
+                        purchaseRecordsService.create.bind(purchaseRecordsService)
+                    jest.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(
+                        async (dto) => {
+                            const record = await createPurchaseRecord(dto)
+                            purchaseRecordId = record.id
+                            return record
+                        }
+                    )
 
                     const createDto = buildCreatePurchaseDto(heldTickets)
 
                     await fix.httpClient.post('/purchases').body(createDto).internalServerError()
 
-                    expect(deletePurchaseRecordSpy).toHaveBeenCalledTimes(1)
-                    expect(cancelPaymentSpy).toHaveBeenCalledTimes(1)
+                    const payments = await getPayments(fix, [paymentId!])
+                    expect(ensure(payments[0]).status).toBe(PaymentStatus.Cancelled)
+
+                    // 삭제된 구매 기록은 더 이상 조회되지 않으므로 getMany가 NotFound로 거부된다.
+                    const deleted = purchaseRecordsService.getMany([purchaseRecordId!])
+                    await expect(deleted).rejects.toMatchObject({
+                        message: Errors.Mongoose.MultipleDocumentsNotFound([purchaseRecordId!])
+                            .message
+                    })
                 })
             })
 
@@ -216,13 +241,21 @@ describe('PurchaseService', () => {
                 jest.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(() => {
                     throw new Error('record creation failed')
                 })
-                const cancelPaymentSpy = jest.spyOn(paymentsService, 'cancel')
+                // 보상으로 결제가 취소될 뿐 행은 남으므로, 생성된 결제 id를 가로채 상태를 확인한다.
+                let paymentId: string
+                const createPayment = paymentsService.create.bind(paymentsService)
+                jest.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
+                    const payment = await createPayment(dto)
+                    paymentId = payment.id
+                    return payment
+                })
 
                 const createDto = buildCreatePurchaseDto(heldTickets)
 
                 await fix.httpClient.post('/purchases').body(createDto).internalServerError()
 
-                expect(cancelPaymentSpy).toHaveBeenCalledTimes(1)
+                const payments = await getPayments(fix, [paymentId!])
+                expect(ensure(payments[0]).status).toBe(PaymentStatus.Cancelled)
             })
         })
 

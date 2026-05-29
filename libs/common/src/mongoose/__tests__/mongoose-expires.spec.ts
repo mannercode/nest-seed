@@ -10,7 +10,7 @@ describe('Mongoose TTL', () => {
     })
     afterEach(() => fix.teardown())
 
-    it('TTL이 지나면 문서가 자동으로 삭제된다', async () => {
+    it('TTL이 지나면 문서를 자동으로 삭제한다', async () => {
         const doc = new fix.model()
         const sn = 1234567
         doc.sn = sn

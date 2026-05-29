@@ -1,6 +1,7 @@
 import {
     CacheService,
     DateUtil,
+    ensure,
     getByPath,
     InjectCache,
     InjectS3Object,
@@ -94,7 +95,7 @@ export class AssetsService {
                 reasons: failed.map((r) => getByPath(r, 'reason.message', String(r.reason))),
                 totalCount: assetIds.length
             })
-            throw failed[0].reason
+            throw ensure(failed[0]).reason
         }
 
         await this.repository.deleteByIds(assetIds)
@@ -158,7 +159,7 @@ export class AssetsService {
     }
 
     private toDto(asset: Asset): AssetDto {
-        return this.toDtos([asset])[0]
+        return ensure(this.toDtos([asset])[0])
     }
 
     private toDtos(assets: Asset[]) {

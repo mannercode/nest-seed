@@ -1,4 +1,4 @@
-import { mapDocToDto } from '@mannercode/common'
+import { ensure, mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { CreateWatchRecordDto, SearchWatchRecordsPageDto, WatchRecordDto } from './dtos'
 import { WatchRecord } from './models'
@@ -21,7 +21,7 @@ export class WatchRecordsService {
     }
 
     private toDto(watchRecord: WatchRecord) {
-        return this.toDtos([watchRecord])[0]
+        return ensure(this.toDtos([watchRecord])[0])
     }
 
     private toDtos(watchRecords: WatchRecord[]) {

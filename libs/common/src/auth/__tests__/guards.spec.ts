@@ -83,7 +83,7 @@ describe('AuthGuard', () => {
             await fix.httpClient.get('/bearer/optional-route').ok()
         })
 
-        it('@OptionalAuth가 붙은 라우트도 잘못된 토큰이면 401이다', async () => {
+        it('@OptionalAuth가 붙은 라우트도 잘못된 토큰이면 401을 반환한다', async () => {
             const expired = await fix.jwtService.signAsync(
                 { userId: 'user-1' },
                 { expiresIn: '-1s' }

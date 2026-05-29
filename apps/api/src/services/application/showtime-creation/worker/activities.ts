@@ -54,8 +54,7 @@ export class ShowtimeCreationActivities {
         // 검증과 삽입은 복제본 경계를 넘어 원자적으로 취급해야 한다.
         // 두 워커가 같은 시간대의 사가를 동시에 검증하면, 아직 삽입되지 않은 서로의 결과를 보지 못해 둘 다 통과할 수 있다.
         // 분산 락 안에서 검증과 삽입을 함께 실행해 같은 시간대는 한 사가씩 처리한다.
-        let result!: ValidateAndCreateResult
-        await this.cache.withLockBlocking(
+        return this.cache.withLockBlocking<ValidateAndCreateResult>(
             VALIDATE_CREATE_LOCK_KEY,
             VALIDATE_CREATE_LOCK_TTL_MS,
             async () => {
@@ -64,15 +63,12 @@ export class ShowtimeCreationActivities {
 
                 if (isValid) {
                     const creationResult = await this.creatorService.create(createDto, sagaId)
-                    result = { kind: 'succeeded', ...creationResult }
-                } else {
-                    result = { conflictingShowtimes, kind: 'failed' }
+                    return { kind: 'succeeded', ...creationResult }
                 }
+                return { conflictingShowtimes, kind: 'failed' }
             },
             { waitMs: VALIDATE_CREATE_LOCK_WAIT_MS }
         )
-
-        return result
     }
 
     async compensate(sagaId: string): Promise<void> {

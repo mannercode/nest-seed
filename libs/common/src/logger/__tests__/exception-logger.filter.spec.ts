@@ -27,7 +27,7 @@ describe('HttpExceptionLoggerFilter', () => {
             })
         })
 
-        it('401 HttpException도 Logger.warn으로 로깅된다', async () => {
+        it('401 HttpException도 Logger.warn으로 로그를 남긴다', async () => {
             await fix.httpClient.get('/unauthorized').unauthorized()
 
             expect(fix.spyWarn).toHaveBeenCalledWith(
@@ -36,7 +36,7 @@ describe('HttpExceptionLoggerFilter', () => {
             )
         })
 
-        it('422 HttpException도 Logger.warn으로 로깅된다', async () => {
+        it('422 HttpException도 Logger.warn으로 로그를 남긴다', async () => {
             await fix.httpClient.get('/unprocessable').unprocessableEntity()
 
             expect(fix.spyWarn).toHaveBeenCalledWith(

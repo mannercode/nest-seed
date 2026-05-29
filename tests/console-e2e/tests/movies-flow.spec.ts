@@ -47,4 +47,25 @@ test('admin으로 로그인하고 새 영화를 등록한다', async ({ page }) 
     await page.getByRole('button', { name: '저장' }).click()
 
     await expect(page).toHaveURL(/\/$/)
+
+    // 콘솔에는 영화 목록 페이지가 없으므로 생성 결과는 API로 확인한다.
+    // 저장이 조용히 실패해도 리다이렉트만 맞으면 통과하던 약한 검증을 메운다.
+    const ctx = await request.newContext()
+    try {
+        await expect
+            .poll(
+                async () => {
+                    const res = await ctx.get(
+                        `${API_BASE_URL}/movies?page=1&size=50&title=${encodeURIComponent(title)}`
+                    )
+                    if (!res.ok()) return false
+                    const body = await res.json()
+                    return body.items.some((m: { title: string }) => m.title === title)
+                },
+                { timeout: 10_000 }
+            )
+            .toBe(true)
+    } finally {
+        await ctx.dispose()
+    }
 })

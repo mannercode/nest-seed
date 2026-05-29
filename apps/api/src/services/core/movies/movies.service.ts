@@ -152,7 +152,7 @@ export class MoviesService {
     }
 
     private async toDto(movie: Movie): Promise<MovieDto> {
-        return (await this.toDtos([movie]))[0]
+        return ensure((await this.toDtos([movie]))[0])
     }
 
     private async toDtos(movies: Movie[]): Promise<MovieDto[]> {

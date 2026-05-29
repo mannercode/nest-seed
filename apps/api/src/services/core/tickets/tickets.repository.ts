@@ -33,7 +33,7 @@ export class TicketsRepository extends CrudRepository<Ticket> {
     async aggregateSales(aggregateDto: AggregateTicketSalesDto) {
         const query = this.buildQuery(aggregateDto)
 
-        const showtimeTicketSalesArray = await this.model.aggregate([
+        const showtimeTicketSalesArray = await this.model.aggregate<TicketSalesForShowtimeDto>([
             { $match: query },
             {
                 $group: {
@@ -53,7 +53,7 @@ export class TicketsRepository extends CrudRepository<Ticket> {
             }
         ])
 
-        return showtimeTicketSalesArray as TicketSalesForShowtimeDto[]
+        return showtimeTicketSalesArray
     }
 
     async createMany(createDtos: CreateTicketDto[]) {

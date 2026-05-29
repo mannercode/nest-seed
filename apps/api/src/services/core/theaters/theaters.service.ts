@@ -1,4 +1,4 @@
-import { mapDocToDto } from '@mannercode/common'
+import { ensure, mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { CreateTheaterDto, SearchTheatersPageDto, UpdateTheaterDto, TheaterDto } from './dtos'
 import { Theater } from './models'
@@ -42,7 +42,7 @@ export class TheatersService {
     }
 
     private toDto(theater: Theater) {
-        return this.toDtos([theater])[0]
+        return ensure(this.toDtos([theater])[0])
     }
 
     private toDtos(theaters: Theater[]) {

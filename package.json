@@ -16,6 +16,7 @@
         "tests/*"
     ],
     "scripts": {
+        "prepare": "husky",
         "build": "npm run build --workspaces --if-present",
         "build:libs": "npm run build -w libs/temporal-sandbox -w libs/common -w libs/testing",
         "clean": "npm run clean --workspaces --if-present && git clean -fdX && bash infra/reset.sh",
@@ -44,7 +45,6 @@
         "@nestjs/config": "4.0.4",
         "@nestjs/core": "11.1.23",
         "@nestjs/jwt": "11.0.2",
-        "@nestjs/microservices": "11.1.23",
         "@nestjs/mongoose": "11.0.4",
         "@nestjs/terminus": "11.1.1",
         "@nestjs/testing": "11.1.23",
@@ -81,5 +81,8 @@
         "typescript": "6.0.3",
         "typescript-eslint": "8.59.4"
     },
-    "packageManager": "npm@11.15.0"
+    "packageManager": "npm@11.15.0",
+    "engines": {
+        "node": ">=24"
+    }
 }

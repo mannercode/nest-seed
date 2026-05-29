@@ -185,7 +185,7 @@ export class HttpTestClient {
     unprocessableEntity = (expected?: any) => this.send(HttpStatus.UNPROCESSABLE_ENTITY, expected)
     unsupportedMediaType = (expected?: any) =>
         this.send(HttpStatus.UNSUPPORTED_MEDIA_TYPE, expected)
-    private parseEventMessage(input: string): EventMessage {
+    private parseEventMessage(input: string): Partial<EventMessage> {
         const lines = input.split('\n')
         const parsedMessage: Partial<EventMessage> = {}
 
@@ -209,6 +209,6 @@ export class HttpTestClient {
             }
         })
 
-        return parsedMessage as EventMessage
+        return parsedMessage
     }
 }

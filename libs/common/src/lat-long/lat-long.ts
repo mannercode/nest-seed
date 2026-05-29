@@ -64,15 +64,10 @@ function isNumericString(value: string): boolean {
 function parseCoordinatePair(value: unknown): null | { latitude: number; longitude: number } {
     if (typeof value !== 'string') return null
 
-    const parts = value.split(',')
-    if (parts.length !== 2) return null
+    const coords = value.split(',').map((part) => part.trim())
+    if (coords.length !== 2 || !coords.every((coord) => isNumericString(coord))) return null
 
-    const [rawLat, rawLng] = parts
-    const latStr = rawLat.trim()
-    const lngStr = rawLng.trim()
-
-    if (!isNumericString(latStr) || !isNumericString(lngStr)) return null
-
+    const [latStr, lngStr] = coords
     return { latitude: Number(latStr), longitude: Number(lngStr) }
 }
 

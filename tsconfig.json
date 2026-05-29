@@ -7,8 +7,10 @@
         // 현재 TypeScript는 paths를 tsconfig 기준으로 해석한다.
         "moduleResolution": "node10",
         "ignoreDeprecations": "6.0",
-        "target": "ESNext",
-        "lib": ["ESNext"],
+        // "ESNext"는 TS 버전마다 의미가 바뀌어 emit/타입이 흔들린다.
+        // Node 24에서 안전한 구체 에디션으로 고정한다.
+        "target": "ES2024",
+        "lib": ["ES2024"],
         "types": ["node"],
 
         "strict": true,
@@ -18,6 +20,7 @@
         "noFallthroughCasesInSwitch": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
+        "noUncheckedIndexedAccess": true,
 
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,

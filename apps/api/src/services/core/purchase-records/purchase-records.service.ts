@@ -1,4 +1,4 @@
-import { mapDocToDto } from '@mannercode/common'
+import { ensure, mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { CreatePurchaseRecordDto, PurchaseRecordDto } from './dtos'
 import { PurchaseRecord } from './models'
@@ -25,7 +25,7 @@ export class PurchaseRecordsService {
     }
 
     private toDto(purchaseRecord: PurchaseRecord) {
-        return this.toDtos([purchaseRecord])[0]
+        return ensure(this.toDtos([purchaseRecord])[0])
     }
 
     private toDtos(purchaseRecords: PurchaseRecord[]) {
