@@ -110,7 +110,7 @@ jest.setup.js    worker별 DB·버킷 준비
 
 `apps/api`의 통합 테스트는 devcontainer가 시작해 둔 공용 인프라(Mongo / Redis / MinIO / NATS / Temporal 컨테이너)를 재사용한다. `libs/common`은 외부 의존을 줄이기 위해 Testcontainers로 자체 인프라를 시작한다. `libs/testing`과 `libs/temporal-sandbox`는 인프라 없는 단위 테스트로 돈다.
 
-콘솔 e2e는 `tests/console-e2e`의 Playwright 설정이 `apps/api`와 `apps/console` dev 서버를 시작한 뒤 브라우저에서 가입, 로그인, 영화 등록 흐름을 검증한다. 개발 중 이미 서버가 떠 있으면 재사용한다.
+콘솔 e2e는 `tests/console-e2e`의 Playwright 설정이 `apps/api`와 `apps/console`을 빌드해 실행한 뒤 브라우저에서 로그인, 영화 등록 흐름을 검증한다. 개발 중 이미 서버가 떠 있으면 재사용한다.
 
 ---
 

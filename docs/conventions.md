@@ -60,7 +60,7 @@ workflowBundleDir = '_output/dist' // 디렉터리
 workflowBundlePath = '_output/dist/showtime-creation.bundle.js' // 파일까지 포함
 ```
 
-환경 변수와 설정 키에도 같은 규칙을 적용한다 (`WORKFLOW_BUNDLE_DIR`, `LOG_DIR` 등).
+환경 변수와 설정 키도 디렉터리를 가리키면 이름에 그대로 드러낸다 (`LOG_DIRECTORY` 등).
 
 ---
 

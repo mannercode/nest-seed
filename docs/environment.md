@@ -40,7 +40,7 @@ apps/api 통합 테스트 (npm test -w apps/api)
 deploy/test.sh
   -> docker compose가 service의 env_file로 ../.env.infra, ../.env.api를 자동 inject
   -> deploy/compose.yml이 API replica와 NGINX 실행
-  -> host shell은 .env.api를 source해 ROOT_PASSWORD를 api-docs로 전달
+  -> test.sh는 run.sh에 SERVER_URL만 넘긴다 (ROOT_PASSWORD는 Dev Container가 주입한 환경에서 상속)
 
 apps/api/api-docs/run.sh
   -> apps/api/api-docs/.env 로드
