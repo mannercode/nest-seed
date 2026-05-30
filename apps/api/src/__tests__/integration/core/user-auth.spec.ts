@@ -1,4 +1,11 @@
-import { createUser, Errors, loginUser, type AppTestContext } from '../helpers'
+import { oid } from '@mannercode/testing'
+import {
+    createPurchaseRecord,
+    createUser,
+    Errors,
+    loginUser,
+    type AppTestContext
+} from '../helpers'
 
 describe('UserAuthentication', () => {
     let fix: AppTestContext
@@ -65,6 +72,77 @@ describe('UserAuthentication', () => {
                 .get('/users')
                 .headers({ Authorization: 'Bearer invalid-token' })
                 .internalServerError()
+        })
+    })
+
+    describe('DELETE /users/me', () => {
+        it('본인 계정을 삭제하고 204를 반환한다', async () => {
+            const { accessToken, user } = await loginUser(fix, credentials)
+
+            await fix.httpClient
+                .delete('/users/me')
+                .headers({ Authorization: `Bearer ${accessToken}` })
+                .noContent()
+
+            // 삭제 뒤 같은 토큰으로 본인 정보를 조회하면 더 이상 존재하지 않는다.
+            await fix.httpClient
+                .get('/users/me')
+                .headers({ Authorization: `Bearer ${accessToken}` })
+                .notFound(Errors.Mongoose.MultipleDocumentsNotFound([user.id]))
+        })
+
+        it('인증 없이 호출하면 401을 반환한다', async () => {
+            await fix.httpClient.delete('/users/me').unauthorized()
+        })
+    })
+
+    describe('PATCH /users/me', () => {
+        it('본인 정보를 수정하고 수정된 DTO를 반환한다', async () => {
+            const { accessToken, user } = await loginUser(fix, credentials)
+            const updateDto = { name: 'updated-name' }
+
+            await fix.httpClient
+                .patch('/users/me')
+                .headers({ Authorization: `Bearer ${accessToken}` })
+                .body(updateDto)
+                .ok({ ...user, ...updateDto })
+        })
+
+        it('인증 없이 호출하면 401을 반환한다', async () => {
+            await fix.httpClient.patch('/users/me').body({ name: 'x' }).unauthorized()
+        })
+    })
+
+    describe('GET /users/me/purchases', () => {
+        it('본인 구매 기록만 반환한다', async () => {
+            const { accessToken, user } = await loginUser(fix, credentials)
+
+            // 본인 기록 둘과 타인 기록 하나를 심어, 토큰 주체의 것만 조회되는지 본다.
+            const mine1 = await createPurchaseRecord(fix, { userId: user.id })
+            const mine2 = await createPurchaseRecord(fix, { userId: user.id })
+            await createPurchaseRecord(fix, { userId: oid(0xff) })
+
+            const { body } = await fix.httpClient
+                .get('/users/me/purchases')
+                .headers({ Authorization: `Bearer ${accessToken}` })
+                .ok()
+
+            expect(body).toEqual(expect.arrayContaining([mine1, mine2]))
+            expect(body).toHaveLength(2)
+            expect(body.every((record: { userId: string }) => record.userId === user.id)).toBe(true)
+        })
+
+        it('구매 기록이 없으면 빈 배열을 반환한다', async () => {
+            const { accessToken } = await loginUser(fix, credentials)
+
+            await fix.httpClient
+                .get('/users/me/purchases')
+                .headers({ Authorization: `Bearer ${accessToken}` })
+                .ok([])
+        })
+
+        it('인증 없이 호출하면 401을 반환한다', async () => {
+            await fix.httpClient.get('/users/me/purchases').unauthorized()
         })
     })
 

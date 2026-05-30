@@ -6,6 +6,7 @@ type HomeResponse = {
         movie: { id: string; title: string }
         upcomingShowtimes: { id: string; theater: { id: string; name: string } }[]
     }[]
+    recommendedMovies: { id: string }[]
 }
 
 type ShowtimeFixture = NonNullable<Awaited<ReturnType<typeof createShowtimes>>[number]>
@@ -24,7 +25,8 @@ describe('UserHomeView', () => {
         it('상영 예정이 없으면 빈 목록을 반환한다', async () => {
             const { body } = await fix.httpClient.get('/views/user-app/home').ok()
 
-            expect(body).toEqual({ movies: [] })
+            // 추천은 상영 중 영화 기반이라 상영이 없으면 함께 비어 있다.
+            expect(body).toEqual({ movies: [], recommendedMovies: [] })
         })
 
         it('상영 예정이 없는 영화는 카드에서 제외한다', async () => {
@@ -32,7 +34,7 @@ describe('UserHomeView', () => {
 
             const { body } = await fix.httpClient.get('/views/user-app/home').ok()
 
-            expect(body).toEqual({ movies: [] })
+            expect(body).toEqual({ movies: [], recommendedMovies: [] })
         })
 
         describe('가까운 상영이 여러 개 있을 때', () => {

@@ -1,7 +1,8 @@
 import { ensure, pickIds, Require } from '@mannercode/common'
-import { TicketStatus, type TicketDto } from 'core'
+import { TicketStatus, type TicketDto, type UserDto } from 'core'
 import { PaymentStatus } from 'infrastructure'
 import {
+    createAndLoginUser,
     Errors,
     getPayments,
     getTickets,
@@ -12,10 +13,14 @@ import { buildCreatePurchaseDto } from './purchase.utils'
 
 describe('PurchaseService', () => {
     let fix: AppTestContext
+    let user: UserDto
+    let accessToken: string
 
     beforeEach(async () => {
         const { createAppTestContext } = await import('../helpers')
         fix = await createAppTestContext()
+        // 결제자는 인증 토큰의 주체로 정해지므로, 실제 user를 만들고 로그인해 그 토큰으로 결제한다.
+        ;({ user, accessToken } = await createAndLoginUser(fix))
     })
     afterEach(() => fix.teardown())
 
@@ -26,7 +31,8 @@ describe('PurchaseService', () => {
             beforeEach(async () => {
                 const { createShowtimeAndTickets, holdTickets } = await import('./purchase.utils')
                 const tickets = await createShowtimeAndTickets(fix)
-                heldTickets = await holdTickets(fix, tickets)
+                // 보유자와 결제자(토큰 주체)가 같아야 검증을 통과한다.
+                heldTickets = await holdTickets(fix, user.id, tickets)
             })
 
             it('생성된 구매를 반환한다', async () => {
@@ -34,9 +40,11 @@ describe('PurchaseService', () => {
 
                 await fix.httpClient
                     .post('/purchases')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
                     .created({
                         ...createDto,
+                        userId: user.id,
                         createdAt: expect.any(Date),
                         id: expect.any(String),
                         paymentId: expect.any(String),
@@ -48,6 +56,7 @@ describe('PurchaseService', () => {
                 const createDto = buildCreatePurchaseDto(heldTickets)
                 const { body: purchaseRecord } = await fix.httpClient
                     .post('/purchases')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
                     .created()
 
@@ -58,7 +67,11 @@ describe('PurchaseService', () => {
 
             it('구매하면 티켓 상태가 판매 완료로 바뀐다', async () => {
                 const createDto = buildCreatePurchaseDto(heldTickets)
-                await fix.httpClient.post('/purchases').body(createDto).created()
+                await fix.httpClient
+                    .post('/purchases')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body(createDto)
+                    .created()
 
                 const soldTickets = await getTickets(fix, pickIds(heldTickets))
 
@@ -74,6 +87,7 @@ describe('PurchaseService', () => {
 
                 await fix.httpClient
                     .post('/purchases')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
                     .badRequest(Errors.Purchase.LimitExceeded(expect.any(Number)))
             })
@@ -89,6 +103,7 @@ describe('PurchaseService', () => {
 
                 await fix.httpClient
                     .post('/purchases')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
                     .badRequest(
                         Errors.Purchase.WindowClosed(
@@ -117,7 +132,11 @@ describe('PurchaseService', () => {
                 it('구매한 티켓을 구매 가능 상태로 되돌린다', async () => {
                     const createDto = buildCreatePurchaseDto(heldTickets)
 
-                    await fix.httpClient.post('/purchases').body(createDto).internalServerError()
+                    await fix.httpClient
+                        .post('/purchases')
+                        .headers({ Authorization: `Bearer ${accessToken}` })
+                        .body(createDto)
+                        .internalServerError()
 
                     const { TicketsService } = await import('core')
                     const ticketsService = fix.module.get(TicketsService)
@@ -126,47 +145,36 @@ describe('PurchaseService', () => {
                 })
 
                 it('결제를 취소하고 구매 기록을 삭제한다', async () => {
-                    const { PurchaseRecordsService } = await import('core')
                     const { PaymentsService } = await import('infrastructure')
-                    const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
                     const paymentsService = fix.module.get(PaymentsService)
 
-                    // 보상으로 결제와 구매 기록이 정리되므로 그 식별자를 알 수 없다.
-                    // 그래서 생성 시점에 실제 반환값을 그대로 통과시키며 id만 가로채 둔다.
+                    // 보상으로 결제가 취소될 뿐 행은 남으므로, 생성된 결제 id를 가로채 상태를 확인한다.
                     let paymentId: string | undefined
-                    let purchaseRecordId: string | undefined
                     const createPayment = paymentsService.create.bind(paymentsService)
                     jest.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
                         const payment = await createPayment(dto)
                         paymentId = payment.id
                         return payment
                     })
-                    const createPurchaseRecord =
-                        purchaseRecordsService.create.bind(purchaseRecordsService)
-                    jest.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(
-                        async (dto) => {
-                            const record = await createPurchaseRecord(dto)
-                            purchaseRecordId = record.id
-                            return record
-                        }
-                    )
 
                     const createDto = buildCreatePurchaseDto(heldTickets)
 
-                    await fix.httpClient.post('/purchases').body(createDto).internalServerError()
+                    await fix.httpClient
+                        .post('/purchases')
+                        .headers({ Authorization: `Bearer ${accessToken}` })
+                        .body(createDto)
+                        .internalServerError()
 
                     Require.defined(paymentId)
-                    Require.defined(purchaseRecordId)
 
                     const payments = await getPayments(fix, [paymentId])
                     expect(ensure(payments[0]).status).toBe(PaymentStatus.Cancelled)
 
-                    // 삭제된 구매 기록은 더 이상 조회되지 않으므로 getMany가 NotFound로 거부된다.
-                    const deleted = purchaseRecordsService.getMany([purchaseRecordId])
-                    await expect(deleted).rejects.toMatchObject({
-                        message: Errors.Mongoose.MultipleDocumentsNotFound([purchaseRecordId])
-                            .message
-                    })
+                    // 보상이 이 사용자의 유일한 구매 기록을 삭제하므로 본인 구매 기록 조회가 빈 배열이 된다.
+                    const { PurchaseRecordsService } = await import('core')
+                    const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
+                    const records = await purchaseRecordsService.findByUserId(user.id)
+                    expect(records).toEqual([])
                 })
             })
 
@@ -184,7 +192,11 @@ describe('PurchaseService', () => {
                 it('Sold가 된 티켓을 다시 Available로 되돌린다', async () => {
                     const createDto = buildCreatePurchaseDto(heldTickets)
 
-                    await fix.httpClient.post('/purchases').body(createDto).internalServerError()
+                    await fix.httpClient
+                        .post('/purchases')
+                        .headers({ Authorization: `Bearer ${accessToken}` })
+                        .body(createDto)
+                        .internalServerError()
 
                     const { TicketsService } = await import('core')
                     const ticketsService = fix.module.get(TicketsService)
@@ -217,7 +229,11 @@ describe('PurchaseService', () => {
 
                     const createDto = buildCreatePurchaseDto(heldTickets)
 
-                    await fix.httpClient.post('/purchases').body(createDto).internalServerError()
+                    await fix.httpClient
+                        .post('/purchases')
+                        .headers({ Authorization: `Bearer ${accessToken}` })
+                        .body(createDto)
+                        .internalServerError()
 
                     expect(deletePurchaseRecordSpy).toHaveBeenCalledTimes(1)
                     const tickets = await ticketsService.getMany(pickIds(heldTickets))
@@ -227,10 +243,15 @@ describe('PurchaseService', () => {
 
             it('이미 판매된 티켓을 다시 구매하려 하면 409를 반환한다', async () => {
                 const createDto = buildCreatePurchaseDto(heldTickets)
-                await fix.httpClient.post('/purchases').body(createDto).created()
+                await fix.httpClient
+                    .post('/purchases')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body(createDto)
+                    .created()
 
                 await fix.httpClient
                     .post('/purchases')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
                     .conflict(Errors.Purchase.AlreadySold(pickIds(heldTickets)))
             })
@@ -255,7 +276,11 @@ describe('PurchaseService', () => {
 
                 const createDto = buildCreatePurchaseDto(heldTickets)
 
-                await fix.httpClient.post('/purchases').body(createDto).internalServerError()
+                await fix.httpClient
+                    .post('/purchases')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body(createDto)
+                    .internalServerError()
 
                 Require.defined(paymentId)
                 const payments = await getPayments(fix, [paymentId])
@@ -271,6 +296,7 @@ describe('PurchaseService', () => {
 
             await fix.httpClient
                 .post('/purchases')
+                .headers({ Authorization: `Bearer ${accessToken}` })
                 .body(createDto)
                 .badRequest(Errors.Purchase.NotHeld())
         })

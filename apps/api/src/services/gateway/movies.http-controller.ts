@@ -1,4 +1,3 @@
-import { defaultTo } from '@mannercode/common'
 import {
     Body,
     Controller,
@@ -10,23 +9,16 @@ import {
     Patch,
     Post,
     Query,
-    Req,
     UseGuards
 } from '@nestjs/common'
-import { RecommendationService } from 'application'
 import { MoviesService, SearchMoviesPageDto, UpsertMovieDto } from 'core'
 import { CreateAssetDto } from 'infrastructure'
-import { AdminAuthGuard, OptionalAuth, UserAuthGuard } from './guards'
-import { UserOptionalAuthRequest } from './types'
+import { AdminAuthGuard } from './guards'
 
 // 인가: 변경 핸들러(create/update/delete/asset 관리/publish)는 admin 전용, 조회는 공개로 둔다.
-// 추천은 게스트도 호출하되 로그인 시 개인화하므로 optional 사용자 가드를 단다.
 @Controller('movies')
 export class MoviesHttpController {
-    constructor(
-        private readonly moviesService: MoviesService,
-        private readonly recommendationService: RecommendationService
-    ) {}
+    constructor(private readonly moviesService: MoviesService) {}
 
     @Post()
     @UseGuards(AdminAuthGuard)
@@ -59,15 +51,6 @@ export class MoviesHttpController {
     @UseGuards(AdminAuthGuard)
     async finalizeUpload(@Param('movieId') movieId: string, @Param('assetId') assetId: string) {
         await this.moviesService.finalizeUpload(movieId, assetId)
-    }
-
-    @Get('recommended')
-    @OptionalAuth()
-    @UseGuards(UserAuthGuard)
-    async searchRecommendedMovies(@Req() req: UserOptionalAuthRequest) {
-        const userId = defaultTo(req.user?.sub, null)
-
-        return this.recommendationService.searchRecommendedMovies(userId)
     }
 
     @Get(':movieId')

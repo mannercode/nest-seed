@@ -1,6 +1,6 @@
+import type { TestContext } from '@mannercode/testing'
 import type { CreatePurchaseDto } from 'application'
 import { DateUtil, ensure, pickIds } from '@mannercode/common'
-import { oid, type TestContext } from '@mannercode/testing'
 import { PurchaseItemType, type TicketDto } from 'core'
 import {
     buildHoldTicketsDto,
@@ -9,15 +9,13 @@ import {
     overrideConfigGetter
 } from '../helpers'
 
-const userId = oid(0x01)
-
 export function buildCreatePurchaseDto(
     tickets: TicketDto[],
     overrides: Partial<CreatePurchaseDto> = {}
 ) {
     const purchaseItems = tickets.map(({ id }) => ({ itemId: id, type: PurchaseItemType.Tickets }))
 
-    const createDto = { userId, purchaseItems, totalPrice: 1, ...overrides }
+    const createDto = { purchaseItems, totalPrice: 1, ...overrides }
     return createDto
 }
 
@@ -33,7 +31,7 @@ export async function createShowtimeAndTickets(ctx: TestContext) {
     return createTickets(ctx, createTicketDtos)
 }
 
-export async function holdTickets(ctx: TestContext, tickets: TicketDto[]) {
+export async function holdTickets(ctx: TestContext, userId: string, tickets: TicketDto[]) {
     const { TicketHoldingService } = await import('core')
     const ticketHoldingService = ctx.module.get(TicketHoldingService)
 

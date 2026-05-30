@@ -1,4 +1,4 @@
-import { CrudRepository } from '@mannercode/common'
+import { CrudRepository, leanArrayToPublic } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
@@ -14,6 +14,16 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         config: AppConfigService
     ) {
         super(model, config.http.paginationDefaultSize)
+    }
+
+    async findByUserId(userId: string) {
+        const purchaseRecords = await this.model
+            .find({ userId })
+            .sort({ createdAt: -1 })
+            .lean()
+            .exec()
+
+        return leanArrayToPublic<PurchaseRecord>(purchaseRecords)
     }
 
     async create(createDto: CreatePurchaseRecordDto) {

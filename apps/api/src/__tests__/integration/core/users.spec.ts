@@ -1,15 +1,26 @@
 import type { UserDto } from 'core'
 import { omit } from '@mannercode/common'
 import { HttpTestClient, nullObjectId } from '@mannercode/testing'
-import { buildCreateUserDto, createUser, Errors, type AppTestContext } from '../helpers'
+import {
+    buildCreateUserDto,
+    createAndLoginAdmin,
+    createAndLoginUser,
+    createUser,
+    Errors,
+    type AppTestContext
+} from '../helpers'
 
 describe('UsersService', () => {
     let fix: AppTestContext
+    // 임의 사용자 대상 작업(GET/PATCH/DELETE /users/:id, GET /users)은 운영자 전용이라 admin 토큰으로 호출한다.
+    // 가드를 끄지 않고 실제 토큰을 쓰므로, 인가 경계가 깨지면(예: user 토큰이 통과) 테스트가 실패한다.
+    let adminAuth: { Authorization: string }
 
     beforeEach(async () => {
         const { createAppTestContext } = await import('../helpers')
-        const { UserAuthGuard } = await import('gateway')
-        fix = await createAppTestContext({ ignoreGuards: [UserAuthGuard] })
+        fix = await createAppTestContext()
+        const { accessToken } = await createAndLoginAdmin(fix)
+        adminAuth = { Authorization: `Bearer ${accessToken}` }
     })
     afterEach(() => fix.teardown())
 
@@ -90,12 +101,13 @@ describe('UsersService', () => {
         it('ID에 해당하는 고객을 반환한다', async () => {
             const user = await createUser(fix)
 
-            await fix.httpClient.get(`/users/${user.id}`).ok(user)
+            await fix.httpClient.get(`/users/${user.id}`).headers(adminAuth).ok(user)
         })
 
         it('ID에 해당하는 고객이 없으면 404를 반환한다', async () => {
             await fix.httpClient
                 .get(`/users/${nullObjectId}`)
+                .headers(adminAuth)
                 .notFound(Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]))
         })
     })
@@ -112,20 +124,25 @@ describe('UsersService', () => {
 
             await fix.httpClient
                 .patch(`/users/${user.id}`)
+                .headers(adminAuth)
                 .body(updateDto)
                 .ok({ ...user, ...updateDto })
         })
 
         it('수정 내용이 DB에 저장된다', async () => {
             const updateDto = { name: 'update-name' }
-            await fix.httpClient.patch(`/users/${user.id}`).body(updateDto).ok()
+            await fix.httpClient.patch(`/users/${user.id}`).headers(adminAuth).body(updateDto).ok()
 
-            await fix.httpClient.get(`/users/${user.id}`).ok({ ...user, ...updateDto })
+            await fix.httpClient
+                .get(`/users/${user.id}`)
+                .headers(adminAuth)
+                .ok({ ...user, ...updateDto })
         })
 
         it('ID에 해당하는 고객이 없으면 404를 반환한다', async () => {
             await fix.httpClient
                 .patch(`/users/${nullObjectId}`)
+                .headers(adminAuth)
                 .body({})
                 .notFound(Errors.Mongoose.DocumentNotFound(nullObjectId))
         })
@@ -137,6 +154,7 @@ describe('UsersService', () => {
 
             await fix.httpClient
                 .patch(`/users/${target.id}`)
+                .headers(adminAuth)
                 .body({ email: existingEmail })
                 .conflict(Errors.Users.EmailAlreadyExists(existingEmail))
         })
@@ -146,21 +164,64 @@ describe('UsersService', () => {
         it('고객이 존재하면 204를 반환한다', async () => {
             const user = await createUser(fix)
 
-            await fix.httpClient.delete(`/users/${user.id}`).noContent()
+            await fix.httpClient.delete(`/users/${user.id}`).headers(adminAuth).noContent()
         })
 
         it('삭제 후에는 조회 시 404가 반환된다', async () => {
             const user = await createUser(fix)
 
-            await fix.httpClient.delete(`/users/${user.id}`).noContent()
+            await fix.httpClient.delete(`/users/${user.id}`).headers(adminAuth).noContent()
 
             await fix.httpClient
                 .get(`/users/${user.id}`)
+                .headers(adminAuth)
                 .notFound(Errors.Mongoose.MultipleDocumentsNotFound([user.id]))
         })
 
         it('고객이 없어도 204를 반환한다', async () => {
-            await fix.httpClient.delete(`/users/${nullObjectId}`).noContent()
+            await fix.httpClient.delete(`/users/${nullObjectId}`).headers(adminAuth).noContent()
+        })
+    })
+
+    // 임의 ID를 다루는 핸들러는 admin 전용이다. user 토큰이나 무인증으로는 통과할 수 없어야
+    // "임의 ID = 운영자" 경계가 코드로 강제됨을 보장한다(가드를 끄면 이 검증이 사라진다).
+    // user 토큰은 admin 가드와 secret이 달라 서명 검증이 실패하는데, AuthGuard는 서명 오류를
+    // 위로 전파하므로 500이 된다(만료·무인증만 401). 이 동작은 admin-auth.spec과 동일하다.
+    describe('인가 경계', () => {
+        let userAuth: { Authorization: string }
+        let target: UserDto
+
+        beforeEach(async () => {
+            const { accessToken } = await createAndLoginUser(fix)
+            userAuth = { Authorization: `Bearer ${accessToken}` }
+            target = await createUser(fix, { email: 'target@mail.com' })
+        })
+
+        it('user 토큰으로 GET /users/:id에 접근하면 통과하지 못한다', async () => {
+            await fix.httpClient.get(`/users/${target.id}`).headers(userAuth).internalServerError()
+        })
+
+        it('user 토큰으로 PATCH /users/:id에 접근하면 통과하지 못한다', async () => {
+            await fix.httpClient
+                .patch(`/users/${target.id}`)
+                .headers(userAuth)
+                .body({ name: 'hacked' })
+                .internalServerError()
+        })
+
+        it('user 토큰으로 DELETE /users/:id에 접근하면 통과하지 못한다', async () => {
+            await fix.httpClient
+                .delete(`/users/${target.id}`)
+                .headers(userAuth)
+                .internalServerError()
+        })
+
+        it('user 토큰으로 GET /users 목록에 접근하면 통과하지 못한다', async () => {
+            await fix.httpClient.get('/users').headers(userAuth).internalServerError()
+        })
+
+        it('Authorization 헤더가 없으면 401을 반환한다', async () => {
+            await fix.httpClient.get(`/users/${target.id}`).unauthorized(Errors.Auth.Unauthorized())
         })
     })
 
@@ -193,12 +254,13 @@ describe('UsersService', () => {
         it('쿼리가 없으면 전체 고객 페이지를 반환한다', async () => {
             const expected = buildExpectedPage([userA1, userA2, userB1, userB2])
 
-            await fix.httpClient.get('/users').ok(expected)
+            await fix.httpClient.get('/users').headers(adminAuth).ok(expected)
         })
 
         it('name 부분 일치로 필터링한다', async () => {
             await fix.httpClient
                 .get('/users')
+                .headers(adminAuth)
                 .query({ name: 'user-a' })
                 .ok(buildExpectedPage([userA1, userA2]))
         })
@@ -206,6 +268,7 @@ describe('UsersService', () => {
         it('email 부분 일치로 필터링한다', async () => {
             await fix.httpClient
                 .get('/users')
+                .headers(adminAuth)
                 .query({ email: 'user-b' })
                 .ok(buildExpectedPage([userB1, userB2]))
         })
@@ -213,6 +276,7 @@ describe('UsersService', () => {
         it('알 수 없는 쿼리 파라미터는 400을 반환한다', async () => {
             await fix.httpClient
                 .get('/users')
+                .headers(adminAuth)
                 .query({ wrong: 'value' })
                 .badRequest(Errors.RequestValidation.Failed(expect.any(Array)))
         })
