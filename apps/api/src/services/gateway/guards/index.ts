@@ -1,6 +1,5 @@
 export * from './admin-auth.guard'
 export * from './errors'
 export * from './optional-auth.decorator'
-export * from './public.decorator'
 export * from './root-auth.guard'
 export * from './user-auth.guard'

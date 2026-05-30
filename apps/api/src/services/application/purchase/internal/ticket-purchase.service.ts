@@ -26,32 +26,26 @@ export class TicketPurchaseService {
         private readonly config: AppConfigService
     ) {}
 
-    async completePurchase(createDto: CreatePurchaseDto): Promise<void> {
+    async completePurchase(createDto: CreatePurchaseDto, userId: string): Promise<void> {
         const ticketItems = createDto.purchaseItems.filter(
             (item) => item.type === PurchaseItemType.Tickets
         )
         const ticketIds = ticketItems.map((item) => item.itemId)
 
-        this.logger.log('completePurchase', {
-            userId: createDto.userId,
-            ticketCount: ticketIds.length
-        })
+        this.logger.log('completePurchase', { userId, ticketCount: ticketIds.length })
 
         await this.ticketsService.updateStatusMany(ticketIds, TicketStatus.Sold)
 
-        await this.events.emitTicketPurchased({ userId: createDto.userId, ticketIds })
+        await this.events.emitTicketPurchased({ userId, ticketIds })
     }
 
-    async rollbackPurchase(createDto: CreatePurchaseDto): Promise<void> {
+    async rollbackPurchase(createDto: CreatePurchaseDto, userId: string): Promise<void> {
         const ticketItems = createDto.purchaseItems.filter(
             (item) => item.type === PurchaseItemType.Tickets
         )
         const ticketIds = ticketItems.map((item) => item.itemId)
 
-        this.logger.warn('rollbackPurchase', {
-            userId: createDto.userId,
-            ticketCount: ticketIds.length
-        })
+        this.logger.warn('rollbackPurchase', { userId, ticketCount: ticketIds.length })
 
         // 보상 흐름은 어디서 멈췄는지에 따라 티켓이 이미 Available일 수 있다.
         // `updateStatusMany`는 동일 상태로의 전이를 충돌로 보므로 Sold인 티켓만 골라 되돌린다.
@@ -63,11 +57,11 @@ export class TicketPurchaseService {
             await this.ticketsService.updateStatusMany(soldTicketIds, TicketStatus.Available)
         }
 
-        await this.events.emitTicketPurchaseCanceled({ userId: createDto.userId, ticketIds })
+        await this.events.emitTicketPurchaseCanceled({ userId, ticketIds })
     }
 
-    async validatePurchase(createDto: CreatePurchaseDto): Promise<void> {
-        this.logger.log('validatePurchase', { userId: createDto.userId })
+    async validatePurchase(createDto: CreatePurchaseDto, userId: string): Promise<void> {
+        this.logger.log('validatePurchase', { userId })
         const ticketItems = createDto.purchaseItems.filter(
             (item) => item.type === PurchaseItemType.Tickets
         )
@@ -75,7 +69,7 @@ export class TicketPurchaseService {
 
         this.validateTicketCount(ticketItems)
         this.validatePurchaseTime(showtimes)
-        await this.validateHeldTickets(createDto.userId, showtimes, ticketItems)
+        await this.validateHeldTickets(userId, showtimes, ticketItems)
     }
 
     private async getShowtimes(ticketItems: PurchaseItemDto[]) {

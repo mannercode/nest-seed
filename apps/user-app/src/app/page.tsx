@@ -1,7 +1,9 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { ApiError, getJson } from '@/lib/api-client'
+import { clearSession, readEmail } from '@/lib/session'
 
 type ShowtimeView = {
     id: string
@@ -9,15 +11,24 @@ type ShowtimeView = {
     endTime: string
     theater: { id: string; name: string }
 }
-type MovieCard = {
-    movie: { id: string; title: string; director: string; rating: string; releaseDate: string }
-    upcomingShowtimes: ShowtimeView[]
-}
-type HomeView = { movies: MovieCard[] }
+type Movie = { id: string; title: string; director: string; rating: string; releaseDate: string }
+type MovieCard = { movie: Movie; upcomingShowtimes: ShowtimeView[] }
+type HomeView = { movies: MovieCard[]; recommendedMovies: Movie[] }
 
 export default function HomePage() {
     const [home, setHome] = useState<HomeView | null>(null)
     const [error, setError] = useState<string | null>(null)
+    // 로그인 상태는 브라우저에서만 알 수 있으므로 마운트 후에 읽어 하이드레이션 불일치를 피한다.
+    const [email, setEmail] = useState<string | null>(null)
+
+    useEffect(() => {
+        setEmail(readEmail())
+    }, [])
+
+    function onLogout() {
+        clearSession()
+        setEmail(null)
+    }
 
     useEffect(() => {
         getJson<HomeView>('/views/user-app/home')
@@ -46,12 +57,54 @@ export default function HomePage() {
 
     return (
         <main className="mx-auto max-w-4xl px-6 py-10">
-            <header className="mb-8">
-                <h1 className="text-3xl font-semibold">지금 볼 만한 영화</h1>
-                <p className="mt-2 text-sm text-slate-500">
-                    개봉된 영화 중 다가오는 상영을 빠르게 확인한다
-                </p>
+            <header className="mb-8 flex items-start justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-semibold">지금 볼 만한 영화</h1>
+                    <p className="mt-2 text-sm text-slate-500">
+                        개봉된 영화 중 다가오는 상영을 빠르게 확인한다
+                    </p>
+                </div>
+                <nav className="flex shrink-0 items-center gap-3 text-sm">
+                    {email ? (
+                        <>
+                            <span className="text-slate-500">{email}</span>
+                            <button
+                                type="button"
+                                onClick={onLogout}
+                                className="font-medium text-slate-900 underline"
+                            >
+                                로그아웃
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <Link href="/login" className="font-medium text-slate-900 underline">
+                                로그인
+                            </Link>
+                            <Link href="/signup" className="font-medium text-slate-900 underline">
+                                회원가입
+                            </Link>
+                        </>
+                    )}
+                </nav>
             </header>
+            {home.recommendedMovies.length > 0 && (
+                <section className="mb-8" data-testid="recommended-movies">
+                    <h2 className="text-lg font-medium">
+                        {email ? '회원님을 위한 추천' : '추천 영화'}
+                    </h2>
+                    <ul className="mt-3 flex flex-wrap gap-2">
+                        {home.recommendedMovies.map((movie) => (
+                            <li
+                                key={movie.id}
+                                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm"
+                            >
+                                {movie.title}
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            )}
             {home.movies.length === 0 ? (
                 <p className="text-sm text-slate-500">아직 상영 예정인 영화가 없다</p>
             ) : (

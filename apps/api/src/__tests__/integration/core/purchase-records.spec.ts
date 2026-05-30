@@ -1,12 +1,9 @@
 import type { PurchaseRecordsService } from 'core'
-import { nullObjectId } from '@mannercode/testing'
-import {
-    buildCreatePurchaseRecordDto,
-    createPurchaseRecord,
-    Errors,
-    type AppTestContext
-} from '../helpers'
+import { oid } from '@mannercode/testing'
+import { buildCreatePurchaseRecordDto, createPurchaseRecord, type AppTestContext } from '../helpers'
 
+// 구매 기록의 HTTP 조회는 본인 전용 GET /users/me/purchases로 노출되며 user-auth.spec에서 검증한다.
+// 여기서는 코어 서비스 자체의 동작(생성, userId 기준 조회)만 본다.
 describe('PurchaseRecordsService', () => {
     let fix: AppTestContext
     let purchaseRecordsService: PurchaseRecordsService
@@ -33,17 +30,24 @@ describe('PurchaseRecordsService', () => {
         })
     })
 
-    describe('GET /purchases/:purchaseRecordId', () => {
-        it('ID에 해당하는 구매 기록을 반환한다', async () => {
-            const purchaseRecord = await createPurchaseRecord(fix)
+    describe('findByUserId', () => {
+        it('해당 userId의 구매 기록만 반환한다', async () => {
+            const userId = oid(0x1)
+            const mine1 = await createPurchaseRecord(fix, { userId })
+            const mine2 = await createPurchaseRecord(fix, { userId })
+            await createPurchaseRecord(fix, { userId: oid(0x2) })
 
-            await fix.httpClient.get(`/purchases/${purchaseRecord.id}`).ok(purchaseRecord)
+            const records = await purchaseRecordsService.findByUserId(userId)
+
+            expect(records).toEqual(expect.arrayContaining([mine1, mine2]))
+            expect(records).toHaveLength(2)
+            expect(records.every((record) => record.userId === userId)).toBe(true)
         })
 
-        it('ID에 해당하는 구매 기록이 없으면 404를 반환한다', async () => {
-            await fix.httpClient
-                .get(`/purchases/${nullObjectId}`)
-                .notFound(Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]))
+        it('구매 기록이 없으면 빈 배열을 반환한다', async () => {
+            const records = await purchaseRecordsService.findByUserId(oid(0x1))
+
+            expect(records).toEqual([])
         })
     })
 })

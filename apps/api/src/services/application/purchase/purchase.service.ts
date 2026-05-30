@@ -21,8 +21,9 @@ export class PurchaseService {
         @InjectCache('purchase') private readonly cache: CacheService
     ) {}
 
-    async processPurchase(createDto: CreatePurchaseDto) {
-        this.logger.log('processPurchase', { userId: createDto.userId })
+    // userId는 본문이 아니라 게이트웨이가 인증 토큰에서 꺼내 넘긴 결제자다(CreatePurchaseDto는 userId를 받지 않는다).
+    async processPurchase(createDto: CreatePurchaseDto, userId: string) {
+        this.logger.log('processPurchase', { userId })
 
         const ticketIds = createDto.purchaseItems
             .filter((item) => item.type === PurchaseItemType.Tickets)
@@ -34,30 +35,32 @@ export class PurchaseService {
         return this.cache.withLockBlocking(
             lockKey,
             PURCHASE_LOCK_TTL_MS,
-            () => this.processPurchaseLocked(createDto, ticketIds),
+            () => this.processPurchaseLocked(createDto, userId, ticketIds),
             { waitMs: PURCHASE_LOCK_WAIT_MS }
         )
     }
 
-    private async processPurchaseLocked(createDto: CreatePurchaseDto, ticketIds: string[]) {
+    private async processPurchaseLocked(
+        createDto: CreatePurchaseDto,
+        userId: string,
+        ticketIds: string[]
+    ) {
         const tickets = await this.ticketsService.getMany(ticketIds)
         const unavailable = tickets.filter((t) => t.status !== TicketStatus.Available)
         if (unavailable.length > 0) {
             throw new ConflictException(PurchaseErrors.AlreadySold(unavailable.map((t) => t.id)))
         }
 
-        await this.ticketPurchaseService.validatePurchase(createDto)
+        await this.ticketPurchaseService.validatePurchase(createDto, userId)
 
-        const payment = await this.paymentsService.create({
-            amount: createDto.totalPrice,
-            userId: createDto.userId
-        })
+        const payment = await this.paymentsService.create({ amount: createDto.totalPrice, userId })
         this.logger.log('processPurchase createPayment completed', { paymentId: payment.id })
 
         let purchaseRecord
         try {
             purchaseRecord = await this.purchaseRecordsService.create({
                 ...createDto,
+                userId,
                 paymentId: payment.id
             })
             this.logger.log('processPurchase createPurchaseRecord completed', {
@@ -72,7 +75,7 @@ export class PurchaseService {
         }
 
         try {
-            await this.ticketPurchaseService.completePurchase(createDto)
+            await this.ticketPurchaseService.completePurchase(createDto, userId)
             this.logger.log('processPurchase completed', { purchaseRecordId: purchaseRecord.id })
             return purchaseRecord
         } catch (error) {
@@ -84,7 +87,7 @@ export class PurchaseService {
             // 실패한 보상은 로그로 남겨 운영자가 수동 정리할 수 있게 하고, 원래 오류는 그대로 호출자에게 던진다.
             // 정합성이 더 중요한 흐름은 Temporal 사가(`showtime-creation`)를 참고한다.
             await this.tryCompensate('rollbackPurchase', () =>
-                this.ticketPurchaseService.rollbackPurchase(createDto)
+                this.ticketPurchaseService.rollbackPurchase(createDto, userId)
             )
             await this.tryCompensate('deletePurchaseRecord', () =>
                 this.purchaseRecordsService.deleteMany([purchaseRecord.id])

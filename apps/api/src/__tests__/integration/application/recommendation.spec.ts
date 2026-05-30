@@ -12,7 +12,9 @@ describe('RecommendationService', () => {
     })
     afterEach(() => fix.teardown())
 
-    describe('GET /movies/recommended', () => {
+    // 추천은 GET /views/user-app/home 의 recommendedMovies 로 노출된다(별도 엔드포인트 없음).
+    // 여기서는 추천 알고리즘(시청 기록·개봉일 정렬)을 home 응답을 통해 검증한다.
+    describe('GET /views/user-app/home (recommendedMovies)', () => {
         let fantasyMovie: MovieDto
         let comedy1Movie: MovieDto
         let comedy2Movie: MovieDto
@@ -50,22 +52,26 @@ describe('RecommendationService', () => {
             })
 
             it('시청 기록 기반 추천을 반환한다', async () => {
-                await fix.httpClient
-                    .get('/movies/recommended')
+                const { body } = await fix.httpClient
+                    .get('/views/user-app/home')
                     .headers({ Authorization: `Bearer ${accessToken}` })
-                    .ok([
-                        actionMovie,
-                        comedy2Movie, // 2900-03-01
-                        comedy1Movie, // 2900-02-01
-                        dramaMovie,
-                        fantasyMovie
-                    ])
+                    .ok()
+
+                expect(body.recommendedMovies).toEqual([
+                    actionMovie,
+                    comedy2Movie, // 2900-03-01
+                    comedy1Movie, // 2900-02-01
+                    dramaMovie,
+                    fantasyMovie
+                ])
             })
         })
 
         describe('게스트일 때', () => {
             it('개봉일 내림차순 기본 추천을 반환한다', async () => {
-                await fix.httpClient.get('/movies/recommended').ok([
+                const { body } = await fix.httpClient.get('/views/user-app/home').ok()
+
+                expect(body.recommendedMovies).toEqual([
                     dramaMovie, // 2900-05-01
                     actionMovie, // 2900-04-01
                     comedy2Movie, // 2900-03-01

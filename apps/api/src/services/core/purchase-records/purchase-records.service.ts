@@ -18,8 +18,8 @@ export class PurchaseRecordsService {
         return this.toDto(purchaseRecord)
     }
 
-    async getMany(purchaseRecordIds: string[]) {
-        const purchaseRecords = await this.repository.getByIds(purchaseRecordIds)
+    async findByUserId(userId: string) {
+        const purchaseRecords = await this.repository.findByUserId(userId)
 
         return this.toDtos(purchaseRecords)
     }

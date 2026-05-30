@@ -1,27 +1,18 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common'
+import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common'
 import { CreatePurchaseDto, PurchaseService } from 'application'
-import { PurchaseRecordsService } from 'core'
+import { UserAuthGuard } from './guards'
+import { UserAuthRequest } from './types'
 
-// 인가: 이 컨트롤러도 인가 검사를 비워 둔다.
-// 지금은 본문에 들어오는 어떤 사용자 ID로도 결제가 가능하고, 구매 기록도 인증 없이 조회할 수 있다.
-// 포크해서 쓸 때는 `@UseGuards(UserAuthGuard)`를 걸고, 본문의 사용자 ID를 무시한 뒤 `req.user.sub`에서 가져오도록 바꾼다.
-// 구매 기록 조회에는 소유자 검사를 더한다.
-// 자세한 안내는 README "5. 인가" 절에 있다.
+// 인가: 결제자는 본문이 아니라 인증 토큰의 주체(req.user.sub)로 정한다.
+// 본문에 userId를 두면 로그인 사용자가 타인 명의로 결제할 수 있으므로 CreatePurchaseDto는 userId를 받지 않는다.
+// 본인 구매 기록 조회는 소유자 컨텍스트가 경로에 드러나는 GET /users/me/purchases 로 옮겼다.
 @Controller('purchases')
 export class PurchaseHttpController {
-    constructor(
-        private readonly purchaseRecordsService: PurchaseRecordsService,
-        private readonly purchaseService: PurchaseService
-    ) {}
-
-    @Get(':purchaseRecordId')
-    async getPurchaseRecord(@Param('purchaseRecordId') purchaseRecordId: string) {
-        const [purchaseRecord] = await this.purchaseRecordsService.getMany([purchaseRecordId])
-        return purchaseRecord
-    }
+    constructor(private readonly purchaseService: PurchaseService) {}
 
     @Post()
-    async processPurchase(@Body() createDto: CreatePurchaseDto) {
-        return this.purchaseService.processPurchase(createDto)
+    @UseGuards(UserAuthGuard)
+    async processPurchase(@Body() createDto: CreatePurchaseDto, @Req() req: UserAuthRequest) {
+        return this.purchaseService.processPurchase(createDto, req.user.sub)
     }
 }

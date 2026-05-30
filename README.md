@@ -52,6 +52,18 @@ nest-seed/
 
 ---
 
+## 인가
+
+JWT 기반으로 세 역할을 둔다. admin과 user 토큰은 서로 다른 secret으로 서명해, user 토큰으로 admin API에 접근할 수 없다.
+
+- **root** — `.env`의 자격증명으로 Basic 인증. admin 생성·삭제(lifecycle)만 한다.
+- **admin** — root가 만든 운영자. 콘텐츠(영화·극장·상영) 관리와 임의 사용자 대상 작업(`GET /users` 목록, `GET·PATCH·DELETE /users/:id`)을 한다. 콘솔(`apps/console`)이 이 역할로 동작한다.
+- **user** — 일반 사용자. 가입(`POST /users`)·로그인하고, 본인 정보 조회·수정·탈퇴(`GET·PATCH·DELETE /users/me`), 본인 구매 기록 조회(`GET /users/me/purchases`), 결제(`POST /purchases`)를 한다. 사용자 앱(`apps/user-app`)이 이 역할이다.
+
+본인 자원은 경로에 식별자가 없는 **`/me` 계열**로 다룬다. 식별자를 인증 토큰의 주체(`req.user.sub`)로 못박으므로, 로그인 사용자가 임의 ID를 넣어 남의 자원에 접근하는 경로(IDOR) 자체가 생기지 않는다. 임의 ID를 다루는 작업은 모두 admin이다 — `/me`(본인)와 `/:id`(운영자)로 권한 경계가 갈린다. 결제도 같은 원칙이라 `POST /purchases`는 본문이 아니라 토큰 주체로 결제자를 정한다.
+
+가드는 컨트롤러 클래스가 아니라 **핸들러마다** 붙인다. 클래스 가드를 두면 메서드 가드가 그것에 합쳐져(둘 다 통과해야 함) admin 전용으로 만들려던 핸들러가 user 가드에도 걸린다.
+
 ## 문서
 
 - [아키텍처](docs/architecture.md) — SoLA 계층 분리와 분산 협력 구조(락, NATS, Temporal)

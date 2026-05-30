@@ -1,5 +1,6 @@
 import { Require, sortBy, uniq } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
+import { RecommendationService } from 'application'
 import { MoviesService, ShowtimeDto, ShowtimesService, TheatersService } from 'core'
 import { HomeMovieCard, HomeShowtimeView, UserHomeView } from './dtos'
 
@@ -15,13 +16,25 @@ export class UserHomeViewService {
     constructor(
         private readonly movies: MoviesService,
         private readonly showtimes: ShowtimesService,
-        private readonly theaters: TheatersService
+        private readonly theaters: TheatersService,
+        private readonly recommendation: RecommendationService
     ) {}
 
-    async getHome(): Promise<UserHomeView> {
+    // userId는 게이트웨이가 optional 인증에서 넘긴 값이다. 로그인 시 추천을 개인화하고, 게스트(null)는 개봉일 순으로 채운다.
+    async getHome(userId: null | string): Promise<UserHomeView> {
+        // 상영 큐레이션과 추천은 서로 독립적이라 함께 가져온다.
+        const [cards, recommendedMovies] = await Promise.all([
+            this.getUpcomingCards(),
+            this.recommendation.searchRecommendedMovies(userId)
+        ])
+
+        return { movies: cards, recommendedMovies }
+    }
+
+    private async getUpcomingCards(): Promise<HomeMovieCard[]> {
         // 공개된 영화만 후보. searchPage가 isPublished=true 필터를 강제한다.
         const page = await this.movies.searchPage({ page: 1, size: HOME_MOVIE_COUNT })
-        if (page.items.length === 0) return { movies: [] }
+        if (page.items.length === 0) return []
 
         const upcomingShowtimes = await this.showtimes.search({
             endTimeRange: { start: new Date() },
@@ -39,7 +52,7 @@ export class UserHomeViewService {
             cards.push({ movie, upcomingShowtimes: showtimes.slice(0, SHOWTIMES_PER_MOVIE) })
         }
 
-        return { movies: cards }
+        return cards
     }
 
     private async fetchTheaterMap(showtimes: ShowtimeDto[]): Promise<Map<string, TheaterRef>> {
