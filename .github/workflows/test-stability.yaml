@@ -17,7 +17,9 @@ jobs:
             matrix:
                 scope: [libs, apps/api]
         runs-on: ubuntu-24.04-arm
-        timeout-minutes: 120
+        # libs 75회는 ~140분이면 끝나지만 apps/api 75회는 컨텍스트 부팅 비용 때문에 GitHub 6시간 상한(360분)에 근접한다.
+        # 레그마다 한계를 따로 둬 libs가 apps/api 때문에 길게 잡히지 않게 한다.
+        timeout-minutes: ${{ matrix.scope == 'apps/api' && 350 || 180 }}
         steps:
             - uses: actions/checkout@v5
             - name: Login to Docker Hub (host)
@@ -80,7 +82,8 @@ jobs:
                     - replica-chaos
                     - jwt-refresh-race
         runs-on: ubuntu-24.04-arm
-        timeout-minutes: 120
+        # 가장 느린 시나리오(user-race 50회 ~200분)에 여유를 둔 값. 50회 반복은 의도된 누적 검증량이다.
+        timeout-minutes: 240
         steps:
             - uses: actions/checkout@v5
             - name: Login to Docker Hub (host)

@@ -133,7 +133,8 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
         for (let c = 0; c < PURCHASES_PER_GROUP; c++) {
             attempts.push(
                 request('POST', '/purchases', {
-                    body: { userId: cust.userId, purchaseItems, totalPrice }
+                    body: { purchaseItems, totalPrice },
+                    headers: { authorization: `Bearer ${cust.accessToken}` }
                 }).then((r) => ({ ...r, group: g }))
             )
         }
@@ -177,20 +178,31 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
 
         // read-back: 승자 구매 기록이 실제로 영속됐는지 확인한다.
         // 2xx 응답 하나만으로는 결제가 만들어졌는지(phantom 성공이 아닌지) 구분하지 못한다.
+        // 단건 GET /purchases/:id는 없어졌고, 소유자 컨텍스트가 경로에 드러나는 GET /users/me/purchases로 옮겼다.
+        // 이 응답은 해당 사용자의 구매 기록 배열이므로, 승자 id로 그 안에서 찾아 영속을 확인한다.
         const winner = results.find((r) => r.group === g && r.status >= 200 && r.status < 300)
         if (!winner.body || !winner.body.id) {
             throw new Error(`iter ${iteration} group ${g}: success response has no purchase id`)
         }
-        const readBack = await request('GET', `/purchases/${winner.body.id}`)
-        if (readBack.status !== 200 || readBack.body?.id !== winner.body.id) {
+        const cust = users[g]
+        const readBack = await request('GET', '/users/me/purchases', {
+            headers: { authorization: `Bearer ${cust.accessToken}` }
+        })
+        if (readBack.status !== 200 || !Array.isArray(readBack.body)) {
             throw new Error(
-                `iter ${iteration} group ${g}: purchase ${winner.body.id} not persisted ` +
-                    `(read-back status=${readBack.status})`
+                `iter ${iteration} group ${g}: purchases read-back status=${readBack.status}`
             )
         }
-        if (readBack.body.paymentId !== winner.body.paymentId) {
+        const persisted = readBack.body.find((p) => p.id === winner.body.id)
+        if (!persisted) {
             throw new Error(
-                `iter ${iteration} group ${g}: persisted paymentId ${readBack.body.paymentId} ` +
+                `iter ${iteration} group ${g}: purchase ${winner.body.id} not persisted ` +
+                    `(not in GET /users/me/purchases)`
+            )
+        }
+        if (persisted.paymentId !== winner.body.paymentId) {
+            throw new Error(
+                `iter ${iteration} group ${g}: persisted paymentId ${persisted.paymentId} ` +
                     `!= response ${winner.body.paymentId}`
             )
         }
