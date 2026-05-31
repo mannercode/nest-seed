@@ -13,7 +13,7 @@ type ShowtimeView = {
 }
 type Movie = { id: string; title: string; director: string; rating: string; releaseDate: string }
 type MovieCard = { movie: Movie; upcomingShowtimes: ShowtimeView[] }
-type HomeView = { movies: MovieCard[]; recommendedMovies: Movie[] }
+type HomeView = { showingMovies: MovieCard[]; recommendedMovies: Movie[] }
 
 export default function HomePage() {
     const [home, setHome] = useState<HomeView | null>(null)
@@ -105,11 +105,11 @@ export default function HomePage() {
                     </ul>
                 </section>
             )}
-            {home.movies.length === 0 ? (
+            {home.showingMovies.length === 0 ? (
                 <p className="text-sm text-slate-500">아직 상영 예정인 영화가 없다</p>
             ) : (
                 <ul className="grid gap-4 sm:grid-cols-2" data-testid="movie-cards">
-                    {home.movies.map(({ movie, upcomingShowtimes }) => (
+                    {home.showingMovies.map(({ movie, upcomingShowtimes }) => (
                         <li
                             key={movie.id}
                             className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"

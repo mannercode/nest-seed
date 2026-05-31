@@ -13,7 +13,7 @@ export class HomeMovieCard {
 }
 
 export class UserHomeView {
-    movies: HomeMovieCard[]
+    showingMovies: HomeMovieCard[]
     // 추천 영화. 로그인하면 시청 기록 기반으로 개인화하고, 게스트는 개봉일 순으로 채운다.
     recommendedMovies: MovieDto[]
 }

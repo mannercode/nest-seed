@@ -2,7 +2,7 @@ import { DateUtil, ensure } from '@mannercode/common'
 import { createMovie, createShowtimes, createTheater, type AppTestContext } from '../helpers'
 
 type HomeResponse = {
-    movies: {
+    showingMovies: {
         movie: { id: string; title: string }
         upcomingShowtimes: { id: string; theater: { id: string; name: string } }[]
     }[]
@@ -26,7 +26,7 @@ describe('UserHomeView', () => {
             const { body } = await fix.httpClient.get('/views/user-app/home').ok()
 
             // 추천은 상영 중 영화 기반이라 상영이 없으면 함께 비어 있다.
-            expect(body).toEqual({ movies: [], recommendedMovies: [] })
+            expect(body).toEqual({ showingMovies: [], recommendedMovies: [] })
         })
 
         it('상영 예정이 없는 영화는 카드에서 제외한다', async () => {
@@ -34,7 +34,7 @@ describe('UserHomeView', () => {
 
             const { body } = await fix.httpClient.get('/views/user-app/home').ok()
 
-            expect(body).toEqual({ movies: [], recommendedMovies: [] })
+            expect(body).toEqual({ showingMovies: [], recommendedMovies: [] })
         })
 
         describe('가까운 상영이 여러 개 있을 때', () => {
@@ -99,7 +99,7 @@ describe('UserHomeView', () => {
                 const { body } = await fix.httpClient.get('/views/user-app/home').ok()
                 const home = body as HomeResponse
 
-                const card = ensure(home.movies[0])
+                const card = ensure(home.showingMovies[0])
                 expect(card.upcomingShowtimes.map((s) => s.id)).toEqual([s1.id, s2.id, s3.id])
                 expect(card.upcomingShowtimes.map((s) => s.theater.name)).toEqual([
                     theaterA.name,
@@ -112,8 +112,8 @@ describe('UserHomeView', () => {
                 const { body } = await fix.httpClient.get('/views/user-app/home').ok()
                 const home = body as HomeResponse
 
-                expect(home.movies).toHaveLength(1)
-                const card = ensure(home.movies[0])
+                expect(home.showingMovies).toHaveLength(1)
+                const card = ensure(home.showingMovies[0])
                 expect(card.movie.title).toBe('Home Movie')
                 expect(card.upcomingShowtimes).toHaveLength(3)
                 expect(card.upcomingShowtimes.map((s) => s.id)).not.toContain(s4.id)
@@ -123,7 +123,7 @@ describe('UserHomeView', () => {
                 const { body } = await fix.httpClient.get('/views/user-app/home').ok()
                 const home = body as HomeResponse
 
-                const card = ensure(home.movies[0])
+                const card = ensure(home.showingMovies[0])
                 expect(card.upcomingShowtimes.map((s) => s.id)).not.toContain(pastShowtime.id)
             })
         })

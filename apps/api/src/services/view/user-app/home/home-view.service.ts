@@ -28,7 +28,7 @@ export class UserHomeViewService {
             this.recommendation.searchRecommendedMovies(userId)
         ])
 
-        return { movies: cards, recommendedMovies }
+        return { showingMovies: cards, recommendedMovies }
     }
 
     private async getUpcomingCards(): Promise<HomeMovieCard[]> {
