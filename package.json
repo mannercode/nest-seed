@@ -1,6 +1,7 @@
 {
     "name": "nest-seed",
     "private": true,
+    "license": "MIT",
     "comments": {
         "workspaces": [
             "workspaces 항목 순서 = 빌드 순서. 의존성이 먼저 오도록 유지할 것."

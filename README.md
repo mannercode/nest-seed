@@ -2,18 +2,43 @@
 
 NestJS 모노레포를 빠르게 시작하기 위한 시드 프로젝트이다. Redis, NATS, Temporal 같은 분산 도구를 기본으로 갖추고 있어, 처음에는 모놀리스처럼 단순하게 시작하고 필요할 때 특정 기능을 독립 서비스로 떼어내기 쉽다.
 
+처음부터 분산·동시성 문제를 고려해야 하는 백엔드를 NestJS로 시작할 때를 위한 시드다 — 가벼운 CRUD API만 필요하면 과할 수 있다.
+
+분산 도구는 각각 다음 상황을 맡는다 — 근거는 [설계 결정](docs/decisions.md)에 있다.
+
+| 상황                  | 도구                            |
+| --------------------- | ------------------------------- |
+| 같은 자원의 동시 수정 | Redis 분산 락(`cache.withLock`) |
+| 컨테이너 사이 알림    | NATS pub/sub                    |
+| 여러 단계의 보상 작업 | Temporal 워크플로(Saga)         |
+
 ## 시작하기
 
-새 프로젝트로 포크했다면 먼저 `nest-seed`로 검색되는 식별자를 새 프로젝트 이름으로 모두 바꾼다.
+공식 개발 경로는 **Dev Container 하나뿐이다**. 로컬에서 직접 실행하는 경로는 지원하지 않는다(MongoDB Replica Set, Redis Cluster 등을 수동으로 배선해야 하기 때문). 자세한 배경은 [환경 변수](docs/environment.md)를 본다.
 
-Docker, VS Code, Dev Containers 확장이 필요하다. VS Code에서 `Reopen in Container`를 실행하면 MongoDB Replica Set, Redis Cluster, MinIO, NATS, Temporal이 함께 올라온다. 권장 최소 사양은 CPU 4코어, RAM 16GB, 디스크 32GB이다.
+Docker, VS Code, Dev Containers 확장이 필요하다. 권장 최소 사양은 CPU 4코어, RAM 16GB, 디스크 32GB이다(`.devcontainer/devcontainer.json`의 `hostRequirements`로 명시).
 
-| 명령                  | 용도                                                               |
-| --------------------- | ------------------------------------------------------------------ |
-| `npm test`            | 워크스페이스 테스트 실행 (libs 빌드 자동, console e2e 포함)        |
-| `bash deploy/test.sh` | Compose 스택과 curl 기반 API 문서 검증                             |
-| `npm run dev`         | libs, api, console, user-app watch 모드 동시 실행 (3000/3100/3200) |
-| `npm run atoz`        | 전체 흐름 검증 (포크 후 회귀 확인용)                               |
+처음 부팅 순서는 다음과 같다.
+
+1. **새 프로젝트로 포크했다면** `nest-seed`로 검색되는 식별자를 새 이름으로 모두 바꾼다. 바꿔야 할 정확한 파일·키 목록(`package.json` name, `.env.api`의 `PROJECT_ID`·`AUTH_ISSUER`·`AUTH_AUDIENCE`·`ROOT_PASSWORD`, `.env.infra`, 테스트 픽스처 이메일 등)과 `@mannercode/*` 패키지 스코프 처리는 [환경 변수 §3 포크할 때 확인할 값](docs/environment.md)에 정리해 두었다.
+2. VS Code에서 `Reopen in Container`를 실행한다. `postStartCommand`가 `bash infra/reset.sh`를 돌려 MongoDB Replica Set, Redis Cluster, MinIO, NATS, Temporal을 함께 띄운다(compose 정의는 `infra/`에 있다). 첫 부팅은 deps 이미지 빌드와 testcontainers 이미지 풀로 시간이 걸리니 멈춘 게 아니다.
+3. `npm test`로 설치가 정상인지 확인한다. 끝까지 통과하면 환경이 준비된 것이다.
+4. `npm run dev`로 watch 모드를 띄운 뒤 `curl http://localhost:3000/health`로 API가 살아 있는지 본다.
+
+> `.env.api`와 `.env.infra`는 커밋된 **개발용 기본값**이다(`ROOT_PASSWORD=DevPass1!` 포함). 포크하면 자기 값으로 바꾼다 — 전체 흐름은 [환경 변수](docs/environment.md)를 본다.
+
+| 명령                  | 용도                                                                                         |
+| --------------------- | -------------------------------------------------------------------------------------------- |
+| `npm run dev`         | common·testing(libs), api, console, user-app watch 모드 동시 실행 (3000/3100/3200)           |
+| `npm run dev:api`     | API만 단독 watch 실행 (백엔드만 작업할 때. console/user-app은 선택적 데모 클라이언트)        |
+| `npm test`            | 워크스페이스 Jest 테스트 실행 (libs 빌드 자동). 단일 spec 실행법은 [테스트](docs/testing.md) |
+| `npm run lint`        | 워크스페이스 + 루트 타입 체크·ESLint·Prettier 검사                                           |
+| `npm run format`      | ESLint `--fix` + Prettier로 코드 정리                                                        |
+| `npm run build`       | 전체 워크스페이스 빌드                                                                       |
+| `bash deploy/test.sh` | Compose 스택을 띄우고 curl 기반 API 문서 검증                                                |
+| `npm run atoz`        | 전체 흐름 검증 (lint·Jest·API 문서·console e2e까지, 포크 후 회귀 확인용)                     |
+
+> `npm run clean`은 `git clean -fdX`로 추적되지 않는 파일을 모두 지우고 인프라를 초기화한다(`npm run atoz`가 내부에서 호출). 추적 안 된 작업물이 있으면 주의한다.
 
 ## 프로젝트 구조
 
@@ -27,9 +52,9 @@ nest-seed/
 ├── apps/api/                ← NestJS API (배포 시 기본 4개 컨테이너)
 │   ├── src/
 │   │   ├── services/            서비스 계층
-│   │   │   ├── gateway/             HTTP 진입점, 가드(admin/user), 파이프
+│   │   │   ├── gateway/             HTTP 진입점, 가드(root/admin/user), 파이프
 │   │   │   ├── application/         여러 도메인을 조합하는 작업(Temporal 워크플로 + 액티비티)
-│   │   │   ├── view/                View: 화면 전용 서비스 소비자(예: user-app/home)
+│   │   │   ├── view/                화면 요구에 맞게 하위 계층(core·application)을 조합하는 소비자(예: user-app/home)
 │   │   │   ├── core/                도메인 모델, 리포지토리
 │   │   │   └── infrastructure/      외부 서비스 연동 (결제, 파일)
 │   │   ├── config/              환경 변수, 외부 자원 설정
@@ -45,10 +70,16 @@ nest-seed/
 │   ├── api-perf/            ← 배포된 API 스택을 대상으로 하는 성능 측정 도구
 │   └── console-e2e/         ← Playwright 콘솔 e2e 테스트
 │
-├── deploy/                  ← Docker Compose, NGINX (앱 진입점)
+├── infra/                   ← 개발 인프라 Compose (MongoDB·Redis·MinIO·NATS·Temporal)
+├── deploy/                  ← Docker Compose, NGINX (앱 배포 진입점)
+├── tools/                   ← 개발·테스트 보조 도구 (free-port, jest 헬퍼)
+├── docs/                    ← 아키텍처·컨벤션·테스트·환경·설계 결정 문서
+├── .github/                 ← CI 워크플로 (atoz, test-stability)
 │
-└── .devcontainer/           ← Dev Container + 개발 인프라
+└── .devcontainer/           ← Dev Container 정의 (인프라는 infra/를 참조)
 ```
+
+`services` 아래 다섯 계층은 **SoLA(Service-oriented Layered Architecture)** 를 따른다 — 위 계층만 아래를 참조하고(gateway→view→application→core→infrastructure) 같은 계층끼리는 서로 직접 호출하지 않아 순환 참조를 막는다. 이 의존 방향은 ESLint로 강제한다. 자세한 내용은 [아키텍처](docs/architecture.md)를 본다.
 
 ---
 
@@ -62,12 +93,33 @@ JWT 기반으로 세 역할을 둔다. admin과 user 토큰은 서로 다른 sec
 
 본인 자원은 경로에 식별자가 없는 **`/me` 계열**로 다룬다. 식별자를 인증 토큰의 주체(`req.user.sub`)로 못박으므로, 로그인 사용자가 임의 ID를 넣어 남의 자원에 접근하는 경로(IDOR) 자체가 생기지 않는다. 임의 ID를 다루는 작업은 모두 admin이다 — `/me`(본인)와 `/:id`(운영자)로 권한 경계가 갈린다. 결제도 같은 원칙이라 `POST /purchases`는 본문이 아니라 토큰 주체로 결제자를 정한다.
 
-가드는 컨트롤러 클래스가 아니라 **핸들러마다** 붙인다. 클래스 가드를 두면 메서드 가드가 그것에 합쳐져(둘 다 통과해야 함) admin 전용으로 만들려던 핸들러가 user 가드에도 걸린다.
+한 컨트롤러에 **서로 다른 역할의 핸들러가 섞이면**(`users`·`admins`처럼 `/me`는 본인, `/:id`는 admin) 가드는 클래스가 아니라 **핸들러마다** 붙인다. 클래스 가드를 두면 메서드 가드가 그것에 합쳐져(둘 다 통과해야 함) admin 전용으로 만들려던 핸들러가 user 가드에도 걸리기 때문이다. 반대로 모든 핸들러가 같은 역할인 컨트롤러(예: admin 전용 `showtime-creation`)는 클래스 레벨 가드를 쓴다.
+
+### 최초 admin 만들기
+
+컨테이너를 띄운 직후엔 admin이 없다. root 자격증명으로 첫 admin을 만들고 로그인하는 순서는 다음과 같다(실행 가능한 시나리오는 `apps/api/api-docs/admins.spec`에 있다).
+
+1. root가 Basic 인증으로 admin 생성 — `POST /admins`, `Authorization: Basic <base64(root:$ROOT_PASSWORD)>`
+2. 만든 admin으로 로그인 — `POST /admins/login`으로 토큰 발급
+3. 콘솔(`apps/console`, 3100)의 `/login`에서 같은 자격증명으로 접속
+
+## API 레퍼런스
+
+Swagger/OpenAPI는 의도적으로 두지 않았다(이유는 [설계 결정](docs/decisions.md)). 엔드포인트 카탈로그는 **실행 가능한 `apps/api/api-docs/*.spec`** 자체다. `bash deploy/test.sh`(또는 `cd apps/api/api-docs && bash run.sh`)를 돌리면 브라우징 가능한 목록이 `_output/`에 생성된다 — `_output/`은 gitignore라 클론 직후엔 없으니 한 번 실행해야 한다.
 
 ## 문서
 
 - [아키텍처](docs/architecture.md) — SoLA 계층 분리와 분산 협력 구조(락, NATS, Temporal)
-- [컨벤션](docs/conventions.md) — 네이밍, 에러, 가져오기, REST API 설계
+- [컨벤션](docs/conventions.md) — 네이밍, 에러, 가져오기, REST API 설계, 데이터 비정규화, 커밋 규칙
 - [테스트](docs/testing.md) — 한글 메시지 규칙, 픽스처, 동적 가져오기, 실행 가능한 API 문서, 분산 레이스 테스트
-- [환경 변수](docs/environment.md) — Dev Container, API, API 문서, console 환경 변수 흐름
-- [설계 결정](docs/decisions.md) — 분산 도구 선택 기준과 쓰지 않기로 한 대안
+- [환경 변수](docs/environment.md) — Dev Container, API, API 문서, console 환경 변수 흐름과 포크 체크리스트
+- [설계 결정](docs/decisions.md) — 분산 도구·View 계층 등 핵심 설계 결정과 쓰지 않기로 한 대안
+- [배포](deploy/README.md) — Docker Compose 다중 API 컨테이너 + NGINX, `x-replica-id` 응답 헤더
+
+## 기여
+
+커밋 메시지는 [Conventional Commits](https://www.conventionalcommits.org)를 따른다 — commitlint(`commit-msg` 훅)가 강제하므로 형식이 어긋나면 커밋이 거부된다. `pre-commit` 훅은 staged 파일에 ESLint `--fix`와 Prettier를 자동 적용한다(lint-staged). 규칙 세부는 [컨벤션 §7](docs/conventions.md)을 본다.
+
+## 라이선스
+
+[MIT](LICENSE).
