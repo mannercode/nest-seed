@@ -100,7 +100,7 @@ export abstract class AuthGuard implements CanActivate {
     }
 
     // 만료는 정상 흐름의 일부라 사전 디코드로 잡아 401을 돌려준다.
-    // 서명 위조/구조 깨짐 같은 비정상은 verifyAsync가 던지게 두어 위로 전파된다.
+    // 서명 위조·구조 깨짐·클레임 불일치도 모두 인증 실패이므로 verifyAsync가 던지는 오류를 401로 매핑한다.
     // canActivate에서 공백 분리가 끝난 뒤에만 호출되므로 token은 비어 있을 수 없다.
     protected async verifyBearer(token: string, bearer: BearerAuthOptions): Promise<unknown> {
         const decoded = this.jwtService.decode<Record<string, unknown> | null>(token)
@@ -109,12 +109,16 @@ export abstract class AuthGuard implements CanActivate {
             throw new UnauthorizedException('token expired')
         }
 
-        return this.jwtService.verifyAsync(token, {
-            algorithms: [...ACCEPTED_ALGORITHMS],
-            audience: bearer.audience,
-            issuer: bearer.issuer,
-            secret: bearer.secret
-        })
+        try {
+            return await this.jwtService.verifyAsync(token, {
+                algorithms: [...ACCEPTED_ALGORITHMS],
+                audience: bearer.audience,
+                issuer: bearer.issuer,
+                secret: bearer.secret
+            })
+        } catch {
+            throw new UnauthorizedException(this.options.errorBody)
+        }
     }
 
     protected async verifyBasic(value: string, basic: BasicAuthOptions): Promise<unknown> {

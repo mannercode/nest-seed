@@ -81,9 +81,9 @@ describe('JwtAuthService', () => {
             expect(after.familyId).toBe(before.familyId)
         })
 
-        it('형식이 깨진 토큰은 jwt malformed로 거부한다', async () => {
+        it('형식이 깨진 토큰은 401(잘못된 리프레시 토큰)로 거부한다', async () => {
             const promise = fix.jwtService.refreshAuthTokens('invalid-token')
-            await expect(promise).rejects.toThrow('jwt malformed')
+            await expect(promise).rejects.toThrow('The provided refresh token is invalid')
         })
 
         it('만료된 토큰은 401(token expired)로 거부한다', async () => {
@@ -274,9 +274,9 @@ describe('JwtAuthService', () => {
             )
         })
 
-        it('형식이 깨진 토큰을 폐기하면 검증 예외를 그대로 전파한다', async () => {
+        it('형식이 깨진 토큰을 폐기하면 401(잘못된 리프레시 토큰)을 전파한다', async () => {
             await expect(fix.jwtService.revokeRefreshToken('garbage')).rejects.toThrow(
-                'jwt malformed'
+                'The provided refresh token is invalid'
             )
             // emitOnFailure=false 경로라 verify.failed 이벤트는 발생하지 않는다.
             expect(fix.events.find((e) => e.type === 'verify.failed')).toBeUndefined()

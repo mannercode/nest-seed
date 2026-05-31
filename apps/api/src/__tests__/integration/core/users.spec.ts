@@ -185,8 +185,8 @@ describe('UsersService', () => {
 
     // 임의 ID를 다루는 핸들러는 admin 전용이다. user 토큰이나 무인증으로는 통과할 수 없어야
     // "임의 ID = 운영자" 경계가 코드로 강제됨을 보장한다(가드를 끄면 이 검증이 사라진다).
-    // user 토큰은 admin 가드와 secret이 달라 서명 검증이 실패하는데, AuthGuard는 서명 오류를
-    // 위로 전파하므로 500이 된다(만료·무인증만 401). 이 동작은 admin-auth.spec과 동일하다.
+    // user 토큰은 admin 가드와 secret이 달라 서명 검증에 실패하고, AuthGuard가 검증 실패를
+    // 401로 매핑하므로 401이 된다(무인증·만료와 같다). 이 동작은 admin-auth.spec과 동일하다.
     describe('인가 경계', () => {
         let userAuth: { Authorization: string }
         let target: UserDto
@@ -198,7 +198,10 @@ describe('UsersService', () => {
         })
 
         it('user 토큰으로 GET /users/:id에 접근하면 통과하지 못한다', async () => {
-            await fix.httpClient.get(`/users/${target.id}`).headers(userAuth).internalServerError()
+            await fix.httpClient
+                .get(`/users/${target.id}`)
+                .headers(userAuth)
+                .unauthorized(Errors.Auth.Unauthorized())
         })
 
         it('user 토큰으로 PATCH /users/:id에 접근하면 통과하지 못한다', async () => {
@@ -206,18 +209,21 @@ describe('UsersService', () => {
                 .patch(`/users/${target.id}`)
                 .headers(userAuth)
                 .body({ name: 'hacked' })
-                .internalServerError()
+                .unauthorized(Errors.Auth.Unauthorized())
         })
 
         it('user 토큰으로 DELETE /users/:id에 접근하면 통과하지 못한다', async () => {
             await fix.httpClient
                 .delete(`/users/${target.id}`)
                 .headers(userAuth)
-                .internalServerError()
+                .unauthorized(Errors.Auth.Unauthorized())
         })
 
         it('user 토큰으로 GET /users 목록에 접근하면 통과하지 못한다', async () => {
-            await fix.httpClient.get('/users').headers(userAuth).internalServerError()
+            await fix.httpClient
+                .get('/users')
+                .headers(userAuth)
+                .unauthorized(Errors.Auth.Unauthorized())
         })
 
         it('Authorization 헤더가 없으면 401을 반환한다', async () => {

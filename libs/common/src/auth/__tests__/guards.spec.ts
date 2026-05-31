@@ -40,11 +40,11 @@ describe('AuthGuard', () => {
             await fix.httpClient.get('/bearer/protected').unauthorized()
         })
 
-        it('형식이 깨진 토큰으로 접근하면 500을 반환한다', async () => {
+        it('형식이 깨진 토큰으로 접근하면 401을 반환한다', async () => {
             await fix.httpClient
                 .get('/bearer/protected')
                 .headers({ Authorization: 'Bearer invalid-token' })
-                .internalServerError()
+                .unauthorized()
         })
 
         it('만료된 토큰으로 접근하면 401을 반환한다', async () => {
@@ -204,11 +204,11 @@ describe('AuthGuard', () => {
                 .ok()
         })
 
-        it('형식이 깨진 토큰이면 500을 반환한다', async () => {
+        it('형식이 깨진 토큰이면 401을 반환한다', async () => {
             await fix.httpClient
                 .get('/optional')
                 .headers({ Authorization: 'Bearer invalid-token' })
-                .internalServerError()
+                .unauthorized()
         })
 
         it('만료된 토큰이면 401을 반환한다', async () => {

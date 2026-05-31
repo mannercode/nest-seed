@@ -256,7 +256,7 @@ export class JwtAuthService {
 
     private async getAuthTokenPayload(token: string, context?: EventContext, emitOnFailure = true) {
         // 만료는 정상 흐름의 일부라 사전 디코드로 잡아 401을 돌려준다.
-        // 서명 위조/구조 깨짐 같은 비정상은 verifyAsync가 던지게 두어 위로 전파된다.
+        // 서명 위조/구조 깨짐도 잘못된 리프레시 토큰이므로 verifyAsync가 던지는 오류를 401로 매핑한다.
         const peek = this.jwtService.decode<Record<string, unknown> | null>(token)
         const exp = peek?.exp
         if (typeof exp === 'number' && exp < Date.now() / 1000) {
@@ -284,7 +284,7 @@ export class JwtAuthService {
                 const { message } = error as Error
                 await this.emit({ type: 'verify.failed', reason: message, at: new Date(), context })
             }
-            throw error
+            throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
         }
     }
 

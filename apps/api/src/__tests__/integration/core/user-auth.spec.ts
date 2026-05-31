@@ -58,20 +58,20 @@ describe('UserAuthentication', () => {
                 )
         })
 
-        it('액세스 토큰이 검증되지 않으면 500을 반환한다', async () => {
+        it('액세스 토큰이 검증되지 않으면 401을 반환한다', async () => {
             await fix.httpClient
                 .get('/users/me')
                 .headers({ Authorization: 'Bearer invalid-token' })
-                .internalServerError()
+                .unauthorized(Errors.Auth.Unauthorized())
         })
     })
 
     describe('GET /users', () => {
-        it('액세스 토큰이 검증되지 않으면 500을 반환한다', async () => {
+        it('액세스 토큰이 검증되지 않으면 401을 반환한다', async () => {
             await fix.httpClient
                 .get('/users')
                 .headers({ Authorization: 'Bearer invalid-token' })
-                .internalServerError()
+                .unauthorized(Errors.Auth.Unauthorized())
         })
     })
 
@@ -156,11 +156,11 @@ describe('UserAuthentication', () => {
             expect(body.refreshToken).not.toEqual(refreshToken)
         })
 
-        it('리프레시 토큰이 검증되지 않으면 500을 반환한다', async () => {
+        it('리프레시 토큰이 검증되지 않으면 401을 반환한다', async () => {
             await fix.httpClient
                 .post('/users/refresh')
                 .body({ refreshToken: 'invalid-token' })
-                .internalServerError()
+                .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
         })
     })
 
@@ -184,11 +184,11 @@ describe('UserAuthentication', () => {
                 .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
         })
 
-        it('잘못된 토큰으로 로그아웃하면 500을 반환한다', async () => {
+        it('잘못된 토큰으로 로그아웃하면 401을 반환한다', async () => {
             await fix.httpClient
                 .post('/users/logout')
                 .body({ refreshToken: 'garbage' })
-                .internalServerError()
+                .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
         })
     })
 
