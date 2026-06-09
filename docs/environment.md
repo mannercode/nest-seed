@@ -52,15 +52,17 @@ apps/api/api-docs/run.sh
 
 ## 3. 포크할 때 확인할 값
 
-새 프로젝트로 가져갈 때는 이름과 외부 자원 식별자를 먼저 바꾼다.
+새 프로젝트로 가져갈 때는 저장소 전체에서 `nest-seed`를 검색해 새 프로젝트 이름으로 모두 바꾸고, `mannercode`를 검색해 새 조직 이름과 내부 패키지 스코프로 모두 바꾼다. 그다음 환경별 식별자를 확인한다.
 
-| 위치                 | 확인할 값                                                     |
-| -------------------- | ------------------------------------------------------------- |
-| `package.json`       | `name`                                                        |
-| `.env.api`           | `PROJECT_ID`, `AUTH_ISSUER`, `AUTH_AUDIENCE`, `ROOT_PASSWORD` |
-| `.env.infra`         | `MONGO_DATABASE`, `S3_BUCKET`, `TEMPORAL_NAMESPACE`           |
-| `deploy/compose.yml` | API image 이름, 필요하면 replica 기본값                       |
-| `apps/console/.env`  | `API_BASE_URL`                                                |
-| `apps/user-app/.env` | `API_BASE_URL`                                                |
+| 위치                 | 확인할 값                                                       |
+| -------------------- | --------------------------------------------------------------- |
+| 저장소 전체 검색     | `nest-seed` → 새 프로젝트 이름                                  |
+| 저장소 전체 검색     | `mannercode` → 새 조직 이름(`@mannercode/*` 패키지 스코프 포함) |
+| `package.json`       | `name`                                                          |
+| `.env.api`           | `PROJECT_ID`, `AUTH_ISSUER`, `AUTH_AUDIENCE`, `ROOT_PASSWORD`   |
+| `.env.infra`         | `MONGO_DATABASE`, `S3_BUCKET`, `TEMPORAL_NAMESPACE`             |
+| `deploy/compose.yml` | API image 이름, 필요하면 replica 기본값                         |
+| `apps/console/.env`  | `API_BASE_URL`                                                  |
+| `apps/user-app/.env` | `API_BASE_URL`                                                  |
 
 개발용 `.env`의 인증 secret과 `ROOT_PASSWORD`는 시드 실행을 위한 값이다. 운영 secret은 저장소에 커밋하지 않고 배포 환경의 secret 관리 경로에서 주입한다.

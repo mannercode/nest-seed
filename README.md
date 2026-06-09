@@ -1,28 +1,20 @@
 # nest-seed
 
-NestJS 모노레포를 빠르게 시작하기 위한 시드 프로젝트이다. Redis, NATS, Temporal 같은 분산 도구를 기본으로 갖추고 있어, 처음에는 모놀리스처럼 단순하게 시작하고 필요할 때 특정 기능을 독립 서비스로 떼어내기 쉽다.
+NestJS API와 이에 연동되는 간단한 관리자 콘솔·사용자 앱을 한 저장소에 담은 모노레포 시드다. 처음에는 모놀리스처럼 단순하게 시작하되, 필요할 때 특정 기능을 독립 서비스로 쉽게 분리할 수 있도록 Redis, NATS, Temporal 같은 분산 도구를 기본으로 갖추고 있다.
 
-처음부터 분산·동시성 문제를 고려해야 하는 백엔드를 NestJS로 시작할 때를 위한 시드다 — 가벼운 CRUD API만 필요하면 과할 수 있다.
-
-분산 도구는 각각 다음 상황을 맡는다 — 근거는 [설계 결정](docs/decisions.md)에 있다.
-
-| 상황                  | 도구                            |
-| --------------------- | ------------------------------- |
-| 같은 자원의 동시 수정 | Redis 분산 락(`cache.withLock`) |
-| 컨테이너 사이 알림    | NATS pub/sub                    |
-| 여러 단계의 보상 작업 | Temporal 워크플로(Saga)         |
+단순한 CRUD API보다는, Redis 분산 락, NATS pub/sub, Temporal Saga처럼 분산 환경에서 자주 마주치는 몇 가지 경계를 미리 잡아 둔 NestJS 백엔드 시드다. 각 도구를 어디에 적용했고 왜 선택했는지는 [설계 결정](docs/decisions.md)에 정리해 두었다.
 
 ## 시작하기
 
-공식 개발 경로는 **Dev Container 하나뿐이다**. 로컬에서 직접 실행하는 경로는 지원하지 않는다(MongoDB Replica Set, Redis Cluster 등을 수동으로 배선해야 하기 때문). 자세한 배경은 [환경 변수](docs/environment.md)를 본다.
+개발은 Dev Container에서 진행한다. Docker와 VS Code가 필요하며, VS Code에는 Dev Containers 확장을 설치해야 한다. MongoDB Replica Set과 Redis Cluster 등 여러 인프라를 맞춰 띄워야 하므로, 로컬에서 직접 실행하는 절차는 따로 지원하지 않는다. 환경 변수 흐름과 부팅 과정은 [환경 변수](docs/environment.md)에 정리했다.
 
-Docker, VS Code, Dev Containers 확장이 필요하다. 권장 최소 사양은 CPU 4코어, RAM 16GB, 디스크 32GB이다(`.devcontainer/devcontainer.json`의 `hostRequirements`로 명시).
+최소 사양은 CPU 4코어, RAM 16GB, 디스크 32GB다. 전체 테스트까지 안정적으로 돌리려면 RAM 32GB 이상을 권장한다.
 
 처음 부팅 순서는 다음과 같다.
 
-1. **새 프로젝트로 포크했다면** `nest-seed`로 검색되는 식별자를 새 이름으로 모두 바꾼다. 바꿔야 할 정확한 파일·키 목록(`package.json` name, `.env.api`의 `PROJECT_ID`·`AUTH_ISSUER`·`AUTH_AUDIENCE`·`ROOT_PASSWORD`, `.env.infra`, 테스트 픽스처 이메일 등)과 `@mannercode/*` 패키지 스코프 처리는 [환경 변수 §3 포크할 때 확인할 값](docs/environment.md)에 정리해 두었다.
-2. VS Code에서 `Reopen in Container`를 실행한다. `postStartCommand`가 `bash infra/reset.sh`를 돌려 MongoDB Replica Set, Redis Cluster, MinIO, NATS, Temporal을 함께 띄운다(compose 정의는 `infra/`에 있다). 첫 부팅은 deps 이미지 빌드와 testcontainers 이미지 풀로 시간이 걸리니 멈춘 게 아니다.
-3. `npm test`로 설치가 정상인지 확인한다. 끝까지 통과하면 환경이 준비된 것이다.
+1. **새 프로젝트로 포크했다면** 저장소 전체에서 `nest-seed`를 검색해 새 프로젝트 이름으로 모두 바꾸고, `mannercode`를 검색해 새 조직 이름으로 모두 바꾼다.
+2. VS Code에서 `Reopen in Container`를 실행한다. 컨테이너가 열리면 `postStartCommand`가 `bash infra/reset.sh`를 실행해 개발 인프라를 준비한다. 첫 부팅은 Dev Container 이미지 빌드, `npm install`, 인프라 이미지 다운로드 때문에 시간이 걸릴 수 있다.
+3. `npm test`로 기본 테스트가 통과하는지 확인한다. 포크 직후 전체 회귀까지 확인하려면 `npm run atoz`를 실행한다.
 4. `npm run dev`로 watch 모드를 띄운 뒤 `curl http://localhost:3000/health`로 API가 살아 있는지 본다.
 
 > `.env.api`와 `.env.infra`는 커밋된 **개발용 기본값**이다(`ROOT_PASSWORD=DevPass1!` 포함). 포크하면 자기 값으로 바꾼다 — 전체 흐름은 [환경 변수](docs/environment.md)를 본다.
@@ -30,7 +22,7 @@ Docker, VS Code, Dev Containers 확장이 필요하다. 권장 최소 사양은 
 | 명령                  | 용도                                                                                         |
 | --------------------- | -------------------------------------------------------------------------------------------- |
 | `npm run dev`         | common·testing(libs), api, console, user-app watch 모드 동시 실행 (3000/3100/3200)           |
-| `npm run dev:api`     | API만 단독 watch 실행 (백엔드만 작업할 때. console/user-app은 선택적 데모 클라이언트)        |
+| `npm run dev:api`     | API만 단독 watch 실행 (백엔드만 작업할 때. console/user-app은 선택적 클라이언트 앱)          |
 | `npm test`            | 워크스페이스 Jest 테스트 실행 (libs 빌드 자동). 단일 spec 실행법은 [테스트](docs/testing.md) |
 | `npm run lint`        | 워크스페이스 + 루트 타입 체크·ESLint·Prettier 검사                                           |
 | `npm run format`      | ESLint `--fix` + Prettier로 코드 정리                                                        |
