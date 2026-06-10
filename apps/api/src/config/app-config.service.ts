@@ -18,9 +18,9 @@ export class AppConfigService extends BaseConfigService {
         AUTH_REFRESH_SECRET: Joi.string().required(),
         AUTH_REFRESH_TOKEN_EXPIRATION: Joi.string().required(),
         ROOT_PASSWORD: Joi.string().required(),
+        API_PORT: Joi.number().required(),
         HTTP_PAGINATION_DEFAULT_SIZE: Joi.number().required(),
 
-        HTTP_PORT: Joi.number().required(),
         HTTP_REQUEST_PAYLOAD_LIMIT: Joi.string().required(),
         LOG_CONSOLE_LEVEL: Joi.string().required(),
         LOG_DAYS_TO_KEEP: Joi.string().required(),
@@ -97,7 +97,7 @@ export class AppConfigService extends BaseConfigService {
     get http() {
         return {
             paginationDefaultSize: this.getNumber('HTTP_PAGINATION_DEFAULT_SIZE'),
-            port: this.getNumber('HTTP_PORT'),
+            port: this.getNumber('API_PORT'),
             requestPayloadLimit: this.getString('HTTP_REQUEST_PAYLOAD_LIMIT')
         }
     }

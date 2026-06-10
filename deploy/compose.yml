@@ -15,7 +15,7 @@ x-api-base: &api-base
         start_period: 10s
         interval: 10s
         timeout: 5s
-        test: 'curl -fsS http://localhost:${HTTP_PORT}/health'
+        test: 'curl -fsS http://localhost:${API_PORT}/health'
 
 services:
     api:

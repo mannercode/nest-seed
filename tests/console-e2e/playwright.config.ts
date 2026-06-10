@@ -1,8 +1,14 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const API_PORT = 3000
-const CONSOLE_PORT = 3100
+// 포트의 정의처는 .env.infra의 API_PORT·CONSOLE_PORT다(devcontainer가 ambient env로 주입).
+const API_PORT = process.env.API_PORT
+const CONSOLE_PORT = process.env.CONSOLE_PORT
+if (!API_PORT || !CONSOLE_PORT) {
+    throw new Error('API_PORT and CONSOLE_PORT must be set (devcontainer ambient env)')
+}
 const BASE_URL = `http://localhost:${CONSOLE_PORT}`
+
+export const API_BASE_URL = `http://localhost:${API_PORT}`
 
 if (!process.env.WORKSPACE_ROOT) {
     throw new Error('WORKSPACE_ROOT must be set')
@@ -34,7 +40,7 @@ export default defineConfig({
     webServer: [
         {
             command: 'npm run build -w apps/api && npm run start -w apps/api',
-            url: `http://localhost:${API_PORT}/health`,
+            url: `${API_BASE_URL}/health`,
             reuseExistingServer: !process.env.CI,
             timeout: 240_000,
             cwd: WORKSPACE_ROOT

@@ -8,7 +8,7 @@
         "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.jest.json && eslint src/ scripts/ --max-warnings=0 && prettier --check src/ scripts/",
         "build": "nest build -b webpack && npm run bundle-workflows",
         "bundle-workflows": "ts-node --transpile-only scripts/bundle-workflows.ts",
-        "predev": "free-port 3000 && npm run bundle-workflows",
+        "predev": "free-port ${API_PORT:?} && npm run bundle-workflows",
         "dev": "nest start --watch",
         "test": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
         "atoz": "npm run lint && npm test"

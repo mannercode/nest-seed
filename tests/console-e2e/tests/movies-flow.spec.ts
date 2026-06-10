@@ -1,10 +1,11 @@
 import { expect, request, test } from '@playwright/test'
 
+import { API_BASE_URL } from '../playwright.config'
+
 // 시드 admin으로 로그인해 새 영화를 등록하는 스모크 테스트.
 // admin은 API가 부팅 시 만들지 않으므로 테스트 시작 전에 root Basic Auth로 한 번 생성한다.
 // 이미 있으면 409가 떨어지는데 무해하게 넘긴다.
 
-const API_BASE_URL = 'http://localhost:3000'
 const ADMIN_EMAIL = 'admin@nest-seed.local'
 const ADMIN_PASSWORD = 'DevPass1!'
 const ADMIN_NAME = 'Admin'
