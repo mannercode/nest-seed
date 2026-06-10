@@ -1,5 +1,6 @@
 import {
     Body,
+    ConflictException,
     Controller,
     Delete,
     Get,
@@ -11,14 +12,23 @@ import {
     Query,
     UseGuards
 } from '@nestjs/common'
-import { MoviesService, SearchMoviesPageDto, UpsertMovieDto } from 'core'
+import {
+    MovieErrors,
+    MoviesService,
+    SearchMoviesPageDto,
+    ShowtimesService,
+    UpsertMovieDto
+} from 'core'
 import { CreateAssetDto } from 'infrastructure'
 import { AdminAuthGuard } from './guards'
 
 // 인가: 변경 핸들러(create/update/delete/asset 관리/publish)는 admin 전용, 조회는 공개로 둔다.
 @Controller('movies')
 export class MoviesHttpController {
-    constructor(private readonly moviesService: MoviesService) {}
+    constructor(
+        private readonly moviesService: MoviesService,
+        private readonly showtimesService: ShowtimesService
+    ) {}
 
     @Post()
     @UseGuards(AdminAuthGuard)
@@ -36,6 +46,11 @@ export class MoviesHttpController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @UseGuards(AdminAuthGuard)
     async delete(@Param('movieId') movieId: string) {
+        // 상영이 참조하는 영화를 지우면 홈·추천 조회가 dangling 참조로 통째로 실패한다.
+        // 참조가 남아 있는 동안은 삭제를 거부한다.
+        if (await this.showtimesService.existsByMovieIds([movieId])) {
+            throw new ConflictException(MovieErrors.DeleteBlockedByShowtimes(movieId))
+        }
         await this.moviesService.deleteMany([movieId])
     }
 

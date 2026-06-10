@@ -1,4 +1,5 @@
 export * from './dtos'
+export * from './errors'
 export * from './models'
 export * from './theaters.module'
 export * from './theaters.service'

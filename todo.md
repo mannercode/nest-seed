@@ -23,7 +23,7 @@
 
 ### 참조 무결성·수명주기
 
-- [ ] apps/api/src/services/core/movies/movies.service.ts:61 — 상영이 남은 영화·극장을 삭제하면 dangling 참조로 모든 사용자의 홈/추천 API가 통째로 실패(`getByIds`의 NotFoundException). 극장 삭제도 동일
+- [x] apps/api/src/services/core/movies/movies.service.ts:61 — 상영이 남은 영화·극장 삭제 시 dangling 참조 문제 → 게이트웨이 DELETE 핸들러가 ShowtimesService.existsByMovieIds/existsByTheaterIds로 확인 후 409(ERR_MOVIE_HAS_SHOWTIMES / ERR_THEATER_HAS_SHOWTIMES)로 거부하도록 수정 완료. 같은 계층(core)끼리는 참조 불가라 소비자(게이트웨이) 조합으로 구현(architecture.md 규칙 3). 테스트 2건 추가, 전체 스위트(265개) 통과
 - [ ] libs/common/src/temporal/temporal-worker.service.ts:38 — 워커가 이미 종료된 상태에서 onModuleDestroy의 `shutdown()`이 IllegalStateError를 던져 NativeConnection 정리가 건너뛰어짐. SIGTERM의 평범한 종료 경로에서도 발생
 
 ## 중간 (22)

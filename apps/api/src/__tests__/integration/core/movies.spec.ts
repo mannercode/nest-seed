@@ -4,6 +4,7 @@ import { MovieDefaults, MovieGenre, MovieRating, type MovieDto } from 'core'
 import {
     buildCreateMovieDto,
     createMovie,
+    createShowtimes,
     Errors,
     testAssets,
     uploadAndFinalizeAsset,
@@ -127,6 +128,15 @@ describe('MoviesService', () => {
             await fix.httpClient
                 .get(`/movies/${movie.id}`)
                 .notFound(Errors.Mongoose.MultipleDocumentsNotFound([movie.id]))
+        })
+
+        it('상영이 참조하는 영화는 삭제할 수 없다', async () => {
+            const movie = await createMovie(fix)
+            await createShowtimes(fix, [{ movieId: movie.id }])
+
+            await fix.httpClient
+                .delete(`/movies/${movie.id}`)
+                .conflict(Errors.Movies.DeleteBlockedByShowtimes(movie.id))
         })
 
         describe('이미지가 있는 영화를 삭제할 때', () => {

@@ -1,5 +1,6 @@
 import {
     Body,
+    ConflictException,
     Controller,
     Delete,
     Get,
@@ -11,13 +12,23 @@ import {
     Query,
     UseGuards
 } from '@nestjs/common'
-import { CreateTheaterDto, SearchTheatersPageDto, TheatersService, UpdateTheaterDto } from 'core'
+import {
+    CreateTheaterDto,
+    SearchTheatersPageDto,
+    ShowtimesService,
+    TheaterErrors,
+    TheatersService,
+    UpdateTheaterDto
+} from 'core'
 import { AdminAuthGuard } from './guards'
 
 // 인가: 변경 핸들러(create/update/delete)는 admin 전용, 조회(get/searchPage)는 공개로 둔다.
 @Controller('theaters')
 export class TheatersHttpController {
-    constructor(private readonly theatersService: TheatersService) {}
+    constructor(
+        private readonly theatersService: TheatersService,
+        private readonly showtimesService: ShowtimesService
+    ) {}
 
     @Post()
     @UseGuards(AdminAuthGuard)
@@ -29,6 +40,11 @@ export class TheatersHttpController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @UseGuards(AdminAuthGuard)
     async delete(@Param('theaterId') theaterId: string) {
+        // 상영이 참조하는 극장을 지우면 홈 조회가 dangling 참조로 통째로 실패한다.
+        // 참조가 남아 있는 동안은 삭제를 거부한다.
+        if (await this.showtimesService.existsByTheaterIds([theaterId])) {
+            throw new ConflictException(TheaterErrors.DeleteBlockedByShowtimes(theaterId))
+        }
         await this.theatersService.deleteMany([theaterId])
     }
 

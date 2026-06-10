@@ -22,6 +22,14 @@ export class ShowtimesService {
         return this.repository.allExist(showtimeIds)
     }
 
+    async existsByMovieIds(movieIds: string[]): Promise<boolean> {
+        return this.repository.existsByMovieIds(movieIds)
+    }
+
+    async existsByTheaterIds(theaterIds: string[]): Promise<boolean> {
+        return this.repository.existsByTheaterIds(theaterIds)
+    }
+
     async getMany(showtimeIds: string[]) {
         const showtimes = await this.repository.getByIds(showtimeIds)
 

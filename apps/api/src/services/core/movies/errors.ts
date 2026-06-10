@@ -9,6 +9,11 @@ export const MovieErrors = {
         message: 'The asset upload could not be validated.',
         assetId
     }),
+    DeleteBlockedByShowtimes: (movieId: string) => ({
+        code: 'ERR_MOVIE_HAS_SHOWTIMES',
+        message: 'The movie cannot be deleted while showtimes reference it.',
+        movieId
+    }),
     InvalidForPublish: (missingFields: string[]) => ({
         code: 'ERR_MOVIE_INVALID_FOR_PUBLISH',
         message: 'The movie is not ready to be published.',

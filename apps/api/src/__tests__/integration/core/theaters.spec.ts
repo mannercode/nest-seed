@@ -1,6 +1,12 @@
 import type { TheaterDto } from 'core'
 import { nullObjectId } from '@mannercode/testing'
-import { buildCreateTheaterDto, createTheater, Errors, type AppTestContext } from '../helpers'
+import {
+    buildCreateTheaterDto,
+    createShowtimes,
+    createTheater,
+    Errors,
+    type AppTestContext
+} from '../helpers'
 
 describe('TheatersService', () => {
     let fix: AppTestContext
@@ -93,6 +99,15 @@ describe('TheatersService', () => {
             await fix.httpClient
                 .get(`/theaters/${theater.id}`)
                 .notFound(Errors.Mongoose.MultipleDocumentsNotFound([theater.id]))
+        })
+
+        it('상영이 참조하는 극장은 삭제할 수 없다', async () => {
+            const theater = await createTheater(fix)
+            await createShowtimes(fix, [{ theaterId: theater.id }])
+
+            await fix.httpClient
+                .delete(`/theaters/${theater.id}`)
+                .conflict(Errors.Theaters.DeleteBlockedByShowtimes(theater.id))
         })
 
         it('극장이 없어도 204를 반환한다', async () => {

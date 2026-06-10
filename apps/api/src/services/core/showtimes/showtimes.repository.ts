@@ -40,6 +40,16 @@ export class ShowtimesRepository extends CrudRepository<Showtime> {
         await this.saveMany(showtimes)
     }
 
+    async existsByMovieIds(movieIds: string[]): Promise<boolean> {
+        const found = await this.model.exists({ movieId: { $in: movieIds } }).lean()
+        return !!found
+    }
+
+    async existsByTheaterIds(theaterIds: string[]): Promise<boolean> {
+        const found = await this.model.exists({ theaterId: { $in: theaterIds } }).lean()
+        return !!found
+    }
+
     async search(searchDto: SearchShowtimesDto) {
         const query = this.buildQuery(searchDto)
 
