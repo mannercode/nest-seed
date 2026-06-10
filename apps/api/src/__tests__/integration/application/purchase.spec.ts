@@ -114,6 +114,16 @@ describe('PurchaseService', () => {
                     )
             })
 
+            it('금액이 서버 계산과 다르면 400을 반환한다', async () => {
+                const createDto = buildCreatePurchaseDto(heldTickets, { totalPrice: 1 })
+
+                await fix.httpClient
+                    .post('/purchases')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body(createDto)
+                    .badRequest(Errors.Purchase.TotalPriceMismatch(expect.any(Number), 1))
+            })
+
             describe('completePurchase 중 내부 오류가 날 때', () => {
                 // `completePurchase`가 처음 기록하는 로그를 기준으로 예외를 던진다.
                 // 그러면 `PurchaseService`의 catch 블록이 실행되어 결제 취소와 구매 기록 삭제가 실행된다.

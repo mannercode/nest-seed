@@ -129,7 +129,8 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
     for (let g = 0; g < USER_GROUPS; g++) {
         const cust = users[g]
         const purchaseItems = groups[g].map((id) => ({ itemId: id, type: 'tickets' }))
-        const totalPrice = groups[g].length * 1000
+        // 서버가 티켓 수 × TICKET_PRICE(기본 10000)로 합산을 검증한다.
+        const totalPrice = groups[g].length * 10000
         for (let c = 0; c < PURCHASES_PER_GROUP; c++) {
             attempts.push(
                 request('POST', '/purchases', {

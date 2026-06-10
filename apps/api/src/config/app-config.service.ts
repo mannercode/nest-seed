@@ -61,6 +61,7 @@ export class AppConfigService extends BaseConfigService {
         ASSET_DOWNLOAD_EXPIRES_SEC: Joi.number().default(60 * 60),
         TICKET_HOLD_DURATION_MS: Joi.number().default(10 * 60 * 1000),
         TICKET_MAX_PER_PURCHASE: Joi.number().default(10),
+        TICKET_PRICE: Joi.number().default(10_000),
         TICKET_PURCHASE_CUTOFF_MINUTES: Joi.number().default(30)
     })
 
@@ -160,6 +161,7 @@ export class AppConfigService extends BaseConfigService {
         return {
             holdDurationInMs: this.getNumber('TICKET_HOLD_DURATION_MS'),
             maxPerPurchase: this.getNumber('TICKET_MAX_PER_PURCHASE'),
+            price: this.getNumber('TICKET_PRICE'),
             purchaseCutoffMinutes: this.getNumber('TICKET_PURCHASE_CUTOFF_MINUTES')
         }
     }

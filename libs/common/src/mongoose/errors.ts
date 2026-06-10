@@ -8,6 +8,11 @@ export const MongooseErrors = {
         code: 'ERR_MONGOOSE_FILTERS_REQUIRED',
         message: 'At least one filter condition must be provided'
     }),
+    InvalidObjectId: (invalidId: string) => ({
+        code: 'ERR_MONGOOSE_INVALID_OBJECT_ID',
+        message: 'The provided id is not a valid ObjectId',
+        invalidId
+    }),
     MaxSizeExceeded: (maxSize: number, size: number) => ({
         code: 'ERR_MONGOOSE_MAX_SIZE_EXCEEDED',
         message: "The 'size' parameter exceeds the maximum allowed value",

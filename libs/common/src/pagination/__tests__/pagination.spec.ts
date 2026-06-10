@@ -68,6 +68,18 @@ describe('PaginationDto', () => {
         expect((dto as any).orderby).toEqual(orderby)
     })
 
+    it('orderby가 {name, direction} 모양이 아닌 객체이면 BadRequestException을 던진다', () => {
+        expect(() => plainToInstance(PaginationDto, { orderby: { evil: 'x' } as any })).toThrow(
+            BadRequestException
+        )
+    })
+
+    it('orderby가 배열이면 BadRequestException을 던진다', () => {
+        expect(() =>
+            plainToInstance(PaginationDto, { orderby: ['name:asc', 'name:desc'] as any })
+        ).toThrow(BadRequestException)
+    })
+
     it('orderby가 null이면 그대로 유지한다', () => {
         const dto = plainToInstance(PaginationDto, { orderby: null })
 

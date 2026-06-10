@@ -48,11 +48,11 @@
 
 ### 입력 검증·API 계약
 
-- [ ] apps/api/src/services/application/purchase/purchase.service.ts:56 — 결제 금액(totalPrice)이 클라이언트 입력 그대로 사용되고 서버 측 가격 검증이 없음
-- [ ] apps/api/src/services/application/purchase/dtos/create-purchase.dto.ts:9 — purchaseItems의 @IsNotEmpty()가 빈 배열을 통과시켜 아이템 0개 구매가 끝까지 성공
-- [ ] libs/common/src/mongoose/mongoose.util.ts:7 — objectId()가 잘못된 형식의 id에 BSONError를 던져 클라이언트 입력 오류가 500으로 응답
-- [ ] libs/common/src/pagination/pagination.ts:40 — orderby의 객체·배열 입력이 검증을 건너뛰어 500 유발
-- [ ] libs/common/src/utils/http.ts:12 — buildContentDisposition가 filename\*의 공백을 +로 치환해 RFC 5987 위반
+- [x] apps/api/src/services/application/purchase/purchase.service.ts:56 — 가격 정의처를 서버로 이동: 도메인 정책 `TICKET_PRICE`(config 기본 10000)로 합산 검증, 불일치 시 400. 테스트·race 스크립트 동기화
+- [x] apps/api/src/services/application/purchase/dtos/create-purchase.dto.ts:9 — @IsNotEmpty → @ArrayNotEmpty로 빈 배열 거절
+- [x] libs/common/src/mongoose/mongoose.util.ts:7 — objectId()가 형식 검증 후 400(ERR_MONGOOSE_INVALID_OBJECT_ID)을 던지도록 수정
+- [x] libs/common/src/pagination/pagination.ts:40 — orderby 객체 입력의 {name, direction} 모양 검증, 배열·임의 객체는 400
+- [x] libs/common/src/utils/http.ts:12 — filename\*의 공백을 RFC 5987대로 %20으로 유지(+ 치환 제거), 테스트 3건 갱신
 
 ### 숨은 설정 결합
 

@@ -15,7 +15,8 @@ export function buildCreatePurchaseDto(
 ) {
     const purchaseItems = tickets.map(({ id }) => ({ itemId: id, type: PurchaseItemType.Tickets }))
 
-    const createDto = { purchaseItems, totalPrice: 1, ...overrides }
+    // 서버는 티켓 수 × TICKET_PRICE(기본 10000)로 합산을 검증한다.
+    const createDto = { purchaseItems, totalPrice: purchaseItems.length * 10_000, ...overrides }
     return createDto
 }
 

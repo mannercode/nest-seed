@@ -16,7 +16,7 @@ describe('HttpUtil', () => {
             const contentDisposition = HttpUtil.buildContentDisposition(filename)
 
             expect(contentDisposition).toEqual(
-                `attachment; filename="report (final)'v1-.txt"; filename*=UTF-8''report+%28final%29%27v1%2A.txt`
+                `attachment; filename="report (final)'v1-.txt"; filename*=UTF-8''report%20%28final%29%27v1%2A.txt`
             )
         })
 
@@ -25,7 +25,7 @@ describe('HttpUtil', () => {
             const contentDisposition = HttpUtil.buildContentDisposition(filename)
 
             expect(contentDisposition).toEqual(
-                `attachment; filename="__ ___(__).pdf"; filename*=UTF-8''%ED%95%9C%EA%B8%80+%ED%8C%8C%EC%9D%BC%EB%AA%85%28%EC%B5%9C%EC%A2%85%29.pdf`
+                `attachment; filename="__ ___(__).pdf"; filename*=UTF-8''%ED%95%9C%EA%B8%80%20%ED%8C%8C%EC%9D%BC%EB%AA%85%28%EC%B5%9C%EC%A2%85%29.pdf`
             )
         })
 
@@ -38,12 +38,12 @@ describe('HttpUtil', () => {
             )
         })
 
-        it('공백은 filename*에서 +로 인코딩한다', () => {
+        it('공백은 filename*에서 %20으로 인코딩한다 (RFC 5987)', () => {
             const filename = 'my file name.txt'
             const contentDisposition = HttpUtil.buildContentDisposition(filename)
 
             expect(contentDisposition).toEqual(
-                `attachment; filename="my file name.txt"; filename*=UTF-8''my+file+name.txt`
+                `attachment; filename="my file name.txt"; filename*=UTF-8''my%20file%20name.txt`
             )
         })
 

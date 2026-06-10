@@ -68,6 +68,7 @@ export class TicketPurchaseService {
         const showtimes = await this.getShowtimes(ticketItems)
 
         this.validateTicketCount(ticketItems)
+        this.validateTotalPrice(createDto, ticketItems)
         this.validatePurchaseTime(showtimes)
         await this.validateHeldTickets(userId, showtimes, ticketItems)
     }
@@ -129,6 +130,18 @@ export class TicketPurchaseService {
 
         if (maxPerPurchase < ticketItems.length) {
             throw new BadRequestException(PurchaseErrors.LimitExceeded(maxPerPurchase))
+        }
+    }
+
+    private validateTotalPrice(createDto: CreatePurchaseDto, ticketItems: PurchaseItemDto[]) {
+        // 가격의 정의처는 서버다. 시드는 좌석 등급 없는 단일 정가(`TICKET_PRICE`)로 합산을 검증해,
+        // 클라이언트가 보낸 금액이 그대로 결제되는 일을 막는다.
+        const expectedPrice = ticketItems.length * this.config.ticket.price
+
+        if (createDto.totalPrice !== expectedPrice) {
+            throw new BadRequestException(
+                PurchaseErrors.TotalPriceMismatch(expectedPrice, createDto.totalPrice)
+            )
         }
     }
 }

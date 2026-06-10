@@ -38,7 +38,17 @@ export class PaginationDto {
         }
 
         if (typeof value === 'object') {
-            return value
+            // RPC 경로가 넘기는 {name, direction} 객체만 허용한다.
+            // HTTP 쿼리의 `orderby[a]=b` 같은 임의 객체·배열이 그대로 통과하면 정렬 단계에서 500이 된다.
+            const { direction, name } = value as Partial<OrderBy>
+            if (
+                Array.isArray(value) ||
+                typeof name !== 'string' ||
+                !Object.values(OrderDirection).includes(direction as OrderDirection)
+            ) {
+                throw new BadRequestException(PaginationErrors.FormatInvalid())
+            }
+            return { direction, name }
         }
 
         if (typeof value !== 'string') {

@@ -4,7 +4,13 @@ import { Assume, escapeRegExp, uniq } from '../utils'
 import { MongooseErrors } from './errors'
 
 export const newObjectIdString = () => new Types.ObjectId().toString()
-export const objectId = (id: string) => new Types.ObjectId(id)
+export const objectId = (id: string) => {
+    // 잘못된 형식의 id는 BSONError(500)가 아니라 입력 오류(400)로 드러낸다.
+    if (!Types.ObjectId.isValid(id)) {
+        throw new BadRequestException(MongooseErrors.InvalidObjectId(id))
+    }
+    return new Types.ObjectId(id)
+}
 export const objectIds = (ids: string[]) => ids.map((id) => objectId(id))
 
 /**

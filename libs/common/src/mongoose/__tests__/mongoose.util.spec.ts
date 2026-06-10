@@ -32,12 +32,11 @@ describe('objectId', () => {
         expect(result.toString()).toBe(idString)
     })
 
-    it('유효하지 않은 문자열이면 예외를 던진다', () => {
+    it('유효하지 않은 문자열이면 400 BadRequestException을 던진다', () => {
         const invalidId = 'invalid-id'
 
-        expect(() => objectId(invalidId)).toThrow(
-            'input must be a 24 character hex string, 12 byte Uint8Array, or an integer'
-        )
+        expect(() => objectId(invalidId)).toThrow(BadRequestException)
+        expect(() => objectId(invalidId)).toThrow('not a valid ObjectId')
     })
 })
 
@@ -56,12 +55,10 @@ describe('objectIds', () => {
         expect(result).toEqual([])
     })
 
-    it('id 중 하나라도 유효하지 않으면 예외를 던진다', () => {
+    it('id 중 하나라도 유효하지 않으면 400 BadRequestException을 던진다', () => {
         const idStrings = ['507f1f77bcf86cd799439011', 'invalid-id']
 
-        expect(() => objectIds(idStrings)).toThrow(
-            'input must be a 24 character hex string, 12 byte Uint8Array, or an integer'
-        )
+        expect(() => objectIds(idStrings)).toThrow(BadRequestException)
     })
 })
 
