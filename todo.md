@@ -92,15 +92,15 @@
 - [ ] apps/api/src/services/infrastructure/assets/assets.service.ts:136 — checksum을 필수로 받고 저장·노출하지만 업로드 결과와 대조하지 않음
 - [ ] apps/api/src/config/app-config.service.ts:99 — HTTP_PAGINATION_DEFAULT_SIZE가 기본값이 아니라 페이지 크기 상한으로도 동작
 - [ ] apps/api/src/config/app-config.service.ts:9 — JWT·root 시크릿에 최소 길이 검증이 없음
-- [ ] apps/api/src/services/core/users/users.repository.ts:37 — existsByEmail은 어디서도 호출되지 않는 죽은 코드
-- [ ] apps/api/src/services/application/showtime-creation/internal/types.ts:15 — ShowtimeCreationJobData는 BullMQ 시절 잔재 죽은 코드
+- [x] apps/api/src/services/core/users/users.repository.ts:37 — existsByEmail 죽은 코드 제거 완료(자기 자신만 검증하던 테스트 포함)
+- [x] apps/api/src/services/application/showtime-creation/internal/types.ts:15 — ShowtimeCreationJobData 제거 완료
 
 ### 통합 테스트 (apps/api)
 
 - [ ] `apps/api/src/__tests__/integration/application/showtime-creation.utils.ts:11` — waitForCompletion의 abort가 SSE 스트림이 아니라 마지막 요청(POST)을 겨냥
 - [ ] `apps/api/src/__tests__/integration/core/users.spec.ts:96` — "ConflictException으로 바꾸지 않고 그대로 던진다" 테스트가 변환 여부를 전혀 검증하지 못함
 - [ ] `apps/api/src/__tests__/integration/core/admin-management.spec.ts:105` — RootAuthGuard username 검증 테스트가 dev용 ROOT_PASSWORD 값에 암묵적 결합
-- [ ] `apps/api/src/__tests__/integration/helpers/create-app-test-context.ts:69` — createConfigServiceMock은 죽은 코드
+- [x] `apps/api/src/__tests__/integration/helpers/create-app-test-context.ts:69` — createConfigServiceMock 제거 완료
 - [ ] `apps/api/src/__tests__/integration/application/purchase.utils.ts:47` — holdTickets가 반환하는 heldTickets(4장)와 실제 선점 범위(10장 전부)가 다름
 
 ### 테스트 라이브러리·헬퍼
@@ -108,18 +108,18 @@
 - [ ] libs/testing/src/http.test-client.ts:161 — sse: 한 청크에 이벤트가 여러 개 오면 마지막만 전달되고 앞 이벤트 소실
 - [ ] libs/testing/src/http.test-client.ts:21 — quoteUnsafeIntegers가 문자열 리터럴 내부의 긴 숫자도 quoting해 유효한 JSON 파싱이 깨짐
 - [ ] libs/testing/src/http.test-client.ts:174 — sse 'end' 핸들러: Node 스트림 'end' 이벤트는 인자가 없어 streamError 분기가 절대 실행 안 됨
-- [ ] libs/testing/src/create-test-context.ts:44 — ignoreProviders: 미사용 죽은 옵션이며 구현도 imported 모듈 바인딩을 대체하지 못함
-- [ ] libs/testing/src/utils.ts:25 — createDummyFile: 자체 단위 테스트 외 사용처 없는 죽은 export
-- [ ] `libs/testing/src/__tests__/http.test-client.fixture.ts:61` — 어떤 테스트도 호출하지 않는 엔드포인트 다수, sse 등 핵심 기능이 자체 테스트로 미검증
+- [x] libs/testing/src/create-test-context.ts:44 — ignoreProviders 옵션·NullProvider 제거 완료
+- [x] libs/testing/src/utils.ts:25 — createDummyFile 제거 완료(자체 테스트 포함)
+- [x] `libs/testing/src/__tests__/http.test-client.fixture.ts:61` — 미사용 HTTP 엔드포인트 6종(items×3·search·echo-headers·payload-too-large) 제거 완료. SSE 픽스처(events 등)는 sse 버그 수정·테스트 추가 시 쓰일 발판이라 유지 — sse 미검증 문제는 http.test-client의 sse 버그 항목들과 함께 처리
 - [ ] tools/jest-helpers/index.js:104 — setupJestLifecycle: beforeAll 실패 시 afterAll이 undefined 핸들에 close/destroy를 호출해 원인 파악 방해
 - [x] apps/api/webpack.config.js:28 — externals 주석이 존재한 적 없는 payloadConverterPath를 근거로 설명. 조사 결과 temporal-sandbox는 워크플로 파일에서만 import되고 워크플로는 bundleWorkflowCode가 따로 번들하므로 앱 번들 그래프에 들어오지 않음(산출물 참조 0건) → 죽은 external 규칙째 제거 완료, 빌드 검증
-- [ ] libs/temporal-sandbox/package.json:20 — 사용하지 않는 @mannercode/dev-tools devDependency
+- [x] libs/temporal-sandbox/package.json:20 — 미사용 @mannercode/dev-tools devDependency 제거 완료
 
 ### 데모 앱 (console·user-app)
 
 - [ ] apps/user-app/src/app/page.tsx:34 — 로그인 후 "회원님을 위한 추천"을 표시하지만 토큰을 보내지 않아 개인화 추천이 절대 동작하지 않음
-- [ ] apps/console/src/app/theaters/page.tsx:12 — /theaters 극장 목록이 어떤 내비게이션에서도 도달 불가한 고아 페이지
-- [ ] apps/console/src/lib/session.ts:20 — readEmail이 미사용 죽은 export(EMAIL_KEY 저장도 쓰기 전용)
+- [x] apps/console/src/app/theaters/page.tsx:12 — 홈에 '극장 목록' 링크를 추가해 도달 가능하게 함(/users 목록 링크와 같은 패턴)
+- [x] apps/console/src/lib/session.ts:20 — readEmail·EMAIL_KEY 제거 완료(saveSession 시그니처도 토큰만 받게 축소)
 - [ ] apps/console/src/app/login/page.tsx:43 — "시드된 1명으로만 동작" 문구가 실제 동작(부팅 시 admin 미생성)과 불일치
 
 ### 테스트 스위트 (perf·race·e2e)
@@ -139,8 +139,8 @@
 - [ ] .env.infra:1 — minio/minio:latest, amazon/aws-cli(무태그), nginx:alpine만 버전 미고정
 - [x] .env.infra:29,33 — NATS_MONITORING_PORT·TEMPORAL_DB_PORT가 어디서도 읽히지 않는 죽은 변수. 실제 값은 infra/compose.nats.yml(8222 하드코딩 3곳)과 infra/temporal/compose.temporal.yml:36,53(DB_PORT '5432')에 박혀 있어 .env.infra 값을 바꿔도 효과 없음 → 제거 완료(서비스 내부 전용 값이라 env에 둘 이유 없음)
 - [ ] deploy/deps.Dockerfile:10 — apps/user-app/package.json을 복사하지 않아 주석의 전제와 모순
-- [ ] eslint.config.node.js:139 — export 4종(tseslint, basePlugins, baseRules, escapeForRegex)이 미사용
-- [ ] package-lock.json:8 — 미커밋 1줄 변경은 license 필드 동기화로 무해, 커밋할 가치 있음
+- [x] eslint.config.node.js:139 — 미사용 export 4종(tseslint, basePlugins, baseRules, escapeForRegex)을 내부 전용으로 격하 완료
+- [x] package-lock.json:8 — license 동기화 1줄, temporal-sandbox 의존성 정리와 함께 커밋 완료
 
 ### 문서 표류
 

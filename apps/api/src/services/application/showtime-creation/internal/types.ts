@@ -1,5 +1,4 @@
 import type { ShowtimeDto } from 'core'
-import type { BulkCreateShowtimesDto } from '../dtos'
 
 export const ShowtimeCreationStatus = {
     Error: 'error',
@@ -11,11 +10,6 @@ export const ShowtimeCreationStatus = {
 
 export type ShowtimeCreationStatus =
     (typeof ShowtimeCreationStatus)[keyof typeof ShowtimeCreationStatus]
-
-export class ShowtimeCreationJobData {
-    createDto: BulkCreateShowtimesDto
-    sagaId: string
-}
 
 export type ShowtimeCreationEvent =
     | { sagaId: string; status: typeof ShowtimeCreationStatus.Error; message: string }

@@ -1,20 +1,5 @@
 import type { Request, Response } from 'express'
-import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    Header,
-    Headers,
-    Param,
-    Patch,
-    Post,
-    Put,
-    Query,
-    Req,
-    Res,
-    Sse
-} from '@nestjs/common'
+import { Body, Controller, Get, Header, Headers, Post, Req, Res, Sse } from '@nestjs/common'
 import { Observable } from 'rxjs'
 import { HttpTestClient } from '../http.test-client'
 import { createHttpTestContext } from '../index'
@@ -56,36 +41,6 @@ class HttpTestClientController {
             )
             req.on('error', reject)
         })
-    }
-
-    @Delete('items/:id')
-    deleteItem(@Param('id') id: string) {
-        return { deleted: id }
-    }
-
-    @Patch('items/:id')
-    patchItem(@Param('id') id: string, @Body() body: any) {
-        return { id, ...body }
-    }
-
-    @Put('items/:id')
-    putItem(@Param('id') id: string, @Body() body: any) {
-        return { id, ...body }
-    }
-
-    @Get('search')
-    search(@Query() query: Record<string, string>) {
-        return { query }
-    }
-
-    @Get('echo-headers')
-    echoHeaders(@Headers('x-custom') custom: string) {
-        return { custom }
-    }
-
-    @Get('payload-too-large')
-    payloadTooLarge(@Res() res: Response) {
-        res.status(413).json({ error: 'too large' })
     }
 
     @Sse('events')

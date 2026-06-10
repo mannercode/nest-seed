@@ -1,19 +1,17 @@
-import {
+import type {
     CanActivate,
     ExecutionContext,
     INestApplication,
-    Injectable,
     ModuleMetadata,
     Type
 } from '@nestjs/common'
-import { Test, TestingModule } from '@nestjs/testing'
-import { Server } from 'http'
+import type { Server } from 'http'
+import { Test, type TestingModule } from '@nestjs/testing'
 import { isDebuggingEnabled } from './utils'
 
 export type ModuleMetadataEx = ModuleMetadata & {
     configureApp?: (app: INestApplication<Server>) => Promise<void>
     ignoreGuards?: Type<CanActivate>[]
-    ignoreProviders?: Type[]
     overrideProviders?: { original: Type; replacement: any }[]
 }
 
@@ -29,23 +27,13 @@ class NullGuard implements CanActivate {
     }
 }
 
-@Injectable()
-class NullProvider {}
-
 export async function createTestContext({
     configureApp,
     ignoreGuards,
-    ignoreProviders,
     overrideProviders,
     ...metadata
 }: ModuleMetadataEx): Promise<TestContext> {
-    const providers = [
-        ...(metadata.providers ?? []),
-        ...(ignoreProviders?.map((provider) => ({ provide: provider, useClass: NullProvider })) ??
-            [])
-    ]
-
-    const builder = Test.createTestingModule({ ...metadata, providers })
+    const builder = Test.createTestingModule(metadata)
 
     ignoreGuards?.forEach((guard) => {
         builder.overrideGuard(guard).useClass(NullGuard)

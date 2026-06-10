@@ -34,11 +34,6 @@ export class UsersRepository extends CrudRepository<User> {
         return user.toJSON()
     }
 
-    async existsByEmail(email: string): Promise<boolean> {
-        const result = await this.model.exists({ email: { $eq: email } }).lean()
-        return !!result
-    }
-
     async findByEmailWithPassword(email: string) {
         // 로그인 경로이다.
         // 뒤이은 인증 처리에서 `user.id`를 그대로 써야 하므로 `leanOneToPublic`으로 ObjectId를 문자열로 바꿔 둔다.

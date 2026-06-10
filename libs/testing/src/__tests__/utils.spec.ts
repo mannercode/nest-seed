@@ -1,28 +1,4 @@
-import fs from 'fs/promises'
-import { tmpdir } from 'os'
-import path from 'path'
-import { createDummyFile, step } from '../utils'
-
-describe('createDummyFile', () => {
-    let tempDir: string
-    let testFilePath: string
-
-    beforeEach(async () => {
-        tempDir = await fs.mkdtemp(`${tmpdir()}${path.sep}`)
-        testFilePath = path.join(tempDir, 'test-file.txt')
-    })
-
-    afterEach(async () => {
-        await fs.rm(tempDir, { force: true, recursive: true })
-    })
-
-    it('지정한 크기의 파일을 생성한다', async () => {
-        const sizeInBytes = 500 * 1024
-        await createDummyFile(testFilePath, sizeInBytes)
-        const stats = await fs.stat(testFilePath)
-        expect(stats.size).toBe(sizeInBytes)
-    })
-})
+import { step } from '../utils'
 
 describe('step', () => {
     it('콜백을 실행한다', async () => {

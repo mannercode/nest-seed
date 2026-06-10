@@ -10,7 +10,6 @@ import {
     type HttpTestContext,
     type ModuleMetadataEx
 } from '@mannercode/testing'
-import { ConfigService } from '@nestjs/config'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import compression from 'compression'
 import { AppConfigService, NATS_CONNECTION_NAME, REDIS_CONNECTION_NAME } from 'config'
@@ -56,28 +55,6 @@ export async function createAppTestContext(metadata: ModuleMetadataEx = {}) {
 }
 
 export type AppTestContext = Awaited<ReturnType<typeof createAppTestContext>>
-
-/**
- * 설정 일부만 바꾸는 mock ConfigService를 만든다.
- *
- * @example
- * const configMock = createConfigServiceMock({ S3_ENDPOINT: s3.endpoint })
- * const ctx = await createAppTestContext({
- *     overrideProviders: [configMock]
- * })
- */
-export function createConfigServiceMock(mockValues: Record<string, any>) {
-    const realConfigService = new ConfigService()
-
-    return {
-        original: ConfigService,
-        replacement: {
-            get: jest.fn((key: string) =>
-                key in mockValues ? mockValues[key] : realConfigService.get(key)
-            )
-        }
-    }
-}
 
 async function stopAllCronJobs(ctx: HttpTestContext) {
     const scheduler = ctx.module.get(SchedulerRegistry)

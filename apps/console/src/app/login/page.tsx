@@ -22,7 +22,7 @@ export default function LoginPage() {
             const tokens = await api.post<LoginResponse>('/admins/login', {
                 body: { email, password }
             })
-            saveSession(tokens.accessToken, email)
+            saveSession(tokens.accessToken)
             router.push('/movies/new')
         } catch (err) {
             const message = err instanceof ApiError ? err.message : '로그인 실패'

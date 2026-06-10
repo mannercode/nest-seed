@@ -136,13 +136,4 @@ function createBaseConfigs({ tsconfigRootDir, srcGlob = 'src/**', parserOptions 
     ]
 }
 
-module.exports = {
-    tseslint,
-    baseGlobals,
-    basePlugins,
-    baseRules,
-    barrelImportPatterns,
-    nodeBuiltinModulePattern,
-    escapeForRegex,
-    createBaseConfigs
-}
+module.exports = { baseGlobals, barrelImportPatterns, nodeBuiltinModulePattern, createBaseConfigs }

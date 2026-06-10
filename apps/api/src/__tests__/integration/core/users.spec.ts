@@ -287,23 +287,4 @@ describe('UsersService', () => {
                 .badRequest(Errors.RequestValidation.Failed(expect.any(Array)))
         })
     })
-
-    describe('UsersRepository.existsByEmail', () => {
-        it('같은 이메일의 고객이 있으면 true를 반환한다', async () => {
-            const email = 'exists-check@mail.com'
-            await createUser(fix, { email })
-
-            const { UsersRepository } = await import('core')
-            const repo = fix.module.get(UsersRepository)
-
-            await expect(repo.existsByEmail(email)).resolves.toBe(true)
-        })
-
-        it('같은 이메일의 고객이 없으면 false를 반환한다', async () => {
-            const { UsersRepository } = await import('core')
-            const repo = fix.module.get(UsersRepository)
-
-            await expect(repo.existsByEmail('does-not-exist@mail.com')).resolves.toBe(false)
-        })
-    })
 })
