@@ -16,7 +16,7 @@
 
 ### 티켓 판매 흐름
 
-- [ ] apps/api/src/services/application/booking/booking.service.ts:40 — 티켓 선점에 존재·상영 소속·수량 검증이 없어 한 사용자가 상영 전체 좌석을 무제한 선점 가능
+- [x] apps/api/src/services/application/booking/booking.service.ts:40 — 티켓 선점 검증 추가 완료: 수량은 구매 상한(maxPerPurchase) 적용(400), 존재하지 않는 티켓은 404, 다른 상영의 티켓은 400. 테스트 3건 추가
 - [ ] apps/api/src/services/application/purchase/purchase.service.ts:31 — 구매 분산 락이 동일 티켓 묶음만 직렬화해, 겹치는 묶음의 동시 결제가 이중 판매·타 구매 롤백으로 이어질 수 있음
 - [ ] apps/api/src/services/application/purchase/internal/ticket-purchase.service.ts:52 — rollbackPurchase가 "내가 전이시킨 티켓"이 아니라 "현재 Sold인 티켓"을 복구해, 실패한 구매의 보상이 다른 구매가 정당하게 판매한 좌석을 되돌림. 위 락 범위 문제와 같은 구매 흐름이므로 묶어서 수정 권장
 - [ ] apps/api/src/services/application/showtime-creation/internal/showtime-bulk-validator.service.ts:53 — 상영 일괄 생성 검증이 요청 내부의 startTimes 중복·상호 겹침을 검사하지 않아 같은 극장에 겹치는 상영과 중복 좌석 티켓 생성

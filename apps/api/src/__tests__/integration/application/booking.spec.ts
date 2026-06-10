@@ -143,6 +143,49 @@ describe('BookingService', () => {
                 .body({ ticketIds })
                 .conflict(Errors.Booking.TicketsAlreadyHeld())
         })
+
+        it('존재하지 않는 티켓이 섞여 있으면 404를 반환한다', async () => {
+            const resources = await createAllResources(fix, locations, startTimes)
+            const showtimeId = ensure(resources.showtimes[0]).id
+            const ticketIds = [...pickIds(resources.tickets.slice(0, 2)), nullObjectId]
+
+            await fix.httpClient
+                .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
+                .headers({ Authorization: `Bearer ${resources.accessToken}` })
+                .body({ ticketIds })
+                .notFound(Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]))
+        })
+
+        it('다른 상영의 티켓이 섞여 있으면 400을 반환한다', async () => {
+            const resources = await createAllResources(fix, locations, [
+                new Date('2999-01-01T12:00'),
+                new Date('2999-01-01T15:00')
+            ])
+            const showtimeId = ensure(resources.showtimes[0]).id
+            const ownTicket = ensure(resources.tickets.find((t) => t.showtimeId === showtimeId))
+            const otherTicket = ensure(resources.tickets.find((t) => t.showtimeId !== showtimeId))
+
+            await fix.httpClient
+                .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
+                .headers({ Authorization: `Bearer ${resources.accessToken}` })
+                .body({ ticketIds: [ownTicket.id, otherTicket.id] })
+                .badRequest(Errors.Booking.TicketsNotInShowtime([otherTicket.id], showtimeId))
+        })
+
+        it('한 번에 보유할 수 있는 수량을 넘으면 400을 반환한다', async () => {
+            const resources = await createAllResources(fix, locations, startTimes)
+            const showtimeId = ensure(resources.showtimes[0]).id
+
+            const { AppConfigService } = await import('config')
+            const max = fix.module.get(AppConfigService).ticket.maxPerPurchase
+            const ticketIds = Array.from({ length: max + 1 }, (_, i) => oid(0x100 + i))
+
+            await fix.httpClient
+                .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
+                .headers({ Authorization: `Bearer ${resources.accessToken}` })
+                .body({ ticketIds })
+                .badRequest(Errors.Booking.HoldLimitExceeded(max))
+        })
     })
 
     describe('GET /booking/showtimes/:id/tickets', () => {

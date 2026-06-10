@@ -1,5 +1,12 @@
 import { pickIds } from '@mannercode/common'
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import {
+    BadRequestException,
+    ConflictException,
+    Injectable,
+    Logger,
+    NotFoundException
+} from '@nestjs/common'
+import { AppConfigService } from 'config'
 import {
     HoldTicketsDto,
     ShowtimesService,
@@ -20,6 +27,7 @@ export class BookingService {
     private readonly logger = new Logger(BookingService.name)
 
     constructor(
+        private readonly config: AppConfigService,
         private readonly showtimesService: ShowtimesService,
         private readonly theatersService: TheatersService,
         private readonly ticketHoldingService: TicketHoldingService,
@@ -39,6 +47,22 @@ export class BookingService {
 
     async holdTickets(dto: HoldTicketsDto): Promise<void> {
         this.logger.log('holdTickets', { userId: dto.userId, ticketCount: dto.ticketIds.length })
+
+        // 보유는 구매의 준비 단계이므로 구매 상한(maxPerPurchase)을 그대로 적용한다.
+        const maxPerPurchase = this.config.ticket.maxPerPurchase
+        if (maxPerPurchase < dto.ticketIds.length) {
+            throw new BadRequestException(BookingErrors.HoldLimitExceeded(maxPerPurchase))
+        }
+
+        // 존재·상영 소속을 확인하지 않으면 임의 id로 다른 상영의 좌석까지 선점할 수 있다.
+        // 존재하지 않는 티켓이 섞여 있으면 getMany가 404를 던진다.
+        const tickets = await this.ticketsService.getMany(dto.ticketIds)
+        const outOfShowtime = tickets.filter((ticket) => ticket.showtimeId !== dto.showtimeId)
+        if (0 < outOfShowtime.length) {
+            throw new BadRequestException(
+                BookingErrors.TicketsNotInShowtime(pickIds(outOfShowtime), dto.showtimeId)
+            )
+        }
 
         const success = await this.ticketHoldingService.holdTickets(dto)
 
