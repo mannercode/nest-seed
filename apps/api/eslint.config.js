@@ -10,7 +10,16 @@ const {
     createBaseConfigs
 } = require('../../eslint.config.node')
 
-const internalAliasPattern = '^(?:application|gateway|core|infrastructure|config|view)$'
+// SoLA 레이어. 앞이 상위 레이어 — 각 레이어는 자기보다 뒤에 오는 레이어만 import할 수 있다.
+const layers = ['gateway', 'view', 'application', 'core', 'infrastructure']
+// 도메인 폴더로 분할된 레이어. 같은 레이어 안에서는 같은 도메인만 참조할 수 있다.
+const domainLayers = ['application', 'core', 'infrastructure']
+
+// no-restricted-imports의 group 패턴은 gitignore 방식이라 슬래시 없는 패턴이 경로 어느 깊이에서나 매치된다.
+// `config` 패턴이 `@nestjs/config`까지 잡는 오탐이 생기므로, alias 제한은 시작을 고정한 regex로 선언한다.
+const aliasRegex = (...aliases) => `^(?:${aliases.join('|')})(/.*)?$`
+
+const internalAliasPattern = aliasRegex(...layers, 'config')
 const dependencyIgnorePatterns = [
     '^\\.',
     nodeBuiltinModulePattern,
@@ -23,6 +32,29 @@ const sourceDependencyOptions = {
     ignore: dependencyIgnorePatterns
 }
 const testDependencyOptions = { ...sourceDependencyOptions, development: true }
+
+// 레이어별 alias import 제한을 layers 순서에서 유도한다.
+// no-restricted-imports를 override하면 base 옵션이 통째로 교체되므로 barrel 패턴을 매번 다시 포함한다.
+const layerImportBlocks = layers.map((layer, index) => {
+    const upperLayers = layers.slice(0, index)
+    const patterns = [
+        ...barrelImportPatterns,
+        {
+            regex: aliasRegex(layer),
+            message: `Use relative imports within ${layer} to avoid ancestor barrel cycles.`
+        }
+    ]
+    if (upperLayers.length > 0) {
+        patterns.push({
+            regex: aliasRegex(...upperLayers),
+            message: `Layering rule: ${layer} must not depend on ${upperLayers.join(', ')}.`
+        })
+    }
+    return {
+        files: [`src/services/${layer}/**/*.ts`],
+        rules: { 'no-restricted-imports': ['warn', { patterns }] }
+    }
+})
 
 module.exports = [
     ...createBaseConfigs({
@@ -48,131 +80,7 @@ module.exports = [
             'jest/no-identical-title': 'warn'
         }
     },
-    {
-        files: ['src/services/gateway/**/*.ts'],
-        rules: {
-            'no-restricted-imports': [
-                'warn',
-                {
-                    patterns: [
-                        ...barrelImportPatterns,
-                        {
-                            group: ['gateway', 'gateway/**'],
-                            message:
-                                'Use relative imports within gateway to avoid ancestor barrel cycles.'
-                        }
-                    ]
-                }
-            ]
-        }
-    },
-    {
-        files: ['src/services/application/**/*.ts'],
-        rules: {
-            'no-restricted-imports': [
-                'warn',
-                {
-                    patterns: [
-                        ...barrelImportPatterns,
-                        {
-                            group: ['application', 'application/**'],
-                            message:
-                                'Use relative imports within application to avoid ancestor barrel cycles.'
-                        },
-                        {
-                            group: ['gateway', 'gateway/**', 'view', 'view/**'],
-                            message:
-                                'Layering rule: application must not depend on gateway or View.'
-                        }
-                    ]
-                }
-            ]
-        }
-    },
-    {
-        files: ['src/services/core/**/*.ts'],
-        rules: {
-            'no-restricted-imports': [
-                'warn',
-                {
-                    patterns: [
-                        ...barrelImportPatterns,
-                        {
-                            group: ['core', 'core/**'],
-                            message:
-                                'Use relative imports within core to avoid ancestor barrel cycles.'
-                        },
-                        {
-                            group: [
-                                'gateway',
-                                'gateway/**',
-                                'application',
-                                'application/**',
-                                'view',
-                                'view/**'
-                            ],
-                            message:
-                                'Layering rule: core must not depend on gateway, application, or View.'
-                        }
-                    ]
-                }
-            ]
-        }
-    },
-    {
-        files: ['src/services/infrastructure/**/*.ts'],
-        rules: {
-            'no-restricted-imports': [
-                'warn',
-                {
-                    patterns: [
-                        ...barrelImportPatterns,
-                        {
-                            group: ['infrastructure', 'infrastructure/**'],
-                            message:
-                                'Use relative imports within infrastructure to avoid ancestor barrel cycles.'
-                        },
-                        {
-                            group: [
-                                'gateway',
-                                'gateway/**',
-                                'application',
-                                'application/**',
-                                'core',
-                                'core/**',
-                                'view',
-                                'view/**'
-                            ],
-                            message:
-                                'Layering rule: infrastructure must not depend on gateway, application, core, or View.'
-                        }
-                    ]
-                }
-            ]
-        }
-    },
-    {
-        files: ['src/services/view/**/*.ts'],
-        rules: {
-            'no-restricted-imports': [
-                'warn',
-                {
-                    patterns: [
-                        ...barrelImportPatterns,
-                        {
-                            group: ['view', 'view/**'],
-                            message:
-                                'Use relative imports within View to avoid ancestor barrel cycles.'
-                        },
-                        {
-                            group: ['gateway', 'gateway/**'],
-                            message: 'Consumer rule: View must not depend on gateway.'
-                        }
-                    ]
-                }
-            ]
-        }
-    },
+    ...layerImportBlocks,
     {
         files: ['src/config/**/*.ts'],
         rules: {
@@ -182,23 +90,12 @@ module.exports = [
                     patterns: [
                         ...barrelImportPatterns,
                         {
-                            regex: '^config(/.*)?$',
+                            regex: aliasRegex('config'),
                             message:
                                 'Use relative imports within config to avoid ancestor barrel cycles.'
                         },
                         {
-                            group: [
-                                'gateway',
-                                'gateway/**',
-                                'application',
-                                'application/**',
-                                'core',
-                                'core/**',
-                                'infrastructure',
-                                'infrastructure/**',
-                                'view',
-                                'view/**'
-                            ],
+                            regex: aliasRegex(...layers),
                             message: 'config must not depend on app layers.'
                         }
                     ]
@@ -215,18 +112,7 @@ module.exports = [
                     patterns: [
                         ...barrelImportPatterns,
                         {
-                            group: [
-                                'gateway',
-                                'gateway/**',
-                                'application',
-                                'application/**',
-                                'core',
-                                'core/**',
-                                'infrastructure',
-                                'infrastructure/**',
-                                'view',
-                                'view/**'
-                            ],
+                            regex: aliasRegex(...layers),
                             message: 'modules must not depend on app layers.'
                         }
                     ]
@@ -243,28 +129,16 @@ module.exports = [
         ignores: ['src/services/**/__tests__/**'],
         plugins: { boundaries: boundariesPlugin },
         settings: {
-            'boundaries/elements': [
-                { mode: 'folder', pattern: 'src/services/gateway', type: 'gateway' },
-                { mode: 'folder', pattern: 'src/services/view', type: 'view' },
-                {
-                    capture: ['domain'],
-                    mode: 'folder',
-                    pattern: 'src/services/application/*',
-                    type: 'application'
-                },
-                {
-                    capture: ['domain'],
-                    mode: 'folder',
-                    pattern: 'src/services/core/*',
-                    type: 'core'
-                },
-                {
-                    capture: ['domain'],
-                    mode: 'folder',
-                    pattern: 'src/services/infrastructure/*',
-                    type: 'infrastructure'
-                }
-            ],
+            'boundaries/elements': layers.map((layer) =>
+                domainLayers.includes(layer)
+                    ? {
+                          capture: ['domain'],
+                          mode: 'folder',
+                          pattern: `src/services/${layer}/*`,
+                          type: layer
+                      }
+                    : { mode: 'folder', pattern: `src/services/${layer}`, type: layer }
+            ),
             'boundaries/ignore': ['**/__tests__/**'],
             'import/resolver': { typescript: { project: path.resolve(__dirname, 'tsconfig.json') } }
         },
@@ -273,60 +147,31 @@ module.exports = [
                 'warn',
                 {
                     default: 'disallow',
-                    rules: [
-                        {
-                            allow: {
-                                to: {
-                                    type: [
-                                        'gateway',
-                                        'view',
-                                        'application',
-                                        'core',
-                                        'infrastructure'
-                                    ]
-                                }
-                            },
-                            from: { type: 'gateway' }
-                        },
-                        {
-                            allow: {
-                                to: { type: ['view', 'application', 'core', 'infrastructure'] }
-                            },
-                            from: { type: 'view' }
-                        },
-                        {
-                            allow: { to: { type: ['core', 'infrastructure'] } },
-                            from: { type: 'application' }
-                        },
-                        {
-                            allow: {
-                                to: {
-                                    captured: { domain: '{{ from.captured.domain }}' },
-                                    type: 'application'
-                                }
-                            },
-                            from: { type: 'application' }
-                        },
-                        { allow: { to: { type: 'infrastructure' } }, from: { type: 'core' } },
-                        {
-                            allow: {
-                                to: {
-                                    captured: { domain: '{{ from.captured.domain }}' },
-                                    type: 'core'
-                                }
-                            },
-                            from: { type: 'core' }
-                        },
-                        {
-                            allow: {
-                                to: {
-                                    captured: { domain: '{{ from.captured.domain }}' },
-                                    type: 'infrastructure'
-                                }
-                            },
-                            from: { type: 'infrastructure' }
+                    // 하위 레이어는 도메인 무관하게 허용하고, 같은 레이어는 같은 도메인만 허용한다.
+                    // 같은 element 내부 import는 boundaries가 검사하지 않으므로
+                    // 단일 element인 gateway·view는 자기 자신 허용 규칙이 필요 없다.
+                    rules: layers.flatMap((layer, index) => {
+                        const lowerLayers = layers.slice(index + 1)
+                        const layerRules = []
+                        if (lowerLayers.length > 0) {
+                            layerRules.push({
+                                allow: { to: { type: lowerLayers } },
+                                from: { type: layer }
+                            })
                         }
-                    ]
+                        if (domainLayers.includes(layer)) {
+                            layerRules.push({
+                                allow: {
+                                    to: {
+                                        captured: { domain: '{{ from.captured.domain }}' },
+                                        type: layer
+                                    }
+                                },
+                                from: { type: layer }
+                            })
+                        }
+                        return layerRules
+                    })
                 }
             ]
         }
