@@ -38,6 +38,10 @@ export class AdminAuthenticationService {
         return this.jwtAuthService.refreshAuthTokens(refreshToken)
     }
 
+    async revokeAllForAdmin(adminId: string): Promise<void> {
+        await this.jwtAuthService.revokeAllForUser(adminId)
+    }
+
     async revokeRefreshToken(refreshToken: string): Promise<void> {
         await this.jwtAuthService.revokeRefreshToken(refreshToken)
     }

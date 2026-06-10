@@ -11,7 +11,7 @@
 
 ### 인증·계정
 
-- [ ] apps/api/src/services/core/users/users.service.ts:41 — 계정 삭제(탈퇴·관리자 제거)가 리프레시 토큰 패밀리를 취소하지 않아 삭제된 주체가 무기한 인증 유지. root가 제거한 admin도 admin API 계속 호출 가능. `revokeAllForUser`가 이미 있는데 삭제 경로만 미사용
+- [x] apps/api/src/services/core/users/users.service.ts:41 — 계정 삭제가 리프레시 토큰 패밀리를 취소하지 않던 문제 → deleteMany·admins.remove가 삭제 전에 revokeAllForUser/revokeAllForAdmin을 호출하도록 수정 완료(통합 테스트 3건 추가). 액세스 토큰 잔여 수명(30m) 창은 시드의 의도된 트레이드오프로 둠
 - [ ] apps/api/src/services/core/users/users.repository.ts:72 — PATCH /users(me, :userId)에 보낸 password가 검증만 통과하고 조용히 버려짐(200 반환, 변경 없음). admins는 해시해 저장하므로 두 도메인이 어긋남
 
 ### 티켓 판매 흐름
@@ -37,7 +37,7 @@
 
 ### 인증·세션
 
-- [ ] apps/api/src/services/core/admins/admins.service.ts:39 — admin 비밀번호 변경이 기존 리프레시 토큰 패밀리를 취소하지 않음
+- [x] apps/api/src/services/core/admins/admins.service.ts:39 — admin 비밀번호 변경 시 기존 리프레시 토큰 패밀리 회수 추가 완료(같은 권한 회수 커밋에 포함)
 - [ ] libs/common/src/auth/auth.guard.ts:109 — 만료된 토큰의 401 응답만 설정된 errorBody(에러 code)를 우회
 
 ### 데이터 모델

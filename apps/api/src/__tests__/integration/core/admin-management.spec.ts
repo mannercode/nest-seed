@@ -90,6 +90,21 @@ describe('Root + Admin lifecycle', () => {
                 .headers({ Authorization: wrongRootBasic })
                 .unauthorized(Errors.Auth.Unauthorized())
         })
+
+        it('제거된 admin의 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
+            const created = await createAdmin(fix, adminCredentials)
+            const { refreshToken } = await loginAdmin(fix, adminCredentials)
+
+            await fix.httpClient
+                .delete(`/admins/${created.id}`)
+                .headers({ Authorization: rootBasic })
+                .noContent()
+
+            await fix.httpClient
+                .post('/admins/refresh')
+                .body({ refreshToken })
+                .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
+        })
     })
 
     describe('RootAuthGuard 형식 검증', () => {
@@ -146,6 +161,22 @@ describe('Root + Admin lifecycle', () => {
                 .post('/admins/login')
                 .body({ email: adminCredentials.email, password: 'newPassword' })
                 .ok({ accessToken: expect.any(String), refreshToken: expect.any(String) })
+        })
+
+        it('password를 바꾸면 기존 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
+            await createAdmin(fix, adminCredentials)
+            const { accessToken, refreshToken } = await loginAdmin(fix, adminCredentials)
+
+            await fix.httpClient
+                .patch('/admins/me')
+                .headers({ Authorization: `Bearer ${accessToken}` })
+                .body({ password: 'newPassword' })
+                .ok()
+
+            await fix.httpClient
+                .post('/admins/refresh')
+                .body({ refreshToken })
+                .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
         })
 
         it('토큰이 없으면 401을 반환한다', async () => {

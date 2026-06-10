@@ -39,6 +39,8 @@ export class UsersService {
     }
 
     async deleteMany(userIds: string[]): Promise<void> {
+        // 삭제된 사용자가 살아 있는 리프레시 토큰으로 인증을 유지하지 못하도록 세션부터 회수한다.
+        await Promise.all(userIds.map((id) => this.authenticationService.revokeAllForUser(id)))
         await this.repository.deleteByIds(userIds)
     }
 

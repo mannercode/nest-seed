@@ -181,6 +181,17 @@ describe('UsersService', () => {
         it('고객이 없어도 204를 반환한다', async () => {
             await fix.httpClient.delete(`/users/${nullObjectId}`).headers(adminAuth).noContent()
         })
+
+        it('삭제된 고객의 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
+            const { user, refreshToken } = await createAndLoginUser(fix)
+
+            await fix.httpClient.delete(`/users/${user.id}`).headers(adminAuth).noContent()
+
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken })
+                .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
+        })
     })
 
     // 임의 ID를 다루는 핸들러는 admin 전용이다. user 토큰이나 무인증으로는 통과할 수 없어야

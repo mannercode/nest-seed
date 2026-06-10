@@ -44,6 +44,10 @@ export class AdminsService {
 
         try {
             const updated = await this.repository.update(id, patch)
+            // 비밀번호가 바뀌면 기존 리프레시 토큰 묶음은 더 이상 신뢰할 수 없으므로 함께 회수한다.
+            if (patch.password !== undefined) {
+                await this.authenticationService.revokeAllForAdmin(id)
+            }
             return this.toDto(updated)
         } catch (error) {
             if (isDuplicateKeyError(error) && updateDto.email) {
@@ -54,6 +58,8 @@ export class AdminsService {
     }
 
     async remove(id: string) {
+        // 제거된 admin이 살아 있는 리프레시 토큰으로 권한을 유지하지 못하도록 세션부터 회수한다.
+        await this.authenticationService.revokeAllForAdmin(id)
         await this.repository.deleteById(id)
     }
 
