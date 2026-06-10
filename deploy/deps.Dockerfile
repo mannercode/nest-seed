@@ -9,6 +9,7 @@ COPY libs/common/package.json libs/common/
 COPY libs/testing/package.json libs/testing/
 COPY apps/api/package.json apps/api/
 COPY apps/console/package.json apps/console/
+COPY apps/user-app/package.json apps/user-app/
 # npm은 lockfile만으로 워크스페이스 그래프를 완성하지 못한다.
 # 배포 이미지에서 실행하지 않는 `tests/*` 워크스페이스도 manifest가 없으면 `npm ci`가 실패한다.
 COPY tests/console-e2e/package.json tests/console-e2e/

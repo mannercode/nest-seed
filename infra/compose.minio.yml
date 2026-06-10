@@ -17,7 +17,7 @@ services:
 
     minio-setup:
         extends: { file: ./compose.common.yml, service: common-options }
-        image: amazon/aws-cli
+        image: amazon/aws-cli:2.35.2
         depends_on:
             minio:
                 condition: service_healthy

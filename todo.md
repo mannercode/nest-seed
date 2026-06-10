@@ -98,10 +98,10 @@
 ### 통합 테스트 (apps/api)
 
 - [ ] `apps/api/src/__tests__/integration/application/showtime-creation.utils.ts:11` — waitForCompletion의 abort가 SSE 스트림이 아니라 마지막 요청(POST)을 겨냥
-- [ ] `apps/api/src/__tests__/integration/core/users.spec.ts:96` — "ConflictException으로 바꾸지 않고 그대로 던진다" 테스트가 변환 여부를 전혀 검증하지 못함
-- [ ] `apps/api/src/__tests__/integration/core/admin-management.spec.ts:105` — RootAuthGuard username 검증 테스트가 dev용 ROOT_PASSWORD 값에 암묵적 결합
+- [x] `apps/api/src/__tests__/integration/core/users.spec.ts:96` — rejects.not.toBeInstanceOf(ConflictException)로 변환 부재까지 검증(admins 동일 테스트도 함께) 완료
+- [x] `apps/api/src/__tests__/integration/core/admin-management.spec.ts:105` — username만 틀린 케이스가 실제 rootPassword 변수를 쓰도록 수정 완료
 - [x] `apps/api/src/__tests__/integration/helpers/create-app-test-context.ts:69` — createConfigServiceMock 제거 완료
-- [ ] `apps/api/src/__tests__/integration/application/purchase.utils.ts:47` — holdTickets가 반환하는 heldTickets(4장)와 실제 선점 범위(10장 전부)가 다름
+- [x] `apps/api/src/__tests__/integration/application/purchase.utils.ts:47` — 선점 범위를 반환값(heldTickets 4장)과 일치시킴 완료
 
 ### 테스트 라이브러리·헬퍼
 
@@ -117,28 +117,28 @@
 
 ### 데모 앱 (console·user-app)
 
-- [ ] apps/user-app/src/app/page.tsx:34 — 로그인 후 "회원님을 위한 추천"을 표시하지만 토큰을 보내지 않아 개인화 추천이 절대 동작하지 않음
+- [x] apps/user-app/src/app/page.tsx:34 — 게스트 읽기 데모이므로 개인화를 약속하는 문구를 제거하고 경계를 주석으로 명시 완료
 - [x] apps/console/src/app/theaters/page.tsx:12 — 홈에 '극장 목록' 링크를 추가해 도달 가능하게 함(/users 목록 링크와 같은 패턴)
 - [x] apps/console/src/lib/session.ts:20 — readEmail·EMAIL_KEY 제거 완료(saveSession 시그니처도 토큰만 받게 축소)
-- [ ] apps/console/src/app/login/page.tsx:43 — "시드된 1명으로만 동작" 문구가 실제 동작(부팅 시 admin 미생성)과 불일치
+- [x] apps/console/src/app/login/page.tsx:43 — 가입 페이지가 없는 실제 이유(root가 POST /admins로 생성)로 문구 수정 완료
 
 ### 테스트 스위트 (perf·race·e2e)
 
-- [ ] tests/api-race/ticket-holding-race.js:72 — `?? search.body.at(-1)` 폴백이 startTime 매칭 실패를 침묵시킴 (purchase-double-spend.js:74도 동일 패턴)
-- [ ] tests/api-perf/harness-refresh.js:5 — 주석의 "호출마다 Redis를 두 번 친다"가 실제 구현(4 round-trip, 8개 명령)과 불일치
+- [x] tests/api-race/ticket-holding-race.js:72 — `?? at(-1)` 폴백을 두 파일 모두 명시적 실패로 교체 완료
+- [x] tests/api-perf/harness-refresh.js:5 — 주석을 실제 구현(왕복 4회, 명령 8개)에 맞게 수정 완료
 - [x] tests/api-race/race-common.js:15 — SERVER_URL 미설정 시 http://localhost:3000 폴백 — race 시나리오는 4-replica 배포 스택 전제인데 단일 dev 서버를 조용히 때려 결과가 왜곡됨 → 필수값으로 수정 완료 (perf 하네스의 동일 기본값은 수동 단독 실행이 1차 용도라 의도된 것)
 
 ### 인프라·CI
 
-- [ ] .github/workflows/test-stability.yaml:12 — cancel-in-progress가 6시간 주기와 350분 실행 시간 사이에서 직전 회차를 취소할 수 있음
-- [ ] infra/compose.mongo.yml:68 — mongo-setup 대기 루프가 PRIMARY 선출이 아니라 rs.status().ok만 검사해 사실상 무대기
+- [x] .github/workflows/test-stability.yaml:12 — cancel-in-progress: false로 변경(직전 회차 보존, 새 회차는 대기)
+- [x] infra/compose.mongo.yml:68 — 대기 조건을 db.hello().isWritablePrimary로 교체해 실제 PRIMARY 선출을 기다림
 - [x] infra/temporal/scripts/create-namespace.sh:6 — `DEFAULT_NAMESPACE`·`TEMPORAL_ADDRESS`의 `:-` 폴백이 compose 배선 누락을 가림(엉뚱한 'default' 네임스페이스를 만들고 API는 나중에 혼란스럽게 실패) → `:?`로 수정 완료. 정의처 없는 죽은 노브(`TEMPORAL_HEALTH_CHECK_*`, `TEMPORAL_NAMESPACE_RETENTION`)도 상수로 교체
 - [x] infra/temporal/scripts/create-namespace.sh:16 — 대기 루프 3중(nc 포트 → cluster health → namespace 재시도) 중 nc 포트 대기는 health 루프가 같은 실패를 같은 예산으로 처리하므로 중복 → 제거 완료
 - [x] apps/api/api-docs/run.sh:189 — `${CURRENT_GROUP:-일반}` 폴백이 spec 밖 TEST 호출이라는 버그를 '일반' 그룹으로 위장 → `:?`로 수정 완료. api-docs/.env의 SERVER_URL 기본값도 `${API_PORT:?}` 연동 완료
 - [x] apps/api/api-docs/run.sh:7 — 미사용 죽은 변수 PURPLE 제거 완료. 색상 출력 자체는 사용자가 직접 읽는 산출물이라 유지하기로 결정(2026-06-10)
-- [ ] .env.infra:1 — minio/minio:latest, amazon/aws-cli(무태그), nginx:alpine만 버전 미고정
+- [x] .env.infra:1 — minio(RELEASE.2025-09-07), aws-cli(2.35.2), nginx(1.31-alpine)로 버전 고정 완료(Docker Hub에서 태그 존재 확인)
 - [x] .env.infra:29,33 — NATS_MONITORING_PORT·TEMPORAL_DB_PORT가 어디서도 읽히지 않는 죽은 변수. 실제 값은 infra/compose.nats.yml(8222 하드코딩 3곳)과 infra/temporal/compose.temporal.yml:36,53(DB_PORT '5432')에 박혀 있어 .env.infra 값을 바꿔도 효과 없음 → 제거 완료(서비스 내부 전용 값이라 env에 둘 이유 없음)
-- [ ] deploy/deps.Dockerfile:10 — apps/user-app/package.json을 복사하지 않아 주석의 전제와 모순
+- [x] deploy/deps.Dockerfile:10 — apps/user-app/package.json 복사 추가로 주석의 전제와 일치
 - [x] eslint.config.node.js:139 — 미사용 export 4종(tseslint, basePlugins, baseRules, escapeForRegex)을 내부 전용으로 격하 완료
 - [x] package-lock.json:8 — license 동기화 1줄, temporal-sandbox 의존성 정리와 함께 커밋 완료
 

@@ -69,7 +69,10 @@ async function createShowtimeTickets(movieId, theaterId, startTimeOffsetMs) {
     if (search.status !== 200 || !Array.isArray(search.body) || search.body.length === 0) {
         throw new Error(`showtimes search: ${search.status}`)
     }
-    const showtime = search.body.find((s) => s.startTime === startTime) ?? search.body.at(-1)
+    const showtime = search.body.find((s) => s.startTime === startTime)
+    if (!showtime) {
+        throw new Error(`showtimes search: no showtime with startTime ${startTime}`)
+    }
     const showtimeId = showtime.id
 
     const tickets = await request('GET', `/booking/showtimes/${showtimeId}/tickets`)

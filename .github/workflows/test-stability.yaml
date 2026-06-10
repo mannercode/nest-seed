@@ -9,7 +9,9 @@ permissions:
     contents: read
 concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
-    cancel-in-progress: true
+    # 6시간 주기에 한 회차가 ~350분 걸리므로, 취소하면 거의 끝난 직전 회차가 버려진다.
+    # 새 회차는 이전 회차가 끝날 때까지 대기한다.
+    cancel-in-progress: false
 jobs:
     unit:
         strategy:
