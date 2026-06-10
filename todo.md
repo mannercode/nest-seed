@@ -1,8 +1,8 @@
 # 전체 검토 결과 TODO
 
 2026-06-10 전수 검토 결과. 파인더 15개(영역 11 + 횡단 4)가 보고한 102건을 중복 병합(87건) 후
-적대 검증을 거쳐 **80건 확정**(높음 8 / 중간 22 / 낮음 50), 16건은 의도된 설계로 판명되어 기각.
-(2026-06-10 설정·폴백 후속 검토에서 낮음 4건 추가)
+적대 검증을 거쳐 **82건 확정**(높음 8 / 중간 22 / 낮음 52), 16건은 의도된 설계로 판명되어 기각.
+(2026-06-10 설정·폴백·스크립트 과잉 후속 검토에서 낮음 6건 추가)
 
 전반: SoLA 레이어 의존 위반 0건(eslint-plugin-boundaries로 강제), 빌드·린트 클린.
 결함은 인증 수명주기, 티켓 판매 동시성, 도메인 간 참조 무결성 세 축에 집중.
@@ -74,7 +74,7 @@
 
 - [ ] docs/testing.md:121 — 문서가 설명하는 api-docs spec 문법(DOC/GROUP)이 run.sh에 존재하지 않음. 문서대로 spec을 쓰면 api-docs 실행 전체가 중단됨. 실제 문법(`TEST "<설명>" <상태> <METHOD> <경로>`, 그룹은 파일명 자동 유도)으로 갱신
 
-## 낮음 (50)
+## 낮음 (52)
 
 ### libs/common 동작 결함
 
@@ -133,7 +133,9 @@
 - [ ] .github/workflows/test-stability.yaml:12 — cancel-in-progress가 6시간 주기와 350분 실행 시간 사이에서 직전 회차를 취소할 수 있음
 - [ ] infra/compose.mongo.yml:68 — mongo-setup 대기 루프가 PRIMARY 선출이 아니라 rs.status().ok만 검사해 사실상 무대기
 - [x] infra/temporal/scripts/create-namespace.sh:6 — `DEFAULT_NAMESPACE`·`TEMPORAL_ADDRESS`의 `:-` 폴백이 compose 배선 누락을 가림(엉뚱한 'default' 네임스페이스를 만들고 API는 나중에 혼란스럽게 실패) → `:?`로 수정 완료. 정의처 없는 죽은 노브(`TEMPORAL_HEALTH_CHECK_*`, `TEMPORAL_NAMESPACE_RETENTION`)도 상수로 교체
+- [x] infra/temporal/scripts/create-namespace.sh:16 — 대기 루프 3중(nc 포트 → cluster health → namespace 재시도) 중 nc 포트 대기는 health 루프가 같은 실패를 같은 예산으로 처리하므로 중복 → 제거 완료
 - [x] apps/api/api-docs/run.sh:189 — `${CURRENT_GROUP:-일반}` 폴백이 spec 밖 TEST 호출이라는 버그를 '일반' 그룹으로 위장 → `:?`로 수정 완료. api-docs/.env의 SERVER_URL 기본값도 `${API_PORT:?}` 연동 완료
+- [x] apps/api/api-docs/run.sh:7 — 미사용 죽은 변수 PURPLE 제거 완료. 색상 출력 자체는 사용자가 직접 읽는 산출물이라 유지하기로 결정(2026-06-10)
 - [ ] .env.infra:1 — minio/minio:latest, amazon/aws-cli(무태그), nginx:alpine만 버전 미고정
 - [x] .env.infra:29,33 — NATS_MONITORING_PORT·TEMPORAL_DB_PORT가 어디서도 읽히지 않는 죽은 변수. 실제 값은 infra/compose.nats.yml(8222 하드코딩 3곳)과 infra/temporal/compose.temporal.yml:36,53(DB_PORT '5432')에 박혀 있어 .env.infra 값을 바꿔도 효과 없음 → 제거 완료(서비스 내부 전용 값이라 env에 둘 이유 없음)
 - [ ] deploy/deps.Dockerfile:10 — apps/user-app/package.json을 복사하지 않아 주석의 전제와 모순

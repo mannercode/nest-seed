@@ -11,7 +11,6 @@ RED='\033[31m'
 CYAN='\033[36m'
 YELLOW='\033[33m'
 MAGENTA='\033[35m'
-PURPLE=$'\033[1;35m'
 
 RUN_ID="$(date '+%Y%m%d_%H%M%S')"
 OUTPUT_ROOT="$(pwd)/_output"

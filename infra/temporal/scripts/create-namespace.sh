@@ -9,21 +9,6 @@ TEMPORAL_ADDRESS=${TEMPORAL_ADDRESS:?}
 MAX_ATTEMPTS=30
 SLEEP_SECONDS=5
 
-echo "Waiting for Temporal server port to be available..."
-SERVER_HOST=$(echo "$TEMPORAL_ADDRESS" | cut -d: -f1)
-SERVER_PORT=$(echo "$TEMPORAL_ADDRESS" | cut -d: -f2)
-attempt=1
-while ! nc -z -w 10 "$SERVER_HOST" "$SERVER_PORT"; do
-    if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
-        echo "Temporal server port did not become available after $MAX_ATTEMPTS attempts"
-        exit 1
-    fi
-    echo "Temporal server port not ready yet, waiting... (attempt $attempt/$MAX_ATTEMPTS)"
-    attempt=$((attempt + 1))
-    sleep "$SLEEP_SECONDS"
-done
-echo 'Temporal server port is available'
-
 echo 'Waiting for Temporal server to be healthy...'
 attempt=1
 while :; do
