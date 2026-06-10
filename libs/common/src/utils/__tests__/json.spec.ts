@@ -20,6 +20,13 @@ describe('JsonUtil', () => {
             expect(parsed[0].bit32).toEqual(123456)
         })
 
+        it('문자열 리터럴 안의 긴 숫자는 건드리지 않는다', () => {
+            const text = '{"note":"id:9223372036854775807,","v":9223372036854775807}'
+            const parsed = JsonUtil.parse(text)
+            expect(parsed.note).toBe('id:9223372036854775807,')
+            expect(parsed.v).toBe('9223372036854775807')
+        })
+
         it('int64 범위를 벗어난 정수는 숫자로 유지한다 (정밀도 손실)', () => {
             const over = JsonUtil.parse('[{"v":9223372036854775808}]')[0].v
             expect(over).toEqual(Number('9223372036854775808'))

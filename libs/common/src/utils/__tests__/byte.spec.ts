@@ -82,12 +82,12 @@ describe('ByteUtil', () => {
             expect(ByteUtil.toString(1024 * 1024)).toBe('1MB')
         })
 
-        it('1536은 "1KB512B"로 분할 표시한다', () => {
-            expect(ByteUtil.toString(1536)).toBe('1KB512B')
+        it('1536은 "1KB 512B"로 분할 표시한다', () => {
+            expect(ByteUtil.toString(1536)).toBe('1KB 512B')
         })
 
-        it('1024 * 1024 * 1.5는 "1MB512KB"로 분할 표시한다', () => {
-            expect(ByteUtil.toString(1024 * 1024 * 1.5)).toBe('1MB512KB')
+        it('1024 * 1024 * 1.5는 "1MB 512KB"로 분할 표시한다', () => {
+            expect(ByteUtil.toString(1024 * 1024 * 1.5)).toBe('1MB 512KB')
         })
 
         it('-1024는 "-1KB"를 반환한다', () => {
@@ -96,8 +96,15 @@ describe('ByteUtil', () => {
 
         it('큰 값도 GB/MB/KB로 분할 표시한다', () => {
             expect(ByteUtil.toString(1024 ** 3 + 256 * 1024 ** 2 + 128 * 1024)).toBe(
-                '1GB256MB128KB'
+                '1GB 256MB 128KB'
             )
+        })
+
+        it('toString 결과를 fromString이 같은 값으로 되돌린다 (왕복)', () => {
+            const values = [1536, 1024 ** 2 * 1.5, -1536, 1024 ** 3 + 256 * 1024 ** 2 + 128 * 1024]
+            for (const value of values) {
+                expect(ByteUtil.fromString(ByteUtil.toString(value))).toBe(value)
+            }
         })
     })
 })

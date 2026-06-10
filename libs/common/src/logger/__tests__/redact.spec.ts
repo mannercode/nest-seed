@@ -43,6 +43,14 @@ describe('redactSensitive', () => {
         expect(redactSensitive(undefined as unknown)).toBe(undefined)
     })
 
+    it('Date 같은 클래스 인스턴스는 빈 객체로 만들지 않고 그대로 통과시킨다', () => {
+        const createdAt = new Date('2026-01-02T03:04:05.000Z')
+        const result = redactSensitive({ createdAt, password: 'secret' })
+
+        expect(result.createdAt).toBe(createdAt)
+        expect(result.password).toBe('[REDACTED]')
+    })
+
     it('순환 참조는 [CIRCULAR]로 치환하고 스택 오버플로 없이 끝낸다', () => {
         const a: any = { password: 'secret', name: 'a' }
         a.self = a

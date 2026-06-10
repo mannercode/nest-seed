@@ -77,6 +77,11 @@ describe('BaseConfigService', () => {
             const service = createServiceWithConfig({ N: 'abc' })
             expect(() => service.getNumber('N')).toThrow("Key 'N' is not a finite number: 'abc'")
         })
+
+        it('빈 문자열은 0으로 통과하지 않고 예외를 던진다', () => {
+            const service = createServiceWithConfig({ N: '' })
+            expect(() => service.getNumber('N')).toThrow("Key 'N' is not a finite number: ''")
+        })
     })
 
     describe('getBoolean', () => {

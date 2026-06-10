@@ -153,7 +153,7 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
             queryHelper.exec(),
             filterIsEmpty
                 ? this.model.estimatedDocumentCount().exec()
-                : this.model.countDocuments(rawFilter).exec()
+                : this.model.countDocuments(rawFilter, { session }).exec()
         ])
 
         const items = leanArrayToPublic<Doc>(rawItems)
@@ -236,14 +236,18 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
             throw error
         } finally {
             if (session) {
-                if (session.inTransaction()) {
-                    if (state.rollbackRequested) {
-                        await session.abortTransaction()
-                    } else {
-                        await session.commitTransaction()
+                // commit/abort가 던져도 세션은 반드시 반납해 누수를 막는다.
+                try {
+                    if (session.inTransaction()) {
+                        if (state.rollbackRequested) {
+                            await session.abortTransaction()
+                        } else {
+                            await session.commitTransaction()
+                        }
                     }
+                } finally {
+                    await session.endSession()
                 }
-                await session.endSession()
             }
         }
     }

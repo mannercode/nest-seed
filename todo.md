@@ -78,13 +78,13 @@
 
 ### libs/common 동작 결함
 
-- [ ] libs/common/src/config/base-config.service.ts:35 — getNumber: 빈 문자열 환경 변수가 예외 대신 0으로 통과
-- [ ] libs/common/src/logger/redact.ts:32 — redactSensitive가 Date 등 plain object가 아닌 값을 {}로 바꿔 로그에서 값 소실
-- [ ] libs/common/src/utils/json.ts:69 — JsonUtil.parse가 문자열 리터럴 내부의 숫자까지 치환해 유효한 JSON 파싱 실패
-- [ ] libs/common/src/utils/byte.ts:10 — ByteUtil.toString 출력을 fromString이 거부(왕복 불가, TimeUtil과 불일치)
-- [ ] libs/common/src/pagination/pagination.ts:69 — page/size에 @IsInt가 없어 소수 값 통과, 페이지 경계 비결정적
-- [ ] libs/common/src/mongoose/crud.repository.ts:235 — withTransaction: commit/abort 실패 시 endSession 미호출로 세션 누수
-- [ ] libs/common/src/mongoose/crud.repository.ts:149 — findWithPagination 카운트 쿼리가 session을 무시해 트랜잭션 내 조회 불일치
+- [x] libs/common/src/config/base-config.service.ts:35 — getNumber가 빈 문자열을 명시적으로 거절(테스트 추가)
+- [x] libs/common/src/logger/redact.ts:32 — plain object가 아닌 값(Date 등)은 그대로 통과(테스트 추가)
+- [x] libs/common/src/utils/json.ts:69 — quoteIntegers를 문자열 구간을 건너뛰는 토크나이저로 교체(테스트 추가)
+- [x] libs/common/src/utils/byte.ts:10 — toString을 공백 구분·토큰별 부호로 바꿔 fromString과 왕복 성립(왕복 테스트 추가)
+- [x] libs/common/src/pagination/pagination.ts:69 — page/size에 @IsInt 추가
+- [x] libs/common/src/mongoose/crud.repository.ts:235 — commit/abort 실패에도 endSession이 호출되도록 중첩 finally
+- [x] libs/common/src/mongoose/crud.repository.ts:149 — countDocuments에 session 전달
 
 ### API
 

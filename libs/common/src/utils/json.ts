@@ -59,25 +59,71 @@ export class JsonUtil {
 
     /**
      * JSON 문자열 안의 64비트 정수를 문자열로 감싸 정밀도를 유지한다.
+     * 정규식 한 방이면 문자열 리터럴 내부의 숫자까지 건드리므로,
+     * 따옴표 구간(이스케이프 포함)을 통째로 건너뛰며 구조 토큰만 검사한다.
      */
     private static quoteIntegers(text: string): string {
+        let out = ''
+        let i = 0
+
+        while (i < text.length) {
+            const ch = text.charAt(i)
+
+            if (ch === '"') {
+                const end = this.findStringEnd(text, i)
+                out += text.slice(i, end)
+                i = end
+                continue
+            }
+
+            if (ch === '-' || (ch >= '0' && ch <= '9')) {
+                const end = this.findNumberEnd(text, i)
+                const raw = text.slice(i, end)
+                out += this.shouldQuote(raw) ? `"${raw}"` : raw
+                i = end
+                continue
+            }
+
+            out += ch
+            i++
+        }
+
+        return out
+    }
+
+    // 여는 따옴표 위치를 받아 닫는 따옴표 다음 위치를 반환한다.
+    private static findStringEnd(text: string, start: number): number {
+        let i = start + 1
+        while (i < text.length) {
+            if (text[i] === '\\') {
+                i += 2
+                continue
+            }
+            if (text[i] === '"') return i + 1
+            i++
+        }
+        return text.length
+    }
+
+    // 숫자 토큰(부호·소수점·지수 포함)의 끝 위치를 반환한다.
+    private static findNumberEnd(text: string, start: number): number {
+        let i = start
+        if (text.charAt(i) === '-') i++
+        while (i < text.length && /[\d.eE+-]/.test(text.charAt(i))) i++
+        return i
+    }
+
+    private static shouldQuote(raw: string): boolean {
+        // 소수·지수 표기는 정밀도 보존 대상이 아니다.
+        if (!/^-?\d+$/.test(raw)) return false
+
         const maxInt64 = 9223372036854775807n
         const minInt64 = -9223372036854775808n
         const maxSafe = BigInt(Number.MAX_SAFE_INTEGER)
-        const minSafe = -maxSafe
 
-        return text.replace(/([:\[,])(\s*)(-?\d+)(?=\s*[,\}\]])/g, (match, prefix, space, raw) => {
-            const value = BigInt(raw)
+        const value = BigInt(raw)
+        if (value < minInt64 || value > maxInt64) return false
 
-            if (value < minInt64 || value > maxInt64) {
-                return match
-            }
-
-            if (minSafe <= value && value <= maxSafe) {
-                return match
-            }
-
-            return `${prefix}${space}"${raw}"`
-        })
+        return value > maxSafe || value < -maxSafe
     }
 }

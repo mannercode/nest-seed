@@ -76,10 +76,12 @@ export class PaginationDto {
     })
     orderby?: OrderBy
 
+    @IsInt()
     @IsOptional()
     @IsPositive()
     page?: number
 
+    @IsInt()
     @IsOptional()
     @IsPositive()
     size?: number

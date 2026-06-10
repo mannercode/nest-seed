@@ -30,6 +30,11 @@ function walk(value: unknown, seen: WeakSet<object>): unknown {
         return value.map((v) => walk(v, seen))
     }
     if (value !== null && typeof value === 'object') {
+        // Date·Error·ObjectId 같은 클래스 인스턴스를 entries로 복사하면 빈 객체가 되어 값이 사라진다.
+        // 민감 키는 plain object의 속성으로만 들어오므로, plain이 아닌 값은 그대로 통과시킨다.
+        const proto = Object.getPrototypeOf(value)
+        if (proto !== null && proto !== Object.prototype) return value
+
         if (seen.has(value)) return CIRCULAR
         seen.add(value)
         const out: Record<string, unknown> = {}

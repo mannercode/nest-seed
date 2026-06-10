@@ -32,6 +32,11 @@ export abstract class BaseConfigService {
             throw new Error(`Key '${key}' is not defined`)
         }
 
+        // Number('')는 0이라 빈 문자열이 조용히 0으로 통과한다. 명시적으로 거절한다.
+        if (typeof value === 'string' && value.trim().length === 0) {
+            throw new Error(`Key '${key}' is not a finite number: '${value}'`)
+        }
+
         const parsed = typeof value === 'number' ? value : Number(value)
         if (!Number.isFinite(parsed)) {
             throw new Error(`Key '${key}' is not a finite number: '${value}'`)

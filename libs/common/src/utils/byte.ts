@@ -43,15 +43,15 @@ export class ByteUtil {
     }
 
     /**
-     * 바이트 수를 `1MB512KB`처럼 큰 단위부터 이어 붙인 문자열로 변환한다.
-     * 0은 `0B`, 음수는 전체 결과 앞에 `-`를 붙여 표현한다.
+     * 바이트 수를 `1MB 512KB`처럼 큰 단위부터 공백으로 이어 붙인 문자열로 변환한다.
+     * `fromString`이 그대로 읽어 같은 값이 되도록(왕복 변환) 음수는 각 토큰에 부호를 붙인다.
      */
     static toString(bytes: number): string {
         if (bytes === 0) {
             return '0B'
         }
 
-        const negative = bytes < 0
+        const sign = bytes < 0 ? '-' : ''
         bytes = Math.abs(bytes)
 
         const unitTable: [string, number][] = [
@@ -62,16 +62,16 @@ export class ByteUtil {
             ['B', 1]
         ]
 
-        let result = ''
+        const parts: string[] = []
 
         for (const [unit, unitValue] of unitTable) {
             if (bytes >= unitValue) {
                 const unitAmount = Math.floor(bytes / unitValue)
                 bytes %= unitValue
-                result += `${unitAmount}${unit}`
+                parts.push(`${sign}${unitAmount}${unit}`)
             }
         }
 
-        return (negative ? '-' : '') + result.trim()
+        return parts.join(' ')
     }
 }
