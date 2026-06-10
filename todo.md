@@ -1,8 +1,8 @@
 # 전체 검토 결과 TODO
 
 2026-06-10 전수 검토 결과. 파인더 15개(영역 11 + 횡단 4)가 보고한 102건을 중복 병합(87건) 후
-적대 검증을 거쳐 **77건 확정**(높음 8 / 중간 22 / 낮음 47), 15건은 의도된 설계로 판명되어 기각.
-(낮음 1건은 2026-06-10 설정 파일 후속 검토에서 추가)
+적대 검증을 거쳐 **80건 확정**(높음 8 / 중간 22 / 낮음 50), 16건은 의도된 설계로 판명되어 기각.
+(2026-06-10 설정·폴백 후속 검토에서 낮음 4건 추가)
 
 전반: SoLA 레이어 의존 위반 0건(eslint-plugin-boundaries로 강제), 빌드·린트 클린.
 결함은 인증 수명주기, 티켓 판매 동시성, 도메인 간 참조 무결성 세 축에 집중.
@@ -74,7 +74,7 @@
 
 - [ ] docs/testing.md:121 — 문서가 설명하는 api-docs spec 문법(DOC/GROUP)이 run.sh에 존재하지 않음. 문서대로 spec을 쓰면 api-docs 실행 전체가 중단됨. 실제 문법(`TEST "<설명>" <상태> <METHOD> <경로>`, 그룹은 파일명 자동 유도)으로 갱신
 
-## 낮음 (47)
+## 낮음 (50)
 
 ### libs/common 동작 결함
 
@@ -124,15 +124,18 @@
 
 ### 테스트 스위트 (perf·race·e2e)
 
-- [ ] tests/api-race/ticket-holding-race.js:72 — `?? search.body.at(-1)` 폴백이 startTime 매칭 실패를 침묵시킴
+- [ ] tests/api-race/ticket-holding-race.js:72 — `?? search.body.at(-1)` 폴백이 startTime 매칭 실패를 침묵시킴 (purchase-double-spend.js:74도 동일 패턴)
 - [ ] tests/api-perf/harness-refresh.js:5 — 주석의 "호출마다 Redis를 두 번 친다"가 실제 구현(4 round-trip, 8개 명령)과 불일치
+- [x] tests/api-race/race-common.js:15 — SERVER_URL 미설정 시 http://localhost:3000 폴백 — race 시나리오는 4-replica 배포 스택 전제인데 단일 dev 서버를 조용히 때려 결과가 왜곡됨 → 필수값으로 수정 완료 (perf 하네스의 동일 기본값은 수동 단독 실행이 1차 용도라 의도된 것)
 
 ### 인프라·CI
 
 - [ ] .github/workflows/test-stability.yaml:12 — cancel-in-progress가 6시간 주기와 350분 실행 시간 사이에서 직전 회차를 취소할 수 있음
 - [ ] infra/compose.mongo.yml:68 — mongo-setup 대기 루프가 PRIMARY 선출이 아니라 rs.status().ok만 검사해 사실상 무대기
+- [x] infra/temporal/scripts/create-namespace.sh:6 — `DEFAULT_NAMESPACE`·`TEMPORAL_ADDRESS`의 `:-` 폴백이 compose 배선 누락을 가림(엉뚱한 'default' 네임스페이스를 만들고 API는 나중에 혼란스럽게 실패) → `:?`로 수정 완료. 정의처 없는 죽은 노브(`TEMPORAL_HEALTH_CHECK_*`, `TEMPORAL_NAMESPACE_RETENTION`)도 상수로 교체
+- [x] apps/api/api-docs/run.sh:189 — `${CURRENT_GROUP:-일반}` 폴백이 spec 밖 TEST 호출이라는 버그를 '일반' 그룹으로 위장 → `:?`로 수정 완료. api-docs/.env의 SERVER_URL 기본값도 `${API_PORT:?}` 연동 완료
 - [ ] .env.infra:1 — minio/minio:latest, amazon/aws-cli(무태그), nginx:alpine만 버전 미고정
-- [ ] .env.infra:29,33 — NATS_MONITORING_PORT·TEMPORAL_DB_PORT가 어디서도 읽히지 않는 죽은 변수. 실제 값은 infra/compose.nats.yml(8222 하드코딩 3곳)과 infra/temporal/compose.temporal.yml:36,53(DB_PORT '5432')에 박혀 있어 .env.infra 값을 바꿔도 효과 없음. 변수를 compose에 연결하거나 제거
+- [x] .env.infra:29,33 — NATS_MONITORING_PORT·TEMPORAL_DB_PORT가 어디서도 읽히지 않는 죽은 변수. 실제 값은 infra/compose.nats.yml(8222 하드코딩 3곳)과 infra/temporal/compose.temporal.yml:36,53(DB_PORT '5432')에 박혀 있어 .env.infra 값을 바꿔도 효과 없음 → 제거 완료(서비스 내부 전용 값이라 env에 둘 이유 없음)
 - [ ] deploy/deps.Dockerfile:10 — apps/user-app/package.json을 복사하지 않아 주석의 전제와 모순
 - [ ] eslint.config.node.js:139 — export 4종(tseslint, basePlugins, baseRules, escapeForRegex)이 미사용
 - [ ] package-lock.json:8 — 미커밋 1줄 변경은 license 필드 동기화로 무해, 커밋할 가치 있음
@@ -154,4 +157,5 @@
 - watch-records 생성 경로 0개("죽은 기능") — 커밋 6d011ea와 api-client.ts 주석으로 확인된 의도된 시드 경계. 게스트는 개봉일 순 폴백으로 정상 동작
 - NATS 핸들러 예외 시 구독 루프 중단 — 클래스 주석과 전용 테스트로 명시된 계약. 발행자가 모두 같은 앱이라 잘못된 메시지 경로 없음
 - test-atoz에 Docker Hub 로그인 부재 — 커밋 9a9b2b7의 의도적 결정. fork PR에는 secrets가 없어 무조건적 로그인이 오히려 PR을 깨뜨림
+- purchase tryCompensate의 보상 실패 삼킴(purchase.service.ts:100) — 바로 위 주석(86-88행)이 설계를 명시: 보상 한 단계가 실패해도 나머지 단계를 계속 시도하고, 실패는 운영자용 error 로그로 남기며, 원래 오류는 호출자에게 그대로 전파된다(은폐 아님). 강한 정합성이 필요하면 Temporal 사가를 쓰라고 문서화됨
 - 기타: perf 하네스의 무단언 종료, mixed-runner의 set -e 동작, .husky 전역 commitlint, SSE 구독 순서 경합 2건, conventions.md REST 예시 등 — 모두 검증자가 코드·커밋 근거로 반박
