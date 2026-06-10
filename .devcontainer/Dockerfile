@@ -35,7 +35,7 @@ RUN ARCH=$(dpkg --print-architecture) \
     && mv "/tmp/k6-v1.4.1-linux-${ARCH}/k6" /usr/local/bin/k6 \
     && rm -rf /tmp/k6.tar.gz "/tmp/k6-v1.4.1-linux-${ARCH}"
 
-# cloudflared: 개발 중 localhost:3000(API)을 공개 https 도메인으로 노출하는 quick tunnel.
+# cloudflared: 개발 중 로컬 dev 서버들(api·console·user-app)을 공개 https 도메인으로 노출하는 quick tunnel.
 # 계정·도메인 없이 임시 *.trycloudflare.com URL을 발급해 OAuth 콜백·웹훅 수신을 로컬에서 받게 한다.
 # k6와 같은 이유로 GitHub release에서 버전을 고정해 받는다(seed 사용자 간 버전 일치).
 RUN ARCH=$(dpkg --print-architecture) \

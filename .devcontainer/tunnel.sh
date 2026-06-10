@@ -5,7 +5,8 @@ cd "$(dirname "$0")/.."
 # 개발 중 공개 https 도메인이 필요할 때 쓰는 quick tunnel.
 # api(백엔드)·console·user-app(프론트) 세 서비스를 각각 임시 URL로 노출한다.
 # 대상은 아래 name:port 목록으로만 정해지니, 줄을 빼거나 더하면 그대로 반영된다.
-TARGETS=("api:3000" "console:3100" "user-app:3200")
+# 포트의 정의처는 .env.infra(API_PORT·CONSOLE_PORT·USER_APP_PORT)다.
+TARGETS=("api:${API_PORT:?}" "console:${CONSOLE_PORT:?}" "user-app:${USER_APP_PORT:?}")
 
 # 발급된 공개 URL 목록을 루트 파일로 떨궈 둔다(.gitignore 대상). 매 실행마다 값이 바뀐다.
 URL_FILE=".tunnel-url"

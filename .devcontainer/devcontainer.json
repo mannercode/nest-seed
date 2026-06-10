@@ -39,7 +39,7 @@
     "postStartCommand": {
         "infra": "bash infra/reset.sh",
         "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null",
-        "tunnel": "nohup bash -c 'bash infra/tunnel.sh >/tmp/tunnel.log 2>&1 &' >/dev/null"
+        "tunnel": "nohup bash -c 'bash .devcontainer/tunnel.sh >/tmp/tunnel.log 2>&1 &' >/dev/null"
     },
     "waitFor": "postStartCommand",
     "forwardPorts": [3000, 3100, 3200, 5010, 5020],
