@@ -6,6 +6,7 @@ import { leanToPublic } from '../crud.repository'
 import {
     createSample,
     createSamples,
+    defaultSizeValue,
     maxSizeValue,
     sortByName,
     sortByNameDescending,
@@ -143,12 +144,12 @@ describe('CrudRepository', () => {
             await expect(promise).rejects.toThrow(fix.BadRequestException)
         })
 
-        it('size가 없으면 기본값을 사용한다', async () => {
+        it('size가 없으면 기본값(defaultSize)을 사용한다', async () => {
             const { size } = await fix.repository.findWithPagination({
                 pagination: { orderby: { direction: OrderDirection.Desc, name: 'name' } }
             })
 
-            expect(size).toEqual(maxSizeValue)
+            expect(size).toEqual(defaultSizeValue)
         })
 
         it('설정된 조건을 적용한다', async () => {

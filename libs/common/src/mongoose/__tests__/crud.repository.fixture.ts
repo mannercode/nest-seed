@@ -18,6 +18,7 @@ export class SampleDto {
     name: string
 }
 
+export const defaultSizeValue = 30
 export const maxSizeValue = 50
 
 export type CrudRepositoryFixture = {
@@ -31,7 +32,7 @@ export type CrudRepositoryFixture = {
 @Injectable()
 class SamplesRepository extends CrudRepository<Sample> {
     constructor(@InjectModel(Sample.name) readonly model: Model<Sample>) {
-        super(model, maxSizeValue)
+        super(model, defaultSizeValue, maxSizeValue)
     }
 }
 

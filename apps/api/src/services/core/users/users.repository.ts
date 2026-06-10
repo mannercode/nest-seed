@@ -19,7 +19,7 @@ export class UsersRepository extends CrudRepository<User> {
         readonly model: Model<User>,
         config: AppConfigService
     ) {
-        super(model, config.http.paginationDefaultSize)
+        super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
     }
 
     async create(createDto: CreateUserDto) {

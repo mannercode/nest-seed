@@ -1,4 +1,4 @@
-import { Require, sortBy, uniq } from '@mannercode/common'
+import { OrderDirection, Require, sortBy, uniq } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { RecommendationService } from 'application'
 import { MoviesService, ShowtimeDto, ShowtimesService, TheatersService } from 'core'
@@ -33,7 +33,13 @@ export class UserHomeViewService {
 
     private async getUpcomingCards(): Promise<HomeMovieCard[]> {
         // 공개된 영화만 후보. searchPage가 isPublished=true 필터를 강제한다.
-        const page = await this.movies.searchPage({ page: 1, size: HOME_MOVIE_COUNT })
+        // 후보는 최신 개봉작 순으로 고정해 결과를 결정적으로 만든다.
+        // 후보 N개 중 상영 없는 영화는 카드에서 빠지므로, 홈은 "최신 개봉작 중 지금 볼 수 있는 영화" 큐레이션이다.
+        const page = await this.movies.searchPage({
+            orderby: { direction: OrderDirection.Desc, name: 'releaseDate' },
+            page: 1,
+            size: HOME_MOVIE_COUNT
+        })
         if (page.items.length === 0) return []
 
         const upcomingShowtimes = await this.showtimes.search({

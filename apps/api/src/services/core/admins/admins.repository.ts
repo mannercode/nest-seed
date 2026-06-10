@@ -13,7 +13,7 @@ export class AdminsRepository extends CrudRepository<Admin> {
         readonly model: Model<Admin>,
         config: AppConfigService
     ) {
-        super(model, config.http.paginationDefaultSize)
+        super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
     }
 
     async create(createDto: CreateAdminDto) {

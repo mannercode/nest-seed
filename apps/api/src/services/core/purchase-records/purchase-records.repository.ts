@@ -13,7 +13,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         readonly model: Model<PurchaseRecord>,
         config: AppConfigService
     ) {
-        super(model, config.http.paginationDefaultSize)
+        super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
     }
 
     async findByUserId(userId: string) {

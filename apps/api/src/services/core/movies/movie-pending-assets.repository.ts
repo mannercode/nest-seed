@@ -12,7 +12,7 @@ export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAss
         readonly model: Model<MoviePendingAsset>,
         config: AppConfigService
     ) {
-        super(model, config.http.paginationDefaultSize)
+        super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
     }
 
     async addPendingAsset(movieId: string, assetId: string) {

@@ -13,7 +13,7 @@ export class AssetsRepository extends CrudRepository<Asset> {
         readonly model: Model<Asset>,
         config: AppConfigService
     ) {
-        super(model, config.http.paginationDefaultSize)
+        super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
     }
 
     async assignOwner(assetId: string, owner: { entityId: string; service: string }) {

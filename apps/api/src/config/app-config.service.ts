@@ -20,6 +20,8 @@ export class AppConfigService extends BaseConfigService {
         ROOT_PASSWORD: Joi.string().required(),
         API_PORT: Joi.number().required(),
         HTTP_PAGINATION_DEFAULT_SIZE: Joi.number().required(),
+        // 페이지 상한. 기본값(HTTP_PAGINATION_DEFAULT_SIZE)과 분리해, 기본값을 조정해도 상한이 따라 움직이지 않게 한다.
+        HTTP_PAGINATION_MAX_SIZE: Joi.number().default(100),
 
         HTTP_REQUEST_PAYLOAD_LIMIT: Joi.string().required(),
         LOG_CONSOLE_LEVEL: Joi.string().required(),
@@ -98,6 +100,7 @@ export class AppConfigService extends BaseConfigService {
     get http() {
         return {
             paginationDefaultSize: this.getNumber('HTTP_PAGINATION_DEFAULT_SIZE'),
+            paginationMaxSize: this.getNumber('HTTP_PAGINATION_MAX_SIZE'),
             port: this.getNumber('API_PORT'),
             requestPayloadLimit: this.getString('HTTP_REQUEST_PAYLOAD_LIMIT')
         }

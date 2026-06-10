@@ -24,7 +24,7 @@ export class TicketsRepository extends CrudRepository<Ticket> {
         @InjectModel(Ticket.name, MONGO_CONNECTION_NAME) readonly model: Model<Ticket>,
         config: AppConfigService
     ) {
-        super(model, config.http.paginationDefaultSize)
+        super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
     }
 
     async deleteBySagaIds(sagaIds: string[]) {

@@ -56,9 +56,9 @@
 
 ### 숨은 설정 결합
 
-- [ ] apps/api/src/services/application/recommendation/recommendation.service.ts:32 — 관람기록 조회 size 50 하드코딩이 HTTP_PAGINATION_DEFAULT_SIZE(=50)와 일치할 때만 동작, env를 낮추면 추천이 400
-- [ ] libs/common/src/mongoose/crud.repository.ts:116 — HTTP_PAGINATION_DEFAULT_SIZE를 50 미만으로 낮추면 console 두 페이지·perf 5개 시나리오·console-e2e가 동시에 400으로 깨지는 숨은 결합
-- [ ] apps/api/src/services/view/user-app/home/home-view.service.ts:36 — 홈 후보 영화를 정렬 없는 첫 페이지 12개로 선정해 상영 중 영화 누락·비결정적 결과
+- [x] apps/api/src/services/application/recommendation/recommendation.service.ts:32 — 페이지 기본값·상한 분리로 결합 해소(RECENT_WATCH_LIMIT 정책 상수 + 상한 100 이내 주석)
+- [x] libs/common/src/mongoose/crud.repository.ts:116 — HTTP_PAGINATION_MAX_SIZE(기본 100) 신설로 기본값과 상한을 분리. CrudRepository가 (defaultSize, maxSize)를 따로 받아, 기본값을 낮춰도 console·perf·e2e의 size=50 요청이 깨지지 않음
+- [x] apps/api/src/services/view/user-app/home/home-view.service.ts:36 — 홈 후보를 최신 개봉작 순으로 고정해 결정적으로 만들고, "최신 개봉작 중 지금 볼 수 있는 영화" 큐레이션임을 주석으로 명시
 
 ### 운영 가시성
 
@@ -90,7 +90,7 @@
 
 - [ ] apps/api/src/services/gateway/movies.http-controller.ts:56 — 비공개(draft) 영화가 가드 없는 GET /movies/:movieId로 조회됨
 - [ ] apps/api/src/services/infrastructure/assets/assets.service.ts:136 — checksum을 필수로 받고 저장·노출하지만 업로드 결과와 대조하지 않음
-- [ ] apps/api/src/config/app-config.service.ts:99 — HTTP_PAGINATION_DEFAULT_SIZE가 기본값이 아니라 페이지 크기 상한으로도 동작
+- [x] apps/api/src/config/app-config.service.ts:99 — 기본값·상한 이중 역할을 HTTP_PAGINATION_MAX_SIZE 분리로 해소(위 crud.repository 항목과 같은 커밋)
 - [ ] apps/api/src/config/app-config.service.ts:9 — JWT·root 시크릿에 최소 길이 검증이 없음
 - [x] apps/api/src/services/core/users/users.repository.ts:37 — existsByEmail 죽은 코드 제거 완료(자기 자신만 검증하던 테스트 포함)
 - [x] apps/api/src/services/application/showtime-creation/internal/types.ts:15 — ShowtimeCreationJobData 제거 완료

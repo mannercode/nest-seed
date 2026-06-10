@@ -13,7 +13,7 @@ export class PaymentsRepository extends CrudRepository<Payment> {
         readonly model: Model<Payment>,
         config: AppConfigService
     ) {
-        super(model, config.http.paginationDefaultSize)
+        super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
     }
 
     async cancel(paymentId: string) {

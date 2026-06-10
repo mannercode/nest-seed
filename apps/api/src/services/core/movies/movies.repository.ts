@@ -17,7 +17,7 @@ export class MoviesRepository extends CrudRepository<Movie> {
         @InjectModel(Movie.name, MONGO_CONNECTION_NAME) readonly model: Model<Movie>,
         config: AppConfigService
     ) {
-        super(model, config.http.paginationDefaultSize)
+        super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
     }
 
     async addAsset(movieId: string, assetId: string) {

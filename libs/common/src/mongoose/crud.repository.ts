@@ -54,8 +54,11 @@ export function leanOneToPublic<T>(doc: unknown): null | T {
  * 해당 구현은 삭제·수정 메서드를 타입 차원에서 노출하지 않는다.
  */
 export abstract class CrudRepository<Doc> implements OnModuleInit {
+    // defaultSize는 호출자가 size를 생략했을 때의 페이지 크기, maxSize는 요청이 넘을 수 없는 상한이다.
+    // 한 값이 두 역할을 겸하면 기본값을 조정할 때 상한까지 따라 움직여 호출자들이 깨진다.
     constructor(
         protected readonly model: Model<Doc>,
+        protected readonly defaultSize: number,
         protected readonly maxSize: number
     ) {}
 
@@ -107,7 +110,7 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
     }) {
         const { configureQuery, pagination, session } = args
 
-        const size = defaultTo(pagination.size, this.maxSize)
+        const size = defaultTo(pagination.size, this.defaultSize)
         const page = defaultTo(pagination.page, 1)
 
         if (size <= 0) {

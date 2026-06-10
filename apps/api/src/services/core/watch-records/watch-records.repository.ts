@@ -13,7 +13,7 @@ export class WatchRecordsRepository extends CrudRepository<WatchRecord> {
         readonly model: Model<WatchRecord>,
         config: AppConfigService
     ) {
-        super(model, config.http.paginationDefaultSize)
+        super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
     }
 
     async create(createDto: CreateWatchRecordDto) {

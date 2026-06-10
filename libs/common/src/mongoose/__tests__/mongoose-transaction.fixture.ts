@@ -22,7 +22,7 @@ export type MongooseTransactionFixture = {
 @Injectable()
 class SamplesRepository extends CrudRepository<Sample> {
     constructor(@InjectModel(Sample.name) readonly model: Model<Sample>) {
-        super(model, 1)
+        super(model, 1, 1)
     }
 }
 

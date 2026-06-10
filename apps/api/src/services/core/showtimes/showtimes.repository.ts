@@ -18,7 +18,7 @@ export class ShowtimesRepository extends CrudRepository<Showtime> {
         readonly model: Model<Showtime>,
         config: AppConfigService
     ) {
-        super(model, config.http.paginationDefaultSize)
+        super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
     }
 
     async deleteBySagaIds(sagaIds: string[]) {

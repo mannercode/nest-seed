@@ -18,7 +18,7 @@ export class TheatersRepository extends CrudRepository<Theater> {
         readonly model: Model<Theater>,
         config: AppConfigService
     ) {
-        super(model, config.http.paginationDefaultSize)
+        super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
     }
 
     async create(createDto: CreateTheaterDto) {
