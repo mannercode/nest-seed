@@ -35,6 +35,14 @@ RUN ARCH=$(dpkg --print-architecture) \
     && mv "/tmp/k6-v1.4.1-linux-${ARCH}/k6" /usr/local/bin/k6 \
     && rm -rf /tmp/k6.tar.gz "/tmp/k6-v1.4.1-linux-${ARCH}"
 
+# cloudflared: 개발 중 localhost:3000(API)을 공개 https 도메인으로 노출하는 quick tunnel.
+# 계정·도메인 없이 임시 *.trycloudflare.com URL을 발급해 OAuth 콜백·웹훅 수신을 로컬에서 받게 한다.
+# k6와 같은 이유로 GitHub release에서 버전을 고정해 받는다(seed 사용자 간 버전 일치).
+RUN ARCH=$(dpkg --print-architecture) \
+    && curl -fsSL "https://github.com/cloudflare/cloudflared/releases/download/2026.6.0/cloudflared-linux-${ARCH}" \
+    -o /usr/local/bin/cloudflared \
+    && chmod +x /usr/local/bin/cloudflared
+
 # 브라우저 바이너리는 이미지 빌드 중 root 권한으로 설치되지만, 테스트는 node 사용자로 실행된다.
 # 기본 경로(`/root/.cache/ms-playwright`) 대신 두 사용자가 모두 접근할 수 있는 `/opt/playwright`에 설치한다.
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
