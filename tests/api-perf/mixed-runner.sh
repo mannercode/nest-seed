@@ -16,7 +16,7 @@ set -euo pipefail
 : "${WORKSPACE_ROOT:?}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-HARNESS="${SCRIPT_DIR}/harness.js"
+HARNESS="${SCRIPT_DIR}/harness-crud.js"
 
 # k6는 handleSummary 반환 파일을 쓸 때 디렉토리는 만들지 않는다. 미리 만든다.
 mkdir -p "${WORKSPACE_ROOT}/_output/perf"

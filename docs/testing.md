@@ -146,7 +146,7 @@ TEST "영화를 생성한다" \
 | `docs/summary.json`      | 같은 내용을 도구가 읽기 쉬운 JSON 배열로 저장                                |
 
 ```bash
-bash deploy/test.sh
+bash deploy/verify.sh
 # 또는 API가 이미 떠 있다면
 cd apps/api/api-docs && bash run.sh
 ```
@@ -161,8 +161,8 @@ cd apps/api/api-docs && bash run.sh
 
 | 파일                       | 검증 대상                                                                  |
 | -------------------------- | -------------------------------------------------------------------------- |
-| `sse.js`                   | SSE 이벤트가 모든 API 컨테이너의 클라이언트에게 빠짐없이 전달되는가        |
-| `user-race.js`             | 같은 이메일 동시 가입 → unique index로 1개만 201, 나머지는 409             |
+| `sse-fanout-race.js`       | SSE 이벤트가 모든 API 컨테이너의 클라이언트에게 빠짐없이 전달되는가        |
+| `user-signup-race.js`      | 같은 이메일 동시 가입 → unique index로 1개만 201, 나머지는 409             |
 | `ticket-holding-race.js`   | 같은 좌석 동시 선점 → Redis Lua script로 1개만 204, 나머지는 409           |
 | `showtime-overlap-race.js` | 겹치는 시간대 사가 동시 요청 → 분산 락으로 1개 성공, 1개 실패              |
 | `purchase-double-spend.js` | 같은 티켓 묶음 동시 구매 → 1개만 201, 나머지는 409, 결제는 1건             |

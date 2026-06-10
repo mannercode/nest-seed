@@ -52,3 +52,4 @@ for t in "${TARGETS[@]}"; do
 done
 
 cat "$URL_FILE"
+# TODO 여기서 생성하는 파일을 npm run clean하면 삭제하게 된다.

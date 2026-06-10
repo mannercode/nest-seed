@@ -15,7 +15,7 @@
  *
  * 실행:
  *   mkdir -p _output/perf  # k6는 출력 디렉토리를 만들지 않는다
- *   k6 run --env SCENARIO=user-write tests/api-perf/harness.js
+ *   k6 run --env SCENARIO=user-write tests/api-perf/harness-crud.js
  */
 
 import http from 'k6/http'

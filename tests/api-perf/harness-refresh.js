@@ -8,7 +8,7 @@
  * VU마다 setup 단계에서 한 번씩 가입·로그인을 끝내고, 이후 자기 토큰을 회전한다.
  * 같은 토큰을 여러 VU가 동시에 회전시키면 무효화 경합이 일어나므로 토큰은 VU 단위로 분리한다.
  *
- * 환경 변수는 harness.js와 같다: SERVER_URL, CONCURRENCY, DURATION_MS, WARMUP_MS, LABEL.
+ * 환경 변수는 harness-crud.js와 같다: SERVER_URL, CONCURRENCY, DURATION_MS, WARMUP_MS, LABEL.
  */
 
 import { sleep } from 'k6'
