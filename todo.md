@@ -42,9 +42,9 @@
 
 ### 데이터 모델
 
-- [ ] apps/api/src/services/core/users/models/user.ts:10 — 소프트 삭제 × email unique 인덱스 충돌로 탈퇴한 이메일 재가입 영구 불가
-- [ ] apps/api/src/services/core/admins/models/admin.ts:7 — Admin도 동일한 소프트 삭제 × email unique 충돌(형제 버그)
-- [ ] libs/common/src/mongoose/append-only.schema.ts:28 — AppendOnlySchema가 findOneAndDelete와 bulkWrite 변이를 차단하지 못함
+- [x] apps/api/src/services/core/users/models/user.ts:10 — (email, deletedAt) 복합 유일 인덱스로 교체해 살아 있는 문서끼리만 충돌, 탈퇴 이메일 재가입 테스트 추가
+- [x] apps/api/src/services/core/admins/models/admin.ts:7 — Admin도 동일하게 수정, 재생성 테스트 추가
+- [x] libs/common/src/mongoose/append-only.schema.ts:28 — findOneAndDelete(쿼리)·bulkWrite(모델) 미들웨어 차단 추가, 테스트 2건 추가
 
 ### 입력 검증·API 계약
 

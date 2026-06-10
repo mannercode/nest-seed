@@ -210,6 +210,15 @@ describe('UsersService', () => {
             await fix.httpClient.delete(`/users/${nullObjectId}`).headers(adminAuth).noContent()
         })
 
+        it('탈퇴한 고객의 이메일로 다시 가입할 수 있다', async () => {
+            const email = 'rejoin@mail.com'
+            const user = await createUser(fix, { email })
+
+            await fix.httpClient.delete(`/users/${user.id}`).headers(adminAuth).noContent()
+
+            await fix.httpClient.post('/users').body(buildCreateUserDto({ email })).created()
+        })
+
         it('삭제된 고객의 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
             const { user, refreshToken } = await createAndLoginUser(fix)
 

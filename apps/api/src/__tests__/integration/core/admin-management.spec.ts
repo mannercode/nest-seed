@@ -91,6 +91,21 @@ describe('Root + Admin lifecycle', () => {
                 .unauthorized(Errors.Auth.Unauthorized())
         })
 
+        it('제거된 admin의 이메일로 다시 admin을 만들 수 있다', async () => {
+            const created = await createAdmin(fix, adminCredentials)
+
+            await fix.httpClient
+                .delete(`/admins/${created.id}`)
+                .headers({ Authorization: rootBasic })
+                .noContent()
+
+            await fix.httpClient
+                .post('/admins')
+                .headers({ Authorization: rootBasic })
+                .body({ ...adminCredentials, name: 'again' })
+                .created(expect.objectContaining({ email: adminCredentials.email }))
+        })
+
         it('제거된 admin의 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
             const created = await createAdmin(fix, adminCredentials)
             const { refreshToken } = await loginAdmin(fix, adminCredentials)

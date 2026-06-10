@@ -69,6 +69,18 @@ describe('AppendOnly', () => {
                     fix.model.replaceOne({ _id: createdDoc._id }, { name: 'replaced' }).exec()
                 ).rejects.toThrow(/append-only/)
             })
+
+            it('findOneAndDelete도 예외를 던진다', async () => {
+                await expect(
+                    fix.model.findOneAndDelete({ _id: createdDoc._id }).exec()
+                ).rejects.toThrow(/append-only/)
+            })
+
+            it('bulkWrite도 예외를 던진다', async () => {
+                await expect(
+                    fix.model.bulkWrite([{ deleteOne: { filter: { _id: createdDoc._id } } }])
+                ).rejects.toThrow(/append-only/)
+            })
         })
     })
 

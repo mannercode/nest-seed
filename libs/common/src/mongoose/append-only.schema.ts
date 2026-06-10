@@ -29,9 +29,12 @@ export function createAppendOnlySchema<T>(cls: Type<T>): Schema<T> {
     schema.pre('updateMany', throwMutation)
     schema.pre('findOneAndUpdate', throwMutation)
     schema.pre('findOneAndReplace', throwMutation)
+    schema.pre('findOneAndDelete', throwMutation)
     schema.pre('replaceOne', throwMutation)
     schema.pre('deleteOne', throwMutation)
     schema.pre('deleteMany', throwMutation)
+    // `Model.bulkWrite`는 쿼리 미들웨어를 거치지 않는 별도 진입점이라 모델 미들웨어로 막는다.
+    schema.pre('bulkWrite', throwMutation)
 
     // 문서 메서드 호출(`doc.deleteOne()`) 차단.
     schema.pre('deleteOne', { document: true, query: false }, function () {
