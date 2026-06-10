@@ -23,10 +23,7 @@ const globalTeardown = createGlobalTeardown({
         new Redis.Cluster([
             { host: process.env.REDIS_HOST1, port: Number(process.env.REDIS_PORT1) },
             { host: process.env.REDIS_HOST2, port: Number(process.env.REDIS_PORT2) },
-            { host: process.env.REDIS_HOST3, port: Number(process.env.REDIS_PORT3) },
-            { host: process.env.REDIS_HOST4, port: Number(process.env.REDIS_PORT4) },
-            { host: process.env.REDIS_HOST5, port: Number(process.env.REDIS_PORT5) },
-            { host: process.env.REDIS_HOST6, port: Number(process.env.REDIS_PORT6) }
+            { host: process.env.REDIS_HOST3, port: Number(process.env.REDIS_PORT3) }
         ])
 })
 

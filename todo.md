@@ -72,7 +72,7 @@
 
 ### 문서
 
-- [ ] docs/testing.md:121 — 문서가 설명하는 api-docs spec 문법(DOC/GROUP)이 run.sh에 존재하지 않음. 문서대로 spec을 쓰면 api-docs 실행 전체가 중단됨. 실제 문법(`TEST "<설명>" <상태> <METHOD> <경로>`, 그룹은 파일명 자동 유도)으로 갱신
+- [x] docs/testing.md:121 — 문서가 설명하는 api-docs spec 문법(DOC/GROUP)이 run.sh에 존재하지 않음 → 실제 문법(`TEST "<설명>" <상태> <METHOD> <경로>`, 그룹은 파일명 자동 유도)으로 갱신 완료. 단일 spec 실행법도 §4·§5에 추가
 
 ## 낮음 (52)
 
@@ -112,7 +112,7 @@
 - [ ] libs/testing/src/utils.ts:25 — createDummyFile: 자체 단위 테스트 외 사용처 없는 죽은 export
 - [ ] `libs/testing/src/__tests__/http.test-client.fixture.ts:61` — 어떤 테스트도 호출하지 않는 엔드포인트 다수, sse 등 핵심 기능이 자체 테스트로 미검증
 - [ ] tools/jest-helpers/index.js:104 — setupJestLifecycle: beforeAll 실패 시 afterAll이 undefined 핸들에 close/destroy를 호출해 원인 파악 방해
-- [ ] apps/api/webpack.config.js:28 — externals 주석이 temporal-sandbox에 존재하지 않는 payloadConverterPath 동작을 근거로 설명
+- [x] apps/api/webpack.config.js:28 — externals 주석이 존재한 적 없는 payloadConverterPath를 근거로 설명. 조사 결과 temporal-sandbox는 워크플로 파일에서만 import되고 워크플로는 bundleWorkflowCode가 따로 번들하므로 앱 번들 그래프에 들어오지 않음(산출물 참조 0건) → 죽은 external 규칙째 제거 완료, 빌드 검증
 - [ ] libs/temporal-sandbox/package.json:20 — 사용하지 않는 @mannercode/dev-tools devDependency
 
 ### 데모 앱 (console·user-app)
@@ -144,13 +144,13 @@
 
 ### 문서 표류
 
-- [ ] docs/environment.md:12 — .env.api 표가 이미 제거된 'runner.sh가 .env.api를 source' 흐름을 설명
-- [ ] docs/testing.md:102 — §4의 'apps/api jest.global.js가 .env 로드' 설명이 코드 및 environment.md와 불일치
-- [ ] README.md:26 — 안내하는 '단일 spec 실행법'이 docs/testing.md에 존재하지 않음
-- [ ] docs/conventions.md:59 — §1.4의 workflowBundle 경로 예시가 실제 번들 경로와 다름
-- [ ] apps/api/jest.teardown.js:27 — 어디에도 정의되지 않은 REDIS_HOST4~6/REDIS_PORT4~6 참조
-- [ ] docs/decisions.md:110 — user-app 홈 View 예시 설명이 Application(Recommendation) 호출을 누락
-- [ ] docs/architecture.md:63 — 레이어 규칙 강제 수단 설명이 no-restricted-imports만 언급, 실제 핵심은 eslint-plugin-boundaries
+- [x] docs/environment.md:12 — .env.api 표의 'test.sh·runner.sh가 source' 설명 제거 완료(둘 다 ambient 상속)
+- [x] docs/testing.md:102 — 'apps/api jest.global.js가 .env 로드' 설명을 실제(workflow bundle 생성만, env는 ambient)로 수정 완료
+- [x] README.md:26 — '단일 spec 실행법'을 docs/testing.md §4에 추가해(`npm test -w apps/api -- <패턴> --coverage=false`, 동작 확인) 안내가 유효해짐
+- [x] docs/conventions.md:59 — workflowBundle 경로 예시를 실제 경로(`_output/workflows/showtime-creation/workflow.js`)로 수정 완료
+- [x] apps/api/jest.teardown.js:27 — 미정의 REDIS_HOST4~6/REDIS_PORT4~6 참조 제거 완료
+- [x] docs/decisions.md:110 — user-app 홈 View 예시에 Recommendation(Application) 호출 추가 완료
+- [x] docs/architecture.md:63 — 강제 수단을 eslint-plugin-boundaries(방향)+no-restricted-imports(세부)로 정정 완료
 
 ## 기각된 지적 — 의도된 설계로 판명 (재지적 금지)
 

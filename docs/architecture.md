@@ -60,7 +60,7 @@ Application, Core, Infrastructure는 단일 서비스를 제공하는 협력 관
 3. Gateway와 View는 서비스 소비자이므로 아래 계층의 공개 API를 자유롭게 호출한다. 단 View는 읽기 응답에 집중하고, 상태를 바꾸는 유스케이스는 두지 않는다.
 4. 서비스 제공 쪽(Application/Core/Infrastructure)은 Gateway와 View를 참조하지 않는다.
 
-이 규칙은 빌드할 때 ESLint의 `no-restricted-imports`로 강제한다. 설정은 [apps/api/eslint.config.js](../apps/api/eslint.config.js)에 있다.
+이 규칙은 ESLint로 강제한다. 계층 간 의존 방향은 `eslint-plugin-boundaries`가 막고, 계층별 세부 금지 항목은 `no-restricted-imports`가 막는다. 설정은 [apps/api/eslint.config.js](../apps/api/eslint.config.js)에 있다.
 
 ### 1.4. View는 화면 전용 서비스 소비자다
 

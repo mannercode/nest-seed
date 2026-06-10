@@ -56,8 +56,8 @@ SearchShowtimesDto
 파일 이름까지 포함하는 경로는 `Path`, 디렉터리만 가리키는 경로는 `Dir`로 끝낸다. 변수 이름만 보고 호출 측에서 `path.join`을 더 붙여야 하는지 판단할 수 있어야 한다.
 
 ```ts
-workflowBundleDir = '_output/dist' // 디렉터리
-workflowBundlePath = '_output/dist/showtime-creation.bundle.js' // 파일까지 포함
+workflowBundleDir = '_output/workflows/showtime-creation' // 디렉터리
+workflowBundlePath = '_output/workflows/showtime-creation/workflow.js' // 파일까지 포함
 ```
 
 환경 변수와 설정 키도 디렉터리를 가리키면 이름에 그대로 드러낸다 (`LOG_DIRECTORY` 등).

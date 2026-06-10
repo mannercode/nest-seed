@@ -6,13 +6,13 @@
 
 ## 1. 파일 역할
 
-| 파일                     | 읽는 곳                                                                                            | 역할                                                                                                                                                               |
-| ------------------------ | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `.env.infra`             | Dev Container `runArgs`, `infra` compose, `deploy/compose.yml`                                     | 개발 인프라 이미지 태그와 접속 값. MongoDB, Redis, MinIO, NATS, Temporal 서비스 이름·포트와 dev 서버 포트(`API_PORT`, `CONSOLE_PORT`, `USER_APP_PORT`)를 정의한다. |
-| `.env.api`               | Dev Container `runArgs`, `deploy/compose.yml`, `deploy/test.sh`, `tests/api-race/runner.sh` source | API 런타임의 앱 설정. `PROJECT_ID`, HTTP, 인증, 로그 값, `ROOT_PASSWORD`를 둔다.                                                                                   |
-| `apps/api/api-docs/.env` | `apps/api/api-docs/run.sh`                                                                         | curl 기반 API 문서 실행 설정. `SERVER_URL`과 업로드 fixture 값을 둔다.                                                                                             |
-| `apps/console/.env`      | Next.js console                                                                                    | 관리 콘솔이 호출할 API 기준 URL을 둔다.                                                                                                                            |
-| `apps/user-app/.env`     | Next.js user-app                                                                                   | 사용자 앱이 호출할 API 기준 URL을 둔다.                                                                                                                            |
+| 파일                     | 읽는 곳                                                        | 역할                                                                                                                                                               |
+| ------------------------ | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `.env.infra`             | Dev Container `runArgs`, `infra` compose, `deploy/compose.yml` | 개발 인프라 이미지 태그와 접속 값. MongoDB, Redis, MinIO, NATS, Temporal 서비스 이름·포트와 dev 서버 포트(`API_PORT`, `CONSOLE_PORT`, `USER_APP_PORT`)를 정의한다. |
+| `.env.api`               | Dev Container `runArgs`, `deploy/compose.yml` `env_file`       | API 런타임의 앱 설정. `PROJECT_ID`, HTTP, 인증, 로그 값, `ROOT_PASSWORD`를 둔다.                                                                                   |
+| `apps/api/api-docs/.env` | `apps/api/api-docs/run.sh`                                     | curl 기반 API 문서 실행 설정. `SERVER_URL`과 업로드 fixture 값을 둔다.                                                                                             |
+| `apps/console/.env`      | Next.js console                                                | 관리 콘솔이 호출할 API 기준 URL을 둔다.                                                                                                                            |
+| `apps/user-app/.env`     | Next.js user-app                                               | 사용자 앱이 호출할 API 기준 URL을 둔다.                                                                                                                            |
 
 `.env` 파일은 역할별로 분리한다. 인프라가 소유한 값은 `.env.infra`, API가 소유한 값은 `.env.api`에 둔다.
 
