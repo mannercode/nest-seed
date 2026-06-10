@@ -113,6 +113,17 @@ describe('MoviesService', () => {
         })
     })
 
+    describe('GET /movies/:id (공개 조회)', () => {
+        it('미공개(draft) 영화는 404를 반환한다', async () => {
+            const { createUnpublishedMovie } = await import('../helpers')
+            const draft = await createUnpublishedMovie(fix)
+
+            await fix.httpClient
+                .get(`/movies/${draft.id}`)
+                .notFound(Errors.Movies.NotFound(draft.id))
+        })
+    })
+
     describe('DELETE /movies/:id', () => {
         it('영화가 존재하면 204를 반환한다', async () => {
             const movie = await createMovie(fix)

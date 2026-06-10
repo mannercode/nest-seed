@@ -40,8 +40,8 @@ export default function LoginPage() {
             >
                 <h1 className="text-xl font-semibold">관리자 로그인</h1>
                 <p className="text-sm text-slate-500">
-                    콘솔은 운영자(admin) 전용이다. 가입 페이지가 없는 이유는 시드된 1명으로만
-                    동작하기 때문이다.
+                    콘솔은 운영자(admin) 전용이다. 가입 페이지가 없는 이유는 admin 계정을 root가
+                    API(POST /admins)로 만들기 때문이다.
                 </p>
                 <label className="block text-sm font-medium text-slate-700">
                     이메일

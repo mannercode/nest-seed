@@ -88,10 +88,10 @@
 
 ### API
 
-- [ ] apps/api/src/services/gateway/movies.http-controller.ts:56 — 비공개(draft) 영화가 가드 없는 GET /movies/:movieId로 조회됨
+- [x] apps/api/src/services/gateway/movies.http-controller.ts:56 — 공개 GET은 MoviesService.getPublished로 draft를 404로 숨김(내부 흐름은 getMany 유지). draft 404 테스트 추가, assets 스펙은 서비스 조회로 전환
 - [ ] apps/api/src/services/infrastructure/assets/assets.service.ts:136 — checksum을 필수로 받고 저장·노출하지만 업로드 결과와 대조하지 않음
 - [x] apps/api/src/config/app-config.service.ts:99 — 기본값·상한 이중 역할을 HTTP_PAGINATION_MAX_SIZE 분리로 해소(위 crud.repository 항목과 같은 커밋)
-- [ ] apps/api/src/config/app-config.service.ts:9 — JWT·root 시크릿에 최소 길이 검증이 없음
+- [x] apps/api/src/config/app-config.service.ts:9 — AUTH 시크릿 4종 min(20), ROOT_PASSWORD min(8) 추가
 - [x] apps/api/src/services/core/users/users.repository.ts:37 — existsByEmail 죽은 코드 제거 완료(자기 자신만 검증하던 테스트 포함)
 - [x] apps/api/src/services/application/showtime-creation/internal/types.ts:15 — ShowtimeCreationJobData 제거 완료
 

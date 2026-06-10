@@ -70,8 +70,8 @@ export class MoviesHttpController {
 
     @Get(':movieId')
     async get(@Param('movieId') movieId: string) {
-        const [movie] = await this.moviesService.getMany([movieId])
-        return movie
+        // 공개 라우트이므로 미공개(draft) 영화는 404로 숨긴다.
+        return this.moviesService.getPublished(movieId)
     }
 
     @HttpCode(HttpStatus.OK)

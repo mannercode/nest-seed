@@ -141,14 +141,20 @@ describe('MoviesAssets', () => {
                     .noContent()
             })
 
+            // 공개 GET은 draft를 404로 숨기므로, draft 상태의 결과 확인은 서비스로 조회한다.
+            const getImageUrls = async () => {
+                const { MoviesService } = await import('core')
+                const moviesService = fix.module.get(MoviesService)
+                const [found] = await moviesService.getMany([movie.id])
+                return found?.imageUrls
+            }
+
             it('영화의 imageUrls에 에셋이 추가된다', async () => {
                 await fix.httpClient
                     .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
                     .noContent()
 
-                await fix.httpClient
-                    .get(`/movies/${movie.id}`)
-                    .ok(expect.objectContaining({ imageUrls: [expect.any(String)] }))
+                await expect(getImageUrls()).resolves.toEqual([expect.any(String)])
             })
 
             it('두 번 호출해도 204를 반환한다', async () => {
@@ -160,9 +166,7 @@ describe('MoviesAssets', () => {
                     .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
                     .noContent()
 
-                await fix.httpClient
-                    .get(`/movies/${movie.id}`)
-                    .ok(expect.objectContaining({ imageUrls: [expect.any(String)] }))
+                await expect(getImageUrls()).resolves.toEqual([expect.any(String)])
             })
         })
 

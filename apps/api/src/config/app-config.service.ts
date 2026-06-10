@@ -6,18 +6,19 @@ import Joi from 'joi'
 @Injectable()
 export class AppConfigService extends BaseConfigService {
     static schema = Joi.object({
-        AUTH_ACCESS_SECRET: Joi.string().required(),
+        // 시크릿은 .env 기본값의 이름이 약속하는 대로 최소 20자를 강제한다. 짧은 값은 부팅에서 막는다.
+        AUTH_ACCESS_SECRET: Joi.string().min(20).required(),
 
         AUTH_ACCESS_TOKEN_EXPIRATION: Joi.string().required(),
-        AUTH_ADMIN_ACCESS_SECRET: Joi.string().required(),
+        AUTH_ADMIN_ACCESS_SECRET: Joi.string().min(20).required(),
         AUTH_ADMIN_ACCESS_TOKEN_EXPIRATION: Joi.string().required(),
-        AUTH_ADMIN_REFRESH_SECRET: Joi.string().required(),
+        AUTH_ADMIN_REFRESH_SECRET: Joi.string().min(20).required(),
         AUTH_ADMIN_REFRESH_TOKEN_EXPIRATION: Joi.string().required(),
         AUTH_AUDIENCE: Joi.string().required(),
         AUTH_ISSUER: Joi.string().required(),
-        AUTH_REFRESH_SECRET: Joi.string().required(),
+        AUTH_REFRESH_SECRET: Joi.string().min(20).required(),
         AUTH_REFRESH_TOKEN_EXPIRATION: Joi.string().required(),
-        ROOT_PASSWORD: Joi.string().required(),
+        ROOT_PASSWORD: Joi.string().min(8).required(),
         API_PORT: Joi.number().required(),
         HTTP_PAGINATION_DEFAULT_SIZE: Joi.number().required(),
         // 페이지 상한. 기본값(HTTP_PAGINATION_DEFAULT_SIZE)과 분리해, 기본값을 조정해도 상한이 따라 움직이지 않게 한다.

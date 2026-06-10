@@ -62,13 +62,17 @@ describe('Root + Admin lifecycle', () => {
 
         it('중복 키 외의 저장 오류는 ConflictException으로 바꾸지 않고 그대로 던진다', async () => {
             const { AdminsService } = await import('core')
+            const { ConflictException } = await import('@nestjs/common')
             const service = fix.module.get(AdminsService)
 
             // required 필드를 null로 보내 Mongoose ValidatorError를 유도한다.
             // class-validator는 컨트롤러에만 붙어 있으므로 service를 직접 호출한다.
             const invalidDto = { email: 'x@y.com', name: null as unknown as string, password: 'p' }
 
-            await expect(service.create(invalidDto)).rejects.toThrow()
+            // "그대로 던진다"의 핵심은 409로 변환되지 않는 것이므로 예외 타입까지 확인한다.
+            const promise = service.create(invalidDto)
+            await expect(promise).rejects.toThrow()
+            await expect(promise).rejects.not.toBeInstanceOf(ConflictException)
         })
     })
 
@@ -132,7 +136,8 @@ describe('Root + Admin lifecycle', () => {
         })
 
         it("username이 'root'가 아니면 401을 반환한다", async () => {
-            const wrongUser = `Basic ${Buffer.from('admin:DevPass1!').toString('base64')}`
+            // 비밀번호는 실제 값을 써서 "username만 틀린" 경우를 검증한다. 하드코딩하면 env 변경 시 의도가 무너진다.
+            const wrongUser = `Basic ${Buffer.from(`admin:${rootPassword}`).toString('base64')}`
             await fix.httpClient
                 .post('/admins')
                 .headers({ Authorization: wrongUser })
