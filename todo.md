@@ -1,0 +1,157 @@
+# 전체 검토 결과 TODO
+
+2026-06-10 전수 검토 결과. 파인더 15개(영역 11 + 횡단 4)가 보고한 102건을 중복 병합(87건) 후
+적대 검증을 거쳐 **77건 확정**(높음 8 / 중간 22 / 낮음 47), 15건은 의도된 설계로 판명되어 기각.
+(낮음 1건은 2026-06-10 설정 파일 후속 검토에서 추가)
+
+전반: SoLA 레이어 의존 위반 0건(eslint-plugin-boundaries로 강제), 빌드·린트 클린.
+결함은 인증 수명주기, 티켓 판매 동시성, 도메인 간 참조 무결성 세 축에 집중.
+
+## 높음 (8)
+
+### 인증·계정
+
+- [ ] apps/api/src/services/core/users/users.service.ts:41 — 계정 삭제(탈퇴·관리자 제거)가 리프레시 토큰 패밀리를 취소하지 않아 삭제된 주체가 무기한 인증 유지. root가 제거한 admin도 admin API 계속 호출 가능. `revokeAllForUser`가 이미 있는데 삭제 경로만 미사용
+- [ ] apps/api/src/services/core/users/users.repository.ts:72 — PATCH /users(me, :userId)에 보낸 password가 검증만 통과하고 조용히 버려짐(200 반환, 변경 없음). admins는 해시해 저장하므로 두 도메인이 어긋남
+
+### 티켓 판매 흐름
+
+- [ ] apps/api/src/services/application/booking/booking.service.ts:40 — 티켓 선점에 존재·상영 소속·수량 검증이 없어 한 사용자가 상영 전체 좌석을 무제한 선점 가능
+- [ ] apps/api/src/services/application/purchase/purchase.service.ts:31 — 구매 분산 락이 동일 티켓 묶음만 직렬화해, 겹치는 묶음의 동시 결제가 이중 판매·타 구매 롤백으로 이어질 수 있음
+- [ ] apps/api/src/services/application/purchase/internal/ticket-purchase.service.ts:52 — rollbackPurchase가 "내가 전이시킨 티켓"이 아니라 "현재 Sold인 티켓"을 복구해, 실패한 구매의 보상이 다른 구매가 정당하게 판매한 좌석을 되돌림. 위 락 범위 문제와 같은 구매 흐름이므로 묶어서 수정 권장
+- [ ] apps/api/src/services/application/showtime-creation/internal/showtime-bulk-validator.service.ts:53 — 상영 일괄 생성 검증이 요청 내부의 startTimes 중복·상호 겹침을 검사하지 않아 같은 극장에 겹치는 상영과 중복 좌석 티켓 생성
+
+### 참조 무결성·수명주기
+
+- [ ] apps/api/src/services/core/movies/movies.service.ts:61 — 상영이 남은 영화·극장을 삭제하면 dangling 참조로 모든 사용자의 홈/추천 API가 통째로 실패(`getByIds`의 NotFoundException). 극장 삭제도 동일
+- [ ] libs/common/src/temporal/temporal-worker.service.ts:38 — 워커가 이미 종료된 상태에서 onModuleDestroy의 `shutdown()`이 IllegalStateError를 던져 NativeConnection 정리가 건너뛰어짐. SIGTERM의 평범한 종료 경로에서도 발생
+
+## 중간 (22)
+
+### 판매 동시성·사가
+
+- [ ] apps/api/src/services/core/tickets/tickets.service.ts:50 — updateStatusMany가 검사-후-쓰기 비원자라 겹치는 티켓 묶음의 동시 결제에서 같은 티켓이 두 번 팔릴 수 있음
+- [ ] apps/api/src/services/core/ticket-holding/ticket-holding.service.ts:86 — releaseTickets가 소유권 확인 없이 티켓 키를 DEL해 다른 사용자의 선점을 해제 가능, 프로덕션에서 호출되지도 않음
+- [ ] apps/api/src/services/application/showtime-creation/worker/activities.ts:76 — compensate 액티비티가 보상 실패를 삼켜 재시도 정책이 무력화되고 고아 데이터가 로그 한 줄만 남기고 잔류
+- [ ] apps/api/src/services/application/showtime-creation/worker/workflow.ts:42 — validateAndCreate가 heartbeat 없는 15분 타임아웃이라, 타임아웃 시 좀비 액티비티가 compensate와 경합해 고아 showtime/ticket이 남을 수 있음. 락 TTL(5분) < 락 대기(10분) 구조도 함께 점검
+
+### 인증·세션
+
+- [ ] apps/api/src/services/core/admins/admins.service.ts:39 — admin 비밀번호 변경이 기존 리프레시 토큰 패밀리를 취소하지 않음
+- [ ] libs/common/src/auth/auth.guard.ts:109 — 만료된 토큰의 401 응답만 설정된 errorBody(에러 code)를 우회
+
+### 데이터 모델
+
+- [ ] apps/api/src/services/core/users/models/user.ts:10 — 소프트 삭제 × email unique 인덱스 충돌로 탈퇴한 이메일 재가입 영구 불가
+- [ ] apps/api/src/services/core/admins/models/admin.ts:7 — Admin도 동일한 소프트 삭제 × email unique 충돌(형제 버그)
+- [ ] libs/common/src/mongoose/append-only.schema.ts:28 — AppendOnlySchema가 findOneAndDelete와 bulkWrite 변이를 차단하지 못함
+
+### 입력 검증·API 계약
+
+- [ ] apps/api/src/services/application/purchase/purchase.service.ts:56 — 결제 금액(totalPrice)이 클라이언트 입력 그대로 사용되고 서버 측 가격 검증이 없음
+- [ ] apps/api/src/services/application/purchase/dtos/create-purchase.dto.ts:9 — purchaseItems의 @IsNotEmpty()가 빈 배열을 통과시켜 아이템 0개 구매가 끝까지 성공
+- [ ] libs/common/src/mongoose/mongoose.util.ts:7 — objectId()가 잘못된 형식의 id에 BSONError를 던져 클라이언트 입력 오류가 500으로 응답
+- [ ] libs/common/src/pagination/pagination.ts:40 — orderby의 객체·배열 입력이 검증을 건너뛰어 500 유발
+- [ ] libs/common/src/utils/http.ts:12 — buildContentDisposition가 filename\*의 공백을 +로 치환해 RFC 5987 위반
+
+### 숨은 설정 결합
+
+- [ ] apps/api/src/services/application/recommendation/recommendation.service.ts:32 — 관람기록 조회 size 50 하드코딩이 HTTP_PAGINATION_DEFAULT_SIZE(=50)와 일치할 때만 동작, env를 낮추면 추천이 400
+- [ ] libs/common/src/mongoose/crud.repository.ts:116 — HTTP_PAGINATION_DEFAULT_SIZE를 50 미만으로 낮추면 console 두 페이지·perf 5개 시나리오·console-e2e가 동시에 400으로 깨지는 숨은 결합
+- [ ] apps/api/src/services/view/user-app/home/home-view.service.ts:36 — 홈 후보 영화를 정렬 없는 첫 페이지 12개로 선정해 상영 중 영화 누락·비결정적 결과
+
+### 운영 가시성
+
+- [ ] apps/api/src/modules/health/health.service.ts:22 — /health가 NATS·Temporal 연결을 점검하지 않아 핵심 기능이 죽어도 healthy로 보고
+- [ ] libs/common/src/redis/redis.module.ts:48 — RedisModule·NatsModule이 만든 연결을 닫는 수명주기 훅이 없어 app.close() 후 연결 잔류
+
+### 테스트 인프라
+
+- [ ] tools/jest-helpers/index.js:162 — cleanupRedisAll이 Cluster 연결 준비 전에 nodes('master')를 호출해 Redis flush가 항상 no-op(실행으로 재현됨). 정리 대상 0개면 예외를 던져 무음 통과 차단 권장
+- [ ] tests/api-perf/perf-common.js:75 — 측정 창 시작점이 VU init 시각 기준이라 setup(bcrypt 가입·로그인)이 워밍업을 잠식, RPS 최대 ~10% 과대. 측정 시작점을 setup() 완료 기준으로 이동
+
+### 문서
+
+- [ ] docs/testing.md:121 — 문서가 설명하는 api-docs spec 문법(DOC/GROUP)이 run.sh에 존재하지 않음. 문서대로 spec을 쓰면 api-docs 실행 전체가 중단됨. 실제 문법(`TEST "<설명>" <상태> <METHOD> <경로>`, 그룹은 파일명 자동 유도)으로 갱신
+
+## 낮음 (47)
+
+### libs/common 동작 결함
+
+- [ ] libs/common/src/config/base-config.service.ts:35 — getNumber: 빈 문자열 환경 변수가 예외 대신 0으로 통과
+- [ ] libs/common/src/logger/redact.ts:32 — redactSensitive가 Date 등 plain object가 아닌 값을 {}로 바꿔 로그에서 값 소실
+- [ ] libs/common/src/utils/json.ts:69 — JsonUtil.parse가 문자열 리터럴 내부의 숫자까지 치환해 유효한 JSON 파싱 실패
+- [ ] libs/common/src/utils/byte.ts:10 — ByteUtil.toString 출력을 fromString이 거부(왕복 불가, TimeUtil과 불일치)
+- [ ] libs/common/src/pagination/pagination.ts:69 — page/size에 @IsInt가 없어 소수 값 통과, 페이지 경계 비결정적
+- [ ] libs/common/src/mongoose/crud.repository.ts:235 — withTransaction: commit/abort 실패 시 endSession 미호출로 세션 누수
+- [ ] libs/common/src/mongoose/crud.repository.ts:149 — findWithPagination 카운트 쿼리가 session을 무시해 트랜잭션 내 조회 불일치
+
+### API
+
+- [ ] apps/api/src/services/gateway/movies.http-controller.ts:56 — 비공개(draft) 영화가 가드 없는 GET /movies/:movieId로 조회됨
+- [ ] apps/api/src/services/infrastructure/assets/assets.service.ts:136 — checksum을 필수로 받고 저장·노출하지만 업로드 결과와 대조하지 않음
+- [ ] apps/api/src/config/app-config.service.ts:99 — HTTP_PAGINATION_DEFAULT_SIZE가 기본값이 아니라 페이지 크기 상한으로도 동작
+- [ ] apps/api/src/config/app-config.service.ts:9 — JWT·root 시크릿에 최소 길이 검증이 없음
+- [ ] apps/api/src/services/core/users/users.repository.ts:37 — existsByEmail은 어디서도 호출되지 않는 죽은 코드
+- [ ] apps/api/src/services/application/showtime-creation/internal/types.ts:15 — ShowtimeCreationJobData는 BullMQ 시절 잔재 죽은 코드
+
+### 통합 테스트 (apps/api)
+
+- [ ] `apps/api/src/__tests__/integration/application/showtime-creation.utils.ts:11` — waitForCompletion의 abort가 SSE 스트림이 아니라 마지막 요청(POST)을 겨냥
+- [ ] `apps/api/src/__tests__/integration/core/users.spec.ts:96` — "ConflictException으로 바꾸지 않고 그대로 던진다" 테스트가 변환 여부를 전혀 검증하지 못함
+- [ ] `apps/api/src/__tests__/integration/core/admin-management.spec.ts:105` — RootAuthGuard username 검증 테스트가 dev용 ROOT_PASSWORD 값에 암묵적 결합
+- [ ] `apps/api/src/__tests__/integration/helpers/create-app-test-context.ts:69` — createConfigServiceMock은 죽은 코드
+- [ ] `apps/api/src/__tests__/integration/application/purchase.utils.ts:47` — holdTickets가 반환하는 heldTickets(4장)와 실제 선점 범위(10장 전부)가 다름
+
+### 테스트 라이브러리·헬퍼
+
+- [ ] libs/testing/src/http.test-client.ts:161 — sse: 한 청크에 이벤트가 여러 개 오면 마지막만 전달되고 앞 이벤트 소실
+- [ ] libs/testing/src/http.test-client.ts:21 — quoteUnsafeIntegers가 문자열 리터럴 내부의 긴 숫자도 quoting해 유효한 JSON 파싱이 깨짐
+- [ ] libs/testing/src/http.test-client.ts:174 — sse 'end' 핸들러: Node 스트림 'end' 이벤트는 인자가 없어 streamError 분기가 절대 실행 안 됨
+- [ ] libs/testing/src/create-test-context.ts:44 — ignoreProviders: 미사용 죽은 옵션이며 구현도 imported 모듈 바인딩을 대체하지 못함
+- [ ] libs/testing/src/utils.ts:25 — createDummyFile: 자체 단위 테스트 외 사용처 없는 죽은 export
+- [ ] `libs/testing/src/__tests__/http.test-client.fixture.ts:61` — 어떤 테스트도 호출하지 않는 엔드포인트 다수, sse 등 핵심 기능이 자체 테스트로 미검증
+- [ ] tools/jest-helpers/index.js:104 — setupJestLifecycle: beforeAll 실패 시 afterAll이 undefined 핸들에 close/destroy를 호출해 원인 파악 방해
+- [ ] apps/api/webpack.config.js:28 — externals 주석이 temporal-sandbox에 존재하지 않는 payloadConverterPath 동작을 근거로 설명
+- [ ] libs/temporal-sandbox/package.json:20 — 사용하지 않는 @mannercode/dev-tools devDependency
+
+### 데모 앱 (console·user-app)
+
+- [ ] apps/user-app/src/app/page.tsx:34 — 로그인 후 "회원님을 위한 추천"을 표시하지만 토큰을 보내지 않아 개인화 추천이 절대 동작하지 않음
+- [ ] apps/console/src/app/theaters/page.tsx:12 — /theaters 극장 목록이 어떤 내비게이션에서도 도달 불가한 고아 페이지
+- [ ] apps/console/src/lib/session.ts:20 — readEmail이 미사용 죽은 export(EMAIL_KEY 저장도 쓰기 전용)
+- [ ] apps/console/src/app/login/page.tsx:43 — "시드된 1명으로만 동작" 문구가 실제 동작(부팅 시 admin 미생성)과 불일치
+
+### 테스트 스위트 (perf·race·e2e)
+
+- [ ] tests/api-race/ticket-holding-race.js:72 — `?? search.body.at(-1)` 폴백이 startTime 매칭 실패를 침묵시킴
+- [ ] tests/api-perf/harness-refresh.js:5 — 주석의 "호출마다 Redis를 두 번 친다"가 실제 구현(4 round-trip, 8개 명령)과 불일치
+
+### 인프라·CI
+
+- [ ] .github/workflows/test-stability.yaml:12 — cancel-in-progress가 6시간 주기와 350분 실행 시간 사이에서 직전 회차를 취소할 수 있음
+- [ ] infra/compose.mongo.yml:68 — mongo-setup 대기 루프가 PRIMARY 선출이 아니라 rs.status().ok만 검사해 사실상 무대기
+- [ ] .env.infra:1 — minio/minio:latest, amazon/aws-cli(무태그), nginx:alpine만 버전 미고정
+- [ ] .env.infra:29,33 — NATS_MONITORING_PORT·TEMPORAL_DB_PORT가 어디서도 읽히지 않는 죽은 변수. 실제 값은 infra/compose.nats.yml(8222 하드코딩 3곳)과 infra/temporal/compose.temporal.yml:36,53(DB_PORT '5432')에 박혀 있어 .env.infra 값을 바꿔도 효과 없음. 변수를 compose에 연결하거나 제거
+- [ ] deploy/deps.Dockerfile:10 — apps/user-app/package.json을 복사하지 않아 주석의 전제와 모순
+- [ ] eslint.config.node.js:139 — export 4종(tseslint, basePlugins, baseRules, escapeForRegex)이 미사용
+- [ ] package-lock.json:8 — 미커밋 1줄 변경은 license 필드 동기화로 무해, 커밋할 가치 있음
+
+### 문서 표류
+
+- [ ] docs/environment.md:12 — .env.api 표가 이미 제거된 'runner.sh가 .env.api를 source' 흐름을 설명
+- [ ] docs/testing.md:102 — §4의 'apps/api jest.global.js가 .env 로드' 설명이 코드 및 environment.md와 불일치
+- [ ] README.md:26 — 안내하는 '단일 spec 실행법'이 docs/testing.md에 존재하지 않음
+- [ ] docs/conventions.md:59 — §1.4의 workflowBundle 경로 예시가 실제 번들 경로와 다름
+- [ ] apps/api/jest.teardown.js:27 — 어디에도 정의되지 않은 REDIS_HOST4~6/REDIS_PORT4~6 참조
+- [ ] docs/decisions.md:110 — user-app 홈 View 예시 설명이 Application(Recommendation) 호출을 누락
+- [ ] docs/architecture.md:63 — 레이어 규칙 강제 수단 설명이 no-restricted-imports만 언급, 실제 핵심은 eslint-plugin-boundaries
+
+## 기각된 지적 — 의도된 설계로 판명 (재지적 금지)
+
+검증 과정에서 반박되어 기각된 15건 중 다시 제기될 가능성이 높은 것들:
+
+- watch-records 생성 경로 0개("죽은 기능") — 커밋 6d011ea와 api-client.ts 주석으로 확인된 의도된 시드 경계. 게스트는 개봉일 순 폴백으로 정상 동작
+- NATS 핸들러 예외 시 구독 루프 중단 — 클래스 주석과 전용 테스트로 명시된 계약. 발행자가 모두 같은 앱이라 잘못된 메시지 경로 없음
+- test-atoz에 Docker Hub 로그인 부재 — 커밋 9a9b2b7의 의도적 결정. fork PR에는 secrets가 없어 무조건적 로그인이 오히려 PR을 깨뜨림
+- 기타: perf 하네스의 무단언 종료, mixed-runner의 set -e 동작, .husky 전역 commitlint, SSE 구독 순서 경합 2건, conventions.md REST 예시 등 — 모두 검증자가 코드·커밋 근거로 반박
