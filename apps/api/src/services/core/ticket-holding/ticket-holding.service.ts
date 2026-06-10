@@ -1,5 +1,5 @@
-import { CacheService, getByPath, InjectCache } from '@mannercode/common'
-import { Injectable, Logger } from '@nestjs/common'
+import { CacheService, InjectCache } from '@mannercode/common'
+import { Injectable } from '@nestjs/common'
 import { AppConfigService } from 'config'
 import { HoldTicketsDto } from './dtos'
 
@@ -25,9 +25,9 @@ const HOLD_TICKETS_SCRIPT = `
 
     local userKey = KEYS[#KEYS]
 
-    -- 이전 해제가 중간에 실패해 ticket 키와 user 키가 어긋났다면,
-    -- user 키에 이제 다른 사용자가 소유한 ticketId가 남아 있을 수 있다.
-    -- 그래서 현재 사용자 소유로 확인된 ticket 키만 DEL 한다.
+    -- 같은 사용자가 선점을 갱신하면 user 키에 이전 ticketId 목록이 남아 있다.
+    -- TTL 만료 시점 차이로 그중 일부를 이제 다른 사용자가 소유했을 수 있으므로,
+    -- 현재 사용자 소유로 확인된 ticket 키만 DEL 한다.
     -- 소유자가 다르면 그대로 두어 다른 사용자의 선점을 해제하지 않는다.
     local previousTicketIdsJson = redis.call('GET', userKey)
     if previousTicketIdsJson then
@@ -53,8 +53,6 @@ const HOLD_TICKETS_SCRIPT = `
 
 @Injectable()
 export class TicketHoldingService {
-    private readonly logger = new Logger(TicketHoldingService.name)
-
     constructor(
         @InjectCache('ticket-holding') private readonly cacheService: CacheService,
         private readonly config: AppConfigService
@@ -74,30 +72,6 @@ export class TicketHoldingService {
         const result = await this.cacheService.executeScript(HOLD_TICKETS_SCRIPT, keys, scriptArgs)
 
         return result === 1
-    }
-
-    async releaseTickets(showtimeId: string, userId: string): Promise<void> {
-        const tickets = await this.searchHeldTicketIds(showtimeId, userId)
-
-        // 티켓 키 하나를 삭제하지 못하더라도 나머지 티켓 키와 사용자 키 정리는 계속한다.
-        // 부분 실패가 영구 잠금으로 이어지지 않는 이유는 두 가지이다.
-        // 첫째, 선점에 걸린 TTL이 끝나면 남은 키가 사라진다.
-        // 둘째, 다음 `holdTickets`가 사용자 키를 다시 읽어 같은 사용자의 남은 티켓 키를 정리한다.
-        const results = await Promise.allSettled(
-            tickets.map((ticketId) => this.cacheService.delete(getTicketKey(showtimeId, ticketId)))
-        )
-        const failed = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-        if (failed.length > 0) {
-            this.logger.warn('partial ticket release failure', {
-                failedCount: failed.length,
-                reasons: failed.map((r) => getByPath(r, 'reason.message', String(r.reason))),
-                showtimeId,
-                totalCount: tickets.length,
-                userId
-            })
-        }
-
-        await this.cacheService.delete(getUserKey(showtimeId, userId))
     }
 
     async searchHeldTicketIds(showtimeId: string, userId: string): Promise<string[]> {

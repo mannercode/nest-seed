@@ -1,5 +1,5 @@
-import type { HoldTicketsDto, TicketHoldingService } from 'core'
-import { CacheService, sleep } from '@mannercode/common'
+import type { TicketHoldingService } from 'core'
+import { sleep } from '@mannercode/common'
 import { oid } from '@mannercode/testing'
 import { buildHoldTicketsDto, overrideConfigGetter, type AppTestContext } from '../helpers'
 
@@ -129,74 +129,6 @@ describe('TicketHoldingService', () => {
             )
 
             expect(heldTicketIds).toHaveLength(0)
-        })
-    })
-
-    describe('releaseTickets', () => {
-        describe('고객이 티켓을 보유하고 있을 때', () => {
-            let holdDto: HoldTicketsDto
-
-            beforeEach(async () => {
-                holdDto = buildHoldTicketsDto()
-                await ticketHoldingService.holdTickets(holdDto)
-            })
-
-            it('보유 상태가 사라진다', async () => {
-                await ticketHoldingService.releaseTickets(holdDto.showtimeId, holdDto.userId)
-
-                const heldTicketIds = await ticketHoldingService.searchHeldTicketIds(
-                    holdDto.showtimeId,
-                    holdDto.userId
-                )
-                expect(heldTicketIds).toHaveLength(0)
-            })
-
-            it('해제 후 다른 고객이 같은 티켓을 잡을 수 있다', async () => {
-                await ticketHoldingService.releaseTickets(holdDto.showtimeId, holdDto.userId)
-
-                const otherDto = buildHoldTicketsDto({
-                    showtimeId: holdDto.showtimeId,
-                    ticketIds: holdDto.ticketIds,
-                    userId: oid(0xff)
-                })
-                const isHeld = await ticketHoldingService.holdTickets(otherDto)
-
-                expect(isHeld).toBe(true)
-            })
-        })
-
-        it('보유한 티켓이 없는 고객에게 호출해도 예외 없이 끝난다', async () => {
-            await expect(
-                ticketHoldingService.releaseTickets(oid(0xa0), oid(0xc1))
-            ).resolves.toBeUndefined()
-        })
-
-        it('일부 티켓 키 삭제가 실패해도 경고 로그만 남기고 계속 진행한다', async () => {
-            const holdDto = buildHoldTicketsDto()
-            await ticketHoldingService.holdTickets(holdDto)
-
-            const cacheService = fix.module.get<CacheService>(
-                CacheService.getName('ticket-holding')
-            )
-            const realDelete = cacheService.delete.bind(cacheService)
-            let calls = 0
-            jest.spyOn(cacheService, 'delete').mockImplementation((key: any) => {
-                calls++
-                // 첫 호출(티켓 키 하나)만 실패시키고, 나머지(다른 티켓 키와 사용자 키)는 정상 동작시킨다.
-                if (calls === 1) return Promise.reject(new Error('delete failed'))
-                return realDelete(key)
-            })
-            const { Logger } = await import('@nestjs/common')
-            const warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation()
-
-            await expect(
-                ticketHoldingService.releaseTickets(holdDto.showtimeId, holdDto.userId)
-            ).resolves.toBeUndefined()
-
-            expect(warnSpy).toHaveBeenCalledWith(
-                'partial ticket release failure',
-                expect.objectContaining({ failedCount: 1 })
-            )
         })
     })
 })

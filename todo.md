@@ -31,9 +31,9 @@
 ### 판매 동시성·사가
 
 - [x] apps/api/src/services/core/tickets/tickets.service.ts:50 — updateStatusMany의 검사-후-쓰기 경쟁 → transitStatusMany(트랜잭션 내 조건부 updateMany, matchedCount 검증)로 교체 완료. 전부-아니면-전무 테스트 추가
-- [ ] apps/api/src/services/core/ticket-holding/ticket-holding.service.ts:86 — releaseTickets가 소유권 확인 없이 티켓 키를 DEL해 다른 사용자의 선점을 해제 가능, 프로덕션에서 호출되지도 않음
-- [ ] apps/api/src/services/application/showtime-creation/worker/activities.ts:76 — compensate 액티비티가 보상 실패를 삼켜 재시도 정책이 무력화되고 고아 데이터가 로그 한 줄만 남기고 잔류
-- [ ] apps/api/src/services/application/showtime-creation/worker/workflow.ts:42 — validateAndCreate가 heartbeat 없는 15분 타임아웃이라, 타임아웃 시 좀비 액티비티가 compensate와 경합해 고아 showtime/ticket이 남을 수 있음. 락 TTL(5분) < 락 대기(10분) 구조도 함께 점검
+- [x] apps/api/src/services/core/ticket-holding/ticket-holding.service.ts:86 — releaseTickets는 무소유 DEL 결함 + 프로덕션 미사용이라 제거(보유는 TTL 만료·재선점 정리로 충분). hold 스크립트의 낡은 주석도 현행화
+- [x] apps/api/src/services/application/showtime-creation/worker/activities.ts:76 — compensate가 보상 실패를 삼키던 문제 → 실패를 던져 Temporal 재시도 정책(3회)이 실제로 동작하게 수정, 재시도 테스트 추가(삭제는 멱등)
+- [x] apps/api/src/services/application/showtime-creation/worker/workflow.ts:42 — 좀비 validateAndCreate와 compensate의 경합 → compensate가 같은 분산 락을 기다려 직렬화. 락 TTL도 액티비티 타임아웃과 같은 15분으로 정합(워커 사망 시에만 만료)
 
 ### 인증·세션
 

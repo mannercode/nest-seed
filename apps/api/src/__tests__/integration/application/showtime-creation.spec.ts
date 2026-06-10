@@ -266,6 +266,37 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
+        describe('보상 중 삭제가 한 번 실패하면', () => {
+            // compensate는 실패를 던져 Temporal 재시도 정책에 맡긴다. 삭제는 멱등이라 재실행이 안전하다.
+            beforeEach(() => {
+                jest.spyOn(ticketsService, 'createMany').mockRejectedValueOnce(
+                    new Error('ticket creation failed')
+                )
+                jest.spyOn(ticketsService, 'deleteBySagaIds').mockRejectedValueOnce(
+                    new Error('delete failed')
+                )
+            })
+
+            it('재시도로 정리를 끝낸 뒤 오류 상태를 전송한다', async () => {
+                const completionPromise = waitForCompletion(fix, 'error')
+
+                const { body } = await fix.httpClient
+                    .post('/showtime-creation/showtimes')
+                    .body({
+                        durationInMinutes: 1,
+                        movieId: movie.id,
+                        startTimes: [new Date('2100-01-01T09:00')],
+                        theaterIds: [theater.id]
+                    })
+                    .accepted()
+
+                await completionPromise
+
+                const showtimes = await showtimesService.search({ sagaIds: [body.sagaId] })
+                expect(showtimes).toEqual([])
+            })
+        })
+
         it('기존 상영 시간과 겹치면 충돌 목록과 함께 실패 상태를 전송한다', async () => {
             const initialShowtimes = await createShowtimes(
                 fix,
