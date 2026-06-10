@@ -186,7 +186,7 @@ record_summary() {
 	local expected_status=$2
 	local method=$3
 	local endpoint=$4
-	local group=${CURRENT_GROUP:-일반}
+	local group=${CURRENT_GROUP:?TEST가 spec 밖에서 호출됨}
 	local display_endpoint
 	local log_path
 	local result

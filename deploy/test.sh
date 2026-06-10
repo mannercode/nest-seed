@@ -20,4 +20,4 @@ trap cleanup EXIT
 
 docker compose up -d --build --wait
 
-SERVER_URL=http://nginx:80 bash "${APP_DIR}/api-docs/run.sh"
+SERVER_URL=http://nginx bash "${APP_DIR}/api-docs/run.sh"

@@ -3,10 +3,11 @@
 # 서버가 준비된 뒤 admin-tools에서 default namespace를 한 번 등록해, 이후 워커와 클라이언트가 같은 namespace로 연결되도록 한다.
 set -eu
 
-NAMESPACE=${DEFAULT_NAMESPACE:-default}
-TEMPORAL_ADDRESS=${TEMPORAL_ADDRESS:-temporal:7233}
-MAX_ATTEMPTS=${TEMPORAL_HEALTH_CHECK_MAX_ATTEMPTS:-30}
-SLEEP_SECONDS=${TEMPORAL_HEALTH_CHECK_SLEEP_SECONDS:-5}
+# 두 값은 compose.temporal.yml의 environment가 넘긴다. 배선이 빠지면 엉뚱한 namespace를 만들지 말고 즉시 실패한다.
+NAMESPACE=${DEFAULT_NAMESPACE:?}
+TEMPORAL_ADDRESS=${TEMPORAL_ADDRESS:?}
+MAX_ATTEMPTS=30
+SLEEP_SECONDS=5
 
 echo "Waiting for Temporal server port to be available..."
 SERVER_HOST=$(echo "$TEMPORAL_ADDRESS" | cut -d: -f1)
@@ -41,7 +42,7 @@ done
 # dev/test에서 완료 워크플로가 누적돼 transfer-queue를 정체시키지 않도록 1h로 짧게 잡는다.
 # Temporal 디폴트(72h)는 운영용.
 # minRetentionDays=0이 dynamic config로 풀려 있어야 1h 설정이 허용된다.
-NAMESPACE_RETENTION=${TEMPORAL_NAMESPACE_RETENTION:-1h0m0s}
+NAMESPACE_RETENTION=1h0m0s
 
 echo "Server is healthy, creating namespace '$NAMESPACE' (retention=$NAMESPACE_RETENTION)..."
 attempt=1
