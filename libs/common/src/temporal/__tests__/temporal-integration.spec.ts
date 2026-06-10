@@ -203,6 +203,26 @@ describe('TemporalWorkerService', () => {
         await expect(service.onModuleDestroy()).resolves.toBeUndefined()
     })
 
+    it('워커가 이미 멈춘 뒤에 destroy를 다시 호출해도 예외 없이 정리를 마친다', async () => {
+        // 이미 멈춘 워커의 shutdown()은 IllegalStateError를 던진다.
+        // run() 실패나 시그널 핸들러의 선행 종료와 같은 상태를 중복 destroy로 재현한다.
+        const { TemporalWorkerService } = await import('../temporal-worker.service')
+        const { address, namespace } = config()
+
+        const service = new TemporalWorkerService({
+            activities: {},
+            address,
+            namespace,
+            taskQueue: withTestId('worker-redestroy'),
+            workflowBundlePath: bundlePath
+        })
+
+        await service.onModuleInit()
+
+        await service.onModuleDestroy()
+        await expect(service.onModuleDestroy()).resolves.toBeUndefined()
+    }, 120_000)
+
     it('workflowBundlePath 파일이 없으면 init에서 ENOENT를 던진다', async () => {
         const { TemporalWorkerService } = await import('../temporal-worker.service')
         const { address, namespace } = config()
