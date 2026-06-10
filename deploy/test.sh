@@ -16,7 +16,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-. "${WORKSPACE_ROOT}/ensure-deps-image.sh"
+. "${WORKSPACE_ROOT}/deploy/ensure-deps-image.sh"
 
 docker compose up -d --build --wait
 

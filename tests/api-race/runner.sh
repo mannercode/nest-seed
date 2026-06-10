@@ -60,7 +60,7 @@ dump_diagnostics() {
 
 bring_up_stack() {
     echo "Building and deploying 4-replica api stack..."
-    . "${WORKSPACE_ROOT}/ensure-deps-image.sh"
+    . "${WORKSPACE_ROOT}/deploy/ensure-deps-image.sh"
 
     if ! docker compose up -d --build --wait; then
         echo "[FAIL] compose up failed before ${TEST_NAME} could start"
