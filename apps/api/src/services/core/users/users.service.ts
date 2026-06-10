@@ -79,8 +79,17 @@ export class UsersService {
     }
 
     async update(userId: string, updateDto: UpdateUserDto) {
+        const patch = { ...updateDto }
+        if (patch.password !== undefined) {
+            patch.password = await this.authenticationService.hash(patch.password)
+        }
+
         try {
-            const user = await this.repository.update(userId, updateDto)
+            const user = await this.repository.update(userId, patch)
+            // 비밀번호가 바뀌면 기존 리프레시 토큰 묶음은 더 이상 신뢰할 수 없으므로 함께 회수한다.
+            if (patch.password !== undefined) {
+                await this.authenticationService.revokeAllForUser(userId)
+            }
             return this.toDto(user)
         } catch (error) {
             if (isDuplicateKeyError(error) && updateDto.email) {

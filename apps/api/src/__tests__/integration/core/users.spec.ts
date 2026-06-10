@@ -147,6 +147,34 @@ describe('UsersService', () => {
                 .notFound(Errors.Mongoose.DocumentNotFound(nullObjectId))
         })
 
+        it('password를 바꾸면 새 password로 로그인할 수 있다', async () => {
+            await fix.httpClient
+                .patch(`/users/${user.id}`)
+                .headers(adminAuth)
+                .body({ password: 'newPassword' })
+                .ok()
+
+            await fix.httpClient
+                .post('/users/login')
+                .body({ email: user.email, password: 'newPassword' })
+                .ok({ accessToken: expect.any(String), refreshToken: expect.any(String) })
+        })
+
+        it('password를 바꾸면 기존 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
+            const session = await createAndLoginUser(fix)
+
+            await fix.httpClient
+                .patch(`/users/${session.user.id}`)
+                .headers(adminAuth)
+                .body({ password: 'newPassword' })
+                .ok()
+
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: session.refreshToken })
+                .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
+        })
+
         it('다른 고객의 이메일로 변경하면 409를 반환한다', async () => {
             const existingEmail = 'taken@mail.com'
             await createUser(fix, { email: existingEmail })

@@ -67,6 +67,7 @@ export class UsersRepository extends CrudRepository<User> {
         assignIfDefined(user, updateDto, 'name')
         assignIfDefined(user, updateDto, 'email')
         assignIfDefined(user, updateDto, 'birthDate')
+        assignIfDefined(user, updateDto, 'password')
 
         await user.save()
 

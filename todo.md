@@ -12,7 +12,7 @@
 ### 인증·계정
 
 - [x] apps/api/src/services/core/users/users.service.ts:41 — 계정 삭제가 리프레시 토큰 패밀리를 취소하지 않던 문제 → deleteMany·admins.remove가 삭제 전에 revokeAllForUser/revokeAllForAdmin을 호출하도록 수정 완료(통합 테스트 3건 추가). 액세스 토큰 잔여 수명(30m) 창은 시드의 의도된 트레이드오프로 둠
-- [ ] apps/api/src/services/core/users/users.repository.ts:72 — PATCH /users(me, :userId)에 보낸 password가 검증만 통과하고 조용히 버려짐(200 반환, 변경 없음). admins는 해시해 저장하므로 두 도메인이 어긋남
+- [x] apps/api/src/services/core/users/users.repository.ts:72 — PATCH /users의 password가 조용히 버려지던 문제 → admins와 같은 패턴(해시 저장 + 기존 리프레시 토큰 회수)으로 지원 완료, 테스트 2건 추가
 
 ### 티켓 판매 흐름
 
