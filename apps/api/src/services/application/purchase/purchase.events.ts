@@ -13,16 +13,9 @@ import { getProjectId } from 'config'
  */
 @Injectable()
 export class PurchaseEvents {
-    readonly subjects = {
-        canceled: `${getProjectId()}.purchase.ticketPurchaseCanceled`,
-        purchased: `${getProjectId()}.purchase.ticketPurchased`
-    }
+    readonly subjects = { purchased: `${getProjectId()}.purchase.ticketPurchased` }
 
     constructor(@InjectNatsPubSub() private readonly natsPubSub: NatsPubSubService) {}
-
-    async emitTicketPurchaseCanceled(payload: TicketPurchaseCanceledEvent) {
-        await this.natsPubSub.publish(this.subjects.canceled, JSON.stringify(payload))
-    }
 
     async emitTicketPurchased(payload: TicketPurchasedEvent) {
         await this.natsPubSub.publish(this.subjects.purchased, JSON.stringify(payload))
@@ -30,4 +23,3 @@ export class PurchaseEvents {
 }
 
 export type TicketPurchasedEvent = { userId: string; ticketIds: string[] }
-export type TicketPurchaseCanceledEvent = { userId: string; ticketIds: string[] }

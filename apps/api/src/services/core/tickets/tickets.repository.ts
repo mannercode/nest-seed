@@ -5,7 +5,7 @@ import {
     QueryBuilder,
     leanArrayToPublic
 } from '@mannercode/common'
-import { Injectable } from '@nestjs/common'
+import { ConflictException, Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
 import { Model } from 'mongoose'
@@ -15,6 +15,7 @@ import {
     SearchTicketsDto,
     TicketSalesForShowtimeDto
 } from './dtos'
+import { TicketErrors } from './errors'
 import { Ticket, TicketStatus } from './models'
 
 @Injectable()
@@ -79,13 +80,28 @@ export class TicketsRepository extends CrudRepository<Ticket> {
         return leanArrayToPublic<Ticket>(tickets)
     }
 
-    async updateStatusMany(ticketIds: string[], status: TicketStatus) {
-        const result = await this.model.updateMany(
-            { _id: { $in: objectIds(ticketIds) } },
-            { $set: { status } }
-        )
+    async transitStatusMany(ticketIds: string[], from: TicketStatus, to: TicketStatus) {
+        // 검사와 쓰기 사이에 다른 결제가 끼어드는 경쟁을 트랜잭션 + 상태 조건으로 차단한다.
+        // 하나라도 `from` 상태가 아니면 전체를 중단해, 겹치는 티켓 묶음의 동시 결제에서도 같은 티켓이 두 번 팔리지 않는다.
+        const ids = objectIds(ticketIds)
 
-        return result
+        await this.withTransaction(async (session) => {
+            const result = await this.model.updateMany(
+                { _id: { $in: ids }, status: from },
+                { $set: { status: to } },
+                { session }
+            )
+
+            if (result.matchedCount !== ticketIds.length) {
+                // 세션 없는 조회는 커밋 전 상태를 보므로, 전이할 수 없었던 티켓이 그대로 드러난다.
+                const eligibleDocs = await this.model
+                    .find({ _id: { $in: ids }, status: from }, { _id: 1 })
+                    .lean()
+                const eligibleIds = new Set(eligibleDocs.map((doc) => String(doc._id)))
+                const failedIds = ticketIds.filter((ticketId) => !eligibleIds.has(ticketId))
+                throw new ConflictException(TicketErrors.StatusTransitionFailed(failedIds))
+            }
+        })
     }
 
     private buildQuery(searchDto: SearchTicketsDto, options: QueryBuilderOptions = {}) {

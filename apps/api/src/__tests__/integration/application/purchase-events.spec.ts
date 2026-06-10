@@ -3,7 +3,6 @@ import type { AppTestContext } from '../helpers'
 
 const NOTIFICATION_LOG = 'would send purchase confirmation'
 const PURCHASED_LOG = 'purchase observed'
-const CANCELED_LOG = 'purchase canceled'
 
 const countLogCalls = (logSpy: jest.SpyInstance, message: string) =>
     logSpy.mock.calls.filter(([msg]) => msg === message).length
@@ -41,20 +40,5 @@ describe('PurchaseEvents 구독자', () => {
 
         expect(countLogCalls(logSpy, NOTIFICATION_LOG)).toBe(1)
         expect(countLogCalls(logSpy, PURCHASED_LOG)).toBe(1)
-    })
-
-    it('ticketPurchaseCanceled 이벤트는 로그 구독자에만 전달한다', async () => {
-        const { waitFor } = await import('./purchase-events.utils')
-        const userId = 'user-2'
-        const ticketIds = ['t3']
-
-        await events.emitTicketPurchaseCanceled({ userId, ticketIds })
-
-        await waitFor(() => countLogCalls(logSpy, CANCELED_LOG) > 0)
-
-        // 알림 구독자는 대기 시간이 끝날 때까지 한 번도 호출되지 않아야 한다.
-        await new Promise((r) => setTimeout(r, 100))
-        expect(countLogCalls(logSpy, CANCELED_LOG)).toBe(1)
-        expect(countLogCalls(logSpy, NOTIFICATION_LOG)).toBe(0)
     })
 })

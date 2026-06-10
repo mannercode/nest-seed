@@ -1,10 +1,6 @@
 import { InjectNatsPubSub, JsonUtil, NatsPubSubService } from '@mannercode/common'
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
-import {
-    PurchaseEvents,
-    TicketPurchaseCanceledEvent,
-    TicketPurchasedEvent
-} from '../purchase.events'
+import { PurchaseEvents, TicketPurchasedEvent } from '../purchase.events'
 
 /**
  * 모든 복제본이 같은 구매 이벤트를 받아야 할 때 쓰는 예시 구독자이다.
@@ -27,14 +23,6 @@ export class PurchaseEventLoggerService implements OnModuleInit, OnModuleDestroy
             ticketCount: event.ticketIds.length
         })
     }
-    private readonly canceledHandler = (message: string) => {
-        const event = JsonUtil.parse(message) as TicketPurchaseCanceledEvent
-        this.logger.log('purchase canceled', {
-            userId: event.userId,
-            ticketCount: event.ticketIds.length
-        })
-    }
-
     constructor(
         private readonly events: PurchaseEvents,
         @InjectNatsPubSub() private readonly natsPubSub: NatsPubSubService
@@ -42,11 +30,9 @@ export class PurchaseEventLoggerService implements OnModuleInit, OnModuleDestroy
 
     async onModuleInit() {
         await this.natsPubSub.subscribe(this.events.subjects.purchased, this.purchasedHandler)
-        await this.natsPubSub.subscribe(this.events.subjects.canceled, this.canceledHandler)
     }
 
     async onModuleDestroy() {
         await this.natsPubSub.unsubscribe(this.events.subjects.purchased, this.purchasedHandler)
-        await this.natsPubSub.unsubscribe(this.events.subjects.canceled, this.canceledHandler)
     }
 }

@@ -17,8 +17,8 @@
 ### 티켓 판매 흐름
 
 - [x] apps/api/src/services/application/booking/booking.service.ts:40 — 티켓 선점 검증 추가 완료: 수량은 구매 상한(maxPerPurchase) 적용(400), 존재하지 않는 티켓은 404, 다른 상영의 티켓은 400. 테스트 3건 추가
-- [ ] apps/api/src/services/application/purchase/purchase.service.ts:31 — 구매 분산 락이 동일 티켓 묶음만 직렬화해, 겹치는 묶음의 동시 결제가 이중 판매·타 구매 롤백으로 이어질 수 있음
-- [ ] apps/api/src/services/application/purchase/internal/ticket-purchase.service.ts:52 — rollbackPurchase가 "내가 전이시킨 티켓"이 아니라 "현재 Sold인 티켓"을 복구해, 실패한 구매의 보상이 다른 구매가 정당하게 판매한 좌석을 되돌림. 위 락 범위 문제와 같은 구매 흐름이므로 묶어서 수정 권장
+- [x] apps/api/src/services/application/purchase/purchase.service.ts:31 — 겹치는 묶음의 동시 결제 이중 판매 → 이중 판매 방지를 락이 아니라 `transitStatusMany`의 원자 전이(트랜잭션 + from 상태 조건, 전부-아니면-전무)가 보장하도록 수정 완료. 락은 동일 묶음 직렬화 최적화로 유지(주석 명시)
+- [x] apps/api/src/services/application/purchase/internal/ticket-purchase.service.ts:52 — rollbackPurchase의 무차별 복구 → 메서드 제거. completePurchase가 원자 전이 성공("소유")을 근거로 이벤트 발행 실패 시에만 자기 티켓을 from=Sold 조건으로 되돌림. 발행된 적 없는 canceled 이벤트·구독 코드도 함께 정리
 - [ ] apps/api/src/services/application/showtime-creation/internal/showtime-bulk-validator.service.ts:53 — 상영 일괄 생성 검증이 요청 내부의 startTimes 중복·상호 겹침을 검사하지 않아 같은 극장에 겹치는 상영과 중복 좌석 티켓 생성
 
 ### 참조 무결성·수명주기
@@ -30,7 +30,7 @@
 
 ### 판매 동시성·사가
 
-- [ ] apps/api/src/services/core/tickets/tickets.service.ts:50 — updateStatusMany가 검사-후-쓰기 비원자라 겹치는 티켓 묶음의 동시 결제에서 같은 티켓이 두 번 팔릴 수 있음
+- [x] apps/api/src/services/core/tickets/tickets.service.ts:50 — updateStatusMany의 검사-후-쓰기 경쟁 → transitStatusMany(트랜잭션 내 조건부 updateMany, matchedCount 검증)로 교체 완료. 전부-아니면-전무 테스트 추가
 - [ ] apps/api/src/services/core/ticket-holding/ticket-holding.service.ts:86 — releaseTickets가 소유권 확인 없이 티켓 키를 DEL해 다른 사용자의 선점을 해제 가능, 프로덕션에서 호출되지도 않음
 - [ ] apps/api/src/services/application/showtime-creation/worker/activities.ts:76 — compensate 액티비티가 보상 실패를 삼켜 재시도 정책이 무력화되고 고아 데이터가 로그 한 줄만 남기고 잔류
 - [ ] apps/api/src/services/application/showtime-creation/worker/workflow.ts:42 — validateAndCreate가 heartbeat 없는 15분 타임아웃이라, 타임아웃 시 좀비 액티비티가 compensate와 경합해 고아 showtime/ticket이 남을 수 있음. 락 TTL(5분) < 락 대기(10분) 구조도 함께 점검

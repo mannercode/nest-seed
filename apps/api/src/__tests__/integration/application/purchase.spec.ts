@@ -116,7 +116,8 @@ describe('PurchaseService', () => {
 
             describe('completePurchase 중 내부 오류가 날 때', () => {
                 // `completePurchase`가 처음 기록하는 로그를 기준으로 예외를 던진다.
-                // 그러면 `PurchaseService`의 catch 블록이 실행되어 결제 취소, 구매 기록 삭제, 티켓 롤백이 함께 실행된다.
+                // 그러면 `PurchaseService`의 catch 블록이 실행되어 결제 취소와 구매 기록 삭제가 실행된다.
+                // 티켓은 아직 전이 전이므로 되돌릴 것이 없다.
                 // 특정 메서드 호출을 직접 가로채지 않고 관측 가능한 로그를 기준으로 삼아, 테스트가 구현 세부에 지나치게 묶이지 않게 한다.
                 beforeEach(async () => {
                     // `resetModules: true` 환경에서는 감시 대상 Logger가 운영 코드의 Logger와 같은 실행 영역에 있어야 한다.

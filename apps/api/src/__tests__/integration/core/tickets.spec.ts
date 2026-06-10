@@ -112,23 +112,24 @@ describe('TicketsService', () => {
         })
     })
 
-    describe('updateStatusMany', () => {
-        it('주어진 티켓들의 상태를 일괄 변경한 결과를 반환한다', async () => {
+    describe('transitStatusMany', () => {
+        it('from 상태인 티켓들을 to 상태로 전이한 결과를 반환한다', async () => {
             const tickets = await createTickets(fix, [
                 { status: TicketStatus.Available },
                 { status: TicketStatus.Available },
                 { status: TicketStatus.Available }
             ])
 
-            const updatedTickets = await ticketsService.updateStatusMany(
+            const updatedTickets = await ticketsService.transitStatusMany(
                 pickIds(tickets),
+                TicketStatus.Available,
                 TicketStatus.Sold
             )
 
             expect(updatedTickets.every((t) => t.status === TicketStatus.Sold)).toBe(true)
         })
 
-        it('일부 티켓이 이미 목표 상태이면 409로 거절한다', async () => {
+        it('일부 티켓이 from 상태가 아니면 409로 거절하고 아무것도 바꾸지 않는다', async () => {
             const createdTickets = await createTickets(fix, [
                 { status: TicketStatus.Available },
                 { status: TicketStatus.Sold }
@@ -136,15 +137,20 @@ describe('TicketsService', () => {
             const first = ensure(createdTickets[0])
             const second = ensure(createdTickets[1])
 
-            const promise = ticketsService.updateStatusMany(
+            const promise = ticketsService.transitStatusMany(
                 [first.id, second.id],
+                TicketStatus.Available,
                 TicketStatus.Sold
             )
 
             await expect(promise).rejects.toMatchObject({
-                response: { code: 'ERR_TICKET_STATUS_TRANSITION_FAILED' },
+                response: { code: 'ERR_TICKET_STATUS_TRANSITION_FAILED', ticketIds: [second.id] },
                 status: 409
             })
+
+            // 전부-아니면-전무: 충돌이 있으면 나머지 티켓도 전이되지 않아야 한다.
+            const after = await ticketsService.getMany([first.id])
+            expect(ensure(after[0]).status).toBe(TicketStatus.Available)
         })
     })
 
@@ -158,7 +164,11 @@ describe('TicketsService', () => {
             const createdTickets = await createTickets(fix, createDtos)
 
             const soldTickets = createdTickets.slice(0, soldCount)
-            await ticketsService.updateStatusMany(pickIds(soldTickets), TicketStatus.Sold)
+            await ticketsService.transitStatusMany(
+                pickIds(soldTickets),
+                TicketStatus.Available,
+                TicketStatus.Sold
+            )
 
             const ticketSales = await ticketsService.aggregateSales({ showtimeIds: [showtimeId] })
 
