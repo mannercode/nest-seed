@@ -48,8 +48,6 @@ export async function createNatsPubSubServiceFixture(): Promise<NatsPubSubServic
     const teardown = async () => {
         await contextA.close()
         await contextB.close()
-        await ncA.drain().catch(() => undefined)
-        await ncB.drain().catch(() => undefined)
     }
 
     return { pubSubA, pubSubB, teardown }

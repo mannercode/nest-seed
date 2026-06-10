@@ -1,7 +1,7 @@
 import { createTestContext, withTestId } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
 import { CacheModule, CacheService, InjectCache } from '..'
-import { getRedisConnectionToken, RedisModule } from '../../redis'
+import { RedisModule } from '../../redis'
 
 export type CacheServiceFixture = { cacheService: CacheService; teardown: () => Promise<void> }
 
@@ -20,11 +20,10 @@ export async function createCacheServiceFixture() {
     })
 
     const cacheService = module.get(CacheService.getName())
-    const redis = module.get(getRedisConnectionToken('name'))
 
+    // 연결 종료는 RedisConnectionRegistry가 모듈 destroy에서 책임진다.
     const teardown = async () => {
         await close()
-        await redis.quit()
     }
 
     return { cacheService, teardown }

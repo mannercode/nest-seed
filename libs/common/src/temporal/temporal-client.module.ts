@@ -81,7 +81,8 @@ export class TemporalClientModule {
         }
 
         return {
-            exports: [clientProvider],
+            // 연결도 내보내, 소비자가 헬스체크 등에 `getTemporalConnectionToken`으로 주입받을 수 있게 한다.
+            exports: [connectionProvider, clientProvider],
             global: true,
             module: TemporalClientModule,
             providers: [

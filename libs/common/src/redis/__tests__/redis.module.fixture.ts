@@ -24,9 +24,9 @@ export async function createRedisModuleFixture() {
 
     const redis = module.get<RedisConnection>(getRedisConnectionToken())
 
+    // 연결 종료는 RedisConnectionRegistry가 모듈 destroy에서 책임진다.
     const teardown = async () => {
         await close()
-        await redis.quit()
     }
 
     return { redis, teardown }
@@ -42,9 +42,9 @@ export async function createRedisModuleNamedFixture() {
 
     const redis = module.get<RedisConnection>(getRedisConnectionToken('named'))
 
+    // 연결 종료는 RedisConnectionRegistry가 모듈 destroy에서 책임진다.
     const teardown = async () => {
         await close()
-        await redis.quit()
     }
 
     return { redis, teardown }
@@ -62,9 +62,9 @@ export async function createRedisModuleAsyncFixture() {
 
     const redis = module.get<RedisConnection>(getRedisConnectionToken())
 
+    // 연결 종료는 RedisConnectionRegistry가 모듈 destroy에서 책임진다.
     const teardown = async () => {
         await close()
-        await redis.quit()
     }
 
     return { redis, teardown }
@@ -77,9 +77,9 @@ export async function createRedisModuleUrlOnlyFixture() {
 
     const redis = module.get<RedisConnection>(getRedisConnectionToken())
 
+    // 연결 종료는 RedisConnectionRegistry가 모듈 destroy에서 책임진다.
     const teardown = async () => {
         await close()
-        await redis.quit()
     }
 
     return { redis, teardown }
@@ -99,9 +99,9 @@ export async function createRedisModuleOptionsOnlyFixture() {
 
     const redis = module.get<RedisConnection>(getRedisConnectionToken())
 
+    // 연결 종료는 RedisConnectionRegistry가 모듈 destroy에서 책임진다.
     const teardown = async () => {
         await close()
-        await redis.quit()
     }
 
     return { redis, teardown }
@@ -136,9 +136,9 @@ export async function createRedisModuleUrlWithOptionsFixture() {
 
     const redis = module.get<RedisConnection>(getRedisConnectionToken())
 
+    // 연결 종료는 RedisConnectionRegistry가 모듈 destroy에서 책임진다.
     const teardown = async () => {
         await close()
-        await redis.quit()
     }
 
     return { redis, teardown }

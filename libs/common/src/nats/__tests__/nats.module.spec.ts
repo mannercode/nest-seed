@@ -28,7 +28,6 @@ describe('NatsModule', () => {
         try {
             const nc = ctx.module.get<NatsConnection>(getNatsConnectionToken('forRoot'))
             expect(nc.info).toBeDefined()
-            await nc.drain()
         } finally {
             await ctx.close()
         }
@@ -46,7 +45,6 @@ describe('NatsModule', () => {
         try {
             const nc = ctx.module.get<NatsConnection>(getNatsConnectionToken('forRootAsync'))
             expect(nc.info).toBeDefined()
-            await nc.drain()
         } finally {
             await ctx.close()
         }

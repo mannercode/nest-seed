@@ -38,7 +38,7 @@
 ### 인증·세션
 
 - [x] apps/api/src/services/core/admins/admins.service.ts:39 — admin 비밀번호 변경 시 기존 리프레시 토큰 패밀리 회수 추가 완료(같은 권한 회수 커밋에 포함)
-- [ ] libs/common/src/auth/auth.guard.ts:109 — 만료된 토큰의 401 응답만 설정된 errorBody(에러 code)를 우회
+- [x] libs/common/src/auth/auth.guard.ts:109 — 만료 사전 디코드 분기를 제거해 모든 인증 실패가 설정된 errorBody로 401 응답(verifyAsync가 만료도 검출)
 
 ### 데이터 모델
 
@@ -62,8 +62,8 @@
 
 ### 운영 가시성
 
-- [ ] apps/api/src/modules/health/health.service.ts:22 — /health가 NATS·Temporal 연결을 점검하지 않아 핵심 기능이 죽어도 healthy로 보고
-- [ ] libs/common/src/redis/redis.module.ts:48 — RedisModule·NatsModule이 만든 연결을 닫는 수명주기 훅이 없어 app.close() 후 연결 잔류
+- [x] apps/api/src/modules/health/health.service.ts:22 — NatsHealthIndicator(flush 왕복)·TemporalHealthIndicator(gRPC health check)를 신설해 /health가 4개 인프라를 모두 점검
+- [x] libs/common/src/redis/redis.module.ts:48 — Redis/NatsConnectionRegistry를 추가해 모듈이 만든 연결을 onModuleDestroy에서 quit/drain. 테스트 픽스처들의 수동 정리(이중 종료) 7곳도 모듈 책임으로 단순화
 
 ### 테스트 인프라
 

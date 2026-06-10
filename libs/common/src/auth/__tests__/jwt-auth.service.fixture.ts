@@ -53,7 +53,6 @@ export async function createJwtAuthServiceFixture() {
 
     const teardown = async () => {
         await close()
-        await redis.quit()
     }
 
     return { events, jwtService, redis, teardown }
@@ -93,7 +92,6 @@ export async function createJwtAuthServiceFixtureWithShortTtl() {
 
     const teardown = async () => {
         await close()
-        await redis.quit()
     }
 
     return { events, jwtService, redis, teardown }

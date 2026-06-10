@@ -9,7 +9,11 @@ describe('RedisModule', () => {
         // 실제 클러스터 동작은 jwt-auth 통합 테스트에서 검증된다.
         it('클러스터 옵션을 주면 Cluster 인스턴스를 생성한다', async () => {
             const { Cluster } = await import('ioredis')
-            const mockCluster = { ping: jest.fn().mockResolvedValue('PONG') }
+            // 모듈 destroy 시 RedisConnectionRegistry가 quit을 호출하므로 mock에도 포함한다.
+            const mockCluster = {
+                ping: jest.fn().mockResolvedValue('PONG'),
+                quit: jest.fn().mockResolvedValue('OK')
+            }
             ;(Cluster as unknown as jest.Mock).mockReturnValue(mockCluster)
 
             const { createRedisModuleClusterFixture } = await import('./redis.module.fixture')

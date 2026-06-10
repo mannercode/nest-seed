@@ -10,14 +10,15 @@ describe('Health', () => {
 
     afterEach(() => fix.teardown())
 
-    it('mongo와 redis가 정상이면 200과 상태 정보를 반환한다', async () => {
+    it('mongo·redis·nats·temporal이 정상이면 200과 상태 정보를 반환한다', async () => {
         const { body } = await fix.httpClient.get('/health').ok()
 
-        expect(body).toEqual({
-            status: 'ok',
-            info: { mongodb: { status: 'up' }, redis: { status: 'up' } },
-            error: {},
-            details: { mongodb: { status: 'up' }, redis: { status: 'up' } }
-        })
+        const allUp = {
+            mongodb: { status: 'up' },
+            redis: { status: 'up' },
+            nats: { status: 'up' },
+            temporal: { status: 'up' }
+        }
+        expect(body).toEqual({ status: 'ok', info: allUp, error: {}, details: allUp })
     })
 })

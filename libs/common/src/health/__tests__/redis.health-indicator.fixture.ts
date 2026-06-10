@@ -21,7 +21,6 @@ export async function createRedisHealthIndicatorFixture() {
 
     const teardown = async () => {
         await close()
-        await redis.quit()
     }
 
     return { redis, redisIndicator, teardown }
