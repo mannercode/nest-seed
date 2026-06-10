@@ -1,7 +1,13 @@
 import type { MovieDto, ShowtimesService, TheaterDto, TicketsService } from 'core'
 import { DateUtil } from '@mannercode/common'
 import { nullObjectId, type Response } from '@mannercode/testing'
-import { createMovie, createShowtimes, createTheater, type AppTestContext } from '../helpers'
+import {
+    createMovie,
+    createShowtimes,
+    createTheater,
+    Errors,
+    type AppTestContext
+} from '../helpers'
 import { waitForCompletion } from './showtime-creation.utils'
 
 describe('ShowtimeCreationService', () => {
@@ -172,6 +178,32 @@ describe('ShowtimeCreationService', () => {
                 sagaId: body.sagaId,
                 status: 'error'
             })
+        })
+
+        it('요청 안의 시작 시각이 서로 겹치면 사가를 시작하지 않고 400을 반환한다', async () => {
+            await fix.httpClient
+                .post('/showtime-creation/showtimes')
+                .body({
+                    durationInMinutes: 90,
+                    movieId: movie.id,
+                    startTimes: [new Date('2100-01-01T09:00'), new Date('2100-01-01T10:00')],
+                    theaterIds: [theater.id]
+                })
+                .badRequest(Errors.ShowtimeCreation.OverlappingStartTimes(expect.any(Array)))
+        })
+
+        it('같은 시작 시각이 중복되어도 400을 반환한다', async () => {
+            const start = new Date('2100-01-01T09:00')
+
+            await fix.httpClient
+                .post('/showtime-creation/showtimes')
+                .body({
+                    durationInMinutes: 1,
+                    movieId: movie.id,
+                    startTimes: [start, start],
+                    theaterIds: [theater.id]
+                })
+                .badRequest(Errors.ShowtimeCreation.OverlappingStartTimes(expect.any(Array)))
         })
 
         describe('생성 도중 티켓 생성이 실패하면', () => {

@@ -19,7 +19,7 @@
 - [x] apps/api/src/services/application/booking/booking.service.ts:40 — 티켓 선점 검증 추가 완료: 수량은 구매 상한(maxPerPurchase) 적용(400), 존재하지 않는 티켓은 404, 다른 상영의 티켓은 400. 테스트 3건 추가
 - [x] apps/api/src/services/application/purchase/purchase.service.ts:31 — 겹치는 묶음의 동시 결제 이중 판매 → 이중 판매 방지를 락이 아니라 `transitStatusMany`의 원자 전이(트랜잭션 + from 상태 조건, 전부-아니면-전무)가 보장하도록 수정 완료. 락은 동일 묶음 직렬화 최적화로 유지(주석 명시)
 - [x] apps/api/src/services/application/purchase/internal/ticket-purchase.service.ts:52 — rollbackPurchase의 무차별 복구 → 메서드 제거. completePurchase가 원자 전이 성공("소유")을 근거로 이벤트 발행 실패 시에만 자기 티켓을 from=Sold 조건으로 되돌림. 발행된 적 없는 canceled 이벤트·구독 코드도 함께 정리
-- [ ] apps/api/src/services/application/showtime-creation/internal/showtime-bulk-validator.service.ts:53 — 상영 일괄 생성 검증이 요청 내부의 startTimes 중복·상호 겹침을 검사하지 않아 같은 극장에 겹치는 상영과 중복 좌석 티켓 생성
+- [x] apps/api/src/services/application/showtime-creation/internal/showtime-bulk-validator.service.ts:53 — 요청 내부 startTimes 중복·상호 겹침 → 사가 시작 전 진입점(requestShowtimeCreation)에서 정렬 후 인접 간격 < 상영 길이면 400으로 거절. 테스트 2건 추가
 
 ### 참조 무결성·수명주기
 
