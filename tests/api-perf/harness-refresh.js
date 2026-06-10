@@ -23,7 +23,6 @@ import {
 } from './perf-common.js'
 
 const opts = readOptions()
-const startAt = measurementStart(opts)
 
 const latency = new Trend('measured_latency', true)
 const statusCounter = new Counter('measured_status')
@@ -82,7 +81,8 @@ export function setup() {
         }
         accounts.push({ refreshToken })
     }
-    return { accounts }
+    // 측정 창은 setup 종료 기준이다. VU init 기준이면 setup의 가입·로그인(bcrypt)이 워밍업을 잠식한다.
+    return { accounts, startAt: measurementStart(opts) }
 }
 
 // VU별 회전 상태. 모듈 초기화는 VU마다 따로 일어나므로 격리된다.
@@ -108,7 +108,7 @@ export default function (data) {
         { headers: JSON_HEADERS }
     )
 
-    if (Date.now() >= startAt) {
+    if (Date.now() >= data.startAt) {
         latency.add(res.timings.duration)
         statusCounter.add(1, { status: String(res.status) })
     }

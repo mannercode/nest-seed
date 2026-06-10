@@ -67,8 +67,8 @@
 
 ### 테스트 인프라
 
-- [ ] tools/jest-helpers/index.js:162 — cleanupRedisAll이 Cluster 연결 준비 전에 nodes('master')를 호출해 Redis flush가 항상 no-op(실행으로 재현됨). 정리 대상 0개면 예외를 던져 무음 통과 차단 권장
-- [ ] tests/api-perf/perf-common.js:75 — 측정 창 시작점이 VU init 시각 기준이라 setup(bcrypt 가입·로그인)이 워밍업을 잠식, RPS 최대 ~10% 과대. 측정 시작점을 setup() 완료 기준으로 이동
+- [x] tools/jest-helpers/index.js:162 — cleanupRedisAll이 Cluster ready를 기다린 뒤 nodes('master')를 조회하고, 정리 대상 0개면 예외를 던지도록 수정 완료(무음 no-op 차단)
+- [x] tests/api-perf/perf-common.js:75 — setup이 있는 하네스(refresh·user-filter)는 startAt을 setup() 끝에서 계산해 반환값으로 내려보내도록 수정 완료. setup 없는 harness-crud는 현행 유지(문서화)
 
 ### 문서
 

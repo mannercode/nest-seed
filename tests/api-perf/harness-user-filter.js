@@ -21,7 +21,6 @@ import {
 } from './perf-common.js'
 
 const opts = readOptions()
-const startAt = measurementStart(opts)
 
 // 부분 문자열을 좁게 설정해 매치 수를 거의 0으로 맞춘다.
 // 그래야 기준값 측정이 회차마다 같은 조건에서 나온다.
@@ -81,7 +80,8 @@ export function setup() {
         }
         accounts.push({ authHeader: `Bearer ${accessToken}` })
     }
-    return { accounts }
+    // 측정 창은 setup 종료 기준이다. VU init 기준이면 setup의 가입·로그인(bcrypt)이 워밍업을 잠식한다.
+    return { accounts, startAt: measurementStart(opts) }
 }
 
 let myAuthHeader = null
@@ -95,7 +95,7 @@ export default function (data) {
         headers: { accept: 'application/json', authorization: myAuthHeader }
     })
 
-    if (Date.now() >= startAt) {
+    if (Date.now() >= data.startAt) {
         latency.add(res.timings.duration)
         statusCounter.add(1, { status: String(res.status) })
     }

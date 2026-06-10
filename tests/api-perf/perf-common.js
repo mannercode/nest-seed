@@ -69,8 +69,11 @@ export function buildScenarioOptions(opts) {
 }
 
 /**
- * 측정 구간 시작 시각(ms epoch). VU의 모듈 초기화 시점에 호출하면
- * VU 사이 편차는 무시할 수준이다(<1s).
+ * 측정 구간 시작 시각(ms epoch).
+ * k6는 모든 VU의 모듈 초기화를 setup()보다 먼저 실행하므로,
+ * setup()이 있는 하네스는 이 함수를 setup() 끝에서 호출해 반환값으로 내려보내야
+ * setup 소요 시간이 워밍업 창을 잠식하지 않는다.
+ * setup()이 없는 하네스는 모듈 초기화 시점에 호출해도 편차가 무시할 수준이다(<1s).
  */
 export function measurementStart(opts) {
     return Date.now() + opts.warmupMs

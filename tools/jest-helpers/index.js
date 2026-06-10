@@ -159,7 +159,18 @@ async function cleanupRedisAll(connectRedis) {
     try {
         // ioredis Cluster와 단일 연결은 flush 방법이 달라 런타임에 구분한다.
         if (typeof redis.nodes === 'function') {
+            // Cluster의 connectionPool은 비동기로 채워져, 생성 직후의 nodes()는 빈 배열이다.
+            // 그대로 진행하면 flush가 조용히 no-op이 되므로 ready를 기다린 뒤 조회한다.
+            if (redis.status !== 'ready') {
+                await new Promise((resolve, reject) => {
+                    redis.once('ready', resolve)
+                    redis.once('error', reject)
+                })
+            }
             const masters = redis.nodes('master')
+            if (masters.length === 0) {
+                throw new Error('cleanupRedisAll: no master nodes — flush would be a no-op')
+            }
             await Promise.all(masters.map((node) => node.flushall()))
         } else {
             await redis.flushall()
