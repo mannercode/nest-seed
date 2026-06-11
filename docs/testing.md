@@ -110,7 +110,7 @@ jest.teardown.js  전체 워커 종료 후 한 번: worker별 DB·버킷 드롭,
 
 `apps/api`의 통합 테스트는 devcontainer가 시작해 둔 공용 인프라(Mongo / Redis / MinIO / NATS / Temporal 컨테이너)를 재사용한다. `libs/common`은 외부 의존을 줄이기 위해 Testcontainers로 자체 인프라를 시작한다. `libs/testing`과 `libs/temporal-sandbox`는 인프라 없는 단위 테스트로 돈다.
 
-단일 spec만 실행하려면 Jest에 파일 패턴을 넘기고 커버리지 게이트를 끈다(`npm test`는 커버리지 100%를 요구해 부분 실행과 맞지 않다). VS Code에서는 devcontainer에 포함된 Jest Runner 확장으로 describe/it 단위 실행도 된다.
+단일 spec만 실행하려면 Jest에 파일 패턴을 넘기고 커버리지 게이트를 끈다(`npm test`는 커버리지 100%를 요구해 부분 실행과 맞지 않다 — 100%를 요구하는 이유는 [설계 결정 §6](decisions.md#6-테스트-커버리지-100-게이트)). VS Code에서는 devcontainer에 포함된 Jest Runner 확장으로 describe/it 단위 실행도 된다.
 
 ```bash
 npm test -w apps/api -- users.spec --coverage=false

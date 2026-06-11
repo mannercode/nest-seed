@@ -136,7 +136,7 @@ Swagger/OpenAPI는 의도적으로 두지 않았다(이유는 [설계 결정](do
 ## 문서
 
 - [아키텍처](docs/architecture.md) — SoLA 계층 분리와 분산 협력 구조(락, NATS, Temporal)
-- [컨벤션](docs/conventions.md) — 네이밍, 에러, 가져오기, REST API 설계와 권한 경계, 데이터 비정규화, 커밋 규칙
+- [컨벤션](docs/conventions.md) — 네이밍, 에러, 가져오기, REST API 설계와 권한 경계, 데이터 비정규화, 커밋 규칙, fail-fast, 값의 위치
 - [테스트](docs/testing.md) — 한글 메시지 규칙, 픽스처, 동적 가져오기, 실행 가능한 API 문서, 분산 레이스 테스트
 - [환경 변수](docs/environment.md) — Dev Container, API, API 문서, console 환경 변수 흐름과 포크 체크리스트
 - [설계 결정](docs/decisions.md) — 분산 도구·View 계층 등 핵심 설계 결정과 쓰지 않기로 한 대안
