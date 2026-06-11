@@ -3,7 +3,8 @@
 # 서버가 준비된 뒤 admin-tools에서 default namespace를 한 번 등록해, 이후 워커와 클라이언트가 같은 namespace로 연결되도록 한다.
 set -eu
 
-# 두 값은 compose.temporal.yml의 environment가 넘긴다. 배선이 빠지면 엉뚱한 namespace를 만들지 말고 즉시 실패한다.
+# 두 값은 compose.temporal.yml의 environment가 넘긴다.
+# 배선이 빠지면 엉뚱한 namespace를 만들지 말고 즉시 실패한다.
 NAMESPACE=${DEFAULT_NAMESPACE:?}
 TEMPORAL_ADDRESS=${TEMPORAL_ADDRESS:?}
 MAX_ATTEMPTS=30

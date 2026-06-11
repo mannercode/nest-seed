@@ -22,7 +22,7 @@ module.exports = {
     coveragePathIgnorePatterns: [
         '__tests__',
         // `src` 바로 아래의 `.ts` 파일은 진입점이나 모듈 연결 코드이다.
-        // (`development`, `bootstrap`, `app.module`, `project-id` 등.)
+        // (`main`, `bootstrap`, `development`, `app.module`.)
         // 커버리지를 따로 잴 의미가 없다.
         '/src/[^/]+\\.ts$',
         '/index\\.ts$',

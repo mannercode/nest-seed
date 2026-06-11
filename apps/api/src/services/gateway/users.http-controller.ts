@@ -27,11 +27,10 @@ import { UserAuthRequest } from './types'
 
 // 인가 모델 — 가드는 핸들러마다 명시한다.
 // 클래스 수준 가드를 두면 메서드 가드가 그것에 "합쳐져"(둘 다 통과해야 함) admin 토큰이 user 가드에 막힌다.
-// - 가드 없음(공개): 가입(POST /users), 로그인·refresh·logout.
+// - 가드 없음(공개): 가입과 로그인·refresh·logout.
 // - UserAuthGuard(본인 작업): /me 계열만 — 식별자를 토큰 주체(req.user.sub)로 못박아 임의 ID 접근(IDOR)을 구조적으로 막는다.
-//   본인 조회·수정·탈퇴(GET·PATCH·DELETE /me), 본인 구매 기록(GET /me/purchases), 전체 로그아웃(/me/logout-all).
-// - AdminAuthGuard(운영자): 임의 사용자 대상 작업 — 목록(GET /users), 단건 조회·수정·삭제(GET·PATCH·DELETE /users/:id).
-//   "임의 ID = 운영자"로 일원화해 일반 user 토큰이 남의 ID를 만질 경로 자체를 두지 않는다. (역할별 권한은 README "인가" 절 참고)
+// - AdminAuthGuard(운영자): 임의 사용자 대상 작업 — "임의 ID = 운영자"로 일원화해 일반 user 토큰이 남의 ID를 만질 경로 자체를 두지 않는다.
+// (역할별 권한은 README "인가" 절 참고)
 @Controller('users')
 export class UsersHttpController {
     constructor(
@@ -101,7 +100,6 @@ export class UsersHttpController {
         return this.usersService.update(req.user.sub, updateDto)
     }
 
-    // 본인 구매 기록만 조회한다. userId(토큰 주체)를 쿼리 조건으로 넣으므로 남의 기록은 결과에 나오지 않는다.
     @Get('me/purchases')
     @UseGuards(UserAuthGuard)
     async getMyPurchases(@Req() req: UserAuthRequest) {

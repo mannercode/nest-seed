@@ -33,7 +33,8 @@ import { Admin, AdminSchema } from './models'
                     refreshSecret: adminAuth.refreshSecret,
                     refreshTokenTtlMs: TimeUtil.toMs(adminAuth.refreshTokenExpiration)
                 },
-                // user 쪽과 동일한 의도. 본문 주석은 users.module.ts 참고.
+                // user 쪽과 동일한 의도.
+                // 본문 주석은 users.module.ts 참고.
                 onEvent: (event: SecurityEvent) => {
                     const message = `security_event:${event.type}`
                     if (event.type === 'token.reuse_detected') logger.error(message, event)

@@ -5,8 +5,9 @@
  * 그다음 각 사용자가 각자의 쌍에 대해 결제 요청 여러 건을 동시에 보낸다.
  * 그룹마다 정확히 한 요청만 2xx로 성공하고, 나머지는 4xx(409 AlreadySold 또는 400 NotHeld)이다.
  *
- * 성공 응답은 한 번 더 검증한다. 2xx만으로는 결제가 실제로 영속됐는지 알 수 없으므로,
- * 승자의 구매 기록을 `GET /purchases/:id`로 읽어 들여 결제 하나가 실제로 만들어졌는지 확인한다.
+ * 성공 응답은 한 번 더 검증한다.
+ * 2xx만으로는 결제가 실제로 영속됐는지 알 수 없으므로,
+ * 승자의 구매 id를 `GET /users/me/purchases` 응답에서 찾아 결제가 실제로 만들어졌는지 확인한다.
  *
  * 영화, 극장, 사용자 계정은 회차 바깥에서 한 번만 만든다.
  * 매 회차마다 상영, 티켓, 선점, 경쟁만 새로 실행한다.
@@ -182,8 +183,7 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
 
         // read-back: 승자 구매 기록이 실제로 영속됐는지 확인한다.
         // 2xx 응답 하나만으로는 결제가 만들어졌는지(phantom 성공이 아닌지) 구분하지 못한다.
-        // 단건 GET /purchases/:id는 없어졌고, 소유자 컨텍스트가 경로에 드러나는 GET /users/me/purchases로 옮겼다.
-        // 이 응답은 해당 사용자의 구매 기록 배열이므로, 승자 id로 그 안에서 찾아 영속을 확인한다.
+        // 구매 단건 조회 endpoint는 없으므로 GET /users/me/purchases 배열에서 승자 id를 찾아 확인한다.
         const winner = results.find((r) => r.group === g && r.status >= 200 && r.status < 300)
         if (!winner.body || !winner.body.id) {
             throw new Error(`iter ${iteration} group ${g}: success response has no purchase id`)

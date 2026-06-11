@@ -6,7 +6,8 @@ jest.mock('ioredis', () => {
 describe('RedisModule', () => {
     describe('forRoot (cluster)', () => {
         // 이 테스트는 mock 구현만 사용하며 실제 클러스터 라우팅을 검증하지 않는다.
-        // 실제 클러스터 동작은 jwt-auth 통합 테스트에서 검증된다.
+        // jwt-auth 통합 테스트는 단일 Redis로 해시 태그 키 배치 호환성만 검증한다.
+        // 실제 클러스터 연결은 infra의 Redis 클러스터를 쓰는 api 앱에서 검증된다.
         it('클러스터 옵션을 주면 Cluster 인스턴스를 생성한다', async () => {
             const { Cluster } = await import('ioredis')
             // 모듈 destroy 시 RedisConnectionRegistry가 quit을 호출하므로 mock에도 포함한다.

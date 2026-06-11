@@ -4,7 +4,7 @@ import { RecommendationService } from 'application'
 import { MoviesService, ShowtimeDto, ShowtimesService, TheatersService } from 'core'
 import { HomeMovieCard, HomeShowtimeView, UserHomeView } from './dtos'
 
-// 홈 한 화면에 가까운 상영이 보여야 하는 영화 수와 영화당 상영 수.
+// 홈 한 화면에 보여 줄 영화 수와 영화마다 보여 줄 가까운 상영 수.
 // 시드는 운영 정책 값을 코드 상수로 두는 패턴을 따른다.
 const HOME_MOVIE_COUNT = 12
 const SHOWTIMES_PER_MOVIE = 3
@@ -20,7 +20,8 @@ export class UserHomeViewService {
         private readonly recommendation: RecommendationService
     ) {}
 
-    // userId는 게이트웨이가 optional 인증에서 넘긴 값이다. 로그인 시 추천을 개인화하고, 게스트(null)는 개봉일 순으로 채운다.
+    // userId는 게이트웨이가 optional 인증에서 넘긴 값이다.
+    // 로그인 시 추천을 개인화하고, 게스트(null)는 개봉일 순으로 채운다.
     async getHome(userId: null | string): Promise<UserHomeView> {
         // 상영 큐레이션과 추천은 서로 독립적이라 함께 가져온다.
         const [cards, recommendedMovies] = await Promise.all([
@@ -32,7 +33,8 @@ export class UserHomeViewService {
     }
 
     private async getUpcomingCards(): Promise<HomeMovieCard[]> {
-        // 공개된 영화만 후보. searchPage가 isPublished=true 필터를 강제한다.
+        // 공개된 영화만 후보다.
+        // searchPage가 isPublished=true 필터를 강제한다.
         // 후보는 최신 개봉작 순으로 고정해 결과를 결정적으로 만든다.
         // 후보 N개 중 상영 없는 영화는 카드에서 빠지므로, 홈은 "최신 개봉작 중 지금 볼 수 있는 영화" 큐레이션이다.
         const page = await this.movies.searchPage({
@@ -53,7 +55,6 @@ export class UserHomeViewService {
         const cards: HomeMovieCard[] = []
         for (const movie of page.items) {
             const showtimes = showtimesByMovie.get(movie.id)
-            // 사용자 홈은 "지금 볼 수 있는" 영화 큐레이션이라 상영이 없는 영화는 카드에서 뺀다.
             if (!showtimes || showtimes.length === 0) continue
             cards.push({ movie, upcomingShowtimes: showtimes.slice(0, SHOWTIMES_PER_MOVIE) })
         }

@@ -82,9 +82,8 @@ export class QueryBuilder<T> {
             // 컬렉션 전체 스캔이 된다.
             // 인덱스를 활용하려면 두 옵션을 함께 켠다.
             // - `prefix: true`로 `^value`를 붙여 접두어 범위 스캔 후보로 만든다.
-            // - `caseSensitive: true`로 `i` 플래그를 제외해 일반 오름차순
-            //   인덱스를 쓸 수 있게 한다. Mongoose 기본 인덱스는 바이너리
-            //   비교라 대소문자 무시 모드와는 맞물리지 않는다.
+            // - `caseSensitive: true`로 `i` 플래그를 제외해 일반 오름차순 인덱스를 쓸 수 있게 한다.
+            //   기본 인덱스는 바이너리 비교라 대소문자 무시 모드와는 맞물리지 않는다.
             const pattern = options?.prefix ? '^' + escapeRegExp(value) : escapeRegExp(value)
             this.query[field] = options?.caseSensitive
                 ? new RegExp(pattern)

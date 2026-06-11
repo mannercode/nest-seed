@@ -41,7 +41,8 @@ export function createAppendOnlySchema<T>(cls: Type<T>): Schema<T> {
         throw new Error(`${cls.name} is append-only; delete is not allowed`)
     })
 
-    // `save()`는 신규 삽입에만 허용한다. 기존 문서를 다시 저장하면 예외를 던진다.
+    // `save()`는 신규 삽입에만 허용한다.
+    // 기존 문서를 다시 저장하면 예외를 던진다.
     schema.pre('save', function () {
         if (!this.isNew) {
             throw new Error(`${cls.name} is append-only; cannot modify existing document`)

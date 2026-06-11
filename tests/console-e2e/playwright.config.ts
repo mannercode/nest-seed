@@ -18,9 +18,8 @@ const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT
 /**
  * API와 console 빌드 결과물을 시작한 뒤 테스트를 실행한다.
  *
- * `next dev` / `nest start --watch`는 콜드 부팅이 길고(workflow 번들링 + 모듈
- * 로딩에 1~2분) 워처 오버헤드가 e2e에는 무의미하다. 빌드 결과물(`npm run start`)
- * 쪽이 더 빠르고 안정적이다.
+ * `next dev` / `nest start --watch`는 콜드 부팅이 길고(workflow 번들링 + 모듈 로딩에 1~2분) 워처 오버헤드가 e2e에는 무의미하다.
+ * 빌드 결과물(`npm run start`) 쪽이 더 빠르고 안정적이다.
  *
  * 이미 서버가 떠 있으면 그대로 재사용한다(`reuseExistingServer`).
  * Mongo, Redis, NATS, Temporal 같은 인프라는 `infra`가 먼저 시작해 두어야 한다.

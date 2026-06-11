@@ -136,7 +136,8 @@ describe('Root + Admin lifecycle', () => {
         })
 
         it("username이 'root'가 아니면 401을 반환한다", async () => {
-            // 비밀번호는 실제 값을 써서 "username만 틀린" 경우를 검증한다. 하드코딩하면 env 변경 시 의도가 무너진다.
+            // 비밀번호는 실제 값을 써서 "username만 틀린" 경우를 검증한다.
+            // 하드코딩하면 env 변경 시 의도가 무너진다.
             const wrongUser = `Basic ${Buffer.from(`admin:${rootPassword}`).toString('base64')}`
             await fix.httpClient
                 .post('/admins')

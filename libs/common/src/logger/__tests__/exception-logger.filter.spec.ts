@@ -85,7 +85,6 @@ describe('HttpExceptionLoggerFilter', () => {
         it('@Catch(Error)는 문자열처럼 Error가 아닌 값은 처리하지 않는다', async () => {
             await fix.httpClient.get('/throw-string').internalServerError()
 
-            // 이 필터는 @Catch(Error)이므로 문자열 throw는 처리하지 않아야 한다.
             expect(fix.spyError).not.toHaveBeenCalledWith('error', expect.anything())
             expect(fix.spyWarn).not.toHaveBeenCalledWith('fail', expect.anything())
         })
@@ -116,7 +115,6 @@ describe('HttpExceptionLoggerFilter', () => {
         })
     })
 
-    // 성공 인터셉터 없이 필터만 등록한 경우이다.
     describe('HttpSuccessLoggerInterceptor 없이', () => {
         let solo: ExceptionLoggerFilterFixture
 
@@ -127,7 +125,7 @@ describe('HttpExceptionLoggerFilter', () => {
         })
         afterEach(() => solo.teardown())
 
-        it('_startTimestamp가 없어도 duration을 산출해 로그를 남긴다', async () => {
+        it('markRequestStart가 호출되지 않은 요청도 duration을 산출해 로그를 남긴다', async () => {
             await solo.httpClient.get('/exception').notFound()
 
             expect(solo.spyWarn).toHaveBeenCalledWith(

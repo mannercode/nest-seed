@@ -9,15 +9,16 @@ const { validateAndCreate } = proxyActivities<ReturnType<ShowtimeCreationActivit
     retry: { maximumAttempts: 1 }
 })
 
-// 실패 정리는 멱등이라 자동 재시도한다. 좀비가 된 validateAndCreate와 직렬화하려고
-// 같은 분산 락을 기다리므로, 한 번의 제한 시간도 validateAndCreate와 같게 둔다.
+// 실패 정리는 멱등이라 자동 재시도한다.
+// 좀비가 된 validateAndCreate와 직렬화하려고 같은 분산 락을 기다리므로, 한 번의 제한 시간도 validateAndCreate와 같게 둔다.
 const { compensate } = proxyActivities<ReturnType<ShowtimeCreationActivities['bind']>>({
     startToCloseTimeout: '15 minutes',
     retry: { maximumAttempts: 3, initialInterval: '1 second' }
 })
 
 // 상태 알림은 같은 요청을 다시 실행해도 결과가 달라지지 않아 자동 재시도한다.
-// 일시적인 지연은 이벤트 대기 시간 5분 안에 회복되도록 한 번의 제한 시간은 짧게, 재시도 간격은 빠르게 둔다.
+// 구독자는 사가 이벤트를 최대 5분 기다린다(race 테스트의 SSE_DEADLINE_MS).
+// 일시적인 발행 지연이 그 안에 회복되도록 한 번의 제한 시간은 짧게, 재시도 간격은 빠르게 둔다.
 const { emitStatusChanged } = proxyActivities<ReturnType<ShowtimeCreationActivities['bind']>>({
     startToCloseTimeout: '30 seconds',
     retry: { maximumAttempts: 3, initialInterval: '1 second' }

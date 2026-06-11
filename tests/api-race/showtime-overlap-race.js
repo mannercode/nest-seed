@@ -65,11 +65,9 @@ async function runInner(iteration, movieId, theaterId, sse, baseOffsetMs) {
     // 직전 회차는 모든 사가가 종료 상태에 도달한 뒤에야 끝났으므로 비워도 잃을 정보가 없다.
     sse.events.length = 0
 
-    // N개의 사가를 만들고, startTime은 10분씩 어긋나며 각 길이는 120분이다.
-    // 즉 사가들은 base, base+10m, base+20m, ..., base+(N-1)×10m에 위치한다.
-    // 마지막 사가는 base + (N-1)×10m + 120m에 끝난다.
-    // 모든 쌍이 겹친다.
-    // 인접 쌍은 110m 겹치고, 처음/끝 쌍은 120m - (N-1)×10m만큼 겹친다(OVERLAP_COUNT ≤ 12라 양수, 위에서 강제).
+    // N개의 사가를 만든다.
+    // startTime이 10분 간격이고 길이가 120분이라 어떤 두 사가를 골라도 시간이 겹친다.
+    // 겹침이 가장 좁은 처음/끝 쌍도 120m - (N-1)×10m만큼 겹친다(OVERLAP_COUNT ≤ 12라 양수, 위에서 강제).
     const base = new Date(Date.now() + 24 * 60 * 60 * 1000 + baseOffsetMs)
     base.setUTCSeconds(0, 0)
     base.setUTCMinutes(0)

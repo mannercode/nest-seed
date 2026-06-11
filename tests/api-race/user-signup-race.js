@@ -38,7 +38,6 @@ async function runInner(iteration) {
 
     const results = await Promise.all(requests)
 
-    // 이메일별로 집계한다.
     const byEmail = new Map()
     const replicaSet = new Set()
     for (const r of results) {
@@ -56,7 +55,6 @@ async function runInner(iteration) {
                 `[race] iter=${iteration} email=${email}: expected 1 × 201, got ${g.created} (409=${g.conflict}, other=${g.other.length})`
             )
             // 이 이메일의 응답 전체를 남겨 다음 실패 때 성공 후보가 5xx였는지, 소켓이 끊겼는지, 예상하지 못한 상태였는지 구분한다.
-            // 이전에는 일시 실패가 나도 진단 정보 없이 0 x 201만 출력했다.
             const sameEmail = results.filter((r) => r.email === email)
             for (const [idx, r] of sameEmail.entries()) {
                 console.error(

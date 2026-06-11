@@ -53,7 +53,7 @@ type JwtExpiresIn = NonNullable<JwtSignOptionsArg>['expiresIn']
 @Injectable()
 export class JwtAuthService {
     // `userIdField`에는 일부러 기본값을 두지 않는다.
-    // `JwtAuthModule.register`가 호출하기 전에 `defaultTo(userIdField, DEFAULT_USER_ID_FIELD)`로 값을 채워 주므로, 여기 기본값을 둬도 그 분기는 절대 실행되지 않는다.
+    // `JwtAuthModule.register`가 생성자를 호출하기 전에 `defaultTo`로 값을 채우므로, 여기 기본값을 둬도 그 분기는 절대 실행되지 않는다.
     // 이 클래스를 직접 `new`로 만든다면 `userIdField`를 반드시 명시한다.
     constructor(
         private readonly jwtService: JwtService,
@@ -144,7 +144,6 @@ export class JwtAuthService {
 
         // 새 토큰을 발급하기 전에 지금 토큰을 먼저 소비한다.
         // 그래야 같은 토큰 하나로 동시에 들어온 리프레시 두 건이 모두 통과하는 일이 방지된다.
-        // 원자적 DEL이 반환하는 카운트로, 같은 토큰을 동시에 쓴 호출 가운데 이 호출이 먼저 지웠는지 알 수 있다.
         // 이 경쟁에서 실패한 호출은 이미 회전된 토큰을 다시 제출한 경우와 구분할 수 없으므로, 재사용 탐지가 토큰 묶음 전체를 무효화한다.
         const consumed = await this.consumeToken(tokenId, familyId)
         if (!consumed) {
@@ -255,8 +254,9 @@ export class JwtAuthService {
     }
 
     private async getAuthTokenPayload(token: string, context?: EventContext, emitOnFailure = true) {
-        // 만료는 정상 흐름의 일부라 사전 디코드로 잡아 401을 돌려준다.
-        // 서명 위조/구조 깨짐도 잘못된 리프레시 토큰이므로 verifyAsync가 던지는 오류를 401로 매핑한다.
+        // 만료는 정상 흐름의 일부라 위조와 구분되는 401('token expired')을 돌려줘야 한다.
+        // 그래서 verifyAsync 전에 디코드로 만료부터 가려낸다.
+        // 서명 위조/구조 깨짐은 잘못된 리프레시 토큰이므로 verifyAsync가 던지는 오류를 401로 매핑한다.
         const peek = this.jwtService.decode<Record<string, unknown> | null>(token)
         const exp = peek?.exp
         if (typeof exp === 'number' && exp < Date.now() / 1000) {

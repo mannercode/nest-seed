@@ -18,10 +18,9 @@ trap on_failure ERR
 
 start_ts=$(date +%s)
 
-# 부하 테스트를 오래 돌리면 Temporal의 PostgreSQL과 MongoDB 데이터가 계속 커진다.
-# `RESET_EVERY` 회차마다 Mongo, Redis, Temporal을 초기화해 기록 누적을 막는다.
-# 초기화하지 않으면 완료된 워크플로우 기록이 수백 회차 동안 쌓여 transfer-queue-processor가 멈출 수 있다.
-# 초기화 한 번은 약 30초 걸린다.
+# 부하 테스트를 반복하면 완료된 워크플로우 기록이 Temporal의 PostgreSQL과 MongoDB에 계속 쌓인다.
+# 수백 회차쯤 누적되면 transfer-queue-processor가 멈출 수 있다.
+# `RESET_EVERY` 회차마다 인프라를 초기화해(회당 약 30초) 누적을 막는다.
 RESET_EVERY="${RESET_EVERY:-10}"
 RESET_SCRIPT="${WORKSPACE_ROOT:?WORKSPACE_ROOT must be set}/infra/reset.sh"
 

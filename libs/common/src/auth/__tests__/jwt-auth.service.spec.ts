@@ -122,7 +122,8 @@ describe('JwtAuthService', () => {
             )
         })
 
-        // 저장 형식을 직접 단언한다. Redis 키 스키마가 바뀌면 이 테스트도 갱신해야 한다.
+        // 저장 형식을 직접 단언한다.
+        // Redis 키 스키마가 바뀌면 이 테스트도 갱신해야 한다.
         it('Redis에 저장된 해시가 변조되면 거부한다', async () => {
             const decoded = new JwtService().decode<Record<string, unknown>>(refreshToken)
             const tokenId = decoded.refreshTokenId as string
@@ -168,7 +169,8 @@ describe('JwtAuthService', () => {
             })
         })
 
-        // 저장 형식을 직접 단언한다. Redis 키 스키마가 바뀌면 이 테스트도 갱신해야 한다.
+        // 저장 형식을 직접 단언한다.
+        // Redis 키 스키마가 바뀌면 이 테스트도 갱신해야 한다.
         it('리프레시 토큰은 SHA-256 해시로 저장하고 평문은 저장하지 않는다', async () => {
             const decoded = new JwtService().decode<Record<string, unknown>>(refreshToken)
             const tokenId = decoded.refreshTokenId as string
@@ -187,7 +189,6 @@ describe('JwtAuthService', () => {
             const tokenId = decoded.refreshTokenId as string
             const familyId = decoded.familyId as string
 
-            // 손상된 JSON으로 덮어쓴다.
             await fix.redis.set(
                 `${fix.jwtService.prefix}:{${familyId}}:token:${tokenId}`,
                 'not-json{{{'
@@ -231,7 +232,6 @@ describe('JwtAuthService', () => {
                     /redis multi exec returned null/
                 )
 
-                // 토큰 묶음은 폐기되지 않고 살아 있어야 한다.
                 const decoded = new JwtService().decode<Record<string, unknown>>(refreshToken)
                 const familyId = decoded.familyId as string
                 const stillAlive = await fix.redis.exists(
@@ -250,9 +250,9 @@ describe('JwtAuthService', () => {
 
                 await expect(fix.jwtService.refreshAuthTokens(refreshToken)).rejects.toThrow()
 
-                // 동일한 refreshToken은 아직 소비되지 않았으므로 유효해야 한다.
-                // 단, multi 한 번만 mock 구현으로 바꾸므로 다음 시도는 정상 동작할 수 있다.
-                // 새 토큰이 발급된 흔적이 없는지만 확인한다. 같은 토큰이 여전히 살아 있어야 한다.
+                // multi mock은 한 번만 적용되므로 리프레시를 다시 호출해 보는 검증은 정상 성공해 버려 쓸 수 없다.
+                // 대신 저장 상태로 확인한다.
+                // 원본 토큰이 소비되지 않고 남아 있으면 새 토큰 발급 단계까지 가지 않은 것이다.
                 const decoded = new JwtService().decode<Record<string, unknown>>(refreshToken)
                 const tokenId = decoded.refreshTokenId as string
                 const familyId = decoded.familyId as string
@@ -430,7 +430,8 @@ describe('JwtAuthService', () => {
         })
 
         it('이벤트 훅이 예외를 던지면 generateAuthTokens도 실패한다', async () => {
-            // emit은 훅 실패를 숨기지 않는다. 훅이 던지면 호출 흐름이 그대로 무너진다.
+            // emit은 훅 실패를 숨기지 않는다.
+            // 훅이 던지면 호출 흐름이 그대로 무너진다.
             jest.spyOn(fix.events, 'push').mockImplementationOnce(() => {
                 throw new Error('hook failure')
             })

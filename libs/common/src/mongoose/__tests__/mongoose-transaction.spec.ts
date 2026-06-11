@@ -51,7 +51,6 @@ describe('Mongoose Transaction', () => {
         })
 
         it('rollback() 호출 시 커밋이 아닌 중단으로 종료된다', async () => {
-            // session.abortTransaction이 호출되고 commitTransaction은 호출되지 않는지 확인한다.
             const fakeSession = {
                 abortTransaction: jest.fn().mockResolvedValue(undefined),
                 commitTransaction: jest.fn().mockResolvedValue(undefined),

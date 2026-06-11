@@ -4,23 +4,6 @@ import { SchemaFactory } from '@nestjs/mongoose'
 import { defaultTo } from '../utils'
 
 /**
- * `toObject`와 `toJSON`의 차이는 `flattenMaps` 기본값뿐이다.
- * `toJSON`은 기본이 true라서 Map을 일반 객체로 변환한다.
- *
- * @Schema()
- * export class Sample {
- *     @Prop({ type: Map, of: String })
- *     attributes: Map<string, string>
- * }
- *
- * console.log(sample.toObject())
- * attributes: Map(2) { 'key1' => 'value1', 'key2' => 'value2' },
- *
- * console.log(sample.toJSON())
- * attributes: { key1: 'value1', key2: 'value2' },
- */
-
-/**
  * 보통의 도메인 엔티티(생성·조회·수정·삭제 모두 가능)에 쓰는 스키마 기반 클래스이다.
  * 기본 동작은 소프트 삭제이다.
  * 특정 모델에서 완전 삭제가 필요하면 `@HardDelete()` 데코레이터를 그 모델에 붙인다.

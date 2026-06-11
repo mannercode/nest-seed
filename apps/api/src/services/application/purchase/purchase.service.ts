@@ -31,9 +31,9 @@ export class PurchaseService {
         const lockKey = `tickets:${ticketIds.sort().join(',')}`
 
         // 같은 티켓 묶음의 동시 결제를 직렬화해, 뒤따른 결제가 결제 기록을 만들기 전에 거절되도록 한다.
-        // 단, 겹치지만 다른 묶음은 락 키가 달라 직렬화되지 않는다. 이중 판매 방지 자체는
-        // 락이 아니라 `transitStatusMany`의 원자 전이(Available→Sold)가 보장하고, 락은 불필요한
-        // 결제 생성·보상을 줄이는 최적화다.
+        // 단, 겹치지만 다른 묶음은 락 키가 달라 직렬화되지 않는다.
+        // 이중 판매 방지 자체는 락이 아니라 `transitStatusMany`의 원자 전이(Available→Sold)가 보장한다.
+        // 락은 불필요한 결제 생성·보상을 줄이는 최적화다.
         return this.cache.withLockBlocking(
             lockKey,
             PURCHASE_LOCK_TTL_MS,

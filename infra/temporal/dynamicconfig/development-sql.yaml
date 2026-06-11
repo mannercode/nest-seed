@@ -2,14 +2,15 @@ limit.maxIDLength:
     - value: 255
       constraints: {}
 system.forceSearchAttributesCacheRefreshOnRead:
-    - value: true # 개발 환경 전용. 운영 환경에서는 활성화하지 말 것.
+    - value: true # 개발 환경 전용이므로 운영 환경에서는 활성화하지 말 것.
       constraints: {}
 # dev/test 네임스페이스는 1h 미만 보존을 쓰기 위해 최소 보존일을 0으로 푼다.
 # 운영 클러스터에서는 기본값(1일) 또는 그 이상을 유지해야 한다.
 system.minRetentionDays:
     - value: 0
       constraints: {}
-# 지속 부하 시 transfer-queue가 정체돼 `TransferActivityTask`가 10초 context를 초과하던 패턴을 줄이기 위해 poll 한도를 디폴트(20/샤드)에서 50/샤드로 올리고, 배치 크기도 디폴트(100)에서 200으로 늘려 드레인 속도를 높인다.
+# 지속 부하 시 transfer-queue가 정체돼 `TransferActivityTask`가 10초 제한(context deadline) 안에 처리되지 못하는 패턴이 있었다.
+# poll 한도를 디폴트(20/샤드)에서 50으로, 배치 크기를 디폴트(100)에서 200으로 올려 드레인 속도를 높인다.
 history.transferProcessorMaxPollRPS:
     - value: 50
       constraints: {}

@@ -25,7 +25,6 @@ export default function SignupPage() {
                 password,
                 birthDate: new Date(birthDate).toISOString()
             })
-            // 가입 후 곧바로 로그인 화면으로 보낸다.
             router.push('/login')
         } catch (err) {
             setError(err instanceof ApiError ? err.message : '회원가입 실패')

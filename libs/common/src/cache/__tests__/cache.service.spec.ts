@@ -24,7 +24,8 @@ describe('CacheService', () => {
             const beforeExpiration = await fix.cacheService.get('key')
             expect(beforeExpiration).toEqual('value')
 
-            // TTL에 500ms 안전 마진을 더한다. 짧은 TTL에서는 비례 마진(10%)이 부하 상황에 부족하다.
+            // TTL에 500ms 안전 마진을 더한다.
+            // 짧은 TTL에서는 비례 마진(10%)이 부하 상황에 부족하다.
             await sleep(ttl + 500)
 
             const afterExpiration = await fix.cacheService.get('key')
@@ -157,7 +158,7 @@ describe('CacheService', () => {
         })
 
         it('같은 프로세스에서 잇따라 락을 얻어도 토큰이 서로 다르다', async () => {
-            // 두 번 연속 획득하고 해제하며 락 키 값이 매번 새로 생성되는지 확인한다.
+            // 잇따라 획득·해제한 뒤 락 키가 남아 있지 않은지 확인한다.
             await fix.cacheService.withLock('job', 5_000, async () => {})
             await fix.cacheService.withLock('job', 5_000, async () => {})
 
@@ -240,7 +241,6 @@ describe('CacheService', () => {
                 fix.cacheService.executeScript('this is not lua', [], [])
             ).rejects.toThrow()
 
-            // 다음 호출은 정상 동작한다.
             await fix.cacheService.set('key', 'value')
             expect(await fix.cacheService.get('key')).toBe('value')
         })

@@ -18,7 +18,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 HARNESS="${SCRIPT_DIR}/harness-crud.js"
 
-# k6는 handleSummary 반환 파일을 쓸 때 디렉토리는 만들지 않는다. 미리 만든다.
+# k6는 handleSummary 반환 파일을 쓸 때 디렉토리는 만들지 않는다.
+# 미리 만든다.
 mkdir -p "${WORKSPACE_ROOT}/_output/perf"
 
 # 셸에서 기본값을 박지 않는다(이중 기본은 두 곳을 동시에 바꿔야 하는 함정).

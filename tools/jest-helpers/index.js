@@ -119,7 +119,7 @@ function setupJestLifecycle({
 
 /**
  * 전체 Jest 워커 풀이 종료된 뒤 한 번 실행되는 공통 정리 함수이다.
- * 각 워크스페이스가 Mongo/S3/Redis 연결 생성 함수를 넘기고, `extra`에는 해당 워크스페이스에만 필요한 정리 작업(예: in-process Temporal 서버 종료)을 넣는다.
+ * 각 워크스페이스가 Mongo/S3/Redis 연결 생성 함수를 넘기고, `extra`에는 해당 워크스페이스에만 필요한 정리 작업(예: Temporal 테스트 환경 종료)을 넣는다.
  */
 function createGlobalTeardown({
     connectMongo, // () => Promise<MongoClient>

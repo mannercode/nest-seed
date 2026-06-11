@@ -37,8 +37,8 @@ function uniqueEmail(vu, seed) {
 
 /**
  * VU 수만큼 계정을 가입·로그인해 refresh token을 받아 둔다.
- * `http.batch`로 가입과 로그인을 각각 한 번에 보낸다. CONCURRENCY=100이면 가입 100건을
- * 병렬로 처리하고 결과를 모은 뒤 로그인 100건을 다시 병렬로 보낸다.
+ * `http.batch`로 가입과 로그인을 각각 한 번에 보낸다.
+ * CONCURRENCY=100이면 가입 100건을 병렬로 처리하고 결과를 모은 뒤 로그인 100건을 다시 병렬로 보낸다.
  * 결과 배열의 i번째 원소는 VU=i+1가 사용한다.
  */
 export function setup() {
@@ -81,13 +81,14 @@ export function setup() {
         }
         accounts.push({ refreshToken })
     }
-    // 측정 창은 setup 종료 기준이다. VU init 기준이면 setup의 가입·로그인(bcrypt)이 워밍업을 잠식한다.
+    // 측정 창은 setup 종료 기준이다.
+    // VU init 기준이면 setup의 가입·로그인(bcrypt)이 워밍업을 잠식한다.
     return { accounts, startAt: measurementStart(opts) }
 }
 
 // VU별 회전 상태. 모듈 초기화는 VU마다 따로 일어나므로 격리된다.
 let myRefreshToken = null
-// 토큰이 무효화된 VU는 더 진행 불가다. 노드 하네스의 "워커 종료"에 대응한다.
+// 토큰이 무효화된 VU는 더 진행 불가다.
 // k6는 VU를 도중에 멈출 수 없으니 플래그로 막아 추가 요청을 보내지 않는다.
 let exhausted = false
 
@@ -120,7 +121,8 @@ export default function (data) {
             return
         }
     }
-    // 200이 아니거나 새 토큰이 없으면 이후 회차는 의미가 없다. 표본에서 빼고 멈춘다.
+    // 200이 아니거나 새 토큰이 없으면 이후 회차는 의미가 없다.
+    // 표본에서 빼고 멈춘다.
     exhausted = true
 }
 

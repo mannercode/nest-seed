@@ -4,7 +4,7 @@ import { compare, hash, hashSync } from 'bcrypt'
 import { AdminsRepository } from '../admins.repository'
 import { AdminAuthPayload, AdminCredentialsDto } from '../dtos'
 
-// JwtAuthModule 등록 시 동일한 name으로 이 토큰과 묶는다.
+// JwtAuthModule.register와 @InjectJwtAuth가 이 이름을 공유해야 같은 JwtAuthService 인스턴스로 묶인다.
 export const ADMIN_JWT_AUTH_NAME = 'admins'
 
 const BCRYPT_SALT_ROUNDS = 10

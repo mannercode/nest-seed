@@ -1,20 +1,20 @@
 /**
  * api-perf k6 하네스들이 공유하는 헬퍼다.
  *
- * - 공통 환경 변수 읽기 (SERVER_URL, CONCURRENCY, DURATION_MS, WARMUP_MS, LABEL)
+ * - 공통 환경 변수 읽기 (SERVER_URL, CONCURRENCY, DURATION_MS, WARMUP_MS, LABEL, ACCEPT_GZIP)
  * - k6 시나리오/executor 옵션 빌드
- * - 워밍업 종료 시각 계산 (각 VU가 모듈 초기화 시 같이 계산)
+ * - 측정 창 시작 시각 계산 (호출 시점 규칙은 measurementStart JSDoc 참고)
  * - handleSummary용 결과 객체 빌드와 출력 파일 경로
  *
- * k6 메트릭 모델은 노드 하네스와 차이가 있다:
+ * k6 메트릭 모델에서 주의할 점:
  *  - Trend는 percentile만 보고 count는 없으므로 표본 수는 Counter(`measured_status`)로 같이 잰다.
  *  - 태그별 Counter 집계는 thresholds로 사전 정의해야 handleSummary에서 분리해 볼 수 있다.
  *    그래서 추적 대상 status code는 미리 박아 둔다(`TRACKED_STATUSES`).
- *  - 레플리카 ID 같은 동적 값은 thresholds에 못 박으므로 이번 마이그레이션에서는 별도 추적하지 않는다.
+ *  - 레플리카 ID 같은 동적 값은 thresholds에 박을 수 없으므로 별도 추적하지 않는다.
  *    필요하면 `k6 run --out json=...`으로 raw 데이터를 뽑아 후처리한다.
  */
 
-// 시나리오들이 자주 받는 상태들. 더 추가하려면 여기 늘리면 된다.
+// 시나리오들이 자주 받는 상태들.
 // 클라이언트 에러(연결 실패)는 k6가 0으로 보고한다.
 const TRACKED_STATUSES = [0, 200, 201, 204, 400, 401, 403, 404, 409, 422, 500, 502, 503]
 
@@ -28,7 +28,10 @@ function readPositiveInt(name, defaultValue) {
     return n
 }
 
-/** 공통 환경 변수를 읽어 옵션 객체로 만든다. 정수형은 잘못된 값이면 fail-fast로 던진다. */
+/**
+ * 공통 환경 변수를 읽어 옵션 객체로 만든다.
+ * 정수형은 잘못된 값이면 fail-fast로 던진다.
+ */
 export function readOptions() {
     return {
         serverUrl: __ENV.SERVER_URL || 'http://localhost:3000',
@@ -40,11 +43,15 @@ export function readOptions() {
     }
 }
 
-/** k6 executor 옵션. warmup+측정을 하나의 constant-vus 구간으로 묶고, 상태별 submetric을 활성화한다. */
+/**
+ * k6 executor 옵션.
+ * warmup+측정을 하나의 constant-vus 구간으로 묶고, 상태별 submetric을 활성화한다.
+ */
 export function buildScenarioOptions(opts) {
     const thresholds = {}
     for (const s of TRACKED_STATUSES) {
-        // 항상 참인 임계치. 단순히 submetric을 등록해 handleSummary에서 태그별로 분리해 보기 위함이다.
+        // 항상 참인 임계치.
+        // 단순히 submetric을 등록해 handleSummary에서 태그별로 분리해 보기 위함이다.
         thresholds[`measured_status{status:${s}}`] = ['count>=0']
     }
     return {
@@ -58,7 +65,7 @@ export function buildScenarioOptions(opts) {
         },
         // 응답 본문은 토큰 파싱이 필요한 시나리오를 위해 보존한다.
         discardResponseBodies: false,
-        // 기본값엔 p(99)/p(50)이 없어 buildSummary와 어긋난다. 명시한다.
+        // 기본값엔 p(99)/p(50)이 없어 buildSummary와 어긋나므로 명시한다.
         summaryTrendStats: ['min', 'avg', 'med', 'max', 'p(50)', 'p(90)', 'p(95)', 'p(99)'],
         // setup()의 http.batch가 VU 수만큼 병렬 실행되도록 막혀 있는 기본 한도를 푼다.
         // 측정 구간의 개별 http 호출은 영향받지 않는다(이 옵션은 batch 전용).
@@ -84,7 +91,7 @@ function round2(n) {
 }
 
 /**
- * 결과 메트릭을 노드 하네스와 호환되는 JSON으로 변환한다.
+ * 결과 메트릭을 perf 결과 JSON으로 변환한다.
  * 측정용 metric 이름은 measured_latency / measured_status로 고정.
  * 표본 수는 measured_status의 untagged 합계로 같이 잰다.
  *

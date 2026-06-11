@@ -34,8 +34,8 @@ export class TicketPurchaseService {
 
         this.logger.log('completePurchase', { userId, ticketCount: ticketIds.length })
 
-        // Available인 티켓만 원자적으로 Sold로 바꾼다. 하나라도 어긋나면 아무것도 팔리지 않으므로(409),
-        // 이 호출이 성공했다는 사실이 곧 "이 결제가 이 티켓들을 팔았다"는 소유의 근거가 된다.
+        // Available인 티켓만 원자적으로 Sold로 바꾼다.
+        // 하나라도 어긋나면 아무것도 팔리지 않으므로(409), 이 호출이 성공했다는 사실이 곧 "이 결제가 이 티켓들을 팔았다"는 소유의 근거가 된다.
         await this.ticketsService.transitStatusMany(
             ticketIds,
             TicketStatus.Available,
@@ -45,7 +45,8 @@ export class TicketPurchaseService {
         try {
             await this.events.emitTicketPurchased({ userId, ticketIds })
         } catch (error) {
-            // 전이는 성공했지만 발행이 실패했다. 방금 이 결제가 판매한 티켓만 되돌린다.
+            // 전이는 성공했지만 발행이 실패했다.
+            // 방금 이 결제가 판매한 티켓만 되돌린다.
             // Sold는 다른 결제가 건드릴 수 없는 상태라, from=Sold 조건부 전이로 소유가 보장된다.
             this.logger.warn('completePurchase compensation: revert tickets', {
                 userId,
@@ -134,8 +135,8 @@ export class TicketPurchaseService {
     }
 
     private validateTotalPrice(createDto: CreatePurchaseDto, ticketItems: PurchaseItemDto[]) {
-        // 가격의 정의처는 서버다. 시드는 좌석 등급 없는 단일 정가(`TICKET_PRICE`)로 합산을 검증해,
-        // 클라이언트가 보낸 금액이 그대로 결제되는 일을 막는다.
+        // 가격의 정의처는 서버다.
+        // 시드는 좌석 등급 없는 단일 정가(`TICKET_PRICE`)로 합산을 검증해, 클라이언트가 보낸 금액이 그대로 결제되는 일을 막는다.
         const expectedPrice = ticketItems.length * this.config.ticket.price
 
         if (createDto.totalPrice !== expectedPrice) {

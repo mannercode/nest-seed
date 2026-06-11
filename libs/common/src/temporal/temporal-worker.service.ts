@@ -36,7 +36,8 @@ export class TemporalWorkerService implements OnModuleInit, OnModuleDestroy {
 
     async onModuleDestroy() {
         // 워커가 이미 멈춰 있으면(run() 실패, 시그널 핸들러의 선행 종료, 중복 destroy)
-        // `shutdown()`이 IllegalStateError를 동기로 던진다. 그 경우에도 아래 정리는 계속해야 한다.
+        // `shutdown()`이 IllegalStateError를 동기로 던진다.
+        // 그 경우에도 아래 정리는 계속해야 한다.
         try {
             this.worker?.shutdown()
         } catch (error) {
@@ -44,8 +45,8 @@ export class TemporalWorkerService implements OnModuleInit, OnModuleDestroy {
         }
 
         try {
-            // 진행 중이던 액티비티가 정상 종료 또는 취소까지 도달하도록, 연결을
-            // 닫기 전에 워커가 완전히 빠질 때까지 기다린다.
+            // 진행 중이던 액티비티가 정상 종료 또는 취소까지 도달하도록,
+            // 연결을 닫기 전에 워커가 완전히 멈출 때까지 기다린다.
             if (this.runPromise) await this.runPromise
         } finally {
             await this.connection?.close().catch(() => undefined)

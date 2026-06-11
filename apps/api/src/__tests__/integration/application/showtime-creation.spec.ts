@@ -267,7 +267,8 @@ describe('ShowtimeCreationService', () => {
         })
 
         describe('보상 중 삭제가 한 번 실패하면', () => {
-            // compensate는 실패를 던져 Temporal 재시도 정책에 맡긴다. 삭제는 멱등이라 재실행이 안전하다.
+            // compensate는 실패를 던져 Temporal 재시도 정책에 맡긴다.
+            // 삭제는 멱등이라 재실행이 안전하다.
             beforeEach(() => {
                 jest.spyOn(ticketsService, 'createMany').mockRejectedValueOnce(
                     new Error('ticket creation failed')

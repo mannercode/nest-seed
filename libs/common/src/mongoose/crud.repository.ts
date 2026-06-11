@@ -33,15 +33,13 @@ export function leanToPublic<T extends { _id?: unknown }>(doc: T): T {
 }
 
 // `lean()` 결과를 공개 타입으로 바꾸는 두 헬퍼이다.
-// mongoose의 `LeanDocument<T>` 타입이 `T extends { _id?: unknown }` 제약과 바로 맞물리지 않아서, 호출 지점마다 같은 형 변환을 반복하던 부분을 한 곳으로 모았다.
+// mongoose가 추론하는 `lean()` 결과 타입이 `T extends { _id?: unknown }` 제약과 바로 맞물리지 않아서, 호출 지점마다 같은 형 변환을 반복하던 부분을 한 곳으로 모았다.
 //
 // `leanToPublic`을 그대로 부르므로, 입력 문서들도 그 자리에서 같이 바뀐다.
 export function leanArrayToPublic<T>(docs: unknown): T[] {
     return (docs as any[]).map(leanToPublic) as T[]
 }
 
-// 입력 문서를 `leanToPublic`으로 바꾼 뒤 그대로 반환한다.
-// 입력이 null이면 null을 반환한다.
 export function leanOneToPublic<T>(doc: unknown): null | T {
     return doc ? (leanToPublic(doc as any) as T) : null
 }

@@ -6,8 +6,6 @@
  *  - ADMIN_ACCESS_TOKEN이 env에 있으면 Authorization 헤더 자동 부착
  *  - 매 요청마다 새 Agent로 keepAlive=false로 보낸다(요청 단위 격리)
  *  - 응답은 {status, replicaId, body}로 반환. body는 JSON parse 시도 후 실패 시 raw 문자열.
- *
- * 시나리오 스크립트들이 각자 비슷한 함수를 7번 다시 구현하던 걸 여기로 모은다.
  */
 
 const http = require('http')
@@ -94,7 +92,8 @@ function request(method, path, opts = {}) {
             }
         )
         req.on('error', (err) => {
-            // 정상 경로는 end 콜백에서 destroy한다. 에러 경로도 대칭으로 정리한다.
+            // 정상 경로는 end 콜백에서 destroy한다.
+            // 에러 경로도 대칭으로 정리한다.
             agent.destroy()
             reject(err)
         })
@@ -105,7 +104,6 @@ function request(method, path, opts = {}) {
 
 /**
  * `/showtime-creation/event-stream` SSE 연결 하나를 열고, 도착하는 이벤트를 파싱해 `events`에 쌓는다.
- * 사가 시나리오들이 각자 다시 구현하던 프레임 파서를 여기로 모은다.
  *
  * SSE 프레임은 `\n\n`으로 구분되고, 각 프레임에서 `data:` 줄만 JSON으로 파싱한다.
  * keepalive 주석처럼 `data:`가 없는 프레임은 건너뛴다.
@@ -166,7 +164,6 @@ function openEventStream(opts = {}) {
                             events.push(JSON.parse(payload))
                         } catch (e) {
                             if (onParseError) onParseError(payload, e)
-                            // onParseError가 없으면 무시한다.
                         }
                     }
                 })
@@ -194,7 +191,10 @@ function openEventStream(opts = {}) {
     return { events, connected, close, getReplicaId: () => replicaId }
 }
 
-/** predicate가 참이 될 때까지 폴링한다. 기한 안에 참이 되면 true, 넘기면 false. */
+/**
+ * predicate가 참이 될 때까지 폴링한다.
+ * 기한 안에 참이 되면 true, 넘기면 false.
+ */
 async function waitUntil(predicate, { timeoutMs, intervalMs = 50 } = {}) {
     const start = Date.now()
     while (!predicate()) {

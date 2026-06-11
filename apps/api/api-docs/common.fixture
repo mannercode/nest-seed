@@ -29,8 +29,8 @@ ADMIN_NAME="Seeded Admin"
 : "${ADMIN_ACCESS_TOKEN:=}"
 CURRENT_AUTH_TOKEN=""
 
-# root는 token 발급 없는 stateless 인증. admin 도큐먼트가 이미 있으면 409가 떨어지는데
-# spec 재실행이나 다음 spec에서 무해하게 넘긴다.
+# root는 token 발급 없는 stateless 인증이다.
+# admin 도큐먼트가 이미 있으면 409가 떨어지는데, spec 재실행이나 다음 spec에서 무해하게 넘긴다.
 create_admin() {
 	LOG_LINE "# 준비 요청: admin 생성(root Basic Auth, 이미 있으면 409 무시)"
 

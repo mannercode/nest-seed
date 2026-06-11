@@ -72,11 +72,12 @@ bring_up_stack() {
     docker compose ps
 }
 
-# admin은 API가 부팅 시 만들지 않는다. root Basic Auth로 직접 만들고 그 admin으로 로그인한다.
+# admin은 API가 부팅 시 만들지 않는다.
+# root Basic Auth로 직접 만들고 그 admin으로 로그인한다.
 # 콘텐츠 endpoint(POST /movies, /theaters, /showtime-creation/*)는 admin token만 통과한다.
-# repeat.sh가 같은 시나리오를 여러 회 돌릴 때 mongo(infra)는 회차 간 살아 있어서
-# 1회차에 만든 seed admin이 그대로 남는다. 따라서 2회차부터는 201 대신 409가 나오는데,
-# 같은 패스워드로 로그인 결과는 동일하므로 둘 다 인정한다. 그 외 코드는 실제 오류로 본다.
+# repeat.sh가 같은 시나리오를 여러 회 돌릴 때 mongo(infra)는 회차 간 살아 있어 1회차의 seed admin이 남는다.
+# 그래서 2회차부터는 201 대신 409가 나오는데, 같은 패스워드로 로그인 결과는 동일하므로 둘 다 인정한다.
+# 그 외 코드는 실제 오류로 본다.
 seed_admin_and_login() {
     local create_body create_status
     create_body=$(mktemp)

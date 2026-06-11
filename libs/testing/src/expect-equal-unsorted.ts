@@ -1,8 +1,6 @@
 /**
- * 객체 배열을 정렬하여 비교한다.
+ * 객체 배열을 순서와 무관하게 비교한다.
  *
- * @param actual 실제 객체 배열
- * @param expected 기대 객체 배열
  * @example
  * expectEqualUnsorted([{ id: 1, name: 'test' }], [{ id: expect.any(Number), name: 'test' }]);
  */

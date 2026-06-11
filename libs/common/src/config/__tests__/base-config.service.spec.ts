@@ -67,7 +67,6 @@ describe('BaseConfigService', () => {
             )
         })
 
-        // ConfigService가 문자열을 그대로 넘겨도 BaseConfigService가 직접 변환한다.
         it('ConfigService가 숫자 문자열을 그대로 넘겨도 숫자로 변환한다', () => {
             const service = createServiceWithConfig({ N: '42' })
             expect(service.getNumber('N')).toBe(42)

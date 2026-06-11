@@ -38,7 +38,6 @@ TEST "인증 없이 구매하면 401을 반환한다" \
 			]
 		}'
 
-# 구매 기록은 본인 것만 조회된다(GET /users/me/purchases).
 TEST "본인 구매 기록을 조회한다" \
 	200 GET /users/me/purchases \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"

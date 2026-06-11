@@ -1,7 +1,7 @@
 import * as Module from './spy.fixture'
 
-// 정적 import 대상은 모듈 로드 시점에 이미 바인딩되므로, 동적 import로 가져온 대상은
-// 별도 it로 나눠 import 이후에 spyOn을 거는 순서를 보여준다.
+// 정적 import 대상은 모듈 로드 시점에 바인딩되어 어느 시점에든 spyOn을 걸 수 있다.
+// 동적 import 대상은 import가 끝난 뒤에야 spyOn을 걸 수 있으므로, 그 순서를 별도 it로 보여준다.
 describe('jest.spyOn', () => {
     it('모듈 함수에 감시자를 건다', () => {
         const mockFunc = jest.spyOn(Module, 'getGreeting')

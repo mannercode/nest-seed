@@ -19,7 +19,8 @@ import { Asset } from './models'
 
 const CLEANUP_LOCK_KEY = 'cleanup-expired-uploads'
 // 락 만료 시간은 두 조건을 동시에 맞춘다.
-// 정리 작업이 가장 오래 걸려도 자동 만료보다 먼저 끝날 만큼 길게 두고, 작업을 획득한 컨테이너가 종료됐을 때 다음 cron 한 회차 안에 다른 컨테이너가 다시 가져갈 만큼은 짧게 둔다.
+// 정리 작업이 가장 오래 걸려도 자동 만료보다 먼저 끝날 만큼 길게 둔다.
+// 작업을 획득한 컨테이너가 종료되면 다음 cron 한 회차 안에 다른 컨테이너가 다시 가져갈 만큼 짧게 둔다.
 const CLEANUP_LOCK_TTL_MS = 5 * 60 * 1000
 
 // `@Cron` 데코레이터는 모듈을 읽어 들이는 시점에 평가되므로 DI로 값을 받아 올 수 없다.
@@ -41,7 +42,6 @@ export class AssetsService {
     async cleanupExpiredUploads() {
         // 모든 복제본이 같은 cron을 실행한다.
         // 그래서 실제 작업은 분산 락 안에서 한다.
-        // `withLock`은 Redis `SET NX`로 락을 획득하고 토큰이 일치할 때만 DEL 한다.
         // 한 cron 회차에 한 복제본만 정리 작업을 수행한다.
         await this.cache.withLock(CLEANUP_LOCK_KEY, CLEANUP_LOCK_TTL_MS, async () => {
             const expiresBefore = this.getExpirationThreshold()

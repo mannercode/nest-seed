@@ -235,10 +235,10 @@ describe('UsersService', () => {
         })
     })
 
-    // 임의 ID를 다루는 핸들러는 admin 전용이다. user 토큰이나 무인증으로는 통과할 수 없어야
-    // "임의 ID = 운영자" 경계가 코드로 강제됨을 보장한다(가드를 끄면 이 검증이 사라진다).
-    // user 토큰은 admin 가드와 secret이 달라 서명 검증에 실패하고, AuthGuard가 검증 실패를
-    // 401로 매핑하므로 401이 된다(무인증·만료와 같다). 이 동작은 admin-auth.spec과 동일하다.
+    // 임의 ID를 다루는 핸들러는 admin 전용이다.
+    // user 토큰이나 무인증으로는 통과할 수 없어야 "임의 ID = 운영자" 경계가 코드로 강제됨을 보장한다(가드를 끄면 이 검증이 사라진다).
+    // user 토큰은 admin 가드와 secret이 달라 서명 검증에 실패하고, AuthGuard가 검증 실패를 401로 매핑하므로 401이 된다(무인증·만료와 같다).
+    // 이 동작은 admin-auth.spec과 동일하다.
     describe('인가 경계', () => {
         let userAuth: { Authorization: string }
         let target: UserDto

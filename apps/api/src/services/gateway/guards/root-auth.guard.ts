@@ -14,8 +14,8 @@ export class RootAuthGuard extends AuthGuard {
     private static readonly USERNAME = 'root'
 
     constructor(jwtService: JwtService, reflector: Reflector, config: AppConfigService) {
-        // 부팅 시 한 번만 해시한다. 매 요청마다 같은 해시로 bcrypt.compare를 돌려
-        // 정답/오답 응답 시간이 일관된다.
+        // 부팅 시 한 번만 해시한다.
+        // 매 요청마다 같은 해시로 bcrypt.compare를 돌려 정답/오답 응답 시간이 일관된다.
         const passwordHash = hashSync(config.root.password, 10)
         super(jwtService, reflector, {
             basic: {

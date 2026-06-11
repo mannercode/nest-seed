@@ -122,9 +122,8 @@ module.exports = [
     },
     {
         // SoLA 레이어 의존을 import 경로 해석으로 강제한다.
-        // 위 no-restricted-imports는 alias 기반 위반만 막아, `../theaters`처럼 형제 도메인을
-        // 상대경로로 참조하면 빠져나간다. boundaries는 import를 실제 파일로 해석해 element
-        // 타입(레이어·도메인)을 판정하므로 상대경로 우회까지 막는다.
+        // 위 no-restricted-imports는 alias 기반 위반만 막아, `../theaters`처럼 형제 도메인을 상대경로로 참조하면 빠져나간다.
+        // boundaries는 import를 실제 파일로 해석해 element 타입(레이어·도메인)을 판정하므로 상대경로 우회까지 막는다.
         files: ['src/services/**/*.ts'],
         ignores: ['src/services/**/__tests__/**'],
         plugins: { boundaries: boundariesPlugin },

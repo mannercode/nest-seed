@@ -30,7 +30,7 @@ describe('LatLong', () => {
 
             const distance = LatLong.distanceInMeters(northPole, southPole)
 
-            // 지구 반지름 × π는 약 20015km로, 측지선 길이의 절반이다.
+            // 극점 사이 거리는 지구 반지름 × π(약 20015km)로, 지구 둘레의 절반이다.
             expect(distance).toBeCloseTo(Math.PI * 6_371_000, -3)
         })
 

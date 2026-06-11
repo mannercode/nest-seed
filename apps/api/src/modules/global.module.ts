@@ -10,8 +10,8 @@ import { AppConfigService } from 'config'
  *
  * - `ScheduleModule`: `@Cron`을 쓰는 서비스가 의존하는 `SchedulerRegistry`를
  *   모듈 그래프에 등록한다.
- * - `JwtModule`: 가드들이 `JwtService`를 주입받기 위해 토큰만 먼저 등록한다.
- *   실제 비밀키와 만료 시간은 `UsersModule` 안의 인증 모듈이 채운다.
+ * - `JwtModule`: 가드와 인증 서비스가 `JwtService`를 주입받도록 빈 옵션으로 등록한다.
+ *   비밀키와 만료 시간은 호출하는 쪽이 서명·검증 시점에 옵션으로 직접 넘긴다.
  * - `AppLoggerService`: 로거 진입점.
  */
 @Global()

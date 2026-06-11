@@ -40,7 +40,8 @@ async function setupMovieTheater() {
         throw new Error(`publish: ${publish.status}`)
     }
 
-    // 큰 좌석 배치도이다. 1 block × 1 row × 20 tickets라 최대 10개 그룹까지 충분하다.
+    // 큰 좌석 배치도이다.
+    // 1 block × 1 row × 20 tickets라 최대 10개 그룹까지 충분하다.
     const theater = await request('POST', '/theaters', {
         body: {
             name: 'hold-race',

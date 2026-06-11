@@ -80,7 +80,8 @@ export function setup() {
         }
         accounts.push({ authHeader: `Bearer ${accessToken}` })
     }
-    // 측정 창은 setup 종료 기준이다. VU init 기준이면 setup의 가입·로그인(bcrypt)이 워밍업을 잠식한다.
+    // 측정 창은 setup 종료 기준이다.
+    // VU init 기준이면 setup의 가입·로그인(bcrypt)이 워밍업을 잠식한다.
     return { accounts, startAt: measurementStart(opts) }
 }
 

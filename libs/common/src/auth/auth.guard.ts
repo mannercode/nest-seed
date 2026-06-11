@@ -11,9 +11,9 @@ import { IS_PUBLIC_KEY } from './public.decorator'
 const ACCEPTED_ALGORITHMS = ['HS256'] as const
 
 export type BearerAuthOptions = {
-    /** 필수 `aud` 클레임. 값이 맞지 않는 토큰은 거절한다. */
+    /** 설정하면 `aud` 클레임이 필수가 되고, 값이 다른 토큰은 거절한다. */
     audience?: string
-    /** 필수 `iss` 클레임. 값이 맞지 않는 토큰은 거절한다. */
+    /** 설정하면 `iss` 클레임이 필수가 되고, 값이 다른 토큰은 거절한다. */
     issuer?: string
     secret: string
 }
@@ -76,7 +76,8 @@ export abstract class AuthGuard implements CanActivate {
             throw new UnauthorizedException(this.options.errorBody)
         }
 
-        // RFC 7235: 스킴과 값은 공백으로 구분된다. 공백이 없으면 형식 오류로 즉시 거절한다.
+        // RFC 7235: 스킴과 값은 공백으로 구분된다.
+        // 공백이 없으면 형식 오류로 즉시 거절한다.
         const sep = authorization.indexOf(' ')
         if (sep === -1) {
             throw new UnauthorizedException(this.options.errorBody)
@@ -99,8 +100,8 @@ export abstract class AuthGuard implements CanActivate {
         throw new UnauthorizedException(this.options.errorBody)
     }
 
-    // 만료·서명 위조·구조 깨짐·클레임 불일치는 모두 인증 실패이므로 verifyAsync가 던지는 오류를
-    // 설정된 errorBody의 401로 매핑한다. 만료만 다른 응답 모양이 되지 않도록 사전 분기를 두지 않는다.
+    // 만료·서명 위조·구조 깨짐·클레임 불일치는 모두 인증 실패이므로 verifyAsync가 던지는 오류를 설정된 errorBody의 401로 매핑한다.
+    // 만료만 다른 응답 모양이 되지 않도록 사전 분기를 두지 않는다.
     // canActivate에서 공백 분리가 끝난 뒤에만 호출되므로 token은 비어 있을 수 없다.
     protected async verifyBearer(token: string, bearer: BearerAuthOptions): Promise<unknown> {
         try {

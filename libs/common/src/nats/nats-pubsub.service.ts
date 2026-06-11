@@ -83,10 +83,9 @@ export class NatsPubSubService implements OnModuleDestroy {
     }
 
     private startConsumeLoop(state: SubscriptionState) {
-        // `sub.unsubscribe()`가 호출되면 이터레이터가 정상 종료한다.
-        // `for await`가 정상적으로 종료되므로 따로 취소 신호를 다룰 필요가 없다.
+        // `sub.unsubscribe()`가 호출되면 이터레이터가 정상 종료하므로 취소 신호를 따로 다룰 필요가 없다.
         // 서버 연결 끊김·프로토콜 오류·핸들러 예외 등으로 이터레이터가 던지면 소비 루프가 멈춘다.
-        // 로그가 없으면 단순히 트래픽이 없는 상황과 구분하기 어려우므로 구독 중단을 오류 로그로 남긴다.
+        // 멈춘 구독은 트래픽이 없는 상황과 구분하기 어려우므로 구독 중단을 오류 로그로 남긴다.
         // (외곽 catch는 fire-and-forget IIFE의 unhandled rejection을 막기 위한 경계이다.)
         void (async () => {
             try {

@@ -39,7 +39,8 @@ export async function holdTickets(ctx: TestContext, userId: string, tickets: Tic
     const heldTicketCount = 4
     await overrideConfigGetter(ctx.module, 'ticket', { maxPerPurchase: heldTicketCount })
 
-    // 반환하는 heldTickets와 실제 선점 범위를 일치시킨다. 나머지 티켓은 NotHeld 시나리오에 쓰인다.
+    // 반환하는 heldTickets와 실제 선점 범위를 일치시킨다.
+    // 나머지 티켓은 NotHeld 시나리오에 쓰인다.
     const heldTickets = tickets.slice(0, heldTicketCount)
 
     await ticketHoldingService.holdTickets(

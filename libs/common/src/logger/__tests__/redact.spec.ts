@@ -62,7 +62,7 @@ describe('redactSensitive', () => {
     })
 
     it('서로 다른 위치에서 같은 객체를 참조하면 양쪽 모두 [CIRCULAR]로 치환한다', () => {
-        // 구현이 WeakSet으로 방문을 추적하므로 DAG에서 두 번째 방문도 [CIRCULAR]가 된다.
+        // 구현이 WeakSet으로 방문을 추적하므로, 순환이 아닌 단순 공유 참조도 두 번째 방문부터는 [CIRCULAR]가 된다.
         const shared = { name: 'shared' }
         const root = { a: shared, b: shared }
 

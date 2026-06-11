@@ -14,8 +14,8 @@ export type ValidateAndCreateResult =
     | { kind: 'succeeded'; createdShowtimeCount: number; createdTicketCount: number }
 
 const VALIDATE_CREATE_LOCK_KEY = 'validate-and-create'
-// 임계 구역(검증+삽입)의 상한. `validateAndCreate`의 startToCloseTimeout(15분)과 같게 두어,
-// 워커가 죽었을 때만 락이 만료되고 정상 실행 중에는 풀리지 않게 한다.
+// 임계 구역(검증+삽입)의 상한.
+// `validateAndCreate`의 startToCloseTimeout(15분)과 같게 두어, 워커가 죽었을 때만 락이 만료되고 정상 실행 중에는 풀리지 않게 한다.
 const VALIDATE_CREATE_LOCK_TTL_MS = 15 * 60 * 1000
 const VALIDATE_CREATE_LOCK_WAIT_MS = 10 * 60 * 1000
 
@@ -87,7 +87,8 @@ export class ShowtimeCreationActivities {
                 ])
 
                 // 한쪽이 실패해도 다른 쪽 삭제는 이미 시도된 상태다.
-                // 실패를 던져 Temporal 재시도 정책이 동작하게 한다. 삭제는 멱등이라 전체 재실행이 안전하다.
+                // 실패를 던져 Temporal 재시도 정책이 동작하게 한다.
+                // 삭제는 멱등이라 전체 재실행이 안전하다.
                 const failures = results
                     .map((result, i) => ({ result, target: targets[i] }))
                     .filter(({ result }) => result.status === 'rejected')
