@@ -176,6 +176,12 @@ POST /showtime-creation/showtimes/search
 { "theaterIds": [...] }
 ```
 
+### 4.5. 권한 경계: 본인 자원은 `/me`, 임의 ID는 admin
+
+본인 자원은 경로에 식별자가 없는 **`/me` 계열**로 다룬다. 식별자를 인증 토큰의 주체(`req.user.sub`)로 못박으므로, 로그인 사용자가 임의 ID를 넣어 남의 자원에 접근하는 경로(IDOR) 자체가 생기지 않는다. 임의 ID를 다루는 작업은 모두 admin이다 — `/me`(본인)와 `/:id`(운영자)로 권한 경계가 갈린다. 결제도 같은 원칙이라 `POST /purchases`는 본문이 아니라 토큰 주체로 결제자를 정한다.
+
+가드는 한 컨트롤러에 서로 다른 역할의 핸들러가 섞이면 핸들러마다 붙이고, 모든 핸들러가 같은 역할이면 클래스에 붙인다. 클래스 가드를 두면 메서드 가드와 합쳐지는(둘 다 통과해야 하는) NestJS 동작 때문인데, 상세는 [users.http-controller.ts](../apps/api/src/services/gateway/users.http-controller.ts) 머리 주석에 있다.
+
 ---
 
 ## 5. 데이터 비정규화
