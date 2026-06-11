@@ -1,6 +1,6 @@
 import { createTestContext } from '@mannercode/testing'
 import type { NatsConnection } from '../nats.types'
-import { NatsModule } from '../nats.module'
+import { NatsConnectionRegistry, NatsModule } from '../nats.module'
 import { DEFAULT_NATS_CONNECTION_NAME, getNatsConnectionToken } from '../nats.tokens'
 
 describe('getNatsConnectionToken', () => {
@@ -12,6 +12,17 @@ describe('getNatsConnectionToken', () => {
 
     it('이름이 있으면 해당 이름으로 토큰을 만든다', () => {
         expect(getNatsConnectionToken('foo')).toBe('NatsConnection:foo')
+    })
+})
+
+describe('NatsConnectionRegistry', () => {
+    it('drain이 실패한 연결이 있어도 onModuleDestroy는 예외를 전파하지 않는다', async () => {
+        const registry = new NatsConnectionRegistry()
+        const connection = { drain: jest.fn().mockRejectedValue(new Error('boom')) }
+        registry.add(connection as any)
+
+        await expect(registry.onModuleDestroy()).resolves.toBeUndefined()
+        expect(connection.drain).toHaveBeenCalled()
     })
 })
 

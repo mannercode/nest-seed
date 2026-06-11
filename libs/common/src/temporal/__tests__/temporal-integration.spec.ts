@@ -294,6 +294,24 @@ describe('TemporalWorkerService', () => {
         expect(closeSpy).toHaveBeenCalled()
     }, 120_000)
 
+    it('shutdown이 IllegalStateError가 아닌 예외를 던지면 그대로 전파한다', async () => {
+        const { TemporalWorkerService } = await import('../temporal-worker.service')
+        const service = new TemporalWorkerService({
+            activities: {},
+            address: 'unused:0',
+            namespace: 'default',
+            taskQueue: 'unused',
+            workflowBundlePath: bundlePath
+        })
+        ;(service as any).worker = {
+            shutdown: () => {
+                throw new Error('boom')
+            }
+        }
+
+        await expect(service.onModuleDestroy()).rejects.toThrow('boom')
+    })
+
     it('onModuleDestroy를 두 번 호출하면 두 번째는 아무 일도 일어나지 않는다', async () => {
         const { TemporalWorkerService } = await import('../temporal-worker.service')
         const service = new TemporalWorkerService({

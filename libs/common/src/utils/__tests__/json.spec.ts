@@ -44,6 +44,22 @@ describe('JsonUtil', () => {
             expect(JsonUtil.parse('{"v":"19990101"}').v).toBe('19990101')
         })
 
+        it('문자열 안의 이스케이프된 따옴표를 건너뛰고 닫는 따옴표를 찾는다', () => {
+            const text = '{"note":"say \\"9223372036854775807\\"","v":9223372036854775807}'
+            const parsed = JsonUtil.parse(text)
+            expect(parsed.note).toBe('say "9223372036854775807"')
+            expect(parsed.v).toBe('9223372036854775807')
+        })
+
+        it('닫는 따옴표가 없는 문자열은 그대로 두어 JSON.parse가 SyntaxError를 던진다', () => {
+            expect(() => JsonUtil.parse('{"v":"unterminated')).toThrow(SyntaxError)
+        })
+
+        it('소수·지수 표기는 정밀도 보존 대상이 아니므로 숫자로 유지한다', () => {
+            expect(JsonUtil.parse('{"v":1.5}').v).toBe(1.5)
+            expect(JsonUtil.parse('{"v":1.7976931348623157e308}').v).toBe(1.7976931348623157e308)
+        })
+
         it('경계값 MAX_SAFE_INTEGER 자체는 숫자로 유지한다', () => {
             const parsed = JsonUtil.parse(`[{"v":${Number.MAX_SAFE_INTEGER}}]`)
             expect(parsed[0].v).toBe(Number.MAX_SAFE_INTEGER)
