@@ -34,7 +34,8 @@
         "dev:testing": "npm run dev -w libs/testing",
         "dev:api": "npm run dev -w apps/api",
         "dev:console": "npm run dev -w apps/console",
-        "dev:user-app": "npm run dev -w apps/user-app"
+        "dev:user-app": "npm run dev -w apps/user-app",
+        "tunnel": "tunnel"
     },
     "devDependencies": {
         "@aws-sdk/client-s3": "3.1065.0",
@@ -42,6 +43,7 @@
         "@aws-sdk/s3-request-presigner": "3.1065.0",
         "@commitlint/cli": "21.0.2",
         "@commitlint/config-conventional": "21.0.2",
+        "@mannercode/dev-tools": "*",
         "@nestjs/common": "11.1.26",
         "@nestjs/config": "4.0.4",
         "@nestjs/core": "11.1.26",
