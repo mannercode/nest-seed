@@ -86,6 +86,76 @@ describe('Mongoose Transaction', () => {
         })
     })
 
+    describe('일시 트랜잭션 오류 재시도', () => {
+        it('동시 트랜잭션의 WriteConflict는 재시도 끝에 성공한다', async () => {
+            const doc = fix.repository.newDocument()
+            doc.name = 'initial'
+            await doc.save()
+
+            let release!: () => void
+            const holdOpen = new Promise<void>((resolve) => (release = resolve))
+            let firstWriteDone!: () => void
+            const firstWrite = new Promise<void>((resolve) => (firstWriteDone = resolve))
+
+            // 첫 트랜잭션이 문서를 잡은 채 열려 있는 동안 같은 문서를 쓰면 WriteConflict가 난다.
+            const first = fix.repository.withTransaction(async (session) => {
+                await fix.model.updateOne(
+                    { _id: doc._id },
+                    { $set: { name: 'first' } },
+                    { session }
+                )
+                firstWriteDone()
+                await holdOpen
+            })
+            await firstWrite
+
+            let attempts = 0
+            await fix.repository.withTransaction(async (session) => {
+                attempts++
+                if (attempts === 2) {
+                    // 재시도 전에 경쟁 트랜잭션을 끝내, 두 번째 시도가 성공하는 경로를 만든다.
+                    release()
+                    await first
+                }
+                await fix.model.updateOne(
+                    { _id: doc._id },
+                    { $set: { name: 'second' } },
+                    { session }
+                )
+            })
+
+            expect(attempts).toEqual(2)
+            const found = await fix.repository.findById(doc.id)
+            expect(found).toMatchObject({ name: 'second' })
+        })
+
+        it('일시 오류가 계속되면 재시도를 소진하고 그 오류를 던진다', async () => {
+            const transientError = Object.assign(new Error('write conflict'), {
+                errorLabels: ['TransientTransactionError']
+            })
+
+            let attempts = 0
+            const promise = fix.repository.withTransaction(async () => {
+                attempts++
+                throw transientError
+            })
+
+            await expect(promise).rejects.toThrow('write conflict')
+            expect(attempts).toEqual(3)
+        })
+
+        it('일시 오류가 아니면 재시도하지 않는다', async () => {
+            let attempts = 0
+            const promise = fix.repository.withTransaction(async () => {
+                attempts++
+                throw new Error('boom')
+            })
+
+            await expect(promise).rejects.toThrow('boom')
+            expect(attempts).toEqual(1)
+        })
+    })
+
     describe('에러 처리', () => {
         it('startSession이 예외를 던지면 그대로 다시 던진다', async () => {
             jest.spyOn(fix.model, 'startSession').mockImplementation(() => {

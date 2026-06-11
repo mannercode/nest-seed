@@ -5,6 +5,7 @@ import { createCrudSchema, CrudSchema } from '../crud.schema'
 import {
     assignIfDefined,
     isDuplicateKeyError,
+    isTransientTransactionError,
     mapDocToDto,
     newObjectIdString,
     objectId,
@@ -276,6 +277,35 @@ describe('isDuplicateKeyError', () => {
         expect(isDuplicateKeyError(undefined)).toBe(false)
         expect(isDuplicateKeyError('error')).toBe(false)
         expect(isDuplicateKeyError(11000)).toBe(false)
+    })
+})
+
+describe('isTransientTransactionError', () => {
+    it('errorLabels에 TransientTransactionError가 있으면 true를 반환한다', () => {
+        expect(isTransientTransactionError({ errorLabels: ['TransientTransactionError'] })).toBe(
+            true
+        )
+    })
+
+    it('errorLabels에 해당 라벨이 없으면 false를 반환한다', () => {
+        expect(
+            isTransientTransactionError({ errorLabels: ['UnknownTransactionCommitResult'] })
+        ).toBe(false)
+    })
+
+    it('errorLabels가 배열이 아니면 false를 반환한다', () => {
+        expect(isTransientTransactionError({ errorLabels: 'TransientTransactionError' })).toBe(
+            false
+        )
+    })
+
+    it('errorLabels 속성이 없으면 false를 반환한다', () => {
+        expect(isTransientTransactionError(new Error('boom'))).toBe(false)
+    })
+
+    it('null이거나 원시 타입이면 false를 반환한다', () => {
+        expect(isTransientTransactionError(null)).toBe(false)
+        expect(isTransientTransactionError('error')).toBe(false)
     })
 })
 

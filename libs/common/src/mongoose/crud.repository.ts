@@ -9,12 +9,16 @@ import { BadRequestException, NotFoundException, type OnModuleInit } from '@nest
 import type { PaginationDto, PaginationResult } from '../pagination'
 import { Assume, defaultTo, differenceWith, Require, uniq } from '../utils'
 import { MongooseErrors } from './errors'
-import { objectId, objectIds } from './mongoose.util'
+import { isTransientTransactionError, objectId, objectIds } from './mongoose.util'
 
 type BulkSaveDocs<Doc> = Parameters<Model<Doc>['bulkSave']>[0]
 type SessionArg = ClientSession | undefined
 
 const defaultLeanOptions = {}
+
+// WriteConflict의 경쟁 상대는 ms 단위로 끝나므로 짧은 재시도면 충분하다.
+// 그래도 계속되면 비정상 상황이라 마지막 오류를 그대로 던진다.
+const TRANSACTION_MAX_ATTEMPTS = 3
 
 // 입력으로 받은 `doc`을 그대로 수정하고 같은 참조를 반환한다.
 //
@@ -214,6 +218,23 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
     }
 
     async withTransaction<T>(
+        callback: (session: ClientSession, rollback: () => void) => Promise<T>
+    ): Promise<T> {
+        // 같은 문서를 만진 동시 트랜잭션은 WriteConflict(TransientTransactionError 라벨)로 중단된다.
+        // 드라이버 권고대로 트랜잭션 전체를 다시 시도한다. 재시도 시점에는 경쟁 트랜잭션이 끝나 있어,
+        // 상태 조건이 걸린 갱신은 일시 오류 대신 도메인 결과(예: 전이 실패 409)로 수렴한다.
+        for (let attempt = 1; ; attempt++) {
+            try {
+                return await this.runTransactionAttempt(callback)
+            } catch (error) {
+                if (attempt >= TRANSACTION_MAX_ATTEMPTS || !isTransientTransactionError(error)) {
+                    throw error
+                }
+            }
+        }
+    }
+
+    private async runTransactionAttempt<T>(
         callback: (session: ClientSession, rollback: () => void) => Promise<T>
     ) {
         const state = { rollbackRequested: false }
