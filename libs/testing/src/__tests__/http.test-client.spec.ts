@@ -16,6 +16,12 @@ describe('HttpTestClient', () => {
             expect(body.v).toBe('9223372036854775807')
         })
 
+        it('문자열 리터럴 안의 숫자는 변형하지 않는다', async () => {
+            const { body } = await fix.httpClient.get('/big-int').ok()
+
+            expect(body.note).toBe('id: 9223372036854775807')
+        })
+
         it('ISO 8601 형식의 타임스탬프를 Date 객체로 되살린다', async () => {
             const { body } = await fix.httpClient.get('/timestamp').ok()
 
@@ -45,6 +51,41 @@ describe('HttpTestClient', () => {
             expect(body.contentType).toMatch(/^multipart\/form-data/)
             expect(body.body).toContain('test-field')
             expect(body.body).toContain('a.txt')
+        })
+    })
+
+    describe('SSE', () => {
+        it('한 청크로 도착한 여러 이벤트를 모두 전달한다', async () => {
+            const events = await new Promise<string[]>((resolve, reject) => {
+                const received: string[] = []
+
+                fix.httpClient.get('/events').sse((data) => {
+                    received.push(data)
+                    if (received.length === 3) resolve(received)
+                }, reject)
+            })
+
+            expect(events.map((e) => JSON.parse(e).status)).toEqual([
+                'waiting',
+                'processing',
+                'succeeded'
+            ])
+        })
+
+        it('error 이벤트는 errorHandler로 전달한다', async () => {
+            const reason = await new Promise((resolve) => {
+                fix.httpClient.get('/event-error').sse(() => {}, resolve)
+            })
+
+            expect(reason).toMatchObject({ event: 'error', data: 'oops' })
+        })
+
+        it('SSE 형식이 아닌 응답 본문은 errorHandler로 전달한다', async () => {
+            const reason = await new Promise<string>((resolve) => {
+                fix.httpClient.get('/not-found-text').sse(() => {}, resolve)
+            })
+
+            expect(reason).toContain('Not Found')
         })
     })
 

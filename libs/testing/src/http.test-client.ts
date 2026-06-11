@@ -16,12 +16,51 @@ function parseJsonResponse(text: string): unknown {
 
 // JS Number 안전 범위를 벗어난 정수만 문자열로 감싸 정밀도 손실을 막는다.
 // 테스트 클라이언트는 서버가 검증한 입력만 받으므로 int64 경계는 따로 검사하지 않는다.
+// 정규식 한 방이면 문자열 리터럴 내부의 숫자까지 건드리므로, 따옴표 구간을 통째로 건너뛴다.
 function quoteUnsafeIntegers(text: string): string {
     const SAFE = BigInt(Number.MAX_SAFE_INTEGER)
-    return text.replace(/([:[,])(\s*)(-?\d+)(?=\s*[,\}\]])/g, (match, prefix, space, raw) => {
-        const n = BigInt(raw)
-        return -SAFE <= n && n <= SAFE ? match : `${prefix}${space}"${raw}"`
-    })
+    let out = ''
+    let i = 0
+
+    while (i < text.length) {
+        const ch = text.charAt(i)
+
+        if (ch === '"') {
+            let j = i + 1
+            while (j < text.length) {
+                if (text.charAt(j) === '\\') {
+                    j += 2
+                    continue
+                }
+                if (text.charAt(j) === '"') break
+                j++
+            }
+            out += text.slice(i, j + 1)
+            i = j + 1
+            continue
+        }
+
+        if (ch === '-' || (ch >= '0' && ch <= '9')) {
+            let j = i
+            if (text.charAt(j) === '-') j++
+            while (j < text.length && /[\d.eE+-]/.test(text.charAt(j))) j++
+            const raw = text.slice(i, j)
+
+            if (/^-?\d+$/.test(raw)) {
+                const n = BigInt(raw)
+                out += -SAFE <= n && n <= SAFE ? raw : `"${raw}"`
+            } else {
+                out += raw
+            }
+            i = j
+            continue
+        }
+
+        out += ch
+        i++
+    }
+
+    return out
 }
 
 export type { Response }
@@ -145,34 +184,43 @@ export class HttpTestClient {
         return response
     }
     sse(messageHandler: (data: string) => void, errorHandler: (reason: any) => void): this {
+        // SSE는 빈 줄(\n\n)이 이벤트 구분자이고, TCP 청크 경계는 이벤트 경계와 무관하다.
+        // 청크를 버퍼에 모아 완성된 이벤트만 하나씩 전달한다. 한 청크에 이벤트 여러 개가 와도 모두 처리된다.
+        const dispatch = (rawEvent: string) => {
+            const message = this.parseEventMessage(rawEvent)
+
+            if (message.event !== 'error' && message.data) {
+                messageHandler(message.data)
+            } else if (message.data !== undefined || message.event !== undefined) {
+                errorHandler(message)
+            } else {
+                // SSE 형식이 아닌 본문이다. 예:
+                // {"message":"Cannot GET /showtime-creation/events2","error":"Not Found","statusCode":404}
+                errorHandler(rawEvent)
+            }
+        }
+
         this.agent
             .set('Accept', 'text/event-stream')
             .buffer(true)
             .parse((response, _unused) => {
+                let buffer = ''
+
                 response.on('data', (chunk: any) => {
-                    const chunkText = chunk.toString()
+                    buffer += chunk.toString()
 
-                    const lines = chunkText.trim().split('\n')
-
-                    if (1 < lines.length) {
-                        // 예:
-                        // id: 1
-                        // data: {"sagaId":"6712d234a78adbff65ae552d","status":"processing"}
-                        const message = this.parseEventMessage(chunkText)
-
-                        if (message.event !== 'error' && message.data) {
-                            messageHandler(message.data)
-                        } else {
-                            errorHandler(message)
-                        }
-                    } else if (0 < lines[0].length) {
-                        // 예:
-                        // {"message":"Cannot GET /showtime-creation/events2","error":"Not Found","statusCode":404}
-                        errorHandler(chunkText)
+                    let separatorIndex = buffer.indexOf('\n\n')
+                    while (separatorIndex !== -1) {
+                        const rawEvent = buffer.slice(0, separatorIndex).trim()
+                        buffer = buffer.slice(separatorIndex + 2)
+                        if (0 < rawEvent.length) dispatch(rawEvent)
+                        separatorIndex = buffer.indexOf('\n\n')
                     }
                 })
-                response.on('end', (streamError) => {
-                    if (streamError) errorHandler(streamError)
+                // Node 스트림의 'end'는 인자를 주지 않는다. 구분자 없이 끝난 잔여 본문(404 JSON 등)을 여기서 처리한다.
+                response.on('end', () => {
+                    const rest = buffer.trim()
+                    if (0 < rest.length) dispatch(rest)
                 })
             })
             .end((requestError) => {

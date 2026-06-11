@@ -101,7 +101,9 @@ function setupJestLifecycle({
     })
 
     afterAll(async () => {
-        await Promise.all([mongoClient.close(), s3Client.destroy()])
+        // beforeAll이 중간에 실패하면 일부 핸들이 비어 있다.
+        // undefined에 close를 호출해 TypeError로 원인(beforeAll 실패)을 가리지 않게 한다.
+        await Promise.all([mongoClient?.close(), s3Client?.destroy()])
     })
 
     beforeEach(async () => {

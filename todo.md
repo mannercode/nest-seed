@@ -97,7 +97,7 @@
 
 ### 통합 테스트 (apps/api)
 
-- [ ] `apps/api/src/__tests__/integration/application/showtime-creation.utils.ts:11` — waitForCompletion의 abort가 SSE 스트림이 아니라 마지막 요청(POST)을 겨냥
+- [x] `apps/api/src/__tests__/integration/application/showtime-creation.utils.ts:11` — waitForCompletion이 스트림 전용 HttpTestClient를 생성해 abort가 항상 SSE 구독을 가리키도록 수정 완료
 - [x] `apps/api/src/__tests__/integration/core/users.spec.ts:96` — rejects.not.toBeInstanceOf(ConflictException)로 변환 부재까지 검증(admins 동일 테스트도 함께) 완료
 - [x] `apps/api/src/__tests__/integration/core/admin-management.spec.ts:105` — username만 틀린 케이스가 실제 rootPassword 변수를 쓰도록 수정 완료
 - [x] `apps/api/src/__tests__/integration/helpers/create-app-test-context.ts:69` — createConfigServiceMock 제거 완료
@@ -105,13 +105,13 @@
 
 ### 테스트 라이브러리·헬퍼
 
-- [ ] libs/testing/src/http.test-client.ts:161 — sse: 한 청크에 이벤트가 여러 개 오면 마지막만 전달되고 앞 이벤트 소실
-- [ ] libs/testing/src/http.test-client.ts:21 — quoteUnsafeIntegers가 문자열 리터럴 내부의 긴 숫자도 quoting해 유효한 JSON 파싱이 깨짐
-- [ ] libs/testing/src/http.test-client.ts:174 — sse 'end' 핸들러: Node 스트림 'end' 이벤트는 인자가 없어 streamError 분기가 절대 실행 안 됨
+- [x] libs/testing/src/http.test-client.ts:161 — sse를 버퍼 기반으로 재작성: 청크를 모아 `\n\n` 단위로 분할 전달, 한 청크 다중 이벤트도 모두 처리. 픽스처 events를 3연속 발행으로 확장하고 스펙 테스트 추가
+- [x] libs/testing/src/http.test-client.ts:21 — quoteUnsafeIntegers를 문자열 구간을 건너뛰는 토크나이저로 재작성(libs/common JsonUtil과 동일 패턴). 문자열 내 숫자 보존 테스트 추가
+- [x] libs/testing/src/http.test-client.ts:174 — 죽은 streamError 분기 제거, 'end'에서 구분자 없이 끝난 잔여 본문(404 JSON 등)을 errorHandler로 flush하도록 수정. 비-SSE 본문 테스트 추가
 - [x] libs/testing/src/create-test-context.ts:44 — ignoreProviders 옵션·NullProvider 제거 완료
 - [x] libs/testing/src/utils.ts:25 — createDummyFile 제거 완료(자체 테스트 포함)
 - [x] `libs/testing/src/__tests__/http.test-client.fixture.ts:61` — 미사용 HTTP 엔드포인트 6종(items×3·search·echo-headers·payload-too-large) 제거 완료. SSE 픽스처(events 등)는 sse 버그 수정·테스트 추가 시 쓰일 발판이라 유지 — sse 미검증 문제는 http.test-client의 sse 버그 항목들과 함께 처리
-- [ ] tools/jest-helpers/index.js:104 — setupJestLifecycle: beforeAll 실패 시 afterAll이 undefined 핸들에 close/destroy를 호출해 원인 파악 방해
+- [x] tools/jest-helpers/index.js:104 — setupJestLifecycle afterAll이 옵셔널 체이닝으로 정의된 핸들만 정리하도록 수정(beforeAll 실패 원인을 TypeError로 가리지 않음)
 - [x] apps/api/webpack.config.js:28 — externals 주석이 존재한 적 없는 payloadConverterPath를 근거로 설명. 조사 결과 temporal-sandbox는 워크플로 파일에서만 import되고 워크플로는 bundleWorkflowCode가 따로 번들하므로 앱 번들 그래프에 들어오지 않음(산출물 참조 0건) → 죽은 external 규칙째 제거 완료, 빌드 검증
 - [x] libs/temporal-sandbox/package.json:20 — 미사용 @mannercode/dev-tools devDependency 제거 완료
 

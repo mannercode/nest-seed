@@ -9,10 +9,11 @@ export type HttpTestClientFixture = { httpClient: HttpTestClient; teardown: () =
 @Controller()
 class HttpTestClientController {
     // 64비트 정수가 원본 JSON으로 그대로 전달되도록 직접 응답을 작성한다.
+    // note는 문자열 리터럴 안의 숫자가 변형되지 않는지 검증하는 용도다.
     @Get('big-int')
     @Header('Content-Type', 'application/json')
     getBigInt(@Res() res: Response) {
-        res.send('{"v":9223372036854775807}')
+        res.send('{"v":9223372036854775807,"note":"id: 9223372036854775807"}')
     }
 
     @Get('timestamp')
@@ -43,9 +44,12 @@ class HttpTestClientController {
         })
     }
 
+    // 동기로 연속 발행하면 여러 이벤트가 한 TCP 청크로 도착해, 클라이언트의 이벤트 분할 파싱을 검증할 수 있다.
     @Sse('events')
     events(): Observable<{ data: { sagaId: string; status: string } }> {
         return new Observable((subscriber) => {
+            subscriber.next({ data: { sagaId: 'abc', status: 'waiting' } })
+            subscriber.next({ data: { sagaId: 'abc', status: 'processing' } })
             subscriber.next({ data: { sagaId: 'abc', status: 'succeeded' } })
             subscriber.complete()
         })
