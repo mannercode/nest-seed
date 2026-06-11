@@ -200,7 +200,7 @@ POST /showtime-creation/showtimes/search
 
 ## 7. 커밋 메시지
 
-[`@commitlint/config-conventional`](https://github.com/conventional-changelog/commitlint) 규칙을 따른다. 규칙을 어기면 commit이 거절된다.
+[`@commitlint/config-conventional`](https://github.com/conventional-changelog/commitlint) 규칙을 따른다. `commit-msg` 훅이 강제하므로 규칙을 어기면 commit이 거절된다. `pre-commit` 훅은 staged 파일에 ESLint `--fix`와 Prettier를 자동 적용한다(lint-staged).
 
 형식은 `type(scope): subject`이다. 사용할 수 있는 type은 `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`, `style`이다.
 
