@@ -26,7 +26,7 @@ COPY --from=build /workspace/node_modules /workspace/node_modules
 # 그래서 패키지 manifest와 빌드 결과를 함께 복사해야 링크가 유효해진다.
 COPY --from=build /workspace/libs/temporal-sandbox/package.json /workspace/libs/temporal-sandbox/
 COPY --from=build /workspace/libs/temporal-sandbox/_output/dist /workspace/libs/temporal-sandbox/_output/dist
-COPY --from=build /workspace/apps/api/_output/dist/index.js _output/dist/index.js
+COPY --from=build /workspace/apps/api/_output/dist/index.js /workspace/apps/api/_output/dist/index.js.map _output/dist/
 COPY --from=build /workspace/apps/api/_output/workflows/ _output/workflows/
 
 # 컨테이너를 root로 돌리면 앱 침해 시 컨테이너 root까지 노출된다.
@@ -35,4 +35,4 @@ COPY --from=build /workspace/apps/api/_output/workflows/ _output/workflows/
 RUN mkdir -p /app/logs && chown -R node:node /app/logs /workspace
 USER node
 
-CMD ["node", "_output/dist/index.js"]
+CMD ["node", "--enable-source-maps", "_output/dist/index.js"]

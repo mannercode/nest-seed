@@ -3,7 +3,7 @@
     "version": "0.0.2",
     "private": true,
     "scripts": {
-        "start": "node _output/dist/index.js",
+        "start": "node --enable-source-maps _output/dist/index.js",
         "format": "eslint src/ scripts/ --fix && prettier --write src/ scripts/",
         "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.jest.json && eslint src/ scripts/ --max-warnings=0 && prettier --check src/ scripts/",
         "build": "nest build -b webpack && npm run bundle-workflows",

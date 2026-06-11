@@ -28,6 +28,9 @@ module.exports = (options) => {
         ...options,
         entry: path.resolve(dirname, 'main.ts'),
         output: { path: path.resolve(appDir, '_output/dist'), filename: 'index.js' },
-        externals: [nodeExternals({ modulesFromFile: true, allowlist: [/^@mannercode\//] })]
+        externals: [nodeExternals({ modulesFromFile: true, allowlist: [/^@mannercode\//] })],
+        // 번들이 단일 파일이라 소스맵이 없으면 운영 에러 스택이 index.js의 수만 번째 줄로 찍힌다.
+        // node --enable-source-maps(Dockerfile CMD)가 이 맵을 읽어 TS 소스 위치로 되돌린다.
+        devtool: 'source-map'
     }
 }
