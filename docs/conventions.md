@@ -224,3 +224,22 @@ POST /showtime-creation/showtimes/search
 환경마다 달라지는 값만 환경 변수로 받는다. 접속 정보, 포트, 시크릿이 여기에 속하고, 부팅할 때 검증한다. 흐름은 [환경 변수](environment.md)에 있다.
 
 도메인 정책 값은 코드에 둔다. 홈 화면의 영화 수, 정리 cron 주기, 티켓 가격 기본값처럼 환경별로 바꿀 일이 없는 값은 사용하는 코드 옆의 상수나 설정 스키마의 기본값으로 적는다. 모든 값을 env로 빼면 설정 파일이 두 번째 코드베이스가 된다.
+
+---
+
+## 10. npm 스크립트 계약
+
+루트 package.json이 진입점이다. 루트는 동사를 워크스페이스로 팬아웃하고(`npm run <동사> --workspaces --if-present`), 각 워크스페이스는 자기가 지원하는 동사만 같은 이름으로 구현한다. 보조 단계는 npm의 pre/post 훅(`prelint`, `postformat`, `preatoz`)으로 잇는다.
+
+| 동사     | 의미                                                                                                  |
+| -------- | ----------------------------------------------------------------------------------------------------- |
+| `dev`    | watch 모드 실행                                                                                       |
+| `build`  | 빌드 산출물 생성                                                                                      |
+| `test`   | 개발 루프용 빠른 회귀. devcontainer 인프라를 재사용하는 Jest                                          |
+| `lint`   | 타입 체크 + ESLint + Prettier 검사                                                                    |
+| `format` | ESLint `--fix` + Prettier 쓰기                                                                        |
+| `e2e`    | 콘솔 브라우저 시나리오 (tests/console-e2e)                                                            |
+| `atoz`   | 클린룸 전체 회귀 — clean·인프라 리셋·`npm ci` 후 lint·build·test·e2e·배포 검증까지. `test`를 포함한다 |
+| `clean`  | (루트 전용) `git clean -fdX`로 추적되지 않는 파일 정리                                                |
+
+`atoz`의 워크스페이스 구현은 "그 워크스페이스를 전부 검증한다"는 의미만 같고 단계는 각자 다르다. libs는 build→lint→test, Next 앱은 테스트가 없어 lint→build, api는 배포 검증에서 Docker가 빌드를 맡으므로 lint→test다.

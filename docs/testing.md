@@ -116,7 +116,7 @@ jest.teardown.js  전체 워커 종료 후 한 번: worker별 DB·버킷 드롭,
 npm test -w apps/api -- users.spec --coverage=false
 ```
 
-콘솔 e2e의 Playwright 설정(`tests/console-e2e`)은 `apps/api`와 `apps/console`을 빌드해 띄운 뒤, 브라우저에서 로그인과 영화 등록 흐름을 검증한다. 개발 중 이미 서버가 떠 있으면 재사용한다. 서버를 빌드해 띄우는 만큼 무거워서 기본 `npm test`에는 넣지 않았다 — `npm run e2e -w tests/console-e2e`로 직접 실행하거나 `npm run atoz`에 포함되어 돈다.
+콘솔 e2e의 Playwright 설정(`tests/console-e2e`)은 `apps/api`와 `apps/console`을 빌드해 띄운 뒤, 브라우저에서 로그인과 영화 등록 흐름을 검증한다. 개발 중 이미 서버가 떠 있으면 재사용한다. 서버를 빌드해 띄우는 만큼 무거워서 기본 `npm test`에는 넣지 않았다 — `npm run e2e`로 직접 실행하거나 `npm run atoz`에 포함되어 돈다.
 
 ---
 
