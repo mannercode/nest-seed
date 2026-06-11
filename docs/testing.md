@@ -179,4 +179,4 @@ bash tests/api-race/runner.sh <scenario>
 
 같은 배포 스택을 대상으로 하는 성능 측정 도구는 `tests/api-perf`에 있다. 읽기·쓰기 혼합 부하의 처리량과 지연을 측정하며 `bash tests/api-perf/mixed-runner.sh`로 실행한다. 실행 전제(스택 기동, 시드 데이터)는 스크립트 머리 주석에 있다.
 
-CI는 [test-stability.yaml](../.github/workflows/test-stability.yaml)의 `scenario` job에서 각 분산 시나리오를 50회 반복 실행한다. 같은 워크플로 안에서 단위/통합 테스트는 75회, 부팅 검증은 50회 반복한다. 레이스 코드는 한 번 통과했다고 안전하다고 보기 어렵다. 그래서 결과가 얼마나 흔들리는지 누적으로 확인한다.
+CI는 [test-stability.yaml](../.github/workflows/test-stability.yaml)의 `scenario` job에서 각 분산 시나리오를 50회 반복 실행한다. 같은 워크플로 안에서 단위/통합 테스트는 75회, 부팅 검증은 50회 반복한다. 레이스 코드는 한 번 통과했다고 안전하다고 보기 어렵다. 그래서 결과가 얼마나 흔들리는지 누적으로 확인한다. 반복 횟수는 GitHub Actions 작업의 6시간 상한에 맞춘 값이다 — 상한 안에서 표본을 최대로 모은다.
