@@ -23,6 +23,9 @@ const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT
  *
  * 이미 서버가 떠 있으면 그대로 재사용한다(`reuseExistingServer`).
  * Mongo, Redis, NATS, Temporal 같은 인프라는 `infra`가 먼저 시작해 두어야 한다.
+ *
+ * 실패하면: 로컬 디버그는 `npm run e2e:ui`(인터랙티브 실행·트레이스 뷰)가 빠르다.
+ * trace는 재시도에서만 남기므로(`on-first-retry`) 재시도가 있는 CI 실패의 trace가 `_output/test-results`에 남는다.
  */
 export default defineConfig({
     testDir: './tests',

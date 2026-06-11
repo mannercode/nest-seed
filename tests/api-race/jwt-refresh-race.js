@@ -107,6 +107,15 @@ async function runInner(iteration) {
         )
         const stillValid = followups.filter((r) => r.status === 200).length
         if (stillValid > 1) {
+            // 어떤 후속 회전이 통과했고 어느 복제본이 처리했는지를 남겨,
+            // CI 50회 반복에서 한 번 터졌을 때 원인을 분류할 수 있게 한다.
+            console.error(
+                `[refresh] iter=${iteration} group=${groupIdx}: ` +
+                    `winners served by replicas [${g.ok.map((r) => r.replicaId).join(', ')}]`
+            )
+            followups.forEach((r, i) => {
+                console.error(`  - followup[${i}] status=${r.status} replica=${r.replicaId}`)
+            })
             throw new Error(
                 `iter ${iteration} group ${groupIdx}: ${stillValid} new tokens ` +
                     `simultaneously valid after concurrent refresh — rotation race window`

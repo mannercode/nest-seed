@@ -24,11 +24,26 @@ export COMPOSE_IGNORE_ORPHANS=True
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 COMPOSE_DIR="${WORKSPACE_ROOT}/deploy"
 
-TEST_NAME="${1:?Usage: $0 <test-name>}"
+list_scenarios() {
+    echo "Scenarios:"
+    for f in "${SCRIPT_DIR}"/*.js; do
+        name="$(basename "$f" .js)"
+        [ "$name" = "race-common" ] && continue
+        echo "  $name"
+    done
+}
+
+TEST_NAME="${1:-}"
+if [ -z "${TEST_NAME}" ]; then
+    echo "Usage: $0 <scenario>"
+    list_scenarios
+    exit 1
+fi
 TEST_SCRIPT="${SCRIPT_DIR}/${TEST_NAME}.js"
 
 if [ ! -f "${TEST_SCRIPT}" ]; then
     echo "Error: no test script at ${TEST_SCRIPT}"
+    list_scenarios
     exit 1
 fi
 
@@ -88,6 +103,9 @@ seed_admin_and_login() {
     if [ "${create_status}" != "201" ] && [ "${create_status}" != "409" ]; then
         echo "Error: admin creation returned HTTP ${create_status}: $(cat "${create_body}")"
         rm -f "${create_body}"
+        # 이 실패 모드(부팅은 됐는데 인증 API가 이상)는 컨테이너 로그가 필요한 경우인데,
+        # EXIT trap이 곧 컨테이너를 지우므로 여기서 남기지 않으면 영구 소실된다.
+        dump_diagnostics
         exit 1
     fi
     rm -f "${create_body}"
@@ -99,6 +117,7 @@ seed_admin_and_login() {
     ADMIN_ACCESS_TOKEN=$(echo "${login_res}" | jq -r '.accessToken // empty')
     if [ -z "${ADMIN_ACCESS_TOKEN}" ]; then
         echo "Error: admin login failed: ${login_res}"
+        dump_diagnostics
         exit 1
     fi
     export ADMIN_ACCESS_TOKEN

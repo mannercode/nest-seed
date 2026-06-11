@@ -145,6 +145,13 @@ async function runInner(iteration, movieId, theaterId, tokens, startTimeOffsetMs
         const slot = byGroup[g]
         if (slot.ok !== 1) {
             console.error(`[hold] iter=${iteration} group=${g}: expected 1 × 204, got ${slot.ok}`)
+            // 이중 204가 같은 복제본에서 났는지(프로세스 안의 경쟁)·다른 복제본인지(Redis 가드 깨짐)를
+            // 구분할 수 있게 그룹 전체 응답을 남긴다.
+            for (const r of results.filter((x) => x.group === g)) {
+                console.error(
+                    `  - ${r.status} replica=${r.replicaId} body=${JSON.stringify(r.body)}`
+                )
+            }
             throw new Error(`iter ${iteration} group ${g}: ${slot.ok} × 204`)
         }
         if (slot.other.length > 0) {
