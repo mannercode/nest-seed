@@ -9,7 +9,6 @@
         "build": "next build",
         "prestart": "free-port ${CONSOLE_PORT:?}",
         "start": "next start -p ${CONSOLE_PORT:?}",
-        "clean": "rm -rf .next",
         "format": "eslint src/ --fix && prettier --write src/",
         "lint": "tsc --noEmit && eslint src/ --max-warnings=0 && prettier --check src/",
         "atoz": "npm run lint && npm run build"

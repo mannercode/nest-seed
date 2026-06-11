@@ -31,7 +31,7 @@
                 "npm run clean",
                 "npm run lint",
                 "npm run format",
-                "npm run tunnel",
+                "npx tunnel",
                 "ncu --deep",
                 "ncu --deep -u && npm install"
             ]
