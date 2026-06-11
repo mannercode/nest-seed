@@ -36,12 +36,15 @@ while :; do
         echo "Namespace '$NAMESPACE' already exists"
         break
     fi
-    if temporal operator namespace create -n "$NAMESPACE" --retention "$NAMESPACE_RETENTION" --address "$TEMPORAL_ADDRESS" >/dev/null 2>&1; then
+    # stderr를 파일로 받아 두어, 재시도를 소진했을 때 마지막 실패의 원인이 함께 남게 한다.
+    if temporal operator namespace create -n "$NAMESPACE" --retention "$NAMESPACE_RETENTION" --address "$TEMPORAL_ADDRESS" >/dev/null 2>/tmp/create-namespace.err; then
         echo "Namespace '$NAMESPACE' created"
         break
     fi
     if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
         echo "Failed to create namespace '$NAMESPACE' after $MAX_ATTEMPTS attempts"
+        echo 'Last error:'
+        cat /tmp/create-namespace.err
         exit 1
     fi
     echo "Namespace operation not ready yet, waiting... (attempt $attempt/$MAX_ATTEMPTS)"

@@ -26,7 +26,7 @@ RESET_SCRIPT="${WORKSPACE_ROOT:?WORKSPACE_ROOT must be set}/infra/reset.sh"
 
 for ((i = 1; i <= repeat_count; i++)); do
     echo "[Run ${i}/${repeat_count} | $(($(date +%s) - start_ts))s]"
-    if [ "${i}" -gt 1 ] && [ $(((i - 1) % RESET_EVERY)) -eq 0 ] && [ -x "${RESET_SCRIPT}" ]; then
+    if [ "${i}" -gt 1 ] && [ $(((i - 1) % RESET_EVERY)) -eq 0 ]; then
         echo "[reset infra @ iter ${i}]"
         bash "${RESET_SCRIPT}"
     fi

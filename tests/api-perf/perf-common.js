@@ -30,8 +30,16 @@ function readPositiveInt(name, defaultValue) {
 
 /** 공통 환경 변수를 읽어 옵션 객체로 만든다. 정수형은 잘못된 값이면 fail-fast로 던진다. */
 export function readOptions() {
+    // 대상 서버는 반드시 명시해서 받는다.
+    // 기본값으로 조용히 붙으면 포트 3000에 dev 단일 프로세스와 deploy 4-replica 어느 쪽이 떠 있었는지 결과만 봐서는 구분할 수 없다.
+    const serverUrl = __ENV.SERVER_URL
+    if (!serverUrl) {
+        throw new Error(
+            'SERVER_URL must be set (예: bash tests/api-perf/mixed-runner.sh 사용법 참고)'
+        )
+    }
     return {
-        serverUrl: __ENV.SERVER_URL || 'http://localhost:3000',
+        serverUrl,
         concurrency: readPositiveInt('CONCURRENCY', 100),
         durationMs: readPositiveInt('DURATION_MS', 30_000),
         warmupMs: readPositiveInt('WARMUP_MS', 3_000),
@@ -126,6 +134,8 @@ export function buildSummary({ data, scenario, opts, extra = {} }) {
     return {
         label: opts.label,
         scenario,
+        // 무엇을 측정했는지 결과 파일만으로 판별할 수 있게 대상 서버를 기록한다.
+        serverUrl: opts.serverUrl,
         concurrency: opts.concurrency,
         durationMs: opts.durationMs,
         warmupMs: opts.warmupMs,

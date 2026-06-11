@@ -5,7 +5,7 @@
  * 원본 결과는 `_output/perf/<scenario>-<timestamp>.json`에 저장한다.
  *
  * 환경 변수 (k6는 `--env` 또는 `K6_` 접두사로 전달):
- *  SERVER_URL    - 대상 서버 (기본 http://localhost:3000)
+ *  SERVER_URL    - 대상 서버 (필수 — dev 단일 프로세스와 deploy 4-replica를 묵시 기본값으로 헷갈리지 않게 명시한다)
  *  SCENARIO      - user-write | user-read | theater-write | theater-read | ... (기본 user-write)
  *  CONCURRENCY   - 동시 VU 수 (기본 100)
  *  DURATION_MS   - 측정 시간 ms (기본 30000)
@@ -15,7 +15,7 @@
  *
  * 실행:
  *   mkdir -p _output/perf  # k6는 출력 디렉토리를 만들지 않는다
- *   k6 run --env SCENARIO=user-write tests/api-perf/harness-crud.js
+ *   k6 run --env SERVER_URL=http://localhost:3000 --env SCENARIO=user-write tests/api-perf/harness-crud.js
  */
 
 import http from 'k6/http'

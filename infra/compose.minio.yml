@@ -8,9 +8,10 @@ services:
         # 호스트에는 브라우저로 확인할 웹 콘솔(9001)만 노출한다.
         ports: ['9001:9001']
         environment:
-            MINIO_ROOT_USER: ${S3_ACCESS_KEY}
-            MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
-            MINIO_BROWSER_REDIRECT_URL: ${S3_CONSOLE_ENDPOINT}
+            # :?가 없으면 부재가 빈 문자열로 통과해 두세 단계 하류에서 'MinIO unhealthy'로 오진단된다.
+            MINIO_ROOT_USER: ${S3_ACCESS_KEY:?}
+            MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?}
+            MINIO_BROWSER_REDIRECT_URL: ${S3_CONSOLE_ENDPOINT:?}
         command: 'server /data --console-address :9001'
         healthcheck:
             test: 'curl -fsS http://localhost:9000/minio/health/ready'
@@ -24,12 +25,12 @@ services:
         entrypoint: /bin/sh
         command: >
             -c "
-            aws --endpoint-url http://minio:9000 s3 mb s3://${S3_BUCKET} ||
+            aws --endpoint-url http://minio:9000 s3 mb s3://${S3_BUCKET:?} ||
             aws --endpoint-url http://minio:9000 s3 ls s3://${S3_BUCKET}
             "
         environment:
-            AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
-            AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
-            AWS_DEFAULT_REGION: ${S3_REGION}
+            AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:?}
+            AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:?}
+            AWS_DEFAULT_REGION: ${S3_REGION:?}
             AWS_EC2_METADATA_DISABLED: 'true'
-            S3_BUCKET: ${S3_BUCKET}
+            S3_BUCKET: ${S3_BUCKET:?}
