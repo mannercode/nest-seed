@@ -26,6 +26,9 @@ services:
             args:
                 DEPS_TAG: ${DEPS_TAG:?DEPS_TAG must be set}
         image: nest-seed-api
+        # restart 정책은 일부러 두지 않는다.
+        # 이 스택은 검증용이라, 복제본이 죽으면 자동 복구로 가려지지 않고 그대로 드러나야 한다.
+        # replica-chaos 시나리오도 kill/start로 복제본 생명주기를 직접 다루므로 자동 재시작과 충돌한다.
         deploy:
             replicas: 4
 
