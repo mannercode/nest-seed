@@ -120,6 +120,46 @@ describe('S3ObjectService', () => {
             })
         })
 
+        describe('체크섬을 지정했을 때', () => {
+            const uploadBody = Buffer.from('hello')
+            let presigned: { fields: Record<string, string>; url: string }
+
+            beforeEach(async () => {
+                const { Checksum } = await import('../../utils')
+                const checksum = Checksum.fromBuffer(uploadBody)
+
+                presigned = await fix.s3Service.presignUploadPost({
+                    checksum,
+                    contentType: 'text/plain',
+                    expiresInSec: 60,
+                    key: 'checksum.txt'
+                })
+            })
+
+            it('필드에 x-amz-checksum-sha256을 포함한다', () => {
+                expect(presigned.fields).toEqual(
+                    expect.objectContaining({ 'x-amz-checksum-sha256': expect.any(String) })
+                )
+            })
+
+            it('본문이 체크섬과 일치하면 업로드를 허용한다', async () => {
+                const form = buildPresignedPostForm(presigned.fields, uploadBody, 'text/plain')
+
+                const response = await fetch(presigned.url, { body: form, method: 'POST' })
+
+                expect(response.ok).toBe(true)
+            })
+
+            it('본문이 체크섬과 다르면 스토리지가 업로드를 거부한다', async () => {
+                const tampered = Buffer.from('tampered body')
+                const form = buildPresignedPostForm(presigned.fields, tampered, 'text/plain')
+
+                const response = await fetch(presigned.url, { body: form, method: 'POST' })
+
+                expect(response.ok).toBe(false)
+            })
+        })
+
         describe('업로드 크기 제한이 있는 프리사인드 POST', () => {
             let presigned: { fields: Record<string, string>; url: string }
             const uploadBody = Buffer.from('hello')

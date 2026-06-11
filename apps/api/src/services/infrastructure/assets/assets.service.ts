@@ -56,10 +56,13 @@ export class AssetsService {
     async create(createDto: CreateAssetDto): Promise<AssetPresignedUploadDto> {
         const asset = await this.repository.create(createDto)
 
-        const { mimeType, size } = createDto
+        const { checksum, mimeType, size } = createDto
         const expiresInSec = this.config.asset.uploadExpiresInSec
 
+        // checksum을 presign 조건에 넣으면 신고한 값과 다른 본문은 스토리지가 업로드 자체를 거부한다.
+        // 그래서 저장된 checksum은 항상 실제 객체와 일치한다.
         const presigned = await this.s3Service.presignUploadPost({
+            checksum,
             contentType: mimeType,
             expiresInSec,
             key: asset.id,

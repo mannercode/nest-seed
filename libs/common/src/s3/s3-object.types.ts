@@ -1,5 +1,6 @@
 import type { S3ClientConfig } from '@aws-sdk/client-s3'
 import type { PresignedPost } from '@aws-sdk/s3-presigned-post'
+import type { ChecksumAlgorithm } from '../utils'
 
 export interface S3ServiceConfig extends S3ClientConfig {
     bucket: string
@@ -44,6 +45,8 @@ export type S3PresignDownloadOptions = {
 } & S3PresignUrlOptions
 
 export type S3PresignPostUploadOptions = S3PresignUrlOptions & {
+    /** 업로드 본문이 이 체크섬과 다르면 스토리지가 업로드 자체를 거부한다. */
+    checksum?: { algorithm: ChecksumAlgorithm; base64: string }
     // 예: `attachment; filename="a.txt"`
     contentDisposition?: string
     contentType?: string

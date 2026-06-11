@@ -61,6 +61,22 @@ describe('AssetsService', () => {
             expect(uploadRes.ok).toBe(true)
         })
 
+        it('신고한 체크섬과 다른 본문은 스토리지가 업로드를 거부한다', async () => {
+            const createDto = buildCreateAssetDto(file)
+            const uploadRequest = await assetsService.create(createDto)
+
+            // size 검증(content-length-range)에 걸리지 않도록 길이는 같고 내용만 다른 본문을 쓴다.
+            const tampered = Buffer.alloc(createDto.size, 'x')
+            const form = new FormData()
+            Object.entries(uploadRequest.fields).forEach(([key, value]) => {
+                form.append(key, value)
+            })
+            form.append('file', new Blob([tampered], { type: createDto.mimeType }), 'tampered')
+
+            const uploadRes = await fetch(uploadRequest.url, { body: form, method: 'POST' })
+            expect(uploadRes.ok).toBe(false)
+        })
+
         describe('업로드 URL이 만료되었을 때', () => {
             let uploadRequest: AssetPresignedUploadDto
 

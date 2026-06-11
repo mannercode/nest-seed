@@ -135,6 +135,7 @@ export class S3ObjectService implements OnModuleDestroy {
         options: S3PresignPostUploadOptions
     ): Promise<S3PresignPostUploadResult> {
         const {
+            checksum,
             contentDisposition,
             contentType,
             expiresInSec,
@@ -150,6 +151,14 @@ export class S3ObjectService implements OnModuleDestroy {
         if (contentType) {
             fields['Content-Type'] = contentType
             conditions.push(['eq', '$Content-Type', contentType])
+        }
+
+        if (checksum) {
+            // x-amz-checksum-* 필드가 있으면 스토리지가 업로드 본문을 직접 대조한다.
+            // 정책 조건은 클라이언트가 필드를 빼고 보내는 우회를 막는다.
+            const checksumField = `x-amz-checksum-${checksum.algorithm}`
+            fields[checksumField] = checksum.base64
+            conditions.push(['eq', `$${checksumField}`, checksum.base64])
         }
 
         if (contentDisposition) {
