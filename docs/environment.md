@@ -1,6 +1,6 @@
 # 환경 변수
 
-이 저장소의 공식 개발 경로는 Dev Container이다. 로컬 직접 실행을 별도 지원 경로로 두지 않는다. 환경 변수도 Dev Container, Docker Compose, 테스트 실행기가 함께 쓰는 값을 기준으로 나뉘어 있다.
+이 저장소의 공식 개발 경로는 Dev Container 하나다(이유는 [설계 결정 §5](decisions.md#5-개발-환경-dev-container-단일-경로)). 환경 변수도 Dev Container, Docker Compose, 테스트 실행기가 함께 쓰는 값을 기준으로 나뉘어 있다.
 
 ---
 
@@ -22,7 +22,7 @@
 
 Dev Container가 시작될 때 `.devcontainer/devcontainer.json`은 `.env.infra`와 `.env.api`를 `runArgs --env-file`로 컨테이너 환경에 주입하고, `containerEnv`로 `WORKSPACE_ROOT`, `COMPOSE_PROJECT_NAME`도 함께 세팅한다.
 
-`--env-file`은 컨테이너 생성 시점에 평가된다. 두 파일의 값을 바꾸면 Dev Container를 Rebuild해야 반영된다. 또한 docker env-file은 셸이 아니라서 따옴표를 값에 그대로 포함시키고 `${...}` 보간도 하지 않는다.
+`--env-file`은 컨테이너 생성 시점에 평가된다. 두 파일의 값을 바꾸면 Dev Container를 Rebuild해야 반영된다. 또한 docker env-file은 셸이 아니라서 따옴표를 값에 그대로 포함시키고, `${...}`를 다른 변수의 값으로 치환하는 보간도 하지 않는다.
 
 ```
 Dev Container
@@ -30,13 +30,13 @@ Dev Container
   -> process.env 안의 NODE_ENV, API_PORT, CONSOLE_PORT, USER_APP_PORT, HTTP_*, AUTH_*, ROOT_PASSWORD, MONGO_*, REDIS_*, S3_*, NATS_*, TEMPORAL_*
 ```
 
-`postStartCommand`는 `infra/reset.sh`를 실행한다. 이 스크립트는 `infra`의 compose 파일들로 MongoDB Replica Set, Redis Cluster, MinIO, NATS, Temporal을 시작한다. 이미지 태그와 `S3_BUCKET`·`TEMPORAL_NAMESPACE`는 ambient한 `.env.infra` 변수로 보간되고, 서비스 이름·포트는 compose 파일의 리터럴이다(그래서 3절의 포트 표가 필요하다).
+`postStartCommand`는 `infra/reset.sh`를 실행한다. 이 스크립트는 `infra`의 compose 파일들로 MongoDB Replica Set, Redis Cluster, MinIO, NATS, Temporal을 시작한다. 이미지 태그와 `S3_BUCKET`·`TEMPORAL_NAMESPACE`는 컨테이너 환경에 이미 주입된 `.env.infra` 변수로 보간되고, 서비스 이름·포트는 compose 파일의 리터럴이다(그래서 3절의 포트 표가 필요하다).
 
 API는 Nest `ConfigModule`에서 `.env` 파일을 직접 읽지 않는다. `ignoreEnvFile: true`로 두고, 실행 경로가 준비한 `process.env`만 검증한다. Dev Container가 두 `.env`를 미리 주입했으므로 모든 워크스페이스의 npm 프로세스는 그 환경을 그대로 상속한다.
 
 ```
 apps/api 통합 테스트 (npm test -w apps/api)
-  -> Dev Container 환경의 .env.api + .env.infra가 이미 ambient
+  -> .env.api + .env.infra 값이 Dev Container 환경에 이미 주입되어 있음
   -> jest는 추가 .env 로드 없이 그 process.env로 동작
 
 deploy/verify.sh

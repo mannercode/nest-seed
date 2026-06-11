@@ -75,7 +75,7 @@ export const MovieErrors = {
 
 - 에러 정의는 서비스 디렉터리 안의 `errors.ts` 파일로 분리한다. 서비스 클래스 파일 안에 함께 적지 않는다.
 - 같은 디렉터리의 `index.ts`에서 `export * from './errors'`로 다시 내보낸다.
-- 단순 파싱/검증처럼 한 파일 안에서만 쓰는 gateway 에러는 예외적으로 가까운 곳에 둘 수 있다. 예: `RequestValidationPipeErrors`, URL 날짜 파싱 에러. 여러 핸들러나 서비스에서 재사용되면 `errors.ts`로 옮긴다.
+- 단순 파싱/검증처럼 한 파일 안에서만 쓰는 gateway 계층([아키텍처](architecture.md) 참고)의 에러는 예외적으로 가까운 곳에 둘 수 있다. 예: `RequestValidationPipeErrors`, URL 날짜 파싱 에러. 여러 핸들러나 서비스에서 재사용되면 `errors.ts`로 옮긴다.
 - 클라이언트가 분기해야 하는 HTTP 4xx 응답에 `code`를 함께 보낸다. 5xx는 서버 장애이므로 클라이언트에게 자세한 원인을 노출하지 않는다.
 - `message`는 디버깅과 로그를 위한 참고 값이다. 화면에 보여 줄 문구는 클라이언트가 `code`를 보고 정한다.
 
@@ -89,7 +89,7 @@ export const MovieErrors = {
 
 ### 3.1. 상위 폴더는 상대 경로로 가져온다
 
-자기보다 위에 있는 폴더를 가져올 때는 상대 경로를 사용한다. 절대 경로 별칭으로 상위 폴더를 가져오면, 상위 폴더의 `index.ts`(폴더의 공개 내보내기를 모은 파일, 보통 배럴이라고 부른다)가 다시 하위 모듈을 가져오면서 순환 참조가 생기기 쉽다.
+자기보다 위에 있는 폴더를 가져올 때는 상대 경로를 사용한다. 절대 경로 별칭으로 상위 폴더를 가져오면 순환 참조가 생기기 쉽다. 상위 폴더의 `index.ts`(폴더의 공개 내보내기를 모은 파일, 보통 배럴이라고 부른다)가 다시 하위 모듈을 가져오기 때문이다.
 
 ```ts
 /* core/users/internal/user-authentication.service.ts */
@@ -160,7 +160,7 @@ async get(@Param('id') id: string) {
 
 ### 4.3. 오래 걸리는 작업은 비동기로 처리한다
 
-처리에 시간이 걸리는 작업은 바로 결과를 반환하려 하지 않는다. 먼저 `202 Accepted`와 sagaId를 응답하고, 진행 상황은 SSE로 보낸다.
+처리에 시간이 걸리는 작업은 바로 결과를 반환하려 하지 않는다. 먼저 `202 Accepted`와 작업 추적용 식별자(sagaId)를 응답하고, 진행 상황은 SSE(Server-Sent Events)로 보낸다.
 
 ```
 POST /some-resource         → 202 { sagaId }
@@ -180,7 +180,7 @@ POST /showtime-creation/showtimes/search
 
 본인 자원은 경로에 식별자가 없는 **`/me` 계열**로 다룬다. 식별자를 인증 토큰의 주체(`req.user.sub`)로 못박으므로, 로그인 사용자가 임의 ID를 넣어 남의 자원에 접근하는 경로(IDOR) 자체가 생기지 않는다. 임의 ID를 다루는 작업은 모두 admin이다 — `/me`(본인)와 `/:id`(운영자)로 권한 경계가 갈린다. 결제도 같은 원칙이라 `POST /purchases`는 본문이 아니라 토큰 주체로 결제자를 정한다.
 
-가드는 한 컨트롤러에 서로 다른 역할의 핸들러가 섞이면 핸들러마다 붙이고, 모든 핸들러가 같은 역할이면 클래스에 붙인다. 클래스 가드를 두면 메서드 가드와 합쳐지는(둘 다 통과해야 하는) NestJS 동작 때문인데, 상세는 [users.http-controller.ts](../apps/api/src/services/gateway/users.http-controller.ts) 머리 주석에 있다.
+가드는 한 컨트롤러에 서로 다른 역할의 핸들러가 섞이면 핸들러마다 붙이고, 모든 핸들러가 같은 역할이면 클래스에 붙인다. 이렇게 나누는 이유는 NestJS에서 클래스 가드와 메서드 가드가 합쳐져 둘 다 통과해야 하기 때문이다. 상세는 [users.http-controller.ts](../apps/api/src/services/gateway/users.http-controller.ts) 머리 주석에 있다.
 
 ---
 
