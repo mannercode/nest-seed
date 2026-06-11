@@ -21,7 +21,7 @@
     "devDependencies": {
         "@mannercode/dev-tools": "*",
         "@tailwindcss/postcss": "^4.3.0",
-        "@types/node": "24",
+        "@types/node": "25",
         "@types/react": "19.2.17",
         "@types/react-dom": "19.2.3",
         "autoprefixer": "^10.5.0",
