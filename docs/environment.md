@@ -9,7 +9,7 @@
 | 파일                     | 읽는 곳                                                        | 역할                                                                                                                                                               |
 | ------------------------ | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `.env.infra`             | Dev Container `runArgs`, `infra` compose, `deploy/compose.yml` | 개발 인프라 이미지 태그와 접속 값. MongoDB, Redis, MinIO, NATS, Temporal 서비스 이름·포트와 dev 서버 포트(`API_PORT`, `CONSOLE_PORT`, `USER_APP_PORT`)를 정의한다. |
-| `.env.api`               | Dev Container `runArgs`, `deploy/compose.yml` `env_file`       | API 런타임의 앱 설정. `PROJECT_ID`, HTTP, 인증, 로그 값, `ROOT_PASSWORD`를 둔다.                                                                                   |
+| `.env.api`               | Dev Container `runArgs`, `deploy/compose.yml` `env_file`       | API 런타임의 앱 설정. `NODE_ENV`(개발·테스트는 test, deploy가 production으로 덮어씀), `PROJECT_ID`, HTTP, 인증, 로그 값, `ROOT_PASSWORD`를 둔다.                   |
 | `apps/api/api-docs/.env` | `apps/api/api-docs/run.sh`                                     | curl 기반 API 문서 실행 설정. `SERVER_URL`과 업로드 fixture 값을 둔다.                                                                                             |
 | `apps/console/.env`      | Next.js console                                                | 관리 콘솔이 호출할 API 기준 URL을 둔다.                                                                                                                            |
 | `apps/user-app/.env`     | Next.js user-app                                               | 사용자 앱이 호출할 API 기준 URL을 둔다.                                                                                                                            |
@@ -30,7 +30,7 @@ Dev Container
   -> process.env 안의 NODE_ENV, API_PORT, CONSOLE_PORT, USER_APP_PORT, HTTP_*, AUTH_*, ROOT_PASSWORD, MONGO_*, REDIS_*, S3_*, NATS_*, TEMPORAL_*
 ```
 
-`postStartCommand`는 `infra/reset.sh`를 실행한다. 이 스크립트는 `infra`의 compose 파일들로 MongoDB Replica Set, Redis Cluster, MinIO, NATS, Temporal을 시작한다(이미지 태그·서비스 이름은 host에 ambient한 `.env.infra` 변수로 채워진다).
+`postStartCommand`는 `infra/reset.sh`를 실행한다. 이 스크립트는 `infra`의 compose 파일들로 MongoDB Replica Set, Redis Cluster, MinIO, NATS, Temporal을 시작한다. 이미지 태그와 `S3_BUCKET`·`TEMPORAL_NAMESPACE`는 ambient한 `.env.infra` 변수로 보간되고, 서비스 이름·포트는 compose 파일의 리터럴이다(그래서 3절의 포트 표가 필요하다).
 
 API는 Nest `ConfigModule`에서 `.env` 파일을 직접 읽지 않는다. `ignoreEnvFile: true`로 두고, 실행 경로가 준비한 `process.env`만 검증한다. Dev Container가 두 `.env`를 미리 주입했으므로 모든 워크스페이스의 npm 프로세스는 그 환경을 그대로 상속한다.
 
@@ -56,17 +56,17 @@ apps/api/api-docs/run.sh
 
 env 파일은 자기 보간이 안 되고 compose 서비스 정의와 스크립트에는 리터럴이 남으므로, 일부 값은 짝으로 맞춰야 한다. 아래 값을 바꿀 때는 짝을 함께 바꾼다.
 
-| 값                             | 정의처                                   | 같이 바꿔야 할 곳                                                                                                                                                             |
-| ------------------------------ | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| API 포트 3000                  | `.env.infra` `API_PORT`                  | `apps/console/.env`·`apps/user-app/.env`의 `API_BASE_URL`, `deploy/nginx.conf`의 upstream `api:3000`, README (tunnel.sh·api predev·playwright·deploy healthcheck는 자동 추종) |
-| console 포트 3100              | `.env.infra` `CONSOLE_PORT`              | README (package.json 스크립트·tunnel.sh·playwright는 자동 추종)                                                                                                               |
-| user-app 포트 3200             | `.env.infra` `USER_APP_PORT`             | README (package.json 스크립트·tunnel.sh는 자동 추종)                                                                                                                          |
-| Mongo `mongo1~3:27016`         | `infra/compose.mongo.yml`                | `.env.infra` `MONGO_URI`                                                                                                                                                      |
-| Redis `redis1~3:6379`          | `infra/compose.redis.yml`                | `.env.infra` `REDIS_HOST1~3`/`REDIS_PORT1~3`                                                                                                                                  |
-| NATS `nats:4222`               | `infra/compose.nats.yml`                 | `.env.infra` `NATS_HOST`/`NATS_PORT`                                                                                                                                          |
-| Temporal `temporal:7233`       | `infra/temporal/compose.temporal.yml`    | `.env.infra` `TEMPORAL_HOST`/`TEMPORAL_PORT`                                                                                                                                  |
-| MinIO `minio:9000`, 콘솔 9001  | `infra/compose.minio.yml`                | `.env.infra` `S3_ENDPOINT`/`S3_CONSOLE_ENDPOINT`                                                                                                                              |
-| 배포 NGINX `http://nginx` (80) | `deploy/compose.yml`·`deploy/nginx.conf` | `deploy/verify.sh`·`tests/api-race/runner.sh`의 `SERVER_URL`                                                                                                                  |
+| 값                             | 정의처                                                                             | 같이 바꿔야 할 곳                                                                                                                                                             |
+| ------------------------------ | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API 포트 3000                  | `.env.infra` `API_PORT`                                                            | `apps/console/.env`·`apps/user-app/.env`의 `API_BASE_URL`, `deploy/nginx.conf`의 upstream `api:3000`, README (tunnel.sh·api predev·playwright·deploy healthcheck는 자동 추종) |
+| console 포트 3100              | `.env.infra` `CONSOLE_PORT`                                                        | README (package.json 스크립트·tunnel.sh·playwright는 자동 추종)                                                                                                               |
+| user-app 포트 3200             | `.env.infra` `USER_APP_PORT`                                                       | README (package.json 스크립트·tunnel.sh는 자동 추종)                                                                                                                          |
+| Mongo `mongo1~3:27016`         | `infra/compose.mongo.yml`                                                          | `.env.infra` `MONGO_URI`                                                                                                                                                      |
+| Redis `redis1~3:6379`          | `infra/compose.redis.yml`                                                          | `.env.infra` `REDIS_HOST1~3`/`REDIS_PORT1~3`                                                                                                                                  |
+| NATS `nats:4222`               | `infra/compose.nats.yml` 서비스 이름(4222는 NATS 기본 포트라 파일에 리터럴이 없다) | `.env.infra` `NATS_HOST`/`NATS_PORT`                                                                                                                                          |
+| Temporal `temporal:7233`       | `infra/temporal/compose.temporal.yml`                                              | `.env.infra` `TEMPORAL_HOST`/`TEMPORAL_PORT`                                                                                                                                  |
+| MinIO `minio:9000`, 콘솔 9001  | `infra/compose.minio.yml`                                                          | `.env.infra` `S3_ENDPOINT`/`S3_CONSOLE_ENDPOINT`                                                                                                                              |
+| 배포 NGINX `http://nginx` (80) | `deploy/compose.yml`·`deploy/nginx.conf`                                           | `deploy/verify.sh`·`tests/api-race/runner.sh`의 `SERVER_URL`                                                                                                                  |
 
 ---
 
