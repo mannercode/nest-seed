@@ -84,8 +84,7 @@ jobs:
                     - replica-chaos
                     - jwt-refresh-race
         runs-on: ubuntu-24.04-arm
-        # 가장 느린 시나리오(user-signup-race 50회 ~200분)에 여유를 둔 값.
-        # 50회 반복은 의도된 누적 검증량이다.
+        # 가장 느린 시나리오(user-signup-race 50회 ~200분)에 여유를 둔 값. 50회 반복은 의도된 누적 검증량이다.
         timeout-minutes: 240
         steps:
             - uses: actions/checkout@v5

@@ -87,8 +87,7 @@ export class ShowtimeCreationActivities {
                 ])
 
                 // 한쪽이 실패해도 다른 쪽 삭제는 이미 시도된 상태다.
-                // 실패를 던져 Temporal 재시도 정책이 동작하게 한다.
-                // 삭제는 멱등이라 전체 재실행이 안전하다.
+                // 실패를 던져 Temporal 재시도 정책이 동작하게 한다. 삭제는 멱등이라 전체 재실행이 안전하다.
                 const failures = results
                     .map((result, i) => ({ result, target: targets[i] }))
                     .filter(({ result }) => result.status === 'rejected')

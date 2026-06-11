@@ -76,8 +76,7 @@ export abstract class AuthGuard implements CanActivate {
             throw new UnauthorizedException(this.options.errorBody)
         }
 
-        // RFC 7235: 스킴과 값은 공백으로 구분된다.
-        // 공백이 없으면 형식 오류로 즉시 거절한다.
+        // RFC 7235: 스킴과 값은 공백으로 구분된다. 공백이 없으면 형식 오류로 즉시 거절한다.
         const sep = authorization.indexOf(' ')
         if (sep === -1) {
             throw new UnauthorizedException(this.options.errorBody)

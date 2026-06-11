@@ -31,8 +31,7 @@ class HttpTestClientController {
         return body
     }
 
-    // multipart 등 임의 요청 검증용이다.
-    // 본문 파싱 없이 원본 스트림을 모아 반환한다.
+    // multipart 등 임의 요청 검증용이다. 본문 파싱 없이 원본 스트림을 모아 반환한다.
     @Post('inspect')
     async inspect(@Headers('content-type') contentType: string, @Req() req: Request) {
         const chunks: Buffer[] = []

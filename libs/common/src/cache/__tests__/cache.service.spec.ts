@@ -24,8 +24,7 @@ describe('CacheService', () => {
             const beforeExpiration = await fix.cacheService.get('key')
             expect(beforeExpiration).toEqual('value')
 
-            // TTL에 500ms 안전 마진을 더한다.
-            // 짧은 TTL에서는 비례 마진(10%)이 부하 상황에 부족하다.
+            // TTL에 500ms 안전 마진을 더한다. 짧은 TTL에서는 비례 마진(10%)이 부하 상황에 부족하다.
             await sleep(ttl + 500)
 
             const afterExpiration = await fix.cacheService.get('key')

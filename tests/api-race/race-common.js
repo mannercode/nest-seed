@@ -92,8 +92,7 @@ function request(method, path, opts = {}) {
             }
         )
         req.on('error', (err) => {
-            // 정상 경로는 end 콜백에서 destroy한다.
-            // 에러 경로도 대칭으로 정리한다.
+            // 정상 경로는 end 콜백에서 destroy한다. 에러 경로도 대칭으로 정리한다.
             agent.destroy()
             reject(err)
         })
@@ -191,10 +190,7 @@ function openEventStream(opts = {}) {
     return { events, connected, close, getReplicaId: () => replicaId }
 }
 
-/**
- * predicate가 참이 될 때까지 폴링한다.
- * 기한 안에 참이 되면 true, 넘기면 false.
- */
+/** predicate가 참이 될 때까지 폴링한다. 기한 안에 참이 되면 true, 넘기면 false. */
 async function waitUntil(predicate, { timeoutMs, intervalMs = 50 } = {}) {
     const start = Date.now()
     while (!predicate()) {

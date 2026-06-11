@@ -53,8 +53,7 @@ const SCENARIOS = {
             birthDate: '1990-01-01T00:00:00.000Z'
         }
     }),
-    // `GET /users`는 JWT가 필요하다.
-    // 이 시나리오가 재는 것은 인증 실패 응답의 처리량이다.
+    // `GET /users`는 JWT가 필요하다. 이 시나리오가 재는 것은 인증 실패 응답의 처리량이다.
     // 인증 없이 Mongo 읽기를 측정하고 싶으면 theater-read나 movie-read 시나리오를 쓴다.
     'user-read': () => ({ method: 'GET', path: '/users?take=50' }),
     // `POST /theaters`는 가드가 없어서 순수 Mongo 쓰기 + majority commit 비용만 잰다.
@@ -88,8 +87,7 @@ const SCENARIOS = {
         path: '/theaters?page=1&size=50&name=perf-theater-17769404'
     }),
     'movie-read': () => ({ method: 'GET', path: '/movies?page=1&size=50' }),
-    // 순수 Mongo 쓰기 (bcrypt 없음).
-    // 필터 측정 전에 데이터를 채워 두는 용도.
+    // 순수 Mongo 쓰기 (bcrypt 없음). 필터 측정 전에 데이터를 채워 두는 용도.
     'movie-write': (vu, iter) => ({
         method: 'POST',
         path: '/movies',

@@ -28,10 +28,7 @@ function readPositiveInt(name, defaultValue) {
     return n
 }
 
-/**
- * 공통 환경 변수를 읽어 옵션 객체로 만든다.
- * 정수형은 잘못된 값이면 fail-fast로 던진다.
- */
+/** 공통 환경 변수를 읽어 옵션 객체로 만든다. 정수형은 잘못된 값이면 fail-fast로 던진다. */
 export function readOptions() {
     return {
         serverUrl: __ENV.SERVER_URL || 'http://localhost:3000',
@@ -43,15 +40,11 @@ export function readOptions() {
     }
 }
 
-/**
- * k6 executor 옵션.
- * warmup+측정을 하나의 constant-vus 구간으로 묶고, 상태별 submetric을 활성화한다.
- */
+/** k6 executor 옵션. warmup+측정을 하나의 constant-vus 구간으로 묶고, 상태별 submetric을 활성화한다. */
 export function buildScenarioOptions(opts) {
     const thresholds = {}
     for (const s of TRACKED_STATUSES) {
-        // 항상 참인 임계치.
-        // 단순히 submetric을 등록해 handleSummary에서 태그별로 분리해 보기 위함이다.
+        // 항상 참인 임계치. 단순히 submetric을 등록해 handleSummary에서 태그별로 분리해 보기 위함이다.
         thresholds[`measured_status{status:${s}}`] = ['count>=0']
     }
     return {

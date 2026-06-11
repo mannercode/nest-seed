@@ -168,8 +168,7 @@ describe('NatsPubSubService', () => {
     })
 
     describe('소비 루프의 이터레이터가 예외를 던지면', () => {
-        // 이터레이터를 강제로 실패시키는 도우미이다.
-        // 같은 실행 영역의 Logger를 감시한다.
+        // 이터레이터를 강제로 실패시키는 도우미이다. 같은 실행 영역의 Logger를 감시한다.
         async function setupErroringSubscription() {
             const { Logger: NestLogger } = await import('@nestjs/common')
             const errorSpy = jest.spyOn(NestLogger.prototype, 'error').mockImplementation()

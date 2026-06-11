@@ -17,14 +17,12 @@ describe('DateUtil', () => {
         })
 
         it('잘못된 월(13, 00)은 다음/이전 달로 자동 보정된다', () => {
-            // YYYYMMDD = 20201301이면 month=13이다.
-            // Date 생성자는 month=12(0-based)를 1년 뒤 1월로 넘긴다.
+            // YYYYMMDD = 20201301이면 month=13이다. Date 생성자는 month=12(0-based)를 1년 뒤 1월로 넘긴다.
             const overflow = DateUtil.fromYMD('20201301')
             expect(overflow.getFullYear()).toBe(2021)
             expect(overflow.getMonth()).toBe(0)
 
-            // YYYYMMDD = 20200001이면 month=00이다.
-            // Date 생성자는 -1을 전년 12월로 해석한다.
+            // YYYYMMDD = 20200001이면 month=00이다. Date 생성자는 -1을 전년 12월로 해석한다.
             const underflow = DateUtil.fromYMD('20200001')
             expect(underflow.getFullYear()).toBe(2019)
             expect(underflow.getMonth()).toBe(11)

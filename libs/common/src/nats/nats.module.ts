@@ -3,8 +3,7 @@ import { connect, type NatsConnection } from 'nats'
 import { getNatsConnectionToken } from './nats.tokens'
 import { NatsModuleAsyncOptions, NatsModuleOptions } from './nats.types'
 
-// 모듈이 만든 연결은 모듈이 닫는다.
-// drain은 전달 중인 메시지를 비운 뒤 닫는다.
+// 모듈이 만든 연결은 모듈이 닫는다. drain은 전달 중인 메시지를 비운 뒤 닫는다.
 @Injectable()
 export class NatsConnectionRegistry implements OnModuleDestroy {
     private connections: NatsConnection[] = []

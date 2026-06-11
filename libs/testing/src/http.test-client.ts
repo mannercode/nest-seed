@@ -185,8 +185,7 @@ export class HttpTestClient {
     }
     sse(messageHandler: (data: string) => void, errorHandler: (reason: any) => void): this {
         // SSE는 빈 줄(\n\n)이 이벤트 구분자이고, TCP 청크 경계는 이벤트 경계와 무관하다.
-        // 청크를 버퍼에 모아 완성된 이벤트만 하나씩 전달한다.
-        // 한 청크에 이벤트 여러 개가 와도 모두 처리된다.
+        // 청크를 버퍼에 모아 완성된 이벤트만 하나씩 전달한다. 한 청크에 이벤트 여러 개가 와도 모두 처리된다.
         const dispatch = (rawEvent: string) => {
             const message = this.parseEventMessage(rawEvent)
 
@@ -217,8 +216,7 @@ export class HttpTestClient {
                         separatorIndex = buffer.indexOf('\n\n')
                     }
                 })
-                // Node 스트림의 'end'는 인자를 주지 않는다.
-                // 구분자 없이 끝난 잔여 본문(404 JSON 등)을 여기서 처리한다.
+                // Node 스트림의 'end'는 인자를 주지 않는다. 구분자 없이 끝난 잔여 본문(404 JSON 등)을 여기서 처리한다.
                 response.on('end', () => {
                     const rest = buffer.trim()
                     if (0 < rest.length) dispatch(rest)

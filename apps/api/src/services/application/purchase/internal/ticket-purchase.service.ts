@@ -45,8 +45,7 @@ export class TicketPurchaseService {
         try {
             await this.events.emitTicketPurchased({ userId, ticketIds })
         } catch (error) {
-            // 전이는 성공했지만 발행이 실패했다.
-            // 방금 이 결제가 판매한 티켓만 되돌린다.
+            // 전이는 성공했지만 발행이 실패했다. 방금 이 결제가 판매한 티켓만 되돌린다.
             // Sold는 다른 결제가 건드릴 수 없는 상태라, from=Sold 조건부 전이로 소유가 보장된다.
             this.logger.warn('completePurchase compensation: revert tickets', {
                 userId,

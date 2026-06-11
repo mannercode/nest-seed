@@ -81,8 +81,7 @@ export function setup() {
         }
         accounts.push({ refreshToken })
     }
-    // 측정 창은 setup 종료 기준이다.
-    // VU init 기준이면 setup의 가입·로그인(bcrypt)이 워밍업을 잠식한다.
+    // 측정 창은 setup 종료 기준이다. VU init 기준이면 setup의 가입·로그인(bcrypt)이 워밍업을 잠식한다.
     return { accounts, startAt: measurementStart(opts) }
 }
 
@@ -121,8 +120,7 @@ export default function (data) {
             return
         }
     }
-    // 200이 아니거나 새 토큰이 없으면 이후 회차는 의미가 없다.
-    // 표본에서 빼고 멈춘다.
+    // 200이 아니거나 새 토큰이 없으면 이후 회차는 의미가 없다. 표본에서 빼고 멈춘다.
     exhausted = true
 }
 

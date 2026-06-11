@@ -122,8 +122,7 @@ describe('JwtAuthService', () => {
             )
         })
 
-        // 저장 형식을 직접 단언한다.
-        // Redis 키 스키마가 바뀌면 이 테스트도 갱신해야 한다.
+        // 저장 형식을 직접 단언한다. Redis 키 스키마가 바뀌면 이 테스트도 갱신해야 한다.
         it('Redis에 저장된 해시가 변조되면 거부한다', async () => {
             const decoded = new JwtService().decode<Record<string, unknown>>(refreshToken)
             const tokenId = decoded.refreshTokenId as string
@@ -169,8 +168,7 @@ describe('JwtAuthService', () => {
             })
         })
 
-        // 저장 형식을 직접 단언한다.
-        // Redis 키 스키마가 바뀌면 이 테스트도 갱신해야 한다.
+        // 저장 형식을 직접 단언한다. Redis 키 스키마가 바뀌면 이 테스트도 갱신해야 한다.
         it('리프레시 토큰은 SHA-256 해시로 저장하고 평문은 저장하지 않는다', async () => {
             const decoded = new JwtService().decode<Record<string, unknown>>(refreshToken)
             const tokenId = decoded.refreshTokenId as string
@@ -430,8 +428,7 @@ describe('JwtAuthService', () => {
         })
 
         it('이벤트 훅이 예외를 던지면 generateAuthTokens도 실패한다', async () => {
-            // emit은 훅 실패를 숨기지 않는다.
-            // 훅이 던지면 호출 흐름이 그대로 무너진다.
+            // emit은 훅 실패를 숨기지 않는다. 훅이 던지면 호출 흐름이 그대로 무너진다.
             jest.spyOn(fix.events, 'push').mockImplementationOnce(() => {
                 throw new Error('hook failure')
             })
