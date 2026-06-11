@@ -313,7 +313,8 @@ for spepath in "${specs[@]}"; do
 	mkdir -p "$(dirname "${LOG_FILE}")"
 	: >"${LOG_FILE}"
 
-	pushd $(dirname "${spepath}") >/dev/null
+	pushd "$(dirname "${spepath}")" >/dev/null
+	# shellcheck disable=SC1090 # spec 파일을 목록에서 받아 동적으로 source한다
 	. "./$(basename "${spepath}")"
 	popd >/dev/null
 done

@@ -229,14 +229,14 @@ POST /showtime-creation/showtimes/search
 
 ## 10. npm 스크립트 계약
 
-루트 package.json이 진입점이다. 루트는 동사를 워크스페이스로 팬아웃하고(`npm run <동사> --workspaces --if-present`), 각 워크스페이스는 자기가 지원하는 동사만 같은 이름으로 구현한다. 보조 단계는 npm의 pre/post 훅(`prelint`, `postformat`, `preatoz`)으로 잇는다.
+루트 package.json이 진입점이다. 루트는 동사를 워크스페이스로 팬아웃하고(`npm run <동사> --workspaces --if-present`), 각 워크스페이스는 자기가 지원하는 동사만 같은 이름으로 구현한다. 보조 단계는 npm의 pre/post 훅(`prelint`, `postformat`, `preatoz`)으로 잇는다. 워크스페이스에 속하지 않는 파일의 검사(저장소 전체 Prettier, 셸 스크립트 shellcheck, 문서 내부 링크 lychee)는 `prelint`가 맡는다 — `lint`와 `atoz`가 모두 이 경로를 지난다.
 
 | 동사     | 의미                                                                                                  |
 | -------- | ----------------------------------------------------------------------------------------------------- |
 | `dev`    | watch 모드 실행                                                                                       |
 | `build`  | 빌드 산출물 생성                                                                                      |
 | `test`   | 개발 루프용 빠른 회귀. devcontainer 인프라를 재사용하는 Jest                                          |
-| `lint`   | 타입 체크 + ESLint + Prettier 검사                                                                    |
+| `lint`   | 타입 체크 + ESLint + Prettier 검사. 루트 prelint가 shellcheck·문서 링크 검사를 더한다                 |
 | `format` | ESLint `--fix` + Prettier 쓰기                                                                        |
 | `e2e`    | 콘솔 브라우저 시나리오 (tests/console-e2e)                                                            |
 | `atoz`   | 클린룸 전체 회귀 — clean·인프라 리셋·`npm ci` 후 lint·build·test·e2e·배포 검증까지. `test`를 포함한다 |

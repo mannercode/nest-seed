@@ -1,7 +1,7 @@
 FROM node:24-slim
 ENV LANG=C.UTF-8
 
-ARG REQUIRED="git curl jq ca-certificates unzip"
+ARG REQUIRED="git curl jq ca-certificates unzip xz-utils"
 ARG DEV_TOOLS="tree tmux iproute2"
 ARG PLANTUML="openjdk-17-jre-headless graphviz fonts-noto-cjk"
 ARG SHELL_FORMATTER="shfmt"
@@ -34,6 +34,19 @@ RUN ARCH=$(dpkg --print-architecture) \
     && tar -xzf /tmp/k6.tar.gz -C /tmp \
     && mv "/tmp/k6-v1.4.1-linux-${ARCH}/k6" /usr/local/bin/k6 \
     && rm -rf /tmp/k6.tar.gz "/tmp/k6-v1.4.1-linux-${ARCH}"
+
+# shellcheck·lychee: `npm run lint`의 prelint가 셸 스크립트 정적 검사와 문서 내부 링크·앵커 검사에 사용한다.
+# k6와 같은 이유로 GitHub release에서 버전을 고정해 받는다(seed 사용자 간 버전 일치).
+RUN ARCH=$(dpkg --print-architecture) \
+    && BIN_ARCH=$([ "$ARCH" = "arm64" ] && echo aarch64 || echo x86_64) \
+    && curl -fsSL "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.${BIN_ARCH}.tar.xz" \
+    | tar -xJ -C /tmp \
+    && mv /tmp/shellcheck-v0.11.0/shellcheck /usr/local/bin/shellcheck \
+    && rm -rf /tmp/shellcheck-v0.11.0 \
+    && curl -fsSL "https://github.com/lycheeverse/lychee/releases/download/lychee-v0.24.2/lychee-${BIN_ARCH}-unknown-linux-musl.tar.gz" \
+    | tar -xz -C /tmp \
+    && mv "/tmp/lychee-${BIN_ARCH}-unknown-linux-musl/lychee" /usr/local/bin/lychee \
+    && rm -rf "/tmp/lychee-${BIN_ARCH}-unknown-linux-musl"
 
 # cloudflared: 개발 중 로컬 dev 서버들(api·console·user-app)을 공개 https 도메인으로 노출하는 quick tunnel(npx tunnel).
 # 계정·도메인 없이 임시 *.trycloudflare.com URL을 발급해 OAuth 콜백·웹훅 수신을 로컬에서 받게 한다.

@@ -6,7 +6,9 @@
 
 : "${WORKSPACE_ROOT:?}"
 
-export DEPS_TAG=$(cat "${WORKSPACE_ROOT}/package-lock.json" "${WORKSPACE_ROOT}/deploy/deps.Dockerfile" | sha256sum | cut -c1-16)
+# export와 할당을 한 줄에 쓰면 $(...)의 실패가 export의 성공으로 가려져, 빈 입력의 해시로 조용히 진행한다.
+DEPS_TAG=$(cat "${WORKSPACE_ROOT}/package-lock.json" "${WORKSPACE_ROOT}/deploy/deps.Dockerfile" | sha256sum | cut -c1-16)
+export DEPS_TAG
 export DEPS_IMAGE="nest-seed-deps:${DEPS_TAG}"
 
 if ! docker image inspect "$DEPS_IMAGE" >/dev/null 2>&1; then
