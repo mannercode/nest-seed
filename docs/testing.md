@@ -170,7 +170,7 @@ bash apps/api/api-docs/run.sh
 | `replica-chaos.js`         | API 컨테이너 4개 중 1개 종료 → NGINX 우회 처리로 5xx 1% 미만 유지                                        |
 | `jwt-refresh-race.js`      | 같은 리프레시 토큰 동시 회전 → 새 토큰이 동시에 유효한 경우 0개 또는 1개만                               |
 
-각 스크립트는 요청마다 별도 `http.Agent({keepAlive:false})`를 만든다. NGINX의 `least_conn`이 실제로 여러 컨테이너로 요청을 나누도록 keep-alive 풀을 공유하지 않기 위해서다. 응답의 `x-replica-id` 헤더(정의는 [배포](../deploy/README.md#x-replica-id-응답-헤더))로 요청이 여러 컨테이너에 분산되었는지도 확인한다. 이렇게 해서 “사실은 한 컨테이너에만 갔는데 통과한” 거짓 성공을 막는다.
+각 스크립트는 요청마다 별도 `http.Agent({keepAlive:false})`를 만든다. NGINX의 `least_conn`이 실제로 여러 컨테이너로 요청을 나누도록 keep-alive 풀을 공유하지 않기 위해서다. 응답의 `x-replica-id` 헤더(정의는 [배포](deploy.md#x-replica-id-응답-헤더))로 요청이 여러 컨테이너에 분산되었는지도 확인한다. 이렇게 해서 “사실은 한 컨테이너에만 갔는데 통과한” 거짓 성공을 막는다.
 
 ```bash
 bash tests/api-race/runner.sh <scenario>

@@ -66,13 +66,15 @@ nest-seed/
 ├── infra/                   ← 개발 인프라 Compose (MongoDB·Redis·MinIO·NATS·Temporal)
 ├── deploy/                  ← Docker Compose, NGINX (앱 배포 진입점)
 ├── tools/                   ← 개발·테스트 보조 도구 (free-port, jest 헬퍼, quick tunnel)
-├── docs/                    ← 아키텍처·컨벤션·테스트·환경·설계 결정 문서
+├── docs/                    ← 폴더 문서(apps·libs·tests·infra·deploy·devcontainer)와 주제별 참고 문서
 ├── .github/                 ← CI 워크플로 (atoz, test-stability)
 │
 └── .devcontainer/           ← Dev Container 정의
 ```
 
 `apps/api/src/services` 아래 다섯 계층은 **SoLA(Service-oriented Layered Architecture)** 를 따른다 — 위 계층만 아래를 참조하고(gateway→view→application→core→infrastructure) 같은 계층끼리는 서로 직접 호출하지 않아 순환 참조를 막는다. 이 의존 방향은 ESLint로 강제한다. 자세한 내용은 [아키텍처](docs/architecture.md)를 본다.
+
+각 폴더가 무엇이고 왜 이렇게 나뉘었는지는 [문서](#문서) 절의 폴더 문서가 안내한다.
 
 ## 사용 기술
 
@@ -137,12 +139,22 @@ Swagger/OpenAPI는 의도적으로 두지 않았다(이유는 [설계 결정](do
 
 문서와 주석은 한국어가 원본이다. 두 언어를 같이 유지하는 동기화 비용을 피했고, 필요한 번역은 AI로 금방 만들 수 있다. 영어 문서는 정리가 끝난 뒤 추가할 예정이다.
 
+**폴더 문서** — 각 폴더가 무엇이고 왜 이렇게 나뉘었는지. 여기서 시작한다:
+
+- [apps/](docs/apps.md) — 본체 API의 SoLA 계층·분산 협력·테스트 방식, 최소 데모 두 앱
+- [libs/](docs/libs.md) — 공유 패키지 셋의 분리 기준
+- [tests/](docs/tests.md) — 배포된 스택을 밖에서 검증하는 테스트들과 실행법
+- [infra/](docs/infra.md) — 개발 인프라 compose 묶음과 그 소비자들
+- [deploy/](docs/deploy.md) — Docker Compose 다중 API 컨테이너 + NGINX, `x-replica-id` 응답 헤더
+- [.devcontainer/](docs/devcontainer.md) — 환경 변수 주입 경로, `WORKSPACE_ROOT`, DooD
+
+**참고 자료** — 폴더 문서가 답을 못 주는 깊이는 주제별 문서가 보관한다:
+
 - [아키텍처](docs/architecture.md) — SoLA 계층 분리와 분산 협력 구조(락, NATS, Temporal)
 - [컨벤션](docs/conventions.md) — 네이밍, 에러, 가져오기, REST API 설계와 권한 경계, 데이터 비정규화, 커밋 규칙, fail-fast, 값의 위치, npm 스크립트 계약
 - [테스트](docs/testing.md) — 한글 메시지 규칙, 픽스처, 동적 가져오기, 실행 가능한 API 문서, 분산 레이스 테스트
 - [환경 변수](docs/environment.md) — Dev Container, API, API 문서, console 환경 변수 흐름과 포크 체크리스트
 - [설계 결정](docs/decisions.md) — 분산 도구·View 계층 등 핵심 설계 결정과 쓰지 않기로 한 대안
-- [배포](deploy/README.md) — Docker Compose 다중 API 컨테이너 + NGINX, `x-replica-id` 응답 헤더
 
 ## 라이선스
 
