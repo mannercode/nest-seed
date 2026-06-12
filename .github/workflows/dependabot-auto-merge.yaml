@@ -1,0 +1,30 @@
+# 보안 경고로 열린 dependabot PR을 test-atoz 통과 후 사람 개입 없이 main에 머지한다.
+# 주기 갱신 PR은 깨지는 변경이 섞일 수 있어 자동 머지에서 빼고 사람이 확인한다.
+# 보안 PR에만 채워지는 alert-state로 두 종류를 구분한다.
+#
+# 이 워크플로는 코드 밖 레포 설정과 짝이다. fork하면 다시 켜야 한다:
+# - Dependabot security updates: 보안 경고가 뜨는 즉시 수정 PR을 연다.
+# - Allow auto-merge: gh pr merge --auto가 동작하기 위한 전제다.
+# - main 룰셋(test-atoz 필수 검사): 자동 머지가 테스트 통과를 기다리게 만든다.
+#   관리자는 bypass로 두어 main 직푸시 흐름은 그대로 둔다.
+name: Dependabot Auto Merge
+on:
+    pull_request:
+        branches: ['main']
+# dependabot이 트리거한 실행의 GITHUB_TOKEN은 기본 읽기 전용이라 머지 권한을 명시한다.
+permissions:
+    contents: write
+    pull-requests: write
+jobs:
+    auto-merge:
+        if: github.actor == 'dependabot[bot]'
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        steps:
+            - id: meta
+              uses: dependabot/fetch-metadata@v2
+            - if: steps.meta.outputs.alert-state != ''
+              run: gh pr merge --auto --squash "$PR_URL"
+              env:
+                  PR_URL: ${{ github.event.pull_request.html_url }}
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
