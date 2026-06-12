@@ -1,12 +1,11 @@
-# dependabot PR은 종류 구분 없이 test-atoz 통과를 조건으로 자동 머지한다.
-# 깨지는 갱신을 거르는 건 사람 눈이 아니라 테스트다 — 검사에 실패한 PR은
-# 머지가 막힌 채 남고, 그게 사람이 개입할 시점이다.
+# `--auto` 머지는 main 룰셋의 필수 검사(test-atoz)가 통과해야 실행된다. 실패한 PR은 머지되지 않고 열린 채 남는다.
 #
-# 이 워크플로는 코드 밖 레포 설정과 짝이다. fork하면 다시 켜야 한다:
-# - Dependabot security updates: 보안 경고가 뜨는 즉시 수정 PR을 연다.
-# - Allow auto-merge: gh pr merge --auto가 동작하기 위한 전제다.
-# - main 룰셋(test-atoz 필수 검사): 자동 머지가 테스트 통과를 기다리게 만든다.
-#   관리자는 bypass로 두어 main 직푸시 흐름은 그대로 둔다.
+# 전제가 되는 레포 설정은 깃 밖에 있어 fork하면 직접 다시 켜야 한다:
+# - 보안 경고 시 수정 PR 자동 생성:
+#   gh api -X PUT repos/{owner}/{repo}/automated-security-fixes
+# - auto-merge 허용과 머지된 브랜치 자동 삭제:
+#   gh api -X PATCH repos/{owner}/{repo} -F allow_auto_merge=true -F delete_branch_on_merge=true
+# - main 룰셋(Settings → Rules → Rulesets): test-atoz를 required status check로 추가하고, 직푸시가 막히지 않게 Repository admin을 bypass에 넣는다.
 name: Dependabot Auto Merge
 on:
     pull_request:
