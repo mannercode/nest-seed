@@ -22,7 +22,7 @@ jobs:
         timeout-minutes: 5
         steps:
             - id: meta
-              uses: dependabot/fetch-metadata@v2
+              uses: dependabot/fetch-metadata@v3
             - if: steps.meta.outputs.alert-state != ''
               run: gh pr merge --auto --squash "$PR_URL"
               env:
