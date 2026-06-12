@@ -3,15 +3,16 @@
 #
 # 각 케이스는 theater-read와 theater-write 프로세스를 (거의) 동시에 시작해 측정 창을 공유시킨다.
 # 같은 LABEL을 쓰므로 결과 JSON을 사후에 짝지을 수 있다.
-# 각 레그는 k6 내장 웹 대시보드의 HTML 리포트도 _output/perf/에 남긴다(런 내부의 시간축 추이 확인용).
+# 각 레그는 k6 내장 웹 대시보드의 HTML 리포트도 tests/api-perf/_output/에 남긴다(런 내부의 시간축 추이 확인용).
+#
+# 스택 기동·시드·정리까지 한 번에 돌리려면 runner.sh를 쓴다. 이 스크립트는 떠 있는 스택을 반복 측정할 때 직접 부른다.
 #
 # 사전 조건 — 이 러너는 스택을 띄우지 않는다.
 #  1) deploy 스택 기동(기본 4-replica, devcontainer 안에서):
 #       cd deploy && export COMPOSE_IGNORE_ORPHANS=True && source ensure-deps-image.sh && docker compose up -d --build --wait
 #     측정이 끝나면 `docker compose down -v`로 내린다.
-#  2) theaters 시드 — 스캔 비용이 현실적이려면 약 50K 이상을 권장한다.
-#     theater-write 시나리오가 곧 시드 도구다(POST /theaters는 가드가 없다):
-#       k6 run --env SERVER_URL=http://localhost:3000 --env SCENARIO=theater-write --env CONCURRENCY=100 --env DURATION_MS=60000 tests/api-perf/harness-crud.js
+#  2) theaters 시드 — 스캔 비용이 현실적이려면 약 50K 이상을 권장한다. 시드 절차는 runner.sh의 seed_theaters를 따른다.
+#  3) 쓰기 레그(theater-write)는 admin 가드를 지나므로 ADMIN_ACCESS_TOKEN이 env에 있어야 한다(발급은 runner.sh의 seed_admin_and_login 참고).
 #
 # 사용법: SERVER_URL=http://localhost:3000 bash tests/api-perf/mixed-runner.sh
 #   재정의: DURATION_MS=60000 WARMUP_MS=5000 SERVER_URL=... bash tests/api-perf/mixed-runner.sh
@@ -32,13 +33,14 @@ if ! curl -fsS "${SERVER_URL}/health" >/dev/null; then
 fi
 
 # k6는 handleSummary 반환 파일을 쓸 때 디렉토리는 만들지 않는다. 미리 만든다.
-mkdir -p "${WORKSPACE_ROOT}/_output/perf"
+mkdir -p "${SCRIPT_DIR}/_output"
 
 # 셸에서 기본값을 박지 않는다(이중 기본은 두 곳을 동시에 바꿔야 하는 함정).
 # 호출자가 환경변수를 지정한 경우에만 --env로 k6에 넘겨준다.
 extra_env=()
 [ -n "${DURATION_MS:-}" ] && extra_env+=(--env "DURATION_MS=$DURATION_MS")
 [ -n "${WARMUP_MS:-}" ] && extra_env+=(--env "WARMUP_MS=$WARMUP_MS")
+[ -n "${ADMIN_ACCESS_TOKEN:-}" ] && extra_env+=(--env "ADMIN_ACCESS_TOKEN=$ADMIN_ACCESS_TOKEN")
 
 # 러너가 케이스 중간에 끊겨도(한쪽 레그 실패, Ctrl-C) 남은 k6가 고아로 부하를 계속 걸지 않게 정리한다.
 pids=()
@@ -69,7 +71,7 @@ run_case() {
         K6_WEB_DASHBOARD=true \
             K6_WEB_DASHBOARD_PORT=5665 \
             K6_WEB_DASHBOARD_PERIOD=2s \
-            K6_WEB_DASHBOARD_EXPORT="${WORKSPACE_ROOT}/_output/perf/dashboard-${stamp}-${label}-read.html" \
+            K6_WEB_DASHBOARD_EXPORT="${SCRIPT_DIR}/_output/dashboard-${stamp}-${label}-read.html" \
             k6 run \
             --env "SERVER_URL=$SERVER_URL" \
             --env "SCENARIO=theater-read" \
@@ -83,7 +85,7 @@ run_case() {
         K6_WEB_DASHBOARD=true \
             K6_WEB_DASHBOARD_PORT=5666 \
             K6_WEB_DASHBOARD_PERIOD=2s \
-            K6_WEB_DASHBOARD_EXPORT="${WORKSPACE_ROOT}/_output/perf/dashboard-${stamp}-${label}-write.html" \
+            K6_WEB_DASHBOARD_EXPORT="${SCRIPT_DIR}/_output/dashboard-${stamp}-${label}-write.html" \
             k6 run \
             --env "SERVER_URL=$SERVER_URL" \
             --env "SCENARIO=theater-write" \
@@ -116,6 +118,6 @@ run_case mixed-r200w100 200 100
 
 echo
 echo "=========================================================="
-echo "DONE. results in _output/perf/<scenario>-<ts>-<label>.json"
-echo "      dashboards in _output/perf/dashboard-<ts>-<label>-<leg>.html"
+echo "DONE. results in tests/api-perf/_output/<scenario>-<ts>-<label>.json"
+echo "      dashboards in tests/api-perf/_output/dashboard-<ts>-<label>-<leg>.html"
 echo "=========================================================="

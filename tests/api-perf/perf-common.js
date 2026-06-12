@@ -156,21 +156,21 @@ export function buildSummary({ data, scenario, opts, extra = {} }) {
     }
 }
 
-/** `_output/perf/<scenario>-<timestamp>[-<label>].json` 절대 경로. */
+/** `tests/api-perf/_output/<scenario>-<timestamp>[-<label>].json` 절대 경로. */
 export function summaryFilePath(scenario, label) {
     if (!__ENV.WORKSPACE_ROOT) {
         throw new Error('WORKSPACE_ROOT must be set')
     }
     const stamp = new Date().toISOString().replace(/[:.]/g, '-')
     const suffix = label ? `-${label}` : ''
-    return `${__ENV.WORKSPACE_ROOT}/_output/perf/${scenario}-${stamp}${suffix}.json`
+    return `${__ENV.WORKSPACE_ROOT}/tests/api-perf/_output/${scenario}-${stamp}${suffix}.json`
 }
 
 /**
  * handleSummary 표준 반환.
  *  - stdout: 한 줄 JSON (파이프 후처리용)
  *  - stderr: 사람이 읽을 요약
- *  - file:   `_output/perf/...` 보존본
+ *  - file:   `tests/api-perf/_output/...` 보존본
  */
 export function summaryReturn({ summary, logTag }) {
     const file = summaryFilePath(summary.scenario, summary.label)
