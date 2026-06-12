@@ -65,8 +65,11 @@ services:
                     })
                     "
 
+                # `rs.initiate`를 mongo1에 보냈어도 첫 선출은 mongo2/3가 이길 수 있다.
+                # mongo1이 PRIMARY인지만 보면 그 경우 영원히 false라 타임아웃으로 끝난다.
+                # 어느 멤버든 PRIMARY가 되면 통과하도록 집합 전체의 멤버 상태를 확인한다.
                 i=0
-                until mongosh $$url --eval "db.hello().isWritablePrimary" | grep -q "true"; do
+                until mongosh $$url --eval "rs.status().members.some(m => m.stateStr === \"PRIMARY\")" | grep -q "true"; do
                     i=$$((i+1))
                     if [ $$i -ge 60 ]; then
                         echo "MongoDB replica set did not become PRIMARY in time" >&2
