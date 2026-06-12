@@ -146,7 +146,7 @@ Swagger/OpenAPI는 의도적으로 두지 않았다(이유는 [설계 결정](do
 - [tests/](docs/tests.md) — 배포된 스택을 밖에서 검증하는 테스트들과 실행법
 - [infra/](docs/infra.md) — 개발 인프라 compose 묶음과 그 소비자들
 - [deploy/](docs/deploy.md) — Docker Compose 다중 API 컨테이너 + NGINX, `x-replica-id` 응답 헤더
-- [.devcontainer/](docs/_devcontainer.md) — 환경 변수 주입 경로, `WORKSPACE_ROOT`, DooD
+- [.devcontainer/](docs/devcontainer.md) — 환경 변수 주입 경로, `WORKSPACE_ROOT`, DooD
 
 **참고 자료** — 폴더 하나에 속하지 않는 횡단 주제는 `docs/reference/`가 맡는다:
 
