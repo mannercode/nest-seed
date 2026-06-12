@@ -19,7 +19,7 @@ jobs:
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 60
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
             - name: Run in devcontainer
               uses: devcontainers/ci@v0.3
               with:
