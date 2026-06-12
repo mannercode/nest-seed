@@ -10,6 +10,12 @@ updates:
       groups:
           npm-all:
               patterns: ['*']
+      # dependabot은 선언된 범위와 무관하게 @types/node를 최신 메이저로 고쳐 쓴 PR을 올린다.
+      # 타입의 메이저는 런타임 Node 메이저(devcontainer 이미지)와 짝이라 어긋나면 빌드가 깨진다.
+      # 메이저 범프 제안을 막는다. 런타임 Node를 올릴 때 타입도 함께 올린다.
+      ignore:
+          - dependency-name: '@types/node'
+            update-types: ['version-update:semver-major']
     - package-ecosystem: github-actions
       directory: '/'
       schedule:
