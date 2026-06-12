@@ -5,7 +5,9 @@
 #   gh api -X PUT repos/{owner}/{repo}/automated-security-fixes
 # - auto-merge 허용과 머지된 브랜치 자동 삭제:
 #   gh api -X PATCH repos/{owner}/{repo} -F allow_auto_merge=true -F delete_branch_on_merge=true
-# - main 룰셋(Settings → Rules → Rulesets): test-atoz를 required status check로 추가하고, 직푸시가 막히지 않게 Repository admin을 bypass에 넣는다.
+# - main 룰셋: "test-atoz가 통과해야 main에 들어갈 수 있다"는 규칙. 이게 없으면 --auto는 기다릴 조건이 없어 검사 전에 머지된다.
+#   Settings → Rules → Rulesets에서 만든다: Target branches에 main, Require status checks to pass에 test-atoz.
+#   이 규칙은 main 직푸시도 막으므로, Bypass list에 Repository admin role을 넣어 관리자 푸시는 예외로 둔다.
 name: Dependabot Auto Merge
 on:
     pull_request:
