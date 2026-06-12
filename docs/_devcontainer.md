@@ -1,10 +1,10 @@
 # .devcontainer/ — 개발 환경
 
-공식 개발 경로는 Dev Container 하나다. 로컬 직접 실행은 지원하지 않는다 — 이유는 [설계 결정 §5](decisions.md#5-개발-환경-dev-container-단일-경로).
+공식 개발 경로는 Dev Container 하나다. 로컬 직접 실행은 지원하지 않는다 — 이유는 [설계 결정 §5](reference/decisions.md#5-개발-환경-dev-container-단일-경로).
 
 ## 환경 변수는 여기서 주입된다
 
-`devcontainer.json`의 `runArgs`가 `.env.infra`와 `.env.api`를 `--env-file`로 컨테이너에 넣는다. 그래서 컨테이너 안의 모든 프로세스(dev 서버, 테스트, npm 스크립트)는 이 값들을 이미 주입된 `process.env`로 받는다. 앱은 `.env` 파일을 직접 읽지 않는다(`ignoreEnvFile`) — env 파일을 고친 뒤에는 컨테이너를 재시작해야 반영된다. 값의 전체 흐름은 [환경 변수](environment.md)에 있다.
+`devcontainer.json`의 `runArgs`가 `.env.infra`와 `.env.api`를 `--env-file`로 컨테이너에 넣는다. 그래서 컨테이너 안의 모든 프로세스(dev 서버, 테스트, npm 스크립트)는 이 값들을 이미 주입된 `process.env`로 받는다. 앱은 `.env` 파일을 직접 읽지 않는다(`ignoreEnvFile`) — env 파일을 고친 뒤에는 컨테이너를 재시작해야 반영된다. 값의 전체 흐름은 [환경 변수](reference/environment.md)에 있다.
 
 `containerEnv`는 두 값을 더 정의한다.
 

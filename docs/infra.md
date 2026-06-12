@@ -10,4 +10,4 @@ devcontainer가 부팅할 때 `postStartCommand`로 `bash infra/reset.sh`를 실
 
 이 인프라는 세 소비자가 공유한다. dev 서버(`npm run dev`)와 `apps/api` 통합 테스트가 직접 붙고, 검증용 4-replica 배포 스택(`deploy/`)도 같은 Docker 네트워크(`COMPOSE_PROJECT_NAME`)에 붙어 서비스 이름(`mongo1`, `redis1` 등)으로 접근한다. 접속 값의 정의처는 `.env.infra`다.
 
-토폴로지를 운영과 같게 두는 이유는 [설계 결정 §5](decisions.md#5-개발-환경-dev-container-단일-경로)가, 환경 변수가 여기서 앱까지 흐르는 전체 경로는 [환경 변수](environment.md)가 설명한다. 각 설정값의 사유는 compose 파일의 현장 주석에 있다.
+토폴로지를 운영과 같게 두는 이유는 [설계 결정 §5](reference/decisions.md#5-개발-환경-dev-container-단일-경로)가, 환경 변수가 여기서 앱까지 흐르는 전체 경로는 [환경 변수](reference/environment.md)가 설명한다. 각 설정값의 사유는 compose 파일의 현장 주석에 있다.

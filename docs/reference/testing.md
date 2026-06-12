@@ -170,7 +170,7 @@ bash apps/api/api-docs/run.sh
 | `replica-chaos.js`         | API 컨테이너 4개 중 1개 종료 → NGINX 우회 처리로 5xx 1% 미만 유지                                        |
 | `jwt-refresh-race.js`      | 같은 리프레시 토큰 동시 회전 → 새 토큰이 동시에 유효한 경우 0개 또는 1개만                               |
 
-각 스크립트는 요청마다 별도 `http.Agent({keepAlive:false})`를 만든다. NGINX의 `least_conn`이 실제로 여러 컨테이너로 요청을 나누도록 keep-alive 풀을 공유하지 않기 위해서다. 응답의 `x-replica-id` 헤더(정의는 [배포](deploy.md#x-replica-id-응답-헤더))로 요청이 여러 컨테이너에 분산되었는지도 확인한다. 이렇게 해서 “사실은 한 컨테이너에만 갔는데 통과한” 거짓 성공을 막는다.
+각 스크립트는 요청마다 별도 `http.Agent({keepAlive:false})`를 만든다. NGINX의 `least_conn`이 실제로 여러 컨테이너로 요청을 나누도록 keep-alive 풀을 공유하지 않기 위해서다. 응답의 `x-replica-id` 헤더(정의는 [배포](../deploy.md#x-replica-id-응답-헤더))로 요청이 여러 컨테이너에 분산되었는지도 확인한다. 이렇게 해서 “사실은 한 컨테이너에만 갔는데 통과한” 거짓 성공을 막는다.
 
 ```bash
 bash tests/api-race/runner.sh <scenario>
@@ -198,4 +198,4 @@ SERVER_URL=http://localhost:3000 bash tests/api-perf/mixed-runner.sh
 1. `statusCodes`부터 본다. `0`(연결 실패)이 섞이면 측정 자체가 무효이고, 5xx가 많으면 지연 수치는 에러 경로를 잰 것이다.
 2. 혼합 케이스의 read/write RPS·p95를 단독 케이스(`iso-*`)와 견줘 간섭 정도를 본다.
 
-CI는 [test-stability.yaml](../.github/workflows/test-stability.yaml)이 레그 행렬 한 잡으로 각 분산 시나리오를 50회, 단위/통합 테스트를 75회, 부팅 검증을 50회 반복한다. 부팅 검증은 `infra/reset.sh`(인프라 compose 전체 재기동)의 반복이다. 레이스 코드는 한 번 통과했다고 안전하다고 보기 어렵다. 그래서 결과가 얼마나 흔들리는지 누적으로 확인한다. 반복 횟수는 GitHub Actions 작업의 6시간 상한에 맞춘 값이다 — 상한 안에서 표본을 최대로 모은다. 실패하면 Actions 로그에서 `[Run i/N]` 마커로 실패 회차를 찾는다 — 이어지는 컨테이너 로그 덤프는 `repeat.sh`가 의도적으로 남기는 진단이다.
+CI는 [test-stability.yaml](../../.github/workflows/test-stability.yaml)이 레그 행렬 한 잡으로 각 분산 시나리오를 50회, 단위/통합 테스트를 75회, 부팅 검증을 50회 반복한다. 부팅 검증은 `infra/reset.sh`(인프라 compose 전체 재기동)의 반복이다. 레이스 코드는 한 번 통과했다고 안전하다고 보기 어렵다. 그래서 결과가 얼마나 흔들리는지 누적으로 확인한다. 반복 횟수는 GitHub Actions 작업의 6시간 상한에 맞춘 값이다 — 상한 안에서 표본을 최대로 모은다. 실패하면 Actions 로그에서 `[Run i/N]` 마커로 실패 회차를 찾는다 — 이어지는 컨테이너 로그 덤프는 `repeat.sh`가 의도적으로 남기는 진단이다.

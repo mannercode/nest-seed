@@ -10,11 +10,11 @@
 bash tests/api-race/runner.sh <scenario>   # 인자 없이 실행하면 시나리오 목록이 나온다
 ```
 
-러너가 배포 스택을 띄우고 내리는 것까지 맡는다. 시나리오별 검증 대상 표는 [테스트 §6](testing.md#6-분산-테스트-복제본-간-레이스), 각 시나리오의 실패 조건은 스크립트 머리 주석에 있다. CI(test-stability)는 각 시나리오를 50회 반복한다.
+러너가 배포 스택을 띄우고 내리는 것까지 맡는다. 시나리오별 검증 대상 표는 [테스트 §6](reference/testing.md#6-분산-테스트-복제본-간-레이스), 각 시나리오의 실패 조건은 스크립트 머리 주석에 있다. CI(test-stability)는 각 시나리오를 50회 반복한다.
 
 ## api-perf — 성능 측정
 
-같은 스택의 처리량·지연을 재는 k6 하네스다. 수치에 절대 합격선은 없고 이전 결과와 비교하는 회귀-비교용이다 — 결과 JSON을 읽는 순서(statusCodes부터)는 [테스트 §6의 성능 측정 절](testing.md#성능-측정--tests-api-perf)에 있다.
+같은 스택의 처리량·지연을 재는 k6 하네스다. 수치에 절대 합격선은 없고 이전 결과와 비교하는 회귀-비교용이다 — 결과 JSON을 읽는 순서(statusCodes부터)는 [테스트 §6의 성능 측정 절](reference/testing.md#성능-측정--testsapi-perf)에 있다.
 
 ```bash
 SERVER_URL=http://localhost:3000 bash tests/api-perf/mixed-runner.sh   # 스택 기동·시드 전제는 머리 주석

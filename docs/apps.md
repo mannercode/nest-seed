@@ -16,21 +16,21 @@ NestJS 백엔드이고 이 시드의 목적이다.
 | `core`           | 도메인 자원의 소유자. 각 서비스가 자기 컬렉션만 소유한다          |
 | `infrastructure` | 외부 시스템 연동. 결제, 파일 스토리지                             |
 
-규칙은 하나다 — **위 계층만 아래를 부르고, 같은 계층끼리는 직접 부르지 않는다.** 같은 계층의 두 모듈을 함께 써야 하면 한 단계 위에 조립용 모듈을 만든다. 이렇게 하면 순환 참조가 구조적으로 생길 수 없고, ESLint(eslint-plugin-boundaries)가 이 방향을 강제한다. 원리와 각 계층의 세부 규칙은 [아키텍처](architecture.md)에 있다.
+규칙은 하나다 — **위 계층만 아래를 부르고, 같은 계층끼리는 직접 부르지 않는다.** 같은 계층의 두 모듈을 함께 써야 하면 한 단계 위에 조립용 모듈을 만든다. 이렇게 하면 순환 참조가 구조적으로 생길 수 없고, ESLint(eslint-plugin-boundaries)가 이 방향을 강제한다. 원리와 각 계층의 세부 규칙은 [아키텍처](reference/architecture.md)에 있다.
 
 어느 서비스부터 읽을지는 [README 도메인 둘러보기](../README.md#도메인-둘러보기)의 순서를 따른다.
 
 ### 분산 협력
 
-API는 배포 시 기본 4개 컨테이너로 돌므로 모든 코드는 복제본 여러 개를 전제한다. 컨테이너 사이 경쟁은 Redis 분산 락과 원자 조건부 전이로 막고, 컨테이너 사이 이벤트는 NATS로 전달하며, 실패 시 보상이 필요한 다단계 작업은 Temporal 사가로 표현한다. 상황→도구 선택 기준은 [아키텍처](architecture.md) §2, 각 도구를 고른 이유는 [설계 결정](decisions.md)에 있다.
+API는 배포 시 기본 4개 컨테이너로 돌므로 모든 코드는 복제본 여러 개를 전제한다. 컨테이너 사이 경쟁은 Redis 분산 락과 원자 조건부 전이로 막고, 컨테이너 사이 이벤트는 NATS로 전달하며, 실패 시 보상이 필요한 다단계 작업은 Temporal 사가로 표현한다. 상황→도구 선택 기준은 [아키텍처](reference/architecture.md) §2, 각 도구를 고른 이유는 [설계 결정](reference/decisions.md)에 있다.
 
 ### 테스트
 
-`src/__tests__/integration/`의 Jest 통합 테스트가 기본이다. mock을 거의 쓰지 않고 devcontainer가 띄운 실제 인프라(Mongo·Redis·MinIO·NATS·Temporal)를 재사용하며, 커버리지 100%를 못 채우면 `npm test`가 실패한다. 테스트끼리는 테스트마다 발급되는 `TEST_ID`로 격리한다 — 이 격리가 요구하는 동적 가져오기 패턴과 픽스처 규칙은 [테스트](testing.md)에 있다.
+`src/__tests__/integration/`의 Jest 통합 테스트가 기본이다. mock을 거의 쓰지 않고 devcontainer가 띄운 실제 인프라(Mongo·Redis·MinIO·NATS·Temporal)를 재사용하며, 커버리지 100%를 못 채우면 `npm test`가 실패한다. 테스트끼리는 테스트마다 발급되는 `TEST_ID`로 격리한다 — 이 격리가 요구하는 동적 가져오기 패턴과 픽스처 규칙은 [테스트](reference/testing.md)에 있다.
 
 ### 그 외
 
-- `api-docs/` — bash + curl로 작성한 실행 가능한 API 문서. 문서가 실제 동작과 다르면 실행이 실패한다([테스트 §5](testing.md#5-실행-가능한-api-문서)).
+- `api-docs/` — bash + curl로 작성한 실행 가능한 API 문서. 문서가 실제 동작과 다르면 실행이 실패한다([테스트 §5](reference/testing.md#5-실행-가능한-api-문서)).
 - `scripts/`와 `webpack.config.js` — 배포 번들과 Temporal 워크플로 번들을 만든다. 왜 webpack 번들인지는 webpack.config.js 머리 주석에 있다.
 
 ## console·user-app — 최소 데모

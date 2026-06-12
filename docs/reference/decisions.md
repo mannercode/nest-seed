@@ -99,7 +99,7 @@ Temporal로 옮기면 부담이 줄어든다.
 
 ### 결정
 
-여러 도메인 데이터를 한 응답으로 묶어야 하는 화면 전용 읽기 API는 `view/` 계층에 둔다. 예: 사용자 앱 홈은 추천 영화·상영시간·극장 정보를 한 응답에 담아야 하므로 [`view/user-app/home`](../apps/api/src/services/view/user-app/home/)이 Recommendation(Application)과 Movies/Showtimes/Theaters(Core)를 호출해 화면용 DTO로 묶는다.
+여러 도메인 데이터를 한 응답으로 묶어야 하는 화면 전용 읽기 API는 `view/` 계층에 둔다. 예: 사용자 앱 홈은 추천 영화·상영시간·극장 정보를 한 응답에 담아야 하므로 [`view/user-app/home`](../../apps/api/src/services/view/user-app/home/)이 Recommendation(Application)과 Movies/Showtimes/Theaters(Core)를 호출해 화면용 DTO로 묶는다.
 
 ### 근거
 
