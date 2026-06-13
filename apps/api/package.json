@@ -14,9 +14,9 @@
         "atoz": "npm run lint && npm test"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "3.1067.0",
-        "@aws-sdk/s3-presigned-post": "3.1067.0",
-        "@aws-sdk/s3-request-presigner": "3.1067.0",
+        "@aws-sdk/client-s3": "3.1068.0",
+        "@aws-sdk/s3-presigned-post": "3.1068.0",
+        "@aws-sdk/s3-request-presigner": "3.1068.0",
         "@mannercode/common": "*",
         "@mannercode/temporal-sandbox": "*",
         "@nestjs/common": "11.1.26",
@@ -56,7 +56,7 @@
         "@types/express": "5.0.6",
         "@types/jest": "30.0.0",
         "@types/node": "24",
-        "eslint": "10.4.1",
+        "eslint": "10.5.0",
         "eslint-import-resolver-typescript": "^4.4.5",
         "eslint-plugin-allowed-dependencies": "2.2.0",
         "eslint-plugin-boundaries": "^6.0.2",
