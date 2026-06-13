@@ -37,15 +37,15 @@
         "rxjs": "^7.0.0"
     },
     "devDependencies": {
-        "@aws-sdk/client-s3": "^3.1067.0",
+        "@aws-sdk/client-s3": "^3.1068.0",
         "@mannercode/jest-helpers": "*",
         "@mannercode/testing": "*",
         "@temporalio/testing": "^1.18.1",
-        "@testcontainers/mongodb": "^12.0.1",
-        "@testcontainers/nats": "^12.0.1",
+        "@testcontainers/mongodb": "^12.0.2",
+        "@testcontainers/nats": "^12.0.2",
         "ioredis": "^5.11.1",
         "mongodb": "^7.3.0",
-        "testcontainers": "^12.0.1",
+        "testcontainers": "^12.0.2",
         "ts-jest": "^29.4.11"
     }
 }
