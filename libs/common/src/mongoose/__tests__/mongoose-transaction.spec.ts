@@ -141,7 +141,7 @@ describe('Mongoose Transaction', () => {
             })
 
             await expect(promise).rejects.toThrow('write conflict')
-            expect(attempts).toEqual(3)
+            expect(attempts).toEqual(5)
         })
 
         it('일시 오류가 아니면 재시도하지 않는다', async () => {

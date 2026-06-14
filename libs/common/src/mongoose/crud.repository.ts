@@ -7,7 +7,7 @@ import type {
 } from 'mongoose'
 import { BadRequestException, NotFoundException, type OnModuleInit } from '@nestjs/common'
 import type { PaginationDto, PaginationResult } from '../pagination'
-import { Assume, defaultTo, differenceWith, Require, uniq } from '../utils'
+import { Assume, defaultTo, differenceWith, Require, sleep, uniq } from '../utils'
 import { MongooseErrors } from './errors'
 import { isTransientTransactionError, objectId, objectIds } from './mongoose.util'
 
@@ -16,9 +16,17 @@ type SessionArg = ClientSession | undefined
 
 const defaultLeanOptions = {}
 
-// WriteConflict의 경쟁 상대는 ms 단위로 끝나므로 짧은 재시도면 충분하다.
-// 그래도 계속되면 비정상 상황이라 마지막 오류를 그대로 던진다.
-const TRANSACTION_MAX_ATTEMPTS = 3
+// 트랜잭션 안에서는 충돌이 잠금 대기 없이 즉시 WriteConflict로 반환된다(yield 비활성).
+// 지연 없이 곧장 다시 시도하면 경쟁 트랜잭션이 커밋하기 전에 시도가 모두 소진돼, 일시 오류가 도메인 결과 대신 5xx로 샌다.
+// 그래서 시도마다 백오프로 잠깐 물러나고, 그 사이 경쟁자가 커밋하면 재시도는 전이 실패(409) 같은 도메인 결과로 수렴한다.
+const TRANSACTION_MAX_ATTEMPTS = 5
+const TRANSACTION_RETRY_BASE_MS = 10
+
+// base × 2^(attempt-1) 범위에서 무작위로 고르는 지수 백오프(풀 지터)다.
+// 같은 시각에 깨어난 패자들이 다시 한꺼번에 몰려 재충돌하는 것을 흩뜨린다.
+function transactionRetryBackoffMs(attempt: number): number {
+    return Math.random() * TRANSACTION_RETRY_BASE_MS * 2 ** (attempt - 1)
+}
 
 // 입력으로 받은 `doc`을 그대로 수정하고 같은 참조를 반환한다.
 //
@@ -221,8 +229,7 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
         callback: (session: ClientSession, rollback: () => void) => Promise<T>
     ): Promise<T> {
         // 같은 문서를 만진 동시 트랜잭션은 WriteConflict(TransientTransactionError 라벨)로 중단된다.
-        // 드라이버 권고대로 트랜잭션 전체를 다시 시도한다. 재시도 시점에는 경쟁 트랜잭션이 끝나 있어,
-        // 상태 조건이 걸린 갱신은 일시 오류 대신 도메인 결과(예: 전이 실패 409)로 수렴한다.
+        // 드라이버 권고대로 백오프를 두고 트랜잭션 전체를 다시 시도한다(상한은 TRANSACTION_MAX_ATTEMPTS).
         for (let attempt = 1; ; attempt++) {
             try {
                 return await this.runTransactionAttempt(callback)
@@ -230,6 +237,7 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
                 if (attempt >= TRANSACTION_MAX_ATTEMPTS || !isTransientTransactionError(error)) {
                     throw error
                 }
+                await sleep(transactionRetryBackoffMs(attempt))
             }
         }
     }
