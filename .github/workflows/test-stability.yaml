@@ -21,8 +21,8 @@ jobs:
             matrix:
                 include:
                     # unit: 단위/통합 테스트 누적 반복.
-                    # libs 75회는 ~140분이면 끝나지만 apps/api 75회는 컨텍스트 부팅 비용 때문에 GitHub 6시간 상한(360분)에 근접한다.
-                    # 레그마다 한계를 따로 둬 libs가 apps/api 때문에 길게 잡히지 않게 한다.
+                    # libs는 75회라도 ~140분이지만, apps/api는 컨텍스트 부팅 비용 때문에 회당 ~5분이라 75회면 GitHub 6시간 상한(360분)을 넘긴다.
+                    # 그래서 apps/api는 상한 안에 드는 60회로 줄이고, libs가 apps/api 한계에 묶이지 않게 레그를 나눠 시간 한계를 따로 둔다.
                     - leg: unit-libs
                       timeout: 180
                       run: |
@@ -32,7 +32,7 @@ jobs:
                       timeout: 350
                       run: |
                           npm run build
-                          bash .github/scripts/repeat.sh 75 npm test -w apps/api -- --coverageThreshold='{}'
+                          bash .github/scripts/repeat.sh 60 npm test -w apps/api -- --coverageThreshold='{}'
                     # bootup: 인프라 compose 전체를 내렸다 올리는 infra/reset.sh를 반복해 부팅 안정성을 본다.
                     - leg: bootup
                       timeout: 120

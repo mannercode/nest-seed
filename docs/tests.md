@@ -61,4 +61,4 @@ npm run e2e:ui -w tests/console-e2e   # 로컬 디버그: 인터랙티브 실행
 
 ## CI 반복 — test-stability
 
-CI는 [test-stability.yaml](../.github/workflows/test-stability.yaml)이 레그 행렬 한 잡으로 각 분산 시나리오를 50회, 단위/통합 테스트를 75회, 부팅 검증을 50회 반복한다. 부팅 검증은 `infra/reset.sh`(인프라 compose 전체 재기동)의 반복이다. 레이스 코드는 한 번 통과했다고 안전하다고 보기 어렵다. 그래서 결과가 얼마나 흔들리는지 누적으로 확인한다. 반복 횟수는 GitHub Actions 작업의 6시간 상한에 맞춘 값이다 — 상한 안에서 표본을 최대로 모은다. 실패하면 Actions 로그에서 `[Run i/N]` 마커로 실패 회차를 찾는다 — 이어지는 컨테이너 로그 덤프는 `repeat.sh`가 의도적으로 남기는 진단이다.
+CI는 [test-stability.yaml](../.github/workflows/test-stability.yaml)이 레그 행렬 한 잡으로 각 분산 시나리오를 50회, 단위/통합 테스트를 libs 75회·apps/api 60회, 부팅 검증을 50회 반복한다. 부팅 검증은 `infra/reset.sh`(인프라 compose 전체 재기동)의 반복이다. 레이스 코드는 한 번 통과했다고 안전하다고 보기 어렵다. 그래서 결과가 얼마나 흔들리는지 누적으로 확인한다. 반복 횟수는 GitHub Actions 작업의 6시간 상한에 맞춘 값이다 — 상한 안에서 표본을 최대로 모은다. 실패하면 Actions 로그에서 `[Run i/N]` 마커로 실패 회차를 찾는다 — 이어지는 컨테이너 로그 덤프는 `repeat.sh`가 의도적으로 남기는 진단이다.
