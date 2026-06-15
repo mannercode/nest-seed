@@ -2,6 +2,7 @@ import {
     QueryBuilderOptions,
     assignIfDefined,
     CrudRepository,
+    objectId,
     QueryBuilder
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
@@ -21,15 +22,15 @@ export class MoviesRepository extends CrudRepository<Movie> {
     }
 
     async addAsset(movieId: string, assetId: string) {
-        const movie = await this.getDocumentById(movieId)
-        movie.assetIds.push(assetId)
-        await movie.save()
+        // finalize가 동시에 두 번 들어오면 load→push→save가 같은 옛 배열을 읽어 assetId를 중복 추가한다.
+        // $addToSet은 단일 문서 원자 연산이라 중복을 차단한다 — 트랜잭션·락 없이 끝난다.
+        await this.model.updateOne({ _id: objectId(movieId) }, { $addToSet: { assetIds: assetId } })
     }
 
     async removeAsset(movieId: string, assetId: string) {
-        const movie = await this.getDocumentById(movieId)
-        movie.assetIds = movie.assetIds.filter((id) => id !== assetId)
-        await movie.save()
+        // load→filter→save는 같은 movie의 다른 asset을 동시에 만지면 한쪽 변경을 덮어쓴다(lost update).
+        // $pull은 항목 단위 원자 갱신이라 그 충돌이 없다. addAsset($addToSet)과 짝을 이룬다.
+        await this.model.updateOne({ _id: objectId(movieId) }, { $pull: { assetIds: assetId } })
     }
 
     async create(upsertDto: UpsertMovieDto) {
