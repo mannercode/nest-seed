@@ -3,11 +3,11 @@
 [![Test AtoZ](https://github.com/mannercode/nest-seed/actions/workflows/test-atoz.yaml/badge.svg)](https://github.com/mannercode/nest-seed/actions/workflows/test-atoz.yaml)
 [![Test Stability](https://github.com/mannercode/nest-seed/actions/workflows/test-stability.yaml/badge.svg)](https://github.com/mannercode/nest-seed/actions/workflows/test-stability.yaml)
 
-NestJS 백엔드(`apps/api`)가 본체인 모노레포 시드다. 모놀리스처럼 단순하게 시작하되 분산 환경에서 자주 마주치는 경계를 미리 잡아 두어, 필요할 때 특정 기능을 독립 서비스로 떼어내기 쉽다. 관리자 콘솔과 사용자 앱은 이 시드로 모노레포를 구성할 사람을 위해 최소한으로 넣은 데모다. 각 도구를 어디에 어떻게 쓰는지는 [apps 문서](docs/apps.md)에, 왜 선택했는지는 [설계 결정](docs/reference/decisions.md)에 정리해 두었다.
+NestJS 백엔드(`apps/api`)가 본체인 모노레포 시드다. 모놀리스처럼 단순하게 시작하되, 분산 환경을 가정해 모듈 경계를 미리 그어 두어 필요할 때 특정 기능을 독립 서비스로 떼어내기 쉽다. 관리자 콘솔과 사용자 앱은 이 시드로 모노레포를 구성할 사람을 위해 최소한으로 넣은 데모다. 각 도구를 어디에 어떻게 쓰는지는 [apps 문서](docs/apps.md)에, 왜 선택했는지는 [설계 결정](docs/reference/decisions.md)에 정리해 두었다.
 
-예제 도메인은 영화 예매다. 누구나 아는 도메인인 데다 좌석이라는 경합 자원이 있어서, 이중 판매 방지·실패 보상·진행 알림 같은 분산 문제가 억지 설정 없이 나온다. 영화·극장·상영·티켓 위에 상영 등록 사가, 예매, 구매 같은 유스케이스를 올렸고, 코드의 패턴 이름이 모두 이 도메인 용어를 쓴다.
+예제 도메인은 영화 예매다. 누구나 아는 도메인인 데다 좌석이라는 경합 자원이 있어서, 이중 판매·부분 실패·진행 상황 전달 같은 분산 문제가 자연스럽게 발생한다. 영화·극장·상영·티켓 같은 모델 위에 상영 등록·예매·구매 같은 유스케이스를 올렸고, 코드의 패턴 이름이 모두 이 도메인 용어를 쓴다.
 
-미리 잡아 둔 경계는 다음과 같다.
+이 시드가 다루는 주요 패턴은 다음과 같다.
 
 - **Redis 분산 락** — 컨테이너 여러 개가 같은 키를 동시에 처리하는 경쟁을 차단한다 (`application/showtime-creation`, `infrastructure/assets`의 cron)
 - **NATS pub/sub** — 다른 컨테이너에 붙은 SSE 클라이언트에게 이벤트를 전달한다. 큐 그룹 수신도 지원한다 (`application/purchase`)
