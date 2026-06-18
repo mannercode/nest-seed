@@ -7,26 +7,14 @@ import type {
 } from 'mongoose'
 import { BadRequestException, NotFoundException, type OnModuleInit } from '@nestjs/common'
 import type { PaginationDto, PaginationResult } from '../pagination'
-import { Assume, defaultTo, differenceWith, Require, sleep, uniq } from '../utils'
+import { Assume, defaultTo, differenceWith, Require, uniq } from '../utils'
 import { MongooseErrors } from './errors'
-import { isTransientTransactionError, objectId, objectIds } from './mongoose.util'
+import { objectId, objectIds } from './mongoose.util'
 
 type BulkSaveDocs<Doc> = Parameters<Model<Doc>['bulkSave']>[0]
 type SessionArg = ClientSession | undefined
 
 const defaultLeanOptions = {}
-
-// 트랜잭션 안에서는 충돌이 잠금 대기 없이 즉시 WriteConflict로 반환된다(yield 비활성).
-// 지연 없이 곧장 다시 시도하면 경쟁 트랜잭션이 커밋하기 전에 시도가 모두 소진돼, 일시 오류가 도메인 결과 대신 5xx로 샌다.
-// 그래서 시도마다 백오프로 잠깐 물러나고, 그 사이 경쟁자가 커밋하면 재시도는 전이 실패(409) 같은 도메인 결과로 수렴한다.
-const TRANSACTION_MAX_ATTEMPTS = 5
-const TRANSACTION_RETRY_BASE_MS = 10
-
-// base × 2^(attempt-1) 범위에서 무작위로 고르는 지수 백오프(풀 지터)다.
-// 같은 시각에 깨어난 패자들이 다시 한꺼번에 몰려 재충돌하는 것을 흩뜨린다.
-function transactionRetryBackoffMs(attempt: number): number {
-    return Math.random() * TRANSACTION_RETRY_BASE_MS * 2 ** (attempt - 1)
-}
 
 // 입력으로 받은 `doc`을 그대로 수정하고 같은 참조를 반환한다.
 //
@@ -225,57 +213,15 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
         )
     }
 
-    async withTransaction<T>(
-        callback: (session: ClientSession, rollback: () => void) => Promise<T>
-    ): Promise<T> {
-        // 같은 문서를 만진 동시 트랜잭션은 WriteConflict(TransientTransactionError 라벨)로 중단된다.
-        // 드라이버 권고대로 백오프를 두고 트랜잭션 전체를 다시 시도한다(상한은 TRANSACTION_MAX_ATTEMPTS).
-        for (let attempt = 1; ; attempt++) {
-            try {
-                return await this.runTransactionAttempt(callback)
-            } catch (error) {
-                if (attempt >= TRANSACTION_MAX_ATTEMPTS || !isTransientTransactionError(error)) {
-                    throw error
-                }
-                await sleep(transactionRetryBackoffMs(attempt))
-            }
-        }
-    }
-
-    private async runTransactionAttempt<T>(
-        callback: (session: ClientSession, rollback: () => void) => Promise<T>
-    ) {
-        const state = { rollbackRequested: false }
-        const rollback = () => {
-            state.rollbackRequested = true
-        }
-
-        let session: ClientSession | undefined
-
+    async withTransaction<T>(callback: (session: ClientSession) => Promise<T>): Promise<T> {
+        // 드라이버의 withTransaction이 충돌(TransientTransactionError)은 트랜잭션 전체를, 커밋 불명은
+        // 커밋을 데드라인까지 재시도한다. 손수 만든 고정 횟수 재시도는 부하에서 소진돼 일시 오류가 5xx로 샜다.
+        // 콜백은 예외를 던져 중단하고, 정상 반환하면 커밋된다.
+        const session = await this.model.startSession()
         try {
-            session = await this.model.startSession()
-            session.startTransaction()
-
-            const result = await callback(session, rollback)
-            return result
-        } catch (error) {
-            rollback()
-            throw error
+            return await session.withTransaction(callback)
         } finally {
-            if (session) {
-                // commit/abort가 던져도 세션은 반드시 반납해 누수를 막는다.
-                try {
-                    if (session.inTransaction()) {
-                        if (state.rollbackRequested) {
-                            await session.abortTransaction()
-                        } else {
-                            await session.commitTransaction()
-                        }
-                    }
-                } finally {
-                    await session.endSession()
-                }
-            }
+            await session.endSession()
         }
     }
 

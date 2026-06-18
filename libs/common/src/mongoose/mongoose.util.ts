@@ -21,20 +21,6 @@ export function isDuplicateKeyError(error: unknown): boolean {
     return typeof error === 'object' && error !== null && 'code' in error && error.code === 11000
 }
 
-/**
- * MongoDB의 일시 트랜잭션 오류(TransientTransactionError 라벨)인지 판별한다.
- * 같은 문서를 만진 동시 트랜잭션은 WriteConflict로 중단되며, 드라이버는 트랜잭션 전체 재시도를 권고한다.
- */
-export function isTransientTransactionError(error: unknown): boolean {
-    return (
-        typeof error === 'object' &&
-        error !== null &&
-        'errorLabels' in error &&
-        Array.isArray(error.errorLabels) &&
-        error.errorLabels.includes('TransientTransactionError')
-    )
-}
-
 export type QueryBuilderOptions = { allowEmpty?: boolean }
 
 type Transform<T> = (value: T) => any
