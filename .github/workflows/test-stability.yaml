@@ -68,7 +68,7 @@ jobs:
         runs-on: ubuntu-24.04-arm
         timeout-minutes: ${{ matrix.timeout }}
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
             - name: Login to Docker Hub (host)
               uses: docker/login-action@v4
               with:
