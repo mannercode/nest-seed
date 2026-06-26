@@ -17,4 +17,11 @@ COPY tests/console-e2e/package.json tests/console-e2e/
 # manifest를 복사하지 않으면 npm이 같은 이름의 패키지를 registry에서 찾으려 해 404로 실패한다.
 COPY tools/dev-tools/package.json tools/dev-tools/
 COPY tools/jest-helpers/package.json tools/jest-helpers/
-RUN npm ci --no-audit
+# npm 레지스트리 연결이 일시로 끊기면(ECONNRESET) 빌드가 통째로 실패한다.
+# 멱등한 설치라 백오프를 두고 최대 5번 시도한다. 실제 오류(lockfile 불일치 등)는 매 시도 같은 실패라 마지막에 그대로 드러난다.
+RUN for attempt in 1 2 3 4 5; do \
+        npm ci --no-audit && break; \
+        [ "$attempt" = 5 ] && exit 1; \
+        echo "npm ci failed (attempt ${attempt}/5), retrying in $((attempt * 10))s..." >&2; \
+        sleep $((attempt * 10)); \
+    done
