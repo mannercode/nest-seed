@@ -3,11 +3,11 @@
 [![Test AtoZ](https://github.com/mannercode/nest-seed/actions/workflows/test-atoz.yaml/badge.svg)](https://github.com/mannercode/nest-seed/actions/workflows/test-atoz.yaml)
 [![Test Stability](https://github.com/mannercode/nest-seed/actions/workflows/test-stability.yaml/badge.svg)](https://github.com/mannercode/nest-seed/actions/workflows/test-stability.yaml)
 
-NestJS 백엔드(`apps/api`)가 본체인 시드 프로젝트다. 모놀리스 구조로 설계되어 있지만, 필요할 때 특정 기능을 독립 서비스로 떼어내기 쉽도록 모듈 경계를 미리 그어 두었다.
+이 시드는 학습을 염두에 뒀지만, 실제 프로덕션의 베이스이기도 하다 — 저자가 이걸로 실무 프로젝트를 진행한다. NestJS 백엔드(`apps/api`)가 본체이고, 모놀리스로 설계되어 있지만 필요할 때 특정 기능을 독립 서비스로 떼어내기 쉽도록 모듈 경계를 미리 그어 두었다.
 
 같은 이유로 외래 키·조인처럼 경계를 넘는 DB 관계를 두지 않고, 서비스가 ID로 관계를 관리한다. 관계형 DB의 핵심 가치가 쓰일 일이 없으니 MongoDB를 쓰고, 정합성은 DB 제약이 아니라 서비스가 책임진다.
 
-관리자 콘솔과 사용자 앱은 이 시드로 모노레포를 구성할 사람을 위해 최소한으로 넣은 데모다. 각 도구를 어디에 어떻게 쓰는지는 [apps 문서](docs/apps.md)에, 왜 선택했는지는 [설계 결정](docs/reference/decisions.md)에 정리해 두었다.
+관리자 콘솔과 사용자 앱은 모노레포에 프런트엔드를 얹는 최소 데모다. 각 도구를 어디에 어떻게 쓰는지는 [apps 문서](docs/apps.md)에, 왜 선택했는지는 [설계 결정](docs/reference/decisions.md)에 정리해 두었다.
 
 예제 도메인은 영화 예매다. 누구나 아는 도메인인 데다 좌석이라는 경합 자원이 있어서, 이중 판매·부분 실패·진행 상황 전달 같은 분산 문제가 자연스럽게 발생한다. 영화·극장·상영·티켓 같은 모델 위에 상영 등록·예매·구매 같은 유스케이스를 올렸고, 코드의 패턴 이름이 모두 이 도메인 용어를 쓴다.
 
