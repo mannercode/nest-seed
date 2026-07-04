@@ -13,7 +13,7 @@
 
 이 시드가 다루는 주요 패턴은 다음과 같다.
 
-- **Redis 분산 락** — 컨테이너 여러 개가 같은 키를 동시에 처리하는 경쟁을 차단한다 (`application/showtime-creation`, `infrastructure/assets`의 cron)
+- **Redis 분산 락** — 컨테이너 여러 개가 같은 키를 동시에 처리하는 경쟁을 차단한다 (`application/showtime-creation`, `application/purchase`, `infrastructure/assets`의 cron)
 - **NATS pub/sub** — 다른 컨테이너에 붙은 SSE 클라이언트에게 이벤트를 전달한다(`application/showtime-creation`). 큐 그룹(그룹 중 한 구독자만 수신) 수신도 지원한다(`application/purchase`)
 - **Temporal Saga** — 여러 단계 작업의 실행 기록·재시도, 실패 시 앞 단계 되돌리기(보상)를 워크플로로 다룬다 (`application/showtime-creation`)
 - **원자 조건부 전이** — 티켓 이중 판매를 락이 아니라 상태 조건부 갱신으로 막는다 (`core/tickets`)
@@ -45,7 +45,7 @@
 
     admin API 전체(로그인·재발급·삭제까지)는 [admins.spec](apps/api/api-docs/admins.spec)이 보여준다.
 
-6. 콘솔에서 영화·극장·상영을 등록하고(상영 등록 진행 상황은 SSE로 표시된다), 사용자 앱(3200)에서 가입해 예매·구매까지 이어 본다.
+6. 콘솔에서 영화·극장을 등록한다. 상영 등록(202+SSE)·예매·구매는 UI 데모가 아니라 실행 가능한 API 문서가 보여준다 — `bash apps/api/api-docs/run.sh showtime-creation.spec`으로 상영까지 만들면, 사용자 앱(3200)에 가입해 홈에서 상영 중 영화를 확인할 수 있다.
 
 > `.env.api`와 `.env.infra`는 커밋된 **개발용 기본값**이다(`ROOT_PASSWORD=DevPass1!` 포함). 포크하면 자기 값으로 바꾼다.
 
@@ -120,25 +120,25 @@ nest-seed/
 
 처음 보는 도구가 있다면 "어디에 쓰나" 열의 코드 경로나 문서부터 따라가면 된다.
 
-| 도구                             | 어디에 쓰나                                                                                 |
-| -------------------------------- | ------------------------------------------------------------------------------------------- |
-| MongoDB (Replica Set) + Mongoose | 주 데이터베이스. 트랜잭션, soft delete — `libs/common/mongoose`                             |
-| Redis (Cluster) + ioredis        | 캐시와 분산 락 — `libs/common/redis`, `libs/common/cache`                                   |
-| NATS                             | 컨테이너 사이 pub/sub — `libs/common/nats`                                                  |
-| Temporal                         | 사가 워크플로 — `application/showtime-creation/worker`                                      |
-| MinIO (S3 API)                   | presigned 파일 업로드·다운로드 — `libs/common/s3`, `infrastructure/assets`                  |
-| NestJS                           | API 서버. 가드·파이프를 Passport 없이 직접 구현 — `gateway/`                                |
-| Next.js                          | console·user-app 최소 데모                                                                  |
-| @nestjs/jwt + bcrypt             | 역할별 토큰 서명, 비밀번호 해시 — `gateway/guards`                                          |
-| class-validator                  | DTO 검증 — 각 서비스의 `dtos/`                                                              |
-| npm workspaces                   | 모노레포 구성. libs를 내부 패키지로 공유                                                    |
-| Jest + Testcontainers            | 단위·통합 테스트. `libs/common`은 인프라를 직접 띄운다 — [apps 문서](docs/apps.md#테스트)   |
-| Playwright                       | 콘솔 브라우저 e2e — `tests/console-e2e`                                                     |
-| k6                               | 성능 측정 하네스 — `tests/api-perf`                                                         |
-| Docker Compose + NGINX           | 개발 인프라(`infra/`)와 다중 컨테이너 배포(`deploy/`)                                       |
-| GitHub Actions                   | atoz 회귀와 반복 안정성 검증 — `.github/workflows`                                          |
-| cloudflared (`npx tunnel`)       | dev 서버 3종을 임시 공개 https 주소로 노출(OAuth 콜백·웹훅) — `tools/dev-tools`             |
-| ESLint·Prettier·husky·commitlint | 계층 의존 강제(eslint-plugin-boundaries), 커밋 훅 — [컨벤션](docs/reference/conventions.md) |
+| 도구                             | 어디에 쓰나                                                                                                                        |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| MongoDB (Replica Set) + Mongoose | 주 데이터베이스. 트랜잭션, soft delete — `libs/common/mongoose`                                                                    |
+| Redis (Cluster) + ioredis        | 캐시와 분산 락 — `libs/common/redis`, `libs/common/cache`                                                                          |
+| NATS                             | 컨테이너 사이 pub/sub — `libs/common/nats`                                                                                         |
+| Temporal                         | 사가 워크플로 — `application/showtime-creation/worker`                                                                             |
+| MinIO (S3 API)                   | presigned 파일 업로드·다운로드 — `libs/common/s3`, `infrastructure/assets`                                                         |
+| NestJS                           | API 서버. 가드·파이프를 Passport 없이 직접 구현 — `gateway/`                                                                       |
+| Next.js                          | console·user-app 최소 데모                                                                                                         |
+| @nestjs/jwt + bcrypt             | 역할별 토큰 서명, 비밀번호 해시 — `gateway/guards`                                                                                 |
+| class-validator                  | DTO 검증 — 각 서비스의 `dtos/`                                                                                                     |
+| npm workspaces                   | 모노레포 구성. libs를 내부 패키지로 공유                                                                                           |
+| Jest + Testcontainers            | 단위·통합 테스트. `libs/common`은 인프라를 직접 띄운다 — [apps 문서](docs/apps.md#테스트)                                          |
+| Playwright                       | 콘솔 브라우저 e2e — `tests/console-e2e`                                                                                            |
+| k6                               | 성능 측정 하네스 — `tests/api-perf`                                                                                                |
+| Docker Compose + NGINX           | 개발 인프라(`infra/`)와 다중 컨테이너 배포(`deploy/`)                                                                              |
+| GitHub Actions                   | atoz 회귀와 반복 안정성 검증 — `.github/workflows`                                                                                 |
+| cloudflared (`npx tunnel`)       | dev 서버 3종을 임시 공개 https 주소로 노출(OAuth 콜백·웹훅) — `tools/dev-tools`                                                    |
+| ESLint·Prettier·husky·commitlint | 계층 의존 강제(eslint-plugin-boundaries) — [apps 문서](docs/apps.md#sola-5계층), 커밋 훅 — [컨벤션](docs/reference/conventions.md) |
 
 ## 도메인 둘러보기
 
@@ -190,7 +190,7 @@ README 뒤의 상세는 폴더 문서 여섯과 참고 자료 셋이 맡는다. 
 **참고 자료** — 폴더 하나에 속하지 않는 횡단 주제는 `docs/reference/`가 맡는다:
 
 - [컨벤션](docs/reference/conventions.md) — 커밋 규칙, fail-fast, 값의 위치, npm 스크립트 계약
-- [환경 변수](docs/reference/environment.md) — Dev Container, API, API 문서, console 환경 변수 흐름과 포크 체크리스트
+- [환경 변수](docs/reference/environment.md) — Dev Container, API, API 문서, console·user-app 환경 변수 흐름과 포크 체크리스트
 - [설계 결정](docs/reference/decisions.md) — 분산 도구·View 계층 등 핵심 설계 결정과 쓰지 않기로 한 대안
 
 ## 라이선스

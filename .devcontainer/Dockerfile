@@ -35,7 +35,7 @@ RUN ARCH=$(dpkg --print-architecture) \
     && mv "/tmp/k6-v1.4.1-linux-${ARCH}/k6" /usr/local/bin/k6 \
     && rm -rf /tmp/k6.tar.gz "/tmp/k6-v1.4.1-linux-${ARCH}"
 
-# shellcheck·lychee: `npm run lint`의 prelint가 셸 스크립트 정적 검사와 문서 내부 링크·앵커 검사에 사용한다.
+# shellcheck·lychee: `npm run lint`의 postlint가 셸 스크립트 정적 검사와 문서 내부 링크·앵커 검사에 사용한다.
 # k6와 같은 이유로 GitHub release에서 버전을 고정해 받는다(seed 사용자 간 버전 일치).
 RUN ARCH=$(dpkg --print-architecture) \
     && BIN_ARCH=$([ "$ARCH" = "arm64" ] && echo aarch64 || echo x86_64) \

@@ -2,6 +2,8 @@
 
 devcontainer가 부팅할 때 `postStartCommand`로 `bash infra/reset.sh`를 실행해 이 compose 묶음을 띄운다. 인프라가 꼬이면 언제든 같은 명령으로 초기화한다.
 
+- `compose.yml` — 진입점. 아래 파일들을 include하고, 모든 준비가 끝나면 종료되는 `infra-setup` 서비스를 정의한다(`reset.sh`가 이 종료로 준비 완료를 판단한다).
+- `compose.common.yml` — 모든 서비스가 공유하는 로깅·healthcheck 공통 옵션.
 - `compose.mongo.yml` — MongoDB Replica Set. 트랜잭션이 Replica Set을 요구한다.
 - `compose.redis.yml` — Redis Cluster. 스탠드얼론에서는 통과하지만 Cluster에서만 실패하는 코드가 개발 단계에서 드러나게 한다.
 - `compose.minio.yml` — S3 호환 스토리지. presigned 업로드·다운로드의 대상이다.
