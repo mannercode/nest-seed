@@ -14,18 +14,18 @@
         "atoz": "npm run lint && npm run build"
     },
     "dependencies": {
-        "next": "16.2.9",
+        "next": "16.2.10",
         "react": "19.2.7",
         "react-dom": "19.2.7"
     },
     "devDependencies": {
         "@mannercode/dev-tools": "*",
-        "@tailwindcss/postcss": "^4.3.1",
+        "@tailwindcss/postcss": "^4.3.2",
         "@types/node": "24",
         "@types/react": "19.2.17",
         "@types/react-dom": "19.2.3",
-        "autoprefixer": "^10.5.0",
-        "postcss": "^8.5.15",
+        "autoprefixer": "^10.5.2",
+        "postcss": "^8.5.16",
         "tailwindcss": "^4.3.0",
         "typescript": "6.0.3"
     }
