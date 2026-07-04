@@ -15,6 +15,21 @@ function spyConsoleTransport(winstonLogger: winston.Logger) {
     return { getOutput: () => spy.mock.calls.map((c) => String(c[0][MESSAGE])).join('\n') }
 }
 
+// DailyRotateFile은 close() 후 파일 스트림을 비동기로 닫으며 완료 시 'finish'를 낸다.
+// 이 신호 전에 tempDir를 지우면 진행 중이던 파일 열기가 삭제된 경로에 착지해 ENOENT로 실패한다.
+// 그래서 'finish'를 기다린 뒤 정리하도록 모든 로거 종료를 이 헬퍼로 감싼다.
+function closeLogger(logger: winston.Logger): Promise<void> {
+    return new Promise<void>((resolve) => {
+        const fileTransport = logger.transports.find(
+            (t) => t.constructor.name === 'DailyRotateFile'
+        )
+        if (fileTransport) fileTransport.once('finish', () => resolve())
+        else resolve()
+
+        logger.close()
+    })
+}
+
 describe('createWinstonLogger', () => {
     let logger: winston.Logger
     let tempDir: string
@@ -31,7 +46,7 @@ describe('createWinstonLogger', () => {
     })
 
     afterEach(async () => {
-        logger.close()
+        await closeLogger(logger)
         await PathUtil.delete(tempDir)
     })
 
@@ -99,10 +114,10 @@ describe('createWinstonLogger', () => {
         expect(output).toContain('success')
         expect(output).toContain('/test')
 
-        consoleLogger.close()
+        await closeLogger(consoleLogger)
     })
 
-    it('consoleLogLevel이 "silent"이면 Console transport를 등록하지 않는다', () => {
+    it('consoleLogLevel이 "silent"이면 Console transport를 등록하지 않는다', async () => {
         const silentLogger = createWinstonLogger({
             consoleLogLevel: 'silent',
             daysToKeepLogs: '1d',
@@ -116,7 +131,7 @@ describe('createWinstonLogger', () => {
             )
             expect(consoleTransport).toBeUndefined()
         } finally {
-            silentLogger.close()
+            await closeLogger(silentLogger)
         }
     })
 
@@ -141,7 +156,7 @@ describe('createWinstonLogger', () => {
         expect(output).toContain('mov-123')
         expect(output).not.toContain('contextType')
 
-        consoleLogger.close()
+        await closeLogger(consoleLogger)
     })
 
     it('contextType이 service이면 SERVICE 라벨을 쓴다', async () => {
@@ -161,7 +176,7 @@ describe('createWinstonLogger', () => {
         expect(output).toContain('SERVICE')
         expect(output).toContain('Foo.bar')
 
-        consoleLogger.close()
+        await closeLogger(consoleLogger)
     })
 
     it('contextType이 없으면 기본 포맷을 쓴다', async () => {
@@ -182,6 +197,6 @@ describe('createWinstonLogger', () => {
         expect(output).toContain('plain message')
         expect(output).toContain('other')
 
-        consoleLogger.close()
+        await closeLogger(consoleLogger)
     })
 })
