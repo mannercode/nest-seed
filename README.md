@@ -5,21 +5,23 @@
 
 이 시드는 학습을 염두에 뒀지만, 실제 프로덕션의 베이스이기도 하다 — 저자가 이걸로 실무 프로젝트를 진행한다. NestJS 백엔드(`apps/api`)가 본체이고, 모놀리스로 설계되어 있지만 필요할 때 특정 기능을 독립 서비스로 떼어내기 쉽도록 모듈 경계를 미리 그어 두었다.
 
-같은 이유로 외래 키·조인처럼 경계를 넘는 DB 관계를 두지 않고, 서비스가 ID로 관계를 관리한다. 관계형 DB의 핵심 가치가 쓰일 일이 없으니 MongoDB를 쓰고, 정합성은 DB 제약이 아니라 서비스가 책임진다.
+서비스를 떼어낼 때 DB부터 풀지 않아도 되도록, 외래 키·조인처럼 경계를 넘는 DB 관계를 두지 않고 서비스가 ID로 관계를 관리한다. 관계형 DB의 핵심 가치가 쓰일 일이 없으니 MongoDB를 쓰고, 도메인 사이 정합성은 DB 제약이 아니라 서비스가 책임진다.
 
-관리자 콘솔과 사용자 앱은 모노레포에 프런트엔드를 얹는 최소 데모다. 각 도구를 어디에 어떻게 쓰는지는 [apps 문서](docs/apps.md)에, 왜 선택했는지는 [설계 결정](docs/reference/decisions.md)에 정리해 두었다.
+관리자 콘솔과 사용자 앱은 모노레포에 프런트엔드를 얹는 최소 데모다.
 
-예제 도메인은 영화 예매다. 누구나 아는 도메인인 데다 좌석이라는 경합 자원이 있어서, 이중 판매·부분 실패·진행 상황 전달 같은 분산 문제가 자연스럽게 발생한다. 영화·극장·상영·티켓 같은 모델 위에 상영 등록·예매·구매 같은 유스케이스를 올렸고, 코드의 패턴 이름이 모두 이 도메인 용어를 쓴다.
+예제 도메인은 영화 예매다. 누구나 아는 도메인인 데다 좌석이라는 경합 자원이 있고, 코드는 모놀리스지만 배포는 기본 4개 컨테이너라서 이중 판매·부분 실패·진행 상황 전달 같은 분산 문제가 자연스럽게 발생한다. 영화·극장·상영·티켓 같은 모델 위에 상영 등록·예매·구매 같은 유스케이스를 올렸고, 코드의 패턴 이름이 모두 이 도메인 용어를 쓴다.
 
 이 시드가 다루는 주요 패턴은 다음과 같다.
 
 - **Redis 분산 락** — 컨테이너 여러 개가 같은 키를 동시에 처리하는 경쟁을 차단한다 (`application/showtime-creation`, `infrastructure/assets`의 cron)
-- **NATS pub/sub** — 다른 컨테이너에 붙은 SSE 클라이언트에게 이벤트를 전달한다. 큐 그룹 수신도 지원한다 (`application/purchase`)
+- **NATS pub/sub** — 다른 컨테이너에 붙은 SSE 클라이언트에게 이벤트를 전달한다(`application/showtime-creation`). 큐 그룹(그룹 중 한 구독자만 수신) 수신도 지원한다(`application/purchase`)
 - **Temporal Saga** — 여러 단계 작업의 실행 기록·재시도, 실패 시 앞 단계 되돌리기(보상)를 워크플로로 다룬다 (`application/showtime-creation`)
 - **원자 조건부 전이** — 티켓 이중 판매를 락이 아니라 상태 조건부 갱신으로 막는다 (`core/tickets`)
 - **soft delete × unique 인덱스** — unique 키에 탈퇴 시각을 포함해(email+deletedAt) 활성 계정끼리만 이메일 중복을 막는다. 탈퇴한 이메일로는 재가입할 수 있다 (`core/users`)
 - **presigned 업로드 + 체크섬** — 신고한 체크섬과 다른 본문은 스토리지가 업로드 자체를 거부한다 (`infrastructure/assets`)
 - **검증 장치** — mock 대신 실제 인프라로 도는 테스트(커버리지 100% 게이트), 실행 가능한 API 문서, 분산 레이스 하네스, CI에서 레이스 시나리오 50회 반복
+
+이 도구들을 어디에 어떻게 쓰는지는 [apps 문서](docs/apps.md)에, 왜 선택했는지는 [설계 결정](docs/reference/decisions.md)에 정리해 두었다.
 
 ## 시작하기
 
@@ -29,11 +31,20 @@
 
 처음 부팅 순서는 다음과 같다.
 
-1. **새 프로젝트로 포크했다면** 저장소 전체에서 `nest-seed`를 새 프로젝트 이름으로, `mannercode`를 새 조직 이름으로 일괄 치환한다. 치환은 `@mannercode/*` import의 정렬 순서를 흐트러뜨리니, 의존성을 설치한 뒤 `npm run format`으로 한 번 정리한다(안 하면 정렬 위반으로 lint가 깨질 수 있다). 그 밖에 확인할 식별자는 [환경 변수 §4](docs/reference/environment.md#4-포크할-때-확인할-값)에 있다.
+1. **새 프로젝트로 포크했다면** 저장소 전체에서 `nest-seed`를 새 프로젝트 이름으로, `mannercode`를 새 조직 이름으로 일괄 치환한다. 치환 후 정리 절차와 그 밖에 확인할 식별자는 [환경 변수 §4](docs/reference/environment.md#4-포크할-때-확인할-값)를 따른다.
 2. VS Code에서 `Reopen in Container`를 실행한다. 컨테이너가 열리면 `postStartCommand`가 `bash infra/reset.sh`를 실행해 개발 인프라를 준비한다. 첫 부팅은 Dev Container 이미지 빌드, `npm install`, 인프라 이미지 다운로드 때문에 시간이 걸릴 수 있다. 인프라가 꼬이면 `bash infra/reset.sh`로 언제든 초기화한다.
 3. `npm test`로 기본 테스트가 통과하는지 확인한다. 포크 직후 전체 회귀까지 확인하려면 `npm run atoz`를 실행한다.
 4. `npm run dev`로 watch 모드를 띄운 뒤 `curl http://localhost:3000/health`로 API가 살아 있는지 본다.
-5. 콘솔(3100)에 로그인한다. 부팅 직후엔 admin이 없으므로 root 계정(사용자명은 `root` 고정, 비밀번호는 `.env.api`의 `ROOT_PASSWORD`)의 Basic 인증으로 `POST /admins`를 호출해 첫 admin을 만든다. `bash apps/api/api-docs/run.sh admins.spec`을 실행하면 이 절차가 dev 서버를 상대로 그대로 재현된다.
+5. 콘솔(3100)에 로그인한다. 부팅 직후엔 admin이 없으므로 root 계정(사용자명은 `root` 고정, 비밀번호는 `.env.api`의 `ROOT_PASSWORD` — devcontainer 터미널에 주입되어 있다)의 Basic 인증으로 첫 admin을 만든다.
+
+    ```bash
+    curl -u "root:${ROOT_PASSWORD}" -H 'Content-Type: application/json' \
+        -d '{"email":"admin@example.com","password":"admin1234!","name":"Admin"}' \
+        http://localhost:3000/admins
+    ```
+
+    admin API 전체(로그인·재발급·삭제까지)는 [admins.spec](apps/api/api-docs/admins.spec)이 보여준다.
+
 6. 콘솔에서 영화·극장·상영을 등록하고(상영 등록 진행 상황은 SSE로 표시된다), 사용자 앱(3200)에서 가입해 예매·구매까지 이어 본다.
 
 > `.env.api`와 `.env.infra`는 커밋된 **개발용 기본값**이다(`ROOT_PASSWORD=DevPass1!` 포함). 포크하면 자기 값으로 바꾼다.
@@ -55,10 +66,9 @@
 ## 테스트
 
 ```bash
-npm test                                              # 전체 단위·통합 테스트 — 커버리지 100% 게이트
 npm test -w apps/api -- users.spec --coverage=false   # 단일 spec만 실행 (게이트 끔)
 npm run e2e                                           # 콘솔 브라우저 e2e (Playwright)
-bash tests/api-race/runner.sh <scenario>              # 분산 레이스 — 4-replica 배포 스택을 직접 띄운다
+bash tests/api-race/runner.sh <scenario>              # 분산 레이스 — 다중 복제본 배포 스택을 직접 띄운다
 bash tests/api-perf/runner.sh                         # 성능 측정 — 스택 기동·시드·측정·정리까지 한 번에
 ```
 
@@ -70,23 +80,23 @@ bash tests/api-perf/runner.sh                         # 성능 측정 — 스택
 bash deploy/verify.sh   # API 4-replica + NGINX 스택을 새로 띄워 검증하고 내린다
 ```
 
-`verify.sh`는 deps 이미지 준비부터 실행 가능한 API 문서 검증까지 배포 전체 흐름을 한 번에 돈다. 구성 파일과 배포 정책(복제본 4개, 포트 3000), `x-replica-id` 응답 헤더는 [deploy 문서](docs/deploy.md)에 있다.
+`verify.sh`는 의존성 설치 레이어를 담은 deps 이미지 준비부터 실행 가능한 API 문서 검증까지 배포 전체 흐름을 한 번에 돈다. 구성 파일과 배포 정책(복제본 수·포트), `x-replica-id` 응답 헤더는 [deploy 문서](docs/deploy.md)에 있다.
 
 ## API 레퍼런스
 
-Swagger/OpenAPI는 의도적으로 두지 않았다(이유는 [설계 결정](docs/reference/decisions.md)). 엔드포인트 카탈로그는 **실행 가능한 `apps/api/api-docs/*.spec`** 자체다. `bash deploy/verify.sh`는 배포 스택을 새로 띄워 검증하고, dev 서버가 이미 떠 있다면 `bash apps/api/api-docs/run.sh`로 충분하다. 어느 쪽이든 브라우징 가능한 목록이 `_output/`에 생성된다 — gitignore라 클론 직후엔 없으니 한 번 실행해야 한다. spec 작성 규약과 산출물 구성은 [apps 문서](docs/apps.md#실행-가능한-api-문서)를 본다.
+Swagger/OpenAPI는 의도적으로 두지 않았다(이유는 [설계 결정](docs/reference/decisions.md)). 엔드포인트 카탈로그는 **실행 가능한 `apps/api/api-docs/*.spec`** 자체다. dev 서버가 떠 있으면 `bash apps/api/api-docs/run.sh`로 실행하고, 아니면 위 [배포](#배포)의 `verify.sh`가 실행까지 겸한다. 어느 쪽이든 브라우징 가능한 목록이 `apps/api/api-docs/_output/`에 생성된다 — gitignore라 클론 직후엔 없으니 한 번 실행해야 한다. spec 작성 규약과 산출물 구성은 [apps 문서](docs/apps.md#실행-가능한-api-문서)를 본다.
 
 ## 프로젝트 구조
 
 ```
 nest-seed/
 ├── libs/                    ← 공유 라이브러리(npm 패키지)
-│   ├── temporal-sandbox/    @mannercode/temporal-sandbox — Temporal workflow 샌드박스 헬퍼
-│   ├── common/              @mannercode/common  — Mongoose, Redis, JWT, S3, Logger, NATS, Temporal
-│   └── testing/             @mannercode/testing — HttpTestClient, 픽스처 헬퍼
+│   ├── temporal-sandbox/    ← @mannercode/temporal-sandbox — Temporal workflow 샌드박스 헬퍼
+│   ├── common/              ← @mannercode/common — Mongoose, Redis, JWT, S3, Logger, NATS, Temporal
+│   └── testing/             ← @mannercode/testing — HttpTestClient, 픽스처 헬퍼
 │
 ├── apps/
-│   ├── api/                 ← NestJS API — SoLA 5계층 서비스 + 실행 가능한 api-docs/ (배포 시 기본 4개 컨테이너)
+│   ├── api/                 ← NestJS API — 5계층 서비스 + 실행 가능한 api-docs/
 │   ├── console/             ← Next.js 관리 콘솔 — 최소 데모
 │   └── user-app/            ← Next.js 사용자 앱 — 최소 데모
 │
@@ -108,7 +118,7 @@ nest-seed/
 
 ## 사용 기술
 
-처음 보는 도구가 있다면 "어디에 쓰나" 열에 적힌 코드 경로부터 따라가면 된다.
+처음 보는 도구가 있다면 "어디에 쓰나" 열의 코드 경로나 문서부터 따라가면 된다.
 
 | 도구                             | 어디에 쓰나                                                                                 |
 | -------------------------------- | ------------------------------------------------------------------------------------------- |
@@ -139,23 +149,21 @@ nest-seed/
 3. `application/showtime-creation` — 사가 전체: 202 응답 → Temporal 워크플로 → NATS → SSE
 4. 각 단계마다 같은 이름의 통합 테스트(`apps/api/src/__tests__/integration`)를 나란히 읽는다
 
-| 서비스                                    | 보여주는 것                                                                    |
-| ----------------------------------------- | ------------------------------------------------------------------------------ |
-| `core/theaters`                           | 가장 단순한 CRUD. 새 도메인을 추가할 때 본보기로 복제할 기준                   |
-| `core/movies`                             | 파일 업로드 연동, draft→publish 공개 상태, 상영이 참조 중이면 삭제 거부        |
-| `core/users` · `admins`                   | soft delete × unique 인덱스, 로그인·토큰 회전, 탈퇴·비밀번호 변경 시 세션 폐기 |
-| `core/showtimes` · `tickets`              | 사가가 만들어내는 자원. tickets는 원자 조건부 전이로 상태를 바꾼다             |
-| `core/ticket-holding`                     | Redis Lua 스크립트 선점 — Cluster의 hash slot에 키를 모으는 설계               |
-| `core/purchase-records` · `watch-records` | 사용자 기록 도메인. watch-records는 추천의 입력이 된다                         |
-| `application/booking`                     | 예매 동선 조회와 좌석 선점, 요청 검증                                          |
-| `application/purchase`                    | 구매 확정과 실패 보상, NATS 구독 2형(브로드캐스트·큐 그룹)                     |
-| `application/showtime-creation`           | Temporal 사가, 202+SSE, 분산 락, 보상                                          |
-| `application/recommendation`              | 관람 기록 기반 추천. 도메인 로직을 순수 모듈로 분리                            |
-| `view/user-app/home`                      | 화면 전용 응답 조합 — View 계층                                                |
-| `infrastructure/assets`                   | presigned 업로드와 체크섬 검증, 만료 업로드 정리 cron(분산 락)                 |
-| `infrastructure/payments`                 | 외부 결제 연동 계층의 자리                                                     |
-
----
+| 서비스                                    | 보여주는 것                                                                                     |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `core/theaters`                           | 가장 단순한 CRUD. 새 도메인을 추가할 때 본보기로 복제할 기준                                    |
+| `core/movies`                             | 파일 업로드 연동, draft→publish 공개 상태, 상영이 참조 중이면 삭제 거부                         |
+| `core/users` · `admins`                   | soft delete × unique 인덱스, 로그인·토큰 회전, 탈퇴·비밀번호 변경 시 세션 폐기                  |
+| `core/showtimes` · `tickets`              | 사가가 만들어내는 자원. tickets는 원자 조건부 전이로 상태를 바꾼다                              |
+| `core/ticket-holding`                     | Redis Lua 스크립트 선점 — Lua가 여러 키를 원자적으로 다루도록 같은 hash slot에 키를 모으는 설계 |
+| `core/purchase-records` · `watch-records` | 사용자 기록 도메인. watch-records는 추천의 입력이 된다                                          |
+| `application/booking`                     | 예매 동선 조회와 좌석 선점, 요청 검증                                                           |
+| `application/purchase`                    | 구매 확정과 실패 보상, NATS 구독 2형(브로드캐스트·큐 그룹)                                      |
+| `application/showtime-creation`           | Temporal 사가, 202+SSE, 분산 락, 보상                                                           |
+| `application/recommendation`              | 관람 기록 기반 추천. 도메인 로직을 순수 모듈로 분리                                             |
+| `view/user-app/home`                      | 화면 전용 응답 조합 — View 계층                                                                 |
+| `infrastructure/assets`                   | presigned 업로드와 체크섬 검증, 만료 업로드 정리 cron(분산 락)                                  |
+| `infrastructure/payments`                 | 외부 결제 연동 계층의 자리                                                                      |
 
 ## 인가
 
@@ -163,11 +171,16 @@ JWT 기반으로 세 역할을 둔다. **root**는 `.env.api` 자격증명의 Ba
 
 ## 문서
 
-문서와 주석은 한국어가 원본이다. 두 언어를 같이 유지하는 동기화 비용을 피했고, 필요한 번역은 AI로 금방 만들 수 있다. 영어 문서는 정리가 끝난 뒤 추가할 예정이다.
+README 뒤의 상세는 폴더 문서 여섯과 참고 자료 셋이 맡는다. 문서와 주석은 한국어가 원본이다 — 두 언어를 같이 유지하는 동기화 비용을 피했고, 필요한 번역은 AI로 금방 만들 수 있다. 영어 문서는 정리가 끝난 뒤 추가할 예정이다.
 
 **폴더 문서** — 각 폴더가 무엇이고 왜 이렇게 나뉘었는지. 여기서 시작한다:
 
-- [apps/](docs/apps.md) — 본체 API의 SoLA 계층·분산 협력·코드 컨벤션·테스트·실행 가능한 API 문서, 최소 데모 두 앱
+- [apps/](docs/apps.md) — 본체 API와 최소 데모 두 앱
+    - [SoLA 5계층](docs/apps.md#sola-5계층) — 순환 참조를 없애는 계층 규칙
+    - [분산 협력](docs/apps.md#분산-협력--msa-준비형-모놀리스) — 분산 락·NATS·Temporal을 쓰는 곳
+    - [코드 컨벤션](docs/apps.md#코드-컨벤션) — 이름·에러·가져오기·REST·비정규화
+    - [테스트](docs/apps.md#테스트) — 실제 인프라 테스트 규칙과 픽스처
+    - [실행 가능한 API 문서](docs/apps.md#실행-가능한-api-문서) — spec 작성 규약과 산출물
 - [libs/](docs/libs.md) — 공유 패키지 셋의 분리 기준
 - [tests/](docs/tests.md) — 배포된 스택을 밖에서 검증하는 테스트들과 실행법
 - [infra/](docs/infra.md) — 개발 인프라 compose 묶음과 그 소비자들
