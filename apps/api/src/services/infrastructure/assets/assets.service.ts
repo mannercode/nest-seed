@@ -106,17 +106,23 @@ export class AssetsService {
 
     async finalizeUpload(assetId: string, { owner }: FinalizeAssetDto) {
         const asset = await this.repository.getById(assetId)
-        const expiresAt = this.getUploadExpiresAt(asset.createdAt)
 
-        if (this.isUploadExpired(expiresAt)) {
+        // 만료 판정과 소유 부여를 조건부 원자 갱신 하나로 처리한다.
+        // 시각을 먼저 검사하고 나중에 소유를 쓰면, 그 틈에 정리 cron이 같은 자산의 S3 객체를 지울 수 있다.
+        const updatedAsset = await this.repository.assignOwner(
+            assetId,
+            owner,
+            this.getExpirationThreshold()
+        )
+
+        if (!updatedAsset) {
             // S3 객체를 먼저 삭제해야 DB 삭제 후 S3 삭제 실패로 고립 객체가 남는 상황을 피할 수 있다.
-            // 정리 cron은 DB를 기준으로 만료 자산을 찾는다.
+            // 정리 cron은 DB를 기준으로 만료 자산을 찾는다. 이미 cron이 지웠다면 두 삭제 모두 멱등이다.
             await this.deleteMany([assetId])
 
+            const expiresAt = this.getUploadExpiresAt(asset.createdAt)
             throw new NotFoundException(AssetErrors.UploadExpired(assetId, expiresAt))
         }
-
-        const updatedAsset = await this.repository.assignOwner(assetId, owner)
 
         const dto = this.toDto(updatedAsset)
         return this.withDownloadInfo(dto)
@@ -155,10 +161,6 @@ export class AssetsService {
 
     private getUploadExpiresAt(createdAt: Date) {
         return DateUtil.add({ base: createdAt, seconds: this.config.asset.uploadExpiresInSec })
-    }
-
-    private isUploadExpired(expiresAt: Date) {
-        return expiresAt.getTime() <= DateUtil.now().getTime()
     }
 
     private toDto(asset: Asset): AssetDto {
