@@ -93,6 +93,12 @@ create_and_login_user() {
 	login_user
 }
 
+# 이후 호출을 인증 없는 게스트로 만든다 — run.sh의 자동 Bearer 주입만 끊는 로컬 전환이다.
+# 서버 세션을 끝내는 POST /users/logout, /admins/logout API와는 다르다.
+as_guest() {
+	CURRENT_AUTH_TOKEN=""
+}
+
 create_movie() {
 	SETUP POST /movies \
 		-H 'Content-Type: application/json' \

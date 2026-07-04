@@ -25,8 +25,7 @@ TEST "선점한 티켓 묶음을 구매한다" \
 			]
 		}'
 
-# 자동 Bearer 주입을 끊어 "인증 없이" 케이스가 실제로 토큰 없이 호출되게 한다.
-CURRENT_AUTH_TOKEN=""
+as_guest
 
 TEST "인증 없이 구매하면 401을 반환한다" \
 	401 POST /purchases \

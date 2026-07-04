@@ -7,9 +7,9 @@ setup_showtime_resources
 
 create_and_login_user
 
-# 홈은 optional 인증이라 게스트도 200이다. 자동 토큰 주입을 끊어 게스트 호출을 보인다.
+# 홈은 optional 인증이라 게스트도 200이다.
 # (admin 토큰을 보내면 user 가드와 secret이 달라 서명 검증이 실패해 401이 된다.)
-CURRENT_AUTH_TOKEN=""
+as_guest
 
 TEST "게스트가 사용자 앱 홈을 조회한다(추천은 개봉일 순)" \
 	200 GET /views/user-app/home
