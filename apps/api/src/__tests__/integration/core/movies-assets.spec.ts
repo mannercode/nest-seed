@@ -168,6 +168,19 @@ describe('MoviesAssets', () => {
 
                 await expect(getImageUrls()).resolves.toEqual([expect.any(String)])
             })
+
+            it('동시에 여러 번 호출해도 에셋은 한 번만 추가된다', async () => {
+                // 여러 요청이 모두 includes 검사를 통과한 뒤 addAsset에 도달하는 경쟁을 재현한다.
+                // 직렬화 시점에 따라 일부가 404(AssetNotFound)일 수 있어 상태는 단정하지 않고 끝 상태만 본다.
+                const finalize = () =>
+                    fix.httpClient
+                        .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
+                        .sendRaw()
+
+                await Promise.all(Array.from({ length: 8 }, finalize))
+
+                await expect(getImageUrls()).resolves.toEqual([expect.any(String)])
+            })
         })
 
         it('업로드 전 에셋을 완료 처리하면 422를 반환한다', async () => {
