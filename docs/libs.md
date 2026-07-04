@@ -15,3 +15,5 @@ HttpTestClient와 픽스처 헬퍼처럼 테스트에서만 쓰는 코드다. co
 Temporal 워크플로 본문은 결정적 샌드박스에서 실행되고 webpack으로 따로 번들된다. NestJS 데코레이터가 있는 모듈을 가져오면 번들이 깨지므로([설계 결정 §3](reference/decisions.md#3-saga-오케스트레이션-temporal-워크플로)의 트레이드오프), 워크플로에 들어가도 안전한 코드만 이 패키지에 격리한다. 피어 의존성이 Temporal 워크플로 패키지 둘(`@temporalio/workflow`와 그 타입 기반인 `@temporalio/common`)뿐인 것이 그 제약의 표현이다.
 
 루트 package.json의 workspaces 배열 순서가 곧 빌드 순서다 — 의존되는 패키지가 앞에 온다.
+
+테스트 지원 코드는 두 곳에 나뉜다 — 같은 기준("어디서 실행되는가")의 결과다. 테스트 코드가 import하는 헬퍼는 `libs/testing`(TS, 빌드 필요)이고, jest 설정(jest.setup/teardown)이 빌드 없이 곧장 require해야 하는 코드는 `tools/jest-helpers`(순수 CJS)다.

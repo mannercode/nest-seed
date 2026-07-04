@@ -2,6 +2,18 @@
 
 NestJS 백엔드인 `api`가 이 시드의 목적이고, `console`과 `user-app`은 모노레포 구성을 보여주는 최소 데모다.
 
+`apps/api/src`의 최상위는 다음과 같이 나뉜다. 이 문서의 대부분은 `services/`를 다룬다.
+
+| 경로            | 역할                                                                                                                |
+| --------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `services/`     | 도메인 — SoLA 5계층(아래 전체 절)                                                                                   |
+| `modules/`      | 인프라 배선 — Mongo·Redis·NATS·Temporal 연결 모듈(`*-setup`), 공용 제공자(`GlobalModule`), health. 도메인 로직 없음 |
+| `config/`       | `AppConfigService` — `process.env`를 검증해 타입 있는 설정으로 바꾸는 단일 정의처                                   |
+| `__tests__/`    | 통합 테스트([테스트](#테스트) 절)                                                                                   |
+| `app.module.ts` | 루트 모듈 — modules와 services의 모듈·컨트롤러·전역 가드/파이프를 한곳에서 조립한다                                 |
+| `bootstrap.ts`  | 앱 기동 — 로거, `x-replica-id` 미들웨어, listen                                                                     |
+| `main.ts`       | 배포 엔트리. `development.ts`는 `NODE_ENV=development`를 강제하는 dev 전용 엔트리                                   |
+
 ## SoLA 5계층
 
 여기서 말하는 계층은 컨트롤러/서비스/리포지토리처럼 한 서비스 내부의 코드 구조를 뜻하지 않는다. Application, Core, Infrastructure는 하나의 백엔드 서비스를 제공하기 위해 협력하고, View는 그 서비스를 화면 요구에 맞게 소비한다. 이렇게 계층을 나누고 의존 방향을 제한하는 규칙은 모듈 사이의 순환 참조를 원천에서 막아, 한쪽을 바꾸면 다른 쪽까지 흔들리는 문제가 생기지 않도록 한다.
