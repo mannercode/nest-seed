@@ -11,9 +11,13 @@
 - `WORKSPACE_ROOT` — 저장소 루트의 절대 경로. 스크립트들이 `${WORKSPACE_ROOT:?}`로 받아 위치에 상관없이 저장소 파일을 가리킨다.
 - `COMPOSE_PROJECT_NAME` — 작업 폴더 이름. infra와 deploy compose가 공유하는 Docker 네트워크의 이름이 된다.
 
-## Docker는 호스트 것을 부린다 (DooD)
+## 컨테이너 안의 `docker` 명령은 호스트 Docker가 실행한다 (DooD)
 
-컨테이너 안에서 `docker` 명령을 실행해도 실제 작업은 호스트 Docker가 한다. 그래서 `workspaceMount`가 작업 폴더를 **호스트와 같은 경로**로 마운트한다 — 호스트 Docker가 compose 파일의 상대 경로를 그대로 찾을 수 있어야 하기 때문이다. `initializeCommand`의 `prepare-network`가 infra·deploy·devcontainer를 묶는 네트워크를 미리 만든다.
+devcontainer 안에는 Docker 데몬이 없다. `docker-outside-of-docker` feature가 호스트의 Docker 소켓을 컨테이너에 연결해 주므로, 안에서 `docker compose up`을 실행하면 컨테이너를 실제로 만드는 쪽은 호스트 Docker다.
+
+여기서 경로 문제가 생긴다. compose가 데몬에 넘기는 파일 경로는 devcontainer 안에서 계산되는데, 그 경로로 파일을 여는 쪽은 호스트다. 두 경로가 다르면 호스트 Docker는 파일을 찾지 못한다. 그래서 `workspaceMount`가 작업 폴더를 **호스트와 같은 경로**로 마운트한다.
+
+infra·deploy compose와 devcontainer는 같은 Docker 네트워크로 묶인다. devcontainer 자신도 시작할 때 이 네트워크에 붙어야 하므로(`runArgs`의 `--network`), 컨테이너가 뜨기 전 호스트에서 실행되는 `initializeCommand`의 `prepare-network`가 네트워크를 미리 만든다.
 
 ## 부팅 순서
 

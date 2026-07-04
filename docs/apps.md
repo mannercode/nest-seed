@@ -105,6 +105,35 @@ Core Service 하나로 처리할 수 있는 API라면 컨트롤러에서 Core를
 - [movies.http-controller.ts](../apps/api/src/services/gateway/movies.http-controller.ts) — 영화 조회·등록은 Core인 `MoviesService`를 바로 호출한다.
 - [showtime-creation.http-controller.ts](../apps/api/src/services/gateway/showtime-creation.http-controller.ts) — 상영 등록은 영화·극장·상영시간·티켓을 한꺼번에 다뤄야 하므로 Application인 `ShowtimeCreationService`를 거친다.
 
+이 규칙이 사용자 여정(가입 → 홈 → 예매 → 구매)에서 어떻게 나타나는지가 다음 유스케이스 지도다 — 각 유스케이스가 어느 계층의 어떤 서비스로 처리되는지 보여준다(다이어그램은 devcontainer의 VS Code 미리보기에서 렌더된다). Application에는 여러 Core를 조합하는 유스케이스만 있고, 단일 도메인으로 끝나는 유스케이스는 Core로 직행한다. 즉 Application은 "유스케이스 계층"이 아니라 "조립이 필요한 유스케이스만 올라오는 계층"이다.
+
+```plantuml
+@startuml
+left to right direction
+actor 사용자 as user
+
+rectangle "View — 화면 전용 조합" {
+    usecase "홈 화면 조회\n(view/user-app/home)" as UC_home
+}
+rectangle "Application — 여러 Core 조합" {
+    usecase "예매·좌석 선점\n(application/booking)" as UC_booking
+    usecase "구매\n(application/purchase)" as UC_purchase
+    usecase "추천\n(application/recommendation)" as UC_reco
+}
+rectangle "Core 직행 — 단일 도메인" {
+    usecase "가입·로그인·탈퇴\n(core/users)" as UC_users
+}
+
+user --> UC_home
+user --> UC_booking
+user --> UC_purchase
+user --> UC_users
+UC_home ..> UC_reco : include\n(View가 Application의\n읽기 API를 호출)
+@enduml
+```
+
+추천은 자기 HTTP 엔드포인트가 없다 — 홈 View가 소비하는 내부 유스케이스라 액터 없이 include로만 이어진다. 관리자·root 쪽 유스케이스도 같은 규칙을 따른다 — 영화·극장 등록과 admin 관리는 Core 직행, 상영 등록만 조합이 필요해 Application이다(위 두 예시가 그 대비다). 전체 서비스 목록은 [README 도메인 둘러보기](../README.md#도메인-둘러보기)를 본다.
+
 ### 왜 모놀리스에 SoLA를 쓰는가
 
 SoLA는 원래 마이크로서비스를 염두에 둔 원칙이다. 마이크로서비스에서는 서비스가 서로 다른 프로세스로 실행된다. 같은 계층끼리 직접 부르기 어렵고, 여러 서비스를 묶는 일은 그 위의 오케스트레이터나 게이트웨이가 맡는다.
@@ -158,6 +187,39 @@ API는 배포할 때 **기본 4개** 컨테이너로 실행하고, NATS와 Tempo
 현재 [showtimeCreationWorkflow](../apps/api/src/services/application/showtime-creation/worker/workflow.ts) 워크플로가 _processing emit → validate/create → result emit_ 흐름을 담당한다. `waiting` 이벤트는 워크플로 시작에 성공한 뒤에 오케스트레이터([ShowtimeCreationOrchestratorService](../apps/api/src/services/application/showtime-creation/internal/showtime-creation-orchestrator.service.ts))가 발행한다.
 
 중간에 예외가 나면 catch 블록에서 **보상을 먼저 끝내고 나서** `error` 이벤트를 발행한다. 클라이언트에게 `error`는 "정리까지 끝났다"는 신호이므로 이 순서를 바꾸면 안 된다. 보상은 진행 중인 검증·삽입과 같은 분산 락으로 직렬화된다(위 표의 compensate 행).
+
+전체 흐름을 시퀀스로 보면 다음과 같다(다이어그램은 devcontainer의 VS Code 미리보기에서 렌더된다).
+
+```plantuml
+@startuml
+actor Client
+participant "API 컨테이너" as API
+participant Temporal
+participant "액티비티(워커)" as Worker
+queue NATS
+
+Client -> API: POST /showtime-creation/showtimes
+API -> Temporal: workflow.start(workflowId=sagaId,\nREJECT_DUPLICATE)
+API -> NATS: waiting 발행 — 시작 성공 후에만
+API --> Client: 202 { sagaId }
+note right of Client
+  이후 모든 이벤트는 NATS → 각 API 컨테이너
+  → SSE(event-stream)로 클라이언트에 전달된다
+end note
+
+Temporal -> Worker: showtimeCreationWorkflow 실행
+Worker -> NATS: processing
+Worker -> Worker: validateAndCreate\n(분산 락 안에서 검증+삽입, 자동 재시도 없음)
+alt 성공
+    Worker -> NATS: succeeded(생성 수)
+else 시간대 충돌
+    Worker -> NATS: failed(충돌 상영 목록)
+else 예외
+    Worker -> Worker: compensate(sagaId 행 삭제,\n같은 분산 락으로 직렬화)
+    Worker -> NATS: error — 보상을 끝낸 뒤에만
+end
+@enduml
+```
 
 ## 코드 컨벤션
 
@@ -317,11 +379,26 @@ POST /showtime-creation/showtimes/search
 { "theaterIds": [...] }
 ```
 
-#### 권한 경계: 본인 자원은 `/me`, 임의 ID는 admin
+#### 본인 자원은 `/me`로 다룬다
 
-본인 자원은 경로에 식별자가 없는 **`/me` 계열**로 다룬다. 식별자를 인증 토큰의 주체(`req.user.sub`)로 못박으므로, 로그인 사용자가 임의 ID를 넣어 남의 자원에 접근하는 경로(IDOR) 자체가 생기지 않는다. 임의 ID를 다루는 작업은 모두 admin이다 — `/me`(본인)와 `/:id`(운영자)로 권한 경계가 갈린다. 결제도 같은 원칙이라 `POST /purchases`는 본문이 아니라 토큰 주체로 결제자를 정한다.
+본인 자원은 경로에 식별자가 없는 **`/me` 계열**로 다룬다. 식별자를 인증 토큰의 주체(`req.user.sub`)로 못박으므로, 로그인 사용자가 임의 ID를 넣어 남의 자원에 접근하는 경로(IDOR) 자체가 생기지 않는다. 결제도 같은 원칙이라 `POST /purchases`는 본문이 아니라 토큰 주체로 결제자를 정한다.
 
 가드는 한 컨트롤러에 서로 다른 역할의 핸들러가 섞이면 핸들러마다 붙이고, 모든 핸들러가 같은 역할이면 클래스에 붙인다. 이렇게 나누는 이유는 NestJS에서 클래스 가드와 메서드 가드가 합쳐져 둘 다 통과해야 하기 때문이다. 상세는 [users.http-controller.ts](../apps/api/src/services/gateway/users.http-controller.ts) 머리 주석에 있다.
+
+```ts
+// 라우트 매칭상 `me`를 `:userId`보다 먼저 선언해야 `/users/me`가 파라미터로 잡히지 않는다.
+@Delete('me')
+@UseGuards(UserAuthGuard)
+async deleteMe(@Req() req: UserAuthRequest) {
+    await this.usersService.deleteMany([req.user.sub]) // 식별자는 토큰 주체로 고정
+}
+
+@Delete(':userId')
+@UseGuards(AdminAuthGuard)
+async delete(@Param('userId') userId: string) {
+    await this.usersService.deleteMany([userId]) // 임의 ID는 admin만
+}
+```
 
 ### 데이터 비정규화
 
@@ -392,7 +469,21 @@ describe('UsersService', () => {
 })
 ```
 
-PATCH나 DELETE처럼 상태를 바꾸는 API는 두 가지를 확인한다. 하나는 응답이 올바른지, 다른 하나는 DB 반영 여부다. 두 검증은 서로 다른 `it`으로 나눈다. 그래야 실패했을 때 어느 쪽 문제인지 바로 알 수 있다.
+PATCH나 DELETE처럼 상태를 바꾸는 API는 두 가지를 확인한다. 하나는 응답이 올바른지, 다른 하나는 DB 반영 여부다. 두 검증은 서로 다른 `it`으로 나눈다. 그래야 실패했을 때 어느 쪽 문제인지 바로 알 수 있다. DB 반영은 GET 재조회로 확인한다.
+
+```ts
+it('수정된 극장을 반환한다', async () => {
+    await fix.httpClient
+        .patch(`/theaters/${theater.id}`)
+        .body(updateDto)
+        .ok({ ...theater, ...updateDto })
+})
+
+it('수정 내용이 DB에 저장된다', async () => {
+    await fix.httpClient.patch(`/theaters/${theater.id}`).body(updateDto).ok()
+    await fix.httpClient.get(`/theaters/${theater.id}`).ok({ ...theater, ...updateDto })
+})
+```
 
 ### 동적 가져오기 — 왜 필요한가
 
@@ -454,9 +545,36 @@ TEST "영화를 생성한다" \
     -d '{ ... }'
 ```
 
-`SETUP <METHOD> <경로>`는 시나리오 준비 요청이다. 실패하면 문서 실행을 중단한다. 다만 API 목록에는 넣지 않는다 — 목록은 검증 대상인 `TEST`만 기록한다.
+`SETUP <METHOD> <경로>`는 시나리오 준비 요청이다. 설명과 기대 상태 없이 요청만 적고, 실패하면 문서 실행을 중단한다. 다만 API 목록에는 넣지 않는다 — 목록은 검증 대상인 `TEST`만 기록한다.
 
-인증은 `common.fixture`의 `login_admin`/`login_user`로 주체를 전환한다. 이 헬퍼들이 `CURRENT_AUTH_TOKEN`을 채우면 run.sh가 이후 모든 호출에 Bearer 헤더를 자동으로 붙이고, spec이 `Authorization` 헤더를 직접 명시하면 그쪽이 우선한다.
+```bash
+# 구매 TEST의 전제(티켓 선점)를 만든다 — 준비 요청이라 API 목록에는 남지 않는다 (purchases.spec)
+SETUP POST /booking/showtimes/${SHOWTIME_ID}/tickets/hold \
+    -H 'Content-Type: application/json' \
+    -d '{ "ticketIds": ["'${TICKET_ID_1}'", "'${TICKET_ID_2}'"] }'
+
+TEST "선점한 티켓 묶음을 구매한다" \
+    201 POST /purchases \
+    -H 'Content-Type: application/json' \
+    -d '{ ... }'
+```
+
+인증은 `common.fixture`의 `login_admin`/`login_user`로 주체를 전환하고, 게스트(인증 없음) 케이스는 `as_guest`로 자동 주입을 끊는다. 로그인 헬퍼들이 `CURRENT_AUTH_TOKEN`을 채우면 run.sh가 이후 모든 호출에 Bearer 헤더를 자동으로 붙이고, spec이 `Authorization` 헤더를 직접 명시하면 그쪽이 우선한다. [views.spec](../apps/api/api-docs/views.spec)이 세 계약을 모두 보여준다.
+
+```bash
+login_admin                # 이후 호출에 admin 토큰이 자동 주입된다
+setup_showtime_resources
+create_and_login_user      # user 토큰으로 전환
+
+as_guest                   # 자동 주입을 끊는다 — "게스트/인증 없이" 케이스를 만들 때
+
+TEST "게스트가 사용자 앱 홈을 조회한다(추천은 개봉일 순)" \
+    200 GET /views/user-app/home
+
+TEST "로그인 사용자가 사용자 앱 홈을 조회한다(추천 개인화)" \
+    200 GET /views/user-app/home \
+    -H "Authorization: Bearer ${USER_ACCESS_TOKEN}"   # 직접 명시가 자동 주입보다 우선
+```
 
 특정 spec만 실행하려면 파일 이름을 인자로 넘긴다: `bash apps/api/api-docs/run.sh movies.spec`
 
