@@ -41,9 +41,11 @@ jobs:
                           bash .github/scripts/repeat.sh 50 bash infra/reset.sh
                     # scenario: 분산 레이스 시나리오 반복. 50회는 의도된 누적 검증량이다.
                     # 240분은 가장 느린 시나리오(user-signup-race 50회 ~200분)에 여유를 둔 값.
+                    # sse-fanout-race는 회차당 사가 1,500개(150 inner × 10)를 만들어 다른 시나리오보다 워크플로 밀도가 압도적으로 높다.
+                    # 기본 RESET_EVERY=10이면 리셋 전에 Temporal이 transfer-queue 정체 구간까지 누적되므로 더 자주 초기화한다.
                     - leg: sse-fanout-race
                       timeout: 240
-                      run: bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh sse-fanout-race
+                      run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh sse-fanout-race
                     - leg: user-signup-race
                       timeout: 240
                       run: bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh user-signup-race
