@@ -472,16 +472,24 @@ describe('UsersService', () => {
 PATCH나 DELETE처럼 상태를 바꾸는 API는 두 가지를 확인한다. 하나는 응답이 올바른지, 다른 하나는 DB 반영 여부다. 두 검증은 서로 다른 `it`으로 나눈다. 그래야 실패했을 때 어느 쪽 문제인지 바로 알 수 있다. DB 반영은 GET 재조회로 확인한다.
 
 ```ts
-it('수정된 극장을 반환한다', async () => {
-    await fix.httpClient
-        .patch(`/theaters/${theater.id}`)
-        .body(updateDto)
-        .ok({ ...theater, ...updateDto })
-})
+describe('PATCH /theaters/:id', () => {
+    let theater: TheaterDto
 
-it('수정 내용이 DB에 저장된다', async () => {
-    await fix.httpClient.patch(`/theaters/${theater.id}`).body(updateDto).ok()
-    await fix.httpClient.get(`/theaters/${theater.id}`).ok({ ...theater, ...updateDto })
+    beforeEach(async () => {
+        theater = await createTheater(fix)
+    })
+
+    it('수정된 극장을 반환한다', async () => {
+        await fix.httpClient
+            .patch(`/theaters/${theater.id}`)
+            .body(updateDto)
+            .ok({ ...theater, ...updateDto })
+    })
+
+    it('수정 내용이 DB에 저장된다', async () => {
+        await fix.httpClient.patch(`/theaters/${theater.id}`).body(updateDto).ok()
+        await fix.httpClient.get(`/theaters/${theater.id}`).ok({ ...theater, ...updateDto })
+    })
 })
 ```
 
