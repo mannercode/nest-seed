@@ -2,10 +2,6 @@ import type { S3ClientConfig } from '@aws-sdk/client-s3'
 import type { PresignedPost } from '@aws-sdk/s3-presigned-post'
 import type { ChecksumAlgorithm } from '../utils'
 
-export interface S3ServiceConfig extends S3ClientConfig {
-    bucket: string
-}
-
 export type S3DeleteObjectResult = { key: string; status: number }
 
 export type S3ListObjectsOptions = {
@@ -58,5 +54,7 @@ export type S3PresignPostUploadOptions = S3PresignUrlOptions & {
 export type S3PresignPostUploadResult = PresignedPost
 
 export type S3PresignUrlOptions = { expiresInSec: number; key: string }
+
+export type S3ServiceConfig = S3ClientConfig & { bucket: string }
 
 export type S3UploadCompleteOptions = { contentLength?: number; contentType?: string; key: string }
