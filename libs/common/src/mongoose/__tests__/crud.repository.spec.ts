@@ -3,6 +3,7 @@ import { Types } from 'mongoose'
 import { OrderDirection } from '../../pagination'
 import { pickIds } from '../../utils'
 import { leanToPublic } from '../crud.repository'
+import { MongooseErrors } from '../errors'
 import {
     createSample,
     createSamples,
@@ -142,6 +143,14 @@ describe('CrudRepository', () => {
             const promise = fix.repository.findWithPagination({ pagination: { size } })
 
             await expect(promise).rejects.toThrow(fix.BadRequestException)
+        })
+
+        it('size가 maxSize와 같으면 허용한다', async () => {
+            const { size } = await fix.repository.findWithPagination({
+                pagination: { size: maxSizeValue }
+            })
+
+            expect(size).toEqual(maxSizeValue)
         })
 
         it('size가 없으면 기본값(defaultSize)을 사용한다', async () => {
@@ -342,6 +351,17 @@ describe('CrudRepository', () => {
             const promise = fix.repository.getByIds([nullObjectId])
 
             await expect(promise).rejects.toThrow(fix.NotFoundException)
+        })
+
+        it('일부 id만 없으면 notFoundIds에 없는 id만 담아 던진다', async () => {
+            const existingId = samples[0]?.id
+            if (existingId === undefined) throw new Error('samples must not be empty')
+
+            const promise = fix.repository.getByIds([existingId, nullObjectId])
+
+            await expect(promise).rejects.toMatchObject({
+                response: MongooseErrors.MultipleDocumentsNotFound([nullObjectId])
+            })
         })
 
         describe('중복된 id가 입력되었을 때', () => {

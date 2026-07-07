@@ -11,6 +11,7 @@ import {
     UnprocessableEntityException
 } from '@nestjs/common'
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core'
+import { sleep } from '../../utils'
 import { HttpExceptionLoggerFilter } from '../exception-logger.filter'
 import { HttpSuccessLoggerInterceptor } from '../success-logger.interceptor'
 
@@ -46,6 +47,13 @@ class TestController {
     @Get('unprocessable')
     getUnprocessable() {
         throw new UnprocessableEntityException({ code: 'ERR_UNPROCESSABLE', message: 'bad' })
+    }
+
+    @Get('slow-exception')
+    async getSlowException() {
+        // 인터셉터가 마크한 진입 시각부터 duration을 재는지 확인하려고 던지기 전에 지연을 둔다.
+        await sleep(50)
+        throw new NotFoundException({ code: 'ERR_CODE', message: 'message' })
     }
 
     @Get('string-response')

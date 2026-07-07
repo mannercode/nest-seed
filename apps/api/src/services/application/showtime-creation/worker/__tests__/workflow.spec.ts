@@ -1,7 +1,7 @@
 import type { ShowtimeDto } from 'core'
 import { newObjectIdString } from '@mannercode/common'
 import { nullObjectId, withTestId } from '@mannercode/testing'
-import { Client, Connection } from '@temporalio/client'
+import { Client, Connection, WorkflowFailedError } from '@temporalio/client'
 import { NativeConnection, Worker } from '@temporalio/worker'
 import { readFileSync } from 'fs'
 import type { ShowtimeCreationEvent } from '../../internal'
@@ -176,6 +176,29 @@ describe('showtimeCreationWorkflow', () => {
             expect(errorEvent.sagaId).toBe(input.sagaId)
             expect(errorEvent.message).toContain('boom during create')
         }
+    })
+
+    it('보상이 재시도를 소진하면 error 이벤트 없이 워크플로 실패로 남는다', async () => {
+        // error 이벤트는 '보상까지 완료됨'을 뜻하므로, 보상이 못 끝났으면 발행하지 않고 워크플로 실패로 드러나야 한다.
+        const statuses: ShowtimeCreationEvent[] = []
+        const validateAndCreate = jest.fn(async (): Promise<ValidateAndCreateResult> => {
+            throw new Error('boom during create')
+        })
+        const compensate = jest.fn(async () => {
+            throw new Error('compensation keeps failing')
+        })
+        const emitStatusChanged = jest.fn(async (payload: ShowtimeCreationEvent) => {
+            statuses.push(payload)
+        })
+
+        const input = buildInput()
+        await expect(
+            runWorkflow(input, { compensate, emitStatusChanged, validateAndCreate })
+        ).rejects.toThrow(WorkflowFailedError)
+
+        // 보상은 재시도 상한(maximumAttempts: 3)까지만 시도되어야 한다 — 무제한이면 워크플로가 영원히 매달린다.
+        expect(compensate).toHaveBeenCalledTimes(3)
+        expect(statuses.map((s) => s.status)).toEqual(['processing'])
     })
 
     it('상태 알림이 일시적으로 실패해도 재시도해 사가를 끝까지 진행한다', async () => {

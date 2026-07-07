@@ -1,5 +1,5 @@
 import { ensure, pickIds } from '@mannercode/common'
-import { oid } from '@mannercode/testing'
+import { nullObjectId, oid } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
 import { TicketStatus, type TicketDto, type TicketsService } from 'core'
 import { buildCreateTicketDto, createTickets, Errors, type AppTestContext } from '../helpers'
@@ -150,6 +150,26 @@ describe('TicketsService', () => {
 
             // 전부-아니면-전무: 충돌이 있으면 나머지 티켓도 전이되지 않아야 한다.
             const after = await ticketsService.getMany([first.id])
+            expect(ensure(after[0]).status).toBe(TicketStatus.Available)
+        })
+
+        it('존재하지 않는 티켓이 섞이면 전이를 시도하지 않고 404를 던진다', async () => {
+            const createdTickets = await createTickets(fix, [{ status: TicketStatus.Available }])
+            const ticket = ensure(createdTickets[0])
+
+            const promise = ticketsService.transitStatusMany(
+                [ticket.id, nullObjectId],
+                TicketStatus.Available,
+                TicketStatus.Sold
+            )
+
+            // '없는 티켓'은 상태 충돌(409)이 아니라 누락 id 목록을 담은 404로 분류되어야 한다.
+            await expect(promise).rejects.toMatchObject({
+                response: Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]),
+                status: HttpStatus.NOT_FOUND
+            })
+
+            const after = await ticketsService.getMany([ticket.id])
             expect(ensure(after[0]).status).toBe(TicketStatus.Available)
         })
     })

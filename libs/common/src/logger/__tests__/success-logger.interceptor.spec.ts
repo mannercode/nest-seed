@@ -75,6 +75,22 @@ describe('HttpSuccessLoggerInterceptor', () => {
             })
         })
 
+        describe('제외 경로의 하위 경로를 요청하면', () => {
+            beforeEach(async () => {
+                const { createSuccessLoggerInterceptorFixture } =
+                    await import('./success-logger.interceptor.fixture')
+                fix = await createSuccessLoggerInterceptorFixture([
+                    { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: ['/exclude-path'] }
+                ])
+            })
+
+            it('경로가 정확히 일치하지 않으므로 로그를 남긴다', async () => {
+                await fix.httpClient.get('/exclude-path/sub').ok({ result: 'success' })
+
+                expect(fix.spyVerbose).toHaveBeenCalledTimes(1)
+            })
+        })
+
         describe('제외 목록이 빈 배열이면', () => {
             beforeEach(async () => {
                 const { createSuccessLoggerInterceptorFixture } =

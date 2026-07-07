@@ -1,6 +1,6 @@
 import type { MovieDto, ShowtimesService, TheaterDto, TicketsService } from 'core'
-import { DateUtil } from '@mannercode/common'
-import { nullObjectId, type Response } from '@mannercode/testing'
+import { DateUtil, JsonUtil, sleep } from '@mannercode/common'
+import { HttpTestClient, nullObjectId, type Response } from '@mannercode/testing'
 import {
     createMovie,
     createShowtimes,
@@ -138,6 +138,63 @@ describe('ShowtimeCreationService', () => {
                 const createdTickets = await ticketsService.search({ sagaIds: [body.sagaId] })
                 expect(createdTickets).toHaveLength(createdTicketCount)
             })
+        })
+
+        it('사가 상태를 waiting → processing → succeeded 순서로 발행한다', async () => {
+            const { ShowtimeCreationEvents } = await import('application')
+            const events = fix.module.get(ShowtimeCreationEvents)
+
+            // 공유 httpClient는 뒤의 POST가 abort 대상을 바꾸므로 스트림 전용 클라이언트로 수신한다.
+            const sseClient = new HttpTestClient(fix.httpClient.serverUrl)
+            const received: { sagaId: string; status: string }[] = []
+            let streamError: Error | undefined
+            sseClient.get('/showtime-creation/event-stream').sse(
+                (data) => received.push(JsonUtil.parse(data)),
+                (reason) =>
+                    (streamError = reason instanceof Error ? reason : new Error(String(reason)))
+            )
+
+            const waitUntil = async (
+                predicate: () => boolean,
+                beforeRetry?: () => Promise<void>
+            ) => {
+                while (!predicate()) {
+                    if (streamError) throw streamError
+                    await beforeRetry?.()
+                    await sleep(50)
+                }
+            }
+
+            // 스트림은 지난 이벤트를 재전송하지 않아, 구독 성립 전에 발행된 waiting은 사라진다.
+            // 프로브가 수신될 때까지 반복 발행해 구독 성립을 확정한 뒤에야 POST한다.
+            await waitUntil(
+                () => received.some((event) => event.sagaId === nullObjectId),
+                () => events.emitStatusChanged({ sagaId: nullObjectId, status: 'waiting' })
+            )
+
+            const { body } = await fix.httpClient
+                .post('/showtime-creation/showtimes')
+                .body({
+                    durationInMinutes: 1,
+                    movieId: movie.id,
+                    startTimes: [new Date('2100-01-01T09:00')],
+                    theaterIds: [theater.id]
+                })
+                .accepted()
+
+            await waitUntil(() =>
+                received.some(
+                    (event) =>
+                        event.sagaId === body.sagaId &&
+                        ['error', 'failed', 'succeeded'].includes(event.status)
+                )
+            )
+            sseClient.abort()
+
+            const statuses = received
+                .filter((event) => event.sagaId === body.sagaId)
+                .map((event) => event.status)
+            expect(statuses).toEqual(['waiting', 'processing', 'succeeded'])
         })
 
         it('영화가 없으면 오류 상태를 전송한다', async () => {
@@ -338,6 +395,43 @@ describe('ShowtimeCreationService', () => {
                 sagaId: expect.any(String),
                 status: 'failed'
             })
+        })
+
+        it('한 극장만 충돌해도 전체가 실패하고 어느 극장에도 행을 남기지 않는다', async () => {
+            // 첫 극장에만 겹치는 기존 상영을 두고, 충돌 없는 두 번째 극장을 같은 사가로 묶는다.
+            const theaterB = await createTheater(fix)
+            const [conflictingShowtime] = await createShowtimes(fix, [
+                {
+                    endTime: new Date('2013-01-31T13:30'),
+                    startTime: new Date('2013-01-31T12:00'),
+                    theaterId: theater.id
+                }
+            ])
+
+            const completionPromise = waitForCompletion(fix, 'failed')
+
+            const { body } = await fix.httpClient
+                .post('/showtime-creation/showtimes')
+                .body({
+                    durationInMinutes: 90,
+                    movieId: movie.id,
+                    startTimes: [new Date('2013-01-31T12:00')],
+                    theaterIds: [theater.id, theaterB.id]
+                })
+                .accepted()
+
+            await expect(completionPromise).resolves.toEqual({
+                conflictingShowtimes: [conflictingShowtime],
+                sagaId: body.sagaId,
+                status: 'failed'
+            })
+
+            // 검증 전체 통과 후에만 생성하므로, 충돌이 없던 두 번째 극장의 몫도 만들어지지 않아야 한다.
+            const showtimes = await showtimesService.search({ sagaIds: [body.sagaId] })
+            expect(showtimes).toEqual([])
+
+            const tickets = await ticketsService.search({ sagaIds: [body.sagaId] })
+            expect(tickets).toEqual([])
         })
 
         it('한 기존 상영 시간이 여러 새 시작 시각과 겹쳐도 결과에는 한 번만 들어간다', async () => {

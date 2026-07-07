@@ -228,6 +228,39 @@ describe('S3ObjectService', () => {
                 expect(response.ok).toBe(false)
             })
         })
+
+        describe('업로드 크기 하한만 지정했을 때', () => {
+            const minContentLength = 5
+            let presigned: { fields: Record<string, string>; url: string }
+
+            beforeEach(async () => {
+                presigned = await fix.s3Service.presignUploadPost({
+                    contentType: 'text/plain',
+                    expiresInSec: 60,
+                    key: 'key.txt',
+                    minContentLength
+                })
+            })
+
+            it('하한 이상이면 크기에 상관없이 업로드를 허용한다', async () => {
+                // 하한만 지정하면 상한은 사실상 무제한이라 하한보다 훨씬 큰 본문도 허용된다.
+                const largeBody = Buffer.alloc(minContentLength * 20, 'a')
+                const form = buildPresignedPostForm(presigned.fields, largeBody, 'text/plain')
+
+                const response = await fetch(presigned.url, { body: form, method: 'POST' })
+
+                expect(response.ok).toBe(true)
+            })
+
+            it('하한 미만이면 업로드를 거부한다', async () => {
+                const smallBody = Buffer.alloc(minContentLength - 1, 'a')
+                const form = buildPresignedPostForm(presigned.fields, smallBody, 'text/plain')
+
+                const response = await fetch(presigned.url, { body: form, method: 'POST' })
+
+                expect(response.ok).toBe(false)
+            })
+        })
     })
 
     describe('presignDownloadUrl', () => {

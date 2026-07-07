@@ -155,6 +155,25 @@ describe('ShowtimesService', () => {
             })
         })
 
+        it('결과를 startTime 오름차순으로 정렬해 반환한다', async () => {
+            const sagaId = oid(0x9)
+
+            // 삽입 순서를 일부러 뒤섞어 정렬 결과가 Mongo 자연 순서와 구분되게 한다
+            await showtimesService.createMany([
+                buildCreateShowtimeDto({ sagaId, startTime: new Date('2000-01-01T14:00') }),
+                buildCreateShowtimeDto({ sagaId, startTime: new Date('2000-01-01T12:00') }),
+                buildCreateShowtimeDto({ sagaId, startTime: new Date('2000-01-01T13:00') })
+            ])
+
+            const showtimes = await showtimesService.search({ sagaIds: [sagaId] })
+
+            expect(showtimes.map((showtime) => showtime.startTime)).toEqual([
+                new Date('2000-01-01T12:00'),
+                new Date('2000-01-01T13:00'),
+                new Date('2000-01-01T14:00')
+            ])
+        })
+
         it('필터가 비어 있으면 400을 던진다', async () => {
             const promise = showtimesService.search({})
 

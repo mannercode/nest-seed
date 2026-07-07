@@ -16,6 +16,11 @@ class TestController {
         return { result: 'success' }
     }
 
+    @Get('exclude-path/sub')
+    async getExcludeSubPath() {
+        return { result: 'success' }
+    }
+
     @Post('success')
     async httpSuccess() {
         return { result: 'success' }

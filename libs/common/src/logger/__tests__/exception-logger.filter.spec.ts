@@ -70,6 +70,16 @@ describe('HttpExceptionLoggerFilter', () => {
             )
         })
 
+        it('duration을 인터셉터가 마크한 요청 진입 시각부터 계산한다', async () => {
+            await fix.httpClient.get('/slow-exception').notFound()
+
+            expect(fix.spyWarn).toHaveBeenCalledTimes(1)
+            const [, log] = fix.spyWarn.mock.calls[0]
+            // 핸들러가 50ms 지연 후 던지므로 마크가 빠지면 0ms로 퇴행한다. 부하는 값을
+            // 키우는 방향으로만 작용하므로 타이머 오차 여유를 둔 하한만 단언한다.
+            expect(parseInt(log.duration)).toBeGreaterThanOrEqual(40)
+        })
+
         it('일반 Error가 발생하면 Logger.error로 로그를 남긴다', async () => {
             await fix.httpClient.get('/error').internalServerError()
 

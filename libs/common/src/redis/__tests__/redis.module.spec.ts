@@ -1,3 +1,4 @@
+import { withTestId } from '@mannercode/testing'
 import type { RedisModuleFixture } from './redis.module.fixture'
 
 describe('RedisConnectionRegistry', () => {
@@ -43,6 +44,21 @@ describe('RedisModule', () => {
             try {
                 const result = await fix.redis.ping()
                 expect(result).toBe('PONG')
+            } finally {
+                await fix.teardown()
+            }
+        })
+
+        it('URL과 함께 준 옵션이 실제 연결에 적용된다', async () => {
+            const { createRedisModuleDbSelectionFixture } = await import('./redis.module.fixture')
+            const fix = await createRedisModuleDbSelectionFixture()
+            try {
+                const key = withTestId('db-selection')
+                await fix.redisDb1.set(key, 'value')
+
+                // db 1 연결의 키가 기본 db 연결에서 보이지 않아야 options가 버려지지 않은 것이다.
+                expect(await fix.redisDb0.get(key)).toBeNull()
+                expect(await fix.redisDb1.get(key)).toBe('value')
             } finally {
                 await fix.teardown()
             }

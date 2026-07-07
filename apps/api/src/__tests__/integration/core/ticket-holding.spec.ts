@@ -1,5 +1,5 @@
 import type { TicketHoldingService } from 'core'
-import { sleep } from '@mannercode/common'
+import { CacheService, ensure, sleep } from '@mannercode/common'
 import { oid } from '@mannercode/testing'
 import { buildHoldTicketsDto, overrideConfigGetter, type AppTestContext } from '../helpers'
 
@@ -59,6 +59,41 @@ describe('TicketHoldingService', () => {
                 const isHeld = await ticketHoldingService.holdTickets(otherHold)
 
                 expect(isHeld).toBe(true)
+            })
+
+            it('이전 보유 목록의 티켓이 그새 다른 고객 소유가 됐으면 해제하지 않는다', async () => {
+                const { showtimeId } = buildHoldTicketsDto()
+                const lostTicketId = ensure(ticketIds[0])
+                const ownedTicketId = ensure(ticketIds[1])
+
+                // TTL 만료 시차로 티켓 키만 먼저 사라진 상태를 키 삭제로 재현한다(sleep 불필요).
+                const cacheService = fix.module.get<CacheService>(
+                    CacheService.getName('ticket-holding')
+                )
+                await cacheService.delete(`Ticket:{${showtimeId}}:${lostTicketId}`)
+
+                const otherHold = buildHoldTicketsDto({
+                    userId: oid(0xc2),
+                    ticketIds: [lostTicketId]
+                })
+                expect(await ticketHoldingService.holdTickets(otherHold)).toBe(true)
+
+                // 기존 고객이 갱신해도 이전 목록 중 본인 소유로 확인된 티켓만 해제해야 한다.
+                const renewHold = buildHoldTicketsDto({ userId, ticketIds: [oid(0xb0)] })
+                await ticketHoldingService.holdTickets(renewHold)
+
+                const thirdUserId = oid(0xc3)
+                const holdLost = buildHoldTicketsDto({
+                    userId: thirdUserId,
+                    ticketIds: [lostTicketId]
+                })
+                expect(await ticketHoldingService.holdTickets(holdLost)).toBe(false)
+
+                const holdOwned = buildHoldTicketsDto({
+                    userId: thirdUserId,
+                    ticketIds: [ownedTicketId]
+                })
+                expect(await ticketHoldingService.holdTickets(holdOwned)).toBe(true)
             })
         })
 

@@ -93,6 +93,22 @@ describe('createCrudSchema', () => {
             })
         })
 
+        describe('findOneAndDelete의 반환값', () => {
+            it('삭제 직전 상태(deletedAt: null)의 문서를 반환한다', async () => {
+                const returnedDoc = await fix.model.findOneAndDelete({ _id: createdDoc._id })
+
+                expect(returnedDoc?.id).toBe(createdDoc.id)
+                expect(returnedDoc).toMatchObject({ deletedAt: null })
+            })
+
+            it('일치하는 문서가 없으면(이미 삭제 포함) null을 반환한다', async () => {
+                await fix.model.findOneAndDelete({ _id: createdDoc._id })
+
+                const returnedDoc = await fix.model.findOneAndDelete({ _id: createdDoc._id })
+                expect(returnedDoc).toBeNull()
+            })
+        })
+
         describe('이미 삭제된 문서 조회 시', () => {
             beforeEach(async () => {
                 await fix.model.deleteOne({ _id: createdDoc._id })

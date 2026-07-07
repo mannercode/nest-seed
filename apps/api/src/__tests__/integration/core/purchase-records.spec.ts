@@ -1,4 +1,5 @@
 import type { PurchaseRecordsService } from 'core'
+import { pickIds, sleep } from '@mannercode/common'
 import { oid } from '@mannercode/testing'
 import { buildCreatePurchaseRecordDto, createPurchaseRecord, type AppTestContext } from '../helpers'
 
@@ -48,6 +49,18 @@ describe('PurchaseRecordsService', () => {
             const records = await purchaseRecordsService.findByUserId(oid(0x1))
 
             expect(records).toEqual([])
+        })
+
+        it('구매 기록을 최신 구매가 먼저 오도록 정렬해 반환한다', async () => {
+            const userId = oid(0x1)
+            const first = await createPurchaseRecord(fix, { userId })
+            // createdAt이 ms 단위에서 동률이 되지 않도록 두 생성 사이를 벌린다.
+            await sleep(50)
+            const second = await createPurchaseRecord(fix, { userId })
+
+            const records = await purchaseRecordsService.findByUserId(userId)
+
+            expect(pickIds(records)).toEqual([second.id, first.id])
         })
     })
 })

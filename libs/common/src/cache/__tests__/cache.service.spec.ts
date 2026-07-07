@@ -267,4 +267,16 @@ describe('CacheService', () => {
             expect(await fix.cacheService.get('key')).toBe('value')
         })
     })
+
+    describe('네임스페이스 격리', () => {
+        it('prefix가 같고 name만 다른 두 캐시는 같은 key로도 서로의 값을 보지 못한다', async () => {
+            await fix.cacheA.set('key', 'value-a')
+            expect(await fix.cacheB.get('key')).toBeNull()
+
+            // 반대 방향도 격리되고, 뒤에 쓴 값이 먼저 쓴 값을 덮지 않는다.
+            await fix.cacheB.set('key', 'value-b')
+            expect(await fix.cacheA.get('key')).toBe('value-a')
+            expect(await fix.cacheB.get('key')).toBe('value-b')
+        })
+    })
 })

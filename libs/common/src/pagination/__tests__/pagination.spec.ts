@@ -59,6 +59,11 @@ describe('PaginationDto', () => {
                 .query({ orderby: '  name  :  asc  ' })
                 .ok({ response: { orderby: { direction: 'asc', name: 'name' } } })
         })
+
+        it('page가 0이면 400을 반환한다', async () => {
+            // 저장소는 size만 가드하므로 비양수 page는 DTO 검증이 유일한 방어선이다.
+            await fix.httpClient.get('/pagination').query({ page: 0, size: 10 }).badRequest()
+        })
     })
 
     it('orderby가 이미 객체이면 그대로 유지한다', () => {

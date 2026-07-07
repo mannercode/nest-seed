@@ -323,6 +323,16 @@ describe('UsersService', () => {
                 .ok(buildExpectedPage([userA1, userA2]))
         })
 
+        it('name 검색은 대소문자를 무시한 부분 문자열로 일치시킨다', async () => {
+            // 'SER-A'는 'user-a1'의 비접두어 부분 문자열 + 대문자라, 접두어·대소문자 구분
+            // 매칭으로 바꾸는 회귀를 한 번에 잡는다.
+            await fix.httpClient
+                .get('/users')
+                .headers(adminAuth)
+                .query({ name: 'SER-A' })
+                .ok(buildExpectedPage([userA1, userA2]))
+        })
+
         it('email 부분 일치로 필터링한다', async () => {
             await fix.httpClient
                 .get('/users')

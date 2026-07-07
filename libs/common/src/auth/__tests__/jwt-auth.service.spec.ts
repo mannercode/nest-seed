@@ -40,6 +40,27 @@ describe('JwtAuthService', () => {
             expect(decoded.refreshTokenId).toEqual(expect.any(String))
         })
 
+        // 저장 형식을 직접 단언한다. Redis 키 스키마가 바뀌면 이 테스트도 갱신해야 한다.
+        it('토큰·패밀리·사용자 인덱스 키에 리프레시 만료 TTL이 설정된다', async () => {
+            const { refreshToken } = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
+
+            const decoded = new JwtService().decode<Record<string, unknown>>(refreshToken)
+            const tokenId = decoded.refreshTokenId as string
+            const familyId = decoded.familyId as string
+
+            const keys = [
+                `${fix.jwtService.prefix}:{${familyId}}:token:${tokenId}`,
+                `${fix.jwtService.prefix}:{${familyId}}:family`,
+                `${fix.jwtService.prefix}:user:{u1}:families`
+            ]
+            for (const key of keys) {
+                // TTL이 빠지면 PTTL이 -1이라 하한이 회귀를 잡고, 상한 3000은 픽스처 refreshTokenTtlMs와 같아 리프레시 만료에 맞춘 값임을 고정한다.
+                const pttl = await fix.redis.pttl(key)
+                expect(pttl).toBeGreaterThan(0)
+                expect(pttl).toBeLessThanOrEqual(3000)
+            }
+        })
+
         it('액세스 토큰 TTL이 1초 미만이면 발급 즉시 만료된다', async () => {
             const { createJwtAuthServiceFixtureWithShortTtl } =
                 await import('./jwt-auth.service.fixture')

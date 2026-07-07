@@ -128,3 +128,26 @@ export async function createRedisModuleUrlWithOptionsFixture() {
 
     return { redis, teardown }
 }
+
+export async function createRedisModuleDbSelectionFixture() {
+    // TESTLIB_REDIS_URL에는 db 경로가 없으므로 db0 연결은 기본 db(0)에 붙는다.
+    const { close, module } = await createTestContext({
+        imports: [
+            RedisModule.forRoot({ type: 'single', url: process.env.TESTLIB_REDIS_URL }, 'db0'),
+            RedisModule.forRoot(
+                { type: 'single', url: process.env.TESTLIB_REDIS_URL, options: { db: 1 } },
+                'db1'
+            )
+        ]
+    })
+
+    const redisDb0 = module.get<RedisConnection>(getRedisConnectionToken('db0'))
+    const redisDb1 = module.get<RedisConnection>(getRedisConnectionToken('db1'))
+
+    // 연결 종료는 RedisConnectionRegistry가 모듈 destroy에서 책임진다.
+    const teardown = async () => {
+        await close()
+    }
+
+    return { redisDb0, redisDb1, teardown }
+}

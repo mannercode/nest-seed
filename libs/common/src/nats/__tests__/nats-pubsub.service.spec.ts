@@ -71,6 +71,21 @@ describe('NatsPubSubService', () => {
         expect(received).toEqual(['before-unsub'])
     })
 
+    it('onModuleDestroy 후에는 공유 연결이 살아 있어도 핸들러가 호출되지 않는다', async () => {
+        const received: string[] = []
+        await fix.pubSubB.subscribe(subject, (msg) => received.push(msg))
+
+        // 실제 배치에서는 연결을 전역 NatsModule이 소유하므로, 연결 종료 없이 서비스 destroy만으로 구독이 끊겨야 한다.
+        await fix.pubSubB.onModuleDestroy()
+
+        await fix.pubSubA.publish(subject, 'after-destroy')
+        // "아무 메시지도 오지 않음"을 보장할 신호가 없어 잠깐 대기 후 검사한다.
+        // 부하 시 50ms는 부족하므로 200ms 여유를 둔다.
+        await new Promise((r) => setTimeout(r, 200))
+
+        expect(received).toEqual([])
+    })
+
     it('구독한 적 없는 subject를 구독 해제해도 아무 일도 일어나지 않는다', async () => {
         await expect(fix.pubSubB.unsubscribe('never-subscribed', () => {})).resolves.toBeUndefined()
     })

@@ -1,4 +1,5 @@
 import { ensure, pickIds, Require } from '@mannercode/common'
+import { oid } from '@mannercode/testing'
 import { TicketStatus, type TicketDto, type UserDto } from 'core'
 import { PaymentStatus } from 'infrastructure'
 import {
@@ -312,6 +313,21 @@ describe('PurchaseService', () => {
             const tickets = await createShowtimeAndTickets(fix)
 
             const createDto = buildCreatePurchaseDto(tickets.slice(0, 1))
+
+            await fix.httpClient
+                .post('/purchases')
+                .headers({ Authorization: `Bearer ${accessToken}` })
+                .body(createDto)
+                .badRequest(Errors.Purchase.NotHeld())
+        })
+
+        it('다른 사용자가 보유한 티켓을 구매하면 400을 반환한다', async () => {
+            const { createShowtimeAndTickets, holdTickets } = await import('./purchase.utils')
+            const tickets = await createShowtimeAndTickets(fix)
+            // 보유 검증은 결제자 본인의 보유만 인정한다 — 남이 선점한 좌석은 미보유와 동일하게 거절돼야 한다.
+            const heldByOther = await holdTickets(fix, oid(0xff), tickets)
+
+            const createDto = buildCreatePurchaseDto(heldByOther)
 
             await fix.httpClient
                 .post('/purchases')

@@ -27,6 +27,20 @@ describe('expectEqualUnsorted', () => {
         expect(() => expectEqualUnsorted(actual, expected)).not.toThrow()
     })
 
+    it('expected 쪽 중첩 필드의 매처가 있는 키도 정렬에서 제외한다', () => {
+        // createdAt이 정렬 키에 남으면 actual은 실제 값·expected는 매처 직렬화 값으로 정렬돼 짝이 어긋난다.
+        const actual = [
+            { createdAt: { at: 'z' }, name: 'a' },
+            { createdAt: { at: 'a' }, name: 'b' }
+        ]
+        const expected = [
+            { createdAt: { at: expect.any(String) }, name: 'b' },
+            { createdAt: { at: expect.any(String) }, name: 'a' }
+        ]
+
+        expect(() => expectEqualUnsorted(actual, expected)).not.toThrow()
+    })
+
     it('빈 배열끼리는 같다고 판정한다', () => {
         expect(() => expectEqualUnsorted([], [])).not.toThrow()
     })

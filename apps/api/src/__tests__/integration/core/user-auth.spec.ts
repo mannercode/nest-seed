@@ -65,6 +65,17 @@ describe('UserAuthentication', () => {
                 .headers({ Authorization: 'Bearer invalid-token' })
                 .unauthorized(Errors.Auth.Unauthorized())
         })
+
+        it('리프레시 토큰을 액세스 토큰 자리에 쓰면 401을 반환한다', async () => {
+            // 두 토큰은 iss/aud가 같아 secret 분리만이 방벽이다 — 이 검증이 무너지면
+            // 수명이 긴 리프레시 토큰이 로그아웃으로도 회수되지 않는 액세스 토큰으로 동작한다.
+            const { refreshToken } = await loginUser(fix, credentials)
+
+            await fix.httpClient
+                .get('/users/me')
+                .headers({ Authorization: `Bearer ${refreshToken}` })
+                .unauthorized(Errors.Auth.Unauthorized())
+        })
     })
 
     describe('DELETE /users/me', () => {
