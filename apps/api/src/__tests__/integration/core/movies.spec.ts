@@ -5,6 +5,7 @@ import {
     buildCreateMovieDto,
     createMovie,
     createShowtimes,
+    createUnpublishedMovie,
     Errors,
     testAssets,
     uploadAndFinalizeAsset,
@@ -59,7 +60,9 @@ describe('MoviesService', () => {
             })
 
             it('imageUrls로 이미지를 다운로드할 수 있다', async () => {
-                const response = await fetch(ensure(movie.imageUrls[0]))
+                const { body } = await fix.httpClient.get(`/movies/${movie.id}`).ok()
+
+                const response = await fetch(ensure(body.imageUrls[0]))
                 expect(response.ok).toBe(true)
 
                 const buffer = Buffer.from(await response.bytes())
@@ -71,6 +74,14 @@ describe('MoviesService', () => {
             await fix.httpClient
                 .get(`/movies/${nullObjectId}`)
                 .notFound(Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]))
+        })
+
+        it('미공개(draft) 영화면 404를 반환한다', async () => {
+            const draft = await createUnpublishedMovie(fix)
+
+            await fix.httpClient
+                .get(`/movies/${draft.id}`)
+                .notFound(Errors.Movies.NotFound(draft.id))
         })
     })
 
@@ -113,17 +124,6 @@ describe('MoviesService', () => {
         })
     })
 
-    describe('GET /movies/:id (공개 조회)', () => {
-        it('미공개(draft) 영화는 404를 반환한다', async () => {
-            const { createUnpublishedMovie } = await import('../helpers')
-            const draft = await createUnpublishedMovie(fix)
-
-            await fix.httpClient
-                .get(`/movies/${draft.id}`)
-                .notFound(Errors.Movies.NotFound(draft.id))
-        })
-    })
-
     describe('DELETE /movies/:id', () => {
         it('영화가 존재하면 204를 반환한다', async () => {
             const movie = await createMovie(fix)
@@ -131,7 +131,7 @@ describe('MoviesService', () => {
             await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
         })
 
-        it('삭제 후에는 조회 시 404가 반환된다', async () => {
+        it('삭제 후에는 조회 시 404를 반환한다', async () => {
             const movie = await createMovie(fix)
 
             await fix.httpClient.delete(`/movies/${movie.id}`).noContent()

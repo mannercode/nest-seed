@@ -1,3 +1,4 @@
+import type { UserDto } from 'core'
 import { oid } from '@mannercode/testing'
 import {
     createPurchaseRecord,
@@ -66,29 +67,33 @@ describe('UserAuthentication', () => {
         })
     })
 
-    describe('GET /users', () => {
-        it('액세스 토큰이 검증되지 않으면 401을 반환한다', async () => {
-            await fix.httpClient
-                .get('/users')
-                .headers({ Authorization: 'Bearer invalid-token' })
-                .unauthorized(Errors.Auth.Unauthorized())
-        })
-    })
-
     describe('DELETE /users/me', () => {
-        it('본인 계정을 삭제하고 204를 반환한다', async () => {
-            const { accessToken, user } = await loginUser(fix, credentials)
+        describe('로그인했을 때', () => {
+            let accessToken: string
+            let user: UserDto
 
-            await fix.httpClient
-                .delete('/users/me')
-                .headers({ Authorization: `Bearer ${accessToken}` })
-                .noContent()
+            beforeEach(async () => {
+                ;({ accessToken, user } = await loginUser(fix, credentials))
+            })
 
-            // 삭제 뒤 같은 토큰으로 본인 정보를 조회하면 더 이상 존재하지 않는다.
-            await fix.httpClient
-                .get('/users/me')
-                .headers({ Authorization: `Bearer ${accessToken}` })
-                .notFound(Errors.Mongoose.MultipleDocumentsNotFound([user.id]))
+            it('204를 반환한다', async () => {
+                await fix.httpClient
+                    .delete('/users/me')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .noContent()
+            })
+
+            it('삭제 후 같은 토큰으로 조회하면 404를 반환한다', async () => {
+                await fix.httpClient
+                    .delete('/users/me')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .noContent()
+
+                await fix.httpClient
+                    .get('/users/me')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .notFound(Errors.Mongoose.MultipleDocumentsNotFound([user.id]))
+            })
         })
 
         it('인증 없이 호출하면 401을 반환한다', async () => {
@@ -97,15 +102,35 @@ describe('UserAuthentication', () => {
     })
 
     describe('PATCH /users/me', () => {
-        it('본인 정보를 수정하고 수정된 DTO를 반환한다', async () => {
-            const { accessToken, user } = await loginUser(fix, credentials)
+        describe('로그인했을 때', () => {
+            let accessToken: string
+            let user: UserDto
             const updateDto = { name: 'updated-name' }
 
-            await fix.httpClient
-                .patch('/users/me')
-                .headers({ Authorization: `Bearer ${accessToken}` })
-                .body(updateDto)
-                .ok({ ...user, ...updateDto })
+            beforeEach(async () => {
+                ;({ accessToken, user } = await loginUser(fix, credentials))
+            })
+
+            it('수정된 DTO를 반환한다', async () => {
+                await fix.httpClient
+                    .patch('/users/me')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body(updateDto)
+                    .ok({ ...user, ...updateDto })
+            })
+
+            it('수정 내용이 DB에 저장된다', async () => {
+                await fix.httpClient
+                    .patch('/users/me')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body(updateDto)
+                    .ok()
+
+                await fix.httpClient
+                    .get('/users/me')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .ok({ ...user, ...updateDto })
+            })
         })
 
         it('인증 없이 호출하면 401을 반환한다', async () => {

@@ -43,8 +43,8 @@ describe('UserAuthenticationService', () => {
         })
     })
 
-    describe('findUserByCredentials의 타이밍 평탄화', () => {
-        it('이메일이 없어도 validate를 호출하고 null을 반환한다', async () => {
+    describe('findUserByCredentials', () => {
+        it('가입된 이메일이 없으면 더미 해시로 validate를 호출하고 null을 반환한다', async () => {
             const repo = { findByEmailWithPassword: jest.fn().mockResolvedValue(null) }
             const svc = new UserAuthenticationService(repo as any, {} as any)
             const validateSpy = jest.spyOn(svc, 'validate')
@@ -56,13 +56,13 @@ describe('UserAuthenticationService', () => {
 
             expect(result).toBeNull()
             expect(validateSpy).toHaveBeenCalledTimes(1)
-            // 더미 해시와 비교했는지 확인 (bcrypt 형식이지만 실제 고객 해시는 아님).
+            // 가입 여부에 따른 응답 시간 차이를 없애기 위해 사용자가 없어도 bcrypt 형식 더미 해시와 비교한다.
             const [, hashArg] = ensure(validateSpy.mock.calls[0])
             expect(typeof hashArg).toBe('string')
             expect(hashArg.startsWith('$2')).toBe(true)
         })
 
-        it('비밀번호가 틀린 기존 고객에 대해 validate를 호출하고 null을 반환한다', async () => {
+        it('비밀번호가 일치하지 않으면 저장된 해시로 validate를 호출하고 null을 반환한다', async () => {
             const realHash = await service.hash('correct')
             const repo = {
                 findByEmailWithPassword: jest

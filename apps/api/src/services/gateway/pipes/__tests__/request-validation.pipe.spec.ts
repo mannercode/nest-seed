@@ -11,17 +11,24 @@ describe('RequestValidationPipe', () => {
     })
     afterEach(() => fix.teardown())
 
-    describe('객체', () => {
+    describe('POST /', () => {
         it('유효한 페이로드는 검증을 통과한다', async () => {
             await fix.httpClient.post('/').body({ date: nullDate, sampleId: 'id' }).created()
         })
 
-        it('유효하지 않거나 알 수 없는 필드가 있으면 400을 반환한다', async () => {
-            await fix.httpClient.post('/').body({ wrong: 'id' }).badRequest()
+        it('알 수 없는 필드가 있으면 400을 반환한다', async () => {
+            await fix.httpClient
+                .post('/')
+                .body({ date: nullDate, sampleId: 'id', unknown: 'x' })
+                .badRequest()
+        })
+
+        it('필수 필드가 누락되면 400을 반환한다', async () => {
+            await fix.httpClient.post('/').body({ date: nullDate }).badRequest()
         })
     })
 
-    describe('배열', () => {
+    describe('POST /array', () => {
         it('유효한 배열은 검증을 통과한다', async () => {
             await fix.httpClient
                 .post('/array')
@@ -37,7 +44,7 @@ describe('RequestValidationPipe', () => {
         })
     })
 
-    describe('중첩 배열', () => {
+    describe('POST /nested', () => {
         it('유효한 중첩 배열은 검증을 통과한다', async () => {
             await fix.httpClient
                 .post('/nested')

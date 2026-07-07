@@ -24,27 +24,13 @@ describe('BaseConfigService', () => {
         })
 
         it('환경변수가 정의되어 있지 않으면 예외를 던진다', () => {
-            class TestConfigService extends BaseConfigService {
-                constructor(configService: ConfigService) {
-                    super(configService)
-                }
-            }
-
-            const configService = { get: () => undefined } as unknown as ConfigService
-            const service = new TestConfigService(configService)
+            const service = createServiceWithConfig({})
 
             expect(() => service.getString('SOME_KEY')).toThrow("Key 'SOME_KEY' is not defined")
         })
 
         it('환경변수 값이 빈 문자열이면 예외를 던진다', () => {
-            class TestConfigService extends BaseConfigService {
-                constructor(configService: ConfigService) {
-                    super(configService)
-                }
-            }
-
-            const configService = { get: () => '' } as unknown as ConfigService
-            const service = new TestConfigService(configService)
+            const service = createServiceWithConfig({ SOME_KEY: '' })
 
             expect(() => service.getString('SOME_KEY')).toThrow("Key 'SOME_KEY' is not defined")
         })

@@ -112,8 +112,8 @@ describe('AssetsService', () => {
         })
     })
 
-    describe('업로드 완료 처리', () => {
-        describe('업로드가 완료된 에셋', () => {
+    describe('finalizeUpload', () => {
+        describe('업로드가 완료되었을 때', () => {
             let assetId: string
 
             beforeEach(async () => {
@@ -144,7 +144,7 @@ describe('AssetsService', () => {
             })
         })
 
-        describe('업로드가 만료된 에셋', () => {
+        describe('업로드가 만료되었을 때', () => {
             let assetId: string
 
             beforeEach(async () => {
@@ -234,7 +234,7 @@ describe('AssetsService', () => {
                 await expect(assetsService.deleteMany(pickIds(assets))).resolves.toBeUndefined()
             })
 
-            it('삭제 후에는 조회 시 404가 반환된다', async () => {
+            it('삭제 후에는 조회 시 404를 던진다', async () => {
                 await assetsService.deleteMany([ensure(assets[0]).id])
 
                 await expect(assetsService.getMany([ensure(assets[0]).id])).rejects.toMatchObject({
@@ -253,8 +253,15 @@ describe('AssetsService', () => {
             })
         })
 
-        it('에셋 ID 목록에 없는 ID가 섞여 있어도 예외 없이 끝난다', async () => {
-            await expect(assetsService.deleteMany([nullObjectId])).resolves.toBeUndefined()
+        it('에셋 ID 목록에 없는 ID가 섞여 있어도 예외 없이 존재하는 에셋을 삭제한다', async () => {
+            const asset = await uploadAndFinalizeAsset(fix, file)
+
+            const mixedIds = [asset.id, nullObjectId]
+            await expect(assetsService.deleteMany(mixedIds)).resolves.toBeUndefined()
+
+            await expect(assetsService.getMany([asset.id])).rejects.toMatchObject({
+                status: HttpStatus.NOT_FOUND
+            })
         })
 
         it('빈 배열을 넘기면 즉시 반환한다', async () => {
@@ -279,7 +286,7 @@ describe('AssetsService', () => {
         })
     })
 
-    describe('cleanupExpiredUploadsJob', () => {
+    describe('cleanupExpiredUploads', () => {
         let fireOnTick: () => Promise<void>
         let assetId: string
 

@@ -1,4 +1,4 @@
-describe('예외 처리', () => {
+describe('toThrow', () => {
     describe('async 함수', () => {
         it('값으로 성공 완료된다', async () => {
             const returnValue = async () => 'ok'

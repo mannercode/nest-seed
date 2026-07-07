@@ -1,9 +1,10 @@
+import type { AdminDto } from 'core'
 import { createAdmin, Errors, loginAdmin, type AppTestContext } from '../helpers'
 
 // root는 DB 도큐먼트 없이 env 자격증명(`ROOT_PASSWORD`)으로 Basic Auth 인증되고,
 // admin lifecycle (생성/삭제)만 책임진다.
 // admin은 DB 도큐먼트이고 자기 자신의 정보 조회·수정만 한다.
-describe('Root + Admin lifecycle', () => {
+describe('AdminManagement', () => {
     let fix: AppTestContext
     const adminCredentials = { email: 'admin@mail.com', password: 'password' }
     const rootPassword = process.env.ROOT_PASSWORD
@@ -20,7 +21,7 @@ describe('Root + Admin lifecycle', () => {
     })
     afterEach(() => fix.teardown())
 
-    describe('POST /admins (root creates admin)', () => {
+    describe('POST /admins (root의 admin 생성)', () => {
         it('Basic Auth가 유효하면 admin을 생성한다', async () => {
             await fix.httpClient
                 .post('/admins')
@@ -76,8 +77,8 @@ describe('Root + Admin lifecycle', () => {
         })
     })
 
-    describe('DELETE /admins/:id (root deletes admin)', () => {
-        it('Basic Auth가 유효하면 admin을 삭제한다', async () => {
+    describe('DELETE /admins/:id (root의 admin 삭제)', () => {
+        it('Basic Auth가 유효하면 204를 반환한다', async () => {
             const created = await createAdmin(fix, adminCredentials)
 
             await fix.httpClient
@@ -86,7 +87,7 @@ describe('Root + Admin lifecycle', () => {
                 .noContent()
         })
 
-        it('Basic Auth가 없거나 잘못되면 401을 반환한다', async () => {
+        it('Basic Auth가 잘못되면 401을 반환한다', async () => {
             const created = await createAdmin(fix, adminCredentials)
 
             await fix.httpClient
@@ -155,91 +156,98 @@ describe('Root + Admin lifecycle', () => {
         })
     })
 
-    describe('PATCH /admins/me (admin updates self)', () => {
-        it('admin 토큰으로 자기 이름을 수정한다', async () => {
-            await createAdmin(fix, adminCredentials)
-            const { accessToken } = await loginAdmin(fix, adminCredentials)
+    describe('PATCH /admins/me (admin 본인 수정)', () => {
+        describe('로그인했을 때', () => {
+            let admin: AdminDto
+            let accessToken: string
+            let refreshToken: string
 
-            await fix.httpClient
-                .patch('/admins/me')
-                .headers({ Authorization: `Bearer ${accessToken}` })
-                .body({ name: 'renamed' })
-                .ok(expect.objectContaining({ email: adminCredentials.email, name: 'renamed' }))
-        })
+            beforeEach(async () => {
+                await createAdmin(fix, adminCredentials)
+                ;({ accessToken, admin, refreshToken } = await loginAdmin(fix, adminCredentials))
+            })
 
-        it('자기 password를 바꾸면 새 password로 로그인할 수 있다', async () => {
-            await createAdmin(fix, adminCredentials)
-            const { accessToken } = await loginAdmin(fix, adminCredentials)
+            it('이름을 수정하면 수정된 admin을 반환한다', async () => {
+                await fix.httpClient
+                    .patch('/admins/me')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body({ name: 'renamed' })
+                    .ok({ ...admin, name: 'renamed' })
+            })
 
-            await fix.httpClient
-                .patch('/admins/me')
-                .headers({ Authorization: `Bearer ${accessToken}` })
-                .body({ password: 'newPassword' })
-                .ok()
+            it('수정 내용이 DB에 저장된다', async () => {
+                await fix.httpClient
+                    .patch('/admins/me')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body({ name: 'renamed' })
+                    .ok()
 
-            await fix.httpClient
-                .post('/admins/login')
-                .body({ email: adminCredentials.email, password: 'newPassword' })
-                .ok({ accessToken: expect.any(String), refreshToken: expect.any(String) })
-        })
+                await fix.httpClient
+                    .get('/admins/me')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .ok({ ...admin, name: 'renamed' })
+            })
 
-        it('password를 바꾸면 기존 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
-            await createAdmin(fix, adminCredentials)
-            const { accessToken, refreshToken } = await loginAdmin(fix, adminCredentials)
+            it('자기 password를 바꾸면 새 password로 로그인할 수 있다', async () => {
+                await fix.httpClient
+                    .patch('/admins/me')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body({ password: 'newPassword' })
+                    .ok()
 
-            await fix.httpClient
-                .patch('/admins/me')
-                .headers({ Authorization: `Bearer ${accessToken}` })
-                .body({ password: 'newPassword' })
-                .ok()
+                await fix.httpClient
+                    .post('/admins/login')
+                    .body({ email: adminCredentials.email, password: 'newPassword' })
+                    .ok({ accessToken: expect.any(String), refreshToken: expect.any(String) })
+            })
 
-            await fix.httpClient
-                .post('/admins/refresh')
-                .body({ refreshToken })
-                .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
+            it('password를 바꾸면 기존 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
+                await fix.httpClient
+                    .patch('/admins/me')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body({ password: 'newPassword' })
+                    .ok()
+
+                await fix.httpClient
+                    .post('/admins/refresh')
+                    .body({ refreshToken })
+                    .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
+            })
+
+            it('email을 변경하면 변경된 email을 반환한다', async () => {
+                await fix.httpClient
+                    .patch('/admins/me')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body({ email: 'renamed@mail.com' })
+                    .ok({ ...admin, email: 'renamed@mail.com' })
+            })
+
+            it('다른 admin과 같은 email로 바꾸려 하면 409를 반환한다', async () => {
+                await createAdmin(fix, { email: 'a@mail.com', password: 'p' })
+
+                await fix.httpClient
+                    .patch('/admins/me')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body({ email: 'a@mail.com' })
+                    .conflict()
+            })
+
+            it('자기 도큐먼트가 삭제되어 없으면 404를 반환한다', async () => {
+                await fix.httpClient
+                    .delete(`/admins/${admin.id}`)
+                    .headers({ Authorization: rootBasic })
+                    .noContent()
+
+                await fix.httpClient
+                    .patch('/admins/me')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body({ name: 'x' })
+                    .notFound()
+            })
         })
 
         it('토큰이 없으면 401을 반환한다', async () => {
             await fix.httpClient.patch('/admins/me').body({ name: 'x' }).unauthorized()
-        })
-
-        it('email을 변경하면 변경된 email을 반환한다', async () => {
-            await createAdmin(fix, adminCredentials)
-            const { accessToken } = await loginAdmin(fix, adminCredentials)
-
-            await fix.httpClient
-                .patch('/admins/me')
-                .headers({ Authorization: `Bearer ${accessToken}` })
-                .body({ email: 'renamed@mail.com' })
-                .ok(expect.objectContaining({ email: 'renamed@mail.com' }))
-        })
-
-        it('다른 admin과 같은 email로 바꾸려 하면 409를 반환한다', async () => {
-            await createAdmin(fix, { email: 'a@mail.com', password: 'p' })
-            await createAdmin(fix, adminCredentials)
-            const { accessToken } = await loginAdmin(fix, adminCredentials)
-
-            await fix.httpClient
-                .patch('/admins/me')
-                .headers({ Authorization: `Bearer ${accessToken}` })
-                .body({ email: 'a@mail.com' })
-                .conflict()
-        })
-
-        it('자기 도큐먼트가 삭제되어 없으면 404를 반환한다', async () => {
-            const created = await createAdmin(fix, adminCredentials)
-            const { accessToken } = await loginAdmin(fix, adminCredentials)
-
-            await fix.httpClient
-                .delete(`/admins/${created.id}`)
-                .headers({ Authorization: rootBasic })
-                .noContent()
-
-            await fix.httpClient
-                .patch('/admins/me')
-                .headers({ Authorization: `Bearer ${accessToken}` })
-                .body({ name: 'x' })
-                .notFound()
         })
 
         it('중복 키 외의 저장 오류는 ConflictException으로 바꾸지 않고 그대로 던진다', async () => {

@@ -105,11 +105,10 @@ describe('CacheService', () => {
 
             expect(maxConcurrent).toBe(1)
             expect(executedCount).toBe(results.filter((r) => r.ran).length)
-            expect(results.filter((r) => r.ran)).toHaveLength(executedCount)
             expect(executedCount).toBeGreaterThanOrEqual(1)
         }, 30_000)
 
-        it('만료된 락을 다른 호출자가 잡으면 원래 호출자의 해제가 새 락을 지우지 않는다', async () => {
+        it('다른 호출자가 점유한 락은 획득하지 못하고 기존 락을 건드리지 않는다', async () => {
             await fix.cacheService.set('lock:job', 'other-runner', 10_000)
 
             const result = await fix.cacheService.withLock('job', 5_000, async () => {
@@ -117,6 +116,24 @@ describe('CacheService', () => {
             })
 
             expect(result.ran).toBe(false)
+            const value = await fix.cacheService.get('lock:job')
+            expect(value).toBe('other-runner')
+        })
+
+        it('만료된 락을 다른 호출자가 잡으면 원래 호출자의 해제가 새 락을 지우지 않는다', async () => {
+            const ttl = 1000
+
+            const result = await fix.cacheService.withLock('job', ttl, async () => {
+                // TTL에 500ms 안전 마진을 더해 콜백이 락보다 오래 살아남는 상황을 만든다.
+                await sleep(ttl + 500)
+                expect(await fix.cacheService.get('lock:job')).toBeNull()
+
+                // 만료로 비워진 자리를 다른 호출자가 새로 잡는다.
+                await fix.cacheService.set('lock:job', 'other-runner', 10_000)
+            })
+
+            // 콜백이 끝나면 원래 호출자의 해제가 실행되지만, 토큰이 달라 새 락은 남는다.
+            expect(result.ran).toBe(true)
             const value = await fix.cacheService.get('lock:job')
             expect(value).toBe('other-runner')
         })
@@ -157,13 +174,16 @@ describe('CacheService', () => {
         })
 
         it('같은 프로세스에서 잇따라 락을 얻어도 토큰이 서로 다르다', async () => {
-            // 잇따라 획득·해제한 뒤 락 키가 남아 있지 않은지 확인한다.
-            await fix.cacheService.withLock('job', 5_000, async () => {})
-            await fix.cacheService.withLock('job', 5_000, async () => {})
+            // 락을 쥔 동안 락 키에 저장된 값이 이번 획득의 토큰이다.
+            const captureToken = () =>
+                fix.cacheService.withLock('job', 5_000, () => fix.cacheService.get('lock:job'))
 
-            // 락이 해제되었는지 확인한다.
-            const value = await fix.cacheService.get('lock:job')
-            expect(value).toBeNull()
+            const first = await captureToken()
+            const second = await captureToken()
+
+            expect(first).toEqual({ ran: true, result: expect.any(String) })
+            expect(second).toEqual({ ran: true, result: expect.any(String) })
+            expect(first).not.toEqual(second)
         })
     })
 
@@ -225,7 +245,10 @@ describe('CacheService', () => {
             expect(elapsed).toBeLessThan(1000)
         })
 
-        it('pollMs가 0이어도 락 획득이 정상 동작한다', async () => {
+        it('pollMs가 0이어도 선점된 락이 풀리면 획득해 실행한다', async () => {
+            // 락을 짧게 선점해 첫 시도를 실패시켜야 pollMs가 쓰이는 재시도 경로가 실행된다.
+            await fix.cacheService.set('lock:job', 'other', 200)
+
             const result = await fix.cacheService.withLockBlocking('job', 5_000, async () => 1, {
                 pollMs: 0
             })

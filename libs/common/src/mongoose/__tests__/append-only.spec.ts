@@ -27,11 +27,11 @@ describe('AppendOnly', () => {
         })
 
         it('findById로 문서를 조회할 수 있다', async () => {
-            const found = await fix.model.findById(createdDoc._id).lean({ virtuals: true })
+            const found = await fix.model.findById(createdDoc._id).lean()
             expect(found).toMatchObject({ name: 'name' })
         })
 
-        describe('변경/삭제 메서드는 모두 차단된다', () => {
+        describe('변경/삭제 메서드를 호출하면', () => {
             it('updateOne은 예외를 던진다', async () => {
                 await expect(
                     fix.model.updateOne({ _id: createdDoc._id }, { name: 'changed' }).exec()
@@ -87,7 +87,7 @@ describe('AppendOnly', () => {
     describe('AppendOnlyRepository', () => {
         it('append() 도메인 메서드로 새 문서를 저장한다', async () => {
             const dto = await fix.repository.append('via-append')
-            const found = await fix.model.findById(dto.id).lean({ virtuals: true })
+            const found = await fix.model.findById(dto.id).lean()
             expect(found).toMatchObject({ name: 'via-append' })
         })
     })

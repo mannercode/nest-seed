@@ -85,6 +85,8 @@ describe('JsonUtil', () => {
             expect(converted.level1.date).toBeInstanceOf(Date)
             expect(converted.level1.date.toISOString()).toEqual('2023-06-18T12:12:34.567Z')
             expect(converted.level1.level2.date).toEqual([new Date('2023-06-19T12:12:34.567Z')])
+            expect(converted.level1.level2.date2).toBe(nullDate)
+            expect(converted.level1.level2.null).toBeNull()
         })
 
         it('Date.toISOString 형식과 다른 날짜 문자열은 변환하지 않는다', () => {

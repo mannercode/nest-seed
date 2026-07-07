@@ -1,4 +1,4 @@
-describe('jest.expect 예제', () => {
+describe('expect', () => {
     it('toBe와 toEqual로 값을 비교한다', () => {
         // toEqual은 객체나 배열의 각 프로퍼티와 요소 값을 재귀적으로 비교한다.
         // 참조가 달라도 내용이 같으면 통과한다.

@@ -7,7 +7,7 @@ const PURCHASED_LOG = 'purchase observed'
 const countLogCalls = (logSpy: jest.SpyInstance, message: string) =>
     logSpy.mock.calls.filter(([msg]) => msg === message).length
 
-describe('PurchaseEvents 구독자', () => {
+describe('PurchaseEvents', () => {
     let fix: AppTestContext
     let events: PurchaseEvents
     let logSpy: jest.SpyInstance

@@ -1,17 +1,14 @@
 import { nullObjectId } from '@mannercode/testing'
-import { MovieGenre, MovieRating, type MovieDto, type MoviesService } from 'core'
+import { MovieGenre, MovieRating, type MovieDto } from 'core'
 import { createUnpublishedMovie, Errors, type AppTestContext } from '../helpers'
 
 describe('MoviesPublish', () => {
     let fix: AppTestContext
-    let moviesService: MoviesService
 
     beforeEach(async () => {
         const { createAppTestContext } = await import('../helpers')
-        const { MoviesService } = await import('core')
         const { AdminAuthGuard } = await import('gateway')
         fix = await createAppTestContext({ ignoreGuards: [AdminAuthGuard] })
-        moviesService = fix.module.get(MoviesService)
     })
     afterEach(() => fix.teardown())
 
@@ -50,12 +47,18 @@ describe('MoviesPublish', () => {
                     .post(`/movies/${movie.id}/publish`)
                     .ok()
 
-                const moviePage = await moviesService.searchPage({ title: `MovieTitle` })
+                const { body: moviePage } = await fix.httpClient
+                    .get('/movies')
+                    .query({ title: 'MovieTitle' })
+                    .ok()
                 expect(moviePage.items[0]).toEqual(publishedMovie)
             })
 
             it('공개 전에는 검색에서 노출되지 않는다', async () => {
-                const moviePage = await moviesService.searchPage({ title: `MovieTitle` })
+                const { body: moviePage } = await fix.httpClient
+                    .get('/movies')
+                    .query({ title: 'MovieTitle' })
+                    .ok()
                 expect(moviePage.items).toHaveLength(0)
             })
         })

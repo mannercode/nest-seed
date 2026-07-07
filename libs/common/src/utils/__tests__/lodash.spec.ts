@@ -218,6 +218,11 @@ describe('isEqual', () => {
         expect(isEqual([], {})).toBe(false)
     })
 
+    it('빈 객체와 빈 배열을 비교하면 true를 반환한다 (얕은 비교 한계)', () => {
+        // 배열 가드가 첫 인자만 검사해 a가 객체면 키 비교로 넘어가고, 양쪽 키가 모두 비어 true가 된다.
+        expect(isEqual({}, [])).toBe(true)
+    })
+
     it('순환 참조 객체끼리 비교하면 RangeError를 던진다', () => {
         const a: any = { x: 1 }
         a.self = a

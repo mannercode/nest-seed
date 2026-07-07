@@ -199,7 +199,7 @@ describe('UsersService', () => {
             await fix.httpClient.delete(`/users/${user.id}`).headers(adminAuth).noContent()
         })
 
-        it('삭제 후에는 조회 시 404가 반환된다', async () => {
+        it('삭제 후에는 조회 시 404를 반환한다', async () => {
             const user = await createUser(fix)
 
             await fix.httpClient.delete(`/users/${user.id}`).headers(adminAuth).noContent()
@@ -249,14 +249,14 @@ describe('UsersService', () => {
             target = await createUser(fix, { email: 'target@mail.com' })
         })
 
-        it('user 토큰으로 GET /users/:id에 접근하면 통과하지 못한다', async () => {
+        it('user 토큰으로 GET /users/:id에 접근하면 401을 반환한다', async () => {
             await fix.httpClient
                 .get(`/users/${target.id}`)
                 .headers(userAuth)
                 .unauthorized(Errors.Auth.Unauthorized())
         })
 
-        it('user 토큰으로 PATCH /users/:id에 접근하면 통과하지 못한다', async () => {
+        it('user 토큰으로 PATCH /users/:id에 접근하면 401을 반환한다', async () => {
             await fix.httpClient
                 .patch(`/users/${target.id}`)
                 .headers(userAuth)
@@ -264,14 +264,14 @@ describe('UsersService', () => {
                 .unauthorized(Errors.Auth.Unauthorized())
         })
 
-        it('user 토큰으로 DELETE /users/:id에 접근하면 통과하지 못한다', async () => {
+        it('user 토큰으로 DELETE /users/:id에 접근하면 401을 반환한다', async () => {
             await fix.httpClient
                 .delete(`/users/${target.id}`)
                 .headers(userAuth)
                 .unauthorized(Errors.Auth.Unauthorized())
         })
 
-        it('user 토큰으로 GET /users 목록에 접근하면 통과하지 못한다', async () => {
+        it('user 토큰으로 GET /users 목록에 접근하면 401을 반환한다', async () => {
             await fix.httpClient
                 .get('/users')
                 .headers(userAuth)

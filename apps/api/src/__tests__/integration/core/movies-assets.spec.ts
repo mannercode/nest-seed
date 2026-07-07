@@ -157,7 +157,7 @@ describe('MoviesAssets', () => {
                 await expect(getImageUrls()).resolves.toEqual([expect.any(String)])
             })
 
-            it('두 번 호출해도 204를 반환한다', async () => {
+            it('두 번 호출해도 에셋은 한 번만 추가된다', async () => {
                 await fix.httpClient
                     .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
                     .noContent()

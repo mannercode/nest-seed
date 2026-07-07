@@ -5,7 +5,6 @@ import { HttpSuccessLoggerInterceptor } from '../success-logger.interceptor'
 
 export type SuccessLoggerInterceptorFixture = {
     httpClient: HttpTestClient
-    spyError: jest.SpyInstance
     spyVerbose: jest.SpyInstance
     teardown: () => Promise<void>
 }
@@ -14,11 +13,6 @@ export type SuccessLoggerInterceptorFixture = {
 class TestController {
     @Get('exclude-path')
     async getExcludePath() {
-        return { result: 'success' }
-    }
-
-    @Get('also-excluded')
-    async getAlsoExcluded() {
         return { result: 'success' }
     }
 
@@ -44,11 +38,10 @@ export async function createSuccessLoggerInterceptorFixture(providers: Provider[
 
     const { Logger } = await import('@nestjs/common')
     const spyVerbose = jest.spyOn(Logger, 'verbose')
-    const spyError = jest.spyOn(Logger, 'error')
 
     const teardown = async () => {
         await ctx.close()
     }
 
-    return { httpClient, spyError, spyVerbose, teardown }
+    return { httpClient, spyVerbose, teardown }
 }

@@ -11,7 +11,7 @@ describe('RedisHealthIndicator', () => {
     afterEach(() => fix.teardown())
 
     describe('isHealthy', () => {
-        it('ping 응답이 "PONG"이면 up 상태를 반환한다', async () => {
+        it('ping이 성공하면 up 상태를 반환한다', async () => {
             const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)
             expect(healthStatus).toEqual({ key: { status: 'up' } })
         })

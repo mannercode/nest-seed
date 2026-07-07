@@ -1,3 +1,5 @@
+import type { ArgumentsHost } from '@nestjs/common'
+import type { HttpExceptionLoggerFilter } from '../exception-logger.filter'
 import type { ExceptionLoggerFilterFixture } from './exception-logger.filter.fixture'
 
 describe('HttpExceptionLoggerFilter', () => {
@@ -10,7 +12,7 @@ describe('HttpExceptionLoggerFilter', () => {
     })
     afterEach(() => fix.teardown())
 
-    describe('HTTP 컨텍스트', () => {
+    describe('HTTP 컨텍스트일 때', () => {
         it('HttpException이 발생하면 Logger.warn으로 로그를 남긴다', async () => {
             await fix.httpClient
                 .get('/exception')
@@ -88,12 +90,16 @@ describe('HttpExceptionLoggerFilter', () => {
             expect(fix.spyError).not.toHaveBeenCalledWith('error', expect.anything())
             expect(fix.spyWarn).not.toHaveBeenCalledWith('fail', expect.anything())
         })
+    })
 
-        it('contextType이 http가 아니면 알 수 없는 컨텍스트 메시지를 남긴다', async () => {
+    describe('HTTP가 아닌 컨텍스트에서 실행되면', () => {
+        let filter: HttpExceptionLoggerFilter
+        let fakeHost: ArgumentsHost
+
+        beforeEach(async () => {
             const { HttpExceptionLoggerFilter } = await import('../exception-logger.filter')
-            const filter = new HttpExceptionLoggerFilter()
-
-            const fakeHost = {
+            filter = new HttpExceptionLoggerFilter()
+            fakeHost = {
                 getType: () => 'rpc',
                 getArgs: () => [],
                 getArgByIndex: () => undefined,
@@ -101,7 +107,9 @@ describe('HttpExceptionLoggerFilter', () => {
                 switchToRpc: () => ({}),
                 switchToWs: () => ({})
             } as any
+        })
 
+        it('알 수 없는 컨텍스트 메시지를 Logger.error로 남긴다', () => {
             try {
                 filter.catch(new Error('boom'), fakeHost)
             } catch {
@@ -115,7 +123,7 @@ describe('HttpExceptionLoggerFilter', () => {
         })
     })
 
-    describe('HttpSuccessLoggerInterceptor 없이', () => {
+    describe('HttpSuccessLoggerInterceptor가 등록되지 않았을 때', () => {
         let solo: ExceptionLoggerFilterFixture
 
         beforeEach(async () => {

@@ -128,6 +128,45 @@ describe('BookingService', () => {
         const locations = [{ latitude: 30.0, longitude: 130.0 }]
         const startTimes = [new Date('2999-01-01T12:00')]
 
+        describe('가용 티켓을 선택했을 때', () => {
+            let accessToken: string
+            let userId: string
+            let showtimeId: string
+            let ticketIds: string[]
+
+            beforeEach(async () => {
+                const resources = await createAllResources(fix, locations, startTimes)
+                accessToken = resources.accessToken
+                userId = resources.user.id
+                showtimeId = ensure(resources.showtimes[0]).id
+                ticketIds = pickIds(resources.tickets.slice(0, 2))
+            })
+
+            it('204를 반환한다', async () => {
+                await fix.httpClient
+                    .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body({ ticketIds })
+                    .noContent()
+            })
+
+            it('보유 상태가 반영된다', async () => {
+                await fix.httpClient
+                    .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body({ ticketIds })
+                    .noContent()
+
+                const { TicketHoldingService } = await import('core')
+                const ticketHoldingService = fix.module.get(TicketHoldingService)
+                const heldTicketIds = await ticketHoldingService.searchHeldTicketIds(
+                    showtimeId,
+                    userId
+                )
+                expect(heldTicketIds.sort()).toEqual([...ticketIds].sort())
+            })
+        })
+
         it('티켓이 이미 다른 고객에게 보유되어 있으면 409를 반환한다', async () => {
             const resources = await createAllResources(fix, locations, startTimes)
             const accessToken = resources.accessToken
@@ -197,7 +236,7 @@ describe('BookingService', () => {
     })
 
     describe('GET /booking/movies/:movieId/theaters/:theaterId/showdates/:showdate/showtimes', () => {
-        // `parseShowdate`는 형식이 다르거나 달력에 없는 날짜일 때 거절한다.
+        // showdate 검증은 `ParseShowdatePipe`가 수행한다.
         const movieId = nullObjectId
         const theaterId = nullObjectId
 
@@ -213,7 +252,7 @@ describe('BookingService', () => {
 
         it('형식은 맞지만 실제 달력에 없는 날짜이면 400을 반환한다', async () => {
             // 20240230은 2월 30일이라 달력에 없다.
-            // `Date.UTC`는 이 값을 조용히 다음 달로 넘기므로, 컨트롤러가 날짜를 다시 문자열로 바꿔 비교할 때 잘못된 값임을 확인한다.
+            // `Date.UTC`는 이 값을 조용히 다음 달로 넘기므로, 파이프가 만든 Date를 다시 분해해 원본과 비교할 때 잘못된 값임을 확인한다.
             await fix.httpClient
                 .get(
                     `/booking/movies/${movieId}/theaters/${theaterId}/showdates/20240230/showtimes`

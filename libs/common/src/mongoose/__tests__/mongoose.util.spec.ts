@@ -240,7 +240,7 @@ describe('mapDocToDto', () => {
     const sampleSchema = createCrudSchema(Sample)
     const SampleModel = model<Sample>('SampleForTest', sampleSchema)
 
-    it('lean 결과 객체를 DTO로 매핑한다', () => {
+    it('toJSON으로 만든 평면 객체를 DTO로 매핑한다', () => {
         const doc = new SampleModel({ name: 'name', optional: undefined }).toJSON()
 
         const dto = mapDocToDto(doc, SampleDto, ['id', 'name', 'optional'])

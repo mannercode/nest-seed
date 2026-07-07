@@ -1,8 +1,8 @@
 import type { HydratedDocument } from 'mongoose'
 import { HardDeleteSample, SoftDeleteSample, type CrudDeleteFixture } from './crud-delete.fixture'
 
-describe('Crud Delete', () => {
-    describe('Soft Delete', () => {
+describe('createCrudSchema', () => {
+    describe('@HardDelete()가 없을 때', () => {
         let fix: CrudDeleteFixture<SoftDeleteSample>
         let createdDoc: HydratedDocument<SoftDeleteSample>
 
@@ -33,7 +33,7 @@ describe('Crud Delete', () => {
             expect(docs.every((d) => d.deletedAt === null)).toBe(true)
         })
 
-        describe('삭제 메서드는 deletedAt을 기록한다', () => {
+        describe('삭제 메서드', () => {
             it('Model.deleteOne은 deletedAt을 기록한다', async () => {
                 await fix.model.deleteOne({ _id: createdDoc._id })
 
@@ -321,7 +321,7 @@ describe('Crud Delete', () => {
         })
     })
 
-    describe('Hard Delete', () => {
+    describe('@HardDelete()가 붙었을 때', () => {
         let fix: CrudDeleteFixture<HardDeleteSample>
         let createdDoc: HydratedDocument<HardDeleteSample>
 

@@ -1,6 +1,6 @@
 import { getCounter, incrementCounter } from './reset-options.fixture'
 
-describe('Jest 초기화 옵션', () => {
+describe('resetModules / resetMocks / restoreMocks', () => {
     describe('resetModules가 활성화되었을 때', () => {
         describe('정적으로 가져올 때', () => {
             it('카운터를 증가시킨다', () => {

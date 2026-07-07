@@ -140,7 +140,7 @@ describe('PurchaseService', () => {
                     }) as any)
                 })
 
-                it('구매한 티켓을 구매 가능 상태로 되돌린다', async () => {
+                it('티켓이 판매 상태로 바뀌지 않고 구매 가능 상태로 남는다', async () => {
                     const createDto = buildCreatePurchaseDto(heldTickets)
 
                     await fix.httpClient
@@ -218,25 +218,33 @@ describe('PurchaseService', () => {
 
             describe('보상 단계가 실패해도', () => {
                 // 보상 체인은 best-effort라 한 단계가 실패해도 다음 단계를 계속 시도해야 한다.
-                // `paymentsService.cancel`이 던지더라도 `deleteMany`와 티켓 롤백은 그대로 수행되는지를 본다.
+                // 이벤트 발행 실패로 보상을 촉발하고 첫 단계인 구매 기록 삭제를 실패시켜,
+                // 다음 단계인 결제 취소가 그래도 수행되는지를 본다.
                 beforeEach(async () => {
                     const { PurchaseEvents } = await import('application')
-                    const { PaymentsService } = await import('infrastructure')
+                    const { PurchaseRecordsService } = await import('core')
                     const events = fix.module.get(PurchaseEvents)
-                    const paymentsService = fix.module.get(PaymentsService)
+                    const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
                     jest.spyOn(events, 'emitTicketPurchased').mockRejectedValueOnce(
                         new Error('emit failed')
                     )
-                    jest.spyOn(paymentsService, 'cancel').mockRejectedValueOnce(
-                        new Error('cancel failed')
+                    jest.spyOn(purchaseRecordsService, 'deleteMany').mockRejectedValueOnce(
+                        new Error('delete failed')
                     )
                 })
 
                 it('나머지 보상 단계는 계속 수행한다', async () => {
-                    const { PurchaseRecordsService, TicketsService } = await import('core')
-                    const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-                    const ticketsService = fix.module.get(TicketsService)
-                    const deletePurchaseRecordSpy = jest.spyOn(purchaseRecordsService, 'deleteMany')
+                    const { PaymentsService } = await import('infrastructure')
+                    const paymentsService = fix.module.get(PaymentsService)
+
+                    // 보상으로 결제가 취소될 뿐 행은 남으므로, 생성된 결제 id를 가로채 상태를 확인한다.
+                    let paymentId: string | undefined
+                    const createPayment = paymentsService.create.bind(paymentsService)
+                    jest.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
+                        const payment = await createPayment(dto)
+                        paymentId = payment.id
+                        return payment
+                    })
 
                     const createDto = buildCreatePurchaseDto(heldTickets)
 
@@ -246,9 +254,9 @@ describe('PurchaseService', () => {
                         .body(createDto)
                         .internalServerError()
 
-                    expect(deletePurchaseRecordSpy).toHaveBeenCalledTimes(1)
-                    const tickets = await ticketsService.getMany(pickIds(heldTickets))
-                    expect(tickets.every((t) => t.status === TicketStatus.Available)).toBe(true)
+                    Require.defined(paymentId)
+                    const payments = await getPayments(fix, [paymentId])
+                    expect(ensure(payments[0]).status).toBe(PaymentStatus.Cancelled)
                 })
             })
 

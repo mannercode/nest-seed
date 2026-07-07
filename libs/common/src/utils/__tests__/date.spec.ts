@@ -12,7 +12,7 @@ describe('DateUtil', () => {
             expect(date).toEqual(new Date(1999, 0, 2))
         })
 
-        it('형식이 유효하지 않으면 예외를 던진다', () => {
+        it('길이가 8 또는 12가 아니면 예외를 던진다', () => {
             expect(() => DateUtil.fromYMD('')).toThrow()
         })
 
@@ -31,7 +31,7 @@ describe('DateUtil', () => {
 
     describe('toYMD', () => {
         it('Date를 YYYYMMDD 형식 문자열로 변환한다', () => {
-            const dateString = DateUtil.toYMD(new Date('1999-01-02'))
+            const dateString = DateUtil.toYMD(new Date(1999, 0, 2))
             expect(dateString).toEqual('19990102')
         })
     })

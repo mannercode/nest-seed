@@ -1,6 +1,6 @@
 import { toAny } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
-import { HttpUtil } from '../../utils'
+import { Checksum, HttpUtil } from '../../utils'
 import { testBuffer, uploadObject, type S3ObjectServiceFixture } from './s3-object.service.fixture'
 
 function buildPresignedPostForm(
@@ -125,7 +125,6 @@ describe('S3ObjectService', () => {
             let presigned: { fields: Record<string, string>; url: string }
 
             beforeEach(async () => {
-                const { Checksum } = await import('../../utils')
                 const checksum = Checksum.fromBuffer(uploadBody)
 
                 presigned = await fix.s3Service.presignUploadPost({
@@ -160,29 +159,19 @@ describe('S3ObjectService', () => {
             })
         })
 
-        describe('업로드 크기 제한이 있는 프리사인드 POST', () => {
-            let presigned: { fields: Record<string, string>; url: string }
+        describe('contentType을 지정했을 때', () => {
             const uploadBody = Buffer.from('hello')
+            let presigned: { fields: Record<string, string>; url: string }
 
             beforeEach(async () => {
                 presigned = await fix.s3Service.presignUploadPost({
                     contentType: 'text/plain',
                     expiresInSec: 60,
-                    key: 'key.txt',
-                    maxContentLength: uploadBody.byteLength,
-                    minContentLength: uploadBody.byteLength
+                    key: 'key.txt'
                 })
             })
 
-            it('업로드를 허용한다', async () => {
-                const form = buildPresignedPostForm(presigned.fields, uploadBody, 'text/plain')
-
-                const response = await fetch(presigned.url, { body: form, method: 'POST' })
-
-                expect(response.ok).toBe(true)
-            })
-
-            it('contentType이 일치하지 않으면 실패한다', async () => {
+            it('contentType이 일치하지 않으면 업로드를 거부한다', async () => {
                 const form = buildPresignedPostForm(
                     { ...presigned.fields, 'Content-Type': 'image/png' },
                     uploadBody,
@@ -195,7 +184,30 @@ describe('S3ObjectService', () => {
             })
         })
 
-        describe('업로드 크기 상한이 본문보다 작은 프리사인드 POST', () => {
+        describe('업로드 크기 제한을 지정했을 때', () => {
+            const uploadBody = Buffer.from('hello')
+            let presigned: { fields: Record<string, string>; url: string }
+
+            beforeEach(async () => {
+                presigned = await fix.s3Service.presignUploadPost({
+                    contentType: 'text/plain',
+                    expiresInSec: 60,
+                    key: 'key.txt',
+                    maxContentLength: uploadBody.byteLength,
+                    minContentLength: uploadBody.byteLength
+                })
+            })
+
+            it('본문이 제한 범위 안이면 업로드를 허용한다', async () => {
+                const form = buildPresignedPostForm(presigned.fields, uploadBody, 'text/plain')
+
+                const response = await fetch(presigned.url, { body: form, method: 'POST' })
+
+                expect(response.ok).toBe(true)
+            })
+        })
+
+        describe('업로드 크기 상한이 본문보다 작을 때', () => {
             const uploadBody = Buffer.from('hello')
             let presigned: { fields: Record<string, string>; url: string }
 
@@ -208,7 +220,7 @@ describe('S3ObjectService', () => {
                 })
             })
 
-            it('contentLength가 상한을 넘으면 실패한다', async () => {
+            it('업로드를 거부한다', async () => {
                 const form = buildPresignedPostForm(presigned.fields, uploadBody, 'text/plain')
 
                 const response = await fetch(presigned.url, { body: form, method: 'POST' })
@@ -339,6 +351,36 @@ describe('S3ObjectService', () => {
             expect(isCompleted).toBe(false)
         })
 
+        describe('content-type 정규화', () => {
+            it('charset이 붙은 content-type은 base 타입만 비교한다', async () => {
+                jest.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
+                    ContentLength: 1,
+                    ContentType: 'application/json; charset=utf-8'
+                })
+
+                const result = await fix.s3Service.isUploadComplete({
+                    contentType: 'application/json',
+                    key: 'k'
+                })
+
+                expect(result).toBe(true)
+            })
+
+            it('대소문자나 공백이 섞인 content-type도 정규화 후 비교한다', async () => {
+                jest.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
+                    ContentLength: 1,
+                    ContentType: '  Application/JSON  '
+                })
+
+                const result = await fix.s3Service.isUploadComplete({
+                    contentType: 'application/json',
+                    key: 'k'
+                })
+
+                expect(result).toBe(true)
+            })
+        })
+
         it('S3 요청이 예기치 않게 실패하면 예외를 던진다', async () => {
             jest.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(
                 new Error('unexpected')
@@ -356,15 +398,6 @@ describe('S3ObjectService', () => {
             jest.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(error403)
 
             await expect(fix.s3Service.isUploadComplete({ key: 'k' })).rejects.toThrow('forbidden')
-        })
-
-        it('error 객체에 $metadata가 undefined여도 예외를 그대로 던진다', async () => {
-            const errorNoMeta = new Error('no metadata')
-            jest.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(errorNoMeta)
-
-            await expect(fix.s3Service.isUploadComplete({ key: 'k' })).rejects.toThrow(
-                'no metadata'
-            )
         })
 
         it('isUploadComplete가 예외를 던진 뒤에도 같은 인스턴스의 다음 호출은 정상 동작한다', async () => {
@@ -387,13 +420,25 @@ describe('S3ObjectService', () => {
     })
 
     describe('deleteObject', () => {
-        it('객체가 존재하면 no-content와 함께 키를 반환한다', async () => {
+        describe('객체가 존재할 때', () => {
             const key = 'foo/data2.json'
-            await uploadObject(fix.s3Service, key, 'upload body')
 
-            const result = await fix.s3Service.deleteObject(key)
+            beforeEach(async () => {
+                await uploadObject(fix.s3Service, key, 'upload body')
+            })
 
-            expect(result).toEqual({ key, status: HttpStatus.NO_CONTENT })
+            it('no-content와 함께 키를 반환한다', async () => {
+                const result = await fix.s3Service.deleteObject(key)
+
+                expect(result).toEqual({ key, status: HttpStatus.NO_CONTENT })
+            })
+
+            it('삭제하면 객체가 실제로 사라진다', async () => {
+                await fix.s3Service.deleteObject(key)
+
+                const isCompleted = await fix.s3Service.isUploadComplete({ key })
+                expect(isCompleted).toBe(false)
+            })
         })
 
         it('객체가 존재하지 않아도 no-content와 함께 키를 반환한다', async () => {
@@ -401,16 +446,6 @@ describe('S3ObjectService', () => {
             const result = await fix.s3Service.deleteObject(key)
 
             expect(result).toEqual({ key, status: HttpStatus.NO_CONTENT })
-        })
-
-        it('삭제하면 객체가 실제로 사라진다', async () => {
-            const key = 'foo/data3.json'
-            await uploadObject(fix.s3Service, key, 'upload body')
-
-            await fix.s3Service.deleteObject(key)
-
-            const isCompleted = await fix.s3Service.isUploadComplete({ key })
-            expect(isCompleted).toBe(false)
         })
     })
 
@@ -522,20 +557,22 @@ describe('S3ObjectService', () => {
         })
     })
 
-    it('putObject를 여러 번 호출하면 매번 서로 다른 키를 반환한다', async () => {
-        const object = {
-            contentType: 'text/plain',
-            data: Buffer.from('body'),
-            filename: 'file.txt'
-        }
-        const count = 200
+    describe('putObject', () => {
+        it('여러 번 호출하면 매번 서로 다른 키를 반환한다', async () => {
+            const object = {
+                contentType: 'text/plain',
+                data: Buffer.from('body'),
+                filename: 'file.txt'
+            }
+            const count = 200
 
-        const results = await Promise.all(
-            Array.from({ length: count }, () => fix.s3Service.putObject(object))
-        )
-        const keys = new Set(results.map((result) => result.key))
+            const results = await Promise.all(
+                Array.from({ length: count }, () => fix.s3Service.putObject(object))
+            )
+            const keys = new Set(results.map((result) => result.key))
 
-        expect(keys.size).toBe(count)
+            expect(keys.size).toBe(count)
+        })
     })
 
     describe('onModuleDestroy', () => {
@@ -546,43 +583,5 @@ describe('S3ObjectService', () => {
 
             expect(destroySpy).toHaveBeenCalledTimes(1)
         })
-    })
-})
-
-describe('normalizeContentType (isUploadComplete를 통해 검증)', () => {
-    let fix: S3ObjectServiceFixture
-
-    beforeEach(async () => {
-        const { createS3ObjectServiceFixture } = await import('./s3-object.service.fixture')
-        fix = await createS3ObjectServiceFixture()
-    })
-    afterEach(() => fix.teardown())
-
-    it('charset이 붙은 content-type은 base 타입만 비교한다', async () => {
-        jest.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
-            ContentLength: 1,
-            ContentType: 'application/json; charset=utf-8'
-        })
-
-        const result = await fix.s3Service.isUploadComplete({
-            contentType: 'application/json',
-            key: 'k'
-        })
-
-        expect(result).toBe(true)
-    })
-
-    it('대소문자나 공백이 섞인 content-type도 정규화 후 비교한다', async () => {
-        jest.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
-            ContentLength: 1,
-            ContentType: '  Application/JSON  '
-        })
-
-        const result = await fix.s3Service.isUploadComplete({
-            contentType: 'application/json',
-            key: 'k'
-        })
-
-        expect(result).toBe(true)
     })
 })

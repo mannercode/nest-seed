@@ -14,7 +14,7 @@ jest.mock('@nestjs/common', () => {
 
 jest.mock('./mocking.fixture', () => ({ getGreeting: jest.fn(), HelloClass: jest.fn() }))
 
-describe('jest.mock 예제', () => {
+describe('jest.mock', () => {
     it('모듈을 mock 구현으로 대체한다', () => {
         ;(Logger.verbose as unknown as jest.Mock).mockImplementation(() => undefined)
 

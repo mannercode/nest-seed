@@ -3,8 +3,6 @@ import { Controller, Get, Query, ValidationPipe } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
 import { PaginationDto } from '..'
 
-export const maxSizeValue = 50
-
 export type PaginationFixture = { httpClient: HttpTestClient; teardown: () => Promise<void> }
 
 @Controller()

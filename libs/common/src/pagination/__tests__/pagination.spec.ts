@@ -13,7 +13,7 @@ describe('PaginationDto', () => {
     })
     afterEach(() => fix.teardown())
 
-    describe('HTTP 컨트롤러', () => {
+    describe('GET /pagination', () => {
         it('유효한 쿼리를 PaginationDto로 변환해 응답한다', async () => {
             const page = 2
             const size = 3

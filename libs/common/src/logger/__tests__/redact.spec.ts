@@ -61,19 +61,15 @@ describe('redactSensitive', () => {
         expect(result.self).toBe('[CIRCULAR]')
     })
 
-    it('서로 다른 위치에서 같은 객체를 참조하면 양쪽 모두 [CIRCULAR]로 치환한다', () => {
-        // 구현이 WeakSet으로 방문을 추적하므로, 순환이 아닌 단순 공유 참조도 두 번째 방문부터는 [CIRCULAR]가 된다.
+    it('서로 다른 위치에서 같은 객체를 참조하면 두 번째 방문부터 [CIRCULAR]로 치환한다', () => {
+        // 구현이 WeakSet으로 방문을 추적하므로, 순환이 아닌 단순 공유 참조도 축약 대상이다.
         const shared = { name: 'shared' }
         const root = { a: shared, b: shared }
 
         const result = redactSensitive(root) as any
 
-        // 첫 방문은 정상 처리하고, 두 번째 방문은 [CIRCULAR]로 축약한다.
-        const visitedAsObject = result.a !== '[CIRCULAR]' ? result.a : result.b
-        const visitedAsCircular = result.a === '[CIRCULAR]' ? result.a : result.b
-
-        expect(visitedAsObject).toEqual({ name: 'shared' })
-        expect(visitedAsCircular).toBe('[CIRCULAR]')
+        expect(result.a).toEqual({ name: 'shared' })
+        expect(result.b).toBe('[CIRCULAR]')
     })
 
     it('배열이 자기 자신을 원소로 포함해도 [CIRCULAR]로 치환한다', () => {
@@ -110,13 +106,13 @@ describe('redactSensitive', () => {
     })
 
     it('prototype 체인으로 상속된 민감 필드는 마스킹하지 않는다', () => {
-        // Object.entries는 own enumerable만 본다.
+        // 커스텀 prototype을 가진 객체는 plain object가 아니라서 복사 없이 통째로 통과된다.
         const proto = { password: 'should-leak' }
         const obj = Object.create(proto)
         obj.name = 'x'
 
         const result = redactSensitive(obj)
 
-        expect(result).toEqual({ name: 'x' })
+        expect(result).toBe(obj)
     })
 })

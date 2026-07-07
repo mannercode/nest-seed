@@ -67,7 +67,7 @@ describe('expectEqualUnsorted', () => {
         expect(() => expectEqualUnsorted([{ v: NaN }], [{ v: NaN }])).not.toThrow()
     })
 
-    it('중첩 배열도 정렬 후 비교한다', () => {
+    it('중첩 배열이 있어도 바깥 배열 순서만 무시하고 비교한다', () => {
         const actual = [
             { id: 1, items: [3, 1, 2] },
             { id: 2, items: ['c', 'a', 'b'] }
@@ -78,5 +78,12 @@ describe('expectEqualUnsorted', () => {
         ]
 
         expect(() => expectEqualUnsorted(actual, expected)).not.toThrow()
+    })
+
+    it('중첩 배열은 정렬하지 않으므로 내부 순서가 다르면 예외를 던진다', () => {
+        const actual = [{ id: 1, items: [3, 1, 2] }]
+        const expected = [{ id: 1, items: [1, 2, 3] }]
+
+        expect(() => expectEqualUnsorted(actual, expected)).toThrow()
     })
 })

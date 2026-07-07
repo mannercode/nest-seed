@@ -98,8 +98,7 @@ describe('HttpTestClient', () => {
                 .created()
 
             // superagent.send는 같은 contentType이면 두 번째 호출의 객체를 병합한다.
-            // 여기서는 두 번째 호출이 무시되지 않는지만 확인한다.
-            expect(body).toEqual(expect.objectContaining({ second: true }))
+            expect(body).toEqual({ first: true, second: true })
         })
     })
 })

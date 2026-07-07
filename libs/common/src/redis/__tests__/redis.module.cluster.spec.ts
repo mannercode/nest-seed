@@ -19,10 +19,11 @@ describe('RedisModule', () => {
 
             const { createRedisModuleClusterFixture } = await import('./redis.module.fixture')
             const fix = await createRedisModuleClusterFixture()
-
-            expect(Cluster).toHaveBeenCalledWith([{ host: 'localhost', port: 7000 }], undefined)
-
-            await fix.teardown()
+            try {
+                expect(Cluster).toHaveBeenCalledWith([{ host: 'localhost', port: 7000 }], undefined)
+            } finally {
+                await fix.teardown()
+            }
         })
     })
 })

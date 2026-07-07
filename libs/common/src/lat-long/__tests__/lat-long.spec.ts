@@ -110,8 +110,7 @@ describe('LatLong', () => {
                 .ok({ latitude: 37, longitude: 127 })
         })
 
-        it('20자인 좌표는 길이 검사를 통과한다', async () => {
-            // 길이 검사는 통과하지만 값이 90을 초과해 범위 검증에서 거부된다.
+        it('20자 좌표는 길이 검사를 통과하고 범위 검증에서 400을 반환한다', async () => {
             const lat = '12345678901234567.89' // 20자
             await fix.httpClient
                 .get('/latLong')

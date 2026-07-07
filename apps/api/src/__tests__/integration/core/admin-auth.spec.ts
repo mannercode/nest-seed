@@ -84,7 +84,7 @@ describe('AdminAuthentication', () => {
             await fix.httpClient.post('/admins/logout').body({ refreshToken }).noContent()
         })
 
-        it('로그아웃한 refresh 토큰을 다시 쓰면 401을 던진다', async () => {
+        it('로그아웃한 refresh 토큰을 다시 쓰면 401을 반환한다', async () => {
             await fix.httpClient.post('/admins/logout').body({ refreshToken }).noContent()
 
             await fix.httpClient

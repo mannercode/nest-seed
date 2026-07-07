@@ -47,7 +47,7 @@ describe('CrudRepository', () => {
             const docs = [
                 { name: 'document-1' },
                 { name: 'document-2' },
-                { name: 'document-2' }
+                { name: 'document-3' }
             ].map((data) => {
                 const doc = fix.repository.newDocument()
                 doc.name = data.name
@@ -219,7 +219,12 @@ describe('CrudRepository', () => {
                 pagination: {}
             })
 
-            expect(countSpy).toHaveBeenCalled()
+            // countDocuments에 넘어간 필터는 find 쿼리의 _conditions와 같은 참조다.
+            // find의 soft delete pre hook이 이 객체에 deletedAt 조건을 덧붙이므로 완전 일치 대신 설정한 조건의 포함을 단언한다.
+            expect(countSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ name: 'Sample-001' }),
+                expect.anything()
+            )
             expect(estimatedSpy).not.toHaveBeenCalled()
         })
     })
@@ -422,8 +427,11 @@ describe('leanToPublic', () => {
     })
 
     it('_id가 없거나 null이면 id를 추가하지 않는다', () => {
-        const result = leanToPublic<{ _id?: unknown; id?: string }>({})
-        expect(result.id).toBeUndefined()
+        const missing = leanToPublic<{ _id?: unknown; id?: string }>({})
+        expect(missing.id).toBeUndefined()
+
+        const nulled = leanToPublic<{ _id?: unknown; id?: string }>({ _id: null })
+        expect(nulled.id).toBeUndefined()
     })
 
     it('입력 객체를 직접 변경하고 같은 참조를 반환한다', () => {

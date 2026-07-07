@@ -70,21 +70,6 @@ export async function createRedisModuleAsyncFixture() {
     return { redis, teardown }
 }
 
-export async function createRedisModuleUrlOnlyFixture() {
-    const { close, module } = await createTestContext({
-        imports: [RedisModule.forRoot({ type: 'single', url: process.env.TESTLIB_REDIS_URL })]
-    })
-
-    const redis = module.get<RedisConnection>(getRedisConnectionToken())
-
-    // 연결 종료는 RedisConnectionRegistry가 모듈 destroy에서 책임진다.
-    const teardown = async () => {
-        await close()
-    }
-
-    return { redis, teardown }
-}
-
 export async function createRedisModuleOptionsOnlyFixture() {
     const url = new URL(process.env.TESTLIB_REDIS_URL as string)
 

@@ -35,10 +35,8 @@ describe('Mongoose Transaction', () => {
             const { total } = await fix.repository.findWithPagination({ pagination: {} })
             expect(total).toEqual(0)
         })
-    })
 
-    describe('일시 트랜잭션 오류 재시도', () => {
-        it('동시 트랜잭션의 WriteConflict는 재시도 끝에 성공한다', async () => {
+        it('동시 트랜잭션과 충돌해 WriteConflict가 나면 재시도 끝에 성공한다', async () => {
             const doc = fix.repository.newDocument()
             doc.name = 'initial'
             await doc.save()

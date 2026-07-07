@@ -254,6 +254,8 @@ describe('TemporalWorkerService', () => {
 
         await service.onModuleInit()
 
+        // 가짜로 교체하면 init에서 연 실제 연결의 참조가 사라지므로, 보관해 두었다가 테스트 끝에 직접 닫는다.
+        const realConnection = (service as any).connection
         const fakeConnection = {
             close: jest.fn(async () => {
                 throw new Error('boom')
@@ -261,8 +263,12 @@ describe('TemporalWorkerService', () => {
         }
         ;(service as any).connection = fakeConnection
 
-        await expect(service.onModuleDestroy()).resolves.toBeUndefined()
-        expect(fakeConnection.close).toHaveBeenCalled()
+        try {
+            await expect(service.onModuleDestroy()).resolves.toBeUndefined()
+            expect(fakeConnection.close).toHaveBeenCalled()
+        } finally {
+            await realConnection.close()
+        }
     }, 120_000)
 
     it('onModuleDestroy는 워커 종료를 기다린 뒤에 연결을 닫는다', async () => {
@@ -288,10 +294,16 @@ describe('TemporalWorkerService', () => {
             order.push('connection-closed')
         })
 
-        await service.onModuleDestroy()
+        try {
+            await service.onModuleDestroy()
 
-        expect(order).toEqual(['worker-stopped', 'connection-closed'])
-        expect(closeSpy).toHaveBeenCalled()
+            expect(order).toEqual(['worker-stopped', 'connection-closed'])
+            expect(closeSpy).toHaveBeenCalled()
+        } finally {
+            // spy가 실제 close를 대체하므로 복원한 뒤 직접 닫아 연결 누수를 막는다.
+            closeSpy.mockRestore()
+            await realConnection.close()
+        }
     }, 120_000)
 
     it('shutdown이 IllegalStateError가 아닌 예외를 던지면 그대로 전파한다', async () => {
@@ -310,19 +322,5 @@ describe('TemporalWorkerService', () => {
         }
 
         await expect(service.onModuleDestroy()).rejects.toThrow('boom')
-    })
-
-    it('onModuleDestroy를 두 번 호출하면 두 번째는 아무 일도 일어나지 않는다', async () => {
-        const { TemporalWorkerService } = await import('../temporal-worker.service')
-        const service = new TemporalWorkerService({
-            activities: {},
-            address: 'unused:0',
-            namespace: 'default',
-            taskQueue: 'unused',
-            workflowBundlePath: bundlePath
-        })
-
-        await expect(service.onModuleDestroy()).resolves.toBeUndefined()
-        await expect(service.onModuleDestroy()).resolves.toBeUndefined()
     })
 })

@@ -46,6 +46,8 @@ describe('WatchRecordsService', () => {
 
         it('userId가 일치하는 기록만 반환한다', async () => {
             const recordsPage = await watchRecordsService.searchPage({ userId })
+
+            expect(recordsPage.items).toHaveLength(2)
             expect(recordsPage).toEqual(
                 buildExpectedPage([ensure(watchRecords[0]), ensure(watchRecords[1])])
             )

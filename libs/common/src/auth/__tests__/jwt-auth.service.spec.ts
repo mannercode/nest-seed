@@ -54,6 +54,15 @@ describe('JwtAuthService', () => {
                 await fix2.teardown()
             }
         })
+
+        it('sub가 문자열이 아니면 userId로 간주하지 않는다', async () => {
+            const tokens = await fix.jwtService.generateAuthTokens({ sub: 12345 })
+
+            await fix.jwtService.revokeAllForUser('12345')
+
+            const rotated = await fix.jwtService.refreshAuthTokens(tokens.refreshToken)
+            expect(rotated.refreshToken).toEqual(expect.any(String))
+        })
     })
 
     describe('refreshAuthTokens', () => {
@@ -192,7 +201,10 @@ describe('JwtAuthService', () => {
                 'not-json{{{'
             )
 
-            await expect(fix.jwtService.refreshAuthTokens(refreshToken)).rejects.toThrow()
+            // SyntaxError가 401로 감싸이지 않고 그대로 전파되는지 확인한다.
+            await expect(fix.jwtService.refreshAuthTokens(refreshToken)).rejects.toThrow(
+                SyntaxError
+            )
         })
 
         it('토큰 키와 family 키가 같은 해시 태그를 쓴다', async () => {
@@ -210,22 +222,24 @@ describe('JwtAuthService', () => {
             const tokens = await fix.jwtService.refreshAuthTokens(refreshToken)
             const after = new JwtService().decode<Record<string, unknown>>(tokens.refreshToken)
 
-            // iat/exp/jti는 새 서명에서 다시 생성되므로 같지 않다.
+            // jti는 재생성되어 달라진다. iat/exp는 같은 초에 재발급되면 이전 값과 같을 수 있어 존재만 확인한다.
             expect(after.jti).not.toBe(before.jti)
             expect(after.iat).not.toBe(undefined)
             expect(after.exp).not.toBe(undefined)
         })
 
         describe('Redis 트랜잭션이 중단될 때', () => {
-            it('토큰 묶음은 폐기하지 않고 예외를 그대로 던진다', async () => {
-                // consumeToken의 multi().exec()가 null을 반환하는 상황을 재현한다.
+            // consumeToken의 multi().exec()가 null을 반환하는 상황을 재현한다.
+            beforeEach(() => {
                 const realMulti = fix.redis.multi.bind(fix.redis)
                 jest.spyOn(fix.redis, 'multi').mockImplementationOnce(() => {
                     const tx = realMulti()
                     jest.spyOn(tx, 'exec').mockResolvedValueOnce(null)
                     return tx
                 })
+            })
 
+            it('토큰 묶음은 폐기하지 않고 예외를 그대로 던진다', async () => {
                 await expect(fix.jwtService.refreshAuthTokens(refreshToken)).rejects.toThrow(
                     /redis multi exec returned null/
                 )
@@ -239,13 +253,6 @@ describe('JwtAuthService', () => {
             })
 
             it('새 토큰을 발급하지 않는다', async () => {
-                const realMulti = fix.redis.multi.bind(fix.redis)
-                jest.spyOn(fix.redis, 'multi').mockImplementationOnce(() => {
-                    const tx = realMulti()
-                    jest.spyOn(tx, 'exec').mockResolvedValueOnce(null)
-                    return tx
-                })
-
                 await expect(fix.jwtService.refreshAuthTokens(refreshToken)).rejects.toThrow()
 
                 // multi mock은 한 번만 적용되므로 리프레시를 다시 호출해 보는 검증은 정상 성공해 버려 쓸 수 없다.
@@ -276,8 +283,6 @@ describe('JwtAuthService', () => {
             await expect(fix.jwtService.revokeRefreshToken('garbage')).rejects.toThrow(
                 'The provided refresh token is invalid'
             )
-            // emitOnFailure=false 경로라 verify.failed 이벤트는 발생하지 않는다.
-            expect(fix.events.find((e) => e.type === 'verify.failed')).toBeUndefined()
         })
 
         it('만료된 토큰을 폐기하면 401(token expired)을 전파한다', async () => {
@@ -415,6 +420,7 @@ describe('JwtAuthService', () => {
         })
 
         it('logout 시 잘못된 토큰이면 throw하고 verify.failed 이벤트를 남기지 않는다', async () => {
+            // emitOnFailure=false 경로라 verify.failed 이벤트는 발생하지 않는다.
             await expect(fix.jwtService.revokeRefreshToken('garbage')).rejects.toThrow()
             expect(fix.events.find((e) => e.type === 'verify.failed')).toBeUndefined()
         })
@@ -439,10 +445,14 @@ describe('JwtAuthService', () => {
         })
     })
 
-    describe('사용자 ID가 없는 페이로드', () => {
-        it('sub가 없어도 토큰 발급, 회전, 폐기가 동작한다', async () => {
-            const tokens = await fix.jwtService.generateAuthTokens({ email: 'no-sub@x' })
+    describe('페이로드에 사용자 ID가 없을 때', () => {
+        let tokens: { accessToken: string; refreshToken: string }
 
+        beforeEach(async () => {
+            tokens = await fix.jwtService.generateAuthTokens({ email: 'no-sub@x' })
+        })
+
+        it('토큰 발급, 회전, 폐기가 동작한다', async () => {
             const rotated = await fix.jwtService.refreshAuthTokens(tokens.refreshToken)
             expect(rotated.refreshToken).not.toEqual(tokens.refreshToken)
 
@@ -453,17 +463,7 @@ describe('JwtAuthService', () => {
             )
         })
 
-        it('sub가 문자열이 아니면 userId로 간주하지 않는다', async () => {
-            const tokens = await fix.jwtService.generateAuthTokens({ sub: 12345 })
-
-            await fix.jwtService.revokeAllForUser('12345')
-
-            const rotated = await fix.jwtService.refreshAuthTokens(tokens.refreshToken)
-            expect(rotated.refreshToken).toEqual(expect.any(String))
-        })
-
-        it('sub가 없는 토큰도 재사용되면 family를 폐기한다', async () => {
-            const tokens = await fix.jwtService.generateAuthTokens({ email: 'no-sub@x' })
+        it('재사용을 감지하면 family를 폐기한다', async () => {
             const rotated = await fix.jwtService.refreshAuthTokens(tokens.refreshToken)
 
             await expect(fix.jwtService.refreshAuthTokens(tokens.refreshToken)).rejects.toThrow(

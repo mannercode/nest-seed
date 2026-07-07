@@ -67,7 +67,7 @@ describe('Env', () => {
             expect(Env.getBoolean('TEST_BOOLEAN')).toBe(true)
         })
 
-        it('"true"가 아닌 모든 값은 false로 처리한다', () => {
+        it('"true"가 아닌 비어 있지 않은 값은 false로 처리한다', () => {
             process.env.TEST_BOOLEAN = '1'
             expect(Env.getBoolean('TEST_BOOLEAN')).toBe(false)
 
@@ -76,6 +76,13 @@ describe('Env', () => {
 
             process.env.TEST_BOOLEAN = 'truthy'
             expect(Env.getBoolean('TEST_BOOLEAN')).toBe(false)
+        })
+
+        it('빈 문자열로 설정하면 미정의로 취급해 예외를 던진다', () => {
+            process.env.TEST_BOOLEAN = ''
+            expect(() => Env.getBoolean('TEST_BOOLEAN')).toThrow(
+                'Environment variable TEST_BOOLEAN is not defined'
+            )
         })
     })
 })

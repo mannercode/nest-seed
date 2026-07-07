@@ -90,33 +90,6 @@ describe('createWinstonLogger', () => {
         })
     })
 
-    it('HTTP 컨텍스트는 콘솔에 HTTP 라벨과 함께 출력된다', async () => {
-        const consoleLogger = createWinstonLogger({
-            consoleLogLevel: 'info',
-            daysToKeepLogs: '1d',
-            directory: tempDir,
-            fileLogLevel: 'silent'
-        })
-
-        const { getOutput } = spyConsoleTransport(consoleLogger)
-
-        const logDetails = {
-            contextType: 'http',
-            request: { body: {}, method: 'GET', url: '/test' },
-            statusCode: 200
-        }
-
-        consoleLogger.info('success', logDetails)
-        await sleep(200)
-
-        const output = getOutput()
-        expect(output).toContain('HTTP')
-        expect(output).toContain('success')
-        expect(output).toContain('/test')
-
-        await closeLogger(consoleLogger)
-    })
-
     it('consoleLogLevel이 "silent"이면 Console transport를 등록하지 않는다', async () => {
         const silentLogger = createWinstonLogger({
             consoleLogLevel: 'silent',
@@ -135,68 +108,62 @@ describe('createWinstonLogger', () => {
         }
     })
 
-    it('service 컨텍스트는 콘솔에 SERVICE 라벨과 함께 출력된다', async () => {
-        const consoleLogger = createWinstonLogger({
-            consoleLogLevel: 'info',
-            daysToKeepLogs: '1d',
-            directory: tempDir,
-            fileLogLevel: 'silent'
+    describe('콘솔 출력이 켜져 있으면', () => {
+        let consoleLogger: winston.Logger
+        let consoleSpy: { getOutput: () => string }
+
+        beforeEach(() => {
+            consoleLogger = createWinstonLogger({
+                consoleLogLevel: 'info',
+                daysToKeepLogs: '1d',
+                directory: tempDir,
+                fileLogLevel: 'silent'
+            })
+
+            consoleSpy = spyConsoleTransport(consoleLogger)
         })
 
-        const { getOutput } = spyConsoleTransport(consoleLogger)
-
-        const logDetails = { contextType: 'service', movieId: 'mov-123', theaterCount: 5 }
-
-        consoleLogger.info('BookingService.searchTheaters', logDetails)
-        await sleep(200)
-
-        const output = getOutput()
-        expect(output).toContain('SERVICE')
-        expect(output).toContain('BookingService.searchTheaters')
-        expect(output).toContain('mov-123')
-        expect(output).not.toContain('contextType')
-
-        await closeLogger(consoleLogger)
-    })
-
-    it('contextType이 service이면 SERVICE 라벨을 쓴다', async () => {
-        const consoleLogger = createWinstonLogger({
-            consoleLogLevel: 'info',
-            daysToKeepLogs: '1d',
-            directory: tempDir,
-            fileLogLevel: 'silent'
+        afterEach(async () => {
+            await closeLogger(consoleLogger)
         })
 
-        const { getOutput } = spyConsoleTransport(consoleLogger)
+        it('HTTP 컨텍스트는 HTTP 라벨과 함께 출력된다', async () => {
+            const logDetails = {
+                contextType: 'http',
+                request: { body: {}, method: 'GET', url: '/test' },
+                statusCode: 200
+            }
 
-        consoleLogger.info('Foo.bar', { contextType: 'service', x: 1 })
-        await sleep(200)
+            consoleLogger.info('success', logDetails)
+            await sleep(200)
 
-        const output = getOutput()
-        expect(output).toContain('SERVICE')
-        expect(output).toContain('Foo.bar')
-
-        await closeLogger(consoleLogger)
-    })
-
-    it('contextType이 없으면 기본 포맷을 쓴다', async () => {
-        const consoleLogger = createWinstonLogger({
-            consoleLogLevel: 'info',
-            daysToKeepLogs: '1d',
-            directory: tempDir,
-            fileLogLevel: 'silent'
+            const output = consoleSpy.getOutput()
+            expect(output).toContain('HTTP')
+            expect(output).toContain('success')
+            expect(output).toContain('/test')
         })
 
-        const { getOutput } = spyConsoleTransport(consoleLogger)
+        it('service 컨텍스트는 SERVICE 라벨과 함께 출력된다', async () => {
+            const logDetails = { contextType: 'service', movieId: 'mov-123', theaterCount: 5 }
 
-        consoleLogger.info('plain message', { other: 'value' })
-        await sleep(200)
+            consoleLogger.info('BookingService.searchTheaters', logDetails)
+            await sleep(200)
 
-        const output = getOutput()
-        expect(output).not.toContain('SERVICE')
-        expect(output).toContain('plain message')
-        expect(output).toContain('other')
+            const output = consoleSpy.getOutput()
+            expect(output).toContain('SERVICE')
+            expect(output).toContain('BookingService.searchTheaters')
+            expect(output).toContain('mov-123')
+            expect(output).not.toContain('contextType')
+        })
 
-        await closeLogger(consoleLogger)
+        it('contextType이 없으면 기본 포맷을 쓴다', async () => {
+            consoleLogger.info('plain message', { other: 'value' })
+            await sleep(200)
+
+            const output = consoleSpy.getOutput()
+            expect(output).not.toContain('SERVICE')
+            expect(output).toContain('plain message')
+            expect(output).toContain('other')
+        })
     })
 })

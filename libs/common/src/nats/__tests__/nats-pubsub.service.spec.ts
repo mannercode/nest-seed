@@ -168,36 +168,32 @@ describe('NatsPubSubService', () => {
     })
 
     describe('소비 루프의 이터레이터가 예외를 던지면', () => {
-        // 이터레이터를 강제로 실패시키는 도우미이다. 같은 실행 영역의 Logger를 감시한다.
-        async function setupErroringSubscription() {
-            const { Logger: NestLogger } = await import('@nestjs/common')
-            const errorSpy = jest.spyOn(NestLogger.prototype, 'error').mockImplementation()
+        let errorSpy: jest.SpyInstance
+        let errorSubject: string
 
-            const errorSubject = withTestId('erroring')
-            const fakeError = new Error('iterator boom')
+        // 이터레이터를 강제로 실패시킨다. 같은 실행 영역의 Logger를 감시한다.
+        beforeEach(async () => {
+            const { Logger: NestLogger } = await import('@nestjs/common')
+            errorSpy = jest.spyOn(NestLogger.prototype, 'error').mockImplementation()
+
+            errorSubject = withTestId('erroring')
             const fakeSub: any = {
                 unsubscribe: jest.fn(),
                 [Symbol.asyncIterator]: () => ({
-                    next: () => Promise.reject(fakeError),
+                    next: () => Promise.reject(new Error('iterator boom')),
                     return: () => Promise.resolve({ done: true, value: undefined })
                 })
             }
 
-            const subscribeSpy = jest
-                .spyOn((fix.pubSubB as any).connection, 'subscribe')
-                .mockReturnValueOnce(fakeSub)
+            jest.spyOn((fix.pubSubB as any).connection, 'subscribe').mockReturnValueOnce(fakeSub)
 
             await fix.pubSubB.subscribe(errorSubject, () => {})
 
             // 이터레이터가 한 번의 이벤트 루프 안에서 거부되고 catch 블록이 실행될 시간을 준다.
             await waitFor(() => errorSpy.mock.calls.length > 0)
+        })
 
-            return { errorSpy, errorSubject, fakeError, fakeSub, subscribeSpy }
-        }
-
-        it('logger.error를 한 번 호출하고 수신 루프를 조용히 종료한다', async () => {
-            const { errorSpy, errorSubject } = await setupErroringSubscription()
-
+        it('logger.error를 한 번 호출하고 수신 루프를 조용히 종료한다', () => {
             const errorCalls = errorSpy.mock.calls.filter((call) =>
                 String(call[0]).includes(errorSubject)
             )
@@ -206,9 +202,8 @@ describe('NatsPubSubService', () => {
 
         it('이후에 발행한 메시지는 더 이상 핸들러에 전달되지 않는다', async () => {
             const received: string[] = []
-            const { errorSubject } = await setupErroringSubscription()
 
-            // 위 설정 이후 추가 핸들러를 등록해도 fakeSub에서는 메시지가 오지 않는다.
+            // 셋업 이후 추가 핸들러를 등록해도 fakeSub에서는 메시지가 오지 않는다.
             const state = [...(fix.pubSubB as any).subscriptions.values()].find(
                 (s: any) => s.subject === errorSubject
             )

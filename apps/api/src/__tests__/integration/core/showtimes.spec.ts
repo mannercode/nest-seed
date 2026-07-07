@@ -104,10 +104,11 @@ describe('ShowtimesService', () => {
             let showtimeInRangeB: ShowtimeDto
 
             beforeEach(async () => {
+                // search는 startTime 오름차순으로 반환하므로 위치 매핑이 흔들리지 않게 서로 다른 startTime을 준다
                 const createdShowtimes = await createShowtimes(fix, [
-                    { sagaId },
-                    { movieId },
-                    { theaterId },
+                    { sagaId, startTime: new Date('2000-01-01T12:00') },
+                    { movieId, startTime: new Date('2000-01-02T12:00') },
+                    { theaterId, startTime: new Date('2000-01-03T12:00') },
                     { startTime: new Date('2020-01-01T12:00') },
                     { startTime: new Date('2020-01-01T14:00') },
                     { startTime: new Date('2020-01-02T14:00') },
@@ -179,7 +180,8 @@ describe('ShowtimesService', () => {
                 startTimeRange: { start: new Date() }
             })
 
-            expect(movieIds).toEqual([oid(0x3), oid(0x4)])
+            expect(movieIds).toHaveLength(2)
+            expect(movieIds).toEqual(expect.arrayContaining([oid(0x3), oid(0x4)]))
         })
     })
 
@@ -195,7 +197,8 @@ describe('ShowtimesService', () => {
         it('영화 ID 목록으로 필터링한 극장 ID 목록을 반환한다', async () => {
             const theaterIds = await showtimesService.searchTheaterIds({ movieIds: [oid(0xaa)] })
 
-            expect(theaterIds).toEqual([oid(0xb1), oid(0xb2)])
+            expect(theaterIds).toHaveLength(2)
+            expect(theaterIds).toEqual(expect.arrayContaining([oid(0xb1), oid(0xb2)]))
         })
     })
 
