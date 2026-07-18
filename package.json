@@ -20,7 +20,7 @@
         "build": "npm run build --workspaces --if-present",
         "clean": "git clean -fdX",
         "lint": "npm run lint --workspaces --if-present",
-        "postlint": "prettier --check . && git ls-files '*.sh' | xargs -r shellcheck --severity=warning && git ls-files '*.md' | xargs -r lychee --offline --include-fragments",
+        "postlint": "prettier --check . && git ls-files '*.sh' | while IFS= read -r file; do [ ! -f \"$file\" ] || printf '%s\\0' \"$file\"; done | xargs -0 -r shellcheck --severity=warning && git ls-files '*.md' | while IFS= read -r file; do [ ! -f \"$file\" ] || printf '%s\\0' \"$file\"; done | xargs -0 -r lychee --offline --include-fragments",
         "format": "npm run format --workspaces --if-present",
         "postformat": "prettier --write .",
         "pretest": "npm run build -w libs",
