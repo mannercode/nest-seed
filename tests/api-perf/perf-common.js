@@ -1,11 +1,4 @@
 /**
- * api-perf k6 하네스들이 공유하는 헬퍼다.
- *
- * - 공통 환경 변수 읽기 (SERVER_URL, CONCURRENCY, DURATION_MS, WARMUP_MS, LABEL, ACCEPT_GZIP)
- * - k6 시나리오/executor 옵션 빌드
- * - 측정 창 시작 시각 계산 (호출 시점 규칙은 measurementStart JSDoc 참고)
- * - handleSummary용 결과 객체 빌드와 출력 파일 경로
- *
  * k6 메트릭 모델에서 주의할 점:
  *  - Trend는 percentile만 보고 count는 없으므로 표본 수는 Counter(`measured_status`)로 같이 잰다.
  *  - 태그별 Counter 집계는 thresholds로 사전 정의해야 handleSummary에서 분리해 볼 수 있다.
@@ -14,7 +7,6 @@
  *    필요하면 `k6 run --out json=...`으로 raw 데이터를 뽑아 후처리한다.
  */
 
-// 시나리오들이 자주 받는 상태들.
 // 클라이언트 에러(연결 실패)는 k6가 0으로 보고한다.
 const TRACKED_STATUSES = [0, 200, 201, 204, 400, 401, 403, 404, 409, 422, 500, 502, 503]
 
@@ -28,7 +20,6 @@ function readPositiveInt(name, defaultValue) {
     return n
 }
 
-/** 공통 환경 변수를 읽어 옵션 객체로 만든다. 정수형은 잘못된 값이면 fail-fast로 던진다. */
 export function readOptions() {
     // 대상 서버는 반드시 명시해서 받는다.
     // 기본값으로 조용히 붙으면 포트 3000에 dev 단일 프로세스와 deploy 4-replica 어느 쪽이 떠 있었는지 결과만 봐서는 구분할 수 없다.
@@ -48,7 +39,6 @@ export function readOptions() {
     }
 }
 
-/** k6 executor 옵션. warmup+측정을 하나의 constant-vus 구간으로 묶고, 상태별 submetric을 활성화한다. */
 export function buildScenarioOptions(opts) {
     const thresholds = {}
     for (const s of TRACKED_STATUSES) {

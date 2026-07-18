@@ -20,8 +20,6 @@ import {
 import { map, Observable } from 'rxjs'
 import { AdminAuthGuard } from './guards'
 
-// 인가: 상영 등록 흐름은 콘솔 운영자(admin) 전용이다.
-// 조회/SSE까지 같은 신뢰 영역으로 묶어 클래스 레벨로 가드를 건다.
 @Controller('showtime-creation')
 @UseGuards(AdminAuthGuard)
 export class ShowtimeCreationHttpController {

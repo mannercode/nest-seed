@@ -23,10 +23,7 @@ export class TemporalWorkerService implements OnModuleInit, OnModuleDestroy {
             workflowBundle: { code: readFileSync(this.options.workflowBundlePath, 'utf8') }
         })
 
-        // `run()`은 워커가 완전히 종료된 뒤에만 resolve 된다.
-        // 진행 중이던 액티비티가 모두 끝나고 polling이 멈춘 시점이다.
-        // 이 Promise를 들고 있어야 `onModuleDestroy`에서 기다릴 수 있다.
-        // 그러지 않으면 액티비티가 끝나기 전에 의존 모듈이 먼저 닫혀, mongoose가 쿼리 중간에 끊기는 식의 경합이 생긴다.
+        // 의존 모듈이 액티비티보다 먼저 닫히지 않도록 완전 종료 Promise를 보관한다.
         this.runPromise = this.worker.run().catch(
             /* istanbul ignore next */ (err: unknown) => {
                 this.logger.error('temporal worker run() failed', err)
@@ -35,8 +32,7 @@ export class TemporalWorkerService implements OnModuleInit, OnModuleDestroy {
     }
 
     async onModuleDestroy() {
-        // 워커가 이미 멈춰 있으면(run() 실패, 시그널 핸들러의 선행 종료, 중복 destroy)
-        // `shutdown()`이 IllegalStateError를 동기로 던진다. 그 경우에도 아래 정리는 계속해야 한다.
+        // 이미 멈춘 워커의 IllegalStateError는 무시하고 연결 정리를 계속한다.
         try {
             this.worker?.shutdown()
         } catch (error) {
@@ -44,8 +40,7 @@ export class TemporalWorkerService implements OnModuleInit, OnModuleDestroy {
         }
 
         try {
-            // 진행 중이던 액티비티가 정상 종료 또는 취소까지 도달하도록,
-            // 연결을 닫기 전에 워커가 완전히 멈출 때까지 기다린다.
+            // 액티비티가 종료 또는 취소된 뒤 연결을 닫는다.
             if (this.runPromise) await this.runPromise
         } finally {
             await this.connection?.close().catch(() => undefined)

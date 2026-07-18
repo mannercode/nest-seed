@@ -1,9 +1,6 @@
 import type { AdminDto } from 'core'
 import { createAdmin, Errors, loginAdmin, type AppTestContext } from '../helpers'
 
-// root는 DB 도큐먼트 없이 env 자격증명(`ROOT_PASSWORD`)으로 Basic Auth 인증되고,
-// admin lifecycle (생성/삭제)만 책임진다.
-// admin은 DB 도큐먼트이고 자기 자신의 정보 조회·수정만 한다.
 describe('AdminManagement', () => {
     let fix: AppTestContext
     const adminCredentials = { email: 'admin@mail.com', password: 'password' }

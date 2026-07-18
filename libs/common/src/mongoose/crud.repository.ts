@@ -16,15 +16,7 @@ type SessionArg = ClientSession | undefined
 
 const defaultLeanOptions = {}
 
-// 입력으로 받은 `doc`을 그대로 수정하고 같은 참조를 반환한다.
-//
-// `lean()` 결과는 `{ _id: ObjectId, ... }` 형태로 반환된다.
-// 스키마 가상 필드의 `id: string`과 `toJSON.flattenObjectIds`는 hydrated 문서에만 적용된다.
-// `lean` 결과에 같은 효과를 보려면 `mongoose-lean-virtuals` 플러그인을 추가해야 하는데, 그 플러그인은 페이지네이션 읽기 처리량을 유의미하게 낮춘다.
-// 그래서 여기서 문자열 `id`를 직접 설정한다.
-//
-// `_id`는 의도적으로 남겨 둔다.
-// 내부 코드 일부가 비교를 위해 `doc._id.toString()`을 쓰고 있고, HTTP 응답으로 나갈 때는 어차피 직렬화 단계에서 빠진다.
+// lean 플러그인의 처리량 비용을 피하려고 입력 문서에 문자열 id를 직접 추가한다. 내부 비교용 _id는 남긴다.
 export function leanToPublic<T extends { _id?: unknown }>(doc: T): T {
     if (doc._id != null) {
         ;(doc as any).id = (doc._id as { toString(): string }).toString()
@@ -32,10 +24,6 @@ export function leanToPublic<T extends { _id?: unknown }>(doc: T): T {
     return doc
 }
 
-// `lean()` 결과를 공개 타입으로 바꾸는 두 헬퍼이다.
-// mongoose가 추론하는 `lean()` 결과 타입이 `T extends { _id?: unknown }` 제약과 바로 맞물리지 않아서, 호출 지점마다 같은 형 변환을 반복하던 부분을 한 곳으로 모았다.
-//
-// `leanToPublic`을 그대로 부르므로, 입력 문서들도 그 자리에서 같이 바뀐다.
 export function leanArrayToPublic<T>(docs: unknown): T[] {
     return (docs as any[]).map(leanToPublic) as T[]
 }
@@ -44,16 +32,9 @@ export function leanOneToPublic<T>(doc: unknown): null | T {
     return doc ? (leanToPublic(doc as any) as T) : null
 }
 
-/**
- * CRUD 도메인용 리포지토리 기반 클래스.
- * 보통의 도메인 엔티티가 쓰는 조회, 저장, 삭제, 페이지네이션, 트랜잭션을 한곳에서 제공한다.
- *
- * 감사 로그처럼 추가만 일어나는 도메인은 이 기반이 아니라 `AppendOnlyRepository`를 사용한다.
- * 해당 구현은 삭제·수정 메서드를 타입 차원에서 노출하지 않는다.
- */
+// 일반 엔티티의 CRUD·페이지네이션·트랜잭션 기반이다. 변경 불가 이력은 AppendOnlyRepository를 쓴다.
 export abstract class CrudRepository<Doc> implements OnModuleInit {
-    // defaultSize는 호출자가 size를 생략했을 때의 페이지 크기, maxSize는 요청이 넘을 수 없는 상한이다.
-    // 한 값이 두 역할을 겸하면 기본값을 조정할 때 상한까지 따라 움직여 호출자들이 깨진다.
+    // 기본 페이지 크기와 요청 상한은 독립적으로 조정할 수 있어야 한다.
     constructor(
         protected readonly model: Model<Doc>,
         protected readonly defaultSize: number,
@@ -134,16 +115,7 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
 
         queryHelper.lean(defaultLeanOptions)
 
-        // 페이지네이션은 조회와 카운트를 함께 실행한다.
-        // 필터가 비어 있을 때 카운트가 조회보다 몇 배는 느리게 관측됐다.
-        // `CrudSchema`의 pre hook이 포함되면서 `countDocuments`가 사실상 `{ deletedAt: null }` 카운트로 바뀌고, 삭제되지 않은 모든 행에 대한 인덱스 스캔이 되기 때문이다.
-        // `estimatedDocumentCount`는 컬렉션 메타데이터만 읽으므로 즉시 반환된다.
-        // 그래서 필터가 빈 경로에서는 이 경로를 사용한다.
-        //
-        // 한 가지 한계가 있다.
-        // `estimatedDocumentCount`는 소프트 삭제된 행까지 포함한 전체 수를 반환한다.
-        // 응답의 `total`이 실제로 페이지에 표시되는 행보다 커질 수 있다.
-        // 마지막 페이지에 빈자리가 생길 수는 있지만 정렬은 일관되게 유지되므로, 이 서비스에서는 받아들일 만한 절충이다.
+        // 빈 필터의 countDocuments 전체 인덱스 스캔을 피한다. 추정치는 soft-deleted 행도 세는 절충이 있다.
         const rawFilter = queryHelper.getQuery()
         const filterIsEmpty = Object.keys(rawFilter).length === 0
 
@@ -193,10 +165,7 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
     }
 
     async onModuleInit() {
-        // `document.save()`가 내부적으로 `createCollection()`을 부른다.
-        // 같은 시점에 여러 곳에서 `save()`가 호출되면 Mongo가 같은 컬렉션을 동시에 만들려 들면서 "Collection namespace is already in use" 에러를 낸다.
-        // 단위 테스트처럼 빠르게 초기화를 반복하는 환경에서 자주 나타나는 증상이다.
-        // 모듈 초기화 시점에 컬렉션과 인덱스를 미리 만들어 두면 이 경합이 사라진다.
+        // 동시 첫 save의 createCollection 경합을 피하려고 미리 초기화한다.
         await this.model.createCollection()
         await this.model.createIndexes()
     }
@@ -214,9 +183,7 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
     }
 
     async withTransaction<T>(callback: (session: ClientSession) => Promise<T>): Promise<T> {
-        // 드라이버의 withTransaction이 충돌(TransientTransactionError)은 트랜잭션 전체를, 커밋 불명은
-        // 커밋을 데드라인까지 재시도한다. 손수 만든 고정 횟수 재시도는 부하에서 소진돼 일시 오류가 5xx로 샜다.
-        // 콜백은 예외를 던져 중단하고, 정상 반환하면 커밋된다.
+        // 드라이버가 일시 충돌은 트랜잭션 전체를, 불명확한 커밋은 커밋 단계만 재시도한다.
         const session = await this.model.startSession()
         try {
             return await session.withTransaction(callback)

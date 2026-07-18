@@ -90,7 +90,6 @@ export default function HomePage() {
             </header>
             {home.recommendedMovies.length > 0 && (
                 <section className="mb-8" data-testid="recommended-movies">
-                    {/* 이 데모는 게스트 읽기 전용이라 토큰을 보내지 않는다. 추천은 항상 비개인화(개봉일 순)이므로 개인화를 약속하는 문구를 쓰지 않는다. */}
                     <h2 className="text-lg font-medium">추천 영화</h2>
                     <ul className="mt-3 flex flex-wrap gap-2">
                         {home.recommendedMovies.map((movie) => (

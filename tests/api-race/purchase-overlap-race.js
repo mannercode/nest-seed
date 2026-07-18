@@ -1,22 +1,6 @@
 /**
- * 겹치되 서로 다른 티켓 묶음을 동시에 구매하는 경쟁을 여러 복제본에 걸쳐 재현하는 부하 테스트이다.
- *
- * purchase의 분산 락 키는 정렬된 티켓 id 묶음이라 "같은 묶음"만 직렬화한다.
- * {t1,t2}와 {t2,t3}처럼 겹치되 다른 묶음은 락 키가 달라 동시에 진행되므로,
- * 이중 판매를 실제로 막는 마지막 가드인 원자 전이(Available→Sold)와
- * 패자의 보상 체인(구매 기록 삭제, 결제 취소)이 경쟁 상태에서 그대로 실행된다.
- * 같은 묶음의 경쟁(락+사전 검사)은 purchase-double-spend.js가 따로 검증한다.
- *
- * 한 회차는 새 상영을 만들고, 사용자 그룹마다 티켓 3장 {t1,t2,t3}를 선점한 뒤
- * {t1,t2}와 {t2,t3} 두 구매를 동시에 보낸다. 그룹마다 정확히 한 건만 성공해야 한다.
- *
- * 성공 응답은 두 가지로 다시 검증한다.
- *  - read-back: `GET /users/me/purchases`에서 이 그룹의 티켓을 담은 구매가 승자 한 건뿐인지.
- *    패자의 구매 기록이 보상으로 삭제됐는지까지 이 검사로 함께 확인된다.
- *  - 티켓 상태: 승자 묶음 2장만 Sold이고, 공유되지 않은 패자의 티켓 1장은 Available로 남았는지.
- *
- * 어떤 그룹의 성공 수가 1이 아니거나, 패자의 흔적(여분 구매 기록, 잘못 팔린 티켓)이 남거나,
- * 5xx가 발생하거나, 응답한 복제본 수가 두 개보다 적으면 실패로 본다.
+ * 락 키가 다른 {t1,t2}/{t2,t3} 구매를 동시에 보내 원자 전이와 패자 보상을 검증한다.
+ * 그룹마다 구매 기록 한 건과 Sold 티켓 두 장만 남아야 한다.
  */
 
 const { readPositiveInt, request, SERVER_URL, waitForSagaSuccess } = require('./race-common')
@@ -114,7 +98,6 @@ async function createAndLoginUser(index) {
 function toPurchaseBody(ticketIds) {
     return {
         purchaseItems: ticketIds.map((id) => ({ itemId: id, type: 'tickets' })),
-        // 서버가 티켓 수 × TICKET_PRICE(기본 10000)로 합산을 검증한다.
         totalPrice: ticketIds.length * 10000
     }
 }
@@ -147,8 +130,6 @@ async function verifyGroup(iteration, g, cust, triple, responses, showtimeId) {
         throw new Error(`iter ${iteration} group ${g}: success response has no purchase id`)
     }
 
-    // read-back: 이 그룹의 티켓을 담은 구매 기록이 승자 한 건만 영속됐는지 확인한다.
-    // 패자의 구매 기록은 보상(deletePurchaseRecord)이 지웠어야 하므로, 한 건이라도 더 있으면 보상 실패다.
     const readBack = await request('GET', '/users/me/purchases', {
         headers: { authorization: `Bearer ${cust.accessToken}` }
     })
@@ -168,8 +149,6 @@ async function verifyGroup(iteration, g, cust, triple, responses, showtimeId) {
         )
     }
 
-    // 티켓 상태: 승자 묶음 2장만 Sold, 공유되지 않은 패자의 티켓 1장은 Available이어야 한다.
-    // 패자가 전이를 일부라도 남겼다면(원자성 깨짐) 여기서 드러난다.
     const tickets = await request('GET', `/booking/showtimes/${showtimeId}/tickets`)
     if (tickets.status !== 200 || !Array.isArray(tickets.body)) {
         throw new Error(`iter ${iteration} group ${g}: tickets read-back status=${tickets.status}`)
@@ -195,7 +174,6 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
         startTimeOffsetMs
     )
 
-    // 각 사용자가 자기 그룹의 티켓 3장을 선점한다.
     await Promise.all(
         users.map(async (cust, g) => {
             const hold = await request('POST', `/booking/showtimes/${showtimeId}/tickets/hold`, {
@@ -208,7 +186,6 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
         })
     )
 
-    // 모든 그룹이 동시에 겹치는 두 묶음 {t1,t2} / {t2,t3}의 구매를 보낸다.
     const attempts = []
     for (let g = 0; g < USER_GROUPS; g++) {
         const cust = users[g]

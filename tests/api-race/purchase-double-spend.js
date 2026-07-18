@@ -1,19 +1,6 @@
 /**
- * 같은 티켓 묶음을 중복 결제하려는 경쟁을 여러 복제본에 걸쳐 재현하는 부하 테스트이다.
- *
- * 한 회차는 새 상영을 하나 만들고, 사용자 그룹마다 서로 겹치지 않는 티켓 쌍 하나씩을 선점한다.
- * 그다음 각 사용자가 각자의 쌍에 대해 결제 요청 여러 건을 동시에 보낸다.
- * 그룹마다 정확히 한 요청만 2xx로 성공하고, 나머지는 4xx(409 AlreadySold 또는 400 NotHeld)이다.
- *
- * 성공 응답은 한 번 더 검증한다.
- * 2xx만으로는 결제가 실제로 영속됐는지 알 수 없으므로,
- * 승자의 구매 id를 `GET /users/me/purchases` 응답에서 찾아 결제가 실제로 만들어졌는지 확인한다.
- *
- * 영화, 극장, 사용자 계정은 회차 바깥에서 한 번만 만든다.
- * 매 회차마다 상영, 티켓, 선점, 경쟁만 새로 실행한다.
- *
- * 어떤 그룹의 성공 응답 수가 1이 아니거나, 승자 구매 기록이 영속되지 않았거나,
- * 5xx가 발생하거나, 응답한 복제본 수가 두 개보다 적으면 실패로 본다.
+ * 같은 티켓 묶음을 여러 복제본에서 동시에 결제해 그룹마다 한 건만 성공하는지 검증한다.
+ * 성공 응답은 구매 목록에서 다시 읽어 phantom 성공도 함께 막는다.
  */
 
 const { readPositiveInt, request, SERVER_URL, waitForSagaSuccess } = require('./race-common')
@@ -115,7 +102,6 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
         startTimeOffsetMs
     )
 
-    // 각 사용자가 자기 그룹의 티켓 쌍을 선점한다.
     await Promise.all(
         users.map(async (cust, g) => {
             const hold = await request('POST', `/booking/showtimes/${showtimeId}/tickets/hold`, {
@@ -128,12 +114,10 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
         })
     )
 
-    // 모든 사용자가 동시에 PURCHASES_PER_GROUP개의 구매 요청을 보낸다.
     const attempts = []
     for (let g = 0; g < USER_GROUPS; g++) {
         const cust = users[g]
         const purchaseItems = groups[g].map((id) => ({ itemId: id, type: 'tickets' }))
-        // 서버가 티켓 수 × TICKET_PRICE(기본 10000)로 합산을 검증한다.
         const totalPrice = groups[g].length * 10000
         for (let c = 0; c < PURCHASES_PER_GROUP; c++) {
             attempts.push(
@@ -181,9 +165,6 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
             throw new Error(`iter ${iteration} group ${g}: ${slot.other.length} unexpected`)
         }
 
-        // read-back: 승자 구매 기록이 실제로 영속됐는지 확인한다.
-        // 2xx 응답 하나만으로는 결제가 만들어졌는지(phantom 성공이 아닌지) 구분하지 못한다.
-        // 구매 단건 조회 endpoint는 없으므로 GET /users/me/purchases 배열에서 승자 id를 찾아 확인한다.
         const winner = results.find((r) => r.group === g && r.status >= 200 && r.status < 300)
         if (!winner.body || !winner.body.id) {
             throw new Error(`iter ${iteration} group ${g}: success response has no purchase id`)

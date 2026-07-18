@@ -4,15 +4,7 @@ import { getProjectId } from 'config'
 import { Observable, Subject } from 'rxjs'
 import type { ShowtimeCreationEvent } from './internal/types'
 
-/**
- * Temporal 워커와 SSE 클라이언트를 복제본 경계 너머로 연결한다.
- *
- * 워크플로를 실행하는 워커와 SSE 응답을 가진 컨트롤러가 서로 다른 복제본에 있을 수 있다.
- * 상태 변화는 NATS subject로 발행하고, 각 복제본은 받은 메시지를 로컬 RxJS Subject에 전달한다.
- * 컨트롤러는 `observeStatusChanged`로 그 Subject를 구독해 SSE 본문을 만든다.
- *
- * subject 이름 앞에 `PROJECT_ID`를 붙여 병렬 테스트 워커의 이벤트 공간을 분리한다.
- */
+// NATS로 복제본을 건넌 상태를 로컬 RxJS 스트림에 전달하며, PROJECT_ID로 테스트를 격리한다.
 @Injectable()
 export class ShowtimeCreationEvents implements OnModuleInit, OnModuleDestroy {
     private readonly natsSubject = `${getProjectId()}.showtime-creation.statusChanged`

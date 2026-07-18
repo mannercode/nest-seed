@@ -38,7 +38,6 @@ export class AdminsRepository extends CrudRepository<Admin> {
     }
 
     async update(id: string, patch: Partial<Pick<Admin, 'email' | 'name' | 'password'>>) {
-        // getDocumentById는 없으면 NotFoundException을 던진다. service 쪽 try/catch에서 통과시켜 그대로 404가 된다.
         const doc = await this.getDocumentById(id)
 
         assignIfDefined(doc, patch, 'email')

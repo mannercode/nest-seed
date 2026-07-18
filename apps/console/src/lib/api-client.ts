@@ -1,9 +1,3 @@
-/**
- * 브라우저에서 NestJS API로 보내는 fetch 래퍼이다.
- * 콘솔은 `next.config.mjs`의 `/api/*` rewrite를 거쳐 API로 간다.
- * 호출자는 호스트 주소 없이 경로만 넘기면 된다.
- */
-
 export class ApiError extends Error {
     readonly status: number
     readonly code: string | undefined

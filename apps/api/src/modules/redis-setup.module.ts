@@ -19,7 +19,6 @@ import { AppConfigService, REDIS_CONNECTION_NAME } from 'config'
                             retryDelayOnFailover: 200,
                             retryDelayOnClusterDown: 200,
                             slotsRefreshTimeout: 5000,
-                            // 노드별 TCP 옵션이다.
                             // `keepAlive`가 0이면 유휴 소켓이 NAT나 방화벽 타임아웃에 조용히 끊긴다.
                             // 다음에 그 소켓을 다시 사용하려고 하면 트래픽이 몰릴 때 `Connection is closed`로 실패한다.
                             // 30초마다 keep-alive 패킷을 보내 소켓을 유지한다.

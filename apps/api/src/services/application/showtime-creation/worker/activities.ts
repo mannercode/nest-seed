@@ -14,8 +14,7 @@ export type ValidateAndCreateResult =
     | { kind: 'succeeded'; createdShowtimeCount: number; createdTicketCount: number }
 
 const VALIDATE_CREATE_LOCK_KEY = 'validate-and-create'
-// 임계 구역(검증+삽입)의 상한.
-// `validateAndCreate`의 startToCloseTimeout(15분)과 같게 두어, 워커가 죽었을 때만 락이 만료되고 정상 실행 중에는 풀리지 않게 한다.
+// 액티비티 제한과 같게 두어 정상 실행 중에는 락이 먼저 풀리지 않게 한다.
 const VALIDATE_CREATE_LOCK_TTL_MS = 15 * 60 * 1000
 const VALIDATE_CREATE_LOCK_WAIT_MS = 10 * 60 * 1000
 
@@ -32,10 +31,7 @@ export class ShowtimeCreationActivities {
         @InjectCache('showtime-creation') private readonly cache: CacheService
     ) {}
 
-    /**
-     * `TemporalWorkerService`에 등록할 액티비티 묶음을 반환한다.
-     * Temporal은 일반 함수로 호출하므로 각 메서드를 `bind`해 `this`를 잃지 않게 한다.
-     */
+    // Temporal은 일반 함수로 호출하므로 인스턴스 컨텍스트를 고정한다.
     bind() {
         return {
             compensate: this.compensate.bind(this),

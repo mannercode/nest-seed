@@ -17,10 +17,7 @@ export class CacheService {
         await this.redis.del(this.getKey(key))
     }
 
-    /**
-     * 캐시 접두어가 붙은 키로 Lua 스크립트를 실행한다.
-     * 캐시 접두어는 항상 첫 번째 ARGV로 들어가므로, 스크립트 안에서 접두어가 필요할 때 그대로 사용할 수 있다.
-     */
+    // 키에는 캐시 접두어를 붙이고 스크립트의 첫 ARGV에도 같은 접두어를 넘긴다.
     async executeScript<T = unknown>(
         script: string,
         keys: string[],
@@ -54,16 +51,8 @@ export class CacheService {
     }
 
     /**
-     * 이 캐시 범위 안에서만 동작하는 분산 락이다.
-     * 같은 키를 획득한 호출자 한 명만 `fn`을 실행한다.
-     * 동시에 들어온 다른 호출자는 `{ ran: false }`만 받는다.
-     * 락은 `fn`이 끝나면(예외가 나도) 해제된다.
-     *
-     * - 락 키는 `${prefix}:lock:${key}`에 둔다.
-     * - `ttlMs`는 `fn`의 최대 실행 시간보다 커야 한다.
-     *   프로세스가 종료되어 락이 남으면 TTL이 다른 호출자가 대기하는 시간의 상한이 된다.
-     * - 락을 획득할 때 만든 토큰과 일치할 때만 키를 지운다.
-     *   그래서 만료된 뒤 다른 호출자가 다시 획득한 락을 실수로 해제하지 않는다.
+     * 락 획득자만 `fn`을 실행하고 나머지는 `{ ran: false }`를 받는다.
+     * `ttlMs`는 최대 실행 시간보다 길어야 하며, 소유 토큰이 일치할 때만 해제한다.
      */
     async withLock<T>(
         key: string,
@@ -97,14 +86,7 @@ export class CacheService {
         return { ran: true, result: await fn() }
     }
 
-    /**
-     * `withLock`과 달리 락이 비워질 때까지 기다리는 변종이다.
-     * 락을 획득하면 `fn`을 정확히 한 번 실행하고, `waitMs` 안에 획득하지 못하면 예외를 던진다.
-     *
-     * 들어온 요청을 무시하지 않고 한 번에 하나씩 처리해야 할 때 사용한다.
-     * 폴링 방식이라 대기자 사이의 획득 순서는 보장하지 않는다.
-     * `pollMs`는 해제된 락을 빠르게 획득할 만큼 짧게 두되, Redis 요청이 과도해지지 않을 정도로는 길게 둔다.
-     */
+    // waitMs 동안 폴링하며 획득 순서는 보장하지 않는다.
     async withLockBlocking<T>(
         key: string,
         ttlMs: number,

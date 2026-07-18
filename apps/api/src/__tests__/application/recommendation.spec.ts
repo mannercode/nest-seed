@@ -12,8 +12,6 @@ describe('RecommendationService', () => {
     })
     afterEach(() => fix.teardown())
 
-    // 추천은 GET /views/user-app/home 의 recommendedMovies 로 노출된다(별도 엔드포인트 없음).
-    // 여기서는 추천 알고리즘(시청 기록·개봉일 정렬)을 home 응답을 통해 검증한다.
     describe('GET /views/user-app/home (recommendedMovies)', () => {
         let fantasyMovie: MovieDto
         let comedy1Movie: MovieDto

@@ -4,7 +4,6 @@ import { AppConfigService } from 'config'
 import { MovieDto, MoviesService, ShowtimesService, WatchRecordsService } from 'core'
 import { MovieRecommender } from './domain'
 
-// 추천에 반영할 최근 관람 기록 수. 페이지 상한(HTTP_PAGINATION_MAX_SIZE) 이내의 도메인 정책 값이다.
 const RECENT_WATCH_LIMIT = 50
 
 @Injectable()

@@ -11,13 +11,7 @@ const SENSITIVE_FIELDS = new Set([
 const REDACTED = '[REDACTED]'
 const CIRCULAR = '[CIRCULAR]'
 
-/**
- * 미리 정해 둔 민감 키(`password`, `refreshToken`, `accessToken` 등)의 값을 `[REDACTED]`로 바꾼 깊은 복사본을 반환한다.
- * HTTP 요청·응답 본문이 로그에 기록되기 전에 가리는 용도이다.
- *
- * 같은 객체를 다시 만나면 끝없이 재귀하지 않고 `[CIRCULAR]`로 축약한다.
- * 예를 들어 에러 로깅 경로에 포함되는 `error.cause = error` 같은 사슬이 그렇다.
- */
+// 민감 필드를 가린 깊은 복사본을 만들며 순환 참조는 [CIRCULAR]로 축약한다.
 export function redactSensitive<T>(value: T): T {
     return walk(value, new WeakSet<object>()) as T
 }

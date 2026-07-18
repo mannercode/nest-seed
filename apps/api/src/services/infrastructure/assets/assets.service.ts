@@ -18,13 +18,10 @@ import { AssetErrors } from './errors'
 import { Asset } from './models'
 
 const CLEANUP_LOCK_KEY = 'cleanup-expired-uploads'
-// 락 만료 시간은 두 조건을 동시에 맞춘다.
-// 정리 작업이 가장 오래 걸려도 자동 만료보다 먼저 끝날 만큼 길게 둔다.
-// 작업을 획득한 컨테이너가 종료되면 다음 cron 한 회차 안에 다른 컨테이너가 다시 가져갈 만큼 짧게 둔다.
+// 정상 정리보다 길고, 소유 컨테이너가 죽었을 때 다음 cron이 재획득할 만큼 짧게 둔다.
 const CLEANUP_LOCK_TTL_MS = 5 * 60 * 1000
 
-// `@Cron` 데코레이터는 모듈을 읽어 들이는 시점에 평가되므로 DI로 값을 받아 올 수 없다.
-// 운영에서 자주 바꿀 값도 아니라 코드 상수로 둔다.
+// @Cron은 DI보다 먼저 평가되므로 코드 상수를 쓴다.
 const EXPIRED_UPLOAD_CLEANUP_CRON = CronExpression.EVERY_10_MINUTES
 
 @Injectable()
@@ -40,9 +37,7 @@ export class AssetsService {
 
     @Cron(EXPIRED_UPLOAD_CLEANUP_CRON, { name: 'assets.cleanupExpiredUploads' })
     async cleanupExpiredUploads() {
-        // 모든 복제본이 같은 cron을 실행한다.
-        // 그래서 실제 작업은 분산 락 안에서 한다.
-        // 한 cron 회차에 한 복제본만 정리 작업을 수행한다.
+        // 모든 복제본이 실행하므로 한 복제본만 작업하도록 분산 락을 쓴다.
         await this.cache.withLock(CLEANUP_LOCK_KEY, CLEANUP_LOCK_TTL_MS, async () => {
             const expiresBefore = this.getExpirationThreshold()
             const expiredAssets = await this.repository.findExpiredIncomplete(expiresBefore)
@@ -59,8 +54,7 @@ export class AssetsService {
         const { checksum, mimeType, size } = createDto
         const expiresInSec = this.config.asset.uploadExpiresInSec
 
-        // checksum을 presign 조건에 넣으면 신고한 값과 다른 본문은 스토리지가 업로드 자체를 거부한다.
-        // 그래서 저장된 checksum은 항상 실제 객체와 일치한다.
+        // checksum을 presign 조건에 넣어 신고한 값과 다른 본문을 스토리지에서 거절한다.
         const presigned = await this.s3Service.presignUploadPost({
             checksum,
             contentType: mimeType,
@@ -84,10 +78,7 @@ export class AssetsService {
     async deleteMany(assetIds: string[]): Promise<void> {
         if (assetIds.length === 0) return
 
-        // S3 한 건이 실패해도 나머지 삭제는 끝까지 시도한다.
-        // `Promise.all` 처럼 첫 실패에서 다른 진행 중인 호출까지 같이 버리지 않는다.
-        // 다만 하나라도 실패하면 DB 행은 지우지 않고 첫 실패를 그대로 던진다.
-        // 호출자(예: 정리 cron)가 다음 회차에 같은 자산을 다시 처리할 수 있어야, S3 객체가 DB 참조 없이 남는 상황을 막을 수 있기 때문이다.
+        // S3 삭제는 모두 시도하되 하나라도 실패하면 재시도 기준인 DB 행을 남긴다.
         const results = await Promise.allSettled(
             assetIds.map((assetId) => this.s3Service.deleteObject(assetId))
         )

@@ -16,11 +16,8 @@ jobs:
     stability:
         strategy:
             fail-fast: false
-            # 모든 레그는 같은 단계(checkout → Docker Hub 로그인 → devcontainer 실행)를 쓰므로,
-            # 레그별 차이(시간 한계, 실행 명령)만 행으로 둔다.
             matrix:
                 include:
-                    # unit: 단위/통합 테스트 누적 반복.
                     # libs는 75회라도 ~140분이지만, apps/api는 컨텍스트 부팅 비용 때문에 회당 ~5분이라 75회면 GitHub 6시간 상한(360분)을 넘긴다.
                     # 그래서 apps/api는 상한 안에 드는 60회로 줄이고, libs가 apps/api 한계에 묶이지 않게 레그를 나눠 시간 한계를 따로 둔다.
                     - leg: unit-libs
@@ -33,13 +30,12 @@ jobs:
                       run: |
                           npm run build
                           bash .github/scripts/repeat.sh 60 npm test -w apps/api -- --coverageThreshold='{}'
-                    # bootup: 인프라 compose 전체를 내렸다 올리는 infra/reset.sh를 반복해 부팅 안정성을 본다.
                     - leg: bootup
                       timeout: 120
                       run: |
                           npm run build
                           bash .github/scripts/repeat.sh 50 bash infra/reset.sh
-                    # scenario: 분산 레이스 시나리오 반복. 50회는 의도된 누적 검증량이다.
+                    # 분산 레이스 50회는 의도된 누적 검증량이다.
                     # 240분은 가장 느린 시나리오(user-signup-race 50회 ~200분)에 여유를 둔 값.
                     # sse-fanout-race는 회차당 사가 1,500개(150 inner × 10)를 만들어 다른 시나리오보다 워크플로 밀도가 압도적으로 높다.
                     # 기본 RESET_EVERY=10이면 리셋 전에 Temporal이 transfer-queue 정체 구간까지 누적되므로 더 자주 초기화한다.

@@ -25,7 +25,6 @@ describe('UserHomeView', () => {
         it('상영 예정이 없으면 빈 목록을 반환한다', async () => {
             const { body } = await fix.httpClient.get('/views/user-app/home').ok()
 
-            // 추천은 상영 중 영화 기반이라 상영이 없으면 함께 비어 있다.
             expect(body).toEqual({ showingMovies: [], recommendedMovies: [] })
         })
 

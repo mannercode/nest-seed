@@ -2,9 +2,7 @@ import { expect, request, test } from '@playwright/test'
 
 import { API_BASE_URL } from '../playwright.config'
 
-// 시드 admin으로 로그인해 새 영화를 등록하는 스모크 테스트.
-// admin은 API가 부팅 시 만들지 않으므로 테스트 시작 전에 root Basic Auth로 한 번 생성한다.
-// 이미 있으면 409가 떨어지는데 무해하게 넘긴다.
+// API가 admin을 자동 생성하지 않으므로 root로 만들고 기존 계정의 409는 허용한다.
 
 const ADMIN_EMAIL = 'admin@nest-seed.local'
 const ADMIN_PASSWORD = 'DevPass1!'
@@ -49,8 +47,7 @@ test('admin으로 로그인하고 새 영화를 등록한다', async ({ page }) 
 
     await expect(page).toHaveURL(/\/$/)
 
-    // 콘솔에는 영화 목록 페이지가 없으므로 생성 결과는 API로 확인한다.
-    // 저장이 조용히 실패해도 리다이렉트만 맞으면 통과하던 약한 검증을 메운다.
+    // 목록 화면이 없어 API read-back으로 저장까지 확인한다.
     const ctx = await request.newContext()
     try {
         await expect

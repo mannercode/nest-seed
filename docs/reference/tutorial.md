@@ -255,7 +255,7 @@ top-down에서는 이것이 자연스럽다. REST API부터 시작하므로:
 
 테스트를 먼저 쓰고 통과시키며 구현한다 — 의식하지 않아도 TDD가 된다. 그리고 이렇게 모인 spec은 **그 자체가 실행 가능한 API 문서**다. 시드의 [apps/api/api-docs/\*.spec](../apps.md#실행-가능한-api-문서)이 정확히 이 결과물이다. spec에는 주로 성공 흐름을 담고, 실패 흐름과 조건 분기 검증은 Jest 통합 테스트가 맡는다.
 
-그 Jest 테스트가 실제로 어떻게 작성됐는지 보자 — 상영시간 생성의 통합 테스트([showtime-creation.spec.ts](../../apps/api/src/__tests__/integration/application/showtime-creation.spec.ts))를 네 토막으로 발췌한다(import 줄은 생략).
+그 Jest 테스트가 실제로 어떻게 작성됐는지 보자 — 상영시간 생성의 통합 테스트([showtime-creation.spec.ts](../../apps/api/src/__tests__/application/showtime-creation.spec.ts))를 네 토막으로 발췌한다(import 줄은 생략).
 
 **준비.** mock 서버가 아니라 실제 앱을 세운다.
 
@@ -274,7 +274,7 @@ describe('ShowtimeCreationService', () => {
     afterEach(() => fix.teardown())
 ```
 
-`createAppTestContext`는 NestJS 앱을 통째로 만들어 devcontainer가 띄워 둔 실제 MongoDB·Redis·Temporal에 붙이고, `createMovie`·`createTheater`는 실제 DB에 픽스처를 만든다. 끄는 것은 관리자 인가 가드 하나뿐이다 — 이 스위트의 관심사는 사가이지 인가가 아니고, 인증·인가는 전용 스위트([admin-auth.spec.ts](../../apps/api/src/__tests__/integration/core/admin-auth.spec.ts) 등)가 따로 검증한다.
+`createAppTestContext`는 NestJS 앱을 통째로 만들어 devcontainer가 띄워 둔 실제 MongoDB·Redis·Temporal에 붙이고, `createMovie`·`createTheater`는 실제 DB에 픽스처를 만든다. 끄는 것은 관리자 인가 가드 하나뿐이다 — 이 스위트의 관심사는 사가이지 인가가 아니고, 인증·인가는 전용 스위트([admin-auth.spec.ts](../../apps/api/src/__tests__/core/admin-auth.spec.ts) 등)가 따로 검증한다.
 
 **정상 흐름.** 4장에서 바뀐 계약(202 + `sagaId` + SSE)이 그대로 테스트 문장이 된다.
 
@@ -318,7 +318,7 @@ describe('POST /showtime-creation/showtimes', () => {
     })
 ```
 
-`describe`·`it`이 함수 이름이 아니라 **동작과 조건**을 말한다 — 내부에서 검증·생성이 어떻게 쪼개지든 이 문장들은 그대로 유효하다. 조건은 `beforeEach`가 만들고 `it`은 검증만 한다. `waitForCompletion`은 SSE 스트림을 구독해 지정한 종결 상태가 올 때까지 기다리는 이 스위트의 유틸이고([showtime-creation.utils.ts](../../apps/api/src/__tests__/integration/application/showtime-creation.utils.ts)), 단언은 서비스가 보고한 값이 아니라 **`sagaId`로 실제 DB를 재조회한 끝 상태**를 센다. 내부 함수를 호출했는지 검사하는 테스트는 없다 — 이 테스트가 성공하려면 사가 전체(202 → 워크플로 → SSE 이벤트)가 실제로 돌아야 한다.
+`describe`·`it`이 함수 이름이 아니라 **동작과 조건**을 말한다 — 내부에서 검증·생성이 어떻게 쪼개지든 이 문장들은 그대로 유효하다. 조건은 `beforeEach`가 만들고 `it`은 검증만 한다. `waitForCompletion`은 SSE 스트림을 구독해 지정한 종결 상태가 올 때까지 기다리는 이 스위트의 유틸이고([showtime-creation.utils.ts](../../apps/api/src/__tests__/application/showtime-creation.utils.ts)), 단언은 서비스가 보고한 값이 아니라 **`sagaId`로 실제 DB를 재조회한 끝 상태**를 센다. 내부 함수를 호출했는지 검사하는 테스트는 없다 — 이 테스트가 성공하려면 사가 전체(202 → 워크플로 → SSE 이벤트)가 실제로 돌아야 한다.
 
 **실패 흐름(`failed`).** 검증 충돌은 400이 아니다 — 요청 자체는 접수(202)되고, 충돌 목록은 SSE로 온다.
 
@@ -415,7 +415,7 @@ left to right direction
 usecase "상영시간 생성하기" as UC
 
 rectangle "실행 가능한 API 문서 = 성공 흐름 테스트\napps/api/api-docs/showtime-creation.spec" as spec
-rectangle "통합 테스트 — 조건·실패 흐름\napps/api/src/__tests__/integration/\napplication/showtime-creation.spec.ts" as jest
+rectangle "통합 테스트 — 조건·실패 흐름\napps/api/src/__tests__/\napplication/showtime-creation.spec.ts" as jest
 rectangle "구현\napps/api/src/services/application/\nshowtime-creation/" as impl
 
 UC --> spec : 성공 흐름을 먼저 쓴다

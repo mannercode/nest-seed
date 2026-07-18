@@ -1,5 +1,4 @@
-// user 앱도 Next.js 프로젝트라 공용 Node 설정과 맞지 않는다.
-// typescript-eslint 추천 규칙만 가볍게 적용한다. 타입 검사는 tsc, 포맷은 prettier가 본다.
+// Next.js 앱에는 백엔드용 공용 Node 규칙 대신 typescript-eslint 권장 규칙만 적용한다.
 const tseslint = require('typescript-eslint')
 
 module.exports = [

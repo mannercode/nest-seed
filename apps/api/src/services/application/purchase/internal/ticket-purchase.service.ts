@@ -134,8 +134,7 @@ export class TicketPurchaseService {
     }
 
     private validateTotalPrice(createDto: CreatePurchaseDto, ticketItems: PurchaseItemDto[]) {
-        // 가격의 정의처는 서버다.
-        // 시드는 좌석 등급 없는 단일 정가(`TICKET_PRICE`)로 합산을 검증해, 클라이언트가 보낸 금액이 그대로 결제되는 일을 막는다.
+        // 서버 정가로 다시 계산해 클라이언트가 결제 금액을 정하지 못하게 한다.
         const expectedPrice = ticketItems.length * this.config.ticket.price
 
         if (createDto.totalPrice !== expectedPrice) {

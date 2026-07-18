@@ -1,13 +1,3 @@
-/**
- * api-race 스크립트들이 공유하는 헬퍼다.
- *
- * race 테스트는 시나리오마다 흐름이 다르지만 HTTP 호출 자체는 같은 패턴이다:
- *  - SERVER_URL 환경 변수 + 상대 경로로 호출
- *  - ADMIN_ACCESS_TOKEN이 env에 있으면 Authorization 헤더 자동 부착
- *  - 매 요청마다 새 Agent로 keepAlive=false로 보낸다(요청 단위 격리)
- *  - 응답은 {status, replicaId, body}로 반환. body는 JSON parse 시도 후 실패 시 raw 문자열.
- */
-
 const http = require('http')
 
 // race 시나리오는 runner.sh가 띄운 4-replica 배포 스택을 전제한다.
@@ -17,10 +7,7 @@ if (!SERVER_URL) {
     throw new Error('SERVER_URL must be set (bash tests/api-race/runner.sh <scenario>로 실행한다)')
 }
 
-/**
- * 잘못된 입력은 NaN으로 떨어뜨리지 않고 즉시 던져 의도된 값이 들어왔는지 확인한다.
- * 빈 문자열/미설정은 defaultValue로 떨어진다.
- */
+// 빈 값은 기본값을 쓰되 잘못된 입력은 즉시 거절한다.
 function readPositiveInt(name, defaultValue) {
     const raw = process.env[name]
     if (raw === undefined || raw === '') return defaultValue

@@ -9,14 +9,7 @@ import type { ValidateAndCreateResult } from '../activities'
 import type { ShowtimeCreationWorkflowInput } from '../types'
 import { showtimeCreationBundle } from '../bundle'
 
-/**
- * 워크플로의 오케스트레이션 로직만 격리해 검증한다.
- * 액티비티를 mock으로 대체하므로 DB·락·NATS 없이 분기, 보상 호출, 재시도, 호출 순서를 직접 단언할 수 있다.
- * 실제 액티비티 본문과 인프라 연동은 통합 테스트(showtime-creation.spec)가 따로 덮는다.
- *
- * 워크플로 본문은 `bundleWorkflowCode`가 만든 샌드박스 안에서 돌아 Istanbul 계측이 닿지 않는다.
- * 그래서 실제 Temporal에 워커를 붙여 워크플로를 끝까지 실행시키되, 액티비티만 mock으로 주입한다.
- */
+// 샌드박스 워크플로는 Istanbul이 계측할 수 없어 실제 Temporal 워커에 mock 액티비티를 주입한다.
 type WorkflowActivities = {
     compensate: (sagaId: string) => Promise<void>
     emitStatusChanged: (payload: ShowtimeCreationEvent) => Promise<void>
@@ -44,8 +37,6 @@ describe('showtimeCreationWorkflow', () => {
         await nativeConnection.close()
     })
 
-    // 매 테스트마다 고유 task queue의 워커를 띄워 mock 액티비티로 워크플로를 한 번 실행한다.
-    // `runUntil`은 워크플로가 끝나면 워커를 정리한다.
     async function runWorkflow(
         input: ShowtimeCreationWorkflowInput,
         activities: WorkflowActivities

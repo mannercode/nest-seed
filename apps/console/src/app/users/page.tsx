@@ -19,7 +19,6 @@ export default function UsersPage() {
             return
         }
 
-        // 사용자 목록·삭제는 관리자 전용 API라 admin 토큰을 함께 보낸다.
         api.get<UsersPage>('/users?size=50&orderby=createdAt:desc', {
             accessToken: readToken() ?? undefined
         })

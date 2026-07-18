@@ -13,7 +13,6 @@ export class ByteUtil {
             throw new Error(`Invalid size format(${sizeExpression})`)
         }
 
-        // 단위를 대문자로 통일해 두면 토큰을 그대로 비교할 수 있다.
         const normalized = sizeExpression.toUpperCase()
         const sizeTokenRegex = /(-?\d+(?:\.\d+)?)(B|KB|MB|GB|TB)/g
 

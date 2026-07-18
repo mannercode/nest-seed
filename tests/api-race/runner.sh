@@ -1,14 +1,5 @@
 #!/usr/bin/env bash
-#
-# 단일 race 시나리오를 실행하는 러너.
-#
-# 흐름:
-#  1) deploy compose를 4-replica로 띄운다.
-#  2) root Basic Auth로 시드 admin을 만든다.
-#  3) 그 admin으로 로그인해 ADMIN_ACCESS_TOKEN을 받는다.
-#  4) 시나리오 스크립트를 실행한다(이 토큰을 env로 받아 admin 보호 endpoint를 호출).
-#  5) trap으로 deploy compose를 내린다(infra compose는 그대로).
-#
+# deploy 스택 기동, admin 인증, 단일 race 시나리오 실행, deploy 정리를 한 번에 수행한다.
 # 사용: bash tests/api-race/runner.sh <scenario-name>
 #  예) bash tests/api-race/runner.sh purchase-double-spend
 

@@ -22,8 +22,6 @@ import {
 
 const opts = readOptions()
 
-// 부분 문자열을 좁게 설정해 매치 수를 거의 0으로 맞춘다.
-// 그래야 기준값 측정이 회차마다 같은 조건에서 나온다.
 const FILTER_PREFIX = __ENV.FILTER_PREFIX || 'perf-user-17769404'
 const requestPath = `/users?page=1&size=50&name=${encodeURIComponent(FILTER_PREFIX)}`
 

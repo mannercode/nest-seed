@@ -3,13 +3,7 @@ import type { ClientSession, Query, Schema } from 'mongoose'
 import { SchemaFactory } from '@nestjs/mongoose'
 import { defaultTo } from '../utils'
 
-/**
- * 보통의 도메인 엔티티(생성·조회·수정·삭제 모두 가능)에 쓰는 스키마 기반 클래스이다.
- * 기본 동작은 소프트 삭제이다.
- * 특정 모델에서 완전 삭제가 필요하면 `@HardDelete()` 데코레이터를 그 모델에 붙인다.
- *
- * 감사 로그처럼 추가만 일어나는 도메인은 이 기반이 아니라 `AppendOnlySchema`와 `createAppendOnlySchema`를 사용한다.
- */
+// 기본은 soft delete이며 완전 삭제 모델만 @HardDelete()를 붙인다.
 export abstract class CrudSchema {
     createdAt: Date
     deletedAt: Date | null
@@ -36,7 +30,7 @@ export function createCrudSchema<T>(cls: Type<T>): Schema<T> {
     const isHardDelete = defaultTo(Reflect.getMetadata(HARD_DELETE_KEY, cls), false)
     if (isHardDelete === false) {
         schema.add({ deletedAt: { default: null, type: Date } } as any)
-        // 소프트 삭제가 활성화된 모든 조회는 `deletedAt: null` 필터를 자동으로 포함하므로, 이 필드 인덱스 하나로 거의 모든 경로가 빨라진다.
+        // 모든 soft-delete 조회가 자동으로 쓰는 필드다.
         schema.index({ deletedAt: 1 })
 
         schema.pre('find', excludeDeletedMiddleware)

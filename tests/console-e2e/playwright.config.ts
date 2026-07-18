@@ -1,6 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
 
-// 포트의 정의처는 .env.infra의 API_PORT·CONSOLE_PORT다(devcontainer가 ambient env로 주입).
 const API_PORT = process.env.API_PORT
 const CONSOLE_PORT = process.env.CONSOLE_PORT
 if (!API_PORT || !CONSOLE_PORT) {
@@ -15,22 +14,8 @@ if (!process.env.WORKSPACE_ROOT) {
 }
 const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT
 
-/**
- * API와 console 빌드 결과물을 시작한 뒤 테스트를 실행한다.
- *
- * `next dev` / `nest start --watch`는 콜드 부팅이 길고(workflow 번들링 + 모듈 로딩에 1~2분) 워처 오버헤드가 e2e에는 무의미하다.
- * 빌드 결과물(`npm run start`) 쪽이 더 빠르고 안정적이다.
- *
- * 이미 서버가 떠 있으면 그대로 재사용한다(`reuseExistingServer`).
- * Mongo, Redis, NATS, Temporal 같은 인프라는 `infra`가 먼저 시작해 두어야 한다.
- *
- * 실패하면: 로컬 디버그는 `npm run e2e:ui`(인터랙티브 실행·트레이스 뷰)가 빠르다.
- * trace는 재시도에서만 남기므로(`on-first-retry`) 재시도가 있는 CI 실패의 trace가 `_output/test-results`에 남는다.
- */
 export default defineConfig({
     testDir: './tests',
-    // 다른 워크스페이스와 같은 `_output` 패턴을 따른다.
-    // test-results가 작업 디렉터리에 흩어지지 않도록 한곳에 모은다.
     outputDir: './_output/test-results',
     fullyParallel: false,
     forbidOnly: !!process.env.CI,

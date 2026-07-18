@@ -1,13 +1,5 @@
 #!/usr/bin/env bash
-#
-# 성능 측정을 한 번에 실행하는 러너.
-#
-# 흐름:
-#  1) deploy compose를 4-replica로 띄운다.
-#  2) theaters를 SEED_TARGET까지 시드한다(현재 수가 이미 충분하면 건너뛴다).
-#  3) mixed-runner.sh로 읽기/쓰기 혼합 행렬을 측정한다.
-#  4) trap으로 deploy compose를 내린다(infra compose는 그대로).
-#
+# deploy 스택 기동, theater 시드, 혼합 성능 측정, deploy 정리를 한 번에 실행한다.
 # 결과는 tests/api-perf/_output/에 남는다 — 집계 JSON과 dashboard-*.html(시간축 추이).
 # 시드한 theaters는 인프라 Mongo에 남는다. 지우려면 bash infra/reset.sh를 실행한다.
 #

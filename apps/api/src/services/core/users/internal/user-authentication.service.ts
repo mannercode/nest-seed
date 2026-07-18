@@ -4,16 +4,10 @@ import { compare, hash, hashSync } from 'bcrypt'
 import { UserAuthPayload, UserCredentialsDto } from '../dtos'
 import { UsersRepository } from '../users.repository'
 
-// bcrypt 비용 계수.
-// OWASP 권장 기본값을 그대로 사용한다.
-// 환경마다 다르게 설정할 값이 아니라서 `.env`가 아닌 코드 상수로 둔다.
+// OWASP 권장 비용 계수다.
 const BCRYPT_SALT_ROUNDS = 10
 
-/**
- * 가입된 이메일과 가입되지 않은 이메일에 대한 응답 시간이 달라지면, 공격자가 그 차이로 가입 여부를 알아낸다.
- * 이를 막기 위해 미리 계산해 둔 더미 해시이다.
- * 사용자를 찾지 못한 경우에도 이 해시로 bcrypt를 한 번 실행해서 응답 시간을 평탄화한다.
- */
+// 없는 이메일도 bcrypt를 거쳐 가입 여부가 응답 시간으로 드러나지 않게 한다.
 const TIMING_DUMMY_HASH = hashSync('timing-equalization-only', BCRYPT_SALT_ROUNDS)
 
 @Injectable()

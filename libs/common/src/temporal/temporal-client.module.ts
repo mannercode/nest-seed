@@ -18,10 +18,7 @@ export function InjectTemporalClient(name?: string): ParameterDecorator {
     return Inject(getTemporalClientToken(name))
 }
 
-/**
- * `forRootAsync`가 만든 Temporal 연결을 모두 모아 두고, `onModuleDestroy` 시점에 한꺼번에 닫는다.
- * 한 프로세스 안에 여러 NestJS 앱이 실행 중이어도 (예: 병렬 테스트) 이 레지스트리가 앱마다 제공자로 인스턴스화되므로 연결이 서로 섞이지 않는다.
- */
+// 앱 단위로 만든 Temporal 연결을 모아 module destroy에서 닫는다.
 @Injectable()
 export class TemporalConnectionRegistry implements OnModuleDestroy {
     private connections: Connection[] = []
@@ -49,9 +46,7 @@ export class TemporalClientModule {
     ): DynamicModule {
         const name = clientName ?? DEFAULT_TEMPORAL_CLIENT_NAME
 
-        // connection과 client 두 제공자가 같은 config를 필요로 한다.
-        // 각자 `useFactory`를 부르면 호출자의 팩토리(예: 비동기 설정 조회)가 두 번 실행된다.
-        // 그래서 config를 한 번만 해석하는 내부 제공자를 두고 둘 다 그 결과를 주입받는다.
+        // connection과 client가 공유하도록 호출자 config factory는 한 번만 실행한다.
         const configToken = `TemporalClientConfig_${name}`
 
         const configProvider: Provider = {
@@ -81,7 +76,6 @@ export class TemporalClientModule {
         }
 
         return {
-            // 연결도 내보내, 소비자가 헬스체크 등에 `getTemporalConnectionToken`으로 주입받을 수 있게 한다.
             exports: [connectionProvider, clientProvider],
             global: true,
             module: TemporalClientModule,

@@ -147,7 +147,7 @@ Each service is built to show one distinct pattern. For a first pass, this order
 1. `core/theaters` — the simplest domain. The basic skeleton: model → repository → service → controller → DTO
 2. `application/booking` — a use case composing multiple Core services
 3. `application/showtime-creation` — the whole saga: 202 response → Temporal workflow → NATS → SSE
-4. At each step, read the integration test of the same name (`apps/api/src/__tests__/integration`) side by side
+4. At each step, read the integration test of the same name (`apps/api/src/__tests__`) side by side
 
 | Service                                   | What it shows                                                                                            |
 | ----------------------------------------- | -------------------------------------------------------------------------------------------------------- |

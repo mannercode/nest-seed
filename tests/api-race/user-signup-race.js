@@ -1,13 +1,4 @@
-/**
- * 높은 동시성 조건에서 사용자 이메일 유일성이 깨지지 않는지 검증하는 부하 테스트이다.
- *
- * 한 회차는 서로 다른 이메일 여러 개를 준비하고, 각 이메일마다 동일한 가입 요청을 한꺼번에 보낸다.
- * 모든 그룹을 같은 시점에 보내 NGINX가 요청을 여러 복제본으로 분산하게 한다.
- * 그룹 한 개당 결과는 정확히 한 요청만 201이고 나머지는 409이다.
- * 5xx는 한 건도 없어야 한다.
- *
- * 어떤 그룹의 201 응답 수가 1이 아니거나, 5xx나 예상하지 못한 상태 코드가 나오거나, 모든 응답이 한 복제본에서만 오면 실패로 본다.
- */
+// 같은 이메일 가입을 여러 복제본에 동시에 보내 정확히 한 건만 201이 되는지 검증한다.
 
 const { readPositiveInt, request, SERVER_URL } = require('./race-common')
 
@@ -16,7 +7,6 @@ const CLIENTS_PER_GROUP = readPositiveInt('RACE_CLIENT_COUNT', 50)
 const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 30)
 
 async function runInner(iteration) {
-    // EMAIL_GROUPS × CLIENTS_PER_GROUP개의 요청을 구성해 동시에 보낸다.
     const emails = Array.from(
         { length: EMAIL_GROUPS },
         (_, g) =>

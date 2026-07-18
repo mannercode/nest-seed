@@ -1,3 +1,14 @@
+TODO
+
+제일 중요한 것은 이 프로젝트를 어떻게 실행하느냐이다. 특징은 간략하게 소개하고 실행 방법을 알려주자.
+
+1. 개발 모드에서는 asciinema 사용해서 npm run dev하고 curl localhost로 테스트 하는 방법 보여주고, jest로 특정 테스트 실행하는 방법 보여주고, vscode에서 test 버튼 누르면 그마저도 자동 실행되는 걸 보여주는 챕터가 있어야 한다.
+2. 배포에서는 deploy/에서 실행하면 되는 걸 알려준다. api-docs가 검증 도구 겸 문서임을 언급한다. 물론 docker 컨테이너 빌드하고 실행해서 curl 하는 것도 알려줘야 한다.
+3. 실행 방법을 알려줬으면 이제 테스트에 대해서 알려준다.
+4. jest/unit test는 무엇이 있고 왜 했는지 설명한다.
+5. tests/의 테스트에는 무엇이 있는지 설명한다.
+6. 그 후에 나머지 항목들을 나열한다.
+
 # nest-seed
 
 [![Test AtoZ](https://github.com/mannercode/nest-seed/actions/workflows/test-atoz.yaml/badge.svg)](https://github.com/mannercode/nest-seed/actions/workflows/test-atoz.yaml)
@@ -145,7 +156,7 @@ nest-seed/
 1. `core/theaters` — 가장 단순한 도메인. 모델→리포지토리→서비스→컨트롤러→DTO의 기본 골격
 2. `application/booking` — 여러 Core를 조합하는 유스케이스
 3. `application/showtime-creation` — 사가 전체: 202 응답 → Temporal 워크플로 → NATS → SSE
-4. 각 단계마다 같은 이름의 통합 테스트(`apps/api/src/__tests__/integration`)를 나란히 읽는다
+4. 각 단계마다 같은 이름의 통합 테스트(`apps/api/src/__tests__`)를 나란히 읽는다
 
 | 서비스                                    | 보여주는 것                                                                                     |
 | ----------------------------------------- | ----------------------------------------------------------------------------------------------- |

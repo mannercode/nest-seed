@@ -1,7 +1,6 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-// 사용자 앱도 console과 동일하게 `/api/*` 요청을 NestJS API로 프록시한다.
 const API_BASE_URL = process.env.API_BASE_URL
 if (!API_BASE_URL) {
     throw new Error(

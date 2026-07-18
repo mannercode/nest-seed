@@ -23,9 +23,7 @@ import {
     S3UploadCompleteOptions
 } from './s3-object.types'
 
-// S3의 `content-length-range` 조건은 하한과 상한을 함께 요구한다.
-// 호출자가 하한만 지정하면 상한 자리를 채워야 하는데, 정책상 상한을 두지 않으려는 경우다.
-// 그래서 AWS 한도가 아니라 "사실상 무제한"을 뜻하는 큰 값을 상한으로 둔다.
+// S3가 content-length-range의 상한을 요구하므로 하한 전용 정책에는 사실상 무제한 값을 쓴다.
 const UNBOUNDED_CONTENT_LENGTH = 1024 * 1024 * 1024 * 1024 // 1 TiB
 
 @Injectable()

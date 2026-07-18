@@ -21,7 +21,6 @@ export class PurchaseService {
         @InjectCache('purchase') private readonly cache: CacheService
     ) {}
 
-    // userId는 본문이 아니라 게이트웨이가 인증 토큰에서 꺼내 넘긴 결제자다(CreatePurchaseDto는 userId를 받지 않는다).
     async processPurchase(createDto: CreatePurchaseDto, userId: string) {
         this.logger.log('processPurchase', { userId })
 
@@ -85,11 +84,7 @@ export class PurchaseService {
                 paymentId: payment.id,
                 purchaseRecordId: purchaseRecord.id
             })
-            // 티켓 전이는 `completePurchase`가 원자적으로 수행하고 자기 보상까지 책임지므로,
-            // 여기서 되돌릴 것은 구매 기록과 결제뿐이다.
-            // 보상 단계 하나가 실패해도 뒤따르는 단계는 계속 시도해야 부분 정리 상태가 줄어든다.
-            // 실패한 보상은 로그로 남겨 운영자가 수동 정리할 수 있게 하고, 원래 오류는 그대로 호출자에게 던진다.
-            // 정합성이 더 중요한 흐름은 Temporal 사가(`showtime-creation`)를 참고한다.
+            // 모든 보상을 시도하되 실패는 기록하고 원래 구매 오류를 보존한다.
             await this.tryCompensate('deletePurchaseRecord', () =>
                 this.purchaseRecordsService.deleteMany([purchaseRecord.id])
             )

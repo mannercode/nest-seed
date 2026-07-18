@@ -54,7 +54,6 @@
                 "esbenp.prettier-vscode",
                 "mutantdino.resourcemonitor",
                 "mkhl.shfmt",
-                "anthropic.claude-code",
                 "openai.chatgpt"
             ],
             "settings": {

@@ -3,8 +3,6 @@ import { pickIds, sleep } from '@mannercode/common'
 import { oid } from '@mannercode/testing'
 import { buildCreatePurchaseRecordDto, createPurchaseRecord, type AppTestContext } from '../helpers'
 
-// 구매 기록의 HTTP 조회는 본인 전용 GET /users/me/purchases로 노출되며 user-auth.spec에서 검증한다.
-// 여기서는 코어 서비스 자체의 동작(생성, userId 기준 조회)만 본다.
 describe('PurchaseRecordsService', () => {
     let fix: AppTestContext
     let purchaseRecordsService: PurchaseRecordsService

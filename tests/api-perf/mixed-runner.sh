@@ -1,22 +1,10 @@
 #!/usr/bin/env bash
 # API 스택용 읽기/쓰기 혼합 부하 행렬이다.
-#
-# 각 케이스는 theater-read와 theater-write 프로세스를 (거의) 동시에 시작해 측정 창을 공유시킨다.
-# 같은 LABEL을 쓰므로 결과 JSON을 사후에 짝지을 수 있다.
-# 각 레그는 k6 내장 웹 대시보드의 HTML 리포트도 tests/api-perf/_output/에 남긴다(런 내부의 시간축 추이 확인용).
-#
-# 스택 기동·시드·정리까지 한 번에 돌리려면 runner.sh를 쓴다. 이 스크립트는 떠 있는 스택을 반복 측정할 때 직접 부른다.
-#
-# 사전 조건 — 이 러너는 스택을 띄우지 않는다.
-#  1) deploy 스택 기동(기본 4-replica, devcontainer 안에서):
-#       cd deploy && export COMPOSE_IGNORE_ORPHANS=True && source ensure-deps-image.sh && docker compose up -d --build --wait
-#     측정이 끝나면 `docker compose down -v`로 내린다.
-#  2) theaters 시드 — 스캔 비용이 현실적이려면 약 50K 이상을 권장한다. 시드 절차는 runner.sh의 seed_theaters를 따른다.
-#  3) 쓰기 레그(theater-write)는 admin 가드를 지나므로 ADMIN_ACCESS_TOKEN이 env에 있어야 한다(발급은 runner.sh의 seed_admin_and_login 참고).
+# theater-read와 theater-write가 측정 창과 LABEL을 공유하며 HTML 리포트를 `_output`에 남긴다.
+# 실행 중인 스택, 약 50K 이상의 theater, ADMIN_ACCESS_TOKEN이 필요하다. 전체 수명주기는 runner.sh가 맡는다.
 #
 # 사용법: SERVER_URL=http://localhost:3000 bash tests/api-perf/mixed-runner.sh
 #   재정의: DURATION_MS=60000 WARMUP_MS=5000 SERVER_URL=... bash tests/api-perf/mixed-runner.sh
-#   재정의가 없으면 perf-common.js의 기본값(30000/3000)이 그대로 쓰인다.
 
 set -euo pipefail
 

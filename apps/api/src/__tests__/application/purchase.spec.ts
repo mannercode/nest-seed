@@ -20,7 +20,6 @@ describe('PurchaseService', () => {
     beforeEach(async () => {
         const { createAppTestContext } = await import('../helpers')
         fix = await createAppTestContext()
-        // 결제자는 인증 토큰의 주체로 정해지므로, 실제 user를 만들고 로그인해 그 토큰으로 결제한다.
         ;({ user, accessToken } = await createAndLoginUser(fix))
     })
     afterEach(() => fix.teardown())
@@ -32,7 +31,6 @@ describe('PurchaseService', () => {
             beforeEach(async () => {
                 const { createShowtimeAndTickets, holdTickets } = await import('./purchase.utils')
                 const tickets = await createShowtimeAndTickets(fix)
-                // 보유자와 결제자(토큰 주체)가 같아야 검증을 통과한다.
                 heldTickets = await holdTickets(fix, user.id, tickets)
             })
 

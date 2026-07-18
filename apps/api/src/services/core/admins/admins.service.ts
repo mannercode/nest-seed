@@ -12,9 +12,6 @@ import { AdminErrors } from './errors'
 import { AdminAuthenticationService } from './internal'
 import { Admin } from './models'
 
-// admin 도큐먼트는 root가 `POST /admins`로 만들고 `DELETE /admins/:id`로 지운다.
-// admin 자신은 `PATCH /admins/me`로 자기 정보를 수정한다.
-// 같은 이메일을 다시 만들면 unique 인덱스가 E11000을 던지므로 ConflictException으로 변환한다.
 @Injectable()
 export class AdminsService {
     constructor(

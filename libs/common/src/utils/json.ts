@@ -88,7 +88,6 @@ export class JsonUtil {
         return out
     }
 
-    // 여는 따옴표 위치를 받아 닫는 따옴표 다음 위치를 반환한다.
     private static findStringEnd(text: string, start: number): number {
         let i = start + 1
         while (i < text.length) {
@@ -102,7 +101,6 @@ export class JsonUtil {
         return text.length
     }
 
-    // 숫자 토큰(부호·소수점·지수 포함)의 끝 위치를 반환한다.
     private static findNumberEnd(text: string, start: number): number {
         let i = start
         if (text.charAt(i) === '-') i++

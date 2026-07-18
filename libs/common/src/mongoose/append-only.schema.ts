@@ -2,17 +2,7 @@ import type { Type } from '@nestjs/common'
 import type { Schema } from 'mongoose'
 import { SchemaFactory } from '@nestjs/mongoose'
 
-/**
- * 추가만 일어나는 도메인용 스키마 기반 클래스이다.
- * 감사 로그, 이벤트 로그, 변경 불가 이력처럼 수정·삭제가 일어나지 않는 모델에 사용한다.
- *
- * `CrudSchema`와 달리 `updatedAt`과 `deletedAt` 필드가 없다.
- * append-only에서는 의미가 없는 값이라서다.
- * `createdAt`만 노출한다.
- *
- * `createAppendOnlySchema`가 스키마 단계에서 모든 수정·삭제 연산을 예외로 막는다.
- * 모델 메서드를 직접 부르는 우회 경로까지 같이 차단된다.
- */
+// 변경 불가 이력용 기반이다. updatedAt/deletedAt을 두지 않고 모든 수정·삭제 경로를 막는다.
 export abstract class AppendOnlySchema {
     createdAt: Date
     id: string
@@ -21,7 +11,6 @@ export abstract class AppendOnlySchema {
 export function createAppendOnlySchema<T>(cls: Type<T>): Schema<T> {
     const schema = SchemaFactory.createForClass(cls)
 
-    // 모델 메서드 호출(`model.updateOne`, `model.deleteOne` 등) 차단.
     const throwMutation = function () {
         throw new Error(`${cls.name} is append-only; mutation is not allowed`)
     }
@@ -36,7 +25,6 @@ export function createAppendOnlySchema<T>(cls: Type<T>): Schema<T> {
     // `Model.bulkWrite`는 쿼리 미들웨어를 거치지 않는 별도 진입점이라 모델 미들웨어로 막는다.
     schema.pre('bulkWrite', throwMutation)
 
-    // 문서 메서드 호출(`doc.deleteOne()`) 차단.
     schema.pre('deleteOne', { document: true, query: false }, function () {
         throw new Error(`${cls.name} is append-only; delete is not allowed`)
     })

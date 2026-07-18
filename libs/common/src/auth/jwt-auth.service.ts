@@ -28,33 +28,15 @@ type JwtSignOptionsArg = Parameters<JwtService['signAsync']>[1]
 type JwtExpiresIn = NonNullable<JwtSignOptionsArg>['expiresIn']
 
 /**
- * 리프레시 토큰 회전과 재사용 탐지를 갖춘 JWT 인증 서비스이다.
+ * 리프레시 토큰은 SHA-256 해시만 Redis에 저장하고 사용할 때마다 회전한다.
+ * 소비된 토큰이 다시 오면 해당 family 전체를 폐기한다.
  *
- * Redis 저장 구조 (인스턴스마다 `prefix`로 분리):
- *
- *   {prefix}:{familyId}:token:{tokenId}   → JSON `{ hash, familyId }`, TTL = 리프레시 만료 시각
- *   {prefix}:{familyId}:family            → 살아 있는 tokenId의 SET, TTL = 리프레시 만료 시각
- *   {prefix}:user:{userId}:families       → 그 사용자의 familyId SET, TTL = 리프레시 만료 시각
- *
- * - 해시만 저장한다. `SHA-256(refreshToken)`만 Redis에 두고, 원본 JWT는
- *   클라이언트에만 둔다. Redis 덤프가 유출되어도 그대로 사용할 수 있는 토큰이
- *   공격자에게 직접 노출되지 않는다.
- * - 리프레시가 성공할 때마다 토큰을 회전한다. 쓴 토큰 항목은 지우고, 같은
- *   토큰 묶음 안에서 새 토큰 ID를 발급한다.
- * - 이미 회전된 토큰(토큰 항목은 사라졌지만 토큰 묶음은 살아 있는 상태)이
- *   다시 제출되면 도난으로 간주한다. 토큰 묶음 전체를 무효화해 정상 사용자와
- *   공격자 모두 더는 리프레시하지 못하게 한다.
- * - 서명 알고리즘을 고정하고 `iss` / `aud` 클레임을 검증한다. 알고리즘 혼동
- *   공격이나, 같은 비밀키로 다른 서비스가 발급한 토큰을 거른다.
- * - 사용자별 토큰 묶음 인덱스 덕에 `revokeAllForUser` (비밀번호 변경, 전체
- *   로그아웃)가 가능하다. 사용자 ID는 `userIdField`가 가리키는 클레임에서
- *   가져온다. 기본값은 RFC 7519의 `sub`이다.
+ * `{prefix}:{familyId}:token:{tokenId}` → 토큰 해시
+ * `{prefix}:{familyId}:family` → 살아 있는 tokenId 집합
+ * `{prefix}:user:{userId}:families` → 사용자별 family 집합
  */
 @Injectable()
 export class JwtAuthService {
-    // `userIdField`에는 일부러 기본값을 두지 않는다.
-    // `JwtAuthModule.register`가 생성자를 호출하기 전에 `defaultTo`로 값을 채우므로, 여기 기본값을 둬도 그 분기는 절대 실행되지 않는다.
-    // 이 클래스를 직접 `new`로 만든다면 `userIdField`를 반드시 명시한다.
     constructor(
         private readonly jwtService: JwtService,
         private readonly config: AuthConfig,
@@ -254,9 +236,7 @@ export class JwtAuthService {
     }
 
     private async getAuthTokenPayload(token: string, context?: EventContext, emitOnFailure = true) {
-        // 만료는 정상 흐름의 일부라 위조와 구분되는 401('token expired')을 돌려줘야 한다.
-        // 그래서 verifyAsync 전에 디코드로 만료부터 가려낸다.
-        // 서명 위조/구조 깨짐은 잘못된 리프레시 토큰이므로 verifyAsync가 던지는 오류를 401로 매핑한다.
+        // 만료만 별도 401로 구분하고 나머지 검증 오류는 invalid token으로 통일한다.
         const peek = this.jwtService.decode<Record<string, unknown> | null>(token)
         const exp = peek?.exp
         if (typeof exp === 'number' && exp < Date.now() / 1000) {
@@ -346,15 +326,7 @@ export class JwtAuthService {
     }
 
     private async consumeToken(tokenId: string, familyId: string): Promise<boolean> {
-        // 결과의 첫 항목이 DEL 응답이다(`[err, count]`).
-        // 카운트가 1 이상이면 동시에 들어온 소비자 중 이 호출이 먼저 지웠다는 뜻이다.
-        // 0이면 다른 워커가 이미 지운 뒤이다.
-        //
-        // ioredis의 `multi().exec()`는 트랜잭션이 중단되면(예: 연결 끊김) `null`을 반환한다.
-        // 이 경우에는 DEL이 실제로 실행됐는지 알 수 없다.
-        // 그래서 짐작하지 않고 그대로 예외를 던진다.
-        // false를 반환하면 일시 오류였을 때도 토큰 묶음 전체를 무효화하고, true를 반환하면 같은 토큰에서 유효한 새 토큰이 두 개 발급될 수 있다.
-        // 예외를 던지면 5xx가 되어 클라이언트가 다시 시도하고, 토큰 묶음은 그대로 남는다.
+        // DEL count가 1인 소비자만 승자다. exec 결과가 없으면 실행 여부를 추측하지 않고 실패시킨다.
         const result = await this.redis
             .multi()
             .del(this.tokenKey(tokenId, familyId))

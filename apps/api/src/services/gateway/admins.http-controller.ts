@@ -22,10 +22,6 @@ import {
 import { AdminAuthGuard, AuthErrors, RootAuthGuard } from './guards'
 import { AdminAuthRequest } from './types'
 
-// 권한 분리:
-// - login/refresh/logout: 가드 없음. 컨트롤러가 자격증명을 직접 검증해 토큰을 발급한다.
-// - GET/PATCH /admins/me: admin 자신의 정보 (AdminAuthGuard, Bearer)
-// - POST /admins, DELETE /admins/:id: admin lifecycle 관리 (RootAuthGuard, Basic)
 @Controller('admins')
 export class AdminsHttpController {
     constructor(private readonly adminsService: AdminsService) {}
