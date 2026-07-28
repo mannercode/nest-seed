@@ -54,7 +54,7 @@ services:
                 # devcontainer도 같은 compose 네트워크에 있으므로 서비스 이름(mongo1/mongo2/mongo3)을 등록한다.
                 url="mongodb://mongo1:27016/?directConnection=true"
 
-                mongosh $$url --eval "
+                mongosh "$$url" --eval "
                     rs.initiate({
                     _id: \"mongo\",
                     members: [
@@ -66,13 +66,35 @@ services:
                     "
 
                 # `rs.initiate`를 mongo1에 보냈어도 첫 선출은 mongo2/3가 이길 수 있다.
-                # mongo1이 PRIMARY인지만 보면 그 경우 영원히 false라 타임아웃으로 끝난다.
-                # 어느 멤버든 PRIMARY가 되면 통과하도록 집합 전체의 멤버 상태를 확인한다.
+                # PRIMARY 하나만 생긴 시점에는 나머지가 STARTUP/RECOVERING이라 곧바로 시작한 majority write가 타임아웃 날 수 있다.
+                # PRIMARY 1대와 SECONDARY 2대가 모두 준비된 뒤 실제 majority write까지 성공해야 setup을 끝낸다.
                 i=0
-                until mongosh $$url --eval "rs.status().members.some(m => m.stateStr === \"PRIMARY\")" | grep -q "true"; do
+                until mongosh "$$url" --quiet --eval "
+                    const members = rs.status().members
+                    members.filter(m => m.stateStr === \"PRIMARY\").length === 1 &&
+                        members.filter(m => m.stateStr === \"SECONDARY\").length === 2
+                    " | grep -q "true"; do
                     i=$$((i+1))
                     if [ $$i -ge 60 ]; then
-                        echo "MongoDB replica set did not become PRIMARY in time" >&2
+                        echo "MongoDB replica set members did not become ready in time" >&2
+                        exit 1
+                    fi
+                    sleep 1
+                done
+
+                replica_url="mongodb://mongo1:27016,mongo2:27016,mongo3:27016/?replicaSet=mongo"
+                i=0
+                until mongosh "$$replica_url" --quiet --eval "
+                    const result = db.getSiblingDB(\"infra_readiness\").runCommand({
+                        insert: \"probe\",
+                        documents: [{ readyAt: new Date() }],
+                        writeConcern: { w: \"majority\", wtimeout: 10000 }
+                    })
+                    if (result.ok !== 1) throw new Error(JSON.stringify(result))
+                    "; do
+                    i=$$((i+1))
+                    if [ $$i -ge 30 ]; then
+                        echo "MongoDB replica set did not accept a majority write in time" >&2
                         exit 1
                     fi
                     sleep 1

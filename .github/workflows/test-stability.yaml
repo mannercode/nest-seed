@@ -9,7 +9,7 @@ permissions:
     contents: read
 concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
-    # 6시간 주기에 한 회차가 ~350분 걸리므로, 취소하면 거의 끝난 직전 회차가 버려진다.
+    # 가장 긴 레그가 240분이라도 러너 대기와 정리 시간이 있으므로, 새 회차가 시작됐다고 진행 중인 회차를 버리지 않는다.
     # 새 회차는 이전 회차가 끝날 때까지 대기한다.
     cancel-in-progress: false
 jobs:
@@ -18,18 +18,23 @@ jobs:
             fail-fast: false
             matrix:
                 include:
-                    # libs는 75회라도 ~140분이지만, apps/api는 컨텍스트 부팅 비용 때문에 회당 ~5분이라 75회면 GitHub 6시간 상한(360분)을 넘긴다.
-                    # 그래서 apps/api는 상한 안에 드는 60회로 줄이고, libs가 apps/api 한계에 묶이지 않게 레그를 나눠 시간 한계를 따로 둔다.
+                    # libs는 75회라도 ~140분이지만, apps/api는 컨텍스트 부팅 비용 때문에 회당 6분 이상 걸린다.
+                    # 60회를 한 잡에서 돌리면 350분 상한에 닿고 한 러너에 부하가 오래 누적되므로, 30회씩 두 독립 잡으로 나눠 총 반복량은 유지한다.
                     - leg: unit-libs
                       timeout: 180
                       run: |
                           npm run build
                           bash .github/scripts/repeat.sh 75 npm test -w libs -- --coverageThreshold='{}'
-                    - leg: unit-api
-                      timeout: 350
+                    - leg: unit-api-1
+                      timeout: 240
                       run: |
                           npm run build
-                          bash .github/scripts/repeat.sh 60 npm test -w apps/api -- --coverageThreshold='{}'
+                          RESET_EVERY=5 bash .github/scripts/repeat.sh 30 npm test -w apps/api -- --coverageThreshold='{}'
+                    - leg: unit-api-2
+                      timeout: 240
+                      run: |
+                          npm run build
+                          RESET_EVERY=5 bash .github/scripts/repeat.sh 30 npm test -w apps/api -- --coverageThreshold='{}'
                     - leg: bootup
                       timeout: 120
                       run: |
@@ -37,8 +42,7 @@ jobs:
                           bash .github/scripts/repeat.sh 50 bash infra/reset.sh
                     # 분산 레이스 50회는 의도된 누적 검증량이다.
                     # 240분은 가장 느린 시나리오(user-signup-race 50회 ~200분)에 여유를 둔 값.
-                    # sse-fanout-race는 회차당 사가 1,500개(150 inner × 10)를 만들어 다른 시나리오보다 워크플로 밀도가 압도적으로 높다.
-                    # 기본 RESET_EVERY=10이면 리셋 전에 Temporal이 transfer-queue 정체 구간까지 누적되므로 더 자주 초기화한다.
+                    # 사가를 만드는 레그는 기본 RESET_EVERY=10에서 Temporal transfer-queue 정체가 재현됐으므로 5회마다 초기화한다.
                     - leg: sse-fanout-race
                       timeout: 240
                       run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh sse-fanout-race
@@ -47,16 +51,16 @@ jobs:
                       run: bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh user-signup-race
                     - leg: ticket-holding-race
                       timeout: 240
-                      run: bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh ticket-holding-race
+                      run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh ticket-holding-race
                     - leg: showtime-overlap-race
                       timeout: 240
-                      run: bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh showtime-overlap-race
+                      run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh showtime-overlap-race
                     - leg: purchase-double-spend
                       timeout: 240
-                      run: bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh purchase-double-spend
+                      run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh purchase-double-spend
                     - leg: purchase-overlap-race
                       timeout: 240
-                      run: bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh purchase-overlap-race
+                      run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh purchase-overlap-race
                     - leg: replica-chaos
                       timeout: 240
                       run: bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh replica-chaos
