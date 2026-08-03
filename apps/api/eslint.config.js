@@ -130,13 +130,8 @@ module.exports = [
         settings: {
             'boundaries/elements': layers.map((layer) =>
                 domainLayers.includes(layer)
-                    ? {
-                          capture: ['domain'],
-                          mode: 'folder',
-                          pattern: `src/services/${layer}/*`,
-                          type: layer
-                      }
-                    : { mode: 'folder', pattern: `src/services/${layer}`, type: layer }
+                    ? { capture: ['domain'], pattern: `src/services/${layer}/*`, type: layer }
+                    : { pattern: `src/services/${layer}`, type: layer }
             ),
             'boundaries/ignore': ['**/__tests__/**'],
             'import/resolver': { typescript: { project: path.resolve(__dirname, 'tsconfig.json') } }
@@ -149,24 +144,28 @@ module.exports = [
                     // 하위 레이어는 도메인 무관하게 허용하고, 같은 레이어는 같은 도메인만 허용한다.
                     // 같은 element 내부 import는 boundaries가 검사하지 않으므로
                     // 단일 element인 gateway·view는 자기 자신 허용 규칙이 필요 없다.
-                    rules: layers.flatMap((layer, index) => {
+                    policies: layers.flatMap((layer, index) => {
                         const lowerLayers = layers.slice(index + 1)
                         const layerRules = []
                         if (lowerLayers.length > 0) {
                             layerRules.push({
-                                allow: { to: { type: lowerLayers } },
-                                from: { type: layer }
+                                allow: { to: { element: { type: lowerLayers } } },
+                                from: { element: { type: layer } }
                             })
                         }
                         if (domainLayers.includes(layer)) {
                             layerRules.push({
                                 allow: {
                                     to: {
-                                        captured: { domain: '{{ from.captured.domain }}' },
-                                        type: layer
+                                        element: {
+                                            captured: {
+                                                domain: '{{ from.element.captured.domain }}'
+                                            },
+                                            type: layer
+                                        }
                                     }
                                 },
-                                from: { type: layer }
+                                from: { element: { type: layer } }
                             })
                         }
                         return layerRules

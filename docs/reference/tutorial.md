@@ -384,7 +384,7 @@ describe('생성 도중 티켓 생성이 실패하면', () => {
         const { body } = await fix.httpClient
             .post('/showtime-creation/showtimes')
             .body({
-                /* 정상 흐름과 같은 형태 */
+                // 정상 흐름과 같은 형태
             })
             .accepted()
         sagaId = body.sagaId

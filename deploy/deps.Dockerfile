@@ -2,8 +2,10 @@
 # `ensure-deps-image.sh`가 이 입력들의 해시를 태그로 쓰므로, 앱 이미지 빌드는 의존성이 바뀔 때만 npm install 비용을 다시 낸다.
 FROM node:24-slim
 
+RUN npm install --global npm@11.18.0
+
 WORKDIR /workspace
-COPY package.json package-lock.json ./
+COPY .npmrc package.json package-lock.json ./
 COPY libs/temporal-sandbox/package.json libs/temporal-sandbox/
 COPY libs/common/package.json libs/common/
 COPY libs/testing/package.json libs/testing/
