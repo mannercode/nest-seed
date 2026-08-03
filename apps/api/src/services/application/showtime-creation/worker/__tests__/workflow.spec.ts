@@ -73,13 +73,11 @@ describe('showtimeCreationWorkflow', () => {
 
     it('성공하면 processing 다음 생성 수와 함께 succeeded 상태를 알린다', async () => {
         const statuses: ShowtimeCreationEvent[] = []
-        const validateAndCreate = jest.fn(
-            async (): Promise<ValidateAndCreateResult> => ({
-                createdShowtimeCount: 3,
-                createdTicketCount: 30,
-                kind: 'succeeded'
-            })
-        )
+        const validateAndCreate = jest.fn(async (): Promise<ValidateAndCreateResult> => ({
+            createdShowtimeCount: 3,
+            createdTicketCount: 30,
+            kind: 'succeeded'
+        }))
         const compensate = jest.fn(async () => {})
         const emitStatusChanged = jest.fn(async (payload: ShowtimeCreationEvent) => {
             statuses.push(payload)
@@ -112,12 +110,10 @@ describe('showtimeCreationWorkflow', () => {
             }
         ]
         const statuses: ShowtimeCreationEvent[] = []
-        const validateAndCreate = jest.fn(
-            async (): Promise<ValidateAndCreateResult> => ({
-                conflictingShowtimes: conflicting,
-                kind: 'failed'
-            })
-        )
+        const validateAndCreate = jest.fn(async (): Promise<ValidateAndCreateResult> => ({
+            conflictingShowtimes: conflicting,
+            kind: 'failed'
+        }))
         const compensate = jest.fn(async () => {})
         const emitStatusChanged = jest.fn(async (payload: ShowtimeCreationEvent) => {
             statuses.push(payload)
@@ -196,13 +192,11 @@ describe('showtimeCreationWorkflow', () => {
         // emitStatusChanged는 자동 재시도하므로, 첫 시도가 실패해도 다음 시도에서 회복되어야 한다.
         const recorded: string[] = []
         let processingAttempts = 0
-        const validateAndCreate = jest.fn(
-            async (): Promise<ValidateAndCreateResult> => ({
-                createdShowtimeCount: 1,
-                createdTicketCount: 1,
-                kind: 'succeeded'
-            })
-        )
+        const validateAndCreate = jest.fn(async (): Promise<ValidateAndCreateResult> => ({
+            createdShowtimeCount: 1,
+            createdTicketCount: 1,
+            kind: 'succeeded'
+        }))
         const compensate = jest.fn(async () => {})
         const emitStatusChanged = jest.fn(async (payload: ShowtimeCreationEvent) => {
             if (payload.status === 'processing') {

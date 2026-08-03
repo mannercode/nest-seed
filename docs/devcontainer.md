@@ -27,3 +27,9 @@ infra·deploy compose와 devcontainer는 같은 Docker 네트워크로 묶인다
 4. `postStartCommand` — `bash infra/reset.sh`로 개발 인프라 기동 + PlantUML 서버
 
 첫 부팅은 이미지 빌드와 인프라 이미지 다운로드 때문에 시간이 걸린다. 이후 부팅은 인프라 리셋 시간(약 30초)이 대부분이다.
+
+## 의존성 설치 스크립트 승인
+
+npm 11.18의 설치 스크립트 정책을 strict 모드로 사용한다. 의존성이 실행하는 `preinstall`·`install`·`postinstall`은 루트 `package.json`의 `allowScripts`에 정확한 버전으로 승인된 경우에만 실행되며, 새 스크립트가 들어오면 `npm install`과 `npm ci`가 실패한다. 패키지를 올린 뒤에는 `npm install-scripts ls`로 새 항목과 실제 스크립트를 검토하고 필요한 버전만 승인한다.
+
+`fsevents` 승인은 macOS 설치용이라 Linux의 `npm install-scripts ls`에는 나타나지 않는다. Linux에서 `npm install-scripts prune`을 실행하면 이 교차 플랫폼 승인을 제거하므로 사용하지 않는다.

@@ -57,7 +57,8 @@ jobs:
                       run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh showtime-overlap-race
                     - leg: purchase-double-spend
                       timeout: 240
-                      run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh purchase-double-spend
+                      # 50-way 경쟁 강도는 유지하되 fixture Temporal saga의 중복 soak는 분리한다.
+                      run: INNER_ITERATIONS=30 RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh purchase-double-spend
                     - leg: purchase-overlap-race
                       timeout: 240
                       run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh purchase-overlap-race

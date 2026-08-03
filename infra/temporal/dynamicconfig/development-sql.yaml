@@ -9,11 +9,12 @@ system.forceSearchAttributesCacheRefreshOnRead:
 system.minRetentionDays:
     - value: 0
       constraints: {}
-# 지속 부하 시 transfer-queue가 정체돼 `TransferActivityTask`가 10초 제한(context deadline) 안에 처리되지 못하는 패턴이 있었다.
-# poll 한도를 디폴트(20/샤드)에서 50으로, 배치 크기를 디폴트(100)에서 200으로 올려 드레인 속도를 높인다.
+# 단일 노드 테스트 환경에서는 큰 poll/batch가 SQL 작업을 순간적으로 몰아
+# `TransferActivityTask`와 트랜잭션 시작 제한 시간을 함께 소진할 수 있다.
+# 서버 버전이 바뀌어도 검증 부하가 흔들리지 않도록 보수적인 기본값을 명시한다.
 history.transferProcessorMaxPollRPS:
-    - value: 50
+    - value: 20
       constraints: {}
 history.transferTaskBatchSize:
-    - value: 200
+    - value: 100
       constraints: {}
