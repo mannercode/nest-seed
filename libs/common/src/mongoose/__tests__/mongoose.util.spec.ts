@@ -1,10 +1,12 @@
 import { BadRequestException, Logger } from '@nestjs/common'
 import { Prop, Schema } from '@nestjs/mongoose'
+import { MongoWriteConcernError } from 'mongodb'
 import { model, Types } from 'mongoose'
 import { createCrudSchema, CrudSchema } from '../crud.schema'
 import {
     assignIfDefined,
     isDuplicateKeyError,
+    isWriteConcernTimeoutError,
     mapDocToDto,
     newObjectIdString,
     objectId,
@@ -276,6 +278,76 @@ describe('isDuplicateKeyError', () => {
         expect(isDuplicateKeyError(undefined)).toBe(false)
         expect(isDuplicateKeyError('error')).toBe(false)
         expect(isDuplicateKeyError(11000)).toBe(false)
+    })
+})
+
+describe('isWriteConcernTimeoutError', () => {
+    it('MongoWriteConcernError의 wtimeout 정보를 인식한다', () => {
+        const error = new MongoWriteConcernError({
+            ok: 1,
+            writeConcernError: {
+                code: 64,
+                codeName: 'WriteConcernFailed',
+                errInfo: { wtimeout: true },
+                errmsg: 'waiting for replication timed out'
+            }
+        })
+
+        expect(isWriteConcernTimeoutError(error)).toBe(true)
+    })
+
+    it('드라이버가 errorResponse 안에 보존한 wtimeout도 인식한다', () => {
+        const error = {
+            errorResponse: {
+                code: 64,
+                codeName: 'WriteConcernFailed',
+                errInfo: { wtimeout: true }
+            },
+            name: 'MongoServerError'
+        }
+
+        expect(isWriteConcernTimeoutError(error)).toBe(true)
+    })
+
+    it('명령 결과의 writeConcernError에 담긴 timeout도 인식한다', () => {
+        const error = {
+            result: { writeConcernError: { code: 64, errmsg: 'waiting for replication timed out' } }
+        }
+
+        expect(isWriteConcernTimeoutError(error)).toBe(true)
+    })
+
+    it('대소문자가 다른 wtimeout과 write concern timeout 메시지도 인식한다', () => {
+        expect(isWriteConcernTimeoutError({ code: 64, message: 'WTIMEOUT' })).toBe(true)
+        expect(isWriteConcernTimeoutError({ code: 64, message: 'Write Concern Timed Out' })).toBe(
+            true
+        )
+    })
+
+    it('wtimeout이 아닌 write concern 실패는 false를 반환한다', () => {
+        expect(
+            isWriteConcernTimeoutError({
+                code: 64,
+                codeName: 'WriteConcernFailed',
+                errInfo: { wtimeout: false },
+                message: 'write concern failed'
+            })
+        ).toBe(false)
+    })
+
+    it('write concern 오류가 아닌 객체의 wtimeout 표시는 false를 반환한다', () => {
+        expect(
+            isWriteConcernTimeoutError({ errInfo: { wtimeout: true }, name: 'OtherError' })
+        ).toBe(false)
+    })
+
+    it('순환 cause와 원시 타입을 안전하게 처리한다', () => {
+        const error: { cause?: unknown; name: string } = { name: 'OtherError' }
+        error.cause = error
+
+        expect(isWriteConcernTimeoutError(error)).toBe(false)
+        expect(isWriteConcernTimeoutError(null)).toBe(false)
+        expect(isWriteConcernTimeoutError('wtimeout')).toBe(false)
     })
 })
 
