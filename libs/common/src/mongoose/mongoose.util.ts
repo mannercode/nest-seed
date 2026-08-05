@@ -18,8 +18,6 @@ export function isDuplicateKeyError(error: unknown): boolean {
 }
 
 const WRITE_CONCERN_FAILED_CODE = 64
-const WRITE_CONCERN_TIMEOUT_MESSAGE =
-    /(?:waiting for replication|write concern).*timed out|wtimeout/i
 
 type ErrorRecord = Record<string, unknown>
 
@@ -45,8 +43,7 @@ export function isWriteConcernTimeoutError(error: unknown): boolean {
         const identifiesTimeout =
             errInfo?.wtimeout === true ||
             [record.message, record.errmsg].some(
-                (message) =>
-                    typeof message === 'string' && WRITE_CONCERN_TIMEOUT_MESSAGE.test(message)
+                (message) => typeof message === 'string' && isWriteConcernTimeoutMessage(message)
             )
 
         if (identifiesWriteConcern && identifiesTimeout) return true
@@ -62,6 +59,15 @@ export function isWriteConcernTimeoutError(error: unknown): boolean {
 
 function isErrorRecord(value: unknown): value is ErrorRecord {
     return typeof value === 'object' && value !== null
+}
+
+function isWriteConcernTimeoutMessage(value: string): boolean {
+    const message = value.toLowerCase()
+    return (
+        message.includes('wtimeout') ||
+        (message.includes('timed out') &&
+            (message.includes('waiting for replication') || message.includes('write concern')))
+    )
 }
 
 export type QueryBuilderOptions = { allowEmpty?: boolean }

@@ -317,6 +317,13 @@ describe('isWriteConcernTimeoutError', () => {
         expect(isWriteConcernTimeoutError(error)).toBe(true)
     })
 
+    it('대소문자가 다른 wtimeout과 write concern timeout 메시지도 인식한다', () => {
+        expect(isWriteConcernTimeoutError({ code: 64, message: 'WTIMEOUT' })).toBe(true)
+        expect(isWriteConcernTimeoutError({ code: 64, message: 'Write Concern Timed Out' })).toBe(
+            true
+        )
+    })
+
     it('wtimeout이 아닌 write concern 실패는 false를 반환한다', () => {
         expect(
             isWriteConcernTimeoutError({
