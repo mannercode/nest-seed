@@ -7,7 +7,7 @@ import {
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
-import { Model } from 'mongoose'
+import { ClientSession, Model } from 'mongoose'
 import { CreateShowtimeDto, SearchShowtimesDto } from './dtos'
 import { Showtime } from './models'
 
@@ -21,11 +21,19 @@ export class ShowtimesRepository extends CrudRepository<Showtime> {
         super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
     }
 
-    async deleteBySagaIds(sagaIds: string[]) {
-        await this.model.deleteMany({ sagaId: { $in: sagaIds } })
+    async deleteBySagaIds(
+        sagaIds: string[],
+        session: ClientSession | undefined = undefined,
+        signal: AbortSignal | undefined = undefined
+    ) {
+        await this.model.deleteMany({ sagaId: { $in: sagaIds } }, { session, signal })
     }
 
-    async createMany(createDtos: CreateShowtimeDto[]) {
+    async createMany(
+        createDtos: CreateShowtimeDto[],
+        session: ClientSession | undefined = undefined,
+        signal: AbortSignal | undefined = undefined
+    ) {
         const showtimes = createDtos.map((dto) => {
             const doc = this.newDocument()
             doc.sagaId = dto.sagaId
@@ -37,7 +45,7 @@ export class ShowtimesRepository extends CrudRepository<Showtime> {
             return doc
         })
 
-        await this.saveMany(showtimes)
+        await this.saveMany(showtimes, session, signal)
     }
 
     async existsByMovieIds(movieIds: string[]): Promise<boolean> {
@@ -50,10 +58,18 @@ export class ShowtimesRepository extends CrudRepository<Showtime> {
         return !!found
     }
 
-    async search(searchDto: SearchShowtimesDto) {
+    async search(
+        searchDto: SearchShowtimesDto,
+        session: ClientSession | undefined = undefined,
+        signal: AbortSignal | undefined = undefined
+    ) {
         const query = this.buildQuery(searchDto)
 
-        const showtimes = await this.model.find(query).sort({ startTime: 1 }).lean().exec()
+        const showtimes = await this.model
+            .find(query, null, { session, signal })
+            .sort({ startTime: 1 })
+            .lean()
+            .exec()
         return leanArrayToPublic<Showtime>(showtimes)
     }
 

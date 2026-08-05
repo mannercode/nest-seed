@@ -254,6 +254,32 @@ describe('CacheService', () => {
             })
             expect(result).toBe(1)
         })
+
+        it('이미 취소된 대기는 락을 실행하지 않고 즉시 중단한다', async () => {
+            const controller = new AbortController()
+            const runner = jest.fn(async () => 1)
+            controller.abort(new Error('activity cancelled'))
+
+            await expect(
+                fix.cacheService.withLockBlocking('job', 5_000, runner, {
+                    signal: controller.signal
+                })
+            ).rejects.toThrow('activity cancelled')
+            expect(runner).not.toHaveBeenCalled()
+        })
+
+        it('락을 기다리는 중 취소되면 다음 획득을 시도하지 않는다', async () => {
+            await fix.cacheService.set('lock:job', 'other', 10_000)
+            const controller = new AbortController()
+            const waiting = fix.cacheService.withLockBlocking('job', 5_000, async () => 'unused', {
+                pollMs: 1000,
+                signal: controller.signal
+            })
+
+            setTimeout(() => controller.abort(new Error('activity cancelled')), 20)
+
+            await expect(waiting).rejects.toThrow('The operation was aborted')
+        })
     })
 
     describe('복구 경로', () => {

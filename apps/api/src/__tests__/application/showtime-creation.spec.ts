@@ -1,5 +1,10 @@
+import type {
+    LegacyShowtimeCreationActivities,
+    ShowtimeBulkValidatorService,
+    ShowtimeCreationPersistenceService
+} from 'application'
 import type { MovieDto, ShowtimesService, TheaterDto, TicketsService } from 'core'
-import { DateUtil, JsonUtil, sleep } from '@mannercode/common'
+import { DateUtil, JsonUtil, newObjectIdString, sleep } from '@mannercode/common'
 import { HttpTestClient, nullObjectId, type Response } from '@mannercode/testing'
 import {
     createMovie,
@@ -14,21 +19,39 @@ describe('ShowtimeCreationService', () => {
     let fix: AppTestContext
     let showtimesService: ShowtimesService
     let ticketsService: TicketsService
+    let persistence: ShowtimeCreationPersistenceService
+    let validatorService: ShowtimeBulkValidatorService
+    let legacyActivities: LegacyShowtimeCreationActivities
     let movie: MovieDto
     let theater: TheaterDto
 
     beforeEach(async () => {
         const { createAppTestContext } = await import('../helpers')
         const { ShowtimesService, TicketsService } = await import('core')
+        const {
+            LegacyShowtimeCreationActivities,
+            ShowtimeBulkValidatorService,
+            ShowtimeCreationPersistenceService
+        } = await import('application')
         const { AdminAuthGuard } = await import('gateway')
         fix = await createAppTestContext({ ignoreGuards: [AdminAuthGuard] })
         showtimesService = fix.module.get(ShowtimesService)
         ticketsService = fix.module.get(TicketsService)
+        persistence = fix.module.get(ShowtimeCreationPersistenceService)
+        validatorService = fix.module.get(ShowtimeBulkValidatorService)
+        legacyActivities = fix.module.get(LegacyShowtimeCreationActivities)
 
         movie = await createMovie(fix)
         theater = await createTheater(fix)
     })
     afterEach(() => fix.teardown())
+
+    const buildCreateDto = () => ({
+        durationInMinutes: 1,
+        movieId: movie.id,
+        startTimes: [new Date('2100-01-01T09:00')],
+        theaterIds: [theater.id]
+    })
 
     describe('GET /showtime-creation/movies', () => {
         it('쿼리가 없으면 전체 영화 페이지를 반환한다', async () => {
@@ -263,95 +286,211 @@ describe('ShowtimeCreationService', () => {
                 .badRequest(Errors.ShowtimeCreation.OverlappingStartTimes(expect.any(Array)))
         })
 
-        describe('생성 도중 티켓 생성이 실패하면', () => {
-            // 상영 시간은 모두 저장되고, 티켓은 일부 묶음까지 저장된 뒤 다음 묶음에서 던진다.
-            // 검증에서 멈추는 위의 오류 케이스와 달리 상영 시간·티켓 행이 실제로 남은 뒤 실패하므로,
-            // 보상이 상영 시간과 티켓을 모두 되돌리는 경로를 검증한다.
+        describe('트랜잭션 안에서 티켓을 저장한 뒤 실패하면', () => {
             let sagaId: string
             let createShowtimesSpy: jest.SpyInstance
-            let persistedTicketCount: number
+            let attemptedTicketCount: number
 
             beforeEach(async () => {
-                persistedTicketCount = 0
-                // 상영 시간 생성은 통과시키되 호출을 관찰한다.
+                attemptedTicketCount = 0
                 createShowtimesSpy = jest.spyOn(showtimesService, 'createMany')
 
-                // 첫 티켓 묶음은 실제로 적재하고, 그 적재가 끝난 뒤 다음 묶음에서 실패시킨다.
-                // 일부 티켓이 DB에 남은 상태로 보상이 돌게 해야 '티켓 삭제' 단언이 헛돌지 않는다.
+                // 실제 insert까지 실행한 다음 throw한다. transaction이 없으면 showtimes와 tickets가 남는다.
                 const realCreateMany = ticketsService.createMany.bind(ticketsService)
-                let firstBatch: ReturnType<typeof realCreateMany> | undefined
-                jest.spyOn(ticketsService, 'createMany').mockImplementation(async (createDtos) => {
-                    if (!firstBatch) {
-                        firstBatch = realCreateMany(createDtos)
-                        const result = await firstBatch
-                        persistedTicketCount = result.count
-                        return result
+                jest.spyOn(ticketsService, 'createMany').mockImplementation(
+                    async (createDtos, session, signal) => {
+                        await realCreateMany(createDtos, session, signal)
+                        attemptedTicketCount += createDtos.length
+                        throw new Error('ticket creation failed after insert')
                     }
-                    // 첫 묶음이 커밋된 뒤에 던져, 보상 시점에 지울 티켓이 반드시 존재하게 한다.
-                    await firstBatch
-                    throw new Error('ticket creation failed')
-                })
+                )
 
                 const completionPromise = waitForCompletion(fix, 'error')
                 const { body } = await fix.httpClient
                     .post('/showtime-creation/showtimes')
                     .body({
-                        durationInMinutes: 1,
-                        movieId: movie.id,
-                        startTimes: [new Date('2100-01-01T09:00'), new Date('2100-01-01T11:00')],
-                        theaterIds: [theater.id]
+                        ...buildCreateDto(),
+                        startTimes: [new Date('2100-01-01T09:00'), new Date('2100-01-01T11:00')]
                     })
                     .accepted()
                 sagaId = body.sagaId
                 await completionPromise
             })
 
-            it('롤백 대상이 되도록 상영 시간과 티켓을 실제로 먼저 생성한다', () => {
-                // 보상 검증이 빈 상태를 빈 상태로 비교하는 헛돌이가 되지 않도록, 되돌릴 대상이 만들어졌는지 먼저 확인한다.
-                expect(createShowtimesSpy.mock.calls[0][0]).not.toHaveLength(0)
-                expect(persistedTicketCount).toBeGreaterThan(0)
+            it('Temporal 재시도마다 생성 쓰기까지 실제로 실행한다', () => {
+                expect(createShowtimesSpy).toHaveBeenCalledTimes(4)
+                expect(attemptedTicketCount).toBeGreaterThan(0)
             })
 
-            it('보상으로 생성된 상영 시간을 모두 삭제한다', async () => {
+            it('실패한 transaction의 상영 시간과 티켓을 모두 롤백한다', async () => {
                 const showtimes = await showtimesService.search({ sagaIds: [sagaId] })
-                expect(showtimes).toEqual([])
-            })
-
-            it('보상으로 생성된 티켓을 모두 삭제한다', async () => {
                 const tickets = await ticketsService.search({ sagaIds: [sagaId] })
+                expect(showtimes).toEqual([])
                 expect(tickets).toEqual([])
             })
         })
 
-        describe('보상 중 삭제가 한 번 실패하면', () => {
-            // compensate는 실패를 던져 Temporal 재시도 정책에 맡긴다. 삭제는 멱등이라 재실행이 안전하다.
-            beforeEach(() => {
-                jest.spyOn(ticketsService, 'createMany').mockRejectedValueOnce(
-                    new Error('ticket creation failed')
+        it('티켓 저장이 한 번 실패해도 Activity 재시도로 한 세트만 생성한다', async () => {
+            jest.spyOn(ticketsService, 'createMany').mockRejectedValueOnce(
+                new Error('transient ticket write failure')
+            )
+
+            const completionPromise = waitForCompletion(fix, 'succeeded')
+            const { body } = await fix.httpClient
+                .post('/showtime-creation/showtimes')
+                .body(buildCreateDto())
+                .accepted()
+            const completion = await completionPromise
+
+            const showtimes = await showtimesService.search({ sagaIds: [body.sagaId] })
+            const tickets = await ticketsService.search({ sagaIds: [body.sagaId] })
+            expect(showtimes).toHaveLength(completion.createdShowtimeCount)
+            expect(tickets).toHaveLength(completion.createdTicketCount)
+        })
+
+        it('커밋 뒤 첫 완료 보고를 잃어도 재시도가 저장 결과를 읽어 중복 없이 성공한다', async () => {
+            const realValidateAndCreate = persistence.validateAndCreate.bind(persistence)
+            const persistenceSpy = jest
+                .spyOn(persistence, 'validateAndCreate')
+                .mockImplementationOnce(async (...args) => {
+                    // 실제 Activity heartbeat interval이 한 번 실행되는 장기 작업 경로도 함께 검증한다.
+                    await sleep(5_100)
+                    await realValidateAndCreate(...args)
+                    throw new Error('activity completion response lost after commit')
+                })
+            const createShowtimesSpy = jest.spyOn(showtimesService, 'createMany')
+
+            const completionPromise = waitForCompletion(fix, 'succeeded')
+            const { body } = await fix.httpClient
+                .post('/showtime-creation/showtimes')
+                .body(buildCreateDto())
+                .accepted()
+            const completion = await completionPromise
+
+            expect(persistenceSpy).toHaveBeenCalledTimes(2)
+            expect(createShowtimesSpy).toHaveBeenCalledTimes(1)
+            const showtimes = await showtimesService.search({ sagaIds: [body.sagaId] })
+            const tickets = await ticketsService.search({ sagaIds: [body.sagaId] })
+            expect(showtimes).toHaveLength(completion.createdShowtimeCount)
+            expect(tickets).toHaveLength(completion.createdTicketCount)
+        })
+
+        it('같은 saga를 순차 재실행하면 저장된 결과를 반환하고 중복 생성하지 않는다', async () => {
+            const sagaId = newObjectIdString()
+            const createDto = buildCreateDto()
+
+            const first = await persistence.validateAndCreate(createDto, sagaId)
+            const second = await persistence.validateAndCreate(createDto, sagaId)
+
+            expect(second).toEqual(first)
+            expect(first.kind).toBe('succeeded')
+            const showtimes = await showtimesService.search({ sagaIds: [sagaId] })
+            const tickets = await ticketsService.search({ sagaIds: [sagaId] })
+            if (first.kind === 'succeeded') {
+                expect(showtimes).toHaveLength(first.createdShowtimeCount)
+                expect(tickets).toHaveLength(first.createdTicketCount)
+            }
+        })
+
+        it('완료된 sagaId를 다른 입력으로 재사용하면 거부한다', async () => {
+            const sagaId = newObjectIdString()
+            const createDto = buildCreateDto()
+            await persistence.validateAndCreate(createDto, sagaId)
+
+            await expect(
+                persistence.validateAndCreate(
+                    { ...createDto, startTimes: [new Date('2100-01-01T11:00')] },
+                    sagaId
                 )
-                jest.spyOn(ticketsService, 'deleteBySagaIds').mockRejectedValueOnce(
-                    new Error('delete failed')
+            ).rejects.toThrow(`Saga ID was reused with different input (sagaId=${sagaId})`)
+        })
+
+        it('한 operation의 상영 시간 수가 안전 상한을 넘으면 transaction 전에 거부한다', async () => {
+            const createDto = {
+                ...buildCreateDto(),
+                startTimes: Array.from(
+                    { length: 15 },
+                    (_, index) => new Date(Date.UTC(2100, 0, 1, index))
+                ),
+                theaterIds: Array.from({ length: 15 }, () => newObjectIdString())
+            }
+
+            await expect(
+                persistence.validateAndCreate(createDto, newObjectIdString())
+            ).rejects.toMatchObject({
+                response: { code: 'ERR_SHOWTIME_CREATION_TOO_MANY_SHOWTIMES', maximum: 200 }
+            })
+        })
+
+        it('좌석 티켓 수가 안전 상한을 넘으면 showtime insert도 롤백한다', async () => {
+            const largeTheater = await createTheater(fix, {
+                seatmap: {
+                    blocks: [{ name: 'A', rows: [{ name: '1', layout: 'O'.repeat(10_001) }] }]
+                }
+            })
+            const sagaId = newObjectIdString()
+
+            await expect(
+                persistence.validateAndCreate(
+                    { ...buildCreateDto(), theaterIds: [largeTheater.id] },
+                    sagaId
                 )
+            ).rejects.toMatchObject({
+                response: { code: 'ERR_SHOWTIME_CREATION_TOO_MANY_TICKETS', maximum: 10_000 }
+            })
+            await expect(showtimesService.search({ sagaIds: [sagaId] })).resolves.toEqual([])
+        })
+
+        it('drain 중인 v1 Activity도 기존 비-transaction 호출 경로로 생성하고 보상한다', async () => {
+            const sagaId = newObjectIdString()
+            const result = await legacyActivities.validateAndCreate({
+                createDto: buildCreateDto(),
+                sagaId
             })
 
-            it('재시도로 정리를 끝낸 뒤 오류 상태를 전송한다', async () => {
-                const completionPromise = waitForCompletion(fix, 'error')
+            expect(result.kind).toBe('succeeded')
+            await legacyActivities.compensate(sagaId)
+            await expect(showtimesService.search({ sagaIds: [sagaId] })).resolves.toEqual([])
+            await expect(ticketsService.search({ sagaIds: [sagaId] })).resolves.toEqual([])
+        })
 
-                const { body } = await fix.httpClient
-                    .post('/showtime-creation/showtimes')
-                    .body({
-                        durationInMinutes: 1,
-                        movieId: movie.id,
-                        startTimes: [new Date('2100-01-01T09:00')],
-                        theaterIds: [theater.id]
-                    })
-                    .accepted()
-
-                await completionPromise
-
-                const showtimes = await showtimesService.search({ sagaIds: [body.sagaId] })
-                expect(showtimes).toEqual([])
+        it('v1 validator도 존재하지 않는 극장을 거부한다', async () => {
+            await expect(
+                validatorService.validate({ ...buildCreateDto(), theaterIds: [nullObjectId] })
+            ).rejects.toMatchObject({
+                response: { code: 'ERR_SHOWTIME_CREATION_THEATERS_NOT_FOUND' }
             })
+        })
+
+        it('같은 saga를 동시에 재실행해도 두 호출이 같은 한 세트에 수렴한다', async () => {
+            const sagaId = newObjectIdString()
+            const createDto = buildCreateDto()
+
+            const [first, second] = await Promise.all([
+                persistence.validateAndCreate(createDto, sagaId),
+                persistence.validateAndCreate(createDto, sagaId)
+            ])
+
+            expect(second).toEqual(first)
+            const showtimes = await showtimesService.search({ sagaIds: [sagaId] })
+            const tickets = await ticketsService.search({ sagaIds: [sagaId] })
+            if (first.kind === 'succeeded') {
+                expect(showtimes).toHaveLength(first.createdShowtimeCount)
+                expect(tickets).toHaveLength(first.createdTicketCount)
+            }
+        })
+
+        it('같은 극장의 겹치는 두 saga를 동시에 실행하면 정확히 하나만 생성한다', async () => {
+            const createDto = buildCreateDto()
+            const sagaIds = [newObjectIdString(), newObjectIdString()]
+
+            const results = await Promise.all(
+                sagaIds.map((sagaId) => persistence.validateAndCreate(createDto, sagaId))
+            )
+
+            expect(results.map((result) => result.kind).sort()).toEqual(['failed', 'succeeded'])
+            const showtimes = await showtimesService.search({ sagaIds })
+            expect(showtimes).toHaveLength(1)
         })
 
         it('기존 상영 시간과 겹치면 충돌 목록과 함께 실패 상태를 전송한다', async () => {

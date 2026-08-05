@@ -1,3 +1,4 @@
+import type { ClientSession } from 'mongoose'
 import { mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { CreateShowtimeDto, CreateShowtimesResult, SearchShowtimesDto, ShowtimeDto } from './dtos'
@@ -8,12 +9,20 @@ import { ShowtimesRepository } from './showtimes.repository'
 export class ShowtimesService {
     constructor(private readonly repository: ShowtimesRepository) {}
 
-    async deleteBySagaIds(sagaIds: string[]) {
-        await this.repository.deleteBySagaIds(sagaIds)
+    async deleteBySagaIds(
+        sagaIds: string[],
+        session: ClientSession | undefined = undefined,
+        signal: AbortSignal | undefined = undefined
+    ) {
+        await this.repository.deleteBySagaIds(sagaIds, session, signal)
     }
 
-    async createMany(createDtos: CreateShowtimeDto[]): Promise<CreateShowtimesResult> {
-        await this.repository.createMany(createDtos)
+    async createMany(
+        createDtos: CreateShowtimeDto[],
+        session: ClientSession | undefined = undefined,
+        signal: AbortSignal | undefined = undefined
+    ): Promise<CreateShowtimesResult> {
+        await this.repository.createMany(createDtos, session, signal)
 
         return { count: createDtos.length }
     }
@@ -36,8 +45,12 @@ export class ShowtimesService {
         return this.toDtos(showtimes)
     }
 
-    async search(searchDto: SearchShowtimesDto) {
-        const showtimes = await this.repository.search(searchDto)
+    async search(
+        searchDto: SearchShowtimesDto,
+        session: ClientSession | undefined = undefined,
+        signal: AbortSignal | undefined = undefined
+    ) {
+        const showtimes = await this.repository.search(searchDto, session, signal)
 
         return this.toDtos(showtimes)
     }

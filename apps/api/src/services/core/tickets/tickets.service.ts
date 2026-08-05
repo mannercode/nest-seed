@@ -1,3 +1,4 @@
+import type { ClientSession } from 'mongoose'
 import { mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import {
@@ -14,8 +15,12 @@ import { TicketsRepository } from './tickets.repository'
 export class TicketsService {
     constructor(private readonly repository: TicketsRepository) {}
 
-    async deleteBySagaIds(sagaIds: string[]) {
-        await this.repository.deleteBySagaIds(sagaIds)
+    async deleteBySagaIds(
+        sagaIds: string[],
+        session: ClientSession | undefined = undefined,
+        signal: AbortSignal | undefined = undefined
+    ) {
+        await this.repository.deleteBySagaIds(sagaIds, session, signal)
     }
 
     async aggregateSales(aggregateDto: AggregateTicketSalesDto) {
@@ -23,8 +28,12 @@ export class TicketsService {
         return salesByShowtime
     }
 
-    async createMany(createDtos: CreateTicketDto[]): Promise<CreateTicketsResult> {
-        await this.repository.createMany(createDtos)
+    async createMany(
+        createDtos: CreateTicketDto[],
+        session: ClientSession | undefined = undefined,
+        signal: AbortSignal | undefined = undefined
+    ): Promise<CreateTicketsResult> {
+        await this.repository.createMany(createDtos, session, signal)
 
         return { count: createDtos.length }
     }

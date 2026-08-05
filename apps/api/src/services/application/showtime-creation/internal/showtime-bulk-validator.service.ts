@@ -1,3 +1,4 @@
+import type { ClientSession } from 'mongoose'
 import { DateTimeRange, DateUtil, Require } from '@mannercode/common'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { MoviesService, ShowtimeDto, ShowtimesService, TheatersService } from 'core'
@@ -20,11 +21,15 @@ export class ShowtimeBulkValidatorService {
         private readonly showtimesService: ShowtimesService
     ) {}
 
-    async validate(createDto: BulkCreateShowtimesDto) {
-        await this.verifyMovieExists(createDto.movieId)
-        await this.verifyTheatersExist(createDto.theaterIds)
+    async validate(
+        createDto: BulkCreateShowtimesDto,
+        session: ClientSession | undefined = undefined,
+        signal: AbortSignal | undefined = undefined
+    ) {
+        await this.verifyMovieExists(createDto.movieId, session, signal)
+        await this.verifyTheatersExist(createDto.theaterIds, session, signal)
 
-        const conflictingShowtimes = await this.findConflictingShowtimes(createDto)
+        const conflictingShowtimes = await this.findConflictingShowtimes(createDto, session, signal)
 
         this.logger.log('validate completed', {
             movieId: createDto.movieId,
@@ -35,10 +40,14 @@ export class ShowtimeBulkValidatorService {
         return { conflictingShowtimes, isValid: 0 === conflictingShowtimes.length }
     }
 
-    private async findConflictingShowtimes(createDto: BulkCreateShowtimesDto) {
+    private async findConflictingShowtimes(
+        createDto: BulkCreateShowtimesDto,
+        session: ClientSession | undefined,
+        signal: AbortSignal | undefined
+    ) {
         const { durationInMinutes, startTimes, theaterIds } = createDto
 
-        const existingByTheater = await this.fetchExistingByTheater(createDto)
+        const existingByTheater = await this.fetchExistingByTheater(createDto, session, signal)
 
         // 한 기존 상영이 여러 새 시작 시각과 겹쳐도 결과에는 한 번만 들어가도록 상영 ID 기준으로 중복을 제거한다.
         const conflictsById = new Map<string, ShowtimeDto>()
@@ -64,7 +73,11 @@ export class ShowtimeBulkValidatorService {
         return [...conflictsById.values()]
     }
 
-    private async fetchExistingByTheater(createDto: BulkCreateShowtimesDto) {
+    private async fetchExistingByTheater(
+        createDto: BulkCreateShowtimesDto,
+        session: ClientSession | undefined,
+        signal: AbortSignal | undefined
+    ) {
         const { durationInMinutes, startTimes, theaterIds } = createDto
 
         const startDate = DateUtil.earliest(startTimes)
@@ -73,29 +86,44 @@ export class ShowtimeBulkValidatorService {
 
         // 새 상영 범위보다 일찍 시작한 기존 상영도 끝 시각이 범위 안에 들어오면 충돌이다.
         // 예를 들어 새 상영이 10:00-12:00이고 기존 상영이 09:00-11:00이면 11:00까지 시간이 겹친다.
-        const fetched = await Promise.all(
-            theaterIds.map((theaterId) =>
-                this.showtimesService.search({
-                    endTimeRange: { start: startDate },
-                    startTimeRange: { end: endDate },
-                    theaterIds: [theaterId]
-                })
-            )
+        // 한 transaction session에서는 병렬 Mongo 명령을 실행하지 않는다. 극장 전체를 한 번에 조회해 묶는다.
+        const fetched = await this.showtimesService.search(
+            { endTimeRange: { start: startDate }, startTimeRange: { end: endDate }, theaterIds },
+            session,
+            signal
         )
-
-        return new Map(theaterIds.map((theaterId, index) => [theaterId, fetched[index]]))
+        const existingByTheater = new Map<string, ShowtimeDto[]>(
+            theaterIds.map((theaterId) => [theaterId, []])
+        )
+        for (const showtime of fetched) {
+            const existing = existingByTheater.get(showtime.theaterId)
+            Require.defined(
+                existing,
+                `Existing showtimes must be defined for theater ID: ${showtime.theaterId}`
+            )
+            existing.push(showtime)
+        }
+        return existingByTheater
     }
 
-    private async verifyMovieExists(movieId: string) {
-        const movieExists = await this.moviesService.allExist([movieId])
+    private async verifyMovieExists(
+        movieId: string,
+        session: ClientSession | undefined,
+        signal: AbortSignal | undefined
+    ) {
+        const movieExists = await this.moviesService.allExist([movieId], session, signal)
 
         if (!movieExists) {
             throw new NotFoundException(ShowtimeCreationErrors.MovieNotFound(movieId))
         }
     }
 
-    private async verifyTheatersExist(theaterIds: string[]) {
-        const theatersExist = await this.theatersService.allExist(theaterIds)
+    private async verifyTheatersExist(
+        theaterIds: string[],
+        session: ClientSession | undefined,
+        signal: AbortSignal | undefined
+    ) {
+        const theatersExist = await this.theatersService.allExist(theaterIds, session, signal)
 
         if (!theatersExist) {
             throw new NotFoundException(ShowtimeCreationErrors.TheatersNotFound(theaterIds))

@@ -12,7 +12,11 @@ import { MongooseErrors } from './errors'
 import { objectId, objectIds } from './mongoose.util'
 
 type BulkSaveDocs<Doc> = Parameters<Model<Doc>['bulkSave']>[0]
+type BulkSaveOptions<Doc> = NonNullable<Parameters<Model<Doc>['bulkSave']>[1]> & {
+    signal?: AbortSignal
+}
 type SessionArg = ClientSession | undefined
+type TransactionOptions = NonNullable<Parameters<ClientSession['withTransaction']>[1]>
 
 const defaultLeanOptions = {}
 
@@ -55,13 +59,17 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
         return { deletedCount }
     }
 
-    async allExist(ids: string[], session: SessionArg = undefined) {
+    async allExist(
+        ids: string[],
+        session: SessionArg = undefined,
+        signal: AbortSignal | undefined = undefined
+    ) {
         const uniqueIds = uniq(ids)
         if (uniqueIds.length === 0) return true
 
         const count = await this.model.countDocuments(
             { _id: { $in: objectIds(uniqueIds) } } as QueryFilter<Doc>,
-            { session }
+            { session, signal }
         )
         return count === uniqueIds.length
     }
@@ -74,9 +82,13 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
         return leanOneToPublic<Doc>(doc)
     }
 
-    async findByIds(ids: string[], session: SessionArg = undefined): Promise<Doc[]> {
+    async findByIds(
+        ids: string[],
+        session: SessionArg = undefined,
+        signal: AbortSignal | undefined = undefined
+    ): Promise<Doc[]> {
         const docs = await this.model
-            .find({ _id: { $in: objectIds(ids) } } as QueryFilter<Doc>, null, { session })
+            .find({ _id: { $in: objectIds(ids) } } as QueryFilter<Doc>, null, { session, signal })
             .lean(defaultLeanOptions)
 
         return leanArrayToPublic<Doc>(docs)
@@ -140,12 +152,16 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
         return doc
     }
 
-    async getByIds(ids: string[], session: SessionArg = undefined) {
+    async getByIds(
+        ids: string[],
+        session: SessionArg = undefined,
+        signal: AbortSignal | undefined = undefined
+    ) {
         const uniqueIds = uniq(ids)
 
         Assume.equalLength(uniqueIds, ids, `Duplicate IDs detected and removed:${ids}`)
 
-        const docs = await this.findByIds(uniqueIds, session)
+        const docs = await this.findByIds(uniqueIds, session, signal)
 
         const notFoundIds = differenceWith(
             uniqueIds,
@@ -170,10 +186,16 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
         await this.model.createIndexes()
     }
 
-    async saveMany(docs: BulkSaveDocs<Doc>, session: SessionArg = undefined): Promise<void> {
-        const { deletedCount, insertedCount, matchedCount } = await this.model.bulkSave(docs, {
-            session
-        })
+    async saveMany(
+        docs: BulkSaveDocs<Doc>,
+        session: SessionArg = undefined,
+        signal: AbortSignal | undefined = undefined
+    ): Promise<void> {
+        const options: BulkSaveOptions<Doc> = { session, signal }
+        const { deletedCount, insertedCount, matchedCount } = await this.model.bulkSave(
+            docs,
+            options
+        )
 
         Require.equals(
             docs.length,
@@ -182,11 +204,14 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
         )
     }
 
-    async withTransaction<T>(callback: (session: ClientSession) => Promise<T>): Promise<T> {
+    async withTransaction<T>(
+        callback: (session: ClientSession) => Promise<T>,
+        options: TransactionOptions = {}
+    ): Promise<T> {
         // 드라이버가 일시 충돌은 트랜잭션 전체를, 불명확한 커밋은 커밋 단계만 재시도한다.
         const session = await this.model.startSession()
         try {
-            return await session.withTransaction(callback)
+            return await session.withTransaction(callback, options)
         } finally {
             await session.endSession()
         }

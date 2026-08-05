@@ -26,5 +26,5 @@ export const ShowtimeSchema = createCrudSchema(Showtime)
 // 이 스키마는 완전 삭제를 쓰므로 다른 도메인과 달리 `deletedAt` 필터가 붙지 않는다.
 // theaterId와 startTime만으로 접근 경로를 만든다.
 ShowtimeSchema.index({ theaterId: 1, startTime: 1 })
-// showtime-creation 보상 처리에서 사가가 만든 상영을 한 번에 찾는 경로이다.
+// showtime-creation 결과 확인과 운영 진단에서 사가가 만든 상영을 한 번에 찾는 경로이다.
 ShowtimeSchema.index({ sagaId: 1 })

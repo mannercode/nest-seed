@@ -18,6 +18,10 @@ export class TemporalWorkerService implements OnModuleInit, OnModuleDestroy {
         this.worker = await Worker.create({
             activities: this.options.activities,
             connection: this.connection,
+            maxConcurrentActivityTaskExecutions: this.options.maxConcurrentActivityTaskExecutions,
+            maxConcurrentActivityTaskPolls: this.options.maxConcurrentActivityTaskPolls,
+            maxConcurrentWorkflowTaskExecutions: this.options.maxConcurrentWorkflowTaskExecutions,
+            maxConcurrentWorkflowTaskPolls: this.options.maxConcurrentWorkflowTaskPolls,
             namespace: this.options.namespace,
             taskQueue: this.options.taskQueue,
             workflowBundle: { code: readFileSync(this.options.workflowBundlePath, 'utf8') }

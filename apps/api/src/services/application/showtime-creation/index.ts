@@ -1,5 +1,7 @@
 export * from './dtos'
 export * from './errors'
+export { ShowtimeBulkValidatorService, ShowtimeCreationPersistenceService } from './internal'
 export * from './showtime-creation.events'
 export * from './showtime-creation.module'
 export * from './showtime-creation.service'
+export { LegacyShowtimeCreationActivities } from './worker/legacy-activities'

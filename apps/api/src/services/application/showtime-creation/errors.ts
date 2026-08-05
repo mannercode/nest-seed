@@ -9,6 +9,16 @@ export const ShowtimeCreationErrors = {
         message: 'Some start times in the request overlap each other.',
         startTimes
     }),
+    TooManyShowtimes: (maximum: number) => ({
+        code: 'ERR_SHOWTIME_CREATION_TOO_MANY_SHOWTIMES',
+        maximum,
+        message: `A single request can create at most ${maximum} showtimes.`
+    }),
+    TooManyTickets: (maximum: number) => ({
+        code: 'ERR_SHOWTIME_CREATION_TOO_MANY_TICKETS',
+        maximum,
+        message: `A single request can create at most ${maximum} tickets.`
+    }),
     TheatersNotFound: (theaterIds: string[]) => ({
         code: 'ERR_SHOWTIME_CREATION_THEATERS_NOT_FOUND',
         message: 'One or more requested theaters could not be found.',
