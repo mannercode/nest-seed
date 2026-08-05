@@ -24,8 +24,11 @@ export class UsersService {
         const password = await this.authenticationService.hash(createDto.password)
 
         try {
-            const newUser = await this.repository.create({ ...createDto, password })
-            return this.toDto(newUser)
+            const result = await this.repository.create({ ...createDto, password })
+            if (result.status === 'conflict') {
+                throw new ConflictException(UserErrors.EmailAlreadyExists(createDto.email))
+            }
+            return this.toDto(result.user)
         } catch (error) {
             if (isDuplicateKeyError(error)) {
                 throw new ConflictException(UserErrors.EmailAlreadyExists(createDto.email))
