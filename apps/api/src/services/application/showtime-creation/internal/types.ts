@@ -26,3 +26,7 @@ export type ShowtimeCreationEvent =
           createdTicketCount: number
       }
     | { sagaId: string; status: typeof ShowtimeCreationStatus.Waiting }
+
+export type ValidateAndCreateResult =
+    | { kind: 'failed'; conflictingShowtimes: ShowtimeDto[] }
+    | { kind: 'succeeded'; createdShowtimeCount: number; createdTicketCount: number }

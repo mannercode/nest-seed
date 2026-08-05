@@ -8,6 +8,10 @@ export type TemporalClientModuleAsyncOptions = {
 export type TemporalWorkerOptions = {
     activities: Record<string, (...args: any[]) => any>
     address: string
+    maxConcurrentActivityTaskExecutions?: number
+    maxConcurrentActivityTaskPolls?: number
+    maxConcurrentWorkflowTaskExecutions?: number
+    maxConcurrentWorkflowTaskPolls?: number
     namespace: string
     taskQueue: string
     workflowBundlePath: string

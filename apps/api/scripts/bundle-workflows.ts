@@ -1,9 +1,12 @@
 import { bundleWorkflowCode } from '@temporalio/worker'
 import fs from 'fs'
 import path from 'path'
-import { showtimeCreationBundle } from '../src/services/application/showtime-creation/worker/bundle'
+import {
+    legacyShowtimeCreationBundle,
+    showtimeCreationBundle
+} from '../src/services/application/showtime-creation/worker/bundle'
 
-const workflows = [showtimeCreationBundle]
+const workflows = [legacyShowtimeCreationBundle, showtimeCreationBundle]
 
 async function bundleWorkflows(): Promise<void> {
     for (const { sourcePath, bundlePath } of workflows) {

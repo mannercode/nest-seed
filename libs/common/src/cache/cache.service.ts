@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import Redis from 'ioredis'
+import { setTimeout as sleep } from 'node:timers/promises'
 import { defaultTo } from '../utils'
 
 @Injectable()
@@ -91,16 +92,25 @@ export class CacheService {
         key: string,
         ttlMs: number,
         fn: () => Promise<T> | T,
-        { pollMs = 50, waitMs = 2 * 60 * 1000 }: { pollMs?: number; waitMs?: number } = {}
+        {
+            pollMs = 50,
+            signal,
+            waitMs = 2 * 60 * 1000
+        }: { pollMs?: number; signal?: AbortSignal; waitMs?: number } = {}
     ): Promise<T> {
         const deadline = Date.now() + waitMs
         for (;;) {
-            const attempt = await this.withLock(key, ttlMs, fn)
+            signal?.throwIfAborted()
+            // Redis SET을 기다리는 동안 취소됐을 수 있으므로 실제 callback 진입 직전에도 확인한다.
+            const attempt = await this.withLock(key, ttlMs, () => {
+                signal?.throwIfAborted()
+                return fn()
+            })
             if (attempt.ran) return attempt.result
             if (Date.now() >= deadline) {
                 throw new Error(`withLockBlocking: could not acquire '${key}' within ${waitMs}ms`)
             }
-            await new Promise((r) => setTimeout(r, pollMs))
+            await sleep(pollMs, undefined, { signal })
         }
     }
 

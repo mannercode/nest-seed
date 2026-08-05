@@ -1,3 +1,4 @@
+import type { ClientSession } from 'mongoose'
 import { ensure, mapDocToDto, pickIds, uniq } from '@mannercode/common'
 import {
     BadRequestException,
@@ -72,8 +73,12 @@ export class MoviesService {
         }
     }
 
-    async allExist(movieIds: string[]): Promise<boolean> {
-        return this.moviesRepository.allExist(movieIds)
+    async allExist(
+        movieIds: string[],
+        session: ClientSession | undefined = undefined,
+        signal: AbortSignal | undefined = undefined
+    ): Promise<boolean> {
+        return this.moviesRepository.allExist(movieIds, session, signal)
     }
 
     async finalizeUpload(movieId: string, assetId: string): Promise<void> {

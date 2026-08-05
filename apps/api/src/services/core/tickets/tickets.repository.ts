@@ -8,7 +8,7 @@ import {
 import { ConflictException, Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
-import { Model } from 'mongoose'
+import { ClientSession, Model } from 'mongoose'
 import {
     AggregateTicketSalesDto,
     CreateTicketDto,
@@ -27,8 +27,12 @@ export class TicketsRepository extends CrudRepository<Ticket> {
         super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
     }
 
-    async deleteBySagaIds(sagaIds: string[]) {
-        await this.model.deleteMany({ sagaId: { $in: sagaIds } })
+    async deleteBySagaIds(
+        sagaIds: string[],
+        session: ClientSession | undefined = undefined,
+        signal: AbortSignal | undefined = undefined
+    ) {
+        await this.model.deleteMany({ sagaId: { $in: sagaIds } }, { session, signal })
     }
 
     async aggregateSales(aggregateDto: AggregateTicketSalesDto) {
@@ -57,7 +61,11 @@ export class TicketsRepository extends CrudRepository<Ticket> {
         return showtimeTicketSalesArray
     }
 
-    async createMany(createDtos: CreateTicketDto[]) {
+    async createMany(
+        createDtos: CreateTicketDto[],
+        session: ClientSession | undefined = undefined,
+        signal: AbortSignal | undefined = undefined
+    ) {
         const tickets = createDtos.map((dto) => {
             const ticket = this.newDocument()
             ticket.sagaId = dto.sagaId
@@ -70,7 +78,7 @@ export class TicketsRepository extends CrudRepository<Ticket> {
             return ticket
         })
 
-        await this.saveMany(tickets)
+        await this.saveMany(tickets, session, signal)
     }
 
     async search(searchDto: SearchTicketsDto) {

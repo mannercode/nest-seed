@@ -1,3 +1,4 @@
+import type { ClientSession } from 'mongoose'
 import { ensure, mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { CreateTheaterDto, SearchTheatersPageDto, UpdateTheaterDto, TheaterDto } from './dtos'
@@ -18,12 +19,28 @@ export class TheatersService {
         await this.repository.deleteByIds(theaterIds)
     }
 
-    async allExist(theaterIds: string[]) {
-        return this.repository.allExist(theaterIds)
+    async acquireShowtimeScheduleGuards(
+        theaterIds: string[],
+        session: ClientSession,
+        signal: AbortSignal | undefined = undefined
+    ) {
+        return this.repository.acquireShowtimeScheduleGuards(theaterIds, session, signal)
     }
 
-    async getMany(theaterIds: string[]) {
-        const theaters = await this.repository.getByIds(theaterIds)
+    async allExist(
+        theaterIds: string[],
+        session: ClientSession | undefined = undefined,
+        signal: AbortSignal | undefined = undefined
+    ) {
+        return this.repository.allExist(theaterIds, session, signal)
+    }
+
+    async getMany(
+        theaterIds: string[],
+        session: ClientSession | undefined = undefined,
+        signal: AbortSignal | undefined = undefined
+    ) {
+        const theaters = await this.repository.getByIds(theaterIds, session, signal)
 
         const theaterDtos = this.toDtos(theaters)
         return theaterDtos
