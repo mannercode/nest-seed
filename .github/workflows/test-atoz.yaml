@@ -22,9 +22,13 @@ jobs:
             - uses: actions/checkout@v7
             - name: Run in devcontainer
               uses: devcontainers/ci@v0.3
+              env:
+                  MONGO_DIAGNOSTICS_ON_TEST_FAILURE: 'true'
               with:
                   configFile: .devcontainer/devcontainer.json
                   push: never
+                  env: |
+                      MONGO_DIAGNOSTICS_ON_TEST_FAILURE
                   runCmd: |
                       set -Eeuo pipefail
-                      npm run atoz
+                      bash .github/scripts/run-with-ci-diagnostics.sh npm run atoz

@@ -74,7 +74,7 @@ function setupJestLifecycle({
     connectMongo, // (workerId) => Promise<{ client, dbName }>
     createS3Client, // () => S3Client
     bucketName, // (workerId) => string
-    afterMongoConnect, // 선택: (client) => Promise<void>
+    afterMongoConnect, // 선택: (client, dbName) => Promise<void>
     onBeforeEach // 선택: (testId) => void | Promise<void>
 }) {
     let mongoClient
@@ -88,7 +88,7 @@ function setupJestLifecycle({
         const m = await connectMongo(workerId)
         mongoClient = m.client
         dbName = m.dbName
-        if (afterMongoConnect) await afterMongoConnect(mongoClient)
+        if (afterMongoConnect) await afterMongoConnect(mongoClient, dbName)
 
         s3Client = createS3Client()
         bucket = bucketName(workerId)

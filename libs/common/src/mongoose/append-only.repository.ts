@@ -6,9 +6,8 @@ export abstract class AppendOnlyRepository<Doc> implements OnModuleInit {
     constructor(protected readonly model: Model<Doc>) {}
 
     async onModuleInit() {
-        // 동시 첫 save의 createCollection 경합을 피하려고 미리 초기화한다.
-        await this.model.createCollection()
-        await this.model.createIndexes()
+        // 모델 생성 때 Mongoose가 시작한 컬렉션·인덱스 초기화를 재사용해 준비만 기다린다.
+        await this.model.init()
     }
 
     newDocument(): HydratedDocument<Doc> {

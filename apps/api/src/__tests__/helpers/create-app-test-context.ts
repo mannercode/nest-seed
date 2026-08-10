@@ -5,14 +5,24 @@ import {
     type HttpTestContext,
     type ModuleMetadataEx
 } from '@mannercode/testing'
+import { getConnectionToken } from '@nestjs/mongoose'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import compression from 'compression'
-import { AppConfigService } from 'config'
+import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
 import express from 'express'
+import { getSharedTestMongooseConnection } from '../../../scripts'
 import { AppModule } from '../../app.module'
 
 export async function createAppTestContext(metadata: ModuleMetadataEx = {}) {
     const imports = [AppModule, ...(metadata.imports ?? [])]
+    const sharedMongo = getSharedTestMongooseConnection()
+    const overrideProviders = [
+        {
+            original: getConnectionToken(MONGO_CONNECTION_NAME),
+            replacement: sharedMongo.connection
+        },
+        ...(metadata.overrideProviders ?? [])
+    ]
 
     const ctx = await createHttpTestContext({
         configureApp: async (app) => {
@@ -27,12 +37,23 @@ export async function createAppTestContext(metadata: ModuleMetadataEx = {}) {
             }
         },
         ...metadata,
-        imports
+        imports,
+        overrideProviders
     })
 
-    await stopAllCronJobs(ctx)
+    try {
+        await stopAllCronJobs(ctx)
+    } catch (setupError) {
+        try {
+            await ctx.close()
+        } catch {
+            // 설정 오류가 정리 오류에 가려지지 않게 원래 오류를 유지한다.
+        }
 
-    // 연결 정리는 각 모듈의 ConnectionRegistry가 onModuleDestroy에서 책임지므로 close만 부른다.
+        throw setupError
+    }
+
+    // 앱별 자원과 모델은 close에서 정리하고, 파일이 공유하는 MongoClient는 Jest afterAll에서 닫는다.
     const teardown = async () => {
         await ctx.close()
     }
