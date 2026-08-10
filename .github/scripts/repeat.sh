@@ -8,7 +8,7 @@ dump_postgresql_diagnostics () {
     local compose_file="${WORKSPACE_ROOT:?WORKSPACE_ROOT must be set}/infra/compose.yml"
     local postgres_id
 
-    postgres_id=$(docker compose --project-directory "${WORKSPACE_ROOT}/infra" -f "${compose_file}" ps -q temporal-postgresql 2>/dev/null || true)
+    postgres_id=$(timeout 8s docker compose --project-directory "${WORKSPACE_ROOT}/infra" -f "${compose_file}" ps -q temporal-postgresql 2>/dev/null || true)
     if [ -z "${postgres_id}" ]; then
         echo "=== PostgreSQL diagnostics unavailable: temporal-postgresql is not running ==="
         return
@@ -96,14 +96,18 @@ on_failure () {
     trap - ERR
     set +e
 
-    docker ps -a
-    docker stats -a --no-stream
+    timeout --kill-after=5s 110s \
+        bash "${WORKSPACE_ROOT}/.github/scripts/dump-mongo-diagnostics.sh" || \
+        echo "MongoDB diagnostics timed out or failed"
+    timeout 10s docker ps -a || echo "docker ps timed out or failed"
+    timeout 15s docker stats -a --no-stream || echo "docker stats timed out or failed"
     dump_postgresql_diagnostics
 
-    for id in $(docker ps -aq); do
-        name=$(docker inspect --format '{{.Name}} ({{.State.Status}})' "${id}")
+    for id in $(timeout 10s docker ps -aq); do
+        name=$(timeout 5s docker inspect --format '{{.Name}} ({{.State.Status}})' "${id}" || echo "${id} (inspect unavailable)")
         echo "========================= ${name} ========================="
-        docker logs --tail 200 "${id}"
+        timeout 15s docker logs --tail 200 "${id}" || \
+            echo "docker logs timed out or failed for ${id}"
     done
 
     exit "${exit_code}"

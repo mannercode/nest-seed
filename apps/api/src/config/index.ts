@@ -1,4 +1,5 @@
 export * from './app-config.service'
 export * from './connections'
+export * from './mongo-driver-options'
 export * from './mongoose-schema-options'
 export * from './project-id'

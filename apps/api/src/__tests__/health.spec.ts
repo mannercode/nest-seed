@@ -2,13 +2,16 @@ import type { AppTestContext } from './helpers'
 
 describe('Health', () => {
     let fix: AppTestContext
+    let teardown: AppTestContext['teardown'] | undefined
 
     beforeEach(async () => {
+        teardown = undefined
         const { createAppTestContext } = await import('./helpers')
         fix = await createAppTestContext()
+        teardown = fix.teardown
     })
 
-    afterEach(() => fix.teardown())
+    afterEach(() => teardown?.())
 
     describe('GET /health', () => {
         it('mongo·redis·nats·temporal이 정상이면 200과 상태 정보를 반환한다', async () => {

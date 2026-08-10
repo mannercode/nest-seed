@@ -12,7 +12,7 @@ import { isDebuggingEnabled } from './utils'
 export type ModuleMetadataEx = ModuleMetadata & {
     configureApp?: (app: INestApplication<Server>) => Promise<void>
     ignoreGuards?: Type<CanActivate>[]
-    overrideProviders?: { original: Type; replacement: any }[]
+    overrideProviders?: { original: string | symbol | Type; replacement: any }[]
 }
 
 export type TestContext = {
@@ -49,11 +49,21 @@ export async function createTestContext({
 
     app.useLogger(isDebuggingEnabled() ? console : false)
 
-    if (configureApp) {
-        await configureApp(app)
-    }
+    try {
+        if (configureApp) {
+            await configureApp(app)
+        }
 
-    await app.init()
+        await app.init()
+    } catch (setupError) {
+        try {
+            await app.close()
+        } catch {
+            // 설정 오류가 정리 오류에 가려지지 않게 원래 오류를 유지한다.
+        }
+
+        throw setupError
+    }
 
     const close = async () => {
         await app.close()

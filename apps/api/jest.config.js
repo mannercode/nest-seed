@@ -12,6 +12,7 @@ module.exports = {
     ...tsJestPreset,
     globalSetup: path.resolve(__dirname, 'jest.global.js'),
     globalTeardown: path.resolve(__dirname, 'jest.teardown.js'),
+    reporters: ['default', path.resolve(__dirname, 'scripts/jest-failure-diagnostics-reporter.js')],
     setupFilesAfterEnv: [path.resolve(__dirname, 'jest.setup.js')],
     moduleFileExtensions: ['js', 'json', 'ts'],
     rootDir: appDir,
