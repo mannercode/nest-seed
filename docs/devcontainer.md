@@ -9,7 +9,7 @@
 `containerEnv`는 두 값을 더 정의한다.
 
 - `WORKSPACE_ROOT` — 저장소 루트의 절대 경로. 스크립트들이 `${WORKSPACE_ROOT:?}`로 받아 위치에 상관없이 저장소 파일을 가리킨다.
-- `COMPOSE_PROJECT_NAME` — 작업 폴더 이름. infra와 deploy compose가 공유하는 Docker 네트워크의 이름이 된다.
+- `COMPOSE_PROJECT_NAME` — 로컬 사용자명과 작업 폴더 이름을 조합한 값. infra와 deploy compose가 공유하는 Docker 네트워크의 이름이 된다.
 
 ## 컨테이너 안의 `docker` 명령은 호스트 Docker가 실행한다 (DooD)
 

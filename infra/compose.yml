@@ -20,7 +20,7 @@ services:
         command: ['true']
 
 # devcontainer 인프라와 deploy compose가 같은 Docker 네트워크를 공유해야 API가 Mongo, Redis, NATS, Temporal에 서비스 이름으로 접근할 수 있다.
-# 네트워크 이름은 workspace 폴더명(`COMPOSE_PROJECT_NAME`)을 사용해 두 compose 파일이 같은 네트워크를 참조하게 한다.
+# 네트워크 이름은 사용자명과 workspace 폴더명을 조합한 `COMPOSE_PROJECT_NAME`을 사용해 두 compose 파일이 같은 네트워크를 참조하게 한다.
 networks:
     default:
         name: ${COMPOSE_PROJECT_NAME}

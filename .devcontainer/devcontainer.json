@@ -12,12 +12,12 @@
         "--env-file",
         ".env.api",
         "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}",
-        "--network=${localWorkspaceFolderBasename}"
+        "--network=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
     ],
     "remoteUser": "node",
     "containerEnv": {
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}",
-        "COMPOSE_PROJECT_NAME": "${containerWorkspaceFolderBasename}"
+        "COMPOSE_PROJECT_NAME": "${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
     },
     // 컨테이너 안에서 `docker compose`를 실행해도 실제 작업은 호스트 Docker가 한다.
     // 호스트가 `compose.yml`의 경로를 그대로 찾을 수 있도록,
@@ -26,14 +26,15 @@
     "workspaceFolder": "${localWorkspaceFolder}",
     "mounts": [
         "source=${localEnv:HOME}/.codex,target=/home/node/.codex,type=bind",
-        "source=${localEnv:HOME}/.config,target=/home/node/.config,type=bind",
+        "source=${localEnv:HOME}/.config/gh,target=/home/node/.config/gh,type=bind",
         "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind",
         "source=${localEnv:HOME}/.claude.json,target=/home/node/.claude.json,type=bind"
     ],
     "initializeCommand": {
-        "prepare-mounts": "mkdir -p ${localEnv:HOME}/.codex ${localEnv:HOME}/.claude ${localEnv:HOME}/.config",
-        "prepare-files": "touch ${localEnv:HOME}/.claude.json",
-        "prepare-network": "docker network create ${localWorkspaceFolderBasename} 2>/dev/null || true"
+        "codex": "mkdir -p ${localEnv:HOME}/.codex",
+        "claude": "mkdir -p ${localEnv:HOME}/.claude && touch ${localEnv:HOME}/.claude.json",
+        "github": "mkdir -p ${localEnv:HOME}/.config/gh",
+        "network": "n=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}; docker network inspect \"$n\" >/dev/null 2>&1 || docker network create \"$n\""
     },
     "postCreateCommand": { "install": "npm install" },
     "postStartCommand": {
