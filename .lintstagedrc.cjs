@@ -1,31 +1,29 @@
-const path = require('node:path')
-
-const shellQuote = (value) => `'${value.replaceAll("'", "'\\''")}'`
-
-const workspaceTypeScriptTasks = (workspace) => (files) => {
-    const workspaceDirectory = path.resolve(__dirname, workspace)
-    const relativeFiles = files.map((file) => {
-        const relativeFile = path.relative(workspaceDirectory, file)
-        if (relativeFile.startsWith(`..${path.sep}`) || path.isAbsolute(relativeFile)) {
-            throw new Error(`lint-staged received a file outside ${workspace}: ${file}`)
-        }
-        return shellQuote(relativeFile)
-    })
-    const argumentsList = relativeFiles.join(' ')
-    return [
-        `npm exec --workspace ${shellQuote(workspace)} -- eslint --fix ${argumentsList}`,
-        `npm exec --workspace ${shellQuote(workspace)} -- prettier --write ${argumentsList}`
-    ]
-}
-
 module.exports = {
-    'apps/api/**/*.{ts,tsx}': workspaceTypeScriptTasks('apps/api'),
-    'apps/console/**/*.{ts,tsx}': workspaceTypeScriptTasks('apps/console'),
-    'apps/user-app/**/*.{ts,tsx}': workspaceTypeScriptTasks('apps/user-app'),
-    'libs/common/**/*.{ts,tsx}': workspaceTypeScriptTasks('libs/common'),
-    'libs/temporal-sandbox/**/*.{ts,tsx}': workspaceTypeScriptTasks('libs/temporal-sandbox'),
-    'libs/testing/**/*.{ts,tsx}': workspaceTypeScriptTasks('libs/testing'),
-    'tests/console-e2e/**/*.{ts,tsx}': workspaceTypeScriptTasks('tests/console-e2e'),
+    'apps/api/**/*.{ts,tsx}': ['npm exec --workspace apps/api -- eslint --fix', 'prettier --write'],
+    'apps/console/**/*.{ts,tsx}': [
+        'npm exec --workspace apps/console -- eslint --fix',
+        'prettier --write'
+    ],
+    'apps/user-app/**/*.{ts,tsx}': [
+        'npm exec --workspace apps/user-app -- eslint --fix',
+        'prettier --write'
+    ],
+    'libs/common/**/*.{ts,tsx}': [
+        'npm exec --workspace libs/common -- eslint --fix',
+        'prettier --write'
+    ],
+    'libs/temporal-sandbox/**/*.{ts,tsx}': [
+        'npm exec --workspace libs/temporal-sandbox -- eslint --fix',
+        'prettier --write'
+    ],
+    'libs/testing/**/*.{ts,tsx}': [
+        'npm exec --workspace libs/testing -- eslint --fix',
+        'prettier --write'
+    ],
+    'tests/console-e2e/**/*.{ts,tsx}': [
+        'npm exec --workspace tests/console-e2e -- eslint --fix',
+        'prettier --write'
+    ],
     '*.{cjs,js,json,md,mjs,yml,yaml}': ['prettier --write'],
     '*.sh': ['shellcheck --severity=warning']
 }
