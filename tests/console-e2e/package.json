@@ -12,9 +12,9 @@
         "atoz": "npm run lint && npm test && CI=1 playwright test"
     },
     "devDependencies": {
-        "@playwright/test": "1.62.0",
+        "@playwright/test": "1.62.1",
         "@types/node": "24",
         "mongodb": "7.5.0",
-        "typescript": "6.0.3"
+        "typescript": "7.0.2"
     }
 }
