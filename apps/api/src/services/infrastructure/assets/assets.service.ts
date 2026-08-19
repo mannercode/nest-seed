@@ -133,6 +133,24 @@ export class AssetsService {
         return Promise.all(dtos.map((dto) => this.withDownloadInfo(dto)))
     }
 
+    async findOwner(
+        assetId: string
+    ): Promise<{ entityId: string; service: string } | null | undefined> {
+        const asset = await this.repository.findById(assetId)
+
+        if (!asset) return undefined
+
+        return this.toOwner(asset)
+    }
+
+    async findOwners(
+        assetIds: string[]
+    ): Promise<Map<string, { entityId: string; service: string } | null>> {
+        const assets = await this.repository.findByIds(assetIds)
+
+        return new Map(assets.map((asset) => [asset.id, this.toOwner(asset)]))
+    }
+
     async isUploadComplete(assetId: string): Promise<boolean> {
         const { id, mimeType, size } = await this.repository.getById(assetId)
 
@@ -177,6 +195,12 @@ export class AssetsService {
 
             return dto
         })
+    }
+
+    private toOwner(asset: Asset): { entityId: string; service: string } | null {
+        if (!asset.ownerEntityId || !asset.ownerService) return null
+
+        return { entityId: asset.ownerEntityId, service: asset.ownerService }
     }
 
     private async withDownloadInfo(assetDto: AssetDto): Promise<AssetDto> {

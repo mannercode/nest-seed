@@ -52,6 +52,9 @@ export type SecurityEvent =
 
 export type OnSecurityEvent = (event: SecurityEvent) => void | Promise<void>
 
+/** JWT 서명 외에 계정의 현재 철회 상태를 확인한다. */
+export type ValidateAuthPayload = (payload: Record<string, unknown>) => boolean | Promise<boolean>
+
 export type JwtAuthFactoryOptions = {
     auth: AuthConfig
     onEvent: OnSecurityEvent

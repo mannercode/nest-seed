@@ -1,8 +1,14 @@
-import { assignIfDefined, CrudRepository, leanOneToPublic } from '@mannercode/common'
-import { Injectable } from '@nestjs/common'
+import {
+    assignIfDefined,
+    CrudRepository,
+    leanOneToPublic,
+    MongooseErrors,
+    objectId
+} from '@mannercode/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
-import { Model } from 'mongoose'
+import { Model, UpdateQuery } from 'mongoose'
 import { CreateAdminDto } from './dtos'
 import { Admin } from './models'
 
@@ -37,14 +43,50 @@ export class AdminsRepository extends CrudRepository<Admin> {
         return leanOneToPublic<Admin>(admin)
     }
 
+    async findAuthVersionById(adminId: string): Promise<number | null> {
+        const admin = await this.model
+            .findById(objectId(adminId))
+            .select('authVersion')
+            .lean()
+            .exec()
+
+        return admin ? ((admin as { authVersion?: number }).authVersion ?? 0) : null
+    }
+
+    async isAuthVersionCurrent(adminId: string, authVersion: number): Promise<boolean> {
+        const current = await this.findAuthVersionById(adminId)
+        return current !== null && current === authVersion
+    }
+
+    async deleteByIdWithAuthVersion(adminId: string): Promise<void> {
+        const admin = await this.model
+            .findOneAndUpdate(
+                { _id: objectId(adminId) },
+                { $inc: { authVersion: 1 }, $set: { deletedAt: new Date() } },
+                { returnDocument: 'before' }
+            )
+            .exec()
+
+        if (!admin) throw new NotFoundException(MongooseErrors.DocumentNotFound(adminId))
+    }
+
     async update(id: string, patch: Partial<Pick<Admin, 'email' | 'name' | 'password'>>) {
-        const doc = await this.getDocumentById(id)
+        const fields: Partial<Pick<Admin, 'email' | 'name' | 'password'>> = {}
+        assignIfDefined(fields, patch, 'email')
+        assignIfDefined(fields, patch, 'name')
+        assignIfDefined(fields, patch, 'password')
 
-        assignIfDefined(doc, patch, 'email')
-        assignIfDefined(doc, patch, 'name')
-        assignIfDefined(doc, patch, 'password')
+        const update: UpdateQuery<Admin> = { $set: fields }
+        if (patch.password !== undefined) update.$inc = { authVersion: 1 }
 
-        await doc.save()
+        const doc = await this.model
+            .findOneAndUpdate({ _id: objectId(id) }, update, {
+                returnDocument: 'after',
+                runValidators: true
+            })
+            .exec()
+
+        if (!doc) throw new NotFoundException(MongooseErrors.DocumentNotFound(id))
         return doc.toJSON()
     }
 }

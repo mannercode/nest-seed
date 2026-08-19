@@ -231,6 +231,15 @@ describe('UsersService', () => {
                 .body({ refreshToken })
                 .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
         })
+
+        it('존재하지 않는 고객의 세션 전체 회수는 404를 던진다', async () => {
+            const { UsersService } = await import('core')
+            const service = fix.module.get(UsersService)
+
+            await expect(service.revokeAllForUser(nullObjectId)).rejects.toThrow(
+                Errors.Mongoose.DocumentNotFound(nullObjectId).message
+            )
+        })
     })
 
     describe('인가 경계', () => {

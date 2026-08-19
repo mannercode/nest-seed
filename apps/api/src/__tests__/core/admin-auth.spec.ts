@@ -1,4 +1,16 @@
+import { HttpStatus, type INestApplication } from '@nestjs/common'
 import { createAdmin, Errors, loginAdmin, type AppTestContext } from '../helpers'
+
+const ACCOUNT_FAILURE_LIMIT = 5
+const IP_FAILURE_LIMIT = 50
+const LOGIN_RATE_LIMITED_ERROR = {
+    code: 'ERR_AUTH_LOGIN_RATE_LIMITED',
+    message: 'Too many login attempts'
+}
+
+function trustPrivateProxy(app: INestApplication) {
+    app.getHttpAdapter().getInstance().set('trust proxy', ['loopback', 'linklocal', 'uniquelocal'])
+}
 
 describe('AdminAuthentication', () => {
     let fix: AppTestContext
@@ -6,7 +18,7 @@ describe('AdminAuthentication', () => {
 
     beforeEach(async () => {
         const { createAppTestContext } = await import('../helpers')
-        fix = await createAppTestContext()
+        fix = await createAppTestContext({ configureApp: async (app) => trustPrivateProxy(app) })
 
         await createAdmin(fix, credentials)
     })
@@ -18,6 +30,26 @@ describe('AdminAuthentication', () => {
                 .post('/admins/login')
                 .body(credentials)
                 .ok({ accessToken: expect.any(String), refreshToken: expect.any(String) })
+        })
+
+        it('authVersion 필드가 없는 기존 관리자도 version 0 세션으로 로그인한다', async () => {
+            const { AdminsRepository } =
+                await import('../../services/core/admins/admins.repository')
+            const repository = fix.module.get(AdminsRepository)
+            await repository.model.collection.updateOne(
+                { email: credentials.email },
+                { $unset: { authVersion: '' } }
+            )
+
+            const { body: tokens } = await fix.httpClient
+                .post('/admins/login')
+                .body(credentials)
+                .ok()
+
+            await fix.httpClient
+                .get('/admins/me')
+                .headers({ Authorization: `Bearer ${tokens.accessToken}` })
+                .ok(expect.objectContaining({ email: credentials.email }))
         })
 
         it('비밀번호가 틀리면 401을 반환한다', async () => {
@@ -32,6 +64,88 @@ describe('AdminAuthentication', () => {
                 .post('/admins/login')
                 .body({ ...credentials, email: 'unknown@mail.com' })
                 .unauthorized(Errors.Auth.Unauthorized())
+        })
+
+        it('정규화한 계정의 실패가 5회를 넘으면 429를 반환한다', async () => {
+            for (let index = 0; index < ACCOUNT_FAILURE_LIMIT; index++) {
+                await fix.httpClient
+                    .post('/admins/login')
+                    .headers({ 'X-Forwarded-For': `198.51.100.${index + 1}` })
+                    .body({
+                        email: index % 2 === 0 ? 'ADMIN@mail.com' : 'admin@MAIL.com',
+                        password: 'wrong password'
+                    })
+                    .unauthorized(Errors.Auth.Unauthorized())
+            }
+
+            await fix.httpClient
+                .post('/admins/login')
+                .headers({ 'X-Forwarded-For': '198.51.100.6' })
+                .body({ ...credentials, password: 'wrong password' })
+                .send(HttpStatus.TOO_MANY_REQUESTS, LOGIN_RATE_LIMITED_ERROR)
+        })
+
+        it('성공하면 정규화한 계정의 실패 횟수를 초기화한다', async () => {
+            for (let index = 0; index < ACCOUNT_FAILURE_LIMIT - 1; index++) {
+                await fix.httpClient
+                    .post('/admins/login')
+                    .headers({ 'X-Forwarded-For': `203.0.113.${index + 1}` })
+                    .body({
+                        email: index % 2 === 0 ? 'ADMIN@mail.com' : 'admin@MAIL.com',
+                        password: 'wrong password'
+                    })
+                    .unauthorized(Errors.Auth.Unauthorized())
+            }
+
+            await fix.httpClient
+                .post('/admins/login')
+                .headers({ 'X-Forwarded-For': '203.0.113.5' })
+                .body(credentials)
+                .ok()
+
+            for (let index = 0; index < ACCOUNT_FAILURE_LIMIT; index++) {
+                await fix.httpClient
+                    .post('/admins/login')
+                    .headers({ 'X-Forwarded-For': `192.0.2.${index + 1}` })
+                    .body({ ...credentials, password: 'wrong password' })
+                    .unauthorized(Errors.Auth.Unauthorized())
+            }
+
+            await fix.httpClient
+                .post('/admins/login')
+                .headers({ 'X-Forwarded-For': '192.0.2.6' })
+                .body({ ...credentials, password: 'wrong password' })
+                .send(HttpStatus.TOO_MANY_REQUESTS, LOGIN_RATE_LIMITED_ERROR)
+        })
+
+        it('성공해도 IP 실패 횟수는 초기화하지 않고 51번째 요청부터 429를 반환한다', async () => {
+            const ip = '198.51.100.100'
+
+            for (let index = 0; index < IP_FAILURE_LIMIT - 1; index++) {
+                await fix.httpClient
+                    .post('/admins/login')
+                    .headers({ 'X-Forwarded-For': ip })
+                    .body({ email: `unknown-${index}@mail.com`, password: 'wrong password' })
+                    .unauthorized(Errors.Auth.Unauthorized())
+            }
+
+            await fix.httpClient
+                .post('/admins/login')
+                .headers({ 'X-Forwarded-For': ip })
+                .body(credentials)
+                .ok()
+
+            await fix.httpClient
+                .post('/admins/login')
+                .headers({ 'X-Forwarded-For': ip })
+                .body({ email: 'unknown-50@mail.com', password: 'wrong password' })
+                .unauthorized(Errors.Auth.Unauthorized())
+
+            await fix.httpClient
+                .post('/admins/login')
+                .headers({ 'X-Forwarded-For': ip })
+                .body({ email: 'unknown-51@mail.com', password: 'wrong password' })
+                .send(HttpStatus.TOO_MANY_REQUESTS, LOGIN_RATE_LIMITED_ERROR)
         })
     })
 

@@ -5,9 +5,40 @@ const {
     ListBucketsCommand,
     ListObjectsV2Command
 } = require('@aws-sdk/client-s3')
+const { randomBytes } = require('node:crypto')
 
 const WORKER_DB_PATTERN = /^mongo-w\d+$/
 const WORKER_BUCKET_PATTERN = /^s3bucket-w\d+$/
+const JEST_RESOURCE_RUN_ID_PATTERN = /^[a-f0-9]{32}$/
+
+function createJestResourceRunId() {
+    return randomBytes(16).toString('hex')
+}
+
+function createJestResourceScope(runId) {
+    if (!JEST_RESOURCE_RUN_ID_PATTERN.test(runId ?? '')) {
+        throw new Error('Jest resource run ID must be 32 lowercase hexadecimal characters')
+    }
+
+    const runPrefix = `r${runId}`
+    const workerSuffix = (workerId) => {
+        const normalized = String(workerId)
+        if (!/^\d+$/.test(normalized)) {
+            throw new Error('Jest worker ID must contain only decimal digits')
+        }
+        return `${runPrefix}-w${normalized}`
+    }
+
+    return {
+        bucketName: (workerId) => `s3bucket-${workerSuffix(workerId)}`,
+        bucketPattern: new RegExp(`^s3bucket-${runPrefix}-w\\d+$`),
+        databaseName: (workerId) => `mongo-${workerSuffix(workerId)}`,
+        databasePattern: new RegExp(`^mongo-${runPrefix}-w\\d+$`),
+        projectId: (testId) => `project-${runPrefix}-${testId}`,
+        redisKeyPattern: `*project-${runPrefix}-*`,
+        redisKeyScope: runId
+    }
+}
 
 function generateTestId() {
     const chars = 'useandom26T198340PX75pxJACKVERYMINDBUSHWOLFGQZbfghjklqvwyzrict'
@@ -116,35 +147,56 @@ function setupJestLifecycle({
 
 // 워커 풀이 끝난 뒤 공용 인프라와 워크스페이스별 extra를 함께 정리한다.
 function createGlobalTeardown({
+    allowRedisFlushAll = false,
     connectMongo, // () => Promise<MongoClient>
     createS3Client, // () => S3Client
     connectRedis, // () => Redis (single or Cluster)
+    databasePattern = WORKER_DB_PATTERN,
+    bucketPattern = WORKER_BUCKET_PATTERN,
+    redisKeyPattern,
+    redisKeyScope,
     extra // 선택: () => Promise<void>
 }) {
+    if (redisKeyPattern !== undefined && allowRedisFlushAll) {
+        throw new Error(
+            'createGlobalTeardown must not combine redisKeyPattern and allowRedisFlushAll'
+        )
+    }
+    if (redisKeyPattern === undefined && !allowRedisFlushAll) {
+        throw new Error(
+            'createGlobalTeardown requires redisKeyPattern or explicit allowRedisFlushAll: true'
+        )
+    }
+    if (redisKeyPattern !== undefined) {
+        assertScopedRedisKeyPattern(redisKeyPattern, redisKeyScope)
+    }
+
     return async function globalTeardown() {
         const tasks = [
-            cleanupMongoMatching(connectMongo),
-            cleanupS3Matching(createS3Client),
-            cleanupRedisAll(connectRedis)
+            cleanupMongoMatching(connectMongo, databasePattern),
+            cleanupS3Matching(createS3Client, bucketPattern),
+            redisKeyPattern === undefined
+                ? cleanupRedisAll(connectRedis)
+                : cleanupRedisMatching(connectRedis, redisKeyPattern, redisKeyScope)
         ]
         if (extra) tasks.push(extra())
         await Promise.all(tasks)
     }
 }
 
-async function cleanupMongoMatching(connectMongo) {
+async function cleanupMongoMatching(connectMongo, pattern = WORKER_DB_PATTERN) {
     const client = await connectMongo()
     try {
-        await dropMatchingDatabases(client, WORKER_DB_PATTERN)
+        await dropMatchingDatabases(client, pattern)
     } finally {
         await client.close()
     }
 }
 
-async function cleanupS3Matching(createS3Client) {
+async function cleanupS3Matching(createS3Client, pattern = WORKER_BUCKET_PATTERN) {
     const client = createS3Client()
     try {
-        await dropMatchingBuckets(client, WORKER_BUCKET_PATTERN)
+        await dropMatchingBuckets(client, pattern)
     } finally {
         client.destroy()
     }
@@ -153,34 +205,78 @@ async function cleanupS3Matching(createS3Client) {
 async function cleanupRedisAll(connectRedis) {
     const redis = connectRedis()
     try {
-        // ioredis Cluster와 단일 연결은 flush 방법이 달라 런타임에 구분한다.
-        if (typeof redis.nodes === 'function') {
-            // Cluster의 connectionPool은 비동기로 채워져, 생성 직후의 nodes()는 빈 배열이다.
-            // 그대로 진행하면 flush가 조용히 no-op이 되므로 ready를 기다린 뒤 조회한다.
-            if (redis.status !== 'ready') {
-                await new Promise((resolve, reject) => {
-                    redis.once('ready', resolve)
-                    redis.once('error', reject)
-                })
-            }
-            const masters = redis.nodes('master')
-            if (masters.length === 0) {
-                throw new Error('cleanupRedisAll: no master nodes — flush would be a no-op')
-            }
-            await Promise.all(masters.map((node) => node.flushall()))
-        } else {
-            await redis.flushall()
-        }
+        const targets = await redisWriteTargets(redis, 'cleanupRedisAll')
+        await Promise.all(targets.map((target) => target.flushall()))
     } finally {
         await redis.quit()
     }
+}
+
+async function cleanupRedisMatching(connectRedis, keyPattern, redisKeyScope) {
+    assertScopedRedisKeyPattern(keyPattern, redisKeyScope)
+
+    const redis = connectRedis()
+    try {
+        const targets = await redisWriteTargets(redis, 'cleanupRedisMatching')
+        await Promise.all(targets.map((target) => deleteMatchingRedisKeys(target, keyPattern)))
+    } finally {
+        await redis.quit()
+    }
+}
+
+function assertScopedRedisKeyPattern(keyPattern, redisKeyScope) {
+    if (typeof keyPattern !== 'string' || keyPattern.trim().length === 0) {
+        throw new Error('cleanupRedisMatching requires a scoped Redis key pattern')
+    }
+
+    if (
+        typeof redisKeyScope !== 'string' ||
+        !/^[A-Za-z0-9_-]{16,}$/.test(redisKeyScope) ||
+        !/^\*?[A-Za-z0-9:._/-]+\*?$/.test(keyPattern) ||
+        !keyPattern.includes(redisKeyScope)
+    ) {
+        throw new Error(
+            'cleanupRedisMatching requires redisKeyScope (16+ safe literal characters) in key pattern'
+        )
+    }
+}
+
+async function redisWriteTargets(redis, operation) {
+    if (typeof redis.nodes !== 'function') return [redis]
+
+    // Cluster의 connectionPool은 비동기로 채워져, 생성 직후의 nodes()는 빈 배열이다.
+    // 그대로 진행하면 정리가 조용히 no-op이 되므로 ready를 기다린 뒤 조회한다.
+    if (redis.status !== 'ready') {
+        await new Promise((resolve, reject) => {
+            redis.once('ready', resolve)
+            redis.once('error', reject)
+        })
+    }
+    const masters = redis.nodes('master')
+    if (masters.length === 0) {
+        throw new Error(`${operation}: no master nodes — cleanup would be a no-op`)
+    }
+    return masters
+}
+
+async function deleteMatchingRedisKeys(redis, keyPattern) {
+    let cursor = '0'
+
+    do {
+        const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', keyPattern, 'COUNT', '100')
+        await Promise.all(keys.map((key) => redis.unlink(key)))
+        cursor = nextCursor
+    } while (cursor !== '0')
 }
 
 module.exports = {
     WORKER_BUCKET_PATTERN,
     WORKER_DB_PATTERN,
     cleanCollections,
+    cleanupRedisMatching,
     createGlobalTeardown,
+    createJestResourceRunId,
+    createJestResourceScope,
     dropMatchingBuckets,
     dropMatchingDatabases,
     emptyBucket,

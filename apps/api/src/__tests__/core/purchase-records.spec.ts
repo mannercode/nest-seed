@@ -1,5 +1,5 @@
 import type { PurchaseRecordsService } from 'core'
-import { pickIds, sleep } from '@mannercode/common'
+import { ensure, pickIds, sleep } from '@mannercode/common'
 import { oid } from '@mannercode/testing'
 import { buildCreatePurchaseRecordDto, createPurchaseRecord, type AppTestContext } from '../helpers'
 
@@ -59,6 +59,213 @@ describe('PurchaseRecordsService', () => {
             const records = await purchaseRecordsService.findByUserId(userId)
 
             expect(pickIds(records)).toEqual([second.id, first.id])
+        })
+    })
+
+    describe('durable purchase state', () => {
+        it('pending은 고객 이력에서 숨기고 완료 전이 뒤 durable event로 조회한다', async () => {
+            const createDto = buildCreatePurchaseRecordDto({ paymentId: null })
+            const pending = await purchaseRecordsService.create(createDto, { pending: true })
+
+            expect(await purchaseRecordsService.findByUserId(createDto.userId)).toEqual([])
+            expect(await purchaseRecordsService.findPendingById(pending.id)).toEqual(pending)
+            expect(
+                await purchaseRecordsService.findPendingBefore(new Date(Date.now() - 1000))
+            ).toEqual([])
+            expect(
+                await purchaseRecordsService.findPendingBefore(new Date(Date.now() + 1000))
+            ).toEqual([pending])
+
+            const paymentId = oid(0x99)
+            await purchaseRecordsService.setPaymentId(pending.id, paymentId)
+            const completionId = 'completion-1'
+            await purchaseRecordsService.claimForCompletion(
+                pending.id,
+                completionId,
+                new Date(Date.now() + 60_000)
+            )
+            const completed = await purchaseRecordsService.markCompleted(pending.id, completionId)
+
+            expect(completed.paymentId).toBe(paymentId)
+            expect(await purchaseRecordsService.findPendingById(pending.id)).toBeUndefined()
+            expect(await purchaseRecordsService.findByUserId(createDto.userId)).toEqual([completed])
+            expect(
+                await purchaseRecordsService.findUnpublishedBefore(new Date(Date.now() + 1000))
+            ).toEqual([completed])
+
+            const publicationId = 'publication-1'
+            const publicationNow = new Date()
+            const publicationLeaseUntil = new Date(publicationNow.getTime() + 60_000)
+            const publicationBefore = new Date(Date.now() + 1000)
+            expect(
+                await purchaseRecordsService.claimEventPublication(pending.id, {
+                    before: publicationBefore,
+                    leaseUntil: publicationLeaseUntil,
+                    now: publicationNow,
+                    publicationId
+                })
+            ).toEqual(expect.objectContaining({ id: pending.id }))
+            expect(
+                await purchaseRecordsService.claimEventPublication(pending.id, {
+                    before: publicationBefore,
+                    leaseUntil: publicationLeaseUntil,
+                    now: publicationNow,
+                    publicationId: 'publication-loser'
+                })
+            ).toBeUndefined()
+
+            const takeoverId = 'publication-after-lease'
+            const takeoverNow = new Date(publicationLeaseUntil.getTime() + 1)
+            expect(
+                await purchaseRecordsService.claimEventPublication(pending.id, {
+                    before: publicationBefore,
+                    leaseUntil: new Date(takeoverNow.getTime() + 60_000),
+                    now: takeoverNow,
+                    publicationId: takeoverId
+                })
+            ).toEqual(expect.objectContaining({ id: pending.id }))
+            expect(await purchaseRecordsService.markEventPublished(pending.id, publicationId)).toBe(
+                false
+            )
+            expect(await purchaseRecordsService.markEventPublished(pending.id, takeoverId)).toBe(
+                true
+            )
+
+            expect(
+                await purchaseRecordsService.findUnpublishedBefore(new Date(Date.now() + 1000))
+            ).toEqual([])
+        })
+
+        it('completion lease는 pending 상태에서 한 번만 획득한다', async () => {
+            const pending = await purchaseRecordsService.create(
+                buildCreatePurchaseRecordDto({ paymentId: null }),
+                { pending: true }
+            )
+            await purchaseRecordsService.claimForCompletion(
+                pending.id,
+                'completion-winner',
+                new Date(Date.now() + 60_000)
+            )
+
+            await expect(
+                purchaseRecordsService.claimForCompletion(
+                    pending.id,
+                    'completion-loser',
+                    new Date(Date.now() + 60_000)
+                )
+            ).rejects.toThrow(`Purchase record is no longer pending: ${pending.id}`)
+        })
+
+        it('보상 완료 상태는 pending 재시도와 고객 구매 이력에서 제외한다', async () => {
+            const createDto = buildCreatePurchaseRecordDto({ paymentId: null })
+            const pending = await purchaseRecordsService.create(createDto, { pending: true })
+            const reconciliationId = 'reconciliation-1'
+            await purchaseRecordsService.claimForReconciliation(pending.id, {
+                before: new Date(Date.now() + 1000),
+                leaseUntil: new Date(Date.now() + 60_000),
+                now: new Date(),
+                reconciliationId
+            })
+
+            await purchaseRecordsService.markCancelled(pending.id, reconciliationId)
+
+            expect(await purchaseRecordsService.findPendingById(pending.id)).toBeUndefined()
+            expect(
+                await purchaseRecordsService.findPendingBefore(new Date(Date.now() + 1000))
+            ).toEqual([])
+            expect(await purchaseRecordsService.findByUserId(createDto.userId)).toEqual([])
+        })
+
+        it('여러 replica 중 한 곳만 보상 lease를 얻고 실패한 lease는 재시도한다', async () => {
+            const createDto = buildCreatePurchaseRecordDto({ paymentId: null })
+            const pending = await purchaseRecordsService.create(createDto, { pending: true })
+            const now = new Date()
+            const before = new Date(now.getTime() + 1000)
+            const leaseUntil = new Date(now.getTime() + 60_000)
+
+            const claims = await Promise.all(
+                ['reconciliation-1', 'reconciliation-2'].map((reconciliationId) =>
+                    purchaseRecordsService.claimForReconciliation(pending.id, {
+                        before,
+                        leaseUntil,
+                        now,
+                        reconciliationId
+                    })
+                )
+            )
+            const winnerIndex = claims.findIndex(Boolean)
+            expect(claims.filter(Boolean)).toHaveLength(1)
+            expect(
+                await purchaseRecordsService.findPendingBefore(new Date(Date.now() + 1000))
+            ).toEqual([])
+            await expect(
+                purchaseRecordsService.markCompleted(pending.id, 'completion-loser')
+            ).rejects.toThrow('Purchase completion lease was lost')
+
+            const winnerId = ensure(['reconciliation-1', 'reconciliation-2'][winnerIndex])
+            const takeoverNow = new Date(leaseUntil.getTime() + 1)
+            const takeoverId = 'reconciliation-after-crash'
+            expect(
+                await purchaseRecordsService.claimForReconciliation(pending.id, {
+                    before,
+                    leaseUntil: new Date(takeoverNow.getTime() + 60_000),
+                    now: takeoverNow,
+                    reconciliationId: takeoverId
+                })
+            ).toEqual(expect.objectContaining({ id: pending.id }))
+
+            // 만료된 이전 owner는 새 lease의 상태를 완료하거나 해제할 수 없다.
+            await purchaseRecordsService.markCancelled(pending.id, winnerId)
+            await purchaseRecordsService.releaseReconciliationClaim(pending.id, winnerId)
+            expect(
+                await purchaseRecordsService.findPendingBefore(new Date(Date.now() + 1000))
+            ).toEqual([])
+
+            await purchaseRecordsService.releaseReconciliationClaim(pending.id, takeoverId)
+            expect(
+                await purchaseRecordsService.findPendingBefore(new Date(Date.now() + 1000))
+            ).toEqual([expect.objectContaining({ id: pending.id })])
+
+            const retryId = 'reconciliation-retry'
+            expect(
+                await purchaseRecordsService.claimForReconciliation(pending.id, {
+                    before,
+                    leaseUntil,
+                    now: new Date(),
+                    reconciliationId: retryId
+                })
+            ).toEqual(expect.objectContaining({ id: pending.id }))
+            await purchaseRecordsService.markCancelled(pending.id, retryId)
+            expect(
+                await purchaseRecordsService.findPendingBefore(new Date(Date.now() + 1000))
+            ).toEqual([])
+        })
+
+        it('프로세스가 죽어 만료된 completion lease를 보상 replica가 회수한다', async () => {
+            const createDto = buildCreatePurchaseRecordDto({ paymentId: null })
+            const pending = await purchaseRecordsService.create(createDto, { pending: true })
+            const completionId = 'completion-crashed'
+            await purchaseRecordsService.claimForCompletion(pending.id, completionId, new Date(0))
+
+            expect(
+                await purchaseRecordsService.findPendingBefore(new Date(Date.now() + 1000))
+            ).toEqual([expect.objectContaining({ id: pending.id })])
+
+            const reconciliationId = 'reconciliation-recovery'
+            expect(
+                await purchaseRecordsService.claimForReconciliation(pending.id, {
+                    before: new Date(Date.now() + 1000),
+                    leaseUntil: new Date(Date.now() + 60_000),
+                    now: new Date(),
+                    reconciliationId
+                })
+            ).toEqual(expect.objectContaining({ id: pending.id }))
+            await expect(
+                purchaseRecordsService.markCompleted(pending.id, completionId)
+            ).rejects.toThrow('Purchase completion lease was lost')
+
+            await purchaseRecordsService.markCancelled(pending.id, reconciliationId)
+            expect(await purchaseRecordsService.findByUserId(createDto.userId)).toEqual([])
         })
     })
 })

@@ -35,15 +35,12 @@ export async function loginUser(ctx: TestContext, credentials: UserCredentialsDt
     const { UsersService } = await import('core')
     const usersService = ctx.module.get(UsersService)
 
-    const user = await usersService.findUserByCredentials(credentials)
-    if (!user) {
+    const result = await usersService.login(credentials)
+    if (!result) {
         throw new Error(`loginUser: no user found for credentials (email=${credentials.email})`)
     }
 
-    const { accessToken, refreshToken } = await usersService.generateAuthTokens({
-        sub: user.id,
-        email: credentials.email
-    })
+    const { accessToken, refreshToken } = result.tokens
 
-    return { accessToken, user, refreshToken }
+    return { accessToken, user: result.user, refreshToken }
 }

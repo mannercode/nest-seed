@@ -2,6 +2,39 @@ import { JwtService } from '@nestjs/jwt'
 import type { JwtAuthServiceFixture } from './jwt-auth.service.fixture'
 import { sleep } from '../../utils'
 
+async function expireConcurrentRefreshGrace(fix: JwtAuthServiceFixture, refreshToken: string) {
+    const decoded = new JwtService().decode<Record<string, unknown>>(refreshToken)
+    const familyId = decoded.familyId as string
+    const tokenId = decoded.refreshTokenId as string
+    await fix.redis.del(`${fix.jwtService.prefix}:{${familyId}}:consumed:${tokenId}`)
+}
+
+function pauseNextRefreshTokenStore(fix: JwtAuthServiceFixture) {
+    type JwtAuthInternals = {
+        storeToken(
+            tokenId: string,
+            familyId: string,
+            refreshToken: string,
+            userId: string | undefined
+        ): Promise<void>
+    }
+
+    const internals = fix.jwtService as unknown as JwtAuthInternals
+    const storeToken = internals.storeToken.bind(internals)
+    let announceStoreReached!: () => void
+    let releaseStore!: () => void
+    const storeReached = new Promise<void>((resolve) => (announceStoreReached = resolve))
+    const storeReleased = new Promise<void>((resolve) => (releaseStore = resolve))
+
+    jest.spyOn(internals, 'storeToken').mockImplementationOnce(async (...args) => {
+        announceStoreReached()
+        await storeReleased
+        return storeToken(...args)
+    })
+
+    return { releaseStore, storeReached }
+}
+
 describe('JwtAuthService', () => {
     let fix: JwtAuthServiceFixture
 
@@ -20,6 +53,40 @@ describe('JwtAuthService', () => {
                 accessToken: expect.any(String),
                 refreshToken: expect.any(String)
             })
+        })
+
+        it('현재 계정 검증을 통과하면 토큰을 발급한다', async () => {
+            const validatePayload = jest.fn().mockResolvedValue(true)
+            const payload = { email: 'email', sub: 'u1' }
+
+            await expect(
+                fix.jwtService.generateAuthTokens(payload, undefined, validatePayload)
+            ).resolves.toEqual({
+                accessToken: expect.any(String),
+                refreshToken: expect.any(String)
+            })
+            expect(validatePayload).toHaveBeenCalledWith(payload)
+        })
+
+        it('발급 중 계정이 철회되면 만든 token family를 폐기하고 401을 반환한다', async () => {
+            await expect(
+                fix.jwtService.generateAuthTokens(
+                    { sub: 'u1' },
+                    { source: 'login' },
+                    async () => false
+                )
+            ).rejects.toThrow('The provided refresh token is invalid')
+
+            expect(fix.events).toContainEqual(
+                expect.objectContaining({
+                    context: { source: 'login' },
+                    reason: 'account_revoked',
+                    type: 'verify.failed'
+                })
+            )
+            expect(await fix.redis.smembers(`${fix.jwtService.prefix}:user:{u1}:families`)).toEqual(
+                []
+            )
         })
 
         it('액세스 토큰에 issuer와 audience가 포함된다', async () => {
@@ -103,6 +170,109 @@ describe('JwtAuthService', () => {
             expect(tokens.refreshToken).not.toEqual(refreshToken)
         })
 
+        it('현재 계정 검증을 회전 전후 모두 통과하면 새 토큰을 반환한다', async () => {
+            const validatePayload = jest.fn().mockResolvedValue(true)
+
+            await expect(
+                fix.jwtService.refreshAuthTokens(refreshToken, undefined, validatePayload)
+            ).resolves.toEqual({
+                accessToken: expect.any(String),
+                refreshToken: expect.any(String)
+            })
+            expect(validatePayload).toHaveBeenCalledTimes(2)
+        })
+
+        it('회전 전에 계정이 철회됐으면 token family를 폐기하고 401을 반환한다', async () => {
+            const validatePayload = jest.fn().mockResolvedValue(false)
+
+            await expect(
+                fix.jwtService.refreshAuthTokens(refreshToken, undefined, validatePayload)
+            ).rejects.toThrow('The provided refresh token is invalid')
+            expect(validatePayload).toHaveBeenCalledTimes(1)
+            await expect(fix.jwtService.refreshAuthTokens(refreshToken)).rejects.toThrow(
+                'The provided refresh token is invalid'
+            )
+        })
+
+        it('토큰 소비와 재발급 사이 계정이 철회되면 새 token family를 폐기한다', async () => {
+            const validatePayload = jest
+                .fn<Promise<boolean>, []>()
+                .mockResolvedValueOnce(true)
+                .mockResolvedValueOnce(false)
+
+            await expect(
+                fix.jwtService.refreshAuthTokens(refreshToken, undefined, validatePayload)
+            ).rejects.toThrow('The provided refresh token is invalid')
+            expect(validatePayload).toHaveBeenCalledTimes(2)
+            expect(await fix.redis.smembers(`${fix.jwtService.prefix}:user:{u1}:families`)).toEqual(
+                []
+            )
+        })
+
+        it('토큰 소비 후 저장 전에 단일 로그아웃되면 늦은 저장으로 family가 부활하지 않는다', async () => {
+            const decoded = new JwtService().decode<Record<string, unknown>>(refreshToken)
+            const familyId = decoded.familyId as string
+            const { releaseStore, storeReached } = pauseNextRefreshTokenStore(fix)
+
+            const rotating = fix.jwtService.refreshAuthTokens(refreshToken)
+            const rejectedRotation = expect(rotating).rejects.toThrow(
+                'The provided refresh token is invalid'
+            )
+            await storeReached
+
+            await fix.jwtService.revokeRefreshToken(refreshToken)
+            releaseStore()
+
+            await rejectedRotation
+            expect(await fix.redis.keys(`${fix.jwtService.prefix}:{${familyId}}:token:*`)).toEqual(
+                []
+            )
+            expect(
+                await fix.redis.smembers(`${fix.jwtService.prefix}:user:{u1}:families`)
+            ).not.toContain(familyId)
+        })
+
+        it('토큰 소비 후 저장 전에 재사용으로 폐기되면 늦은 저장으로 family가 부활하지 않는다', async () => {
+            const noUserTokens = await fix.jwtService.generateAuthTokens({
+                email: 'no-sub@example.com'
+            })
+            const noUserRefreshToken = noUserTokens.refreshToken
+            const decoded = new JwtService().decode<Record<string, unknown>>(noUserRefreshToken)
+            const familyId = decoded.familyId as string
+            const siblingTokenId = 'sibling-token'
+            const familyKey = `${fix.jwtService.prefix}:{${familyId}}:family`
+            const siblingTokenKey = `${fix.jwtService.prefix}:{${familyId}}:token:${siblingTokenId}`
+            await fix.redis
+                .multi()
+                .set(
+                    siblingTokenKey,
+                    JSON.stringify({ familyId, hash: 'unused-sibling-hash' }),
+                    'PX',
+                    3000
+                )
+                .sadd(familyKey, siblingTokenId)
+                .pexpire(familyKey, 3000)
+                .exec()
+
+            const { releaseStore, storeReached } = pauseNextRefreshTokenStore(fix)
+            const rotating = fix.jwtService.refreshAuthTokens(noUserRefreshToken)
+            const rejectedRotation = expect(rotating).rejects.toThrow(
+                'The provided refresh token is invalid'
+            )
+            await storeReached
+            await expireConcurrentRefreshGrace(fix, noUserRefreshToken)
+
+            await expect(fix.jwtService.refreshAuthTokens(noUserRefreshToken)).rejects.toThrow(
+                /reuse detected/i
+            )
+            releaseStore()
+
+            await rejectedRotation
+            expect(await fix.redis.keys(`${fix.jwtService.prefix}:{${familyId}}:token:*`)).toEqual(
+                []
+            )
+        })
+
         it('회전 후에도 familyId가 유지된다', async () => {
             const before = new JwtService().decode<Record<string, unknown>>(refreshToken)
             const tokens = await fix.jwtService.refreshAuthTokens(refreshToken)
@@ -123,8 +293,9 @@ describe('JwtAuthService', () => {
             await expect(promise).rejects.toThrow('token expired')
         })
 
-        it('이미 회전한 토큰을 다시 쓰면 재사용으로 보고 토큰 묶음 전체를 폐기한다', async () => {
+        it('동시 중복 유예가 지난 토큰을 다시 쓰면 재사용으로 보고 family를 폐기한다', async () => {
             const rotated = await fix.jwtService.refreshAuthTokens(refreshToken)
+            await expireConcurrentRefreshGrace(fix, refreshToken)
 
             await expect(fix.jwtService.refreshAuthTokens(refreshToken)).rejects.toThrow(
                 /reuse detected/i
@@ -133,6 +304,19 @@ describe('JwtAuthService', () => {
             await expect(fix.jwtService.refreshAuthTokens(rotated.refreshToken)).rejects.toThrow(
                 'The provided refresh token is invalid'
             )
+        })
+
+        it('회전 직후 같은 토큰이 다시 오면 전용 409만 반환하고 새 family는 유지한다', async () => {
+            const rotated = await fix.jwtService.refreshAuthTokens(refreshToken)
+
+            await expect(fix.jwtService.refreshAuthTokens(refreshToken)).rejects.toMatchObject({
+                response: { code: 'ERR_JWT_AUTH_REFRESH_TOKEN_CONCURRENT' },
+                status: 409
+            })
+            await expect(fix.jwtService.refreshAuthTokens(rotated.refreshToken)).resolves.toEqual({
+                accessToken: expect.any(String),
+                refreshToken: expect.any(String)
+            })
         })
 
         it('refreshTokenId나 familyId가 없는 토큰은 거부한다', async () => {
@@ -168,10 +352,8 @@ describe('JwtAuthService', () => {
             )
         })
 
-        // 동시 회전: 원자적 DEL 카운트로 정확히 한 호출만 새 토큰을 받고, 나머지는 이미 회전된 토큰을 다시 제출한 경우와 구별할 수 없어 재사용 탐지로 401을 받는다.
-        // 토큰 묶음 폐기 여부는 성공 호출의 storeToken과 실패 호출의 revokeFamily 사이 타이밍에 좌우되므로 단언하지 않는다.
-        // 핵심 불변식은 "동시에 유효한 새 토큰이 둘 이상 생기지 않는다"이다.
-        it('동시 회전 시 하나만 성공하고 나머지는 재사용 감지로 실패한다', async () => {
+        // 동시 회전: 원자적 소비로 하나만 새 토큰을 받고, 나머지는 짧은 tombstone을 보고 전용 409로 끝난다.
+        it('동시 회전 시 하나만 성공하고 나머지는 동시 중복 오류로 실패한다', async () => {
             type Attempt =
                 | { ok: true; tokens: { accessToken: string; refreshToken: string } }
                 | { ok: false; err: Error }
@@ -194,7 +376,82 @@ describe('JwtAuthService', () => {
             expect(winners).toHaveLength(1)
             expect(losers).toHaveLength(9)
             losers.forEach((l) => {
-                expect(l.err.message).toMatch(/reuse detected/i)
+                expect(l.err).toMatchObject({
+                    response: { code: 'ERR_JWT_AUTH_REFRESH_TOKEN_CONCURRENT' },
+                    status: 409
+                })
+            })
+        })
+
+        it('즉시 겹친 중복 refresh는 winner의 새 세션을 철회하지 않는다', async () => {
+            type StoredToken = { familyId: string; hash: string } | null
+            type IssuedTokens = {
+                refreshTokenId: string
+                tokens: { accessToken: string; refreshToken: string }
+            }
+            type Internals = {
+                getStoredToken(tokenId: string, familyId: string): Promise<StoredToken>
+                issueTokensInFamily(
+                    payload: object,
+                    familyId: string,
+                    userId: string | undefined
+                ): Promise<IssuedTokens>
+                revokeFamily(familyId: string, userId: string | undefined): Promise<void>
+            }
+
+            const internals = fix.jwtService as unknown as Internals
+            const getStoredToken = internals.getStoredToken.bind(internals)
+            let reads = 0
+            let releaseReads!: () => void
+            const bothRead = new Promise<void>((resolve) => (releaseReads = resolve))
+            const synchronizedRead = async (tokenId: string, familyId: string) => {
+                const stored = await getStoredToken(tokenId, familyId)
+                reads += 1
+                if (reads === 2) releaseReads()
+                await bothRead
+                return stored
+            }
+            jest.spyOn(internals, 'getStoredToken')
+                .mockImplementationOnce(synchronizedRead)
+                .mockImplementationOnce(synchronizedRead)
+
+            const issueTokens = internals.issueTokensInFamily.bind(internals)
+            let announceIssued!: () => void
+            const issued = new Promise<void>((resolve) => (announceIssued = resolve))
+            jest.spyOn(internals, 'issueTokensInFamily').mockImplementationOnce(async (...args) => {
+                const result = await issueTokens(...args)
+                announceIssued()
+                return result
+            })
+
+            const revokeFamily = internals.revokeFamily.bind(internals)
+            jest.spyOn(internals, 'revokeFamily').mockImplementationOnce(async (...args) => {
+                await issued
+                return revokeFamily(...args)
+            })
+
+            const outcomes = await Promise.allSettled([
+                fix.jwtService.refreshAuthTokens(refreshToken),
+                fix.jwtService.refreshAuthTokens(refreshToken)
+            ])
+            const winner = outcomes.find(
+                (outcome): outcome is PromiseFulfilledResult<IssuedTokens['tokens']> =>
+                    outcome.status === 'fulfilled'
+            )
+            const loser = outcomes.find(
+                (outcome): outcome is PromiseRejectedResult => outcome.status === 'rejected'
+            )
+
+            expect(winner).toBeDefined()
+            expect(loser?.reason).toMatchObject({
+                response: { code: 'ERR_JWT_AUTH_REFRESH_TOKEN_CONCURRENT' },
+                status: 409
+            })
+            await expect(
+                fix.jwtService.refreshAuthTokens(winner?.value.refreshToken ?? '')
+            ).resolves.toEqual({
+                accessToken: expect.any(String),
+                refreshToken: expect.any(String)
             })
         })
 
@@ -249,20 +506,14 @@ describe('JwtAuthService', () => {
             expect(after.exp).not.toBe(undefined)
         })
 
-        describe('Redis 트랜잭션이 중단될 때', () => {
-            // consumeToken의 multi().exec()가 null을 반환하는 상황을 재현한다.
+        describe('Redis 원자 소비 결과가 손상될 때', () => {
             beforeEach(() => {
-                const realMulti = fix.redis.multi.bind(fix.redis)
-                jest.spyOn(fix.redis, 'multi').mockImplementationOnce(() => {
-                    const tx = realMulti()
-                    jest.spyOn(tx, 'exec').mockResolvedValueOnce(null)
-                    return tx
-                })
+                jest.spyOn(fix.redis, 'eval').mockResolvedValueOnce(null)
             })
 
             it('토큰 묶음은 폐기하지 않고 예외를 그대로 던진다', async () => {
                 await expect(fix.jwtService.refreshAuthTokens(refreshToken)).rejects.toThrow(
-                    /redis multi exec returned null/
+                    /redis eval returned a non-number/
                 )
 
                 const decoded = new JwtService().decode<Record<string, unknown>>(refreshToken)
@@ -276,7 +527,7 @@ describe('JwtAuthService', () => {
             it('새 토큰을 발급하지 않는다', async () => {
                 await expect(fix.jwtService.refreshAuthTokens(refreshToken)).rejects.toThrow()
 
-                // multi mock은 한 번만 적용되므로 리프레시를 다시 호출해 보는 검증은 정상 성공해 버려 쓸 수 없다.
+                // eval mock은 한 번만 적용되므로 리프레시를 다시 호출해 보는 검증은 정상 성공해 버려 쓸 수 없다.
                 // 대신 저장 상태로 확인한다.
                 // 원본 토큰이 소비되지 않고 남아 있으면 새 토큰 발급 단계까지 가지 않은 것이다.
                 const decoded = new JwtService().decode<Record<string, unknown>>(refreshToken)
@@ -298,6 +549,18 @@ describe('JwtAuthService', () => {
             await expect(fix.jwtService.refreshAuthTokens(refreshToken)).rejects.toThrow(
                 'The provided refresh token is invalid'
             )
+        })
+
+        it('폐기 fence를 refresh 토큰 수명 동안 유지한다', async () => {
+            const { refreshToken } = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
+            const decoded = new JwtService().decode<Record<string, unknown>>(refreshToken)
+            const familyId = decoded.familyId as string
+
+            await fix.jwtService.revokeRefreshToken(refreshToken)
+
+            const pttl = await fix.redis.pttl(`${fix.jwtService.prefix}:{${familyId}}:revoked`)
+            expect(pttl).toBeGreaterThan(0)
+            expect(pttl).toBeLessThanOrEqual(3000)
         })
 
         it('형식이 깨진 토큰을 폐기하면 401(잘못된 리프레시 토큰)을 전파한다', async () => {
@@ -396,6 +659,7 @@ describe('JwtAuthService', () => {
         it('재사용을 감지하면 token.reuse_detected와 reason=reuse 이벤트를 남긴다', async () => {
             const initial = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
             await fix.jwtService.refreshAuthTokens(initial.refreshToken)
+            await expireConcurrentRefreshGrace(fix, initial.refreshToken)
             fix.events.length = 0
             await expect(fix.jwtService.refreshAuthTokens(initial.refreshToken)).rejects.toThrow()
 
@@ -486,6 +750,7 @@ describe('JwtAuthService', () => {
 
         it('재사용을 감지하면 family를 폐기한다', async () => {
             const rotated = await fix.jwtService.refreshAuthTokens(tokens.refreshToken)
+            await expireConcurrentRefreshGrace(fix, tokens.refreshToken)
 
             await expect(fix.jwtService.refreshAuthTokens(tokens.refreshToken)).rejects.toThrow(
                 /reuse detected/i

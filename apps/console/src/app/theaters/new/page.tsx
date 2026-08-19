@@ -2,8 +2,8 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { LogoutButton } from '@/app/_components/logout-button'
 import { ApiError, api } from '@/lib/api-client'
-import { clearSession, readToken } from '@/lib/session'
 
 // seatmap은 실제 운영에선 평면도 편집기로 입력하지만 시드 콘솔에서는 한 블록·한 행·N개 좌석으로 단순화해서 등록 흐름만 보여준다.
 function buildDefaultSeatmap(seatCount: number) {
@@ -23,11 +23,15 @@ export default function NewTheaterPage() {
     const [busy, setBusy] = useState(false)
 
     useEffect(() => {
-        if (!readToken()) {
-            router.replace('/login')
-            return
-        }
-        setReady(true)
+        api.get('/admins/me')
+            .then(() => setReady(true))
+            .catch((err) => {
+                if (err instanceof ApiError && err.status === 401) {
+                    router.replace('/login')
+                    return
+                }
+                setError(err instanceof Error ? err.message : '세션을 확인할 수 없다')
+            })
     }, [router])
 
     async function onSubmit(e: React.FormEvent) {
@@ -36,7 +40,6 @@ export default function NewTheaterPage() {
         setBusy(true)
         try {
             await api.post('/theaters', {
-                accessToken: readToken() ?? undefined,
                 body: {
                     name,
                     location: { latitude: Number(latitude), longitude: Number(longitude) },
@@ -46,7 +49,6 @@ export default function NewTheaterPage() {
             router.push('/')
         } catch (err) {
             if (err instanceof ApiError && err.status === 401) {
-                clearSession()
                 router.replace('/login')
                 return
             }
@@ -56,11 +58,23 @@ export default function NewTheaterPage() {
         }
     }
 
-    if (!ready) return null
+    if (error && !ready) {
+        return (
+            <main role="alert" className="mx-auto max-w-xl px-6 py-10 text-sm text-red-600">
+                {error}
+            </main>
+        )
+    }
+    if (!ready) {
+        return <main className="mx-auto max-w-xl px-6 py-10 text-sm text-slate-500">확인 중…</main>
+    }
 
     return (
         <main className="mx-auto max-w-xl px-6 py-10">
-            <h1 className="mb-6 text-2xl font-semibold">새 극장 등록</h1>
+            <header className="mb-6 flex items-center justify-between">
+                <h1 className="text-2xl font-semibold">새 극장 등록</h1>
+                <LogoutButton />
+            </header>
             <form
                 onSubmit={onSubmit}
                 className="space-y-5 rounded-xl bg-white p-6 shadow ring-1 ring-slate-200"
@@ -103,7 +117,11 @@ export default function NewTheaterPage() {
                         className={inputCls}
                     />
                 </Field>
-                {error && <p className="text-sm text-red-600">{error}</p>}
+                {error && (
+                    <p role="alert" className="text-sm text-red-600">
+                        {error}
+                    </p>
+                )}
                 <div className="flex items-center justify-end gap-2">
                     <button
                         type="button"

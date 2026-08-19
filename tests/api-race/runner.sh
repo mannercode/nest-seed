@@ -65,10 +65,21 @@ dump_diagnostics() {
 }
 
 bring_up_stack() {
-    echo "Building and deploying 4-replica api stack..."
     . "${WORKSPACE_ROOT}/deploy/ensure-deps-image.sh"
 
-    if ! docker compose up -d --build --wait; then
+    local build_option="--build"
+    if [ "${DEPLOY_IMAGES_PREBUILT:-false}" = "true" ]; then
+        echo "Deploying prebuilt 4-replica api stack..."
+        if ! docker image inspect nest-seed-api >/dev/null 2>&1; then
+            echo "[FAIL] DEPLOY_IMAGES_PREBUILT=true but nest-seed-api is unavailable"
+            exit 1
+        fi
+        build_option="--no-build"
+    else
+        echo "Building and deploying 4-replica api stack..."
+    fi
+
+    if ! docker compose up -d "${build_option}" --wait; then
         echo "[FAIL] compose up failed before ${TEST_NAME} could start"
         dump_diagnostics
         exit 1

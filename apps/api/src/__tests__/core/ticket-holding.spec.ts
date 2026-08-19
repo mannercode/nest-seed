@@ -166,4 +166,218 @@ describe('TicketHoldingService', () => {
             expect(heldTicketIds).toHaveLength(0)
         })
     })
+
+    describe('purchase claim', () => {
+        it('현재 hold owner를 purchase owner로 원자 전환하고 소유자 조건으로 해제한다', async () => {
+            const showtimeId = oid(0x10)
+            const userId = oid(0xc1)
+            const otherUserId = oid(0xc2)
+            const ticketIds = [oid(0xa0), oid(0xa1)]
+            const tickets = ticketIds.map((id) => ({ id, showtimeId }))
+            await ticketHoldingService.holdTickets({ showtimeId, ticketIds, userId })
+
+            expect(
+                await ticketHoldingService.claimTicketsForPurchase({
+                    purchaseRecordId: oid(0xd0),
+                    tickets,
+                    userId
+                })
+            ).toBe(true)
+            expect(await ticketHoldingService.searchHeldTicketIds(showtimeId, userId)).toEqual([])
+            expect(
+                await ticketHoldingService.holdTickets({
+                    showtimeId,
+                    ticketIds,
+                    userId: otherUserId
+                })
+            ).toBe(false)
+
+            await ticketHoldingService.releasePurchaseClaims(oid(0xd0), tickets)
+
+            expect(
+                await ticketHoldingService.holdTickets({
+                    showtimeId,
+                    ticketIds,
+                    userId: otherUserId
+                })
+            ).toBe(true)
+        })
+
+        it('일부 티켓만 구매 claim하면 나머지 hold를 원 사용자 목록과 TTL에 유지한다', async () => {
+            const showtimeId = oid(0x10)
+            const userId = oid(0xc1)
+            const otherUserId = oid(0xc2)
+            const purchasedTicketId = oid(0xa0)
+            const remainingTicketId = oid(0xa1)
+            await ticketHoldingService.holdTickets({
+                showtimeId,
+                ticketIds: [purchasedTicketId, remainingTicketId],
+                userId
+            })
+
+            expect(
+                await ticketHoldingService.claimTicketsForPurchase({
+                    purchaseRecordId: oid(0xd0),
+                    tickets: [{ id: purchasedTicketId, showtimeId }],
+                    userId
+                })
+            ).toBe(true)
+
+            expect(await ticketHoldingService.searchHeldTicketIds(showtimeId, userId)).toEqual([
+                remainingTicketId
+            ])
+            expect(
+                await ticketHoldingService.holdTickets({
+                    showtimeId,
+                    ticketIds: [remainingTicketId],
+                    userId: otherUserId
+                })
+            ).toBe(false)
+        })
+
+        it('hold가 다른 고객에게 넘어갔으면 claim하지 않는다', async () => {
+            const showtimeId = oid(0x10)
+            const ticketIds = [oid(0xa0)]
+            const ownerId = oid(0xc2)
+            await ticketHoldingService.holdTickets({ showtimeId, ticketIds, userId: ownerId })
+
+            const claimed = await ticketHoldingService.claimTicketsForPurchase({
+                purchaseRecordId: oid(0xd0),
+                tickets: ticketIds.map((id) => ({ id, showtimeId })),
+                userId: oid(0xc1)
+            })
+
+            expect(claimed).toBe(false)
+            expect(await ticketHoldingService.searchHeldTicketIds(showtimeId, ownerId)).toEqual(
+                ticketIds
+            )
+        })
+
+        it('판매 직전 purchase owner를 확인하고, 다른 고객에게 넘어간 claim은 갱신하지 않는다', async () => {
+            const showtimeId = oid(0x10)
+            const ticketId = oid(0xa0)
+            const purchaseRecordId = oid(0xd0)
+            const tickets = [{ id: ticketId, showtimeId }]
+            await ticketHoldingService.holdTickets({
+                showtimeId,
+                ticketIds: [ticketId],
+                userId: oid(0xc1)
+            })
+            await ticketHoldingService.claimTicketsForPurchase({
+                purchaseRecordId,
+                tickets,
+                userId: oid(0xc1)
+            })
+
+            expect(
+                await ticketHoldingService.confirmPurchaseClaims(purchaseRecordId, tickets)
+            ).toBe(true)
+
+            const cache = fix.module.get<CacheService>(CacheService.getName('ticket-holding'))
+            await cache.delete(`Ticket:{${showtimeId}}:${ticketId}`)
+            const otherUserId = oid(0xc2)
+            await ticketHoldingService.holdTickets({
+                showtimeId,
+                ticketIds: [ticketId],
+                userId: otherUserId
+            })
+
+            expect(
+                await ticketHoldingService.confirmPurchaseClaims(purchaseRecordId, tickets)
+            ).toBe(false)
+            await ticketHoldingService.releasePurchaseClaims(purchaseRecordId, tickets)
+            expect(await ticketHoldingService.searchHeldTicketIds(showtimeId, otherUserId)).toEqual(
+                [ticketId]
+            )
+        })
+
+        it('여러 showtime 중 뒤 그룹 claim이 실패하면 앞 그룹 hold와 기존 TTL을 복원한다', async () => {
+            const firstShowtimeId = oid(0x10)
+            const secondShowtimeId = oid(0x20)
+            const firstTicketId = oid(0xa0)
+            const secondTicketId = oid(0xa1)
+            const userId = oid(0xc1)
+            const otherUserId = oid(0xc2)
+            await overrideConfigGetter(fix.module, 'ticket', { holdDurationInMs: 10_000 })
+            await ticketHoldingService.holdTickets({
+                showtimeId: firstShowtimeId,
+                ticketIds: [firstTicketId],
+                userId
+            })
+            await ticketHoldingService.holdTickets({
+                showtimeId: secondShowtimeId,
+                ticketIds: [secondTicketId],
+                userId: otherUserId
+            })
+            const cache = fix.module.get<CacheService>(CacheService.getName('ticket-holding'))
+            const firstTicketKey = `Ticket:{${firstShowtimeId}}:${firstTicketId}`
+            const firstUserKey = `User:{${firstShowtimeId}}:${userId}`
+            const readTtl = (key: string) =>
+                cache.executeScript<number>(`return redis.call('PTTL', KEYS[1])`, [key], [])
+            const ticketTtlBefore = await readTtl(firstTicketKey)
+            const userTtlBefore = await readTtl(firstUserKey)
+
+            const claimed = await ticketHoldingService.claimTicketsForPurchase({
+                purchaseRecordId: oid(0xd0),
+                tickets: [
+                    { id: secondTicketId, showtimeId: secondShowtimeId },
+                    { id: firstTicketId, showtimeId: firstShowtimeId }
+                ],
+                userId
+            })
+
+            expect(claimed).toBe(false)
+            expect(await ticketHoldingService.searchHeldTicketIds(firstShowtimeId, userId)).toEqual(
+                [firstTicketId]
+            )
+            const ticketTtlAfter = await readTtl(firstTicketKey)
+            const userTtlAfter = await readTtl(firstUserKey)
+            expect(ticketTtlAfter).toBeGreaterThan(0)
+            expect(ticketTtlAfter).toBeLessThanOrEqual(ticketTtlBefore)
+            expect(userTtlAfter).toBeGreaterThan(0)
+            expect(userTtlAfter).toBeLessThanOrEqual(userTtlBefore)
+            expect(
+                await ticketHoldingService.holdTickets({
+                    showtimeId: firstShowtimeId,
+                    ticketIds: [firstTicketId],
+                    userId: oid(0xc3)
+                })
+            ).toBe(false)
+            expect(
+                await ticketHoldingService.searchHeldTicketIds(secondShowtimeId, otherUserId)
+            ).toEqual([secondTicketId])
+        })
+
+        it('claim 해제는 그 사이 다른 고객이 얻은 hold를 지우지 않는다', async () => {
+            const showtimeId = oid(0x10)
+            const ticketId = oid(0xa0)
+            const purchaseRecordId = oid(0xd0)
+            const tickets = [{ id: ticketId, showtimeId }]
+            await ticketHoldingService.holdTickets({
+                showtimeId,
+                ticketIds: [ticketId],
+                userId: oid(0xc1)
+            })
+            await ticketHoldingService.claimTicketsForPurchase({
+                purchaseRecordId,
+                tickets,
+                userId: oid(0xc1)
+            })
+
+            const cache = fix.module.get<CacheService>(CacheService.getName('ticket-holding'))
+            await cache.delete(`Ticket:{${showtimeId}}:${ticketId}`)
+            const otherUserId = oid(0xc2)
+            await ticketHoldingService.holdTickets({
+                showtimeId,
+                ticketIds: [ticketId],
+                userId: otherUserId
+            })
+
+            await ticketHoldingService.releasePurchaseClaims(purchaseRecordId, tickets)
+
+            expect(await ticketHoldingService.searchHeldTicketIds(showtimeId, otherUserId)).toEqual(
+                [ticketId]
+            )
+        })
+    })
 })

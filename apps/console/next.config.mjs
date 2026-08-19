@@ -11,12 +11,6 @@ if (!API_BASE_URL) {
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-    output: 'standalone',
-    outputFileTracingRoot: path.join(__dirname, '../..'),
-    async rewrites() {
-        return [{ source: '/api/:path*', destination: `${API_BASE_URL}/:path*` }]
-    }
-}
+const nextConfig = { output: 'standalone', outputFileTracingRoot: path.join(__dirname, '../..') }
 
 export default nextConfig

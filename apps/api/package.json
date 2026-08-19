@@ -11,7 +11,8 @@
         "predev": "free-port ${API_PORT:?} && npm run bundle-workflows",
         "dev": "nest start --watch",
         "test": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
-        "atoz": "npm run lint && npm test"
+        "test:jest-isolation": "node --test scripts/__tests__/*.test.js",
+        "atoz": "npm run lint && npm run test:jest-isolation && npm test"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "3.1096.0",
@@ -56,7 +57,7 @@
         "@types/express": "5.0.6",
         "@types/jest": "30.0.0",
         "@types/node": "24",
-        "eslint": "10.8.0",
+        "eslint": "9.39.5",
         "eslint-import-resolver-typescript": "^4.4.5",
         "eslint-plugin-allowed-dependencies": "2.2.0",
         "eslint-plugin-boundaries": "^7.1.0",

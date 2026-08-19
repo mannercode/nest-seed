@@ -12,6 +12,9 @@ export class Ticket extends CrudSchema {
     @Prop({ required: true })
     movieId: string
 
+    @Prop({ default: null, type: String })
+    purchaseRecordId: null | string
+
     @Prop({ required: true })
     sagaId: string
 

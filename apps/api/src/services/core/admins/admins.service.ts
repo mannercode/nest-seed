@@ -1,13 +1,7 @@
 import { isDuplicateKeyError, mapDocToDto } from '@mannercode/common'
 import { ConflictException, Injectable } from '@nestjs/common'
 import { AdminsRepository } from './admins.repository'
-import {
-    AdminAuthPayload,
-    AdminCredentialsDto,
-    AdminDto,
-    CreateAdminDto,
-    UpdateAdminDto
-} from './dtos'
+import { AdminCredentialsDto, AdminDto, CreateAdminDto, UpdateAdminDto } from './dtos'
 import { AdminErrors } from './errors'
 import { AdminAuthenticationService } from './internal'
 import { Admin } from './models'
@@ -55,23 +49,30 @@ export class AdminsService {
     }
 
     async remove(id: string) {
-        // 제거된 admin이 살아 있는 리프레시 토큰으로 권한을 유지하지 못하도록 세션부터 회수한다.
+        // DB 상태를 먼저 비활성화해 Redis 회수 실패나 동시 refresh에도 기존 JWT가 즉시 거부되게 한다.
+        await this.repository.deleteByIdWithAuthVersion(id)
         await this.authenticationService.revokeAllForAdmin(id)
-        await this.repository.deleteById(id)
     }
 
-    async findAdminByCredentials(credentials: AdminCredentialsDto) {
+    async login(credentials: AdminCredentialsDto) {
         const admin = await this.authenticationService.findAdminByCredentials(credentials)
-        return admin ? this.toDto(admin) : null
-    }
+        if (!admin) return null
 
-    async generateAuthTokens(payload: AdminAuthPayload) {
-        return this.authenticationService.generateAuthTokens(payload)
+        const tokens = await this.authenticationService.generateAuthTokens({
+            authVersion: (admin as { authVersion?: number }).authVersion ?? 0,
+            email: admin.email,
+            sub: admin.id
+        })
+        return { admin: this.toDto(admin), tokens }
     }
 
     async getMany(adminIds: string[]) {
         const admins = await this.repository.getByIds(adminIds)
         return admins.map((admin) => this.toDto(admin))
+    }
+
+    async isAuthPayloadActive(payload: unknown): Promise<boolean> {
+        return this.authenticationService.isAuthPayloadActive(payload)
     }
 
     async refreshAuthTokens(refreshToken: string) {

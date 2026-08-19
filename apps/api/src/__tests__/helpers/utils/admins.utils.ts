@@ -28,15 +28,12 @@ export async function loginAdmin(ctx: TestContext, credentials: AdminCredentials
     const { AdminsService } = await import('core')
     const adminsService = ctx.module.get(AdminsService)
 
-    const admin = await adminsService.findAdminByCredentials(credentials)
-    if (!admin) {
+    const result = await adminsService.login(credentials)
+    if (!result) {
         throw new Error(`loginAdmin: no admin found for credentials (email=${credentials.email})`)
     }
 
-    const { accessToken, refreshToken } = await adminsService.generateAuthTokens({
-        sub: admin.id,
-        email: credentials.email
-    })
+    const { accessToken, refreshToken } = result.tokens
 
-    return { accessToken, admin, refreshToken }
+    return { accessToken, admin: result.admin, refreshToken }
 }

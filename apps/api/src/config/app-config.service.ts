@@ -15,6 +15,9 @@ export class AppConfigService extends BaseConfigService {
         AUTH_ADMIN_REFRESH_TOKEN_EXPIRATION: Joi.string().required(),
         AUTH_AUDIENCE: Joi.string().required(),
         AUTH_ISSUER: Joi.string().required(),
+        AUTH_LOGIN_ACCOUNT_FAILURE_LIMIT: Joi.number().integer().min(1).default(5),
+        AUTH_LOGIN_FAILURE_WINDOW: Joi.string().default('15m'),
+        AUTH_LOGIN_IP_FAILURE_LIMIT: Joi.number().integer().min(1).default(50),
         AUTH_REFRESH_SECRET: Joi.string().min(20).required(),
         AUTH_REFRESH_TOKEN_EXPIRATION: Joi.string().required(),
         ROOT_PASSWORD: Joi.string().min(8).required(),
@@ -83,6 +86,14 @@ export class AppConfigService extends BaseConfigService {
             issuer: this.getString('AUTH_ISSUER'),
             refreshSecret: this.getString('AUTH_ADMIN_REFRESH_SECRET'),
             refreshTokenExpiration: this.getString('AUTH_ADMIN_REFRESH_TOKEN_EXPIRATION')
+        }
+    }
+
+    get loginRateLimit() {
+        return {
+            accountFailureLimit: this.getNumber('AUTH_LOGIN_ACCOUNT_FAILURE_LIMIT'),
+            failureWindow: this.getString('AUTH_LOGIN_FAILURE_WINDOW'),
+            ipFailureLimit: this.getNumber('AUTH_LOGIN_IP_FAILURE_LIMIT')
         }
     }
 

@@ -34,6 +34,22 @@ export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAss
         return 0 < count
     }
 
+    async findAssetIdsByMovieIds(movieIds: string[]): Promise<string[]> {
+        const builder = new QueryBuilder<MoviePendingAsset>()
+        builder.addIn('movieId', movieIds)
+        const query = builder.build({})
+
+        return this.model.distinct('assetId', query).exec()
+    }
+
+    async removeByMovieIds(movieIds: string[]): Promise<void> {
+        const builder = new QueryBuilder<MoviePendingAsset>()
+        builder.addIn('movieId', movieIds)
+        const query = builder.build({})
+
+        await this.model.deleteMany(query)
+    }
+
     async removePendingAsset(movieId: string, assetId: string): Promise<void> {
         const builder = new QueryBuilder<MoviePendingAsset>()
         builder.addEquals('movieId', movieId)

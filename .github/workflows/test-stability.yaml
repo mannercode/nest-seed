@@ -29,12 +29,12 @@ jobs:
                       timeout: 240
                       run: |
                           npm run build
-                          RESET_EVERY=5 bash .github/scripts/repeat.sh 30 npm test -w apps/api -- --coverageThreshold='{}'
+                          RESET_EVERY=5 bash .github/scripts/repeat.sh 30 npm test -w apps/api -- --coverage=false --coverageThreshold='{}'
                     - leg: unit-api-2
                       timeout: 240
                       run: |
                           npm run build
-                          RESET_EVERY=5 bash .github/scripts/repeat.sh 30 npm test -w apps/api -- --coverageThreshold='{}'
+                          RESET_EVERY=5 bash .github/scripts/repeat.sh 30 npm test -w apps/api -- --coverage=false --coverageThreshold='{}'
                     - leg: bootup
                       timeout: 120
                       run: |
@@ -45,28 +45,36 @@ jobs:
                     # 사가를 만드는 레그는 기본 RESET_EVERY=10에서 Temporal transfer-queue 정체가 재현됐으므로 5회마다 초기화한다.
                     - leg: sse-fanout-race
                       timeout: 240
+                      prebuild_deploy: true
                       run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh sse-fanout-race
                     - leg: user-signup-race
                       timeout: 240
+                      prebuild_deploy: true
                       run: bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh user-signup-race
                     - leg: ticket-holding-race
                       timeout: 240
+                      prebuild_deploy: true
                       run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh ticket-holding-race
                     - leg: showtime-overlap-race
                       timeout: 240
+                      prebuild_deploy: true
                       run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh showtime-overlap-race
                     - leg: purchase-double-spend
                       timeout: 240
+                      prebuild_deploy: true
                       # 50-way 경쟁 강도는 유지하되 fixture Temporal saga의 중복 soak는 분리한다.
                       run: INNER_ITERATIONS=30 RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh purchase-double-spend
                     - leg: purchase-overlap-race
                       timeout: 240
+                      prebuild_deploy: true
                       run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh purchase-overlap-race
                     - leg: replica-chaos
                       timeout: 240
+                      prebuild_deploy: true
                       run: bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh replica-chaos
                     - leg: jwt-refresh-race
                       timeout: 240
+                      prebuild_deploy: true
                       run: bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh jwt-refresh-race
         runs-on: ubuntu-24.04-arm
         timeout-minutes: ${{ matrix.timeout }}
@@ -93,4 +101,8 @@ jobs:
                   runCmd: |
                       set -Eeuo pipefail
                       echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+                      if [ "${{ matrix.prebuild_deploy }}" = "true" ]; then
+                          bash deploy/prebuild-images.sh
+                          export DEPLOY_IMAGES_PREBUILT=true
+                      fi
                       ${{ matrix.run }}

@@ -4,9 +4,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { ApiError, postJson } from '@/lib/api-client'
-import { saveSession } from '@/lib/session'
-
-type LoginResponse = { accessToken: string; refreshToken: string }
 
 export default function LoginPage() {
     const router = useRouter()
@@ -20,8 +17,7 @@ export default function LoginPage() {
         setError(null)
         setBusy(true)
         try {
-            const tokens = await postJson<LoginResponse>('/users/login', { email, password })
-            saveSession(tokens.accessToken, email)
+            await postJson('/users/login', { email, password })
             router.push('/')
         } catch (err) {
             setError(err instanceof ApiError ? err.message : '로그인 실패')

@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common'
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { createHash } from 'crypto'
 import Redis from 'ioredis'
@@ -8,10 +8,15 @@ import {
     EventContext,
     JwtAuthTokens,
     OnSecurityEvent,
-    SecurityEvent
+    SecurityEvent,
+    ValidateAuthPayload
 } from './jwt-auth.types'
 
 export const JwtAuthErrors = {
+    RefreshTokenConcurrent: () => ({
+        code: 'ERR_JWT_AUTH_REFRESH_TOKEN_CONCURRENT',
+        message: 'A refresh is already in progress'
+    }),
     RefreshTokenInvalid: () => ({
         code: 'ERR_JWT_AUTH_REFRESH_TOKEN_INVALID',
         message: 'The provided refresh token is invalid'
@@ -23,6 +28,25 @@ export const JwtAuthErrors = {
 }
 
 const JWT_ALGORITHM = 'HS256' as const
+// 네트워크·멀티 인스턴스에서 같은 refresh가 거의 동시에 도착한 경우만 흡수하는 짧은 유예다.
+const CONCURRENT_REFRESH_GRACE_MS = 2_000
+const CONSUME_TOKEN_SCRIPT = `
+    local deleted = redis.call('DEL', KEYS[1])
+    if deleted == 1 then
+        redis.call('SREM', KEYS[2], ARGV[1])
+        redis.call('SET', KEYS[3], ARGV[2], 'PX', ARGV[3])
+    end
+    return deleted
+`
+const STORE_TOKEN_SCRIPT = `
+    if redis.call('EXISTS', KEYS[3]) == 1 then
+        return 0
+    end
+    redis.call('SET', KEYS[1], ARGV[1], 'PX', ARGV[3])
+    redis.call('SADD', KEYS[2], ARGV[2])
+    redis.call('PEXPIRE', KEYS[2], ARGV[3])
+    return 1
+`
 
 type JwtSignOptionsArg = Parameters<JwtService['signAsync']>[1]
 type JwtExpiresIn = NonNullable<JwtSignOptionsArg>['expiresIn']
@@ -33,6 +57,7 @@ type JwtExpiresIn = NonNullable<JwtSignOptionsArg>['expiresIn']
  *
  * `{prefix}:{familyId}:token:{tokenId}` → 토큰 해시
  * `{prefix}:{familyId}:family` → 살아 있는 tokenId 집합
+ * `{prefix}:{familyId}:revoked` → 폐기 후 늦은 토큰 저장을 막는 fence
  * `{prefix}:user:{userId}:families` → 사용자별 family 집합
  */
 @Injectable()
@@ -50,10 +75,17 @@ export class JwtAuthService {
         return `JwtAuthService_${defaultTo(name, 'default')}`
     }
 
-    async generateAuthTokens(payload: object, context?: EventContext): Promise<JwtAuthTokens> {
+    async generateAuthTokens(
+        payload: object,
+        context?: EventContext,
+        validatePayload?: ValidateAuthPayload
+    ): Promise<JwtAuthTokens> {
         const familyId = generateShortId(30)
         const userId = this.getUserId(payload)
         const result = await this.issueTokensInFamily(payload, familyId, userId)
+        if (validatePayload && !(await validatePayload(payload as Record<string, unknown>))) {
+            await this.rejectRevokedPayload(payload as Record<string, unknown>, familyId, context)
+        }
         await this.emit({
             type: 'token.issued',
             userId,
@@ -65,7 +97,11 @@ export class JwtAuthService {
         return result.tokens
     }
 
-    async refreshAuthTokens(refreshToken: string, context?: EventContext): Promise<JwtAuthTokens> {
+    async refreshAuthTokens(
+        refreshToken: string,
+        context?: EventContext,
+        validatePayload?: ValidateAuthPayload
+    ): Promise<JwtAuthTokens> {
         const payload = await this.getAuthTokenPayload(refreshToken, context)
         const tokenId = getByPath(payload, 'refreshTokenId') as string | undefined
         const familyId = getByPath(payload, 'familyId') as string | undefined
@@ -80,38 +116,14 @@ export class JwtAuthService {
             throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
         }
 
+        if (validatePayload && !(await validatePayload(payload))) {
+            await this.rejectRevokedPayload(payload, familyId, context)
+        }
+
         const stored = await this.getStoredToken(tokenId, familyId)
 
         if (!stored) {
-            const familyStillAlive = await this.redis.exists(this.familyKey(familyId))
-            if (familyStillAlive) {
-                const userId = this.getUserId(payload)
-                await this.revokeFamily(familyId, userId)
-                await this.emit({
-                    type: 'token.reuse_detected',
-                    userId,
-                    familyId,
-                    presentedTokenId: tokenId,
-                    at: new Date(),
-                    context
-                })
-                await this.emit({
-                    type: 'family.revoked',
-                    userId,
-                    familyId,
-                    reason: 'reuse',
-                    at: new Date(),
-                    context
-                })
-                throw new UnauthorizedException(JwtAuthErrors.RefreshTokenReuseDetected())
-            }
-            await this.emit({
-                type: 'verify.failed',
-                reason: 'token_not_found',
-                at: new Date(),
-                context
-            })
-            throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
+            return this.rejectConsumedOrReused(refreshToken, payload, tokenId, familyId, context)
         }
 
         if (stored.hash !== this.hashToken(refreshToken) || stored.familyId !== familyId) {
@@ -126,33 +138,21 @@ export class JwtAuthService {
 
         // 새 토큰을 발급하기 전에 지금 토큰을 먼저 소비한다.
         // 그래야 같은 토큰 하나로 동시에 들어온 리프레시 두 건이 모두 통과하는 일이 방지된다.
-        // 이 경쟁에서 실패한 호출은 이미 회전된 토큰을 다시 제출한 경우와 구분할 수 없으므로, 재사용 탐지가 토큰 묶음 전체를 무효화한다.
-        const consumed = await this.consumeToken(tokenId, familyId)
+        // 짧은 tombstone 안의 loser는 동시 중복으로만 거절하고, 유예가 지난 재사용만 family 전체를 무효화한다.
+        const consumed = await this.consumeToken(refreshToken, tokenId, familyId)
         if (!consumed) {
-            const loserUserId = this.getUserId(payload)
-            await this.revokeFamily(familyId, loserUserId)
-            await this.emit({
-                type: 'token.reuse_detected',
-                userId: loserUserId,
-                familyId,
-                presentedTokenId: tokenId,
-                at: new Date(),
-                context
-            })
-            await this.emit({
-                type: 'family.revoked',
-                userId: loserUserId,
-                familyId,
-                reason: 'reuse',
-                at: new Date(),
-                context
-            })
-            throw new UnauthorizedException(JwtAuthErrors.RefreshTokenReuseDetected())
+            return this.rejectConsumedOrReused(refreshToken, payload, tokenId, familyId, context)
         }
 
         const carryPayload = omit(payload, ['refreshTokenId', 'familyId'])
         const userId = this.getUserId(carryPayload)
         const result = await this.issueTokensInFamily(carryPayload, familyId, userId)
+
+        // 토큰 소비와 새 토큰 저장 사이에 계정이 철회될 수 있으므로 발급 직후 다시 확인한다.
+        // 여기서도 경합이 생길 수 있지만, 이후 access/refresh 요청은 같은 버전 검증으로 항상 차단된다.
+        if (validatePayload && !(await validatePayload(carryPayload))) {
+            await this.rejectRevokedPayload(carryPayload, familyId, context)
+        }
         await this.emit({
             type: 'token.refreshed',
             userId,
@@ -197,6 +197,65 @@ export class JwtAuthService {
             })
         }
         await this.redis.del(userKey)
+    }
+
+    private async rejectRevokedPayload(
+        payload: Record<string, unknown>,
+        familyId: string,
+        context?: EventContext
+    ): Promise<never> {
+        const userId = this.getUserId(payload)
+        await this.revokeFamily(familyId, userId)
+        await this.emit({
+            type: 'verify.failed',
+            reason: 'account_revoked',
+            at: new Date(),
+            context
+        })
+        throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
+    }
+
+    private async rejectConsumedOrReused(
+        refreshToken: string,
+        payload: Record<string, unknown>,
+        tokenId: string,
+        familyId: string,
+        context?: EventContext
+    ): Promise<never> {
+        if (await this.isConcurrentDuplicate(refreshToken, tokenId, familyId)) {
+            await this.rejectConcurrentRefresh(context)
+        }
+
+        const familyStillAlive = await this.redis.exists(this.familyKey(familyId))
+        if (familyStillAlive) {
+            const userId = this.getUserId(payload)
+            await this.revokeFamily(familyId, userId)
+            await this.emit({
+                type: 'token.reuse_detected',
+                userId,
+                familyId,
+                presentedTokenId: tokenId,
+                at: new Date(),
+                context
+            })
+            await this.emit({
+                type: 'family.revoked',
+                userId,
+                familyId,
+                reason: 'reuse',
+                at: new Date(),
+                context
+            })
+            throw new UnauthorizedException(JwtAuthErrors.RefreshTokenReuseDetected())
+        }
+
+        await this.emit({
+            type: 'verify.failed',
+            reason: 'token_not_found',
+            at: new Date(),
+            context
+        })
+        throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
     }
 
     private async issueTokensInFamily(
@@ -288,6 +347,14 @@ export class JwtAuthService {
         return `${this.prefix}:{${familyId}}:family`
     }
 
+    private revokedFamilyKey(familyId: string) {
+        return `${this.prefix}:{${familyId}}:revoked`
+    }
+
+    private consumedTokenKey(tokenId: string, familyId: string) {
+        return `${this.prefix}:{${familyId}}:consumed:${tokenId}`
+    }
+
     private userFamiliesKey(userId: string) {
         return `${this.prefix}:user:{${userId}}:families`
     }
@@ -309,12 +376,6 @@ export class JwtAuthService {
     ) {
         const ttlMs = this.config.refreshTokenTtlMs
         const value = JSON.stringify({ familyId, hash: this.hashToken(refreshToken) })
-        await this.redis
-            .multi()
-            .set(this.tokenKey(tokenId, familyId), value, 'PX', ttlMs)
-            .sadd(this.familyKey(familyId), tokenId)
-            .pexpire(this.familyKey(familyId), ttlMs)
-            .exec()
 
         if (userId) {
             await this.redis
@@ -323,23 +384,79 @@ export class JwtAuthService {
                 .pexpire(this.userFamiliesKey(userId), ttlMs)
                 .exec()
         }
+
+        // revoke fence 확인과 family/token 저장을 한 슬롯의 Lua로 묶는다. 저장이 먼저 끝나면 뒤의
+        // revoke가 지우고, revoke가 먼저 fence를 세우면 이 저장은 절대 family를 되살리지 못한다.
+        const result = await this.redis.eval(
+            STORE_TOKEN_SCRIPT,
+            3,
+            this.tokenKey(tokenId, familyId),
+            this.familyKey(familyId),
+            this.revokedFamilyKey(familyId),
+            value,
+            tokenId,
+            ttlMs.toString()
+        )
+        if (result !== 1) {
+            // 사용자 인덱스는 다른 Redis Cluster 슬롯이라 Lua에 포함할 수 없다. 먼저 등록해 revokeAll이
+            // 진행 중 발급도 발견하게 하고, fence에 막힌 경우 여기서 되돌린다.
+            if (userId) {
+                await this.redis.srem(this.userFamiliesKey(userId), familyId)
+            }
+            throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
+        }
     }
 
-    private async consumeToken(tokenId: string, familyId: string): Promise<boolean> {
-        // DEL count가 1인 소비자만 승자다. exec 결과가 없으면 실행 여부를 추측하지 않고 실패시킨다.
-        const result = await this.redis
-            .multi()
-            .del(this.tokenKey(tokenId, familyId))
-            .srem(this.familyKey(familyId), tokenId)
-            .exec()
-        if (!result) {
-            throw new Error('Refresh token consume aborted: redis multi exec returned null')
+    private async consumeToken(
+        refreshToken: string,
+        tokenId: string,
+        familyId: string
+    ): Promise<boolean> {
+        // 소비와 짧은 tombstone 기록을 한 슬롯의 Lua로 묶어 loser가 실제 재사용과 동시 중복을 구분하게 한다.
+        const result = await this.redis.eval(
+            CONSUME_TOKEN_SCRIPT,
+            3,
+            this.tokenKey(tokenId, familyId),
+            this.familyKey(familyId),
+            this.consumedTokenKey(tokenId, familyId),
+            tokenId,
+            this.hashToken(refreshToken),
+            CONCURRENT_REFRESH_GRACE_MS.toString()
+        )
+        if (typeof result !== 'number') {
+            throw new Error('Refresh token consume aborted: redis eval returned a non-number')
         }
-        const [, count] = result[0] as [Error | null, number]
-        return count > 0
+        return result > 0
+    }
+
+    private async isConcurrentDuplicate(
+        refreshToken: string,
+        tokenId: string,
+        familyId: string
+    ): Promise<boolean> {
+        const consumedHash = await this.redis.get(this.consumedTokenKey(tokenId, familyId))
+        return consumedHash === this.hashToken(refreshToken)
+    }
+
+    private async rejectConcurrentRefresh(context?: EventContext): Promise<never> {
+        await this.emit({
+            type: 'verify.failed',
+            reason: 'concurrent_refresh',
+            at: new Date(),
+            context
+        })
+        throw new ConflictException(JwtAuthErrors.RefreshTokenConcurrent())
     }
 
     private async revokeFamily(familyId: string, userId: string | undefined) {
+        // fence를 토큰 정리보다 먼저 세운다. 이후 storeToken의 Lua는 같은 family 슬롯에서 이를 보고
+        // 실패하므로, 아래 목록 조회와 삭제 사이에 새 토큰이 끼어들 수 없다.
+        await this.redis.set(
+            this.revokedFamilyKey(familyId),
+            '1',
+            'PX',
+            this.config.refreshTokenTtlMs
+        )
         const tokenIds = await this.redis.smembers(this.familyKey(familyId))
         const pipeline = this.redis.multi()
         for (const tokenId of tokenIds) {

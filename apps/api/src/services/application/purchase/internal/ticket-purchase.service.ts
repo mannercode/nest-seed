@@ -7,12 +7,10 @@ import {
     ShowtimesService,
     TicketHoldingService,
     TicketsService,
-    PurchaseItemType,
-    TicketStatus
+    PurchaseItemType
 } from 'core'
 import { CreatePurchaseDto } from '../dtos'
 import { PurchaseErrors } from '../errors'
-import { PurchaseEvents } from '../purchase.events'
 
 @Injectable()
 export class TicketPurchaseService {
@@ -22,42 +20,77 @@ export class TicketPurchaseService {
         private readonly ticketsService: TicketsService,
         private readonly showtimesService: ShowtimesService,
         private readonly ticketHoldingService: TicketHoldingService,
-        private readonly events: PurchaseEvents,
         private readonly config: AppConfigService
     ) {}
 
-    async completePurchase(createDto: CreatePurchaseDto, userId: string): Promise<void> {
+    async claimPurchase(
+        createDto: CreatePurchaseDto,
+        userId: string,
+        purchaseRecordId: string
+    ): Promise<void> {
         const ticketItems = createDto.purchaseItems.filter(
             (item) => item.type === PurchaseItemType.Tickets
         )
         const ticketIds = ticketItems.map((item) => item.itemId)
+        const tickets = await this.ticketsService.getMany(ticketIds)
 
-        this.logger.log('completePurchase', { userId, ticketCount: ticketIds.length })
+        this.logger.log('claimPurchase', { userId, ticketCount: ticketIds.length })
 
-        // Available인 티켓만 원자적으로 Sold로 바꾼다.
-        // 하나라도 어긋나면 아무것도 팔리지 않으므로(409), 이 호출이 성공했다는 사실이 곧 "이 결제가 이 티켓들을 팔았다"는 소유의 근거가 된다.
-        await this.ticketsService.transitStatusMany(
-            ticketIds,
-            TicketStatus.Available,
-            TicketStatus.Sold
+        // 사전 hold 검증 이후 TTL이 만료될 수 있으므로 결제 전에 실제 ticket 키 owner를
+        // purchaseRecordId로 claim한다. showtime별 Lua 원자성은 TicketHoldingService가 보장한다.
+        const claimed = await this.ticketHoldingService.claimTicketsForPurchase({
+            purchaseRecordId,
+            tickets,
+            userId
+        })
+        if (!claimed) throw new BadRequestException(PurchaseErrors.NotHeld())
+    }
+
+    async completePurchase<T>(
+        createDto: CreatePurchaseDto,
+        purchaseRecordId: string,
+        completeDurably: (ticketIds: string[]) => Promise<T>
+    ): Promise<T> {
+        const ticketItems = createDto.purchaseItems.filter(
+            (item) => item.type === PurchaseItemType.Tickets
         )
+        const ticketIds = ticketItems.map((item) => item.itemId)
+        const tickets = await this.ticketsService.getMany(ticketIds)
+
+        this.logger.log('completePurchase', { ticketCount: ticketIds.length })
+
+        // 결제가 진행되는 동안 claim TTL이 만료됐을 수 있다. 판매 직전 owner를 Lua에서
+        // 확인하면서 TTL을 연장해, 다른 고객의 새 hold를 Mongo sale이 빼앗지 않게 한다.
+        const confirmed = await this.ticketHoldingService.confirmPurchaseClaims(
+            purchaseRecordId,
+            tickets
+        )
+        if (!confirmed) throw new BadRequestException(PurchaseErrors.NotHeld())
+
+        // 티켓 판매와 구매 상태 CAS는 호출자가 같은 Mongo 트랜잭션으로 묶는다.
+        // Redis 확인·정리를 callback 밖에 둬 MongoDB의 transaction callback 재시도에
+        // 비트랜잭션 부수 효과가 반복되지 않게 한다.
+        const completed = await completeDurably(ticketIds)
 
         try {
-            await this.events.emitTicketPurchased({ userId, ticketIds })
+            await this.ticketHoldingService.releasePurchaseClaims(purchaseRecordId, tickets)
         } catch (error) {
-            // 전이는 성공했지만 발행이 실패했다. 방금 이 결제가 판매한 티켓만 되돌린다.
-            // Sold는 다른 결제가 건드릴 수 없는 상태라, from=Sold 조건부 전이로 소유가 보장된다.
-            this.logger.warn('completePurchase compensation: revert tickets', {
-                userId,
-                ticketCount: ticketIds.length
-            })
-            await this.ticketsService.transitStatusMany(
-                ticketIds,
-                TicketStatus.Sold,
-                TicketStatus.Available
-            )
-            throw error
+            // 판매 소유권은 MongoDB에 확정됐다. Redis claim은 TTL로 사라지므로 구매 전체를
+            // 되돌리지 않고 진단만 남긴다.
+            this.logger.warn('completePurchase claim cleanup failed', { error, purchaseRecordId })
         }
+
+        return completed
+    }
+
+    async compensatePurchase(createDto: CreatePurchaseDto, purchaseRecordId: string) {
+        const ticketIds = createDto.purchaseItems
+            .filter((item) => item.type === PurchaseItemType.Tickets)
+            .map((item) => item.itemId)
+        const tickets = await this.ticketsService.getMany(ticketIds)
+
+        await this.ticketsService.releaseOwnedPurchaseForCompensation(ticketIds, purchaseRecordId)
+        await this.ticketHoldingService.releasePurchaseClaims(purchaseRecordId, tickets)
     }
 
     async validatePurchase(createDto: CreatePurchaseDto, userId: string): Promise<void> {

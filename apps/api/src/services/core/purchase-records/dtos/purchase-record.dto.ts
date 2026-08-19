@@ -4,7 +4,7 @@ export class PurchaseRecordDto {
     createdAt: Date
     userId: string
     id: string
-    paymentId: string
+    paymentId: null | string
     purchaseItems: PurchaseItemDto[]
     totalPrice: number
     updatedAt: Date

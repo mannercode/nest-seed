@@ -12,5 +12,5 @@
         "lib": ["dom", "esnext"],
         "types": ["node"]
     },
-    "include": ["tests/**/*", "playwright.config.ts"]
+    "include": ["tests/**/*", "unit/**/*", "playwright.config.ts", "playwright.unit.config.ts"]
 }

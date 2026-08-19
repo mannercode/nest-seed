@@ -11,7 +11,12 @@ const TEST_SECRET = 'test-secret'
 @Injectable()
 class BearerOnlyGuard extends AuthGuard {
     constructor(jwtService: JwtService, reflector: Reflector) {
-        super(jwtService, reflector, { bearer: { secret: TEST_SECRET } })
+        super(jwtService, reflector, {
+            bearer: {
+                secret: TEST_SECRET,
+                validate: async (payload) => (payload as { userId?: string }).userId === 'user-1'
+            }
+        })
     }
 }
 

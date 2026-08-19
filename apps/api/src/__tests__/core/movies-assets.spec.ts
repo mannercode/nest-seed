@@ -115,10 +115,81 @@ describe('MoviesAssets', () => {
             await fix.httpClient.delete(`/movies/${movie.id}/assets/${nullObjectId}`).noContent()
         })
 
+        it('아직 업로드 중인 자기 에셋도 삭제할 수 있다', async () => {
+            const movie = await createUnpublishedMovie(fix)
+            const upload = await createMovieAsset(fix, movie.id, testAssets.image)
+
+            await fix.httpClient.delete(`/movies/${movie.id}/assets/${upload.assetId}`).noContent()
+
+            await expect(assetsService.getMany([upload.assetId])).rejects.toThrow()
+        })
+
+        it('다른 영화가 소유한 에셋은 삭제하지 않는다', async () => {
+            const movie = await createUnpublishedMovie(fix)
+            const ownerMovie = await createUnpublishedMovie(fix)
+            const assetId = await uploadAndFinalizeMovieAsset(fix, ownerMovie.id)
+
+            await fix.httpClient
+                .delete(`/movies/${movie.id}/assets/${assetId}`)
+                .notFound(Errors.Movies.AssetNotFound(assetId))
+
+            const [asset] = await assetsService.getMany([assetId])
+            expect(asset?.owner).toEqual({ entityId: ownerMovie.id, service: 'movies' })
+        })
+
+        it('다른 영화 에셋이 잘못 연결돼 있어도 실제 owner를 확인하고 삭제하지 않는다', async () => {
+            const { MoviesRepository } =
+                await import('../../services/core/movies/movies.repository')
+            const movie = await createUnpublishedMovie(fix)
+            const ownerMovie = await createUnpublishedMovie(fix)
+            const assetId = await uploadAndFinalizeMovieAsset(fix, ownerMovie.id)
+            const moviesRepository = fix.module.get(MoviesRepository)
+            await moviesRepository.addAsset(movie.id, assetId)
+
+            await fix.httpClient
+                .delete(`/movies/${movie.id}/assets/${assetId}`)
+                .notFound(Errors.Movies.AssetNotFound(assetId))
+
+            const [asset] = await assetsService.getMany([assetId])
+            expect(asset?.owner).toEqual({ entityId: ownerMovie.id, service: 'movies' })
+        })
+
         it('영화가 없으면 404를 반환한다', async () => {
             await fix.httpClient
                 .delete(`/movies/${nullObjectId}/assets/${nullObjectId}`)
                 .notFound(Errors.Movies.NotFound(nullObjectId))
+        })
+    })
+
+    describe('DELETE /movies/:movieId', () => {
+        it('assetIds가 오염돼 있어도 다른 영화가 실제 소유한 에셋은 삭제하지 않는다', async () => {
+            const { MoviesRepository } =
+                await import('../../services/core/movies/movies.repository')
+            const movie = await createUnpublishedMovie(fix)
+            const ownerMovie = await createUnpublishedMovie(fix)
+            const assetId = await uploadAndFinalizeMovieAsset(fix, ownerMovie.id)
+            const moviesRepository = fix.module.get(MoviesRepository)
+            await moviesRepository.addAsset(movie.id, assetId)
+
+            await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
+
+            const [asset] = await assetsService.getMany([assetId])
+            expect(asset?.owner).toEqual({ entityId: ownerMovie.id, service: 'movies' })
+        })
+
+        it('삭제되는 영화의 아직 업로드 중인 pending 에셋도 함께 삭제한다', async () => {
+            const { MoviePendingAssetsRepository } =
+                await import('../../services/core/movies/movie-pending-assets.repository')
+            const movie = await createUnpublishedMovie(fix)
+            const upload = await createMovieAsset(fix, movie.id, testAssets.image)
+            const pendingAssetsRepository = fix.module.get(MoviePendingAssetsRepository)
+
+            await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
+
+            await expect(assetsService.getMany([upload.assetId])).rejects.toThrow()
+            await expect(
+                pendingAssetsRepository.hasPendingAsset(movie.id, upload.assetId)
+            ).resolves.toBe(false)
         })
     })
 

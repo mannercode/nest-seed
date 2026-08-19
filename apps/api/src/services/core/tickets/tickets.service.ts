@@ -50,16 +50,53 @@ export class TicketsService {
         return this.toDtos(tickets)
     }
 
-    async transitStatusMany(ticketIds: string[], from: TicketStatus, to: TicketStatus) {
+    async transitStatusMany(
+        ticketIds: string[],
+        from: TicketStatus,
+        to: TicketStatus,
+        purchaseRecordId?: string,
+        session?: ClientSession
+    ) {
         // 누락된 ticketId는 `getByIds`가 404로 분리한다.
         // 상태 충돌(409)과 전이는 리포지토리가 한 트랜잭션에서 원자적으로 판정한다.
-        await this.repository.getByIds(ticketIds)
+        await this.repository.getByIds(ticketIds, session)
 
-        await this.repository.transitStatusMany(ticketIds, from, to)
+        await this.repository.transitStatusMany(ticketIds, from, to, purchaseRecordId, session)
 
-        const tickets = await this.repository.getByIds(ticketIds)
+        const tickets = await this.repository.getByIds(ticketIds, session)
 
         return this.toDtos(tickets)
+    }
+
+    async releasePurchase(ticketIds: string[], purchaseRecordId: string) {
+        const releaseIds = await this.repository.getPurchaseReleaseIds(ticketIds, purchaseRecordId)
+        if (releaseIds.length === 0) return this.getMany(ticketIds)
+
+        await this.transitStatusMany(
+            releaseIds,
+            TicketStatus.Sold,
+            TicketStatus.Available,
+            purchaseRecordId
+        )
+        return this.getMany(ticketIds)
+    }
+
+    async releaseOwnedPurchaseForCompensation(ticketIds: string[], purchaseRecordId: string) {
+        await this.repository.releaseOwnedPurchaseForCompensation(ticketIds, purchaseRecordId)
+    }
+
+    async sellForPurchase(
+        ticketIds: string[],
+        purchaseRecordId: string,
+        session: ClientSession | undefined = undefined
+    ) {
+        return this.transitStatusMany(
+            ticketIds,
+            TicketStatus.Available,
+            TicketStatus.Sold,
+            purchaseRecordId,
+            session
+        )
     }
 
     private toDtos(tickets: Ticket[]) {

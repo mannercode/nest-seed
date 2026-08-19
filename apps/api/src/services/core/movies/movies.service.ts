@@ -50,12 +50,32 @@ export class MoviesService {
             throw new NotFoundException(MovieErrors.NotFound(movieId))
         }
 
+        const isAttached = movie.assetIds.includes(assetId)
+        const isPending = await this.pendingAssetsRepository.hasPendingAsset(movieId, assetId)
+        const owner = await this.assetsService.findOwner(assetId)
+
+        if (owner === undefined && !isAttached && !isPending) {
+            // 이미 사라진 asset 삭제는 멱등하게 성공한다.
+            return
+        }
+
+        const belongsToMovie = owner?.service === 'movies' && owner.entityId === movieId
+        const isOwnedPendingUpload = owner === null && isPending
+
+        // 영화 문서의 assetIds는 복구 과정이나 과거 버그로 오염될 수 있으므로 실제 asset owner를
+        // 최종 권한 기준으로 삼는다. 아직 finalize 전인 pending upload만 owner가 없어도 허용한다.
+        if (owner !== undefined && !belongsToMovie && !isOwnedPendingUpload) {
+            throw new NotFoundException(MovieErrors.AssetNotFound(assetId))
+        }
+
         // 파일을 먼저 영화와 대기 목록에서 제거한 뒤 실제 저장소에서 삭제한다.
         // 순서를 바꾸면 이미 삭제된 파일을 계속 가리키는 기록이 남을 수 있다.
-        if (movie.assetIds.includes(assetId)) {
+        if (isAttached) {
             await this.moviesRepository.removeAsset(movieId, assetId)
         }
-        await this.pendingAssetsRepository.removePendingAsset(movieId, assetId)
+        if (isPending) {
+            await this.pendingAssetsRepository.removePendingAsset(movieId, assetId)
+        }
         await this.assetsService.deleteMany([assetId])
     }
 
@@ -63,13 +83,31 @@ export class MoviesService {
         const movies = await this.moviesRepository.findByIds(movieIds)
 
         if (0 < movies.length) {
-            const assetIds = uniq(movies.flatMap((movie) => movie.assetIds))
+            const existingMovieIds = pickIds(movies)
+            const pendingAssetIds =
+                await this.pendingAssetsRepository.findAssetIdsByMovieIds(existingMovieIds)
+            const candidateAssetIds = uniq([
+                ...movies.flatMap((movie) => movie.assetIds),
+                ...pendingAssetIds
+            ])
+            const ownerByAssetId = await this.assetsService.findOwners(candidateAssetIds)
+            const existingMovieIdSet = new Set(existingMovieIds)
+            const pendingAssetIdSet = new Set(pendingAssetIds)
+            const assetIds = candidateAssetIds.filter((assetId) => {
+                const owner = ownerByAssetId.get(assetId)
+                const belongsToDeletedMovie =
+                    owner?.service === 'movies' && existingMovieIdSet.has(owner.entityId)
+                const isPendingUpload = owner === null && pendingAssetIdSet.has(assetId)
+
+                return belongsToDeletedMovie || isPendingUpload
+            })
 
             if (0 < assetIds.length) {
                 await this.assetsService.deleteMany(assetIds)
             }
 
-            await this.moviesRepository.deleteByIds(pickIds(movies))
+            await this.pendingAssetsRepository.removeByMovieIds(existingMovieIds)
+            await this.moviesRepository.deleteByIds(existingMovieIds)
         }
     }
 

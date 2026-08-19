@@ -7,5 +7,9 @@ export class CreatePaymentDto {
 
     @IsNotEmpty()
     @IsString()
+    purchaseRecordId: string
+
+    @IsNotEmpty()
+    @IsString()
     userId: string
 }
