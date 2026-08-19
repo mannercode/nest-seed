@@ -3,15 +3,18 @@ import {
     assignIfDefined,
     CrudRepository,
     isWriteConcernTimeoutError,
+    MongooseErrors,
+    objectId,
+    objectIds,
     QueryBuilder,
     leanOneToPublic,
     leanToPublic,
     sleep
 } from '@mannercode/common'
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
-import { Model } from 'mongoose'
+import { Model, UpdateQuery } from 'mongoose'
 import { CreateUserDto, SearchUsersPageDto, UpdateUserDto } from './dtos'
 import { User } from './models'
 
@@ -68,6 +71,38 @@ export class UsersRepository extends CrudRepository<User> {
         return leanOneToPublic<User>(user)
     }
 
+    async findAuthVersionById(userId: string): Promise<number | null> {
+        const user = await this.model.findById(objectId(userId)).select('authVersion').lean().exec()
+
+        return user ? ((user as { authVersion?: number }).authVersion ?? 0) : null
+    }
+
+    async isAuthVersionCurrent(userId: string, authVersion: number): Promise<boolean> {
+        const current = await this.findAuthVersionById(userId)
+        return current !== null && current === authVersion
+    }
+
+    async advanceAuthVersion(userId: string): Promise<void> {
+        const user = await this.model
+            .findOneAndUpdate(
+                { _id: objectId(userId) },
+                { $inc: { authVersion: 1 } },
+                { returnDocument: 'after', runValidators: true }
+            )
+            .exec()
+
+        if (!user) throw new NotFoundException(MongooseErrors.DocumentNotFound(userId))
+    }
+
+    async deleteByIdsWithAuthVersion(userIds: string[]): Promise<void> {
+        await this.model
+            .updateMany(
+                { _id: { $in: objectIds(userIds) } },
+                { $inc: { authVersion: 1 }, $set: { deletedAt: new Date() } }
+            )
+            .exec()
+    }
+
     async searchPage(searchDto: SearchUsersPageDto) {
         const { orderby, page, size } = searchDto
 
@@ -84,14 +119,23 @@ export class UsersRepository extends CrudRepository<User> {
     }
 
     async update(userId: string, updateDto: UpdateUserDto) {
-        const user = await this.getDocumentById(userId)
+        const patch: Partial<Pick<User, 'birthDate' | 'email' | 'name' | 'password'>> = {}
+        assignIfDefined(patch, updateDto, 'name')
+        assignIfDefined(patch, updateDto, 'email')
+        assignIfDefined(patch, updateDto, 'birthDate')
+        assignIfDefined(patch, updateDto, 'password')
 
-        assignIfDefined(user, updateDto, 'name')
-        assignIfDefined(user, updateDto, 'email')
-        assignIfDefined(user, updateDto, 'birthDate')
-        assignIfDefined(user, updateDto, 'password')
+        const update: UpdateQuery<User> = { $set: patch }
+        if (updateDto.password !== undefined) update.$inc = { authVersion: 1 }
 
-        await user.save()
+        const user = await this.model
+            .findOneAndUpdate({ _id: objectId(userId) }, update, {
+                returnDocument: 'after',
+                runValidators: true
+            })
+            .exec()
+
+        if (!user) throw new NotFoundException(MongooseErrors.DocumentNotFound(userId))
 
         return user.toJSON()
     }

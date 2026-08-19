@@ -2,8 +2,8 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { LogoutButton } from '@/app/_components/logout-button'
 import { ApiError, api } from '@/lib/api-client'
-import { clearSession, readToken } from '@/lib/session'
 
 type User = { id: string; name: string; email: string; birthDate: string }
 type UsersPage = { items: User[]; page: number; size: number; total: number }
@@ -14,18 +14,10 @@ export default function UsersPage() {
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
-        if (!readToken()) {
-            router.replace('/login')
-            return
-        }
-
-        api.get<UsersPage>('/users?size=50&orderby=createdAt:desc', {
-            accessToken: readToken() ?? undefined
-        })
+        api.get<UsersPage>('/users?size=50&orderby=createdAt:desc')
             .then((page) => setItems(page.items))
             .catch((err) => {
                 if (err instanceof ApiError && err.status === 401) {
-                    clearSession()
                     router.replace('/login')
                     return
                 }
@@ -36,11 +28,10 @@ export default function UsersPage() {
     async function onDelete(id: string) {
         if (!window.confirm('이 사용자를 삭제할까요?')) return
         try {
-            await api.delete(`/users/${id}`, { accessToken: readToken() ?? undefined })
+            await api.delete(`/users/${id}`)
             setItems((prev) => (prev ? prev.filter((user) => user.id !== id) : prev))
         } catch (err) {
             if (err instanceof ApiError && err.status === 401) {
-                clearSession()
                 router.replace('/login')
                 return
             }
@@ -49,7 +40,11 @@ export default function UsersPage() {
     }
 
     if (error) {
-        return <main className="mx-auto max-w-3xl px-6 py-10 text-sm text-red-600">{error}</main>
+        return (
+            <main role="alert" className="mx-auto max-w-3xl px-6 py-10 text-sm text-red-600">
+                {error}
+            </main>
+        )
     }
     if (items === null) {
         return (
@@ -61,7 +56,10 @@ export default function UsersPage() {
 
     return (
         <main className="mx-auto max-w-3xl px-6 py-10">
-            <h1 className="mb-6 text-2xl font-semibold">사용자 목록</h1>
+            <header className="mb-6 flex items-center justify-between">
+                <h1 className="text-2xl font-semibold">사용자 목록</h1>
+                <LogoutButton />
+            </header>
             {items.length === 0 ? (
                 <p className="text-sm text-slate-500">등록된 사용자가 없다</p>
             ) : (

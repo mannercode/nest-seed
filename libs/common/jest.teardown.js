@@ -4,6 +4,8 @@ const { MongoClient } = require('mongodb')
 const Redis = require('ioredis')
 
 module.exports = createGlobalTeardown({
+    // 이 Redis는 해당 Jest 실행만 쓰는 Testcontainers 인스턴스라 전체 정리가 안전하다.
+    allowRedisFlushAll: true,
     connectMongo: async () => {
         const client = new MongoClient(process.env.TESTLIB_MONGO_URI)
         await client.connect()

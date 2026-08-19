@@ -2,8 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { ApiError, getJson } from '@/lib/api-client'
-import { clearSession, readEmail } from '@/lib/session'
+import { ApiError, getJson, postJson } from '@/lib/api-client'
 
 type ShowtimeView = {
     id: string
@@ -14,38 +13,71 @@ type ShowtimeView = {
 type Movie = { id: string; title: string; director: string; rating: string; releaseDate: string }
 type MovieCard = { movie: Movie; upcomingShowtimes: ShowtimeView[] }
 type HomeView = { showingMovies: MovieCard[]; recommendedMovies: Movie[] }
+type CurrentUser = { email: string }
 
 export default function HomePage() {
     const [home, setHome] = useState<HomeView | null>(null)
     const [error, setError] = useState<string | null>(null)
-    // 로그인 상태는 브라우저에서만 알 수 있으므로 마운트 후에 읽어 하이드레이션 불일치를 피한다.
     const [email, setEmail] = useState<string | null>(null)
+    const [loggingOut, setLoggingOut] = useState(false)
 
     useEffect(() => {
-        setEmail(readEmail())
+        let cancelled = false
+
+        async function load() {
+            try {
+                const user = await getJson<CurrentUser>('/users/me')
+                if (!cancelled) setEmail(user.email)
+            } catch (err) {
+                if (!(err instanceof ApiError && err.status === 401) && !cancelled) {
+                    setError(err instanceof Error ? err.message : '세션을 확인할 수 없다')
+                    return
+                }
+            }
+
+            try {
+                const view = await getJson<HomeView>('/views/user-app/home')
+                if (!cancelled) setHome(view)
+            } catch (err) {
+                if (!cancelled) {
+                    setError(
+                        err instanceof ApiError
+                            ? err.message
+                            : err instanceof Error
+                              ? err.message
+                              : '홈 화면을 불러올 수 없다'
+                    )
+                }
+            }
+        }
+
+        void load()
+        return () => {
+            cancelled = true
+        }
     }, [])
 
-    function onLogout() {
-        clearSession()
-        setEmail(null)
+    async function onLogout() {
+        setLoggingOut(true)
+        setError(null)
+        try {
+            await postJson('/users/logout', {})
+            setEmail(null)
+            setHome(await getJson<HomeView>('/views/user-app/home'))
+        } catch (err) {
+            setEmail(null)
+            setError(err instanceof Error ? err.message : '로그아웃에 실패했다')
+        } finally {
+            setLoggingOut(false)
+        }
     }
 
-    useEffect(() => {
-        getJson<HomeView>('/views/user-app/home')
-            .then(setHome)
-            .catch((err) => {
-                const message =
-                    err instanceof ApiError
-                        ? err.message
-                        : err instanceof Error
-                          ? err.message
-                          : '홈 화면을 불러올 수 없다'
-                setError(message)
-            })
-    }, [])
-
     if (error) {
-        return <main className="mx-auto max-w-4xl px-6 py-10 text-sm text-red-600">{error}</main>
+        return (
+            <main role="alert" className="mx-auto max-w-4xl px-6 py-10 text-sm text-red-600">
+                {error}
+            </main>
+        )
     }
     if (home === null) {
         return (
@@ -70,10 +102,11 @@ export default function HomePage() {
                             <span className="text-slate-500">{email}</span>
                             <button
                                 type="button"
-                                onClick={onLogout}
+                                onClick={() => void onLogout()}
+                                disabled={loggingOut}
                                 className="font-medium text-slate-900 underline"
                             >
-                                로그아웃
+                                {loggingOut ? '로그아웃 중…' : '로그아웃'}
                             </button>
                         </>
                     ) : (

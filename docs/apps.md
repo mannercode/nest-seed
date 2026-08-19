@@ -496,7 +496,7 @@ describe('PATCH /theaters/:id', () => {
 
 ### 동적 가져오기 — 왜 필요한가
 
-각 테스트가 다른 테스트와 부딪히지 않도록, `jest.setup`이 테스트마다 고유한 `TEST_ID`를 발급한다. `apps/api` 테스트는 앱 설정값인 `PROJECT_ID`를 이 값으로 새로 만들고, Redis/cache prefix, NATS subject, Temporal task queue 이름이 그 값을 따라 테스트마다 갈라진다. MongoDB 데이터베이스와 S3 버킷은 Jest worker별로 만들고, 각 테스트가 끝날 때 컬렉션과 버킷 내용을 비운다.
+각 테스트가 다른 테스트와 부딪히지 않도록, `jest.config`가 Jest 명령마다 고유한 실행 ID를 만든다. `jest.setup`은 app 모듈을 읽기 전에 먼저 실행 ID와 worker 번호가 들어간 startup `PROJECT_ID`를 설정하고, `beforeEach`에서 테스트별 `TEST_ID` suffix로 다시 갱신한다. Redis/cache prefix, NATS subject, Temporal task queue 이름이 이 값을 따라 갈라진다. MongoDB 데이터베이스와 S3 버킷도 실행 ID와 Jest worker 번호를 조합해 만든다. coverage·로그·Temporal workflow bundle은 `_output/jest-runs/<실행 ID>/` 아래에서 실행별로 분리된다. 따라서 같은 devcontainer에서 API Jest 명령을 동시에 실행해도 같은 번호의 worker나 파일 산출물을 공유하지 않는다.
 
 문제는 일반적인 가져오기 방식이다. 파일 맨 위에 `import { createUsersFixture } from './users.fixture'`라고 쓰면, 그 모듈은 처음 한 번만 평가된다. 모듈이 처음 평가될 때 읽은 `process.env.PROJECT_ID`나 `process.env.TEST_ID`로 cache prefix, NATS subject, Temporal queue 같은 값이 만들어진다. 그래서 다음 테스트도 이전 테스트의 값을 그대로 쓰게 된다.
 
@@ -522,18 +522,19 @@ describe('Users', () => {
 Jest 기반 테스트 인프라는 네 단계로 동작한다.
 
 ```
+jest.config.js    apps/api 명령별 실행 ID 발급, coverage·로그·workflow 출력 경로 분리
 jest.global.js    workspace별 전역 준비
-                   - apps/api: workflow bundle 생성 (env는 Dev Container가 주입한 process.env를 그대로 사용)
+                   - apps/api: config의 실행 ID 검증, 실행별 workflow bundle 생성
                    - libs/common: Testcontainers로 MongoDB · Redis · MinIO · NATS 기동,
                      Temporal local test environment 생성
-jest.setup.js     worker별 DB·버킷 준비
-                   beforeEach마다 TEST_ID 발급 (apps/api는 PROJECT_ID도 이 값으로 파생)
+jest.setup.js     app 모듈 로드 전에 startup PROJECT_ID 설정, 실행 ID + worker별 DB·버킷 준비
+                   beforeEach마다 TEST_ID 발급 (apps/api는 실행 ID + TEST_ID로 PROJECT_ID 갱신)
                    afterEach에서 컬렉션과 버킷 내용 정리
 *.spec.ts         개별 테스트가 픽스처로 위 자원 사용
-jest.teardown.js  전체 워커 종료 후 한 번: worker별 DB·버킷 드롭, Redis 전체 flush
+jest.teardown.js  전체 워커 종료 후 한 번: 현재 실행의 DB·버킷·Redis key만 제거
 ```
 
-`apps/api`의 통합 테스트는 devcontainer가 시작해 둔 공용 인프라(Mongo / Redis / MinIO / NATS / Temporal 컨테이너)를 재사용한다. `libs/common`은 외부 의존을 줄이기 위해 Testcontainers로 자체 인프라를 시작한다. `libs/testing`과 `libs/temporal-sandbox`는 인프라 없는 단위 테스트로 돈다.
+`apps/api`의 통합 테스트는 devcontainer가 시작해 둔 공용 인프라(Mongo / Redis / MinIO / NATS / Temporal 컨테이너)를 재사용한다. 정상 teardown은 실행 ID에 정확히 대응하는 자원만 제거하며, 실행 ID가 없거나 형식이 잘못되면 넓은 범위를 정리하지 않고 실패한다. Redis teardown도 scoped glob이 필수이고, 전체 flush는 실행 전용 Testcontainers Redis를 쓰는 `libs/common`만 명시적으로 허용한다. 강제 종료로 teardown을 건너뛰면 실행별 디렉터리와 외부 자원이 남을 수 있지만 다음 실행과 이름이 겹치지는 않는다. `npm run clean`은 남은 `_output`을 제거하고, `npm run preatoz`는 그 작업과 인프라 reset을 함께 수행한다. AtoZ의 격리 하네스는 실제 setup/teardown을 켠 Jest 두 개를 병렬로 띄운다. B 실행이 실제 Mongo·S3·Redis sentinel을 만든 뒤 기다리고, A teardown이 끝난 다음 B의 세 sentinel이 남고 A의 세 자원은 제거됐는지 확인한다. 성공한 두 child의 출력 디렉터리는 run 경로 형식을 검증한 뒤 하네스가 제거한다. 이 probe spec은 일반 API suite에서도 skip하지 않고 namespace assertion만 수행한다. stability의 apps/api 반복은 run별 coverage 디렉터리가 누적되지 않도록 coverage를 끈다. `libs/testing`과 `libs/temporal-sandbox`는 인프라 없는 단위 테스트로 돈다.
 
 단일 spec만 실행하려면 Jest에 파일 패턴을 넘기고 커버리지 게이트를 끈다. VS Code에서는 devcontainer에 포함된 Jest Runner 확장으로 describe/it 단위 실행도 된다.
 
@@ -605,4 +606,4 @@ bash apps/api/api-docs/run.sh
 
 ## console·user-app — 최소 데모
 
-Next.js 앱 두 개는 이 시드로 모노레포를 구성할 사람을 위해 최소한으로 넣은 데모다. 콘솔은 admin 로그인과 영화·극장 등록, 극장·사용자 목록 조회를, 사용자 앱은 가입·로그인과 홈 화면(`view/user-app/home` 응답 소비)을 보여준다. 상영 등록(202+SSE)·예매·구매 흐름은 UI가 아니라 실행 가능한 API 문서(`api-docs/showtime-creation.spec`·`booking.spec`·`purchases.spec`)와 분산 레이스 시나리오(`tests/api-race/`)가 보여준다. 프로덕션 수준의 프론트엔드 구조를 의도하지 않았다.
+Next.js 앱 두 개는 이 시드로 모노레포를 구성할 사람을 위해 최소한으로 넣은 데모다. 콘솔은 admin 로그인과 영화·극장 등록, 극장·사용자 목록 조회를, 사용자 앱은 가입·로그인과 홈 화면(`view/user-app/home` 응답 소비)을 보여준다. 두 앱의 `/api` Route Handler는 access/refresh 토큰을 HttpOnly 쿠키에 보관하고, 만료 시 회전한 뒤 원 요청을 한 번 재시도하는 BFF다. BFF 응답은 캐시하지 않고 요청 본문을 1MiB로 제한한다. 상영 등록(202+SSE)·예매·구매 흐름은 UI가 아니라 실행 가능한 API 문서(`api-docs/showtime-creation.spec`·`booking.spec`·`purchases.spec`)와 분산 레이스 시나리오(`tests/api-race/`)가 보여준다. 프로덕션 수준의 프론트엔드 구조를 의도하지 않았다.

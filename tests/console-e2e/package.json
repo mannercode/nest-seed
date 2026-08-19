@@ -4,15 +4,17 @@
     "private": true,
     "type": "module",
     "scripts": {
+        "test": "playwright test --config=playwright.unit.config.ts",
         "e2e": "playwright test",
         "e2e:ui": "playwright test --ui",
-        "format": "eslint tests/ playwright.config.ts --fix && prettier --write tests/ playwright.config.ts",
-        "lint": "tsc --noEmit && eslint tests/ playwright.config.ts --max-warnings=0 && prettier --check tests/ playwright.config.ts",
-        "atoz": "npm run lint && CI=1 playwright test"
+        "format": "eslint tests/ unit/ playwright.config.ts playwright.unit.config.ts --fix && prettier --write tests/ unit/ playwright.config.ts playwright.unit.config.ts",
+        "lint": "tsc --noEmit && eslint tests/ unit/ playwright.config.ts playwright.unit.config.ts --max-warnings=0 && prettier --check tests/ unit/ playwright.config.ts playwright.unit.config.ts",
+        "atoz": "npm run lint && npm test && CI=1 playwright test"
     },
     "devDependencies": {
         "@playwright/test": "1.62.0",
         "@types/node": "24",
+        "mongodb": "7.5.0",
         "typescript": "6.0.3"
     }
 }

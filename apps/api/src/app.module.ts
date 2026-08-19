@@ -23,6 +23,7 @@ import {
     AdminsHttpController,
     BookingHttpController,
     MoviesHttpController,
+    LoginRateLimiterService,
     PurchaseHttpController,
     RequestValidationPipe,
     RootAuthGuard,
@@ -70,6 +71,7 @@ import { AppConfigModule, GlobalModule, HealthModule } from './modules'
     ],
     providers: [
         AdminAuthGuard,
+        LoginRateLimiterService,
         RootAuthGuard,
         UserAuthGuard,
         { provide: APP_PIPE, useClass: RequestValidationPipe },

@@ -4,6 +4,9 @@ import { MONGOOSE_SCHEMA_OPTIONS } from 'config'
 
 @Schema(MONGOOSE_SCHEMA_OPTIONS)
 export class Admin extends CrudSchema {
+    @Prop({ default: 0, required: true })
+    authVersion: number
+
     @Prop({ required: true })
     email: string
 

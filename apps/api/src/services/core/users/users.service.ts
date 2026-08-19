@@ -2,7 +2,6 @@ import { ensure, isDuplicateKeyError, mapDocToDto } from '@mannercode/common'
 import { ConflictException, Injectable } from '@nestjs/common'
 import {
     CreateUserDto,
-    UserAuthPayload,
     UserCredentialsDto,
     SearchUsersPageDto,
     UpdateUserDto,
@@ -38,19 +37,21 @@ export class UsersService {
     }
 
     async deleteMany(userIds: string[]): Promise<void> {
-        // 삭제된 사용자가 살아 있는 리프레시 토큰으로 인증을 유지하지 못하도록 세션부터 회수한다.
+        // DB 상태를 먼저 한 번에 비활성화해 Redis 회수 실패나 동시 refresh에도 기존 JWT가 즉시 거부되게 한다.
+        await this.repository.deleteByIdsWithAuthVersion(userIds)
         await Promise.all(userIds.map((id) => this.authenticationService.revokeAllForUser(id)))
-        await this.repository.deleteByIds(userIds)
     }
 
-    async findUserByCredentials(credentials: UserCredentialsDto) {
+    async login(credentials: UserCredentialsDto) {
         const user = await this.authenticationService.findUserByCredentials(credentials)
+        if (!user) return null
 
-        return user ? this.toDto(user) : null
-    }
-
-    async generateAuthTokens(payload: UserAuthPayload) {
-        return this.authenticationService.generateAuthTokens(payload)
+        const tokens = await this.authenticationService.generateAuthTokens({
+            authVersion: (user as { authVersion?: number }).authVersion ?? 0,
+            email: user.email,
+            sub: user.id
+        })
+        return { tokens, user: this.toDto(user) }
     }
 
     async getMany(userIds: string[]) {
@@ -59,11 +60,17 @@ export class UsersService {
         return this.toDtos(users)
     }
 
+    async isAuthPayloadActive(payload: unknown): Promise<boolean> {
+        return this.authenticationService.isAuthPayloadActive(payload)
+    }
+
     async refreshAuthTokens(refreshToken: string) {
         return this.authenticationService.refreshAuthTokens(refreshToken)
     }
 
     async revokeAllForUser(userId: string): Promise<void> {
+        // 버전을 먼저 올려 refresh 발급과 Redis 회수가 엇갈려도 그 토큰이 현재 계정과 일치하지 않게 한다.
+        await this.repository.advanceAuthVersion(userId)
         await this.authenticationService.revokeAllForUser(userId)
     }
 

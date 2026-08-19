@@ -24,11 +24,22 @@ jobs:
               uses: devcontainers/ci@v0.3
               env:
                   MONGO_DIAGNOSTICS_ON_TEST_FAILURE: 'true'
+                  # PR/push는 첫 실패를 그대로 게이트하고, 정기 진단 실행만 한 번 재시도한다.
+                  PLAYWRIGHT_RETRIES: ${{ github.event_name == 'schedule' && '1' || '0' }}
               with:
                   configFile: .devcontainer/devcontainer.json
                   push: never
                   env: |
                       MONGO_DIAGNOSTICS_ON_TEST_FAILURE
+                      PLAYWRIGHT_RETRIES
                   runCmd: |
                       set -Eeuo pipefail
                       bash .github/scripts/run-with-ci-diagnostics.sh npm run atoz
+            - name: Upload browser test diagnostics
+              if: ${{ always() }}
+              uses: actions/upload-artifact@v4
+              with:
+                  name: playwright-${{ github.run_id }}-${{ github.run_attempt }}
+                  path: tests/console-e2e/_output/
+                  if-no-files-found: warn
+                  retention-days: 14

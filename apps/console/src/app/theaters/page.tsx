@@ -3,8 +3,8 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { LogoutButton } from '@/app/_components/logout-button'
 import { ApiError, api } from '@/lib/api-client'
-import { clearSession, readToken } from '@/lib/session'
 
 type Theater = { id: string; name: string; location: { latitude: number; longitude: number } }
 type TheatersPage = { items: Theater[]; page: number; size: number; total: number }
@@ -15,16 +15,11 @@ export default function TheatersPage() {
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
-        if (!readToken()) {
-            router.replace('/login')
-            return
-        }
-
-        api.get<TheatersPage>('/theaters?size=50&orderby=createdAt:desc')
+        api.get('/admins/me')
+            .then(() => api.get<TheatersPage>('/theaters?size=50&orderby=createdAt:desc'))
             .then((page) => setItems(page.items))
             .catch((err) => {
                 if (err instanceof ApiError && err.status === 401) {
-                    clearSession()
                     router.replace('/login')
                     return
                 }
@@ -33,7 +28,11 @@ export default function TheatersPage() {
     }, [router])
 
     if (error) {
-        return <main className="mx-auto max-w-3xl px-6 py-10 text-sm text-red-600">{error}</main>
+        return (
+            <main role="alert" className="mx-auto max-w-3xl px-6 py-10 text-sm text-red-600">
+                {error}
+            </main>
+        )
     }
     if (items === null) {
         return (
@@ -47,12 +46,15 @@ export default function TheatersPage() {
         <main className="mx-auto max-w-3xl px-6 py-10">
             <header className="mb-6 flex items-center justify-between">
                 <h1 className="text-2xl font-semibold">극장 목록</h1>
-                <Link
-                    href="/theaters/new"
-                    className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700"
-                >
-                    새 극장 등록
-                </Link>
+                <div className="flex items-center gap-3">
+                    <Link
+                        href="/theaters/new"
+                        className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700"
+                    >
+                        새 극장 등록
+                    </Link>
+                    <LogoutButton />
+                </div>
             </header>
             {items.length === 0 ? (
                 <p className="text-sm text-slate-500">등록된 극장이 없다</p>

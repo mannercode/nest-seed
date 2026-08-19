@@ -1,8 +1,10 @@
 const path = require('path')
 const { createDefaultPreset, pathsToModuleNameMapper } = require('ts-jest')
 const baseConfig = require('../../jest.config.base')
+const { initializeApiJestRun } = require('./scripts/jest-run-context')
 
 const appDir = __dirname
+const jestRun = initializeApiJestRun(appDir)
 const tsconfig = require(path.resolve(appDir, 'tsconfig.json'))
 const tsJestPreset = createDefaultPreset({ tsconfig: path.resolve(appDir, 'tsconfig.jest.json') })
 const { compilerOptions } = tsconfig
@@ -33,5 +35,5 @@ module.exports = {
         // 순수 로직은 옆 파일로 분리해 단위 테스트로 따로 덮는다.
         '/worker/workflow(?:-v2)?\\.ts$'
     ],
-    coverageDirectory: '<rootDir>/_output/coverage'
+    coverageDirectory: jestRun.coverageDirectory
 }

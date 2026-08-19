@@ -1,3 +1,8 @@
+const { initializeApiJestWorkerEnvironment } = require('./scripts/jest-resource-wiring')
+
+// app 모듈이 PROJECT_ID를 최초 평가하기 전에 공유 .env 값을 실행별 namespace로 덮어쓴다.
+const resourceScope = initializeApiJestWorkerEnvironment()
+
 require('reflect-metadata')
 const { S3Client } = require('@aws-sdk/client-s3')
 const { setupJestLifecycle } = require('@mannercode/jest-helpers')
@@ -14,7 +19,7 @@ const sharedMongoAppName = () =>
 
 setupJestLifecycle({
     connectMongo: async (workerId) => {
-        const dbName = `mongo-w${workerId}`
+        const dbName = resourceScope.databaseName(workerId)
         process.env.MONGO_DATABASE = dbName
 
         const client = new MongoClient(
@@ -39,12 +44,12 @@ setupJestLifecycle({
             forcePathStyle: process.env.S3_FORCE_PATH_STYLE.toLowerCase() === 'true'
         }),
     bucketName: (workerId) => {
-        const bucket = `s3bucket-w${workerId}`
+        const bucket = resourceScope.bucketName(workerId)
         process.env.S3_BUCKET = bucket
         return bucket
     },
     onBeforeEach: (testId) => {
-        process.env.PROJECT_ID = `project-${testId}`
+        process.env.PROJECT_ID = resourceScope.projectId(testId)
     }
 })
 

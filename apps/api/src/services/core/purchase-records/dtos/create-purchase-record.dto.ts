@@ -1,4 +1,11 @@
-import { IsArray, IsNotEmpty, IsPositive, IsString, ValidateNested } from 'class-validator'
+import {
+    IsArray,
+    IsNotEmpty,
+    IsOptional,
+    IsPositive,
+    IsString,
+    ValidateNested
+} from 'class-validator'
 import { PurchaseItemDto } from './purchase-item.dto'
 
 export class CreatePurchaseRecordDto {
@@ -6,9 +13,9 @@ export class CreatePurchaseRecordDto {
     @IsString()
     userId: string
 
-    @IsNotEmpty()
+    @IsOptional()
     @IsString()
-    paymentId: string
+    paymentId?: null | string
 
     @IsArray()
     @IsNotEmpty()

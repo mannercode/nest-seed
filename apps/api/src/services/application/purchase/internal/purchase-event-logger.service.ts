@@ -9,6 +9,8 @@ export class PurchaseEventLoggerService implements OnModuleInit, OnModuleDestroy
     private readonly purchasedHandler = (message: string) => {
         const event = JsonUtil.parse(message) as TicketPurchasedEvent
         this.logger.log('purchase observed', {
+            dedupeKey: event.purchaseRecordId,
+            purchaseRecordId: event.purchaseRecordId,
             userId: event.userId,
             ticketCount: event.ticketIds.length
         })

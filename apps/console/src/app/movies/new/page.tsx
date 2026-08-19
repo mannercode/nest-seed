@@ -2,8 +2,8 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { LogoutButton } from '@/app/_components/logout-button'
 import { ApiError, api } from '@/lib/api-client'
-import { clearSession, readToken } from '@/lib/session'
 
 const GENRES = [
     'action',
@@ -30,55 +30,80 @@ export default function NewMoviePage() {
     const [runtimeMinutes, setRuntimeMinutes] = useState('120')
     const [error, setError] = useState<string | null>(null)
     const [busy, setBusy] = useState(false)
+    const [draftMovieId, setDraftMovieId] = useState<string | null>(null)
 
     useEffect(() => {
-        if (!readToken()) {
-            router.replace('/login')
-            return
-        }
-        setReady(true)
+        api.get('/admins/me')
+            .then(() => setReady(true))
+            .catch((err) => {
+                if (err instanceof ApiError && err.status === 401) {
+                    router.replace('/login')
+                    return
+                }
+                setError(err instanceof Error ? err.message : '세션을 확인할 수 없다')
+            })
     }, [router])
 
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault()
         setError(null)
         setBusy(true)
+        let savedDraftId: string | null = null
         try {
             // 영화 목록 API는 공개된 영화만 반환한다.
             // 등록 직후에 목록에 바로 보이도록, 생성한 뒤 공개 처리까지 같이 호출한다.
-            const created = await api.post<{ id: string }>('/movies', {
-                accessToken: readToken() ?? undefined,
-                body: {
-                    title,
-                    director,
-                    plot,
-                    genres: [genre],
-                    rating,
-                    releaseDate: new Date(releaseDate).toISOString(),
-                    durationInSeconds: Math.max(1, Number(runtimeMinutes)) * 60
-                }
-            })
-            await api.post(`/movies/${created.id}/publish`, {
-                accessToken: readToken() ?? undefined
-            })
+            const body = {
+                title,
+                director,
+                plot,
+                genres: [genre],
+                rating,
+                releaseDate: new Date(releaseDate).toISOString(),
+                durationInSeconds: Math.max(1, Number(runtimeMinutes)) * 60
+            }
+            if (draftMovieId) {
+                await api.patch(`/movies/${draftMovieId}`, { body })
+                savedDraftId = draftMovieId
+            } else {
+                const created = await api.post<{ id: string }>('/movies', { body })
+                savedDraftId = created.id
+                setDraftMovieId(created.id)
+            }
+            await api.post(`/movies/${savedDraftId}/publish`)
             router.push('/')
         } catch (err) {
             if (err instanceof ApiError && err.status === 401) {
-                clearSession()
                 router.replace('/login')
                 return
             }
-            setError(err instanceof Error ? err.message : '등록 실패')
+            const message = err instanceof Error ? err.message : '등록 실패'
+            setError(
+                savedDraftId
+                    ? `영화 초안은 저장되었습니다. 공개에 실패했습니다. 다시 저장하면 같은 초안으로 공개를 재시도합니다. (${message})`
+                    : message
+            )
         } finally {
             setBusy(false)
         }
     }
 
-    if (!ready) return null
+    if (error && !ready) {
+        return (
+            <main role="alert" className="mx-auto max-w-xl px-6 py-10 text-sm text-red-600">
+                {error}
+            </main>
+        )
+    }
+    if (!ready) {
+        return <main className="mx-auto max-w-xl px-6 py-10 text-sm text-slate-500">확인 중…</main>
+    }
 
     return (
         <main className="mx-auto max-w-xl px-6 py-10">
-            <h1 className="mb-6 text-2xl font-semibold">새 영화 등록</h1>
+            <header className="mb-6 flex items-center justify-between">
+                <h1 className="text-2xl font-semibold">새 영화 등록</h1>
+                <LogoutButton />
+            </header>
             <form
                 onSubmit={onSubmit}
                 className="space-y-5 rounded-xl bg-white p-6 shadow ring-1 ring-slate-200"
@@ -151,7 +176,11 @@ export default function NewMoviePage() {
                         className={inputCls}
                     />
                 </Field>
-                {error && <p className="text-sm text-red-600">{error}</p>}
+                {error && (
+                    <p role="alert" className="text-sm text-red-600">
+                        {error}
+                    </p>
+                )}
                 <div className="flex items-center justify-end gap-2">
                     <button
                         type="button"

@@ -31,7 +31,7 @@ describe('PurchaseEvents', () => {
         const userId = 'user-1'
         const ticketIds = ['t1', 't2']
 
-        await events.emitTicketPurchased({ userId, ticketIds })
+        await events.emitTicketPurchased({ purchaseRecordId: 'purchase-1', userId, ticketIds })
 
         await waitFor(
             () =>
@@ -41,6 +41,14 @@ describe('PurchaseEvents', () => {
 
         expect(countLogCalls(logSpy, NOTIFICATION_LOG)).toBe(1)
         expect(countLogCalls(logSpy, PURCHASED_LOG)).toBe(1)
+        expect(logSpy).toHaveBeenCalledWith(
+            NOTIFICATION_LOG,
+            expect.objectContaining({ dedupeKey: 'purchase-1', purchaseRecordId: 'purchase-1' })
+        )
+        expect(logSpy).toHaveBeenCalledWith(
+            PURCHASED_LOG,
+            expect.objectContaining({ dedupeKey: 'purchase-1', purchaseRecordId: 'purchase-1' })
+        )
     })
 
     it('알림 구독은 큐 그룹에 참여해 같은 그룹의 다른 멤버가 있어도 전체에서 한 번만 처리한다', async () => {
@@ -59,7 +67,11 @@ describe('PurchaseEvents', () => {
             queue: 'purchase-notification'
         })
 
-        await events.emitTicketPurchased({ userId: 'user-1', ticketIds: ['t1'] })
+        await events.emitTicketPurchased({
+            purchaseRecordId: 'purchase-1',
+            userId: 'user-1',
+            ticketIds: ['t1']
+        })
 
         // 브로드캐스트 구독자 수신은 메시지가 서버를 왕복했다는 신호다.
         await waitFor(

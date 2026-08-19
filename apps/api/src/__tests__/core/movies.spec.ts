@@ -9,6 +9,7 @@ import {
     Errors,
     testAssets,
     uploadAndFinalizeAsset,
+    uploadAndFinalizeMovieAsset,
     type AppTestContext
 } from '../helpers'
 
@@ -154,8 +155,11 @@ describe('MoviesService', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
-                const asset = await uploadAndFinalizeAsset(fix, testAssets.image)
-                movie = await createMovie(fix, { assetIds: [asset.id] })
+                const createdMovie = await createMovie(fix)
+                await uploadAndFinalizeMovieAsset(fix, createdMovie.id)
+                const { MoviesService } = await import('core')
+                const moviesService = fix.module.get(MoviesService)
+                movie = ensure((await moviesService.getMany([createdMovie.id]))[0])
             })
 
             it('204를 반환한다', async () => {

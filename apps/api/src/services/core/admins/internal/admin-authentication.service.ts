@@ -1,6 +1,7 @@
 import { InjectJwtAuth, JwtAuthService } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { compare, hash, hashSync } from 'bcrypt'
+import { validate } from 'class-validator'
 import { AdminsRepository } from '../admins.repository'
 import { AdminAuthPayload, AdminCredentialsDto } from '../dtos'
 
@@ -27,7 +28,9 @@ export class AdminAuthenticationService {
     }
 
     async generateAuthTokens(payload: AdminAuthPayload) {
-        return this.jwtAuthService.generateAuthTokens(payload)
+        return this.jwtAuthService.generateAuthTokens(payload, undefined, (candidate) =>
+            this.isAuthPayloadActive(candidate)
+        )
     }
 
     async hash(rawPassword: string) {
@@ -35,7 +38,9 @@ export class AdminAuthenticationService {
     }
 
     async refreshAuthTokens(refreshToken: string) {
-        return this.jwtAuthService.refreshAuthTokens(refreshToken)
+        return this.jwtAuthService.refreshAuthTokens(refreshToken, undefined, (payload) =>
+            this.isAuthPayloadActive(payload)
+        )
     }
 
     async revokeAllForAdmin(adminId: string): Promise<void> {
@@ -48,5 +53,13 @@ export class AdminAuthenticationService {
 
     async validate(rawPassword: string, hashedPassword: string) {
         return compare(rawPassword, hashedPassword)
+    }
+
+    async isAuthPayloadActive(payload: unknown): Promise<boolean> {
+        const candidate = Object.assign(new AdminAuthPayload(), payload)
+        const errors = await validate(candidate)
+        if (errors.length > 0) return false
+
+        return this.repository.isAuthVersionCurrent(candidate.sub, candidate.authVersion ?? 0)
     }
 }

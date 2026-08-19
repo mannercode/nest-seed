@@ -9,16 +9,11 @@ export class ApiError extends Error {
     }
 }
 
-type RequestOptions = { body?: unknown; accessToken?: string }
+type RequestOptions = { body?: unknown }
 
-async function request<T>(
-    method: string,
-    path: string,
-    { body, accessToken }: RequestOptions = {}
-): Promise<T> {
+async function request<T>(method: string, path: string, { body }: RequestOptions = {}): Promise<T> {
     const headers: Record<string, string> = {}
     if (body !== undefined) headers['Content-Type'] = 'application/json'
-    if (accessToken) headers.Authorization = `Bearer ${accessToken}`
 
     const response = await fetch(`/api${path}`, {
         method,

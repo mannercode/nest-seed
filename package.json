@@ -63,7 +63,7 @@
         "class-transformer": "0.5.1",
         "class-validator": "0.15.1",
         "concurrently": "10.0.4",
-        "eslint": "10.8.0",
+        "eslint": "9.39.5",
         "eslint-plugin-perfectionist": "5.10.0",
         "eslint-plugin-unused-imports": "4.4.1",
         "express": "5.2.1",

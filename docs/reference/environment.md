@@ -11,8 +11,8 @@
 | `.env.infra`             | Dev Container `runArgs`, `infra` compose, `deploy/compose.yml` | 개발 인프라 이미지 태그와 접속 값. MongoDB, Redis, MinIO, NATS, Temporal 서비스 이름·포트와 dev 서버 포트(`API_PORT`, `CONSOLE_PORT`, `USER_APP_PORT`)를 정의한다. |
 | `.env.api`               | Dev Container `runArgs`, `deploy/compose.yml` `env_file`       | API 런타임의 앱 설정. `NODE_ENV`(개발·테스트는 test, deploy가 production으로 덮어씀), `PROJECT_ID`, HTTP, 인증, 로그 값, `ROOT_PASSWORD`를 둔다.                   |
 | `apps/api/api-docs/.env` | `apps/api/api-docs/run.sh`                                     | curl 기반 API 문서 실행 설정. `SERVER_URL`과 업로드 fixture 값을 둔다.                                                                                             |
-| `apps/console/.env`      | Next.js console                                                | 관리 콘솔이 호출할 API 기준 URL을 둔다.                                                                                                                            |
-| `apps/user-app/.env`     | Next.js user-app                                               | 사용자 앱이 호출할 API 기준 URL을 둔다.                                                                                                                            |
+| `apps/console/.env`      | Next.js console                                                | 관리 콘솔이 호출할 API 기준 URL과 선택적인 trusted-proxy opt-in을 둔다.                                                                                            |
+| `apps/user-app/.env`     | Next.js user-app                                               | 사용자 앱이 호출할 API 기준 URL과 선택적인 trusted-proxy opt-in을 둔다.                                                                                            |
 
 `.env` 파일은 역할별로 분리한다. 인프라가 소유한 값은 `.env.infra`, API가 소유한 값은 `.env.api`에 둔다.
 
@@ -82,8 +82,8 @@ env 파일은 자기 보간이 안 되고 compose 서비스 정의와 스크립�
 | `.env.api`           | `PROJECT_ID`, `AUTH_ISSUER`, `AUTH_AUDIENCE`, `ROOT_PASSWORD`                                                                        |
 | `.env.infra`         | `MONGO_DATABASE`, `S3_BUCKET`, `TEMPORAL_NAMESPACE`                                                                                  |
 | `deploy/compose.yml` | API image 이름 (replica 수는 배포 정책 — 줄이면 api-race·test-stability의 분산 검증 전제가 깨진다. [deploy 문서](../deploy.md) 참고) |
-| `apps/console/.env`  | `API_BASE_URL`                                                                                                                       |
-| `apps/user-app/.env` | `API_BASE_URL`                                                                                                                       |
+| `apps/console/.env`  | `API_BASE_URL`, 신뢰 edge 뒤에서만 `BFF_TRUST_PROXY_HEADERS=true`                                                                    |
+| `apps/user-app/.env` | `API_BASE_URL`, 신뢰 edge 뒤에서만 `BFF_TRUST_PROXY_HEADERS=true`                                                                    |
 
 치환과 `npm run format`을 끝낸 뒤에는 devcontainer를 재생성(Rebuild Container)해, 바뀐 `.env.*` 값이 `--env-file`로 다시 주입되게 한다. 컨테이너의 `process.env`는 생성 시점에 굳으므로, 재생성하지 않으면 인프라(`infra/reset.sh`)는 옛 `TEMPORAL_NAMESPACE`로 뜨고 deploy는 새 값으로 접속해 `atoz`의 deploy 단계가 깨진다.
 

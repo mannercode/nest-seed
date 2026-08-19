@@ -79,4 +79,24 @@ describe('UserAuthenticationService', () => {
             expect(ensure(validateSpy.mock.calls[0])[1]).toBe(realHash)
         })
     })
+
+    describe('isAuthPayloadActive', () => {
+        it('authVersion이 없는 기존 토큰을 version 0으로 검증한다', async () => {
+            const repository = { isAuthVersionCurrent: jest.fn().mockResolvedValue(true) }
+            const legacyService = new UserAuthenticationService(repository as any, {} as any)
+
+            await expect(
+                legacyService.isAuthPayloadActive({ sub: 'user-id', email: 'user@mail.com' })
+            ).resolves.toBe(true)
+            expect(repository.isAuthVersionCurrent).toHaveBeenCalledWith('user-id', 0)
+        })
+
+        it('필수 claim이 없는 토큰 payload는 거부한다', async () => {
+            const repository = { isAuthVersionCurrent: jest.fn() }
+            const malformedService = new UserAuthenticationService(repository as any, {} as any)
+
+            await expect(malformedService.isAuthPayloadActive({})).resolves.toBe(false)
+            expect(repository.isAuthVersionCurrent).not.toHaveBeenCalled()
+        })
+    })
 })

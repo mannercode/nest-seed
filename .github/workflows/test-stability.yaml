@@ -29,12 +29,12 @@ jobs:
                       timeout: 240
                       run: |
                           npm run build
-                          RESET_EVERY=5 bash .github/scripts/repeat.sh 30 npm test -w apps/api -- --coverageThreshold='{}'
+                          RESET_EVERY=5 bash .github/scripts/repeat.sh 30 npm test -w apps/api -- --coverage=false --coverageThreshold='{}'
                     - leg: unit-api-2
                       timeout: 240
                       run: |
                           npm run build
-                          RESET_EVERY=5 bash .github/scripts/repeat.sh 30 npm test -w apps/api -- --coverageThreshold='{}'
+                          RESET_EVERY=5 bash .github/scripts/repeat.sh 30 npm test -w apps/api -- --coverage=false --coverageThreshold='{}'
                     - leg: bootup
                       timeout: 120
                       run: |

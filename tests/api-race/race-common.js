@@ -18,6 +18,9 @@ function readPositiveInt(name, defaultValue) {
     return n
 }
 
+const HTTP_REQUEST_TIMEOUT_MS = readPositiveInt('HTTP_REQUEST_TIMEOUT_MS', 30_000)
+const SSE_HANDSHAKE_TIMEOUT_MS = readPositiveInt('SSE_HANDSHAKE_TIMEOUT_MS', 30_000)
+
 /**
  * HTTP 요청 하나를 보내고 응답을 정규화해 돌려준다.
  *
@@ -34,57 +37,93 @@ function request(method, path, opts = {}) {
     const url = new URL(path, SERVER_URL)
     const payload = body === undefined ? undefined : JSON.stringify(body)
     const agent = new http.Agent({ keepAlive: false })
+    const requestPath = url.pathname + url.search
+    const diagnostic = `HTTP ${method.toUpperCase()} ${requestPath}`
 
     return new Promise((resolve, reject) => {
-        const req = http.request(
-            {
-                agent,
-                hostname: url.hostname,
-                port: url.port,
-                path: url.pathname + url.search,
-                method,
-                headers: {
-                    'content-type': 'application/json',
-                    ...(process.env.ADMIN_ACCESS_TOKEN
-                        ? { authorization: `Bearer ${process.env.ADMIN_ACCESS_TOKEN}` }
-                        : {}),
-                    ...(payload === undefined
-                        ? {}
-                        : { 'content-length': Buffer.byteLength(payload) }),
-                    ...(headers || {})
-                }
-            },
-            (res) => {
-                const chunks = []
-                res.on('data', (c) => chunks.push(c))
-                res.on('end', () => {
-                    const raw = Buffer.concat(chunks).toString('utf8')
-                    let parsed = null
-                    if (raw) {
-                        try {
-                            parsed = JSON.parse(raw)
-                        } catch {
-                            // JSON이 아니면 raw 문자열을 그대로 돌려준다.
-                            // 예: 일부 NGINX 에러 페이지, 빈 응답이 아닌 평문 응답.
-                            parsed = raw
-                        }
-                    }
-                    resolve({
-                        status: res.statusCode,
-                        replicaId: res.headers['x-replica-id'],
-                        body: parsed
-                    })
-                    agent.destroy()
-                })
-            }
-        )
-        req.on('error', (err) => {
-            // 정상 경로는 end 콜백에서 destroy한다. 에러 경로도 대칭으로 정리한다.
+        let req
+        let res
+        let settled = false
+        let deadline
+
+        const destroy = () => {
+            if (deadline) clearTimeout(deadline)
+            if (res && !res.destroyed) res.destroy()
+            if (req && !req.destroyed) req.destroy()
             agent.destroy()
-            reject(err)
-        })
-        if (payload !== undefined) req.write(payload)
-        req.end()
+        }
+        const fail = (error) => {
+            if (settled) return
+            settled = true
+            destroy()
+            reject(error)
+        }
+        const succeed = (value) => {
+            if (settled) return
+            settled = true
+            if (deadline) clearTimeout(deadline)
+            agent.destroy()
+            resolve(value)
+        }
+
+        // 소켓 inactivity가 아니라 요청 시작부터 응답 body 종료까지의 절대 기한이다.
+        // 상대가 조금씩 데이터를 보내며 연결만 붙들어도 이 타이머는 연장되지 않는다.
+        deadline = setTimeout(
+            () => fail(new Error(`${diagnostic} timed out after ${HTTP_REQUEST_TIMEOUT_MS}ms`)),
+            HTTP_REQUEST_TIMEOUT_MS
+        )
+
+        try {
+            req = http.request(
+                {
+                    agent,
+                    hostname: url.hostname,
+                    port: url.port,
+                    path: requestPath,
+                    method,
+                    headers: {
+                        'content-type': 'application/json',
+                        ...(process.env.ADMIN_ACCESS_TOKEN
+                            ? { authorization: `Bearer ${process.env.ADMIN_ACCESS_TOKEN}` }
+                            : {}),
+                        ...(payload === undefined
+                            ? {}
+                            : { 'content-length': Buffer.byteLength(payload) }),
+                        ...(headers || {})
+                    }
+                },
+                (incoming) => {
+                    res = incoming
+                    const chunks = []
+                    res.on('data', (c) => chunks.push(c))
+                    res.once('aborted', () => fail(new Error(`${diagnostic} response aborted`)))
+                    res.once('error', fail)
+                    res.once('end', () => {
+                        const raw = Buffer.concat(chunks).toString('utf8')
+                        let parsed = null
+                        if (raw) {
+                            try {
+                                parsed = JSON.parse(raw)
+                            } catch {
+                                // JSON이 아니면 raw 문자열을 그대로 돌려준다.
+                                // 예: 일부 NGINX 에러 페이지, 빈 응답이 아닌 평문 응답.
+                                parsed = raw
+                            }
+                        }
+                        succeed({
+                            status: res.statusCode,
+                            replicaId: res.headers['x-replica-id'],
+                            body: parsed
+                        })
+                    })
+                }
+            )
+            req.once('error', fail)
+            if (payload !== undefined) req.write(payload)
+            req.end()
+        } catch (error) {
+            fail(error)
+        }
     })
 }
 
@@ -95,7 +134,7 @@ function request(method, path, opts = {}) {
  * keepalive 주석처럼 `data:`가 없는 프레임은 건너뛴다.
  *
  * @param {object} [opts]
- * @param {string} [opts.label] 상태 코드 에러 메시지에 붙일 식별자.
+ * @param {string} [opts.label] 상태 코드·handshake 에러 진단에 붙일 식별자.
  * @param {(payload:string, err:Error)=>void} [opts.onParseError]
  *   `data:` 페이로드가 JSON이 아닐 때 호출된다. 없으면 무시한다.
  *   엄격 모드가 필요한 시나리오는 여기서 throw해 깨진 페이로드를 즉시 드러낸다.
@@ -106,71 +145,112 @@ function openEventStream(opts = {}) {
     const url = new URL('/showtime-creation/event-stream', SERVER_URL)
     const agent = new http.Agent({ keepAlive: false })
     const events = []
+    const requestPath = url.pathname + url.search
+    const diagnostic = `SSE GET ${requestPath}${label ? ` [${label}]` : ''}`
     let replicaId
     let closed = false
+    let req
+    let res
+    let handshakeSettled = false
+    let handshakeDeadline
+    let rejectConnected
+
+    const destroy = () => {
+        if (handshakeDeadline) clearTimeout(handshakeDeadline)
+        if (res && !res.destroyed) res.destroy()
+        if (req && !req.destroyed) req.destroy()
+        agent.destroy()
+    }
+    const failHandshake = (error) => {
+        if (handshakeSettled) return
+        handshakeSettled = true
+        destroy()
+        rejectConnected(error)
+    }
 
     const connected = new Promise((resolve, reject) => {
-        const req = http.request(
-            {
-                agent,
-                hostname: url.hostname,
-                port: url.port,
-                path: url.pathname,
-                method: 'GET',
-                headers: {
-                    accept: 'text/event-stream',
-                    ...(process.env.ADMIN_ACCESS_TOKEN
-                        ? { authorization: `Bearer ${process.env.ADMIN_ACCESS_TOKEN}` }
-                        : {})
-                }
-            },
-            (res) => {
-                if (res.statusCode !== 200) {
-                    reject(
-                        new Error(
-                            `event-stream${label ? ` ${label}` : ''} status ${res.statusCode}`
-                        )
+        rejectConnected = reject
+        handshakeDeadline = setTimeout(
+            () =>
+                failHandshake(
+                    new Error(
+                        `${diagnostic} handshake timed out after ${SSE_HANDSHAKE_TIMEOUT_MS}ms`
                     )
-                    return
-                }
-                replicaId = res.headers['x-replica-id']
-                res.setEncoding('utf8')
-                let buffer = ''
-                res.on('data', (chunk) => {
-                    if (closed) return
-                    buffer += chunk
-                    let idx
-                    while ((idx = buffer.indexOf('\n\n')) !== -1) {
-                        const frame = buffer.slice(0, idx)
-                        buffer = buffer.slice(idx + 2)
-                        const dataLine = frame.split('\n').find((line) => line.startsWith('data:'))
-                        if (!dataLine) continue
-                        const payload = dataLine.slice('data:'.length).trim()
-                        try {
-                            events.push(JSON.parse(payload))
-                        } catch (e) {
-                            if (onParseError) onParseError(payload, e)
-                        }
-                    }
-                })
-                res.on('error', reject)
-                resolve({ res, req })
-            }
+                ),
+            SSE_HANDSHAKE_TIMEOUT_MS
         )
-        req.on('error', reject)
-        req.end()
+
+        try {
+            req = http.request(
+                {
+                    agent,
+                    hostname: url.hostname,
+                    port: url.port,
+                    path: requestPath,
+                    method: 'GET',
+                    headers: {
+                        accept: 'text/event-stream',
+                        ...(process.env.ADMIN_ACCESS_TOKEN
+                            ? { authorization: `Bearer ${process.env.ADMIN_ACCESS_TOKEN}` }
+                            : {})
+                    }
+                },
+                (incoming) => {
+                    if (handshakeSettled) {
+                        incoming.destroy()
+                        return
+                    }
+                    res = incoming
+                    if (res.statusCode !== 200) {
+                        failHandshake(new Error(`${diagnostic} status ${res.statusCode}`))
+                        return
+                    }
+                    replicaId = res.headers['x-replica-id']
+                    res.setEncoding('utf8')
+                    let buffer = ''
+                    res.on('data', (chunk) => {
+                        if (closed) return
+                        buffer += chunk
+                        let idx
+                        while ((idx = buffer.indexOf('\n\n')) !== -1) {
+                            const frame = buffer.slice(0, idx)
+                            buffer = buffer.slice(idx + 2)
+                            const dataLine = frame
+                                .split('\n')
+                                .find((line) => line.startsWith('data:'))
+                            if (!dataLine) continue
+                            const payload = dataLine.slice('data:'.length).trim()
+                            try {
+                                events.push(JSON.parse(payload))
+                            } catch (e) {
+                                if (onParseError) onParseError(payload, e)
+                            }
+                        }
+                    })
+                    res.once('error', failHandshake)
+                    handshakeSettled = true
+                    clearTimeout(handshakeDeadline)
+                    resolve({ res, req })
+                }
+            )
+            req.once('error', failHandshake)
+            req.end()
+        } catch (error) {
+            failHandshake(error)
+        }
     })
 
     const close = async () => {
         closed = true
+        if (!handshakeSettled) {
+            failHandshake(new Error(`${diagnostic} closed before handshake completed`))
+        } else {
+            destroy()
+        }
         try {
-            const { res, req } = await connected
-            res.destroy()
-            req.destroy()
+            await connected
         } catch {
             // 연결 자체가 실패했으면 정리할 스트림이 없다.
-        } finally {
-            agent.destroy()
         }
     }
 

@@ -3,9 +3,6 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { ApiError, api } from '@/lib/api-client'
-import { saveSession } from '@/lib/session'
-
-type LoginResponse = { accessToken: string; refreshToken: string }
 
 export default function LoginPage() {
     const router = useRouter()
@@ -19,10 +16,7 @@ export default function LoginPage() {
         setError(null)
         setBusy(true)
         try {
-            const tokens = await api.post<LoginResponse>('/admins/login', {
-                body: { email, password }
-            })
-            saveSession(tokens.accessToken)
+            await api.post('/admins/login', { body: { email, password } })
             router.push('/movies/new')
         } catch (err) {
             const message = err instanceof ApiError ? err.message : '로그인 실패'

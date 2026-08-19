@@ -11,6 +11,10 @@ export async function bootstrap() {
     const app = await NestFactory.create(AppModule)
     const { http, log } = app.get(AppConfigService)
 
+    // 외부가 보낸 X-Forwarded-For는 NGINX가 실제 원격 주소를 뒤에 붙인다.
+    // 사설 프록시 홉만 신뢰하면 Express가 오른쪽부터 첫 외부 주소를 클라이언트 IP로 고른다.
+    app.getHttpAdapter().getInstance().set('trust proxy', ['loopback', 'linklocal', 'uniquelocal'])
+
     await PathUtil.mkdir(log.directory)
 
     if (!(await PathUtil.isWritable(log.directory))) {

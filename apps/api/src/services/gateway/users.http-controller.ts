@@ -5,6 +5,7 @@ import {
     Get,
     HttpCode,
     HttpStatus,
+    Ip,
     Param,
     Patch,
     Post,
@@ -23,6 +24,7 @@ import {
     UsersService
 } from 'core'
 import { AdminAuthGuard, AuthErrors, UserAuthGuard } from './guards'
+import { LoginRateLimiterService } from './login-rate-limiter.service'
 import { UserAuthRequest } from './types'
 
 // Nest는 클래스와 메서드 가드를 모두 요구하므로 역할별 가드는 메서드에만 둔다.
@@ -30,7 +32,8 @@ import { UserAuthRequest } from './types'
 export class UsersHttpController {
     constructor(
         private readonly usersService: UsersService,
-        private readonly purchaseRecordsService: PurchaseRecordsService
+        private readonly purchaseRecordsService: PurchaseRecordsService,
+        private readonly loginRateLimiter: LoginRateLimiterService
     ) {}
 
     @Post()
@@ -55,12 +58,17 @@ export class UsersHttpController {
 
     @HttpCode(HttpStatus.OK)
     @Post('login')
-    async login(@Body() body: UserCredentialsDto) {
-        const user = await this.usersService.findUserByCredentials(body)
-        if (!user) {
+    async login(@Body() body: UserCredentialsDto, @Ip() ip: string) {
+        await this.loginRateLimiter.assertAllowed('user', body.email, ip)
+
+        const result = await this.usersService.login(body)
+        if (!result) {
+            await this.loginRateLimiter.recordFailure('user', body.email, ip)
             throw new UnauthorizedException(AuthErrors.Unauthorized())
         }
-        return this.usersService.generateAuthTokens({ sub: user.id, email: user.email })
+
+        await this.loginRateLimiter.resetAccount('user', body.email)
+        return result.tokens
     }
 
     @HttpCode(HttpStatus.OK)

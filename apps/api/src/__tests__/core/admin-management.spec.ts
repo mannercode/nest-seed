@@ -1,4 +1,5 @@
 import type { AdminDto } from 'core'
+import { nullObjectId } from '@mannercode/testing'
 import { createAdmin, Errors, loginAdmin, type AppTestContext } from '../helpers'
 
 describe('AdminManagement', () => {
@@ -91,6 +92,13 @@ describe('AdminManagement', () => {
                 .delete(`/admins/${created.id}`)
                 .headers({ Authorization: wrongRootBasic })
                 .unauthorized(Errors.Auth.Unauthorized())
+        })
+
+        it('존재하지 않는 admin이면 404를 반환한다', async () => {
+            await fix.httpClient
+                .delete(`/admins/${nullObjectId}`)
+                .headers({ Authorization: rootBasic })
+                .notFound(Errors.Mongoose.DocumentNotFound(nullObjectId))
         })
 
         it('제거된 admin의 이메일로 다시 admin을 만들 수 있다', async () => {
@@ -211,6 +219,19 @@ describe('AdminManagement', () => {
                     .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
             })
 
+            it('password를 바꾸면 기존 액세스 토큰을 즉시 거부한다', async () => {
+                await fix.httpClient
+                    .patch('/admins/me')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body({ password: 'newPassword' })
+                    .ok()
+
+                await fix.httpClient
+                    .get('/admins/me')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .unauthorized(Errors.Auth.Unauthorized())
+            })
+
             it('email을 변경하면 변경된 email을 반환한다', async () => {
                 await fix.httpClient
                     .patch('/admins/me')
@@ -229,7 +250,7 @@ describe('AdminManagement', () => {
                     .conflict()
             })
 
-            it('자기 도큐먼트가 삭제되어 없으면 404를 반환한다', async () => {
+            it('자기 도큐먼트가 삭제되면 기존 액세스 토큰으로 쓰기도 401을 반환한다', async () => {
                 await fix.httpClient
                     .delete(`/admins/${admin.id}`)
                     .headers({ Authorization: rootBasic })
@@ -239,7 +260,7 @@ describe('AdminManagement', () => {
                     .patch('/admins/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body({ name: 'x' })
-                    .notFound()
+                    .unauthorized(Errors.Auth.Unauthorized())
             })
         })
 
@@ -257,10 +278,19 @@ describe('AdminManagement', () => {
 
             await expect(service.update(created.id, { name: 'x' })).rejects.toThrow('boom')
         })
+
+        it('존재하지 않는 admin을 수정하면 404를 던진다', async () => {
+            const { AdminsService } = await import('core')
+            const service = fix.module.get(AdminsService)
+
+            await expect(service.update(nullObjectId, { name: 'x' })).rejects.toThrow(
+                Errors.Mongoose.DocumentNotFound(nullObjectId).message
+            )
+        })
     })
 
     describe('GET /admins/me', () => {
-        it('자기 도큐먼트가 삭제되어 없으면 404를 반환한다', async () => {
+        it('자기 도큐먼트가 삭제되면 기존 액세스 토큰을 401로 거부한다', async () => {
             const created = await createAdmin(fix, adminCredentials)
             const { accessToken } = await loginAdmin(fix, adminCredentials)
 
@@ -272,7 +302,7 @@ describe('AdminManagement', () => {
             await fix.httpClient
                 .get('/admins/me')
                 .headers({ Authorization: `Bearer ${accessToken}` })
-                .notFound()
+                .unauthorized(Errors.Auth.Unauthorized())
         })
     })
 })

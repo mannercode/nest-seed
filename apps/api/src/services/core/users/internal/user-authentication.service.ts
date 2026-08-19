@@ -1,6 +1,7 @@
 import { JwtAuthService, InjectJwtAuth } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { compare, hash, hashSync } from 'bcrypt'
+import { validate } from 'class-validator'
 import { UserAuthPayload, UserCredentialsDto } from '../dtos'
 import { UsersRepository } from '../users.repository'
 
@@ -27,7 +28,9 @@ export class UserAuthenticationService {
     }
 
     async generateAuthTokens(payload: UserAuthPayload) {
-        return this.jwtAuthService.generateAuthTokens(payload)
+        return this.jwtAuthService.generateAuthTokens(payload, undefined, (candidate) =>
+            this.isAuthPayloadActive(candidate)
+        )
     }
 
     async hash(rawPassword: string) {
@@ -35,7 +38,9 @@ export class UserAuthenticationService {
     }
 
     async refreshAuthTokens(refreshToken: string) {
-        return this.jwtAuthService.refreshAuthTokens(refreshToken)
+        return this.jwtAuthService.refreshAuthTokens(refreshToken, undefined, (payload) =>
+            this.isAuthPayloadActive(payload)
+        )
     }
 
     async revokeAllForUser(userId: string): Promise<void> {
@@ -48,5 +53,13 @@ export class UserAuthenticationService {
 
     async validate(rawPassword: string, hashedPassword: string) {
         return compare(rawPassword, hashedPassword)
+    }
+
+    async isAuthPayloadActive(payload: unknown): Promise<boolean> {
+        const candidate = Object.assign(new UserAuthPayload(), payload)
+        const errors = await validate(candidate)
+        if (errors.length > 0) return false
+
+        return this.repository.isAuthVersionCurrent(candidate.sub, candidate.authVersion ?? 0)
     }
 }
