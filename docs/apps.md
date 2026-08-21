@@ -53,7 +53,7 @@ SoLA는 여기서 한 걸음 더 나아간다. **같은 계층에 있는 모듈�
 │  UserHomeView                           │
 ├─────────────────────────────────────────┤
 │  Application Services                   │  여러 도메인 묶는 유스케이스
-│  ShowtimeCreation, Booking, Purchase    │  (사가/보상 포함)
+│  ShowtimeCreation, Booking, Purchase    │  (워크플로·트랜잭션·재조정)
 ├─────────────────────────────────────────┤
 │  Core Services                          │  도메인 로직, 자기 DB 소유
 │  Movies, Theaters, Showtimes, Tickets   │
@@ -142,19 +142,22 @@ SoLA는 원래 마이크로서비스를 염두에 둔 원칙이다. 마이크로
 
 ## 분산 협력 — MSA 준비형 모놀리스
 
-API는 배포할 때 **기본 4개** 컨테이너로 실행하고, NATS와 Temporal 같은 분산 인프라도 함께 사용한다. 컨테이너가 여러 개라면 한 컨테이너 안에서만 생각해서는 안 된다. 예를 들어 다음 상황을 처리해야 한다.
+검증용 deploy 스택은 API를 **기본 4개** 컨테이너로 실행하고, NATS와 Temporal 같은 분산 인프라도 함께 사용한다. 컨테이너가 여러 개라면 한 컨테이너 안에서만 생각해서는 안 된다. 예를 들어 다음 상황을 처리해야 한다.
 
 - 여러 컨테이너가 같은 자원을 동시에 수정하려는 상황
 - 한 컨테이너에 붙은 클라이언트에게 다른 컨테이너에서 생긴 이벤트를 보내야 하는 상황
-- 여러 단계를 거치는 작업이 중간에 실패했을 때 앞 단계 작업을 되돌려 보상해야 하는 상황 — 이런 처리 패턴을 사가(saga)라고 한다
+- 워커가 종료되어도 오래 걸리는 작업을 재시도·완료해야 하는 상황
+- DB·Redis·외부 결제처럼 한 트랜잭션으로 묶을 수 없는 단계가 중간에 멈춘 상황
 
 이 시드는 이런 문제를 아래 도구로 푼다.
 
-| 상황                               | 도구                         | 동작 방식                         |
-| ---------------------------------- | ---------------------------- | --------------------------------- |
-| 같은 키를 동시에 처리하면 안 될 때 | Redis 분산 락                | 건너뛰거나 순서대로 처리          |
-| 다른 컨테이너의 클라이언트로 알림  | NATS pub/sub                 | 모두에게 보내거나 그룹 안 한 명만 |
-| 중간 실패 시 보상해야 하는 작업    | Temporal 워크플로 + 액티비티 | 저장·재시도·보상 처리             |
+| 상황                                       | 도구                                  | 동작 방식                                               |
+| ------------------------------------------ | ------------------------------------- | ------------------------------------------------------- |
+| 중복 실행을 줄이거나 같은 키를 직렬화할 때 | Redis 분산 락                         | 건너뛰거나 기다림. 핵심 정합성은 DB CAS·트랜잭션이 보장 |
+| 다른 컨테이너의 클라이언트로 알림          | NATS pub/sub                          | 모두에게 보내거나 그룹 안 한 명만                       |
+| 장기 비동기 작업의 실행 기록·재시도        | Temporal 워크플로 + Activity          | 결정적 오케스트레이션, timeout, 멱등 Activity 재시도    |
+| 한 시스템의 묶음 쓰기                      | MongoDB 트랜잭션·CAS                  | 상영 생성과 티켓 판매를 원자적으로 커밋·롤백            |
+| 여러 시스템에 걸친 외부 효과·보상          | durable 상태 머신·lease 재조정·outbox | 구매를 완료 또는 취소로 수렴시키고 완료 이벤트를 재발행 |
 
 각 도구를 고른 이유와 검토한 대안은 [설계 결정](reference/decisions.md)에 있다. 여기서는 도구를 어디에 어떻게 쓰는지에 집중한다.
 
@@ -164,12 +167,14 @@ API는 배포할 때 **기본 4개** 컨테이너로 실행하고, NATS와 Tempo
 
 현재 사용 위치는 다음과 같다.
 
-| 위치                                                                                                                        | 유형               | 목적                                                                                 |
-| --------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------ |
-| [AssetsService.cleanupExpiredUploads](../apps/api/src/services/infrastructure/assets/assets.service.ts)                     | `withLock`         | 4개 컨테이너의 cron 중 한 번만 실행                                                  |
-| [ShowtimeCreationActivities.validateAndCreate](../apps/api/src/services/application/showtime-creation/worker/activities.ts) | `withLockBlocking` | 겹치는 시간대 사가의 검증 후 삽입 경합 차단                                          |
-| [ShowtimeCreationActivities.compensate](../apps/api/src/services/application/showtime-creation/worker/activities.ts)        | `withLockBlocking` | 같은 락 키로 보상과 진행 중 검증·삽입을 직렬화                                       |
-| [PurchaseService.processPurchase](../apps/api/src/services/application/purchase/purchase.service.ts)                        | `withLockBlocking` | 동시 결제 직렬화로 불필요한 결제·보상 축소(이중 판매 방지는 티켓의 원자 전이가 보장) |
+| 위치                                                                                                                        | 유형               | 목적                                                                                      |
+| --------------------------------------------------------------------------------------------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
+| [AssetsService.cleanupExpiredUploads](../apps/api/src/services/infrastructure/assets/assets.service.ts)                     | `withLock`         | 4개 컨테이너의 cron 중 한 번만 실행                                                       |
+| [PurchaseService.processPurchase](../apps/api/src/services/application/purchase/purchase.service.ts)                        | `withLockBlocking` | 동일한 티켓 묶음의 결제를 직렬화해 불필요한 결제·보상을 줄임(이중 판매는 티켓 CAS가 방지) |
+| [LegacyShowtimeCreationActivities](../apps/api/src/services/application/showtime-creation/worker/legacy-activities.ts)      | `withLockBlocking` | 배포 전부터 실행 중인 v1 Temporal history의 검증·삽입·보상을 동일 키로 직렬화             |
+| [ShowtimeCreationActivities.validateAndCreate](../apps/api/src/services/application/showtime-creation/worker/activities.ts) | `withLockBlocking` | v1 worker가 남은 롤링 마이그레이션 기간에만 v1과 v2를 교차 직렬화하는 호환 fence          |
+
+상영 생성 v2의 정합성은 이 호환 락에 의존하지 않는다. 신규 v2 작업 끼리의 경합은 MongoDB 트랜잭션 안에서 극장별 스케줄 guard를 먼저 CAS 갱신해 WriteConflict로 직렬화한다. v1 queue와 worker가 완전히 drain되면 상영 생성 경로의 Redis 락은 별도 후속 릴리스에서 제거할 수 있는 마이그레이션 장치다.
 
 ### 컨테이너 사이 메시지 — `NatsPubSubService`
 
@@ -178,15 +183,41 @@ API는 배포할 때 **기본 4개** 컨테이너로 실행하고, NATS와 Tempo
 현재 두 경로가 이 서비스를 탄다.
 
 - **showtime-creation 사가의 상태 브로드캐스트** — 사가가 상태를 NATS에 발행하면 모든 컨테이너의 구독 핸들러가 그 이벤트를 받는다. 각 핸들러는 이벤트를 로컬 RxJS Subject로 넘기고, SSE 컨트롤러는 자기 컨테이너에 붙은 클라이언트에게 흘려보낸다.
-- **purchase 이벤트** — 브로드캐스트 구독은 [PurchaseEventLoggerService](../apps/api/src/services/application/purchase/internal/purchase-event-logger.service.ts), 큐 그룹 구독은 [PurchaseNotificationService](../apps/api/src/services/application/purchase/internal/purchase-notification.service.ts)가 예시다.
+- **purchase 이벤트** — 완료된 구매 기록의 `purchaseEventStatus=pending`이 durable outbox이다. 복제본 중 publication lease를 CAS로 획득한 하나가 NATS `publish()`와 `flush()`를 실행하고, 두 호출이 성공하면 MongoDB 기록을 `published`로 바꾼다. NATS `flush()`는 서버가 이전 명령을 처리했다는 신호일 뿐 소비자 처리·durable ack가 아니다. 브로드캐스트 구독은 [PurchaseEventLoggerService](../apps/api/src/services/application/purchase/internal/purchase-event-logger.service.ts), 큐 그룹 구독은 [PurchaseNotificationService](../apps/api/src/services/application/purchase/internal/purchase-notification.service.ts)가 예시다.
+
+Core NATS publish/flush와 MongoDB의 `published` 갱신은 한 트랜잭션으로 묶을 수 없다. publish/flush는 성공했지만 DB 갱신이 실패하면 lease 만료 후 같은 이벤트가 다시 나갈 수 있으므로 발행은 **at-least-once**다. 반대로 Core NATS 자체는 메시지를 저장하는 durable broker가 아니므로 소비자 전달을 보장하지 않는다. 실제 알림·메일·외부 제공자 호출을 구독자에 추가할 때는 안정적인 `purchaseRecordId`를 durable inbox의 unique key 또는 provider idempotency key로 써야 한다. 현재 두 구독자는 `dedupeKey`를 로그로 보여 주는 예시이며 실제 알림을 보내지 않는다.
+
+### 구매 상태 머신과 재조정
+
+외부 결제, Redis 티켓 claim, MongoDB 티켓·구매 기록을 하나의 분산 트랜잭션으로 묶을 수는 없다. 그래서 [PurchaseService](../apps/api/src/services/application/purchase/purchase.service.ts)는 외부 효과보다 먼저 durable 구매 기록을 남기고 다음 상태로 전이한다.
+
+```text
+pending ── completion lease 획득 ──> completing ── Mongo transaction ──> completed
+   │                                  (티켓 Sold + 구매 완료 + 결제 resolution)
+   └── 실패·stale lease ──> compensating ── 티켓/claim 해제+결제 취소 ──> cancelled
+```
+
+- `pending`은 외부 결제나 티켓 전이보다 먼저 저장되므로, 프로세스가 어느 줄에서 종료되어도 재시도 기준점이 남는다.
+- 완료는 `completionId`와 만료 시각이 있는 lease를 CAS로 획득한 복제본만 시도한다. 티켓 `Available→Sold`, 구매 `completing→completed`, 결제 resolution marker는 같은 MongoDB 트랜잭션으로 커밋된다.
+- 예외와 주기 재조정은 stale `pending`, 만료된 `completing`, 만료된 `compensating`을 찾는다. `reconciliationId` lease를 CAS로 얻은 하나만 멱등으로 티켓·Redis claim을 해제하고 결제를 취소한 뒤 `cancelled`로 바꾼다. 재조정 중 종료되면 lease 만료 후 다른 복제본이 이어받는다.
+- 구매 완료 트랜잭션과 재조정 lease 회수가 경합하면 MongoDB write conflict와 owner ID CAS로 승자 하나만 `completed` 또는 `cancelled`로 수렴한다.
+- 완료 후에는 위의 durable outbox가 별도로 이벤트를 발행한다. 이벤트 발행 실패는 이미 완료된 구매를 되돌리지 않고 재시도한다.
 
 ### Saga 오케스트레이션 — Temporal
 
 오래 걸리거나 여러 단계를 거치는 작업은 Temporal 워크플로로 작성한다. 워크플로 함수는 결정적으로(같은 입력이면 항상 같은 실행 경로를 타도록) 작성하고, DB 쓰기나 외부 API 호출 같은 부수효과는 액티비티로 분리한다. Temporal을 고른 이유와 결정성 제약의 상세는 [설계 결정 §3](reference/decisions.md#3-saga-오케스트레이션-temporal-워크플로)에 있다.
 
-현재 [showtimeCreationWorkflow](../apps/api/src/services/application/showtime-creation/worker/workflow.ts) 워크플로가 _processing emit → validate/create → result emit_ 흐름을 담당한다. `waiting` 이벤트는 워크플로 시작에 성공한 뒤에 오케스트레이터([ShowtimeCreationOrchestratorService](../apps/api/src/services/application/showtime-creation/internal/showtime-creation-orchestrator.service.ts))가 발행한다.
+신규 요청은 [showtimeCreationWorkflowV2](../apps/api/src/services/application/showtime-creation/worker/workflow-v2.ts)와 v2 전용 task queue로 들어간다. 워크플로는 _processing emit → validate/create → result emit_을 조율하고, `waiting` 이벤트는 워크플로 시작에 성공한 뒤에 오케스트레이터([ShowtimeCreationOrchestratorService](../apps/api/src/services/application/showtime-creation/internal/showtime-creation-orchestrator.service.ts))가 발행한다.
 
-중간에 예외가 나면 catch 블록에서 **보상을 먼저 끝내고 나서** `error` 이벤트를 발행한다. 클라이언트에게 `error`는 "정리까지 끝났다"는 신호이므로 이 순서를 바꾸면 안 된다. 보상은 진행 중인 검증·삽입과 같은 분산 락으로 직렬화된다(위 표의 compensate 행).
+v2의 `validateAndCreate`는 [ShowtimeCreationPersistenceService](../apps/api/src/services/application/showtime-creation/internal/showtime-creation-persistence.service.ts)에서 다음 쓰기를 MongoDB 트랜잭션 하나로 묶는다.
+
+1. `sagaId`로 완료된 operation을 찾아 이미 있으면 저장된 결과를 반환한다. 같은 ID에 다른 입력이 오면 거부한다.
+2. 대상 극장의 스케줄 guard를 검증 조회보다 먼저 CAS 갱신한다. 동시 트랜잭션은 WriteConflict를 내고 MongoDB 드라이버가 재시도하므로, 각자 예전 snapshot을 보고 둘 다 검증을 통과하는 일이 없다.
+3. 시간대를 검증하고 상영 시간·티켓을 생성한 뒤 operation 결과를 저장한다.
+
+일시적 워커·네트워크·DB 오류는 Temporal Activity가 최대 네 번 시도한다. 실패한 트랜잭션은 부분 데이터를 남기지 않고, 커밋 후 완료 응답만 잃은 경우에도 다음 시도가 `sagaId` operation을 읽어 중복 생성 없이 같은 결과를 반환한다. 모든 시도가 실패해 `error`를 발행하더라도 별도 보상 삭제는 필요 없다. 해당 시도의 쓰기 전체가 롤백되기 때문이다.
+
+단, [showtimeCreationWorkflow](../apps/api/src/services/application/showtime-creation/worker/workflow.ts)과 [LegacyShowtimeCreationActivities](../apps/api/src/services/application/showtime-creation/worker/legacy-activities.ts)는 배포 전에 이미 시작한 v1 Temporal history를 replay·완료하려고 남겨 둔 **마이그레이션 호환 경로**다. v1은 기존 분산 락, 비-트랜잭션 생성, 실패 후 보상 삭제 순서를 그대로 보존한다. 워크플로 history의 명령·timeout·retry를 바꾸면 결정성이 깨지므로, v1 queue가 drain될 때까지 이 코드를 일반 v2 경로로 합치지 않는다. 배포 절차는 [deploy 문서](deploy.md#상영-생성-v1--v2-마이그레이션)를 따른다.
 
 전체 흐름을 시퀀스로 보면 다음과 같다(다이어그램은 devcontainer의 VS Code 미리보기에서 렌더된다).
 
@@ -207,16 +238,19 @@ note right of Client
   → SSE(event-stream)로 클라이언트에 전달된다
 end note
 
-Temporal -> Worker: showtimeCreationWorkflow 실행
+Temporal -> Worker: showtimeCreationWorkflowV2 실행
 Worker -> NATS: processing
-Worker -> Worker: validateAndCreate\n(분산 락 안에서 검증+삽입, 자동 재시도 없음)
+Worker -> Worker: validateAndCreate Activity\n(일시 실패 재시도)
+Worker -> mongo: transaction\noperation 멱등 조회 → 극장 guard CAS\n→ 검증 → 상영·티켓·operation 쓰기
 alt 성공
+    mongo --> Worker: commit
     Worker -> NATS: succeeded(생성 수)
 else 시간대 충돌
+    mongo --> Worker: 충돌 결과 commit(자원 생성 없음)
     Worker -> NATS: failed(충돌 상영 목록)
 else 예외
-    Worker -> Worker: compensate(sagaId 행 삭제,\n같은 분산 락으로 직렬화)
-    Worker -> NATS: error — 보상을 끝낸 뒤에만
+    mongo --> Worker: rollback(부분 쓰기 없음)
+    Worker -> NATS: error — 재시도 소진 후
 end
 @enduml
 ```
@@ -412,7 +446,7 @@ async delete(@Param('userId') userId: string) {
 
 ## 테스트
 
-이 시드의 테스트는 mock 객체를 거의 사용하지 않는다. 인덱스, 트랜잭션, 레이스 컨디션처럼 mock으로는 놓치기 쉬운 문제를 실제 환경에 가깝게 확인하기 위해서다. `apps/api` 통합 테스트는 devcontainer가 띄운 MongoDB Replica Set, Redis Cluster, MinIO, NATS, Temporal을 재사용하고, `libs/common` 테스트는 Testcontainers와 Temporal local test environment로 필요한 인프라를 직접 시작한다. 커버리지 100%를 못 채우면 `npm test`가 실패한다 — 이유와 유일한 예외(libs/testing)는 [설계 결정 §6](reference/decisions.md#6-테스트-커버리지-100-게이트).
+이 시드의 테스트는 mock 객체를 거의 사용하지 않는다. 인덱스, 트랜잭션, 레이스 컨디션처럼 mock으로는 놓치기 쉬운 문제를 실제 환경에 가깝게 확인하기 위해서다. `apps/api` 통합 테스트는 devcontainer가 띄운 MongoDB Replica Set, Redis Cluster, MinIO, NATS, Temporal을 재사용하고, `libs/common` 테스트는 Testcontainers와 Temporal local test environment로 필요한 인프라를 직접 시작한다. 커버리지를 수집하는 `apps/api`·`libs/common`·`libs/temporal-sandbox`·`tools/jest-helpers`는 100%를 못 채우면 실패한다. 하네스·BFF·shell 계약 테스트처럼 커버리지를 수집하지 않는 예외는 목적과 실행 경로를 [설계 결정 §6](reference/decisions.md#6-테스트-커버리지-100-게이트)에 명시한다.
 
 이 구조는 테스트 주도 개발과 잘 맞고, 그 이점은 모듈 경계 설계에서 나온다. 테스트가 필요한 환경(인프라·해당 모듈)을 코드로 세우므로, 한 모듈을 작업할 때 다른 앱이나 서비스를 함께 띄울 필요가 없다 — 모듈을 독립 서비스로 떼어내도 그 모듈의 작업 루프는 그대로다. 반대로 `npm run dev`로 앱을 직접 띄우는 방식은 서비스가 늘수록 기동 대상이 늘어 부담이 커진다. 단, 이 이점은 단위·단일 모듈 통합 테스트의 inner-loop에 한한다 — 여러 서비스를 가로지르는 e2e·분산 레이스 테스트는 여전히 배포 스택 전체가 필요하다([tests 문서](tests.md)).
 
@@ -546,6 +580,8 @@ npm test -w apps/api -- users.spec --coverage=false
 
 `apps/api/api-docs/*.spec`는 bash와 curl로 작성한 실행 가능한 API 문서이다. 문서를 따로 손으로 관리하지 않고, 실제 요청을 보내는 spec을 실행해 API 목록과 상세 요청/응답 로그를 만든다.
 
+이 카탈로그는 현재 HTTP 요청·응답을 `TEST`로 표현할 수 있는 엔드포인트를 담는다. 단, 연결이 즉시 종료되지 않는 SSE 라우트 `GET /showtime-creation/event-stream`은 curl 문서 목록에서 제외한다. 이 장기 연결 계약은 [showtime-creation 통합 테스트](../apps/api/src/__tests__/application/showtime-creation.spec.ts)가 상태 스트림 종결까지 검증한다. 따라서 `_output/docs/summary.md`를 SSE를 포함한 전체 라우트 인벤토리로 간주하지 않는다.
+
 spec에는 사람이 읽을 설명을 `TEST`의 첫 번째 인자로 붙인다. 그룹은 spec 파일 이름에서 자동으로 만들어진다(`movies.spec` → `movies` 그룹).
 
 ```bash
@@ -596,6 +632,8 @@ TEST "로그인 사용자가 사용자 앱 홈을 조회한다(추천 개인화)
 | `docs/summary.md`        | 최신 실행의 API 목록. 설명, method, endpoint, 기대/실제 상태, 상세 로그 링크 |
 | `docs/summary.json`      | 같은 내용을 도구가 읽기 쉬운 JSON 배열로 저장                                |
 
+`run.sh`는 상세 로그에서 `Authorization`, password, access/refresh token, presigned 응답 URL, `X-Amz-Credential`·`Signature`·`Security-Token`·`Policy`, 민감한 query/form 값을 숨긴다. non-JSON 응답 본문은 안전하게 파싱·가림할 수 없으므로 생략한다. 그래도 API 문서 fixture와 요청 본문에 실제 운영 secret·고객 데이터를 넣지 않는다. `_output/`은 진단 산출물이며 공개 문서 호스팅용이 아니다.
+
 ```bash
 bash deploy/verify.sh
 # 또는 API가 이미 떠 있다면
@@ -606,4 +644,4 @@ bash apps/api/api-docs/run.sh
 
 ## console·user-app — 최소 데모
 
-Next.js 앱 두 개는 이 시드로 모노레포를 구성할 사람을 위해 최소한으로 넣은 데모다. 콘솔은 admin 로그인과 영화·극장 등록, 극장·사용자 목록 조회를, 사용자 앱은 가입·로그인과 홈 화면(`view/user-app/home` 응답 소비)을 보여준다. 두 앱의 `/api` Route Handler는 access/refresh 토큰을 HttpOnly 쿠키에 보관하고, 만료 시 회전한 뒤 원 요청을 한 번 재시도하는 BFF다. BFF 응답은 캐시하지 않고 요청 본문을 1MiB로 제한한다. 상영 등록(202+SSE)·예매·구매 흐름은 UI가 아니라 실행 가능한 API 문서(`api-docs/showtime-creation.spec`·`booking.spec`·`purchases.spec`)와 분산 레이스 시나리오(`tests/api-race/`)가 보여준다. 프로덕션 수준의 프론트엔드 구조를 의도하지 않았다.
+Next.js 앱 두 개는 이 시드로 모노레포를 구성할 사람을 위해 최소한으로 넣은 데모다. 콘솔은 admin 로그인과 영화·극장 등록, 극장·사용자 목록 조회를, 사용자 앱은 가입·로그인과 홈 화면(`view/user-app/home` 응답 소비)을 보여준다. 두 앱의 `/api` Route Handler는 access/refresh 토큰을 HttpOnly 쿠키에 보관하고, 만료 시 회전한 뒤 원 요청을 한 번 재시도하는 BFF다. BFF 응답은 캐시하지 않고 요청 본문을 1MiB로 제한한다. 이 BFF는 catch-all proxy다. 각 앱의 역할과 맞지 않는 login/logout·외부 refresh 같은 일부 auth endpoint를 차단하지만, 최종 인가 경계는 백엔드 guard다. 상영 등록(202+SSE)·예매·구매 흐름은 UI가 아니라 실행 가능한 API 문서(`api-docs/showtime-creation.spec`·`booking.spec`·`purchases.spec`)와 분산 레이스 시나리오(`tests/api-race/`)가 보여준다. 프로덕션 수준의 프론트엔드 구조를 의도하지 않았다.

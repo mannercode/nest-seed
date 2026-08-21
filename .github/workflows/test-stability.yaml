@@ -14,12 +14,14 @@ concurrency:
     cancel-in-progress: false
 jobs:
     stability:
+        # Original repository immutable ID; do not rename this guard when adapting a fork.
+        if: ${{ github.event_name != 'schedule' || github.repository_id == '849585972' || vars.ENABLE_SCHEDULED_CI == 'true' }}
         strategy:
             fail-fast: false
             matrix:
                 include:
-                    # libs는 75회라도 ~140분이지만, apps/api는 컨텍스트 부팅 비용 때문에 회당 6분 이상 걸린다.
-                    # 60회를 한 잡에서 돌리면 350분 상한에 닿고 한 러너에 부하가 오래 누적되므로, 30회씩 두 독립 잡으로 나눠 총 반복량은 유지한다.
+                    # libs는 75회라도 ~140분이지만, apps/api는 컨텍스트 부팅 비용 때문에 회당 8~9분 걸린다.
+                    # 30회짜리 잡은 240분 상한에 닿으므로 20회씩 세 독립 잡으로 나눠 총 60회 반복량을 유지한다.
                     - leg: unit-libs
                       timeout: 180
                       run: |
@@ -29,12 +31,17 @@ jobs:
                       timeout: 240
                       run: |
                           npm run build
-                          RESET_EVERY=5 bash .github/scripts/repeat.sh 30 npm test -w apps/api -- --coverage=false --coverageThreshold='{}'
+                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 npm test -w apps/api -- --coverage=false --coverageThreshold='{}'
                     - leg: unit-api-2
                       timeout: 240
                       run: |
                           npm run build
-                          RESET_EVERY=5 bash .github/scripts/repeat.sh 30 npm test -w apps/api -- --coverage=false --coverageThreshold='{}'
+                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 npm test -w apps/api -- --coverage=false --coverageThreshold='{}'
+                    - leg: unit-api-3
+                      timeout: 240
+                      run: |
+                          npm run build
+                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 npm test -w apps/api -- --coverage=false --coverageThreshold='{}'
                     - leg: bootup
                       timeout: 120
                       run: |
@@ -79,14 +86,16 @@ jobs:
         runs-on: ubuntu-24.04-arm
         timeout-minutes: ${{ matrix.timeout }}
         steps:
-            - uses: actions/checkout@v7
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
             - name: Login to Docker Hub (host)
-              uses: docker/login-action@v4
+              uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
               with:
                   username: ${{ secrets.DOCKERHUB_USERNAME }}
                   password: ${{ secrets.DOCKERHUB_TOKEN }}
             - name: Run in devcontainer
-              uses: devcontainers/ci@v0.3
+              uses: devcontainers/ci@513af61f4de4f75d37e4438f184ba4358f0fc1ca # v0.3.1900000450
               env:
                   DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
                   DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -100,9 +109,11 @@ jobs:
                       MONGO_DIAGNOSTICS_ON_TEST_FAILURE
                   runCmd: |
                       set -Eeuo pipefail
+                      git diff --exit-code -- package-lock.json
                       echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
                       if [ "${{ matrix.prebuild_deploy }}" = "true" ]; then
                           bash deploy/prebuild-images.sh
                           export DEPLOY_IMAGES_PREBUILT=true
                       fi
                       ${{ matrix.run }}
+                      git diff --exit-code -- package-lock.json

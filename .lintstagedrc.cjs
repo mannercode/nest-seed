@@ -24,6 +24,9 @@ module.exports = {
         'npm exec --workspace tests/console-e2e -- eslint --fix',
         'prettier --write'
     ],
-    '*.{cjs,js,json,md,mjs,yml,yaml}': ['prettier --write'],
-    '*.sh': ['shellcheck --severity=warning']
+    '*.{cjs,js,mjs}': 'node tools/lint-staged-js.mjs',
+    '*.{json,md,yml,yaml}': ['prettier --write'],
+    '*.sh': 'node tools/lint-shell.mjs',
+    '.husky/*': 'node tools/lint-shell.mjs',
+    'apps/api/api-docs/*.{fixture,spec}': 'node tools/lint-shell.mjs'
 }

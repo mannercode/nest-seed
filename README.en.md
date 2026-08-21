@@ -1,5 +1,7 @@
 # nest-seed
 
+[한국어](README.md)
+
 [![Test AtoZ](https://github.com/mannercode/nest-seed/actions/workflows/test-atoz.yaml/badge.svg)](https://github.com/mannercode/nest-seed/actions/workflows/test-atoz.yaml)
 [![Test Stability](https://github.com/mannercode/nest-seed/actions/workflows/test-stability.yaml/badge.svg)](https://github.com/mannercode/nest-seed/actions/workflows/test-stability.yaml)
 
@@ -13,15 +15,15 @@ So that splitting a service off never has to start with untangling the database,
 
 The admin console and the user app are minimal demos showing how frontends sit in the monorepo.
 
-The example domain is movie ticketing. Everyone knows it, seats are a contended resource, and although the code is a monolith the default deployment runs 4 containers — so distributed problems like double selling, partial failure, and progress reporting arise naturally. Use cases such as showtime registration, booking, and purchase sit on top of models like movies, theaters, showtimes, and tickets, and every pattern in the code is named in these domain terms.
+The example domain is movie ticketing. Everyone knows it, seats are a contended resource, and although the code is a monolith the verification stack runs 4 API containers to reproduce distributed problems such as double selling, partial failure, and progress reporting. Use cases such as showtime registration, booking, and purchase sit on top of models like movies, theaters, showtimes, and tickets, and every pattern in the code is named in these domain terms.
 
 The three problems are solved like this:
 
 - **Double selling** — blocked not with a lock but with an atomic conditional transition (an update whose filter carries the state) (`core/tickets`)
-- **Partial failure** — a Temporal saga owns execution history, retries, and compensation (undoing earlier steps) (`application/showtime-creation`)
+- **Partial failure** — one MongoDB transaction commits showtimes, tickets, and the idempotency operation record together, while Temporal retries transient failures (`application/showtime-creation`)
 - **Progress reporting** — NATS pub/sub carries events all the way to SSE clients attached to other containers (`application/showtime-creation`)
 
-Whether these solutions actually work is verified by mock-free tests on real infrastructure (with a 100% coverage gate), a distributed race harness, and repeated CI runs. The full list of patterns is in the [Domain tour](#domain-tour); the reasoning behind tool choices is in [Design decisions](docs/reference/decisions.md).
+Whether these solutions actually work is verified by mock-free tests on real infrastructure (100% coverage in implementation workspaces that collect it), a distributed race harness, and repeated CI runs. The full list of patterns is in the [Domain tour](#domain-tour); the reasoning behind tool choices is in [Design decisions](docs/reference/decisions.md).
 
 ## Getting started
 
@@ -31,7 +33,7 @@ The minimum spec is 4 CPU cores, 16GB RAM, and 32GB of disk. To run the full tes
 
 First boot goes like this:
 
-1. **If you forked this as a new project**, replace `nest-seed` with your project name and `mannercode` with your organization name across the whole repository. For the cleanup steps after the rename and the other identifiers to check, follow [Environment variables §4](docs/reference/environment.md#4-포크할-때-확인할-값).
+1. **If you forked this as a new project**, do not mechanically replace names across the entire repository. Change only the package, env, and Compose identifiers listed in [Environment variables §4](docs/reference/environment.md#4-포크할-때-확인할-값). Review author-owned external URLs, contact details, and the original-repository ID sentinel deliberately rather than replacing them in bulk. Then follow [GitHub operations setup](docs/github-setup.md#6-fork-완료-확인) for rulesets, Actions secrets, security features, and scheduled-CI opt-in that forks do not inherit.
 2. Run `Reopen in Container` in VS Code. Once the container opens, `postStartCommand` runs `bash infra/reset.sh` to prepare the development infrastructure. The first boot can take a while — Dev Container image build, `npm install`, and infrastructure image downloads. If the infrastructure ever gets into a bad state, reset it anytime with `bash infra/reset.sh`.
 3. Run `npm test` to confirm the basic tests pass. To check the full regression right after forking, run `npm run atoz`.
 4. Start watch mode with `npm run dev`, then check the API is alive with `curl http://localhost:3000/health`.
@@ -55,19 +57,19 @@ Development is test-driven — a test brings up the environment it needs (infras
 
 | Command           | Purpose                                                                                                            |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `npm test`        | Unit and integration tests (100% coverage gate)                                                                    |
+| `npm test`        | Workspace unit, integration, and contract tests; 100% gate for implementation workspaces that collect coverage     |
 | `npm run lint`    | All static checks — type check, ESLint, Prettier, shellcheck, doc links                                            |
 | `npm run dev`     | To run the real apps — api (3000), console (3100), user-app (3200) + libs watch                                    |
 | `npm run dev:api` | API only                                                                                                           |
 | `npm run atoz`    | Full verification after forking / before deploying — lint, tests, API docs, e2e, and deployment from a clean slate |
 
-> `npm run clean`, which `npm run atoz` calls internally, runs `git clean -fdX` and deletes every file matched by .gitignore — including personal files you keep on the ignore list, so beware. For the remaining scripts, see [package.json](package.json).
+> `npm run clean`, which `npm run atoz` calls internally, removes only the generated paths allowlisted by `tools/clean-workspace.mjs`, such as `node_modules`, `_output`, coverage, and build output. It does not delete personal env/config files merely because they are gitignored. For the remaining scripts, see [package.json](package.json).
 
 ## Tests
 
 ```bash
 npm test -w apps/api -- users.spec --coverage=false   # run a single spec (gate off)
-npm run e2e                                           # console browser e2e (Playwright)
+npm run e2e                                           # console and user-app browser e2e (Playwright)
 bash tests/api-race/runner.sh <scenario>              # distributed races — brings up a multi-replica deployment stack
 bash tests/api-perf/runner.sh                         # performance measurement — stack boot, seeding, measurement, teardown in one go
 ```
@@ -80,11 +82,11 @@ The test system and writing rules are described in the [apps document](docs/apps
 bash deploy/verify.sh   # brings up a fresh API 4-replica + NGINX stack, verifies it, and tears it down
 ```
 
-`verify.sh` walks the whole deployment flow in one run, from preparing the deps image (the dependency-install layer) to verifying the executable API docs. The configuration files, the deployment policy (replica count, ports), and the `x-replica-id` response header are in the [deploy document](docs/deploy.md).
+`verify.sh` walks the multi-replica verification flow in one run, from preparing the deps image (the dependency-install layer) to verifying the executable API docs. `deploy/` is a **verification/reference stack**, not a production deployment with TLS, secret management, backups, and frontend deployment. The configuration, replica policy, repeated-CI image prebuild, and `x-replica-id` response header are in the [deploy document](docs/deploy.md).
 
 ## API reference
 
-There is deliberately no Swagger/OpenAPI (the reasoning is in [Design decisions](docs/reference/decisions.md)). The endpoint catalog is the **executable `apps/api/api-docs/*.spec`** files themselves. With the dev server up, run them with `bash apps/api/api-docs/run.sh`; otherwise `verify.sh` from [Deployment](#deployment) above runs them as part of its flow. Either way a browsable listing is generated under `apps/api/api-docs/_output/` — it is gitignored, so it does not exist right after cloning; run once to create it. The spec-writing conventions and the output layout are in the [apps document](docs/apps.md#실행-가능한-api-문서).
+There is deliberately no Swagger/OpenAPI (the reasoning is in [Design decisions](docs/reference/decisions.md)). The request/response endpoint catalog is the **executable `apps/api/api-docs/*.spec`** files themselves. With the dev server up, run them with `bash apps/api/api-docs/run.sh`; otherwise `verify.sh` from [Deployment](#deployment) above runs them as part of its flow. Either way a browsable listing is generated under `apps/api/api-docs/_output/` — it is gitignored, so it does not exist right after cloning; run once to create it. Long-lived SSE is verified by an integration test instead. Spec conventions, redaction, the SSE exclusion, and output layout are in the [apps document](docs/apps.md#실행-가능한-api-문서).
 
 ## Project structure
 
@@ -103,7 +105,7 @@ nest-seed/
 ├── tests/
 │   ├── api-race/            ← distributed race scenarios against a deployed API stack
 │   ├── api-perf/            ← performance measurement tools against a deployed API stack
-│   └── console-e2e/         ← Playwright console e2e tests
+│   └── console-e2e/         ← Playwright console/user-app e2e + shared BFF contract tests
 │
 ├── infra/                   ← development infrastructure Compose (MongoDB, Redis, MinIO, NATS, Temporal)
 ├── deploy/                  ← Docker Compose, NGINX (app deployment entry point)
@@ -129,15 +131,15 @@ If a tool is new to you, start from the code path or document in the "Where it's
 | MinIO (S3 API)                   | Presigned file upload/download — `libs/common/s3`, `infrastructure/assets`                                                                                      |
 | NestJS                           | API server. Guards and pipes implemented directly, without Passport — `gateway/`                                                                                |
 | Next.js                          | console and user-app minimal demos                                                                                                                              |
-| @nestjs/jwt + bcrypt             | Per-role token signing, password hashing — `gateway/guards`                                                                                                     |
+| @nestjs/jwt + bcrypt             | Per-role token signing/verification — `gateway/guards`; password hashing — `core/{users,admins}/internal`                                                       |
 | class-validator                  | DTO validation — each service's `dtos/`                                                                                                                         |
 | npm workspaces                   | Monorepo layout. Shares libs as internal packages                                                                                                               |
 | Jest + Testcontainers            | Unit and integration tests. `libs/common` brings up its own infrastructure — [apps document](docs/apps.md#테스트)                                               |
-| Playwright                       | Console browser e2e — `tests/console-e2e`                                                                                                                       |
+| Playwright                       | Console/user-app browser e2e and shared BFF contracts — `tests/console-e2e`                                                                                     |
 | k6                               | Performance measurement harness — `tests/api-perf`                                                                                                              |
 | Docker Compose + NGINX           | Development infrastructure (`infra/`) and multi-container deployment (`deploy/`)                                                                                |
 | GitHub Actions                   | atoz regression and repeated stability verification — `.github/workflows`                                                                                       |
-| cloudflared (`npx tunnel`)       | Exposes the three dev servers on temporary public https URLs (OAuth callbacks, webhooks) — `tools/dev-tools`                                                    |
+| cloudflared (`npx tunnel`)       | Always refuses direct API; app BFFs proxy most API routes except selected auth endpoints, so exposure requires both opt-in flags in a disposable environment    |
 | ESLint·Prettier·husky·commitlint | Layer-dependency enforcement (eslint-plugin-boundaries) — [apps document](docs/apps.md#sola-5계층); commit hooks — [Conventions](docs/reference/conventions.md) |
 
 ## Domain tour
@@ -158,8 +160,8 @@ Each service is built to show one distinct pattern. For a first pass, this order
 | `core/ticket-holding`                     | Redis Lua-script seat holds — keys grouped into one hash slot so Lua can handle multiple keys atomically |
 | `core/purchase-records` · `watch-records` | User-record domains. watch-records feeds the recommendations                                             |
 | `application/booking`                     | Booking-flow queries and seat holds, request validation                                                  |
-| `application/purchase`                    | Purchase confirmation and failure compensation, two NATS subscription forms (broadcast, queue group)     |
-| `application/showtime-creation`           | Temporal saga, 202+SSE, distributed lock, compensation                                                   |
+| `application/purchase`                    | Durable state machine, lease-based reconciliation and outbox; at-least-once NATS event publication       |
+| `application/showtime-creation`           | Temporal 202+SSE, Mongo transaction, theater-guard CAS, and idempotent retry keyed by `sagaId`           |
 | `application/recommendation`              | Watch-history-based recommendations. Domain logic split into a pure module                               |
 | `view/user-app/home`                      | Screen-specific response composition — the View layer                                                    |
 | `infrastructure/assets`                   | Presigned uploads with checksum verification, a cron that cleans up expired uploads (distributed lock)   |
@@ -171,7 +173,7 @@ JWT-based, with three roles. **root** only creates and deletes admins, using Bas
 
 ## Documentation
 
-The detail behind this README lives in six folder documents and three references. **Korean is the source language for the documents and code comments** — keeping two languages in sync is a cost this repo avoids, and translations are quick to produce with AI. This file is a translation of [README.md](README.md); where the two disagree, the Korean version wins. English versions of the documents are planned once the originals settle.
+The detail behind this README lives in six folder documents, four references, and operations/contributor documents. **Korean is the source language for the detailed documents and code comments.** This file is a translation of [README.md](README.md); where the two disagree, the Korean version wins. Keeping the detailed documents in one source language avoids silent drift between two copies.
 
 **Folder documents** — what each folder is and why it is split this way. Start here:
 
@@ -193,6 +195,13 @@ The detail behind this README lives in six folder documents and three references
 - [Conventions](docs/reference/conventions.md) — commit rules, fail-fast, where values live, npm script contracts
 - [Environment variables](docs/reference/environment.md) — env-variable flow for the Dev Container, API, API docs, and console/user-app, plus the fork checklist
 - [Design decisions](docs/reference/decisions.md) — the key design decisions (distributed tooling, the View layer, and more) and the alternatives not taken
+
+**Operations and participation**:
+
+- [GitHub operations setup](docs/github-setup.md) — rulesets, Actions secrets, Dependabot, security features, and scheduled-CI opt-in for a fork
+- [Contributing guide](CONTRIBUTING.md) — development flow, RED→GREEN evidence, and the PR checklist
+- [Security policy](SECURITY.md) — supported versions and the private vulnerability-reporting path
+- [Code of Conduct](CODE_OF_CONDUCT.md) — participation standards
 
 ## License
 

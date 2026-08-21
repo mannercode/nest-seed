@@ -1,6 +1,6 @@
 # tests/ — 배포 스택 대상 테스트
 
-단위·통합 테스트는 보통 각 워크스페이스 안(`apps/api/src/__tests__`, `libs/*/src/**/__tests__`)에 살고 `npm test`로 돈다([apps 문서의 테스트 절](apps.md#테스트) 참고). tests/에 모인 것은 주로 **배포된 스택을 밖에서 검증하는** 무거운 테스트라 폴더가 따로 있다. 예외로 두 Next.js BFF 구현의 같은 보안 계약을 검증하는 pure unit test는 `console-e2e/unit`에 함께 두며, 서버나 브라우저 없이 기본 `npm test`에서 실행한다.
+단위·통합 테스트는 보통 각 워크스페이스 안(`apps/api/src/__tests__`, `libs/*/src/**/__tests__`)에 살고 `npm test`로 돈다([apps 문서의 테스트 절](apps.md#테스트) 참고). `tests/`에 모인 것은 주로 **배포된 스택을 밖에서 검증하는** 무거운 테스트라 폴더가 따로 있다. 다만 하네스 자체의 계약은 같은 워크스페이스 안에 둔다. `tests/api-race/__tests__`는 공통 HTTP/SSE client·repository 계약을 `npm test -w tests/api-race`로, `tests/console-e2e/unit`은 두 Next.js BFF의 공통 보안 계약을 `npm test -w tests/console-e2e`로 실행한다. 둘 다 배포 스택이나 브라우저를 시작하지 않고 기본 `npm test`에 포함된다.
 
 ## api-race — 분산 레이스 시나리오
 
@@ -13,7 +13,7 @@
 | `sse-fanout-race.js`       | SSE 이벤트가 모든 API 컨테이너의 클라이언트에게 빠짐없이 전달되는가                                      |
 | `user-signup-race.js`      | 같은 이메일 동시 가입 → unique index로 1개만 201, 나머지는 409                                           |
 | `ticket-holding-race.js`   | 같은 좌석 동시 선점 → Redis Lua script로 1개만 204, 나머지는 409                                         |
-| `showtime-overlap-race.js` | 겹치는 시간대 상영 등록 사가 동시 요청 → 분산 락으로 1개만 성공, 나머지는 실패                           |
+| `showtime-overlap-race.js` | 겹치는 시간대 상영 등록 v2 동시 요청 → Mongo 트랜잭션·극장 guard CAS로 1개만 성공                        |
 | `purchase-double-spend.js` | 같은 티켓 묶음 동시 구매 → 1개만 성공, 나머지는 4xx(409/400), 결제는 1건                                 |
 | `purchase-overlap-race.js` | 겹치되 다른 티켓 묶음 동시 구매(락 키가 달라 직렬화를 우회) → 원자 전이로 1개만 성공, 패자는 보상 후 4xx |
 | `replica-chaos.js`         | API 컨테이너 4개 중 1개 종료 → NGINX 우회 처리로 5xx 1% 미만 유지                                        |
@@ -68,7 +68,7 @@ SERVER_URL=http://localhost:3000 bash tests/api-perf/mixed-runner.sh # 떠 있�
 1. `statusCodes`부터 본다. `0`(연결 실패)이 섞이면 측정 자체가 무효이고, 5xx가 많으면 지연 수치는 에러 경로를 잰 것이다. 쓰기 시나리오에 401이 섞이면 `ADMIN_ACCESS_TOKEN` 누락이다.
 2. 혼합 케이스의 read/write RPS·p95를 단독 케이스(`iso-*`)와 견줘 간섭 정도를 본다.
 
-## console-e2e — 브라우저 e2e
+## console-e2e — 프런트엔드 e2e와 BFF 계약
 
 Playwright가 `apps/api`·`apps/console`·`apps/user-app`을 빌드해 띄운 뒤, 브라우저에서 관리자 로그인과 영화·극장·사용자 관리, 사용자 가입·로그인·세션 회전 흐름을 검증한다. 개발 중 이미 서버가 떠 있으면 재사용한다(`reuseExistingServer`). PR/push CI는 재시도 없이 첫 실패를 게이트하고, 정기 실행만 한 번 재시도한다. 실패 시 trace·screenshot·JUnit·HTML report는 workflow artifact로 보존한다.
 
@@ -82,6 +82,12 @@ npm run e2e:ui -w tests/console-e2e   # 로컬 디버그: 인터랙티브 실행
 
 ## CI 반복 — test-stability
 
-CI 워크플로는 둘이다 — [test-atoz.yaml](../.github/workflows/test-atoz.yaml)이 3시간마다 전체 회귀(atoz)를 한 번씩 돌려 기능 회귀를 잡고, test-stability는 같은 시나리오를 누적 반복해 흔들림(간헐 실패)을 드러낸다.
+CI 워크플로는 둘이다. [test-atoz.yaml](../.github/workflows/test-atoz.yaml)은 PR·main push·수동 실행에서 전체 회귀(atoz)를 한 번 돌려 기능 회귀를 잡고, test-stability는 같은 시나리오를 누적 반복해 흔들림(간헐 실패)을 드러낸다. 원본 저장소는 GitHub의 immutable `repository_id == 849585972`로 식별되어 test-atoz가 3시간마다, test-stability가 6시간마다 변수 없이 정기 실행된다. fork의 cron event는 repository variable `ENABLE_SCHEDULED_CI=true`를 명시해야만 job을 실행하고, 수동 실행은 이 변수와 무관하다. 저장소 이름을 재사용해도 원본 권한을 얻지 않으며, fork의 ID로 workflow sentinel을 바꾸지 않는다. 비용·secret·ruleset 준비는 [GitHub 운영 설정](github-setup.md#1-actions와-정기-실행-opt-in)을 따른다.
 
-[test-stability.yaml](../.github/workflows/test-stability.yaml)은 레그 행렬 한 잡으로 각 분산 시나리오를 50회, 단위/통합 테스트를 libs 75회·apps/api 60회, 부팅 검증을 50회 반복한다. apps/api 반복은 실행별 coverage 디렉터리 60개를 누적하지 않도록 coverage를 끄며, coverage 100% 게이트와 병렬 Jest 격리 하네스는 정기 AtoZ에서 각각 한 번 실행한다. 부팅 검증은 `infra/reset.sh`(인프라 compose 전체 재기동)의 반복이다. 레이스 코드는 한 번 통과했다고 안전하다고 보기 어렵다. 그래서 결과가 얼마나 흔들리는지 누적으로 확인한다. 반복 횟수는 GitHub Actions 작업의 6시간 상한에 맞춘 값이다 — 상한 안에서 표본을 최대로 모은다. 실패하면 Actions 로그에서 `[Run i/N]` 마커로 실패 회차를 찾는다 — 이어지는 컨테이너 로그 덤프는 `repeat.sh`가 의도적으로 남기는 진단이다.
+[test-stability.yaml](../.github/workflows/test-stability.yaml)은 행렬의 각 레그를 독립된 잡으로 실행한다. 각 분산 시나리오는 50회, libs 단위/통합 테스트는 75회, 부팅 검증은 50회를 반복한다. apps/api는 한 러너에 장시간 부하가 누적되지 않고 240분 제한 안에 끝나도록 20회씩 세 레그로 나누어 총 60회를 유지한다.
+
+apps/api 반복은 실행별 coverage 디렉터리를 누적하지 않도록 coverage를 끄고 반복 흔들림만 본다. 이것은 커버리지 게이트를 우회하는 경로가 아니다. `test-atoz`의 전체 `npm test`가 별도로 커버리지 100% 게이트를 통과해야 하고, apps/api AtoZ는 실제 setup/teardown을 켠 Jest 명령 두 개를 동시에 돌리는 격리 하네스도 검증한다.
+
+분산 레이스 레그는 반복을 시작하기 전 `deploy/prebuild-images.sh`로 deps·API·NGINX 이미지를 한 번만 준비한다. 각 회차는 `DEPLOY_IMAGES_PREBUILT=true`로 `docker compose up --no-build`를 써서 같은 이미지를 재사용한다. 이렇게 해야 반복 횟수가 이미지 레지스트리 메타데이터 장애와 빌드 시간을 반복 추출하지 않고, 같은 바이너리의 안정성을 측정한다.
+
+부팅 레그는 `infra/reset.sh`(인프라 compose 전체 재기동)를 반복한다. 레이스 코드는 한 번 통과했다고 안전하다고 보기 어렵다. 그래서 결과가 얼마나 흔들리는지 누적으로 확인한다. 반복 횟수와 timeout은 각 레그가 GitHub Actions 상한 안에서 진단 표본을 모으도록 맞춘 값이다. 실패하면 Actions 로그에서 `[Run i/N]` 마커로 실패 회차를 찾는다. 이어지는 컨테이너 로그 덤프는 `repeat.sh`가 의도적으로 남기는 진단이다.

@@ -12,13 +12,6 @@
             "type": "shell",
             "command": "bash",
             "args": ["-c", "${input:testCommand}"]
-        },
-        {
-            "label": "Claude (persistent)",
-            "type": "shell",
-            "command": "tmux new -As work claude",
-            "presentation": { "reveal": "always", "panel": "dedicated", "focus": true },
-            "problemMatcher": []
         }
     ],
     "inputs": [

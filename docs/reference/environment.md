@@ -6,15 +6,21 @@
 
 ## 1. 파일 역할
 
-| 파일                     | 읽는 곳                                                        | 역할                                                                                                                                                               |
-| ------------------------ | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `.env.infra`             | Dev Container `runArgs`, `infra` compose, `deploy/compose.yml` | 개발 인프라 이미지 태그와 접속 값. MongoDB, Redis, MinIO, NATS, Temporal 서비스 이름·포트와 dev 서버 포트(`API_PORT`, `CONSOLE_PORT`, `USER_APP_PORT`)를 정의한다. |
-| `.env.api`               | Dev Container `runArgs`, `deploy/compose.yml` `env_file`       | API 런타임의 앱 설정. `NODE_ENV`(개발·테스트는 test, deploy가 production으로 덮어씀), `PROJECT_ID`, HTTP, 인증, 로그 값, `ROOT_PASSWORD`를 둔다.                   |
-| `apps/api/api-docs/.env` | `apps/api/api-docs/run.sh`                                     | curl 기반 API 문서 실행 설정. `SERVER_URL`과 업로드 fixture 값을 둔다.                                                                                             |
-| `apps/console/.env`      | Next.js console                                                | 관리 콘솔이 호출할 API 기준 URL과 선택적인 trusted-proxy opt-in을 둔다.                                                                                            |
-| `apps/user-app/.env`     | Next.js user-app                                               | 사용자 앱이 호출할 API 기준 URL과 선택적인 trusted-proxy opt-in을 둔다.                                                                                            |
+| 파일                     | 읽는 곳                                                        | 역할                                                                                                                                                                      |
+| ------------------------ | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.env.infra`             | Dev Container `runArgs`, `infra` compose, `deploy/compose.yml` | 개발 인프라 이미지 태그·digest와 접속 값. MongoDB, Redis, MinIO, NATS, Temporal 서비스 이름·포트와 dev 서버 포트(`API_PORT`, `CONSOLE_PORT`, `USER_APP_PORT`)를 정의한다. |
+| `.env.api`               | Dev Container `runArgs`, `deploy/compose.yml` `env_file`       | API 런타임의 앱 설정. `NODE_ENV`(개발·테스트는 test, deploy가 production으로 덮어씀), `PROJECT_ID`, HTTP, 인증, 로그 값, `ROOT_PASSWORD`를 둔다.                          |
+| `apps/api/api-docs/.env` | `apps/api/api-docs/run.sh`                                     | curl 기반 API 문서 실행 설정. `SERVER_URL`과 업로드 fixture 값을 둔다.                                                                                                    |
+| `apps/console/.env`      | Next.js console                                                | 관리 콘솔이 호출할 API 기준 URL과 선택적인 trusted-proxy opt-in을 둔다.                                                                                                   |
+| `apps/user-app/.env`     | Next.js user-app                                               | 사용자 앱이 호출할 API 기준 URL과 선택적인 trusted-proxy opt-in을 둔다.                                                                                                   |
 
 `.env` 파일은 역할별로 분리한다. 인프라가 소유한 값은 `.env.infra`, API가 소유한 값은 `.env.api`에 둔다.
+
+이미지 값의 태그는 사람이 버전을 읽을 수 있게 남기고, multi-architecture manifest digest가 실제 이미지 바이트를 고정한다. 이미지를 올릴 때는 태그와 digest를 함께 검증·갱신한다. 태그만 바꾸거나, 기존 digest를 다른 태그에 그대로 남기지 않는다. MongoDB만 `@testcontainers/mongodb`가 `MONGO_IMAGE`의 태그를 semver로 읽어 `mongosh` 사용 여부를 정하므로 `MONGO_IMAGE`와 `MONGO_IMAGE_DIGEST`를 분리한다. `infra/compose.mongo.yml`은 두 값을 `tag@digest`로 결합해 실제 인프라 이미지의 불변성은 그대로 유지한다.
+
+PostgreSQL 18 공식 이미지는 실제 데이터 디렉터리를 major별 하위 경로에 두므로 Temporal DB volume은 `/var/lib/postgresql/data`가 아니라 상위 경로 `/var/lib/postgresql`에 연결한다. 이 경로는 PostgreSQL major 업그레이드 도구가 이전·새 데이터 디렉터리를 함께 다룰 수 있게 한 이미지 계약이므로 임의로 예전 경로로 되돌리지 않는다.
+
+Dependabot은 설정된 Dockerfile 디렉터리(`.devcontainer`, `deploy`)와 Compose 디렉터리(`deploy`, `infra`)의 직접 참조를 매주 minor/patch 범위로 확인한다. 변수로 간접 참조하는 `.env.infra` 이미지와 감시 대상 밖인 `apps/api/Dockerfile`의 외부 runtime `FROM`은 자동 갱신되지 않으므로, 버전 갱신 때 사람이 태그와 multi-architecture digest를 함께 확인한다.
 
 ---
 
@@ -72,19 +78,38 @@ env 파일은 자기 보간이 안 되고 compose 서비스 정의와 스크립�
 
 ## 4. 포크할 때 확인할 값
 
-새 프로젝트로 가져갈 때는 저장소 전체에서 `nest-seed`를 검색해 새 프로젝트 이름으로 모두 바꾸고, `mannercode`를 검색해 새 조직 이름과 내부 패키지 스코프로 모두 바꾼다. 조직 이름 치환은 `@mannercode/*` import의 정렬 순서와 줄바꿈을 바꾸므로, 의존성을 설치한 뒤 `npm run format`으로 한 번 정리한다 — 안 하면 정렬 위반이나 포맷 차이로 lint(`--max-warnings=0`, `prettier --check`)가 실패할 수 있다. 그다음 환경별 식별자를 확인한다.
+`nest-seed`나 `mannercode`라는 문자열을 저장소 전체에서 일괄 치환하지 않는다. 같은 문자열이어도 내부 식별자, 저자 소유 URL, 보안 연락처, 원 프로젝트의 운영 sentinel처럼 소유권과 의미가 다르다. 아래 대상만 새 프로젝트 정책에 맞춰 하나씩 바꾸고, 나머지 검색 결과는 용도를 확인한 뒤 유지하거나 수정한다.
 
-| 위치                 | 확인할 값                                                                                                                            |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| 저장소 전체 검색     | `nest-seed` → 새 프로젝트 이름                                                                                                       |
-| 저장소 전체 검색     | `mannercode` → 새 조직 이름(`@mannercode/*` 패키지 스코프 포함)                                                                      |
-| `package.json`       | `name`                                                                                                                               |
-| `.env.api`           | `PROJECT_ID`, `AUTH_ISSUER`, `AUTH_AUDIENCE`, `ROOT_PASSWORD`                                                                        |
-| `.env.infra`         | `MONGO_DATABASE`, `S3_BUCKET`, `TEMPORAL_NAMESPACE`                                                                                  |
-| `deploy/compose.yml` | API image 이름 (replica 수는 배포 정책 — 줄이면 api-race·test-stability의 분산 검증 전제가 깨진다. [deploy 문서](../deploy.md) 참고) |
-| `apps/console/.env`  | `API_BASE_URL`, 신뢰 edge 뒤에서만 `BFF_TRUST_PROXY_HEADERS=true`                                                                    |
-| `apps/user-app/.env` | `API_BASE_URL`, 신뢰 edge 뒤에서만 `BFF_TRUST_PROXY_HEADERS=true`                                                                    |
+| 대상                     | 확인할 값                                                                                                                                                                                                       |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 패키지 식별자            | 루트 `package.json`의 `name`, 내부 워크스페이스의 `@mannercode/*` 이름·의존성·import·도구 alias. 새 내부 scope로 바꾸면 `package-lock.json`도 함께 갱신한다.                                                    |
+| Dev Container 식별자     | `.devcontainer/devcontainer.json`의 `${localEnv:USER:unknown}-${localWorkspaceFolderBasename}` network·Compose project 이름                                                                                     |
+| API 런타임               | `.env.api`의 `PROJECT_ID`, `AUTH_ISSUER`, `AUTH_AUDIENCE`, `ROOT_PASSWORD`                                                                                                                                      |
+| 인프라 런타임            | `.env.infra`의 `MONGO_DATABASE`, `S3_BUCKET`, `TEMPORAL_NAMESPACE`                                                                                                                                              |
+| 배포 이미지              | `deploy/compose.yml`의 `nest-seed-api`와 deps 이미지 이름. replica 수는 배포 검증 정책이므로 줄이면 api-race·test-stability의 분산 전제가 깨진다([deploy 문서](../deploy.md) 참고).                             |
+| 앱 세션·테스트 격리 이름 | 두 BFF의 cookie 접두사, Jest Mongo `appName`, API 문서 fixture 이메일처럼 프로젝트끼리 충돌하면 안 되는 내부 값                                                                                                 |
+| 프런트엔드 환경          | `apps/console/.env`·`apps/user-app/.env`의 `API_BASE_URL`; 신뢰 edge 뒤에서만 `BFF_TRUST_PROXY_HEADERS=true`                                                                                                    |
+| 저장소 링크·연락처       | README badge, 취약점 제보 URL, 행동 강령 연락처, 저자 블로그·라이선스·귀속 표시는 새 소유권과 유지할 원 저작자 정보를 구분해 의도적으로 검토한다. URL이나 `mannercode.com`·이메일을 기계적으로 치환하지 않는다. |
+| GitHub Settings          | ruleset, Actions/Dependabot 권한, `DOCKERHUB_*` secrets, 필요한 fork에만 `ENABLE_SCHEDULED_CI=true` — [GitHub 운영 설정](../github-setup.md)                                                                    |
 
-치환과 `npm run format`을 끝낸 뒤에는 devcontainer를 재생성(Rebuild Container)해, 바뀐 `.env.*` 값이 `--env-file`로 다시 주입되게 한다. 컨테이너의 `process.env`는 생성 시점에 굳으므로, 재생성하지 않으면 인프라(`infra/reset.sh`)는 옛 `TEMPORAL_NAMESPACE`로 뜨고 deploy는 새 값으로 접속해 `atoz`의 deploy 단계가 깨진다.
+정기 CI 조건의 `repository_id == '849585972'`는 원본 저장소만 변수 없이 schedule을 실행하게 하는 immutable sentinel이다. fork에서 자기 repository ID로 바꾸면 opt-in 안전장치를 우회하므로 치환하지 않는다.
+
+패키지 scope를 바꿨다면 의존성과 lockfile을 갱신한 뒤 `npm run format`으로 import 정렬과 줄바꿈을 정리한다. 끝나면 devcontainer를 재생성(Rebuild Container)해 바뀐 `.env.*` 값이 `--env-file`로 다시 주입되게 한다. 컨테이너의 `process.env`는 생성 시점에 굳으므로, 재생성하지 않으면 인프라(`infra/reset.sh`)는 옛 `TEMPORAL_NAMESPACE`로 뜨고 deploy는 새 값으로 접속해 `atoz`의 deploy 단계가 깨진다.
 
 개발용 `.env`의 인증 secret과 `ROOT_PASSWORD`는 시드 실행을 위한 값이다. 운영 secret은 저장소에 커밋하지 않고 배포 환경의 secret 관리 경로에서 주입한다.
+
+## 5. Quick Tunnel 공개 경계
+
+`npx tunnel`은 서버를 인터넷에 공개하는 명시적 작업이므로 무플래그 실행을 거부한다. console·user-app을 공개하려면 다음 두 값을 **모두** 설정해야 한다.
+
+```bash
+TUNNEL_EXPOSE_APPS=true \
+TUNNEL_ACKNOWLEDGE_PUBLIC_DEV_STACK_RISK=true \
+npx tunnel
+```
+
+이 모드는 console·user-app Next.js 서버를 공개한다. 두 BFF는 catch-all proxy이며, 각 앱의 역할과 맞지 않는 login/logout·외부 refresh 같은 일부 auth endpoint만 차단한다. 따라서 백엔드 API surface의 대부분이 결국 인터넷에 노출되고, 최종 권한 경계는 백엔드 guard다. 두 번째 값은 이 사실을 인지했고 격리된 폐기성 환경에서만 쓴다는 명시적 승인이다.
+
+direct API Quick Tunnel은 secret 값을 교체했더라도 **항상 거부**한다. tunnel 프로세스는 이미 실행 중인 API 프로세스가 어떤 secret을 쓰는지 증명할 수 없기 때문이다. `TUNNEL_EXPOSE_API=true`를 주면 opt-in이 아니라 그 위험한 요청을 명시적으로 거부하고 종료한다.
+
+운영 secret·실제 데이터를 쓰는 환경을 quick tunnel에 연결하지 않는다. 사용 후 tunnel을 종료하고 외부에 노출한 임시 자격증명은 다시 회전한다. 공유 환경에는 Quick Tunnel 대신 신원 확인·접근 제어·장기 관리 도메인을 갖춘 엣지를 사용한다.

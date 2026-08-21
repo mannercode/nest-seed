@@ -17,7 +17,9 @@ services:
             - -c
             - work_mem=16MB
         volumes:
-            - temporal_pgdata:/var/lib/postgresql/data
+            # PostgreSQL 18부터 실제 PGDATA는 major별 하위 경로에 생긴다.
+            # 공식 이미지가 업그레이드 도구와 함께 쓰도록 정한 상위 경로를 volume으로 유지한다.
+            - temporal_pgdata:/var/lib/postgresql
         healthcheck:
             test: ['CMD-SHELL', 'pg_isready -U temporal']
         deploy: { resources: { limits: { memory: 2g } } }

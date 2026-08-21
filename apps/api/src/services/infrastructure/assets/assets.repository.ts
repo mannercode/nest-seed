@@ -27,7 +27,7 @@ export class AssetsRepository extends CrudRepository<Asset> {
         const doc = await this.model.findOneAndUpdate(
             { _id: objectId(assetId), createdAt: { $gt: createdAfter } },
             { $set: { ownerEntityId: owner.entityId, ownerService: owner.service } },
-            { new: true }
+            { returnDocument: 'after' }
         )
         return doc ? doc.toJSON() : null
     }

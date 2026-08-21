@@ -1,4 +1,4 @@
-FROM node:24-slim
+FROM node:24.19.0-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03
 ENV LANG=C.UTF-8
 
 ARG REQUIRED="git curl jq ca-certificates unzip xz-utils"
@@ -13,9 +13,9 @@ RUN set -Eeu; \
     $PLANTUML \
     $SHELL_FORMATTER; \
     rm -rf /var/lib/apt/lists/*; \
-    curl -fsSL "https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar" -o /opt/plantuml.jar; \
-    npm i -g npm@11.18.0; \
-    npm i -g --allow-scripts=@anthropic-ai/claude-code @commitlint/cli @anthropic-ai/claude-code playwright@1.62.0; \
+    curl -fsSL "https://github.com/plantuml/plantuml/releases/download/v1.2026.6/plantuml.jar" -o /opt/plantuml.jar; \
+    npm i -g npm@12.0.2; \
+    npm i -g --allow-scripts=@anthropic-ai/claude-code @commitlint/cli@21.2.2 @anthropic-ai/claude-code@2.1.237 playwright@1.62.1; \
     npm cache clean --force
 
 # features/docker-outside-of-docker에 포함된 buildx는 ECR 푸시 중 TLS 버그로 죽는다.
@@ -23,18 +23,18 @@ RUN set -Eeu; \
 # 로컬은 amd64, GitHub Actions 러너는 arm64라 호스트 아키텍처를 감지해 같은 ABI의 바이너리를 받는다.
 RUN ARCH=$(dpkg --print-architecture) \
     && mkdir -p /usr/local/lib/docker/cli-plugins \
-    && curl -fsSL "https://github.com/docker/buildx/releases/download/v0.18.0/buildx-v0.18.0.linux-${ARCH}" \
+    && curl -fsSL "https://github.com/docker/buildx/releases/download/v0.36.1/buildx-v0.36.1.linux-${ARCH}" \
     -o /usr/local/lib/docker/cli-plugins/docker-buildx \
     && chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
 
-# k6: tests/api-perf 부하 테스트 러너. 공식 GitHub release에서 v1.4.1을 고정해 받는다.
+# k6: tests/api-perf 부하 테스트 러너. 공식 GitHub release에서 v2.2.0을 고정해 받는다.
 # (dl.k6.io apt 저장소도 있지만 그쪽은 stable 최신만 제공해 seed 사용자 간 버전이 어긋날 수 있다.)
 RUN ARCH=$(dpkg --print-architecture) \
-    && curl -fsSL "https://github.com/grafana/k6/releases/download/v1.4.1/k6-v1.4.1-linux-${ARCH}.tar.gz" \
+    && curl -fsSL "https://github.com/grafana/k6/releases/download/v2.2.0/k6-v2.2.0-linux-${ARCH}.tar.gz" \
     -o /tmp/k6.tar.gz \
     && tar -xzf /tmp/k6.tar.gz -C /tmp \
-    && mv "/tmp/k6-v1.4.1-linux-${ARCH}/k6" /usr/local/bin/k6 \
-    && rm -rf /tmp/k6.tar.gz "/tmp/k6-v1.4.1-linux-${ARCH}"
+    && mv "/tmp/k6-v2.2.0-linux-${ARCH}/k6" /usr/local/bin/k6 \
+    && rm -rf /tmp/k6.tar.gz "/tmp/k6-v2.2.0-linux-${ARCH}"
 
 # shellcheck·lychee: `npm run lint`의 postlint가 셸 스크립트 정적 검사와 문서 내부 링크·앵커 검사에 사용한다.
 # k6와 같은 이유로 GitHub release에서 버전을 고정해 받는다(seed 사용자 간 버전 일치).
@@ -53,7 +53,7 @@ RUN ARCH=$(dpkg --print-architecture) \
 # 계정·도메인 없이 임시 *.trycloudflare.com URL을 발급해 OAuth 콜백·웹훅 수신을 로컬에서 받게 한다.
 # k6와 같은 이유로 GitHub release에서 버전을 고정해 받는다(seed 사용자 간 버전 일치).
 RUN ARCH=$(dpkg --print-architecture) \
-    && curl -fsSL "https://github.com/cloudflare/cloudflared/releases/download/2026.6.0/cloudflared-linux-${ARCH}" \
+    && curl -fsSL "https://github.com/cloudflare/cloudflared/releases/download/2026.8.2/cloudflared-linux-${ARCH}" \
     -o /usr/local/bin/cloudflared \
     && chmod +x /usr/local/bin/cloudflared
 

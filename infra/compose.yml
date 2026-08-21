@@ -10,7 +10,7 @@ services:
     # `reset.sh`는 이 컨테이너의 종료를 보고 인프라 준비 완료 시점을 판단한 뒤, 종료된 setup 컨테이너를 정리한다.
     infra-setup:
         extends: { file: ./compose.common.yml, service: common-options }
-        image: alpine:3
+        image: alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
         depends_on:
             mongo-setup: { condition: service_completed_successfully }
             redis-setup: { condition: service_completed_successfully }
@@ -20,7 +20,7 @@ services:
         command: ['true']
 
 # devcontainer 인프라와 deploy compose가 같은 Docker 네트워크를 공유해야 API가 Mongo, Redis, NATS, Temporal에 서비스 이름으로 접근할 수 있다.
-# 네트워크 이름은 사용자명과 workspace 폴더명을 조합한 `COMPOSE_PROJECT_NAME`을 사용해 두 compose 파일이 같은 네트워크를 참조하게 한다.
+# 네트워크 이름은 Dev Container가 사용자명과 workspace 폴더명으로 만든 `COMPOSE_PROJECT_NAME`을 사용해 두 compose 파일이 같은 네트워크를 참조하게 한다.
 networks:
     default:
         name: ${COMPOSE_PROJECT_NAME}

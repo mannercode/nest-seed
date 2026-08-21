@@ -178,7 +178,7 @@ Core 서비스들 사이에는 화살표가 하나도 없다는 점을 보라 �
 
 SoLA는 원래 마이크로서비스 — 서비스가 서로 다른 프로세스로 실행되는 환경 — 를 염두에 둔 원칙이지만, 시드는 같은 경계를 **모놀리스 안에** 적용했다. 경계가 코드에 있으면 배포 형태는 나중에 바꿀 수 있기 때문이다. 계층 규칙의 전체 정의(Gateway·View를 포함한 5계층)와 강제 수단(eslint-plugin-boundaries)은 [apps 문서의 SoLA 5계층](../apps.md#sola-5계층)에 있다.
 
-## 4. 규모가 설계를 바꾼다 — 202, 사가, 동시성
+## 4. 규모가 설계를 바꾼다 — 202, 워크플로, 동시성
 
 여기까지의 설계로 "상영시간 생성"을 동기 요청 하나로 처리할 수 있을까? 최우선 요구사항의 숫자를 대입해 보자.
 
@@ -191,17 +191,19 @@ SoLA는 원래 마이크로서비스 — 서비스가 서로 다른 프로세스
 
 - 서버는 작업을 접수만 하고 **`202 Accepted` + 작업 식별자(`sagaId`)** 를 즉시 응답한다.
 - 진행 상황(waiting → processing → succeeded/failed/error)은 **SSE**(Server-Sent Events)로 흘려보낸다.
-- 여러 단계를 거치다 중간에 실패하면? 이미 만든 상영시간·티켓을 되돌려야 한다. 이렇게 **실패 시 앞 단계를 보상(compensation)하는 다단계 작업 패턴을 사가(saga)** 라고 하고, 시드는 Temporal 워크플로로 구현했다.
+- Temporal 워크플로가 비동기 실행 기록·timeout·재시도를 맡고, 상영 시간·티켓·멱등 작업 기록은 MongoDB 트랜잭션 하나로 생성한다.
 
-이 흐름 전체는 [apps 문서의 사가 시퀀스 다이어그램](../apps.md#saga-오케스트레이션--temporal)에 있다. 종결 상태 둘을 구분하자 — `failed`는 검증 충돌로 아무것도 만들지 않았을 때고, `error`는 만들다 실패해 보상이 필요했을 때다. 그래서 항상 지켜야 하는 규칙(불변식)이 하나 나온다 — **보상을 끝낸 뒤에만 `error` 이벤트를 발행한다.** 클라이언트에게 error는 "정리까지 끝났다"는 신호다.
+이 흐름 전체는 [apps 문서의 Temporal 시퀀스 다이어그램](../apps.md#saga-오케스트레이션--temporal)에 있다. 종결 상태를 구분하자. `failed`는 요청은 유효하지만 기존 상영 시간과 충돌해 자원을 만들지 않은 도메인 결과다. `error`는 재시도해도 시스템 오류를 해결하지 못한 결과다. v2에서는 실패한 트랜잭션이 상영 시간·티켓 부분 쓰기를 전부 롤백하므로, `error`를 내기 전 별도 삭제 보상을 할 필요가 없다.
 
-1장의 나머지 점선(결제)도 같은 무늬다 — 티켓 구매는 결제를 만든 뒤 티켓 전이가 실패하면 결제를 취소하는 보상을 한다([purchase.service.ts](../../apps/api/src/services/application/purchase/purchase.service.ts)).
+v1 코드에 보상 삭제가 남아 있는 것은 신규 설계가 아니다. 배포 전부터 실행 중이던 Temporal history를 끝까지 replay하려는 마이그레이션 호환 경로다. 신규 요청은 v2 queue와 `showtimeCreationWorkflowV2`로만 들어간다.
+
+1장의 나머지 점선(결제)은 트랜잭션 하나로 묶을 수 없는 외부 효과다. 티켓 구매는 외부 효과보다 `pending` 기록을 먼저 남기고, 완료 또는 보상을 lease 기반 상태 머신으로 재시도한다([apps 문서의 구매 상태 머신](../apps.md#구매-상태-머신과-재조정)).
 
 ### 동시성은 별도의 문제다
 
-흔한 오해가 있다. "큐에 넣고 순차 처리하면 동시성도 해결된다"는 것이다. 워커가 하나일 때만 맞는 말이다. 시드처럼 컨테이너를 여러 개 띄우면(기본 4개) 충돌하는 두 작업이 서로 다른 워커에서 동시에 검증을 통과할 수 있다 — 각자 검증하는 시점에는 상대가 만들 상영시간이 아직 DB에 없어, 충돌이 보이지 않기 때문이다. 그래서 경쟁 구간은 별도 장치로 직렬화한다.
+흔한 오해가 있다. "큐에 넣으면 동시성도 해결된다"는 것이다. 워커가 하나일 때만 맞는 말이다. 시드처럼 컨테이너를 여러 개 띄우면(기본 4개) 충돌하는 두 작업이 서로 다른 워커에서 동시에 예전 DB snapshot을 보고 검증을 통과할 수 있다. 그래서 읽기 검증만 믿지 않고, 충돌하는 쓰기가 하나만 성공하는 DB 원어를 둘 수 있는 조건을 만든다.
 
-- 상영시간 **검증+삽입**은 분산 락 안에서 한 사가씩 처리한다 ([activities.ts](../../apps/api/src/services/application/showtime-creation/worker/activities.ts)의 주석이 정확히 이 이유를 설명한다)
+- 상영시간 **검증+삽입**은 트랜잭션에서 대상 극장의 스케줄 guard를 먼저 CAS 갱신한다. 같은 극장을 다루는 동시 쓰기는 WriteConflict로 재시도된 뒤 최신 상태를 다시 검증한다([showtime-creation-persistence.service.ts](../../apps/api/src/services/application/showtime-creation/internal/showtime-creation-persistence.service.ts)).
 - 티켓 **이중 판매**는 락이 아니라 원자 조건부 전이로 막는다 — "Available인 것만 Sold로" 조건을 갱신 쿼리 자체에 넣는다 ([tickets.repository.ts](../../apps/api/src/services/core/tickets/tickets.repository.ts)의 `transitStatusMany`)
 
 ### 엔티티에서 배울 것 두 가지
@@ -369,16 +371,21 @@ it('기존 상영 시간과 겹치면 충돌 목록과 함께 실패 상태를 �
 
 시작 시각 세 개 중 무엇이 충돌이고 무엇이 아닌지 — 끝 시각을 포함하지 않는다는 경계 정책까지 — 테스트가 문서화한다. 이런 조건 분기(영화가 없을 때, 요청 안에서 시각이 서로 겹칠 때, 시작 분이 어긋난 겹침)가 이 파일에 케이스별로 쌓여 있다.
 
-**보상 경로(`error`).** 4장의 불변식 — 보상을 끝낸 뒤에만 `error`를 발행한다 — 은 문서 속 문장이 아니라 테스트가 지키는 계약이다.
+**트랜잭션 롤백과 재시도(`error`).** 티켓 쓰기가 상영 시간 쓰기 후 실패해도 부분 데이터가 남지 않아야 한다. 일시 실패라면 Activity 재시도가 결국 한 세트만 생성해야 한다. 이 두 계약을 통합 테스트가 고정한다.
 
 ```ts
 describe('생성 도중 티켓 생성이 실패하면', () => {
     let sagaId: string
 
     beforeEach(async () => {
-        // 첫 티켓 묶음은 실제로 적재하고, 그 적재가 끝난 뒤 다음 묶음에서 실패시킨다.
-        // 일부 티켓이 DB에 남은 상태로 보상이 돌게 해야 '티켓 삭제' 단언이 헛돌지 않는다.
-        jest.spyOn(ticketsService, 'createMany').mockImplementation(/* 본문은 실물 참고 */)
+        // 실제 transaction session으로 티켓을 insert한 뒤 예외를 던진다.
+        // Temporal이 재시도해도 모든 시도가 같이 실패하게 한다.
+        jest.spyOn(ticketsService, 'createMany').mockImplementation(
+            async (createDtos, session, signal) => {
+                await realCreateMany(createDtos, session, signal)
+                throw new Error('ticket creation failed after insert')
+            }
+        )
 
         const completionPromise = waitForCompletion(fix, 'error')
         const { body } = await fix.httpClient
@@ -391,19 +398,16 @@ describe('생성 도중 티켓 생성이 실패하면', () => {
         await completionPromise
     })
 
-    it('보상으로 생성된 상영 시간을 모두 삭제한다', async () => {
+    it('실패한 transaction의 상영 시간과 티켓을 모두 롤백한다', async () => {
         const showtimes = await showtimesService.search({ sagaIds: [sagaId] })
-        expect(showtimes).toEqual([])
-    })
-
-    it('보상으로 생성된 티켓을 모두 삭제한다', async () => {
         const tickets = await ticketsService.search({ sagaIds: [sagaId] })
+        expect(showtimes).toEqual([])
         expect(tickets).toEqual([])
     })
 })
 ```
 
-티켓 생성 실패는 현실에서 임의로 일으킬 수 없으므로, 여기서만 spy로 **실패를 주입**한다. 의존성을 가짜로 바꿔치기하는 mock과는 용도가 다르다 — 첫 묶음은 실제 DB에 적재된 뒤에 터지고, 나머지는 전부 실물로 돈다. 그리고 단언 시점을 보라. `error` 이벤트를 받은 **직후에** DB를 조회해 비어 있음을 단언하므로, 보상이 끝나기 전에 `error`가 발행되면 이 테스트가 실패한다. 불변식이 테스트로 고정되어 있다.
+티켓 생성 실패는 현실에서 임의로 일으킬 수 없으므로, 여기서만 spy로 **실패를 주입**한다. 의존성 전체를 가짜로 바꿔치기하는 mock과는 용도가 다르다. insert는 실제 MongoDB transaction session으로 수행되고, 예외가 트랜잭션 전체를 롤백하는지를 실물 DB 재조회로 단언한다. 같은 스위트의 다른 테스트는 첫 티켓 쓰기만 실패시켜 Activity가 재시도한 뒤 상영 시간과 티켓을 중복 없이 한 세트만 생성하는지도 검증한다.
 
 시드의 테스트 규칙은 여기서 나온 결론들이다 — 동작 단위로 쓴다, mock 대신 실제 인프라로 돈다, spy는 실패 주입처럼 실물로 만들 수 없는 조건에만 쓴다, 커버리지 100%를 못 채우면 실패한다. describe는 조건·it은 결과라는 문장 규칙까지 포함한 전체 규칙은 [apps 문서의 테스트](../apps.md#테스트) 절에 있다.
 
@@ -446,12 +450,12 @@ npm test -w apps/api -- theaters.spec --coverage=false   # 같은 도메인의 J
 
 ## 요약
 
-| 단계        | 산출물                       | 정의처                                                                              |
-| ----------- | ---------------------------- | ----------------------------------------------------------------------------------- |
-| 유스케이스  | 액터·유스케이스 지도         | [apps 문서](../apps.md#application-service는-조립이-필요할-때만-만든다)             |
-| API 설계    | 리소스 경로·namespace        | [REST API 설계](../apps.md#rest-api-설계)                                           |
-| 계층 배치   | Core 직행 or Application     | [SoLA 5계층](../apps.md#sola-5계층)                                                 |
-| 비동기·분산 | 202+SSE, 사가, 락, 원자 전이 | [분산 협력](../apps.md#분산-협력--msa-준비형-모놀리스)                              |
-| 구현·테스트 | spec(curl) → 스텁 → 구현     | [실행 가능한 API 문서](../apps.md#실행-가능한-api-문서)·[테스트](../apps.md#테스트) |
+| 단계        | 산출물                                | 정의처                                                                              |
+| ----------- | ------------------------------------- | ----------------------------------------------------------------------------------- |
+| 유스케이스  | 액터·유스케이스 지도                  | [apps 문서](../apps.md#application-service는-조립이-필요할-때만-만든다)             |
+| API 설계    | 리소스 경로·namespace                 | [REST API 설계](../apps.md#rest-api-설계)                                           |
+| 계층 배치   | Core 직행 or Application              | [SoLA 5계층](../apps.md#sola-5계층)                                                 |
+| 비동기·분산 | 202+SSE, Temporal, 트랜잭션·CAS·lease | [분산 협력](../apps.md#분산-협력--msa-준비형-모놀리스)                              |
+| 구현·테스트 | spec(curl) → 스텁 → 구현              | [실행 가능한 API 문서](../apps.md#실행-가능한-api-문서)·[테스트](../apps.md#테스트) |
 
 분석, 설계, 구현, 테스트는 별개의 활동이 아니라 하나의 흐름이다. 도메인 전문가와의 대화가 유스케이스가 되고, 유스케이스가 REST API가 되고, API가 테스트 코드가 되고, 테스트 코드가 구현을 이끈다. 도구 선택의 이유(왜 Temporal인지, 왜 MongoDB인지)는 [설계 결정](decisions.md)이 소유한다.
