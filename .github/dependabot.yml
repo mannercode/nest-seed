@@ -1,5 +1,6 @@
-# 의존성이 전부 정확 고정(exact pin)이라 갱신 장치가 없으면 포크한 시점부터 묵기 시작한다.
-# 주 1회 전부 한 PR로 묶어 받고, 보안 취약점 PR은 주기와 무관하게 바로 열린다.
+# registry에서 직접 설치하는 dependencies/devDependencies는 정확 고정한다.
+# peerDependencies의 호환 범위와 로컬 workspace 연결(`*`)은 예외이며, 고정 버전은 갱신 장치가 없으면 포크 시점부터 묵기 시작한다.
+# npm, GitHub Actions, Docker 이미지의 minor/patch를 주 1회 묶고 major는 수동 검토할 별도 PR로 받는다. 보안 취약점 PR은 주기와 무관하게 바로 열린다.
 # 올라온 PR은 기존 test-atoz 워크플로(pull_request 트리거)가 그대로 검증한다.
 version: 2
 updates:
@@ -8,8 +9,9 @@ updates:
       schedule:
           interval: weekly
       groups:
-          npm-all:
+          npm-minor-patch:
               patterns: ['*']
+              update-types: ['minor', 'patch']
       # dependabot은 선언된 범위와 무관하게 @types/node를 최신 메이저로 고쳐 쓴 PR을 올린다.
       # 타입의 메이저는 런타임 Node 메이저(devcontainer 이미지)와 짝이라 어긋나면 빌드가 깨진다.
       # 메이저 범프 제안을 막는다. 런타임 Node를 올릴 때 타입도 함께 올린다.
@@ -21,5 +23,31 @@ updates:
       schedule:
           interval: weekly
       groups:
-          actions-all:
+          actions-minor-patch:
               patterns: ['*']
+              update-types: ['minor', 'patch']
+    # Docker updater는 Dockerfile의 첫 FROM만 안정적으로 갱신한다. apps/api의 외부
+    # runtime 이미지는 두 번째 stage라 자동화 대상에서 제외한다. Node PR에서는 runtime을
+    # 수동으로 같은 tag+digest로 맞춰야 하며, test:config의 3개 이미지 동일성 계약이 누락을 막는다.
+    - package-ecosystem: docker
+      directories:
+          - '/.devcontainer'
+          - '/deploy'
+      schedule:
+          interval: weekly
+      groups:
+          docker-minor-patch:
+              patterns: ['*']
+              update-types: ['minor', 'patch']
+    # Compose updater는 리터럴 image 참조만 갱신한다. .env.infra의 *_IMAGE 변수는
+    # updater가 해석하지 않으므로 해당 digest는 인프라 이미지 갱신 시 수동 검증한다.
+    - package-ecosystem: docker-compose
+      directories:
+          - '/deploy'
+          - '/infra'
+      schedule:
+          interval: weekly
+      groups:
+          compose-minor-patch:
+              patterns: ['*']
+              update-types: ['minor', 'patch']

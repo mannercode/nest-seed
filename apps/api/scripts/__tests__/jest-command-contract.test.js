@@ -18,7 +18,10 @@ test('API의 일반 test는 Jest만 실행하고 atoz가 isolation harness를 �
 
     assert.doesNotMatch(scripts.test, /test:jest-isolation/)
     assert.match(scripts.test, /jest --coverage/)
-    assert.match(scripts.atoz, /^npm run lint && npm run test:jest-isolation && npm test$/)
+    assert.equal(
+        scripts.atoz,
+        'npm run lint && npm run test:api-docs-redaction && npm run test:jest-isolation && npm test'
+    )
 })
 
 test('API stability 반복은 run별 coverage 산출물을 만들지 않는다', () => {

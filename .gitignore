@@ -2,6 +2,9 @@ node_modules
 _output
 coverage
 
+# 개인 로컬 환경 변수는 커밋하지 않는다. `npm run clean`도 이 파일들은 보존한다.
+.env*.local
+
 .DS_Store
 desktop.ini
 scheduled_tasks.lock

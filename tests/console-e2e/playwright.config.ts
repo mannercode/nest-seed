@@ -49,7 +49,8 @@ export default defineConfig({
             cwd: WORKSPACE_ROOT
         },
         {
-            command: 'npm run build -w apps/user-app && npm run start -w apps/user-app',
+            command:
+                'BFF_TRUST_PROXY_HEADERS=true npm run build -w apps/user-app && BFF_TRUST_PROXY_HEADERS=true npm run start -w apps/user-app',
             url: USER_APP_BASE_URL,
             reuseExistingServer: !process.env.CI,
             timeout: 240_000,

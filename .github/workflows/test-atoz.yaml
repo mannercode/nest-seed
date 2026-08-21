@@ -16,12 +16,16 @@ concurrency:
     cancel-in-progress: true
 jobs:
     test-atoz:
+        # Original repository immutable ID; do not rename this guard when adapting a fork.
+        if: ${{ github.event_name != 'schedule' || github.repository_id == '849585972' || vars.ENABLE_SCHEDULED_CI == 'true' }}
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 60
         steps:
-            - uses: actions/checkout@v7
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
             - name: Run in devcontainer
-              uses: devcontainers/ci@v0.3
+              uses: devcontainers/ci@513af61f4de4f75d37e4438f184ba4358f0fc1ca # v0.3.1900000450
               env:
                   MONGO_DIAGNOSTICS_ON_TEST_FAILURE: 'true'
                   # PR/push는 첫 실패를 그대로 게이트하고, 정기 진단 실행만 한 번 재시도한다.
@@ -34,12 +38,17 @@ jobs:
                       PLAYWRIGHT_RETRIES
                   runCmd: |
                       set -Eeuo pipefail
+                      git diff --exit-code -- package-lock.json
                       bash .github/scripts/run-with-ci-diagnostics.sh npm run atoz
-            - name: Upload browser test diagnostics
+                      git diff --exit-code -- package-lock.json
+            - name: Upload test diagnostics
               if: ${{ always() }}
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
               with:
-                  name: playwright-${{ github.run_id }}-${{ github.run_attempt }}
-                  path: tests/console-e2e/_output/
+                  name: atoz-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+                  path: |
+                      tests/console-e2e/_output/
+                      _output/ci-diagnostics/
+                      _output/deploy-diagnostics/
                   if-no-files-found: warn
                   retention-days: 14

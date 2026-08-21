@@ -1,4 +1,5 @@
 const path = require('path')
+const js = require('@eslint/js')
 const globals = require('globals')
 const allowedDependenciesPlugin = require('eslint-plugin-allowed-dependencies').default
 const boundariesPlugin = require('eslint-plugin-boundaries')
@@ -57,6 +58,31 @@ const layerImportBlocks = layers.map((layer, index) => {
 })
 
 module.exports = [
+    {
+        // Runtime helpers, Jest wiring, and repository-local config are CommonJS Node files.
+        // Generated bundles live under _output and are deliberately outside these source globs.
+        files: ['*.js', 'scripts/**/*.js'],
+        linterOptions: { reportUnusedDisableDirectives: true },
+        languageOptions: {
+            ecmaVersion: 'latest',
+            globals: { ...baseGlobals },
+            sourceType: 'commonjs'
+        },
+        rules: {
+            ...js.configs.recommended.rules,
+            'no-unused-vars': [
+                'error',
+                {
+                    args: 'all',
+                    argsIgnorePattern: '^_',
+                    caughtErrors: 'all',
+                    caughtErrorsIgnorePattern: '^_',
+                    varsIgnorePattern: '^_'
+                }
+            ]
+        }
+    },
+    { files: ['jest.setup.js'], languageOptions: { globals: { ...baseGlobals, ...globals.jest } } },
     ...createBaseConfigs({
         tsconfigRootDir: __dirname,
         srcGlob: '{src,scripts}/**',

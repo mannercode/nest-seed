@@ -1,12 +1,20 @@
 import { sleep } from '../async'
 
 describe('sleep', () => {
+    afterEach(() => {
+        jest.useRealTimers()
+    })
+
     it('주어진 시간이 지난 뒤 완료된다', async () => {
-        const start = Date.now()
+        jest.useFakeTimers()
+        const completed = jest.fn()
+        const sleeping = sleep(10).then(completed)
 
-        await expect(sleep(10)).resolves.toBeUndefined()
+        await jest.advanceTimersByTimeAsync(9)
+        expect(completed).not.toHaveBeenCalled()
 
-        // setTimeout은 타이머 해상도 탓에 1ms 미만 이르게 깨어날 수 있어 하한을 1ms 낮춘다.
-        expect(Date.now() - start).toBeGreaterThanOrEqual(9)
+        await jest.advanceTimersByTimeAsync(1)
+        await sleeping
+        expect(completed).toHaveBeenCalledTimes(1)
     })
 })

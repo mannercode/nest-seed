@@ -57,8 +57,10 @@ const HOME_MOVIE_COUNT = 12 // 사용하는 코드 옆 상수 (view/user-app/hom
 | `test`   | 개발 루프용 빠른 회귀. devcontainer 인프라를 재사용하는 Jest                                          |
 | `lint`   | 타입 체크 + ESLint + Prettier 검사. 루트 postlint가 shellcheck·문서 링크 검사를 더한다                |
 | `format` | ESLint `--fix` + Prettier 쓰기                                                                        |
-| `e2e`    | 콘솔 브라우저 시나리오 (tests/console-e2e)                                                            |
+| `e2e`    | console·user-app 브라우저 시나리오 (tests/console-e2e)                                                |
 | `atoz`   | 클린룸 전체 회귀 — clean·인프라 리셋·`npm ci` 후 lint·build·test·e2e·배포 검증까지. `test`를 포함한다 |
-| `clean`  | (루트 전용) `git clean -fdX`로 추적되지 않는 파일 정리                                                |
+| `clean`  | (루트 전용) allowlist에 적은 `node_modules`·`_output`·coverage·build 산출물만 정리                    |
+
+`clean`은 workspace 밖의 경로와 workspace 밖으로 향하는 symlink를 거부한다. `.gitignore`에 있다는 이유만으로 개인 env·설정 파일을 지우지 않으며, 새 산출물을 추가할 때는 `tools/clean-workspace.mjs`의 allowlist와 구성 계약 테스트를 함께 갱신한다.
 
 `atoz`의 워크스페이스 구현은 "그 워크스페이스를 전부 검증한다"는 의미만 같고 단계는 각자 다르다. libs는 build→lint→test, Next 앱은 테스트가 없어 lint→build, api는 배포 검증에서 Docker가 빌드를 맡으므로 lint→test다.
