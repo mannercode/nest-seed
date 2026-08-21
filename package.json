@@ -81,7 +81,7 @@
         "rxjs": "7.8.2",
         "testcontainers": "12.1.0",
         "ts-jest": "29.4.12",
-        "typescript": "6.0.3",
+        "typescript": "7.0.2",
         "typescript-eslint": "8.67.0"
     },
     "packageManager": "npm@12.0.2",
