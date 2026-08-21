@@ -1,4 +1,4 @@
-FROM node:24.19.0-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03
+FROM node:26.7.0-slim@sha256:4ebb5ace66f15a24c14c492e01a8beeed4fddf970a856109f5126e703e5fe503
 ENV LANG=C.UTF-8
 
 ARG REQUIRED="git curl jq ca-certificates unzip xz-utils"
