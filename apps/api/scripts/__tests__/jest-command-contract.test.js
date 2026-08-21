@@ -31,9 +31,9 @@ test('API stability 반복은 run별 coverage 산출물을 만들지 않는다',
     )
     const apiRepeatCommands = workflow
         .split('\n')
-        .filter((line) => line.includes('repeat.sh 30 npm test -w apps/api'))
+        .filter((line) => line.includes('repeat.sh 20 npm test -w apps/api'))
 
-    assert.equal(apiRepeatCommands.length, 2)
+    assert.equal(apiRepeatCommands.length, 3)
     for (const command of apiRepeatCommands) {
         assert.match(command, /--coverage=false(?:\s|$)/)
     }
