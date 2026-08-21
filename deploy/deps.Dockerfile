@@ -1,6 +1,6 @@
 # lockfile과 워크스페이스 package manifest만으로 `node_modules` 베이스 이미지를 만든다.
 # `ensure-deps-image.sh`가 이 입력들의 해시를 태그로 쓰므로, 앱 이미지 빌드는 의존성이 바뀔 때만 npm install 비용을 다시 낸다.
-FROM node:24.19.0-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03
+FROM node:26.7.0-slim@sha256:4ebb5ace66f15a24c14c492e01a8beeed4fddf970a856109f5126e703e5fe503
 
 RUN npm install --global npm@12.0.2
 
