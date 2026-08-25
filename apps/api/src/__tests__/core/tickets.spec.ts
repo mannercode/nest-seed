@@ -6,15 +6,18 @@ import { buildCreateTicketDto, createTickets, Errors, type AppTestContext } from
 
 describe('TicketsService', () => {
     let fix: AppTestContext
+    let teardown: AppTestContext['teardown'] | undefined
     let ticketsService: TicketsService
 
     beforeEach(async () => {
+        teardown = undefined
         const { createAppTestContext } = await import('../helpers')
         const { TicketsService } = await import('core')
         fix = await createAppTestContext()
+        teardown = fix.teardown
         ticketsService = fix.module.get(TicketsService)
     })
-    afterEach(() => fix.teardown())
+    afterEach(() => teardown?.())
 
     describe('createMany', () => {
         it('생성된 티켓 수를 반환한다', async () => {

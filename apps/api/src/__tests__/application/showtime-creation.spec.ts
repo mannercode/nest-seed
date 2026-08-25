@@ -17,6 +17,7 @@ import { waitForCompletion } from './showtime-creation.utils'
 
 describe('ShowtimeCreationService', () => {
     let fix: AppTestContext
+    let teardown: AppTestContext['teardown'] | undefined
     let showtimesService: ShowtimesService
     let ticketsService: TicketsService
     let persistence: ShowtimeCreationPersistenceService
@@ -26,6 +27,7 @@ describe('ShowtimeCreationService', () => {
     let theater: TheaterDto
 
     beforeEach(async () => {
+        teardown = undefined
         const { createAppTestContext } = await import('../helpers')
         const { ShowtimesService, TicketsService } = await import('core')
         const {
@@ -35,6 +37,7 @@ describe('ShowtimeCreationService', () => {
         } = await import('application')
         const { AdminAuthGuard } = await import('gateway')
         fix = await createAppTestContext({ ignoreGuards: [AdminAuthGuard] })
+        teardown = fix.teardown
         showtimesService = fix.module.get(ShowtimesService)
         ticketsService = fix.module.get(TicketsService)
         persistence = fix.module.get(ShowtimeCreationPersistenceService)
@@ -44,7 +47,7 @@ describe('ShowtimeCreationService', () => {
         movie = await createMovie(fix)
         theater = await createTheater(fix)
     })
-    afterEach(() => fix.teardown())
+    afterEach(() => teardown?.())
 
     const buildCreateDto = () => ({
         durationInMinutes: 1,

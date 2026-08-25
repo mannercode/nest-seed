@@ -38,3 +38,12 @@ test('API stability 반복은 run별 coverage 산출물을 만들지 않는다',
         assert.match(command, /--coverage=false(?:\s|$)/)
     }
 })
+
+test('API integration spec은 setup 실패 뒤 이전 fixture를 다시 닫지 않는다', () => {
+    const specs = fs.globSync('src/__tests__/**/*.spec.ts', { cwd: apiDirectory })
+
+    for (const spec of specs) {
+        const source = fs.readFileSync(path.join(apiDirectory, spec), 'utf8')
+        assert.doesNotMatch(source, /afterEach\(\(\) => fix\.teardown\(\)\)/, spec)
+    }
+})

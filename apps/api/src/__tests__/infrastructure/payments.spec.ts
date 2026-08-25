@@ -6,15 +6,18 @@ import { buildCreatePaymentDto, createPayment, Errors, type AppTestContext } fro
 
 describe('PaymentsService', () => {
     let fix: AppTestContext
+    let teardown: AppTestContext['teardown'] | undefined
     let paymentsService: PaymentsService
 
     beforeEach(async () => {
+        teardown = undefined
         const { createAppTestContext } = await import('../helpers')
         const { PaymentsService } = await import('infrastructure')
         fix = await createAppTestContext()
+        teardown = fix.teardown
         paymentsService = fix.module.get(PaymentsService)
     })
-    afterEach(() => fix.teardown())
+    afterEach(() => teardown?.())
 
     describe('cancel', () => {
         it('결제 행을 지우지 않고 status를 cancelled로 전이한다', async () => {

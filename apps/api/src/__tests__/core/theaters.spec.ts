@@ -10,13 +10,16 @@ import {
 
 describe('TheatersService', () => {
     let fix: AppTestContext
+    let teardown: AppTestContext['teardown'] | undefined
 
     beforeEach(async () => {
+        teardown = undefined
         const { createAppTestContext } = await import('../helpers')
         const { AdminAuthGuard } = await import('gateway')
         fix = await createAppTestContext({ ignoreGuards: [AdminAuthGuard] })
+        teardown = fix.teardown
     })
-    afterEach(() => fix.teardown())
+    afterEach(() => teardown?.())
 
     describe('POST /theaters', () => {
         it('생성된 극장을 반환한다', async () => {

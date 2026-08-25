@@ -5,15 +5,18 @@ import { buildHoldTicketsDto, overrideConfigGetter, type AppTestContext } from '
 
 describe('TicketHoldingService', () => {
     let fix: AppTestContext
+    let teardown: AppTestContext['teardown'] | undefined
     let ticketHoldingService: TicketHoldingService
 
     beforeEach(async () => {
+        teardown = undefined
         const { createAppTestContext } = await import('../helpers')
         const { TicketHoldingService } = await import('core')
         fix = await createAppTestContext()
+        teardown = fix.teardown
         ticketHoldingService = fix.module.get(TicketHoldingService)
     })
-    afterEach(() => fix.teardown())
+    afterEach(() => teardown?.())
 
     describe('holdTickets', () => {
         it('아무도 보유하지 않은 티켓을 잡으면 true를 반환한다', async () => {

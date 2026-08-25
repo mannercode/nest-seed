@@ -6,15 +6,18 @@ import { buildCreateShowtimeDto, createShowtimes, Errors, type AppTestContext } 
 
 describe('ShowtimesService', () => {
     let fix: AppTestContext
+    let teardown: AppTestContext['teardown'] | undefined
     let showtimesService: ShowtimesService
 
     beforeEach(async () => {
+        teardown = undefined
         const { createAppTestContext } = await import('../helpers')
         const { ShowtimesService } = await import('core')
         fix = await createAppTestContext()
+        teardown = fix.teardown
         showtimesService = fix.module.get(ShowtimesService)
     })
-    afterEach(() => fix.teardown())
+    afterEach(() => teardown?.())
 
     describe('deleteBySagaIds', () => {
         it('사가 식별자 목록에 해당하는 상영 시간을 삭제한다', async () => {

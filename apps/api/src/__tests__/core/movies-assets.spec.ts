@@ -15,16 +15,19 @@ import {
 
 describe('MoviesAssets', () => {
     let fix: AppTestContext
+    let teardown: AppTestContext['teardown'] | undefined
     let assetsService: AssetsService
 
     beforeEach(async () => {
+        teardown = undefined
         const { createAppTestContext } = await import('../helpers')
         const { AssetsService } = await import('infrastructure')
         const { AdminAuthGuard } = await import('gateway')
         fix = await createAppTestContext({ ignoreGuards: [AdminAuthGuard] })
+        teardown = fix.teardown
         assetsService = fix.module.get(AssetsService)
     })
-    afterEach(() => fix.teardown())
+    afterEach(() => teardown?.())
 
     describe('POST /movies/:movieId/assets', () => {
         let movie: MovieDto

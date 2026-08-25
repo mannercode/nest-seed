@@ -383,7 +383,10 @@ export function registerMongoClientDiagnostics(
                 const appName = `nest-seed-test-w${process.env.JEST_WORKER_ID ?? '0'}-p${process.pid}-${process.env.TEST_ID ?? 'startup'}`
 
                 return {
-                    ...createMongoDriverOptions({ appName: testDiagnostics ? appName : undefined }),
+                    ...createMongoDriverOptions({
+                        appName: testDiagnostics ? appName : undefined,
+                        lifetime: 'application'
+                    }),
                     ...(testDiagnostics
                         ? {
                               appName,

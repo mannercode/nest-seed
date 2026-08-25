@@ -13,13 +13,16 @@ type ShowtimeFixture = NonNullable<Awaited<ReturnType<typeof createShowtimes>>[n
 
 describe('UserHomeView', () => {
     let fix: AppTestContext
+    let teardown: AppTestContext['teardown'] | undefined
 
     beforeEach(async () => {
+        teardown = undefined
         const { createAppTestContext } = await import('../helpers')
         fix = await createAppTestContext()
+        teardown = fix.teardown
     })
 
-    afterEach(() => fix.teardown())
+    afterEach(() => teardown?.())
 
     describe('GET /views/user-app/home', () => {
         it('상영 예정이 없으면 빈 목록을 반환한다', async () => {

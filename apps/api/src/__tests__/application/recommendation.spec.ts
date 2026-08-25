@@ -5,12 +5,15 @@ import { createShowingMovies, createWatchedMovies } from './recommendation.utils
 
 describe('RecommendationService', () => {
     let fix: AppTestContext
+    let teardown: AppTestContext['teardown'] | undefined
 
     beforeEach(async () => {
+        teardown = undefined
         const { createAppTestContext } = await import('../helpers')
         fix = await createAppTestContext()
+        teardown = fix.teardown
     })
-    afterEach(() => fix.teardown())
+    afterEach(() => teardown?.())
 
     describe('GET /views/user-app/home (recommendedMovies)', () => {
         let fantasyMovie: MovieDto

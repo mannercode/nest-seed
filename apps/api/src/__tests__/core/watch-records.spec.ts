@@ -5,15 +5,18 @@ import { buildCreateWatchRecordDto, createWatchRecord, type AppTestContext } fro
 
 describe('WatchRecordsService', () => {
     let fix: AppTestContext
+    let teardown: AppTestContext['teardown'] | undefined
     let watchRecordsService: WatchRecordsService
 
     beforeEach(async () => {
+        teardown = undefined
         const { createAppTestContext } = await import('../helpers')
         const { WatchRecordsService } = await import('core')
         fix = await createAppTestContext()
+        teardown = fix.teardown
         watchRecordsService = fix.module.get(WatchRecordsService)
     })
-    afterEach(() => fix.teardown())
+    afterEach(() => teardown?.())
 
     describe('create', () => {
         it('생성된 시청 기록을 반환한다', async () => {

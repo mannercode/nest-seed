@@ -10,13 +10,16 @@ const countLogCalls = (logSpy: jest.SpyInstance, message: string) =>
 
 describe('PurchaseEvents', () => {
     let fix: AppTestContext
+    let teardown: AppTestContext['teardown'] | undefined
     let events: PurchaseEvents
     let logSpy: jest.SpyInstance
 
     beforeEach(async () => {
+        teardown = undefined
         const { createAppTestContext } = await import('../helpers')
         const { PurchaseEvents } = await import('application')
         fix = await createAppTestContext()
+        teardown = fix.teardown
         events = fix.module.get(PurchaseEvents)
         // `resetModules: true` 환경에서는 감시 대상 Logger가 구독자 Logger와 같은 실행 영역에 있어야 한다.
         // 그래서 같은 모듈 그래프에서 동적으로 가져온다.
@@ -24,7 +27,7 @@ describe('PurchaseEvents', () => {
         logSpy = jest.spyOn(Logger.prototype, 'log')
     })
 
-    afterEach(() => fix.teardown())
+    afterEach(() => teardown?.())
 
     it('ticketPurchased 이벤트는 알림 구독자와 로그 구독자 모두에 전달한다', async () => {
         const { waitFor } = await import('./purchase-events.utils')

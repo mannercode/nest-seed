@@ -24,7 +24,7 @@ setupJestLifecycle({
 
         const client = new MongoClient(
             process.env.MONGO_URI,
-            createMongoDriverOptions({ appName: sharedMongoAppName() })
+            createMongoDriverOptions({ appName: sharedMongoAppName(), lifetime: 'test-file' })
         )
         registerMongoClientDiagnostics(client, dbName, sharedMongoAppName())
         await client.connect()

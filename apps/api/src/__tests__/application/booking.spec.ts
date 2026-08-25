@@ -13,12 +13,15 @@ import { createAllResources } from './booking.utils'
 
 describe('BookingService', () => {
     let fix: AppTestContext
+    let teardown: AppTestContext['teardown'] | undefined
 
     beforeEach(async () => {
+        teardown = undefined
         const { createAppTestContext } = await import('../helpers')
         fix = await createAppTestContext()
+        teardown = fix.teardown
     })
-    afterEach(() => fix.teardown())
+    afterEach(() => teardown?.())
 
     describe('고객 예매 흐름', () => {
         let movie: MovieDto

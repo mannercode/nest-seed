@@ -14,15 +14,18 @@ import { buildCreatePurchaseDto } from './purchase.utils'
 
 describe('PurchaseService', () => {
     let fix: AppTestContext
+    let teardown: AppTestContext['teardown'] | undefined
     let user: UserDto
     let accessToken: string
 
     beforeEach(async () => {
+        teardown = undefined
         const { createAppTestContext } = await import('../helpers')
         fix = await createAppTestContext()
+        teardown = fix.teardown
         ;({ user, accessToken } = await createAndLoginUser(fix))
     })
-    afterEach(() => fix.teardown())
+    afterEach(() => teardown?.())
 
     describe('POST /purchases', () => {
         describe('고객이 티켓을 보유하고 있을 때', () => {

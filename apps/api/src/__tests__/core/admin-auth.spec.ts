@@ -14,15 +14,18 @@ function trustPrivateProxy(app: INestApplication) {
 
 describe('AdminAuthentication', () => {
     let fix: AppTestContext
+    let teardown: AppTestContext['teardown'] | undefined
     const credentials = { email: 'admin@mail.com', password: 'password' }
 
     beforeEach(async () => {
+        teardown = undefined
         const { createAppTestContext } = await import('../helpers')
         fix = await createAppTestContext({ configureApp: async (app) => trustPrivateProxy(app) })
+        teardown = fix.teardown
 
         await createAdmin(fix, credentials)
     })
-    afterEach(() => fix.teardown())
+    afterEach(() => teardown?.())
 
     describe('POST /admins/login', () => {
         it('자격 증명이 유효하면 인증 토큰을 반환한다', async () => {

@@ -12,15 +12,18 @@ import {
 
 describe('UsersService', () => {
     let fix: AppTestContext
+    let teardown: AppTestContext['teardown'] | undefined
     let adminAuth: { Authorization: string }
 
     beforeEach(async () => {
+        teardown = undefined
         const { createAppTestContext } = await import('../helpers')
         fix = await createAppTestContext()
+        teardown = fix.teardown
         const { accessToken } = await createAndLoginAdmin(fix)
         adminAuth = { Authorization: `Bearer ${accessToken}` }
     })
-    afterEach(() => fix.teardown())
+    afterEach(() => teardown?.())
 
     describe('POST /users', () => {
         it('생성된 고객을 반환한다', async () => {

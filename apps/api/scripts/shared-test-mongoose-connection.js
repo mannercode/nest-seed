@@ -14,14 +14,10 @@ function attachSharedTestMongooseConnection({ appName, client, dbName }) {
     const contextConnection = new Proxy(connection, {
         get(target, property) {
             if (property === 'close') {
-                return async () => {
-                    await Promise.allSettled(
-                        Object.values(target.models).map((model) => model.init())
-                    )
-                    for (const modelName of target.modelNames()) {
-                        target.deleteModel(modelName)
-                    }
-                }
+                // Nest app context는 파일이 공유하는 connection/client를 소유하지 않는다.
+                // 모델도 파일 수명 동안 유지해 Mongoose의 memoized Model.init()을 재사용한다.
+                // 실제 client 종료는 이를 만든 Jest afterAll 한 곳에서만 수행한다.
+                return async () => undefined
             }
 
             const value = Reflect.get(target, property, target)

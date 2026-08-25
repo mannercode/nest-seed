@@ -5,15 +5,18 @@ import { buildCreatePurchaseRecordDto, createPurchaseRecord, type AppTestContext
 
 describe('PurchaseRecordsService', () => {
     let fix: AppTestContext
+    let teardown: AppTestContext['teardown'] | undefined
     let purchaseRecordsService: PurchaseRecordsService
 
     beforeEach(async () => {
+        teardown = undefined
         const { createAppTestContext } = await import('../helpers')
         const { PurchaseRecordsService } = await import('core')
         fix = await createAppTestContext()
+        teardown = fix.teardown
         purchaseRecordsService = fix.module.get(PurchaseRecordsService)
     })
-    afterEach(() => fix.teardown())
+    afterEach(() => teardown?.())
 
     describe('create', () => {
         it('생성된 구매 기록을 반환한다', async () => {

@@ -18,19 +18,22 @@ import {
 
 describe('AssetsService', () => {
     let fix: AppTestContext
+    let teardown: AppTestContext['teardown'] | undefined
     let assetsService: AssetsService
     let scheduler: SchedulerRegistry
     const file = testAssets.small
 
     beforeEach(async () => {
+        teardown = undefined
         const { createAppTestContext } = await import('../helpers')
         const { AssetsService } = await import('infrastructure')
         const { SchedulerRegistry } = await import('@nestjs/schedule')
         fix = await createAppTestContext()
+        teardown = fix.teardown
         assetsService = fix.module.get(AssetsService)
         scheduler = fix.module.get(SchedulerRegistry)
     })
-    afterEach(() => fix.teardown())
+    afterEach(() => teardown?.())
 
     describe('create', () => {
         it('업로드 요청을 반환한다', async () => {

@@ -4,6 +4,7 @@ import { createAdmin, Errors, loginAdmin, type AppTestContext } from '../helpers
 
 describe('AdminManagement', () => {
     let fix: AppTestContext
+    let teardown: AppTestContext['teardown'] | undefined
     const adminCredentials = { email: 'admin@mail.com', password: 'password' }
     const rootPassword = process.env.ROOT_PASSWORD
     if (!rootPassword) {
@@ -14,10 +15,12 @@ describe('AdminManagement', () => {
     const wrongRootBasic = `Basic ${Buffer.from('root:wrong').toString('base64')}`
 
     beforeEach(async () => {
+        teardown = undefined
         const { createAppTestContext } = await import('../helpers')
         fix = await createAppTestContext()
+        teardown = fix.teardown
     })
-    afterEach(() => fix.teardown())
+    afterEach(() => teardown?.())
 
     describe('POST /admins (root의 admin 생성)', () => {
         it('Basic Auth가 유효하면 admin을 생성한다', async () => {

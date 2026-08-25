@@ -4,13 +4,16 @@ import { createMovie, createUnpublishedMovie, Errors, type AppTestContext } from
 
 describe('MoviesPublish', () => {
     let fix: AppTestContext
+    let teardown: AppTestContext['teardown'] | undefined
 
     beforeEach(async () => {
+        teardown = undefined
         const { createAppTestContext } = await import('../helpers')
         const { AdminAuthGuard } = await import('gateway')
         fix = await createAppTestContext({ ignoreGuards: [AdminAuthGuard] })
+        teardown = fix.teardown
     })
-    afterEach(() => fix.teardown())
+    afterEach(() => teardown?.())
 
     describe('POST /movies/:movieId/publish', () => {
         describe('미발행 영화에 필수 필드가 모두 채워졌을 때', () => {
