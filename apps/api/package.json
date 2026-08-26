@@ -16,9 +16,9 @@
         "atoz": "npm run lint && npm run test:api-docs-redaction && npm run test:jest-isolation && npm test"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "3.1114.0",
-        "@aws-sdk/s3-presigned-post": "3.1114.0",
-        "@aws-sdk/s3-request-presigner": "3.1114.0",
+        "@aws-sdk/client-s3": "3.1116.0",
+        "@aws-sdk/s3-presigned-post": "3.1116.0",
+        "@aws-sdk/s3-request-presigner": "3.1116.0",
         "@mannercode/common": "*",
         "@mannercode/temporal-sandbox": "*",
         "@nestjs/common": "11.2.1",
