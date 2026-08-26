@@ -1,4 +1,5 @@
 const http = require('http')
+const { randomBytes, randomInt } = require('node:crypto')
 
 // race 시나리오는 runner.sh가 띄운 4-replica 배포 스택을 전제한다.
 // 기본값으로 단일 dev 서버에 조용히 붙으면 경쟁이 재현되지 않아 결과가 왜곡되므로 필수로 받는다.
@@ -20,6 +21,17 @@ function readPositiveInt(name, defaultValue) {
 
 const HTTP_REQUEST_TIMEOUT_MS = readPositiveInt('HTTP_REQUEST_TIMEOUT_MS', 30_000)
 const SSE_HANDSHAKE_TIMEOUT_MS = readPositiveInt('SSE_HANDSHAKE_TIMEOUT_MS', 30_000)
+
+function secureRandomHex(byteLength = 16) {
+    return randomBytes(byteLength).toString('hex')
+}
+
+function secureRandomIndex(length) {
+    if (!Number.isSafeInteger(length) || length <= 0) {
+        throw new Error('length must be a positive safe integer')
+    }
+    return randomInt(length)
+}
 
 /**
  * HTTP 요청 하나를 보내고 응답을 정규화해 돌려준다.
@@ -292,6 +304,8 @@ module.exports = {
     SERVER_URL,
     readPositiveInt,
     request,
+    secureRandomHex,
+    secureRandomIndex,
     openEventStream,
     waitUntil,
     waitForSagaSuccess

@@ -1,3 +1,5 @@
+import crypto from 'k6/crypto'
+
 /**
  * k6 메트릭 모델에서 주의할 점:
  *  - Trend는 percentile만 보고 count는 없으므로 표본 수는 Counter(`measured_status`)로 같이 잰다.
@@ -9,6 +11,17 @@
 
 // 클라이언트 에러(연결 실패)는 k6가 0으로 보고한다.
 const TRACKED_STATUSES = [0, 200, 201, 204, 400, 401, 403, 404, 409, 422, 500, 502, 503]
+
+/** API로 전송할 고유 식별자를 k6의 CSPRNG로 만든다. */
+export function secureRandomHex(byteLength = 8) {
+    if (!Number.isInteger(byteLength) || byteLength <= 0) {
+        throw new Error('byteLength must be a positive integer')
+    }
+
+    return Array.from(new Uint8Array(crypto.randomBytes(byteLength)), (byte) =>
+        byte.toString(16).padStart(2, '0')
+    ).join('')
+}
 
 function readPositiveInt(name, defaultValue) {
     const raw = __ENV[name]

@@ -1,6 +1,12 @@
 // 같은 티켓 쌍을 여러 복제본에서 동시에 선점해 그룹마다 한 건만 204가 되는지 검증한다.
 
-const { readPositiveInt, request, SERVER_URL, waitForSagaSuccess } = require('./race-common')
+const {
+    readPositiveInt,
+    request,
+    secureRandomHex,
+    SERVER_URL,
+    waitForSagaSuccess
+} = require('./race-common')
 
 const TICKET_GROUPS = readPositiveInt('HOLD_TICKET_GROUPS', 5)
 const USERS_PER_GROUP = readPositiveInt('HOLD_CLIENT_COUNT', 50)
@@ -79,7 +85,7 @@ async function createShowtimeTickets(movieId, theaterId, startTimeOffsetMs) {
 }
 
 async function createAndLoginUser(index) {
-    const email = `hold.${Date.now()}.${index}.${Math.random().toString(36).slice(2)}@example.com`
+    const email = `hold.${Date.now()}.${index}.${secureRandomHex()}@example.com`
     const password = 'holdpassword'
     const create = await request('POST', '/users', {
         body: { name: `hold-${index}`, birthDate: '1990-01-01T00:00:00.000Z', email, password }

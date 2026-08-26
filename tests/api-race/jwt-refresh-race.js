@@ -4,7 +4,7 @@
  * 승자의 새 refresh token은 다시 회전돼 토큰 패밀리가 폐기되지 않았음을 증명해야 한다.
  */
 
-const { readPositiveInt, request, SERVER_URL } = require('./race-common')
+const { readPositiveInt, request, secureRandomHex, SERVER_URL } = require('./race-common')
 
 const USER_GROUPS = readPositiveInt('RACE_USER_GROUPS', 5)
 const CLIENTS_PER_USER = readPositiveInt('RACE_CLIENT_COUNT', 20)
@@ -12,7 +12,7 @@ const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 30)
 const CONCURRENT_ERROR_CODE = 'ERR_JWT_AUTH_REFRESH_TOKEN_CONCURRENT'
 
 async function createAndLogin(suffix) {
-    const email = `race.${Date.now()}.${suffix}.${Math.random().toString(36).slice(2)}@example.com`
+    const email = `race.${Date.now()}.${suffix}.${secureRandomHex()}@example.com`
     const password = 'racepassword'
 
     const created = await request('POST', '/users', {

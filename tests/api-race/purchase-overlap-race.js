@@ -3,7 +3,13 @@
  * 그룹마다 구매 기록 한 건과 Sold 티켓 두 장만 남아야 한다.
  */
 
-const { readPositiveInt, request, SERVER_URL, waitForSagaSuccess } = require('./race-common')
+const {
+    readPositiveInt,
+    request,
+    secureRandomHex,
+    SERVER_URL,
+    waitForSagaSuccess
+} = require('./race-common')
 
 const USER_GROUPS = readPositiveInt('PURCHASE_USER_GROUPS', 5)
 const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 150)
@@ -81,7 +87,7 @@ async function createShowtimeTickets(movieId, theaterId, startTimeOffsetMs) {
 }
 
 async function createAndLoginUser(index) {
-    const email = `overlap.${Date.now()}.${index}.${Math.random().toString(36).slice(2)}@example.com`
+    const email = `overlap.${Date.now()}.${index}.${secureRandomHex()}@example.com`
     const password = 'overlappass'
     const create = await request('POST', '/users', {
         body: { name: `ovl-${index}`, birthDate: '1990-01-01T00:00:00.000Z', email, password }
