@@ -89,17 +89,17 @@
         "node": "^24.15.0"
     },
     "allowScripts": {
-        "@swc/core@1.15.33": true,
+        "@swc/core@1.16.1": true,
         "bcrypt@6.0.0": true,
         "cpu-features@0.0.10": true,
         "fsevents@2.3.2": true,
         "fsevents@2.3.3": true,
         "protobufjs@7.6.5": true,
         "ssh2@1.17.0": true,
-        "unrs-resolver@1.11.1": true
+        "unrs-resolver@1.12.2": true
     },
     "overrides": {
-        "next@16.3.1": {
+        "next": {
             "postcss": "8.5.26",
             "sharp": "0.35.3"
         }

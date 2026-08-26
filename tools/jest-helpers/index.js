@@ -50,7 +50,12 @@ function generateTestId() {
 async function cleanCollections(mongoClient, dbName) {
     const db = mongoClient.db(dbName)
     const collections = await db.collections()
-    await Promise.all(collections.map((c) => c.deleteMany({})))
+    // 정리는 테스트 본문과 달리 처리량을 얻을 이유가 없다. 한 worker의 모든 collection을
+    // 동시에 비우면 짧은 수명의 pool이 connection을 만드는 동안 불필요한 checkout
+    // fan-out이 생긴다. 순차 실행해 정리 작업이 항상 connection 하나만 사용하게 한다.
+    for (const collection of collections) {
+        await collection.deleteMany({})
+    }
 }
 
 async function dropMatchingDatabases(mongoClient, pattern) {

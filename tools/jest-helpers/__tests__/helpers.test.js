@@ -77,9 +77,15 @@ test('test ID는 고정 길이의 허용 문자로 생성된다', () => {
 
 test('Mongo collection 정리는 조회된 모든 collection을 비운다', async () => {
     const deleted = []
+    let activeDeletes = 0
+    let maxActiveDeletes = 0
     const collections = ['first', 'second'].map((name) => ({
         async deleteMany(filter) {
+            activeDeletes += 1
+            maxActiveDeletes = Math.max(maxActiveDeletes, activeDeletes)
+            await new Promise((resolve) => setImmediate(resolve))
             deleted.push({ filter, name })
+            activeDeletes -= 1
         }
     }))
     const mongo = { db: () => ({ collections: async () => collections }) }
@@ -90,6 +96,7 @@ test('Mongo collection 정리는 조회된 모든 collection을 비운다', asyn
         { filter: {}, name: 'first' },
         { filter: {}, name: 'second' }
     ])
+    assert.equal(maxActiveDeletes, 1)
 })
 
 test('S3 bucket 생성은 성공과 이미 존재하는 경우만 허용한다', async () => {
