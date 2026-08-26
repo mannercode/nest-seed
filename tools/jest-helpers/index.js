@@ -5,7 +5,7 @@ const {
     ListBucketsCommand,
     ListObjectsV2Command
 } = require('@aws-sdk/client-s3')
-const { randomBytes } = require('node:crypto')
+const { randomBytes, randomInt } = require('node:crypto')
 
 const WORKER_DB_PATTERN = /^mongo-w\d+$/
 const WORKER_BUCKET_PATTERN = /^s3bucket-w\d+$/
@@ -42,9 +42,7 @@ function createJestResourceScope(runId) {
 
 function generateTestId() {
     const chars = 'useandom26T198340PX75pxJACKVERYMINDBUSHWOLFGQZbfghjklqvwyzrict'
-    return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join(
-        ''
-    )
+    return Array.from({ length: 10 }, () => chars[randomInt(chars.length)]).join('')
 }
 
 async function cleanCollections(mongoClient, dbName) {

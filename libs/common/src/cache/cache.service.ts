@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import Redis from 'ioredis'
+import { randomUUID } from 'node:crypto'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { defaultTo } from '../utils'
 
@@ -62,7 +63,7 @@ export class CacheService {
     ): Promise<{ ran: false } | { ran: true; result: T }> {
         if (ttlMs <= 0) throw new Error('Lock TTL must be a positive integer (ms)')
 
-        const token = `${process.pid}:${Date.now()}:${Math.random()}`
+        const token = `${process.pid}:${Date.now()}:${randomUUID()}`
         const lockKey = this.getKey(`lock:${key}`)
         const acquired = await this.redis.set(lockKey, token, 'PX', ttlMs, 'NX')
 

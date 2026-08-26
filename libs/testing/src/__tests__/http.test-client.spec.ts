@@ -91,14 +91,16 @@ describe('HttpTestClient', () => {
 
     describe('체인 메서드', () => {
         it('body()를 두 번 호출하면 두 번째 호출까지 결과에 포함된다', async () => {
-            const { body } = await fix.httpClient
-                .post('/echo')
-                .body({ first: true })
+            const response = await fix.httpClient
+                .post('/body-merging')
+                .body({ first: true, untrusted: '<script>alert(1)</script>' })
                 .body({ second: true })
                 .created()
 
             // superagent.send는 같은 contentType이면 두 번째 호출의 객체를 병합한다.
-            expect(body).toEqual({ first: true, second: true })
+            expect(response.body).toEqual({ first: true, second: true })
+            expect(response.type).toBe('application/json')
+            expect(response.text).not.toContain('<script>')
         })
     })
 })

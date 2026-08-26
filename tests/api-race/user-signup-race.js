@@ -1,6 +1,6 @@
 // 같은 이메일 가입을 여러 복제본에 동시에 보내 정확히 한 건만 201이 되는지 검증한다.
 
-const { readPositiveInt, request, SERVER_URL } = require('./race-common')
+const { readPositiveInt, request, secureRandomHex, SERVER_URL } = require('./race-common')
 
 const EMAIL_GROUPS = readPositiveInt('RACE_EMAIL_GROUPS', 10)
 const CLIENTS_PER_GROUP = readPositiveInt('RACE_CLIENT_COUNT', 50)
@@ -9,8 +9,7 @@ const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 30)
 async function runInner(iteration) {
     const emails = Array.from(
         { length: EMAIL_GROUPS },
-        (_, g) =>
-            `race.${Date.now()}.${iteration}.${g}.${Math.random().toString(36).slice(2)}@example.com`
+        (_, g) => `race.${Date.now()}.${iteration}.${g}.${secureRandomHex()}@example.com`
     )
 
     const requests = emails.flatMap((email) =>

@@ -19,6 +19,7 @@ import {
     buildSummary,
     measurementStart,
     readOptions,
+    secureRandomHex,
     summaryReturn
 } from './perf-common.js'
 
@@ -32,7 +33,7 @@ export const options = buildScenarioOptions(opts)
 const JSON_HEADERS = { 'content-type': 'application/json', accept: 'application/json' }
 
 function uniqueEmail(vu, seed) {
-    return `perf-refresh.${seed}.${vu}.${Math.random().toString(36).slice(2, 8)}@example.com`
+    return `perf-refresh.${seed}.${vu}.${secureRandomHex()}@example.com`
 }
 
 export function setup() {

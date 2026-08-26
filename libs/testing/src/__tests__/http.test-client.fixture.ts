@@ -1,5 +1,16 @@
 import type { Request, Response } from 'express'
-import { Body, Controller, Get, Header, Headers, Post, Req, Res, Sse } from '@nestjs/common'
+import {
+    BadRequestException,
+    Body,
+    Controller,
+    Get,
+    Header,
+    Headers,
+    Post,
+    Req,
+    Res,
+    Sse
+} from '@nestjs/common'
 import { Observable } from 'rxjs'
 import { HttpTestClient } from '../http.test-client'
 import { createHttpTestContext } from '../index'
@@ -26,9 +37,14 @@ class HttpTestClientController {
         return { ok: true }
     }
 
-    @Post('echo')
-    echo(@Body() body: any) {
-        return body
+    @Post('body-merging')
+    verifyBodyMerging(@Body() body: Record<string, unknown>) {
+        if (body.first !== true || body.second !== true) {
+            throw new BadRequestException('both body fragments are required')
+        }
+
+        // 요청에 들어온 임의 값을 반사하지 않고, 검증 결과만 JSON으로 응답한다.
+        return { first: true, second: true }
     }
 
     // multipart 등 임의 요청 검증용이다. 본문 파싱 없이 원본 스트림을 모아 반환한다.

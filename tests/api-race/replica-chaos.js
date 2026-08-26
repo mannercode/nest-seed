@@ -4,7 +4,7 @@
  */
 
 const { execSync } = require('child_process')
-const { readPositiveInt, request } = require('./race-common')
+const { readPositiveInt, request, secureRandomHex, secureRandomIndex } = require('./race-common')
 
 const KILL_AT_MS = readPositiveInt('CHAOS_KILL_AT_MS', 30_000)
 const RESTART_AFTER_MS = readPositiveInt('CHAOS_RESTART_AFTER_MS', 30_000)
@@ -39,7 +39,7 @@ function bucketFor(state) {
 
 async function trafficWorker(workerId, state) {
     while (!state.stop) {
-        const email = `chaos.${Date.now()}.${workerId}.${Math.random().toString(36).slice(2)}@example.com`
+        const email = `chaos.${Date.now()}.${workerId}.${secureRandomHex()}@example.com`
         try {
             const r = await request('POST', '/users', {
                 body: {
@@ -75,7 +75,7 @@ async function main() {
     if (replicas.length < 4) {
         throw new Error(`expected 4 app replicas, got ${replicas.length}: ${replicas.join(',')}`)
     }
-    const target = replicas[Math.floor(Math.random() * replicas.length)]
+    const target = replicas[secureRandomIndex(replicas.length)]
     console.log(`[chaos] target=${target.slice(0, 12)} alive=${replicas.length}`)
 
     const state = { stop: false, phase: 'warmup', byPhase: {} }

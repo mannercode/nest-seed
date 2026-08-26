@@ -43,7 +43,7 @@ test.beforeAll(async () => {
 })
 
 async function signupAndLogin(page: Page): Promise<string> {
-    const email = `e2e-user-${Date.now()}-${Math.random().toString(16).slice(2)}@example.com`
+    const email = `e2e-user-${Date.now()}-${randomUUID()}@example.com`
 
     await page.goto(`${USER_APP_BASE_URL}/signup`)
     await page.getByRole('textbox', { name: '이름' }).fill('E2E User')

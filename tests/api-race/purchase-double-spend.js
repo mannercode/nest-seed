@@ -3,7 +3,13 @@
  * 성공 응답은 구매 목록에서 다시 읽어 phantom 성공도 함께 막는다.
  */
 
-const { readPositiveInt, request, SERVER_URL, waitForSagaSuccess } = require('./race-common')
+const {
+    readPositiveInt,
+    request,
+    secureRandomHex,
+    SERVER_URL,
+    waitForSagaSuccess
+} = require('./race-common')
 
 const USER_GROUPS = readPositiveInt('PURCHASE_USER_GROUPS', 5)
 const PURCHASES_PER_GROUP = readPositiveInt('PURCHASE_CLIENT_COUNT', 50)
@@ -81,7 +87,7 @@ async function createShowtimeTickets(movieId, theaterId, startTimeOffsetMs) {
 }
 
 async function createAndLoginUser(index) {
-    const email = `purchase.${Date.now()}.${index}.${Math.random().toString(36).slice(2)}@example.com`
+    const email = `purchase.${Date.now()}.${index}.${secureRandomHex()}@example.com`
     const password = 'purchasepass'
     const create = await request('POST', '/users', {
         body: { name: `pur-${index}`, birthDate: '1990-01-01T00:00:00.000Z', email, password }

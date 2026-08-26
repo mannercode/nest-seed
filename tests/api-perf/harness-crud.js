@@ -26,6 +26,7 @@ import {
     buildSummary,
     measurementStart,
     readOptions,
+    secureRandomHex,
     summaryReturn
 } from './perf-common.js'
 
@@ -40,7 +41,7 @@ const statusCounter = new Counter('measured_status')
 export const options = buildScenarioOptions(opts)
 
 function uniqueEmail(vu, iter) {
-    return `perf.${Date.now()}.${vu}.${iter}.${Math.random().toString(36).slice(2, 8)}@example.com`
+    return `perf.${Date.now()}.${vu}.${iter}.${secureRandomHex()}@example.com`
 }
 
 const SCENARIOS = {
@@ -63,7 +64,7 @@ const SCENARIOS = {
         method: 'POST',
         path: '/theaters',
         body: {
-            name: `perf-theater-${Date.now()}-${vu}-${iter}-${Math.random().toString(36).slice(2, 8)}`,
+            name: `perf-theater-${Date.now()}-${vu}-${iter}-${secureRandomHex()}`,
             location: { latitude: 37.5, longitude: 127.0 },
             seatmap: {
                 blocks: [
@@ -92,9 +93,7 @@ const SCENARIOS = {
     'movie-write': (vu, iter) => ({
         method: 'POST',
         path: '/movies',
-        body: {
-            title: `perf-movie-${Date.now()}-${vu}-${iter}-${Math.random().toString(36).slice(2, 8)}`
-        }
+        body: { title: `perf-movie-${Date.now()}-${vu}-${iter}-${secureRandomHex()}` }
     }),
     'movie-read-title-filter': () => ({
         method: 'GET',
