@@ -1,13 +1,13 @@
 import { InjectNatsPubSub, JsonUtil, NatsPubSubService } from '@mannercode/common'
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
-import { getProjectId } from 'config'
+import { AppConfigService } from 'config'
 import { Observable, Subject } from 'rxjs'
 import type { ShowtimeCreationEvent } from './internal/types'
 
 // NATS로 복제본을 건넌 상태를 로컬 RxJS 스트림에 전달하며, PROJECT_ID로 테스트를 격리한다.
 @Injectable()
 export class ShowtimeCreationEvents implements OnModuleInit, OnModuleDestroy {
-    private readonly natsSubject = `${getProjectId()}.showtime-creation.statusChanged`
+    private readonly natsSubject: string
 
     private readonly subject = new Subject<ShowtimeCreationEvent>()
     private readonly handler = (message: string) => {
@@ -15,7 +15,12 @@ export class ShowtimeCreationEvents implements OnModuleInit, OnModuleDestroy {
         this.subject.next(event)
     }
 
-    constructor(@InjectNatsPubSub() private readonly natsPubSub: NatsPubSubService) {}
+    constructor(
+        @InjectNatsPubSub() private readonly natsPubSub: NatsPubSubService,
+        config: AppConfigService
+    ) {
+        this.natsSubject = `${config.projectId}.showtime-creation.statusChanged`
+    }
 
     async onModuleInit() {
         await this.natsPubSub.subscribe(this.natsSubject, this.handler)

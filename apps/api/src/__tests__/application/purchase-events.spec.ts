@@ -21,8 +21,6 @@ describe('PurchaseEvents', () => {
         fix = await createAppTestContext()
         teardown = fix.teardown
         events = fix.module.get(PurchaseEvents)
-        // `resetModules: true` 환경에서는 감시 대상 Logger가 구독자 Logger와 같은 실행 영역에 있어야 한다.
-        // 그래서 같은 모듈 그래프에서 동적으로 가져온다.
         const { Logger } = await import('@nestjs/common')
         logSpy = jest.spyOn(Logger.prototype, 'log')
     })

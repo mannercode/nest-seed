@@ -1,7 +1,8 @@
 import { BaseConfigService } from '@mannercode/common'
-import { Injectable } from '@nestjs/common'
+import { Inject, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import Joi from 'joi'
+import { PROJECT_ID_TOKEN } from './project-id'
 
 @Injectable()
 export class AppConfigService extends BaseConfigService {
@@ -174,7 +175,10 @@ export class AppConfigService extends BaseConfigService {
     }
 
     // 명시하지 않으면 Nest가 부모 constructor의 주입 메타데이터를 읽지 못한다.
-    constructor(configService: ConfigService) {
+    constructor(
+        configService: ConfigService,
+        @Inject(PROJECT_ID_TOKEN) readonly projectId: string
+    ) {
         super(configService)
     }
 }

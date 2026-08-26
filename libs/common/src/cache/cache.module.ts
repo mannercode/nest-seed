@@ -12,13 +12,15 @@ export function InjectCache(name?: string): ParameterDecorator {
 @Module({})
 export class CacheModule {
     static register(options: CacheModuleOptions): DynamicModule {
-        const { name, prefix, redisName } = options
+        const { inject, name, prefix, redisName } = options
 
         const provider = {
-            inject: [getRedisConnectionToken(redisName)],
+            inject: [getRedisConnectionToken(redisName), ...defaultTo(inject, [])],
             provide: CacheService.getName(name),
-            useFactory: async (redis: Redis) =>
-                new CacheService(redis, `${prefix}:${defaultTo(name, 'default')}`)
+            useFactory: async (redis: Redis, ...args: any[]) => {
+                const resolvedPrefix = typeof prefix === 'function' ? await prefix(...args) : prefix
+                return new CacheService(redis, `${resolvedPrefix}:${defaultTo(name, 'default')}`)
+            }
         }
 
         return { exports: [provider], module: CacheModule, providers: [provider] }

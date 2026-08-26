@@ -5,7 +5,7 @@ import {
     WorkflowIdReusePolicy
 } from '@mannercode/common'
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { TEMPORAL_CLIENT_NAME } from 'config'
+import { AppConfigService, TEMPORAL_CLIENT_NAME } from 'config'
 import { BulkCreateShowtimesDto } from '../dtos'
 import { getShowtimeCreationTaskQueue } from '../showtime-creation-task-queue'
 import { ShowtimeCreationEvents } from '../showtime-creation.events'
@@ -17,7 +17,8 @@ export class ShowtimeCreationOrchestratorService {
 
     constructor(
         private readonly events: ShowtimeCreationEvents,
-        @Inject(getTemporalClientToken(TEMPORAL_CLIENT_NAME)) private readonly temporal: Client
+        @Inject(getTemporalClientToken(TEMPORAL_CLIENT_NAME)) private readonly temporal: Client,
+        private readonly config: AppConfigService
     ) {}
 
     async enqueueShowtimeCreationJob(createDto: BulkCreateShowtimesDto): Promise<string> {
@@ -29,7 +30,7 @@ export class ShowtimeCreationOrchestratorService {
         // 같은 ID로 두 번 시작하려는 요청은 `REJECT_DUPLICATE` 옵션이 막으므로 별도 중복 방지 키가 필요 없다.
         await this.temporal.workflow.start('showtimeCreationWorkflowV2', {
             args: [{ createDto, sagaId }],
-            taskQueue: getShowtimeCreationTaskQueue(),
+            taskQueue: getShowtimeCreationTaskQueue(this.config.projectId),
             workflowId: sagaId,
             workflowIdReusePolicy: WorkflowIdReusePolicy.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE
         })

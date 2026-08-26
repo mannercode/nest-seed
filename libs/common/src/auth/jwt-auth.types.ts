@@ -68,7 +68,7 @@ export type JwtAuthFactoryOptions = {
 export type JwtAuthModuleOptions = {
     inject?: any[]
     name?: string
-    prefix: string
+    prefix: string | ((...args: any[]) => Promise<string> | string)
     redisName?: string
     useFactory: (...args: any[]) => JwtAuthFactoryOptions | Promise<JwtAuthFactoryOptions>
 }
