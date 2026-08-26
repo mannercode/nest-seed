@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { TheatersService } from 'core'
-import { createHash } from 'crypto'
 import type { BulkCreateShowtimesDto } from '../dtos'
 import type { ValidateAndCreateResult } from './types'
 import { ShowtimeCreationErrors } from '../errors'
 import { ShowtimeBulkCreatorService } from './showtime-bulk-creator.service'
 import { ShowtimeBulkValidatorService } from './showtime-bulk-validator.service'
+import { fingerprintShowtimeCreation } from './showtime-creation-fingerprint'
 import { ShowtimeCreationOperationRepository } from './showtime-creation-operation.repository'
 
 const COMMIT_TIMEOUT_MS = 10_000
@@ -35,7 +35,7 @@ export class ShowtimeCreationPersistenceService {
             )
         }
 
-        const inputHash = this.hashInput(createDto)
+        const inputHash = fingerprintShowtimeCreation(createDto)
 
         return this.operations.withTransaction(
             async (session) => {
@@ -86,15 +86,5 @@ export class ShowtimeCreationPersistenceService {
         if (expectedHash !== actualHash) {
             throw new Error(`Saga ID was reused with different input (sagaId=${sagaId})`)
         }
-    }
-
-    private hashInput(createDto: BulkCreateShowtimesDto) {
-        const normalized = {
-            durationInMinutes: createDto.durationInMinutes,
-            movieId: createDto.movieId,
-            startTimes: createDto.startTimes.map((date) => date.toISOString()).sort(),
-            theaterIds: [...createDto.theaterIds].sort()
-        }
-        return createHash('sha256').update(JSON.stringify(normalized)).digest('hex')
     }
 }

@@ -7,6 +7,7 @@ publish_movie
 create_theater
 
 SHOWTIME_START_TIME=$(date -u -d '+1 day' '+%Y-%m-%dT%H:%M:%S.000Z')
+SHOWTIME_IDEMPOTENCY_KEY=$(new_idempotency_key)
 
 TEST "상영 생성에 사용할 영화 목록을 조회한다" \
 	200 GET /showtime-creation/movies
@@ -17,6 +18,7 @@ TEST "상영 생성에 사용할 극장 목록을 조회한다" \
 TEST "상영 시간 대량 생성을 요청한다" \
 	202 POST /showtime-creation/showtimes \
 	-H 'Content-Type: application/json' \
+	-H "Idempotency-Key: ${SHOWTIME_IDEMPOTENCY_KEY}" \
 	-d '{
 			"movieId": "'${MOVIE_ID}'",
 			"theaterIds": ["'${THEATER_ID}'"],

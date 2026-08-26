@@ -3,6 +3,7 @@
 const {
     readPositiveInt,
     request,
+    secureRandomHex,
     SERVER_URL,
     openEventStream,
     waitUntil
@@ -75,7 +76,8 @@ async function runInner(iteration, movieId, theaterId, sse, baseOffsetMs) {
                     theaterIds: [theaterId],
                     durationInMinutes: 120,
                     startTimes: [startTime]
-                }
+                },
+                headers: { 'idempotency-key': secureRandomHex() }
             })
         )
     )

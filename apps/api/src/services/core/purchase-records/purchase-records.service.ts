@@ -11,12 +11,38 @@ export class PurchaseRecordsService {
 
     async create(
         createDto: CreatePurchaseRecordDto,
-        { pending = false }: { pending?: boolean } = {}
+        {
+            idempotency,
+            pending = false
+        }: { idempotency?: { fingerprint: string; key: string }; pending?: boolean } = {}
     ) {
         const status = pending ? PurchaseRecordStatus.Pending : PurchaseRecordStatus.Completed
-        const purchaseRecord = await this.repository.create(createDto, status)
+        const purchaseRecord = await this.repository.create(
+            {
+                ...createDto,
+                idempotencyFingerprint: idempotency?.fingerprint,
+                idempotencyKey: idempotency?.key
+            },
+            status
+        )
 
         return this.toDto(purchaseRecord)
+    }
+
+    async findIdempotencyOperation(userId: string, idempotencyKey: string) {
+        const record = await this.repository.findByIdempotencyKey(userId, idempotencyKey)
+        if (!record) return undefined
+
+        return {
+            errorResponse: record.idempotencyErrorResponse,
+            errorStatus: record.idempotencyErrorStatus,
+            fingerprint: record.idempotencyFingerprint,
+            response: record.idempotencyResponse
+                ? (record.idempotencyResponse as unknown as PurchaseRecordDto)
+                : undefined,
+            purchaseRecord: this.toDto(record),
+            status: record.status
+        }
     }
 
     async findPendingById(purchaseRecordId: string) {
@@ -51,6 +77,7 @@ export class PurchaseRecordsService {
             now: Date
             reconciliationId: string
             completionId?: string
+            idempotencyError?: { response: Record<string, unknown>; status: number }
         }
     ) {
         const record = await this.repository.claimForReconciliation(purchaseRecordId, options)
@@ -86,12 +113,14 @@ export class PurchaseRecordsService {
     async markCompleted(
         purchaseRecordId: string,
         completionId: string,
-        session: ClientSession | undefined = undefined
+        session: ClientSession | undefined = undefined,
+        idempotencyResponse: PurchaseRecordDto | undefined = undefined
     ) {
         const purchaseRecord = await this.repository.markCompleted(
             purchaseRecordId,
             completionId,
-            session
+            session,
+            idempotencyResponse
         )
         return this.toDto(purchaseRecord)
     }

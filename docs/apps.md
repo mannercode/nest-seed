@@ -199,6 +199,7 @@ pending ── completion lease 획득 ──> completing ── Mongo transacti
 
 - `pending`은 외부 결제나 티켓 전이보다 먼저 저장되므로, 프로세스가 어느 줄에서 종료되어도 재시도 기준점이 남는다.
 - 완료는 `completionId`와 만료 시각이 있는 lease를 CAS로 획득한 복제본만 시도한다. 티켓 `Available→Sold`, 구매 `completing→completed`, 결제 resolution marker는 같은 MongoDB 트랜잭션으로 커밋된다.
+- HTTP 멱등 응답 스냅샷도 완료 트랜잭션에 함께 저장한다. 따라서 outbox 상태가 나중에 갱신돼도 같은 키의 재시도 응답은 최초 응답과 달라지지 않는다.
 - 예외와 주기 재조정은 stale `pending`, 만료된 `completing`, 만료된 `compensating`을 찾는다. `reconciliationId` lease를 CAS로 얻은 하나만 멱등으로 티켓·Redis claim을 해제하고 결제를 취소한 뒤 `cancelled`로 바꾼다. 재조정 중 종료되면 lease 만료 후 다른 복제본이 이어받는다.
 - 구매 완료 트랜잭션과 재조정 lease 회수가 경합하면 MongoDB write conflict와 owner ID CAS로 승자 하나만 `completed` 또는 `cancelled`로 수렴한다.
 - 완료 후에는 위의 durable outbox가 별도로 이벤트를 발행한다. 이벤트 발행 실패는 이미 완료된 구매를 되돌리지 않고 재시도한다.
@@ -230,7 +231,13 @@ participant "액티비티(워커)" as Worker
 queue NATS
 
 Client -> API: POST /showtime-creation/showtimes
+API -> mongo: 인증 주체+Idempotency-Key claim
+note right of API
+  같은 본문+완료: 기존 sagaId 반환
+  다른 본문/처리 중: 409
+end note
 API -> Temporal: workflow.start(workflowId=sagaId,\nREJECT_DUPLICATE)
+API -> mongo: submission accepted
 API -> NATS: waiting 발행 — 시작 성공 후에만
 API --> Client: 202 { sagaId }
 note right of Client
@@ -371,6 +378,35 @@ POST /booking/showtimes/:id/tickets/hold
 # 다른 맥락에서도 단독으로 의미가 있음 — namespace 없이 둠
 GET  /movies/:movieId
 ```
+
+#### 중복 실행 비용이 큰 POST는 멱등성 키를 요구한다
+
+결제나 장기 비동기 작업처럼 중복 실행이 별도 외부 효과나 작업을 만드는 POST는
+`Idempotency-Key`를 필수로 받는다. 현재 적용 대상은 `POST /purchases`와
+`POST /showtime-creation/showtimes`다. 조회를 위해 POST를 쓰는
+`POST /showtime-creation/showtimes/search`에는 요구하지 않는다.
+
+```http
+Content-Type: application/json
+Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000
+```
+
+- 키는 클라이언트가 논리적 요청마다 만드는 16~128자의 opaque token이다. 같은 논리적
+  요청을 재시도할 때만 같은 키를 쓴다.
+- 서버는 인증 주체와 엔드포인트별 저장소, 키의 조합으로 요청을 구분한다. 같은 키와 같은
+  정규화 본문이면 최초 성공 응답을 반환하고, 다른 본문이면 `409 Conflict`를 반환한다.
+- 최초 요청을 아직 처리 중이면 `409 Conflict`를 반환한다. 클라이언트는 새 키로 우회하지
+  않고 같은 키로 나중에 다시 확인한다.
+- DTO·업무 검증처럼 부수효과를 시작하기 전의 실패는 키를 소비하지 않는다. 실행을 시작한
+  구매의 오류 응답은 보상이 끝난 뒤에도 같은 키로 재현한다.
+- 키가 같아도 서로 다른 논리적 요청을 하나로 합치지는 않는다. 다른 키로 들어온 동시 요청의
+  정합성은 티켓 원자 전이, MongoDB 트랜잭션과 업무 상태 검증이 담당한다.
+
+구매는 인증 주체+키 unique index와 완료 응답 스냅샷을 구매 기록에 함께 저장한다. 상영 생성은
+인증 주체+키를 고정 `sagaId`에 매핑하고 lease를 저장한다. API 컨테이너가 Temporal 시작 응답을
+잃고 종료되어도 다른 컨테이너가 같은 `sagaId`로 이어받으며, Temporal의
+`REJECT_DUPLICATE`가 workflow를 한 번만 시작하게 한다. 메모리 캐시나 프로세스 로컬 중복 방지는
+정합성 근거로 쓰지 않는다.
 
 #### ID만 받는 API는 처음부터 복수형으로 둔다
 

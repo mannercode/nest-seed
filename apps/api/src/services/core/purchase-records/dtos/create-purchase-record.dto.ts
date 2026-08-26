@@ -9,6 +9,14 @@ import {
 import { PurchaseItemDto } from './purchase-item.dto'
 
 export class CreatePurchaseRecordDto {
+    @IsOptional()
+    @IsString()
+    idempotencyFingerprint?: string
+
+    @IsOptional()
+    @IsString()
+    idempotencyKey?: string
+
     @IsNotEmpty()
     @IsString()
     userId: string

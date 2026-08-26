@@ -7,6 +7,8 @@ setup_showtime_resources
 create_and_login_user
 wait_for_tickets
 
+PURCHASE_IDEMPOTENCY_KEY=$(new_idempotency_key)
+
 SETUP POST /booking/showtimes/${SHOWTIME_ID}/tickets/hold \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}" \
 	-H 'Content-Type: application/json' \
@@ -17,8 +19,35 @@ TEST "선점한 티켓 묶음을 구매한다" \
 	201 POST /purchases \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}" \
 	-H 'Content-Type: application/json' \
+	-H "Idempotency-Key: ${PURCHASE_IDEMPOTENCY_KEY}" \
 	-d '{
 			"totalPrice": 20000,
+			"purchaseItems": [
+				{ "type": "tickets", "itemId": "'${TICKET_ID_1}'" },
+				{ "type": "tickets", "itemId": "'${TICKET_ID_2}'" }
+			]
+		}'
+
+TEST "같은 멱등성 키와 본문으로 재시도하면 최초 구매 응답을 반환한다" \
+	201 POST /purchases \
+	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}" \
+	-H 'Content-Type: application/json' \
+	-H "Idempotency-Key: ${PURCHASE_IDEMPOTENCY_KEY}" \
+	-d '{
+			"totalPrice": 20000,
+			"purchaseItems": [
+				{ "type": "tickets", "itemId": "'${TICKET_ID_1}'" },
+				{ "type": "tickets", "itemId": "'${TICKET_ID_2}'" }
+			]
+		}'
+
+TEST "같은 멱등성 키를 다른 본문에 사용하면 409를 반환한다" \
+	409 POST /purchases \
+	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}" \
+	-H 'Content-Type: application/json' \
+	-H "Idempotency-Key: ${PURCHASE_IDEMPOTENCY_KEY}" \
+	-d '{
+			"totalPrice": 20001,
 			"purchaseItems": [
 				{ "type": "tickets", "itemId": "'${TICKET_ID_1}'" },
 				{ "type": "tickets", "itemId": "'${TICKET_ID_2}'" }
@@ -30,6 +59,7 @@ as_guest
 TEST "인증 없이 구매하면 401을 반환한다" \
 	401 POST /purchases \
 	-H 'Content-Type: application/json' \
+	-H "Idempotency-Key: $(new_idempotency_key)" \
 	-d '{
 			"totalPrice": 20000,
 			"purchaseItems": [

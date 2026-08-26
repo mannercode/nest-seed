@@ -32,6 +32,21 @@ export class PurchaseItem {
 
 @Schema(MONGOOSE_SCHEMA_OPTIONS)
 export class PurchaseRecord extends CrudSchema {
+    @Prop({ default: null, type: String })
+    idempotencyKey: null | string
+
+    @Prop({ default: null, type: String })
+    idempotencyFingerprint: null | string
+
+    @Prop({ default: null, type: Number })
+    idempotencyErrorStatus: null | number
+
+    @Prop({ default: null, type: Object })
+    idempotencyErrorResponse: null | Record<string, unknown>
+
+    @Prop({ default: null, type: Object })
+    idempotencyResponse: null | Record<string, unknown>
+
     @Prop({ required: true })
     userId: string
 
@@ -80,6 +95,14 @@ export class PurchaseRecord extends CrudSchema {
 }
 export const PurchaseRecordSchema = createCrudSchema(PurchaseRecord)
 
+PurchaseRecordSchema.index(
+    { userId: 1, idempotencyKey: 1 },
+    {
+        name: 'user_idempotency_key_unique',
+        partialFilterExpression: { idempotencyKey: { $type: 'string' } },
+        unique: true
+    }
+)
 PurchaseRecordSchema.index({ status: 1, updatedAt: 1 })
 PurchaseRecordSchema.index({ status: 1, completionLeaseUntil: 1 })
 PurchaseRecordSchema.index({ status: 1, reconciliationLeaseUntil: 1 })

@@ -1,6 +1,12 @@
 import type { Connection } from 'mongoose'
-import { CacheService, InjectCache } from '@mannercode/common'
-import { ConflictException, Injectable, Logger } from '@nestjs/common'
+import {
+    CacheService,
+    ensure,
+    IdempotencyErrors,
+    InjectCache,
+    isDuplicateKeyError
+} from '@mannercode/common'
+import { ConflictException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { InjectConnection } from '@nestjs/mongoose'
 import { Interval } from '@nestjs/schedule'
 import { MONGO_CONNECTION_NAME } from 'config'
@@ -13,7 +19,7 @@ import {
     type PurchaseRecordDto
 } from 'core'
 import { PaymentsService } from 'infrastructure'
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { CreatePurchaseDto } from './dtos'
 import { PurchaseErrors } from './errors'
 import { TicketPurchaseService } from './internal'
@@ -41,8 +47,15 @@ export class PurchaseService {
         @InjectConnection(MONGO_CONNECTION_NAME) private readonly mongoConnection: Connection
     ) {}
 
-    async processPurchase(createDto: CreatePurchaseDto, userId: string) {
+    async processPurchase(createDto: CreatePurchaseDto, userId: string, idempotencyKey: string) {
         this.logger.log('processPurchase', { userId })
+
+        const fingerprint = this.fingerprint(createDto)
+        const existing = await this.purchaseRecordsService.findIdempotencyOperation(
+            userId,
+            idempotencyKey
+        )
+        if (existing) return this.replayIdempotencyOperation(existing, fingerprint)
 
         const ticketIds = createDto.purchaseItems
             .filter((item) => item.type === PurchaseItemType.Tickets)
@@ -56,7 +69,14 @@ export class PurchaseService {
         return this.cache.withLockBlocking(
             lockKey,
             PURCHASE_LOCK_TTL_MS,
-            () => this.processPurchaseLocked(createDto, userId, ticketIds),
+            () =>
+                this.processPurchaseLocked(
+                    createDto,
+                    userId,
+                    ticketIds,
+                    idempotencyKey,
+                    fingerprint
+                ),
             { waitMs: PURCHASE_LOCK_WAIT_MS }
         )
     }
@@ -64,8 +84,16 @@ export class PurchaseService {
     private async processPurchaseLocked(
         createDto: CreatePurchaseDto,
         userId: string,
-        ticketIds: string[]
+        ticketIds: string[],
+        idempotencyKey: string,
+        fingerprint: string
     ) {
+        const existing = await this.purchaseRecordsService.findIdempotencyOperation(
+            userId,
+            idempotencyKey
+        )
+        if (existing) return this.replayIdempotencyOperation(existing, fingerprint)
+
         const tickets = await this.ticketsService.getMany(ticketIds)
         const unavailable = tickets.filter((t) => t.status !== TicketStatus.Available)
         if (unavailable.length > 0) {
@@ -76,10 +104,21 @@ export class PurchaseService {
 
         // 외부 효과(결제·티켓 판매)보다 먼저 pending 행을 남긴다. 프로세스가 어느 줄에서
         // 죽더라도 이 행이 reconciliation의 재시도 기준점이 된다.
-        const purchaseRecord = await this.purchaseRecordsService.create(
-            { ...createDto, paymentId: null, userId },
-            { pending: true }
-        )
+        let purchaseRecord: PurchaseRecordDto
+        try {
+            purchaseRecord = await this.purchaseRecordsService.create(
+                { ...createDto, paymentId: null, userId },
+                { idempotency: { fingerprint, key: idempotencyKey }, pending: true }
+            )
+        } catch (error) {
+            if (!isDuplicateKeyError(error)) throw error
+
+            const winner = ensure(
+                await this.purchaseRecordsService.findIdempotencyOperation(userId, idempotencyKey),
+                'Purchase idempotency winner is missing after a duplicate-key conflict.'
+            )
+            return this.replayIdempotencyOperation(winner, fingerprint)
+        }
         this.logger.log('processPurchase createPurchaseRecord completed', {
             purchaseRecordId: purchaseRecord.id
         })
@@ -99,7 +138,10 @@ export class PurchaseService {
             this.logger.log('processPurchase createPayment completed', { paymentId: payment.id })
 
             try {
-                await this.purchaseRecordsService.setPaymentId(purchaseRecord.id, payment.id)
+                purchaseRecord = await this.purchaseRecordsService.setPaymentId(
+                    purchaseRecord.id,
+                    payment.id
+                )
             } catch (stateError) {
                 // reconciliation이 payment 생성 중 먼저 이겼다면 취소 조회가 insert보다
                 // 빨랐을 수 있다. payment 행의 durable resolution marker를 남긴 채 여기서도
@@ -126,15 +168,21 @@ export class PurchaseService {
                 createDto,
                 purchaseRecord.id,
                 (completionTicketIds) =>
-                    this.commitPurchase(completionTicketIds, purchaseRecord.id, activeCompletionId)
+                    this.commitPurchase(completionTicketIds, purchaseRecord, activeCompletionId)
             )
             this.logger.log('processPurchase completed', { purchaseRecordId: purchaseRecord.id })
         } catch (error) {
             this.logger.warn('processPurchase reconciliation requested', {
                 purchaseRecordId: purchaseRecord.id
             })
+            const replayable = this.toReplayableError(error)
             try {
-                await this.reconcilePurchase(purchaseRecord.id, new Date(), completionId)
+                await this.reconcilePurchase(
+                    purchaseRecord.id,
+                    new Date(),
+                    completionId,
+                    replayable
+                )
             } catch (reconciliationError) {
                 // 원래 구매 오류는 호출자에게 유지하고, durable 구매·결제 행은 주기 작업이 다시 찾는다.
                 this.logger.error('purchase reconciliation deferred', {
@@ -149,6 +197,65 @@ export class PurchaseService {
         // 같은 purchaseRecordId를 event id로 사용해 outbox 재시도 대상으로 남긴다.
         await this.publishPurchaseEvent(completed)
         return completed
+    }
+
+    private fingerprint(createDto: CreatePurchaseDto) {
+        const normalized = {
+            purchaseItems: [...createDto.purchaseItems]
+                .map(({ itemId, type }) => ({ itemId, type }))
+                .sort((a, b) => `${a.type}:${a.itemId}`.localeCompare(`${b.type}:${b.itemId}`)),
+            totalPrice: createDto.totalPrice
+        }
+        return createHash('sha256').update(JSON.stringify(normalized)).digest('hex')
+    }
+
+    private replayIdempotencyOperation(
+        operation: NonNullable<
+            Awaited<ReturnType<PurchaseRecordsService['findIdempotencyOperation']>>
+        >,
+        fingerprint: string
+    ): PurchaseRecordDto {
+        if (operation.fingerprint !== fingerprint) {
+            throw new ConflictException(IdempotencyErrors.KeyReused())
+        }
+
+        if (operation.status === PurchaseRecordStatus.Completed) {
+            return ensure(
+                operation.response,
+                'Completed idempotent purchase is missing its immutable response.'
+            )
+        }
+        if (operation.status !== PurchaseRecordStatus.Cancelled) {
+            throw new ConflictException(IdempotencyErrors.RequestInProgress())
+        }
+        if (operation.errorStatus && operation.errorResponse) {
+            throw new HttpException(operation.errorResponse, operation.errorStatus)
+        }
+        throw new ConflictException(IdempotencyErrors.OperationFailed())
+    }
+
+    private toReplayableError(error: unknown): {
+        response: Record<string, unknown>
+        status: number
+    } {
+        if (error instanceof HttpException) {
+            const response = error.getResponse()
+            return {
+                response:
+                    typeof response === 'string'
+                        ? { message: response, statusCode: error.getStatus() }
+                        : { ...response },
+                status: error.getStatus()
+            }
+        }
+
+        return {
+            response: {
+                message: 'Internal server error',
+                statusCode: HttpStatus.INTERNAL_SERVER_ERROR
+            },
+            status: HttpStatus.INTERNAL_SERVER_ERROR
+        }
     }
 
     async reconcilePendingPurchases(before: Date = new Date()) {
@@ -224,9 +331,10 @@ export class PurchaseService {
 
     private async commitPurchase(
         ticketIds: string[],
-        purchaseRecordId: string,
+        response: PurchaseRecordDto,
         completionId: string
     ): Promise<PurchaseRecordDto> {
+        const purchaseRecordId = response.id
         const session = await this.mongoConnection.startSession()
         try {
             // 같은 transaction에서 티켓과 completion lease 문서를 모두 쓰므로, lease를
@@ -234,13 +342,14 @@ export class PurchaseService {
             // 함께 커밋하고 패자의 티켓 쓰기는 rollback된다.
             return await session.withTransaction(async () => {
                 await this.ticketsService.sellForPurchase(ticketIds, purchaseRecordId, session)
-                const completed = await this.purchaseRecordsService.markCompleted(
+                await this.purchaseRecordsService.markCompleted(
                     purchaseRecordId,
                     completionId,
-                    session
+                    session,
+                    response
                 )
                 await this.paymentsService.resolvePurchase(purchaseRecordId, session)
-                return completed
+                return response
             })
         } finally {
             await session.endSession()
@@ -255,7 +364,12 @@ export class PurchaseService {
         await this.publishPendingPurchaseEvents()
     }
 
-    private async reconcilePurchase(purchaseRecordId: string, before: Date, completionId?: string) {
+    private async reconcilePurchase(
+        purchaseRecordId: string,
+        before: Date,
+        completionId?: string,
+        idempotencyError?: { response: Record<string, unknown>; status: number }
+    ) {
         const now = new Date()
         const reconciliationId = randomUUID()
         // stale 조회 결과를 그대로 믿지 않고 Pending→Compensating CAS를 획득한 replica만
@@ -267,7 +381,8 @@ export class PurchaseService {
                 leaseUntil: new Date(now.getTime() + PURCHASE_RECONCILIATION_LEASE_MS),
                 now,
                 reconciliationId,
-                completionId
+                completionId,
+                idempotencyError
             }
         )
         if (!purchaseRecord) return

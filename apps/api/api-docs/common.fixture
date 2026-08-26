@@ -6,6 +6,10 @@ random_email() {
 	printf 'test.%s.%s@example.com\n' "${epoch_ns}" "${RANDOM}"
 }
 
+new_idempotency_key() {
+	openssl rand -hex 16
+}
+
 USER_NAME="사용자 이름"
 USER_BIRTHDATE="1990-01-01T00:00:00.000Z"
 USER_PASSWORD="testpassword"
@@ -138,9 +142,12 @@ create_theater() {
 
 request_showtime_creation() {
 	local startTime=${1:-$(date -u -d '+1 day' '+%Y-%m-%dT%H:%M:%S.000Z')}
+	local idempotencyKey
+	idempotencyKey=$(new_idempotency_key)
 
 	SETUP POST /showtime-creation/showtimes \
 		-H 'Content-Type: application/json' \
+		-H "Idempotency-Key: ${idempotencyKey}" \
 		-d '{
 				"movieId": "'${MOVIE_ID}'",
 				"theaterIds": ["'${THEATER_ID}'"],
