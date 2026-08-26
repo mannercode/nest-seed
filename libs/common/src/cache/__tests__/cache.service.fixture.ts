@@ -23,7 +23,7 @@ export async function createCacheServiceFixture() {
         imports: [
             RedisModule.forRoot({ type: 'single', url: process.env.TESTLIB_REDIS_URL }, 'name'),
             CacheModule.register({ prefix, redisName: 'name' }),
-            CacheModule.register({ name: 'a', prefix, redisName: 'name' }),
+            CacheModule.register({ name: 'a', prefix: async () => prefix, redisName: 'name' }),
             CacheModule.register({ name: 'b', prefix, redisName: 'name' })
         ],
         providers: [TestInjectCacheService]

@@ -29,7 +29,7 @@ export async function createJwtAuthServiceFixture() {
         imports: [
             RedisModule.forRoot({ type: 'single', url: process.env.TESTLIB_REDIS_URL }),
             JwtAuthModule.register({
-                prefix: withTestId('jwt-auth'),
+                prefix: async () => withTestId('jwt-auth'),
                 useFactory() {
                     return {
                         auth: {

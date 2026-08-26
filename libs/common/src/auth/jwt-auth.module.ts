@@ -23,12 +23,13 @@ export class JwtAuthModule {
             useFactory: async (jwtService: JwtService, redis: Redis, ...args: any[]) => {
                 const factoryOptions = await useFactory(...args)
                 const { auth, onEvent, userIdField } = factoryOptions
+                const resolvedPrefix = typeof prefix === 'function' ? await prefix(...args) : prefix
 
                 return new JwtAuthService(
                     jwtService,
                     auth,
                     redis,
-                    `${prefix}:${defaultTo(name, 'default')}`,
+                    `${resolvedPrefix}:${defaultTo(name, 'default')}`,
                     defaultTo(userIdField, DEFAULT_USER_ID_FIELD),
                     onEvent
                 )

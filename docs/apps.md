@@ -528,24 +528,21 @@ describe('PATCH /theaters/:id', () => {
 })
 ```
 
-### 동적 가져오기 — 왜 필요한가
+### 테스트별 자원 격리
 
 각 테스트가 다른 테스트와 부딪히지 않도록, `jest.config`가 Jest 명령마다 고유한 실행 ID를 만든다. `jest.setup`은 app 모듈을 읽기 전에 먼저 실행 ID와 worker 번호가 들어간 startup `PROJECT_ID`를 설정하고, `beforeEach`에서 테스트별 `TEST_ID` suffix로 다시 갱신한다. Redis/cache prefix, NATS subject, Temporal task queue 이름이 이 값을 따라 갈라진다. MongoDB 데이터베이스와 S3 버킷도 실행 ID와 Jest worker 번호를 조합해 만든다. coverage·로그·Temporal workflow bundle은 `_output/jest-runs/<실행 ID>/` 아래에서 실행별로 분리된다. 따라서 같은 devcontainer에서 API Jest 명령을 동시에 실행해도 같은 번호의 worker나 파일 산출물을 공유하지 않는다.
 
-문제는 일반적인 가져오기 방식이다. 파일 맨 위에 `import { createUsersFixture } from './users.fixture'`라고 쓰면, 그 모듈은 처음 한 번만 평가된다. 모듈이 처음 평가될 때 읽은 `process.env.PROJECT_ID`나 `process.env.TEST_ID`로 cache prefix, NATS subject, Temporal queue 같은 값이 만들어진다. 그래서 다음 테스트도 이전 테스트의 값을 그대로 쓰게 된다.
+Nest 모듈 파일은 프로세스에서 한 번만 평가된다. 따라서 데코레이터 인자에서 `process.env.PROJECT_ID`를 읽으면 첫 테스트의 값에 고정된다. cache와 JWT 모듈은 정적인 값을 캡처하지 않고, 제공자를 만들 때 `AppConfigService.projectId`를 주입받아 prefix를 계산한다. NATS subject와 Temporal queue도 서비스나 worker를 생성할 때 같은 설정값으로 만든다.
 
-이 문제를 피하려고 Jest 설정에 `resetModules: true`를 켠다. 그리고 픽스처는 **`beforeEach` 안에서 `await import`로 동적으로 가져온다**. 이렇게 하면 테스트마다 모듈이 새로 평가되고, 그 시점의 `TEST_ID`와 `PROJECT_ID`가 픽스처와 앱 모듈에 반영된다.
-
-IDE 자동 완성과 타입 체크는 유지하고 싶다. 그래서 타입은 `import type`으로 정적으로 가져온다. 타입 가져오기는 런타임 코드를 만들지 않는다.
+이 구조에서는 Jest 모듈 레지스트리를 테스트마다 초기화할 필요가 없다. 애플리케이션 코드와 Nest/Temporal 의존성은 worker 안에서 한 번 로드되고, 테스트별 애플리케이션 컨텍스트만 새로 만든다. 픽스처는 정적으로 가져와도 자원 격리가 유지된다.
 
 ```ts
-import type { AppTestContext } from '../helpers' // 타입만 가져오므로 런타임 영향 없음
+import { createAppTestContext, type AppTestContext } from '../helpers'
 
 describe('Users', () => {
     let fix: AppTestContext
 
     beforeEach(async () => {
-        const { createAppTestContext } = await import('../helpers')
         fix = await createAppTestContext()
     })
 })

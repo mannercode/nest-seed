@@ -3,7 +3,6 @@ import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import {
     AppConfigService,
-    getProjectId,
     MONGO_CONNECTION_NAME,
     NATS_CONNECTION_NAME,
     REDIS_CONNECTION_NAME
@@ -37,8 +36,9 @@ const SHOWTIME_CREATION_WORKER = Symbol('SHOWTIME_CREATION_WORKER')
         // v2도 rolling migration 동안 v1 binary와 같은 lock key를 사용한다.
         // original Temporal queue가 완전히 drain된 뒤 별도 릴리스에서 제거할 수 있다.
         CacheModule.register({
+            inject: [AppConfigService],
             name: 'showtime-creation',
-            prefix: `cache:${getProjectId()}`,
+            prefix: (config: AppConfigService) => `cache:${config.projectId}`,
             redisName: REDIS_CONNECTION_NAME
         }),
         MongooseModule.forFeature(
@@ -76,7 +76,7 @@ const SHOWTIME_CREATION_WORKER = Symbol('SHOWTIME_CREATION_WORKER')
                     maxConcurrentWorkflowTaskExecutions: 2,
                     maxConcurrentWorkflowTaskPolls: 2,
                     namespace: config.temporal.namespace,
-                    taskQueue: getLegacyShowtimeCreationTaskQueue(),
+                    taskQueue: getLegacyShowtimeCreationTaskQueue(config.projectId),
                     workflowBundlePath: legacyShowtimeCreationBundle.bundlePath
                 })
         },
@@ -88,7 +88,7 @@ const SHOWTIME_CREATION_WORKER = Symbol('SHOWTIME_CREATION_WORKER')
                     activities: activities.bind(),
                     address: config.temporal.address,
                     namespace: config.temporal.namespace,
-                    taskQueue: getShowtimeCreationTaskQueue(),
+                    taskQueue: getShowtimeCreationTaskQueue(config.projectId),
                     workflowBundlePath: showtimeCreationBundle.bundlePath
                 })
         }

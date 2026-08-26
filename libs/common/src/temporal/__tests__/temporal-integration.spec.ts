@@ -7,7 +7,7 @@ import type { TemporalClientConfig } from '../temporal.types'
 
 /**
  * 이 파일 전체가 공유하는 단일 Connection과 Client이다.
- * 각 `it` 안의 `await import`(프로젝트 컨벤션: resetModules: true)는 SUT 모듈에 새로운 클래스 정체성을 부여하고, 살아 있는 인프라 핸들만 재사용한다.
+ * 각 `it` 안의 `await import`는 무거운 Temporal 테스트 환경을 파일 수준에서 준비한 뒤 SUT를 늦게 읽게 한다.
  */
 let connection: Connection
 let client: Client

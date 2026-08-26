@@ -153,8 +153,6 @@ describe('PurchaseService', () => {
                 // 티켓은 아직 전이 전이므로 되돌릴 것이 없다.
                 // 특정 메서드 호출을 직접 가로채지 않고 관측 가능한 로그를 기준으로 삼아, 테스트가 구현 세부에 지나치게 묶이지 않게 한다.
                 beforeEach(async () => {
-                    // `resetModules: true` 환경에서는 감시 대상 Logger가 운영 코드의 Logger와 같은 실행 영역에 있어야 한다.
-                    // 그래서 같은 모듈 그래프에서 동적으로 가져온다.
                     const { Logger } = await import('@nestjs/common')
                     jest.spyOn(Logger.prototype, 'log').mockImplementation((message: unknown) => {
                         if (message === 'completePurchase') {

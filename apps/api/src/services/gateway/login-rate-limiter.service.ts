@@ -1,6 +1,6 @@
 import { getRedisConnectionToken, TimeUtil, type RedisConnection } from '@mannercode/common'
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common'
-import { AppConfigService, getProjectId, REDIS_CONNECTION_NAME } from 'config'
+import { AppConfigService, REDIS_CONNECTION_NAME } from 'config'
 import { createHash } from 'node:crypto'
 import { AuthErrors } from './guards'
 
@@ -19,7 +19,7 @@ export class LoginRateLimiterService {
     private readonly accountFailureLimit: number
     private readonly failureWindowMs: number
     private readonly ipFailureLimit: number
-    private readonly prefix = `login-rate-limit:${getProjectId()}`
+    private readonly prefix: string
 
     constructor(
         @Inject(getRedisConnectionToken(REDIS_CONNECTION_NAME))
@@ -29,6 +29,7 @@ export class LoginRateLimiterService {
         this.accountFailureLimit = config.loginRateLimit.accountFailureLimit
         this.failureWindowMs = TimeUtil.toMs(config.loginRateLimit.failureWindow)
         this.ipFailureLimit = config.loginRateLimit.ipFailureLimit
+        this.prefix = `login-rate-limit:${config.projectId}`
     }
 
     async assertAllowed(role: LoginRole, email: string, ip: string): Promise<void> {
