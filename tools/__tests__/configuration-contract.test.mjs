@@ -239,10 +239,13 @@ test('container base and infrastructure image references are digest-pinned', asy
         'deploy/deps.Dockerfile'
     ]) {
         const contents = await read(dockerfile)
-        for (const [, image] of contents.matchAll(/^FROM\s+(\S+)/gm)) {
+        const stages = new Set()
+        for (const [, image, alias] of contents.matchAll(/^FROM\s+(\S+)(?:\s+AS\s+(\S+))?/gim)) {
+            if (stages.has(image)) continue
             if (image.startsWith('nest-seed-deps:')) continue
             assert.match(image, /@sha256:[a-f0-9]{64}$/, `${dockerfile} base image must be pinned`)
             if (image.startsWith('node:')) nodeBaseImages.push(image)
+            if (alias) stages.add(alias)
         }
     }
     assert.equal(nodeBaseImages.length, 3)
@@ -322,15 +325,24 @@ test('Stability keeps 60 API repetitions within three timeout-safe jobs', async 
     )
 })
 
-test('Dependabot major updates are not automatically merged', async () => {
+test('Dependabot only proposes grouped routine updates and keeps major updates manual', async () => {
     const config = await read('.github/dependabot.yml')
     const workflow = await read('.github/workflows/dependabot-auto-merge.yaml')
 
-    assert.match(config, /update-types:\s*\['minor', 'patch'\]/)
+    const ecosystems = [...config.matchAll(/^\s+- package-ecosystem:/gm)]
+    const routineAllowLists = [
+        ...config.matchAll(
+            /allow:\s+- dependency-name: '\*'\s+update-types:\s+- version-update:semver-minor\s+- version-update:semver-patch/g
+        )
+    ]
+    assert.equal(ecosystems.length, 4)
+    assert.equal(routineAllowLists.length, ecosystems.length)
+    assert.equal(config.match(/update-types:\s*\['minor', 'patch'\]/g)?.length, ecosystems.length)
     assert.match(
         config,
-        /package-ecosystem: docker\s+directories:\s+- '\/\.devcontainer'\s+- '\/deploy'/
+        /package-ecosystem: docker\s+directories:\s+- '\/\.devcontainer'\s+- '\/apps\/api'\s+- '\/deploy'/
     )
+    assert.equal(config.match(/group-by: dependency-name/g)?.length, 2)
     assert.match(
         config,
         /package-ecosystem: docker-compose\s+directories:\s+- '\/deploy'\s+- '\/infra'/

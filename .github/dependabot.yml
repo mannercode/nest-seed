@@ -1,6 +1,8 @@
 # registry에서 직접 설치하는 dependencies/devDependencies는 정확 고정한다.
 # peerDependencies의 호환 범위와 로컬 workspace 연결(`*`)은 예외이며, 고정 버전은 갱신 장치가 없으면 포크 시점부터 묵기 시작한다.
-# npm, GitHub Actions, Docker 이미지의 minor/patch를 주 1회 묶고 major는 수동 검토할 별도 PR로 받는다. 보안 취약점 PR은 주기와 무관하게 바로 열린다.
+# npm, GitHub Actions, Docker 이미지의 minor/patch만 주 1회 묶는다. major는 서로 맞물린
+# toolchain/runtime을 한 PR에서 올려야 하므로 routine version update 대상에서 제외한다.
+# `allow.update-types`는 security update에는 적용되지 않아 major 보안 수정 PR도 계속 열린다.
 # 올라온 PR은 기존 test-atoz 워크플로(pull_request 트리거)가 그대로 검증한다.
 version: 2
 updates:
@@ -8,35 +10,45 @@ updates:
       directory: '/'
       schedule:
           interval: weekly
+      allow:
+          - dependency-name: '*'
+            update-types:
+                - version-update:semver-minor
+                - version-update:semver-patch
       groups:
           npm-minor-patch:
               patterns: ['*']
               update-types: ['minor', 'patch']
-      # dependabot은 선언된 범위와 무관하게 @types/node를 최신 메이저로 고쳐 쓴 PR을 올린다.
-      # 타입의 메이저는 런타임 Node 메이저(devcontainer 이미지)와 짝이라 어긋나면 빌드가 깨진다.
-      # 메이저 범프 제안을 막는다. 런타임 Node를 올릴 때 타입도 함께 올린다.
-      ignore:
-          - dependency-name: '@types/node'
-            update-types: ['version-update:semver-major']
     - package-ecosystem: github-actions
       directory: '/'
       schedule:
           interval: weekly
+      allow:
+          - dependency-name: '*'
+            update-types:
+                - version-update:semver-minor
+                - version-update:semver-patch
       groups:
           actions-minor-patch:
               patterns: ['*']
               update-types: ['minor', 'patch']
-    # Docker updater는 Dockerfile의 첫 FROM만 안정적으로 갱신한다. apps/api의 외부
-    # runtime 이미지는 두 번째 stage라 자동화 대상에서 제외한다. Node PR에서는 runtime을
-    # 수동으로 같은 tag+digest로 맞춰야 하며, test:config의 3개 이미지 동일성 계약이 누락을 막는다.
+    # 세 Dockerfile의 첫 외부 FROM을 같은 Node 이미지로 유지한다. dependency-name 기준
+    # cross-directory grouping으로 tag+digest 갱신도 항상 하나의 PR에서 수행한다.
     - package-ecosystem: docker
       directories:
           - '/.devcontainer'
+          - '/apps/api'
           - '/deploy'
       schedule:
           interval: weekly
+      allow:
+          - dependency-name: '*'
+            update-types:
+                - version-update:semver-minor
+                - version-update:semver-patch
       groups:
           docker-minor-patch:
+              group-by: dependency-name
               patterns: ['*']
               update-types: ['minor', 'patch']
     # Compose updater는 리터럴 image 참조만 갱신한다. .env.infra의 *_IMAGE 변수는
@@ -47,7 +59,13 @@ updates:
           - '/infra'
       schedule:
           interval: weekly
+      allow:
+          - dependency-name: '*'
+            update-types:
+                - version-update:semver-minor
+                - version-update:semver-patch
       groups:
           compose-minor-patch:
+              group-by: dependency-name
               patterns: ['*']
               update-types: ['minor', 'patch']

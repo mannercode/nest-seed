@@ -83,7 +83,7 @@ gh api -X PATCH repos/OWNER/REPO \
 
 ## 4. Dependabot과 보안 기능
 
-`.github/dependabot.yml`은 npm, GitHub Actions와 추적 가능한 Dockerfile/Compose 이미지 참조를 매주 확인한다. 다단계 Dockerfile의 두 번째 `FROM`과 `.env.infra` 변수로 간접 참조한 이미지는 자동 갱신 범위가 아니므로, PR에서 Node runtime 및 인프라 digest의 수동 동기화 계약도 확인한다. 파일이 있다고 다음 저장소 설정까지 자동으로 켜지는 것은 아니다.
+`.github/dependabot.yml`은 npm, GitHub Actions와 추적 가능한 Dockerfile/Compose 이미지 참조의 minor/patch를 매주 확인한다. 같은 이미지가 여러 디렉터리에 있으면 dependency name으로 묶어 한 PR에서 갱신한다. routine major update는 생성하지 않는다. TypeScript와 ESLint 생태계, Node 이미지와 OS 패키지처럼 함께 바뀌어야 하는 범위를 관리자가 한 PR에서 올려 AtoZ로 검증한다. 이 제한은 security update에는 적용되지 않으므로 major 보안 수정도 PR로 열리며 자동 머지하지 않는다. `.env.infra` 변수로 간접 참조한 digest는 자동 갱신 범위가 아니므로 인프라 이미지 갱신 시 수동으로 맞춘다. 파일이 있다고 다음 저장소 설정까지 자동으로 켜지는 것은 아니다.
 
 - Settings → Code security에서 Dependabot alerts와 Dependabot security updates를 활성화한다.
 - Automated security fixes를 활성화한다.
