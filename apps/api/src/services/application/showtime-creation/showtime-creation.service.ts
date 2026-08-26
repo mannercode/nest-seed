@@ -1,9 +1,15 @@
-import { PaginationDto, OrderDirection } from '@mannercode/common'
-import { BadRequestException, Injectable } from '@nestjs/common'
+import { IdempotencyErrors, PaginationDto, OrderDirection } from '@mannercode/common'
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common'
 import { MoviesService, ShowtimesService, TheatersService } from 'core'
 import { BulkCreateShowtimesDto, RequestShowtimeCreationResponse } from './dtos'
 import { ShowtimeCreationErrors } from './errors'
-import { ShowtimeCreationOrchestratorService } from './internal'
+import {
+    ShowtimeCreationOrchestratorService,
+    ShowtimeCreationSubmissionRepository
+} from './internal'
+import { fingerprintShowtimeCreation } from './internal/showtime-creation-fingerprint'
+
+const SUBMISSION_CLAIM_LEASE_MS = 5 * 60 * 1000
 
 @Injectable()
 export class ShowtimeCreationService {
@@ -11,17 +17,51 @@ export class ShowtimeCreationService {
         private readonly theatersService: TheatersService,
         private readonly moviesService: MoviesService,
         private readonly showtimesService: ShowtimesService,
-        private readonly orchestrator: ShowtimeCreationOrchestratorService
+        private readonly orchestrator: ShowtimeCreationOrchestratorService,
+        private readonly submissions: ShowtimeCreationSubmissionRepository
     ) {}
 
     async requestShowtimeCreation(
-        createDto: BulkCreateShowtimesDto
+        createDto: BulkCreateShowtimesDto,
+        principalId: string,
+        idempotencyKey: string
     ): Promise<RequestShowtimeCreationResponse> {
         this.assertStartTimesDoNotOverlap(createDto)
 
-        const sagaId = await this.orchestrator.enqueueShowtimeCreationJob(createDto)
+        const now = new Date()
+        const claim = await this.submissions.acquire(
+            principalId,
+            idempotencyKey,
+            fingerprintShowtimeCreation(createDto),
+            now,
+            new Date(now.getTime() + SUBMISSION_CLAIM_LEASE_MS)
+        )
 
-        return { sagaId }
+        if (claim.kind === 'key-reused') {
+            throw new ConflictException(IdempotencyErrors.KeyReused())
+        }
+        if (claim.kind === 'in-progress') {
+            throw new ConflictException(IdempotencyErrors.RequestInProgress())
+        }
+        if (claim.kind === 'accepted') return { sagaId: claim.sagaId }
+
+        try {
+            await this.orchestrator.ensureShowtimeCreationJobStarted(createDto, claim.sagaId)
+            const accepted = await this.submissions.markAccepted(
+                principalId,
+                idempotencyKey,
+                claim.claimId,
+                new Date()
+            )
+            if (!accepted) {
+                throw new Error('Showtime creation submission claim was lost before acceptance.')
+            }
+        } catch (error) {
+            await this.submissions.release(principalId, idempotencyKey, claim.claimId)
+            throw error
+        }
+
+        return { sagaId: claim.sagaId }
     }
 
     // 검증 액티비티는 기존 상영과의 충돌만 보므로, 요청 안에서 서로 겹치는 시작 시각은

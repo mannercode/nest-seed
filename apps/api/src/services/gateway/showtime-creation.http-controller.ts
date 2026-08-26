@@ -8,6 +8,7 @@ import {
     HttpStatus,
     Post,
     Query,
+    Req,
     Sse,
     UseGuards
 } from '@nestjs/common'
@@ -18,7 +19,10 @@ import {
     ShowtimeCreationService
 } from 'application'
 import { map, Observable } from 'rxjs'
+import type { AdminAuthRequest } from './types'
 import { AdminAuthGuard } from './guards'
+import { IdempotencyKey } from './idempotency-key.decorator'
+import { ParseIdempotencyKeyPipe } from './pipes'
 
 @Controller('showtime-creation')
 @UseGuards(AdminAuthGuard)
@@ -35,8 +39,16 @@ export class ShowtimeCreationHttpController {
 
     @HttpCode(HttpStatus.ACCEPTED)
     @Post('showtimes')
-    async requestShowtimeCreation(@Body() createDto: BulkCreateShowtimesDto) {
-        return this.showtimeCreationService.requestShowtimeCreation(createDto)
+    async requestShowtimeCreation(
+        @Body() createDto: BulkCreateShowtimesDto,
+        @IdempotencyKey(ParseIdempotencyKeyPipe) idempotencyKey: string,
+        @Req() req: AdminAuthRequest
+    ) {
+        return this.showtimeCreationService.requestShowtimeCreation(
+            createDto,
+            req.user.sub,
+            idempotencyKey
+        )
     }
 
     @Get('movies')

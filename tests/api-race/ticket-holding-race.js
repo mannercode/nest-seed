@@ -52,7 +52,8 @@ async function createShowtimeTickets(movieId, theaterId, startTimeOffsetMs) {
         .toISOString()
         .replace(/\.\d{3}Z$/, '.000Z')
     const created = await request('POST', '/showtime-creation/showtimes', {
-        body: { movieId, theaterIds: [theaterId], durationInMinutes: 120, startTimes: [startTime] }
+        body: { movieId, theaterIds: [theaterId], durationInMinutes: 120, startTimes: [startTime] },
+        headers: { 'idempotency-key': secureRandomHex() }
     })
     if (created.status !== 202) throw new Error(`showtime: ${created.status}`)
     await waitForSagaSuccess(created.body.sagaId, SHOWTIME_DEADLINE_MS)

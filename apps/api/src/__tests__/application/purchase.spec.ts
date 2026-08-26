@@ -1,7 +1,8 @@
 import { CacheService, ensure, objectId, pickIds, Require } from '@mannercode/common'
-import { oid } from '@mannercode/testing'
+import { HttpTestClient, oid } from '@mannercode/testing'
 import { PurchaseItemType, TicketStatus, type TicketDto, type UserDto } from 'core'
 import { PaymentStatus } from 'infrastructure'
+import { createHash, randomUUID } from 'node:crypto'
 import {
     createAndLoginUser,
     Errors,
@@ -37,11 +38,278 @@ describe('PurchaseService', () => {
                 heldTickets = await holdTickets(fix, user.id, tickets)
             })
 
+            it('Idempotency-Key가 없으면 400을 반환한다', async () => {
+                await fix.httpClient
+                    .post('/purchases')
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body(buildCreatePurchaseDto(heldTickets))
+                    .badRequest(Errors.Idempotency.KeyRequired())
+            })
+
+            it('Idempotency-Key 형식이 잘못되면 400을 반환한다', async () => {
+                await fix.httpClient
+                    .post('/purchases')
+                    .headers({ Authorization: `Bearer ${accessToken}`, 'Idempotency-Key': 'short' })
+                    .body(buildCreatePurchaseDto(heldTickets))
+                    .badRequest(Errors.Idempotency.KeyInvalid())
+            })
+
+            it('같은 키와 같은 요청은 결제를 다시 만들지 않고 최초 구매 응답을 반환한다', async () => {
+                const { PaymentsService } = await import('infrastructure')
+                const createPayment = jest.spyOn(fix.module.get(PaymentsService), 'create')
+                const createDto = buildCreatePurchaseDto(heldTickets)
+                const idempotencyKey = randomUUID()
+
+                const first = await fix.httpClient
+                    .post('/purchases')
+                    .headers({
+                        Authorization: `Bearer ${accessToken}`,
+                        'Idempotency-Key': idempotencyKey
+                    })
+                    .body(createDto)
+                    .created()
+                const replay = await fix.httpClient
+                    .post('/purchases')
+                    .headers({
+                        Authorization: `Bearer ${accessToken}`,
+                        'Idempotency-Key': idempotencyKey
+                    })
+                    .body(createDto)
+                    .created()
+
+                expect(replay.body).toEqual(first.body)
+                expect(createPayment).toHaveBeenCalledTimes(1)
+            })
+
+            it('동시에 도착한 같은 키와 요청도 한 구매와 한 결제로 수렴한다', async () => {
+                const { TicketPurchaseService } =
+                    await import('../../services/application/purchase/internal')
+                const { PurchaseRecordsService } = await import('core')
+                const { PaymentsService } = await import('infrastructure')
+                const ticketPurchaseService = fix.module.get(TicketPurchaseService)
+                const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
+                const createPayment = jest.spyOn(fix.module.get(PaymentsService), 'create')
+                const validatePurchase =
+                    ticketPurchaseService.validatePurchase.bind(ticketPurchaseService)
+                let firstValidationEntered!: () => void
+                const didEnterFirstValidation = new Promise<void>((resolve) => {
+                    firstValidationEntered = resolve
+                })
+                let continueFirstValidation!: () => void
+                const mayContinueFirstValidation = new Promise<void>((resolve) => {
+                    continueFirstValidation = resolve
+                })
+                jest.spyOn(ticketPurchaseService, 'validatePurchase').mockImplementationOnce(
+                    async (...args) => {
+                        firstValidationEntered()
+                        await mayContinueFirstValidation
+                        return validatePurchase(...args)
+                    }
+                )
+
+                const findOperation =
+                    purchaseRecordsService.findIdempotencyOperation.bind(purchaseRecordsService)
+                let lookupCount = 0
+                let secondOuterLookupCompleted!: () => void
+                const didCompleteSecondOuterLookup = new Promise<void>((resolve) => {
+                    secondOuterLookupCompleted = resolve
+                })
+                jest.spyOn(purchaseRecordsService, 'findIdempotencyOperation').mockImplementation(
+                    async (...args) => {
+                        const operation = await findOperation(...args)
+                        lookupCount += 1
+                        if (lookupCount === 3) secondOuterLookupCompleted()
+                        return operation
+                    }
+                )
+
+                const createDto = buildCreatePurchaseDto(heldTickets)
+                const idempotencyKey = randomUUID()
+                const first = new HttpTestClient(fix.httpClient.serverUrl)
+                    .post('/purchases')
+                    .headers({
+                        Authorization: `Bearer ${accessToken}`,
+                        'Idempotency-Key': idempotencyKey
+                    })
+                    .body(createDto)
+                    .created()
+                await didEnterFirstValidation
+                const second = new HttpTestClient(fix.httpClient.serverUrl)
+                    .post('/purchases')
+                    .headers({
+                        Authorization: `Bearer ${accessToken}`,
+                        'Idempotency-Key': idempotencyKey
+                    })
+                    .body(createDto)
+                    .created()
+                await didCompleteSecondOuterLookup
+                continueFirstValidation()
+
+                const [firstResponse, secondResponse] = await Promise.all([first, second])
+                expect(secondResponse.body).toEqual(firstResponse.body)
+                expect(createPayment).toHaveBeenCalledTimes(1)
+            })
+
+            it('서로 다른 티켓 묶음이 같은 키로 경합해도 한 요청만 실행한다', async () => {
+                const { PurchaseRecordsService } = await import('core')
+                const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
+                const createRecord = purchaseRecordsService.create.bind(purchaseRecordsService)
+                let createCallCount = 0
+                let firstCreateEntered!: () => void
+                const didEnterFirstCreate = new Promise<void>((resolve) => {
+                    firstCreateEntered = resolve
+                })
+                let secondCreateEntered!: () => void
+                const didEnterSecondCreate = new Promise<void>((resolve) => {
+                    secondCreateEntered = resolve
+                })
+                let firstCreateSaved!: () => void
+                const didSaveFirstCreate = new Promise<void>((resolve) => {
+                    firstCreateSaved = resolve
+                })
+                jest.spyOn(purchaseRecordsService, 'create').mockImplementation(async (...args) => {
+                    createCallCount += 1
+                    if (createCallCount === 1) {
+                        firstCreateEntered()
+                        await didEnterSecondCreate
+                        const record = await createRecord(...args)
+                        firstCreateSaved()
+                        return record
+                    }
+
+                    secondCreateEntered()
+                    await didSaveFirstCreate
+                    return createRecord(...args)
+                })
+
+                const idempotencyKey = randomUUID()
+                const firstDto = buildCreatePurchaseDto([ensure(heldTickets[0])])
+                const secondDto = buildCreatePurchaseDto([ensure(heldTickets[1])])
+                const first = new HttpTestClient(fix.httpClient.serverUrl)
+                    .post('/purchases')
+                    .headers({
+                        Authorization: `Bearer ${accessToken}`,
+                        'Idempotency-Key': idempotencyKey
+                    })
+                    .body(firstDto)
+                    .created()
+                await didEnterFirstCreate
+                const second = new HttpTestClient(fix.httpClient.serverUrl)
+                    .post('/purchases')
+                    .headers({
+                        Authorization: `Bearer ${accessToken}`,
+                        'Idempotency-Key': idempotencyKey
+                    })
+                    .body(secondDto)
+                    .conflict(Errors.Idempotency.KeyReused())
+
+                await Promise.all([first, second])
+                expect(createCallCount).toBe(2)
+            })
+
+            it('같은 키를 다른 요청 본문에 재사용하면 409를 반환한다', async () => {
+                const createDto = buildCreatePurchaseDto(heldTickets)
+                const idempotencyKey = randomUUID()
+
+                await fix.httpClient
+                    .post('/purchases')
+                    .headers({
+                        Authorization: `Bearer ${accessToken}`,
+                        'Idempotency-Key': idempotencyKey
+                    })
+                    .body(createDto)
+                    .created()
+
+                await fix.httpClient
+                    .post('/purchases')
+                    .headers({
+                        Authorization: `Bearer ${accessToken}`,
+                        'Idempotency-Key': idempotencyKey
+                    })
+                    .body({ ...createDto, totalPrice: createDto.totalPrice + 1 })
+                    .conflict(Errors.Idempotency.KeyReused())
+            })
+
+            it('같은 키의 최초 요청을 처리 중이면 409를 반환한다', async () => {
+                const { PaymentsService } = await import('infrastructure')
+                const paymentsService = fix.module.get(PaymentsService)
+                const createPayment = paymentsService.create.bind(paymentsService)
+                let paymentStarted!: () => void
+                const didStartPayment = new Promise<void>((resolve) => {
+                    paymentStarted = resolve
+                })
+                let continuePayment!: () => void
+                const mayContinuePayment = new Promise<void>((resolve) => {
+                    continuePayment = resolve
+                })
+                jest.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
+                    paymentStarted()
+                    await mayContinuePayment
+                    return createPayment(dto)
+                })
+
+                const idempotencyKey = randomUUID()
+                const createDto = buildCreatePurchaseDto(heldTickets)
+                const firstClient = new HttpTestClient(fix.httpClient.serverUrl)
+                const first = firstClient
+                    .post('/purchases')
+                    .headers({
+                        Authorization: `Bearer ${accessToken}`,
+                        'Idempotency-Key': idempotencyKey
+                    })
+                    .body(createDto)
+                    .created()
+
+                await didStartPayment
+                try {
+                    await fix.httpClient
+                        .post('/purchases')
+                        .headers({
+                            Authorization: `Bearer ${accessToken}`,
+                            'Idempotency-Key': idempotencyKey
+                        })
+                        .body(createDto)
+                        .conflict(Errors.Idempotency.RequestInProgress())
+                } finally {
+                    continuePayment()
+                }
+                await first
+            })
+
+            it('실행 전 검증 실패는 키를 소비하지 않는다', async () => {
+                const idempotencyKey = randomUUID()
+                const createDto = buildCreatePurchaseDto(heldTickets)
+
+                await fix.httpClient
+                    .post('/purchases')
+                    .headers({
+                        Authorization: `Bearer ${accessToken}`,
+                        'Idempotency-Key': idempotencyKey
+                    })
+                    .body({ ...createDto, totalPrice: createDto.totalPrice + 1 })
+                    .badRequest(
+                        Errors.Purchase.TotalPriceMismatch(
+                            expect.any(Number),
+                            createDto.totalPrice + 1
+                        )
+                    )
+
+                await fix.httpClient
+                    .post('/purchases')
+                    .headers({
+                        Authorization: `Bearer ${accessToken}`,
+                        'Idempotency-Key': idempotencyKey
+                    })
+                    .body(createDto)
+                    .created()
+            })
+
             it('생성된 구매를 반환한다', async () => {
                 const createDto = buildCreatePurchaseDto(heldTickets)
 
                 await fix.httpClient
                     .post('/purchases')
+                    .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
                     .created({
@@ -58,6 +326,7 @@ describe('PurchaseService', () => {
                 const createDto = buildCreatePurchaseDto(heldTickets)
                 const { body: purchaseRecord } = await fix.httpClient
                     .post('/purchases')
+                    .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
                     .created()
@@ -71,6 +340,7 @@ describe('PurchaseService', () => {
                 const createDto = buildCreatePurchaseDto(heldTickets)
                 await fix.httpClient
                     .post('/purchases')
+                    .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
                     .created()
@@ -90,6 +360,7 @@ describe('PurchaseService', () => {
                 const createDto = buildCreatePurchaseDto(heldTickets)
                 await fix.httpClient
                     .post('/purchases')
+                    .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
                     .created()
@@ -110,6 +381,7 @@ describe('PurchaseService', () => {
 
                 await fix.httpClient
                     .post('/purchases')
+                    .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
                     .badRequest(Errors.Purchase.LimitExceeded(expect.any(Number)))
@@ -126,6 +398,7 @@ describe('PurchaseService', () => {
 
                 await fix.httpClient
                     .post('/purchases')
+                    .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
                     .badRequest(
@@ -142,6 +415,7 @@ describe('PurchaseService', () => {
 
                 await fix.httpClient
                     .post('/purchases')
+                    .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
                     .badRequest(Errors.Purchase.TotalPriceMismatch(expect.any(Number), 1))
@@ -166,6 +440,7 @@ describe('PurchaseService', () => {
 
                     await fix.httpClient
                         .post('/purchases')
+                        .headers({ 'Idempotency-Key': randomUUID() })
                         .headers({ Authorization: `Bearer ${accessToken}` })
                         .body(createDto)
                         .internalServerError()
@@ -193,6 +468,7 @@ describe('PurchaseService', () => {
 
                     await fix.httpClient
                         .post('/purchases')
+                        .headers({ 'Idempotency-Key': randomUUID() })
                         .headers({ Authorization: `Bearer ${accessToken}` })
                         .body(createDto)
                         .internalServerError()
@@ -207,6 +483,30 @@ describe('PurchaseService', () => {
                     const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
                     const records = await purchaseRecordsService.findByUserId(user.id)
                     expect(records).toEqual([])
+                })
+
+                it('같은 키를 재시도하면 최초 오류 응답을 그대로 반환한다', async () => {
+                    const createDto = buildCreatePurchaseDto(heldTickets)
+                    const idempotencyKey = randomUUID()
+
+                    const first = await fix.httpClient
+                        .post('/purchases')
+                        .headers({
+                            Authorization: `Bearer ${accessToken}`,
+                            'Idempotency-Key': idempotencyKey
+                        })
+                        .body(createDto)
+                        .internalServerError()
+                    const replay = await fix.httpClient
+                        .post('/purchases')
+                        .headers({
+                            Authorization: `Bearer ${accessToken}`,
+                            'Idempotency-Key': idempotencyKey
+                        })
+                        .body(createDto)
+                        .internalServerError()
+
+                    expect(replay.body).toEqual(first.body)
                 })
             })
 
@@ -226,6 +526,7 @@ describe('PurchaseService', () => {
 
                     await fix.httpClient
                         .post('/purchases')
+                        .headers({ 'Idempotency-Key': randomUUID() })
                         .headers({ Authorization: `Bearer ${accessToken}` })
                         .body(createDto)
                         .internalServerError()
@@ -251,6 +552,7 @@ describe('PurchaseService', () => {
                     const createDto = buildCreatePurchaseDto(heldTickets)
                     const { body: purchaseRecord } = await fix.httpClient
                         .post('/purchases')
+                        .headers({ 'Idempotency-Key': randomUUID() })
                         .headers({ Authorization: `Bearer ${accessToken}` })
                         .body(createDto)
                         .created()
@@ -291,6 +593,7 @@ describe('PurchaseService', () => {
                     const createDto = buildCreatePurchaseDto(heldTickets)
                     await fix.httpClient
                         .post('/purchases')
+                        .headers({ 'Idempotency-Key': randomUUID() })
                         .headers({ Authorization: `Bearer ${accessToken}` })
                         .body(createDto)
                         .internalServerError()
@@ -335,6 +638,7 @@ describe('PurchaseService', () => {
 
                     await fix.httpClient
                         .post('/purchases')
+                        .headers({ 'Idempotency-Key': randomUUID() })
                         .headers({ Authorization: `Bearer ${accessToken}` })
                         .body(createDto)
                         .internalServerError()
@@ -363,6 +667,7 @@ describe('PurchaseService', () => {
                     const createDto = buildCreatePurchaseDto(heldTickets)
                     await fix.httpClient
                         .post('/purchases')
+                        .headers({ 'Idempotency-Key': randomUUID() })
                         .headers({ Authorization: `Bearer ${accessToken}` })
                         .body(createDto)
                         .internalServerError()
@@ -488,6 +793,7 @@ describe('PurchaseService', () => {
 
                 const purchasePromise = fix.httpClient
                     .post('/purchases')
+                    .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(buildCreatePurchaseDto(heldTickets))
                     .internalServerError()
@@ -572,6 +878,7 @@ describe('PurchaseService', () => {
 
                 const purchasePromise = fix.httpClient
                     .post('/purchases')
+                    .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(buildCreatePurchaseDto(heldTickets))
                     .internalServerError()
@@ -608,12 +915,14 @@ describe('PurchaseService', () => {
                 const createDto = buildCreatePurchaseDto(heldTickets)
                 await fix.httpClient
                     .post('/purchases')
+                    .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
                     .created()
 
                 await fix.httpClient
                     .post('/purchases')
+                    .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
                     .conflict(Errors.Purchase.AlreadySold(pickIds(heldTickets)))
@@ -634,11 +943,82 @@ describe('PurchaseService', () => {
 
                 await fix.httpClient
                     .post('/purchases')
+                    .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
                     .internalServerError()
 
                 expect(createPayment).not.toHaveBeenCalled()
+            })
+
+            it('응답 저장 전 종료된 구매는 보상 후 명시적인 operation 실패로 응답한다', async () => {
+                const { PurchaseService } = await import('application')
+                const { PurchaseRecordsService } = await import('core')
+                const purchaseService = fix.module.get(PurchaseService)
+                const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
+                const createDto = buildCreatePurchaseDto(heldTickets)
+                const idempotencyKey = randomUUID()
+                const fingerprint = createHash('sha256')
+                    .update(
+                        JSON.stringify({
+                            purchaseItems: [...createDto.purchaseItems]
+                                .map(({ itemId, type }) => ({ itemId, type }))
+                                .sort((a, b) =>
+                                    `${a.type}:${a.itemId}`.localeCompare(`${b.type}:${b.itemId}`)
+                                ),
+                            totalPrice: createDto.totalPrice
+                        })
+                    )
+                    .digest('hex')
+                await purchaseRecordsService.create(
+                    { ...createDto, paymentId: null, userId: user.id },
+                    { idempotency: { fingerprint, key: idempotencyKey }, pending: true }
+                )
+                await purchaseService.reconcilePendingPurchases(new Date(Date.now() + 1_000))
+
+                await fix.httpClient
+                    .post('/purchases')
+                    .headers({
+                        Authorization: `Bearer ${accessToken}`,
+                        'Idempotency-Key': idempotencyKey
+                    })
+                    .body(createDto)
+                    .conflict(Errors.Idempotency.OperationFailed())
+            })
+
+            it('문자열 HttpException도 같은 키 재시도에서 같은 상태와 본문을 반환한다', async () => {
+                const { HttpException } = await import('@nestjs/common')
+                const { TicketPurchaseService } =
+                    await import('../../services/application/purchase/internal')
+                const ticketPurchaseService = fix.module.get(TicketPurchaseService)
+                jest.spyOn(ticketPurchaseService, 'claimPurchase').mockRejectedValueOnce(
+                    new HttpException('purchase dependency rejected the request', 418)
+                )
+                const createDto = buildCreatePurchaseDto(heldTickets)
+                const idempotencyKey = randomUUID()
+
+                const first = await fix.httpClient
+                    .post('/purchases')
+                    .headers({
+                        Authorization: `Bearer ${accessToken}`,
+                        'Idempotency-Key': idempotencyKey
+                    })
+                    .body(createDto)
+                    .sendRaw()
+                const replay = await fix.httpClient
+                    .post('/purchases')
+                    .headers({
+                        Authorization: `Bearer ${accessToken}`,
+                        'Idempotency-Key': idempotencyKey
+                    })
+                    .body(createDto)
+                    .sendRaw()
+
+                expect({ body: replay.body, status: replay.status }).toEqual({
+                    body: first.body,
+                    status: first.status
+                })
+                expect(first.status).toBe(418)
             })
         })
 
@@ -650,6 +1030,7 @@ describe('PurchaseService', () => {
 
             await fix.httpClient
                 .post('/purchases')
+                .headers({ 'Idempotency-Key': randomUUID() })
                 .headers({ Authorization: `Bearer ${accessToken}` })
                 .body(createDto)
                 .badRequest(Errors.Purchase.NotHeld())
@@ -665,6 +1046,7 @@ describe('PurchaseService', () => {
 
             await fix.httpClient
                 .post('/purchases')
+                .headers({ 'Idempotency-Key': randomUUID() })
                 .headers({ Authorization: `Bearer ${accessToken}` })
                 .body(createDto)
                 .badRequest(Errors.Purchase.NotHeld())
@@ -705,6 +1087,7 @@ describe('PurchaseService', () => {
 
             const purchasePromise = fix.httpClient
                 .post('/purchases')
+                .headers({ 'Idempotency-Key': randomUUID() })
                 .headers({ Authorization: `Bearer ${accessToken}` })
                 .body(buildCreatePurchaseDto(heldByFirst))
                 .badRequest(Errors.Purchase.NotHeld())
@@ -772,6 +1155,7 @@ describe('PurchaseService', () => {
 
             const purchasePromise = fix.httpClient
                 .post('/purchases')
+                .headers({ 'Idempotency-Key': randomUUID() })
                 .headers({ Authorization: `Bearer ${accessToken}` })
                 .body(buildCreatePurchaseDto(heldByFirst))
                 .badRequest(Errors.Purchase.NotHeld())
@@ -812,6 +1196,7 @@ describe('PurchaseService', () => {
         it('미구현 food 구매는 DTO 검증에서 명확한 400을 반환한다', async () => {
             await fix.httpClient
                 .post('/purchases')
+                .headers({ 'Idempotency-Key': randomUUID() })
                 .headers({ Authorization: `Bearer ${accessToken}` })
                 .body({
                     purchaseItems: [{ itemId: oid(0xf0), type: PurchaseItemType.Foods }],
@@ -948,6 +1333,7 @@ describe('PurchaseService', () => {
 
         const purchasePromise = fix.httpClient
             .post('/purchases')
+            .headers({ 'Idempotency-Key': randomUUID() })
             .headers({ Authorization: `Bearer ${accessToken}` })
             .body(buildCreatePurchaseDto(heldTickets))
             .internalServerError()

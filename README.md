@@ -158,8 +158,8 @@ nest-seed/
 | `core/ticket-holding`                     | Redis Lua 스크립트 선점 — Lua가 여러 키를 원자적으로 다루도록 같은 hash slot에 키를 모으는 설계 |
 | `core/purchase-records` · `watch-records` | 사용자 기록 도메인. watch-records는 추천의 입력이 된다                                          |
 | `application/booking`                     | 예매 동선 조회와 좌석 선점, 요청 검증                                                           |
-| `application/purchase`                    | durable 상태 머신·lease 재조정·outbox, 멱등 이벤트의 at-least-once 발행                         |
-| `application/showtime-creation`           | Temporal 202+SSE, Mongo 트랜잭션·극장 guard CAS·`sagaId` 멱등 재시도                            |
+| `application/purchase`                    | HTTP 멱등 응답, durable 상태 머신·lease 재조정·outbox, 멱등 이벤트의 at-least-once 발행         |
+| `application/showtime-creation`           | HTTP 키→`sagaId` 매핑, Temporal 202+SSE, Mongo 트랜잭션·극장 guard CAS·멱등 재시도              |
 | `application/recommendation`              | 관람 기록 기반 추천. 도메인 로직을 순수 모듈로 분리                                             |
 | `view/user-app/home`                      | 화면 전용 응답 조합 — View 계층                                                                 |
 | `infrastructure/assets`                   | presigned 업로드와 체크섬 검증, 만료 업로드 정리 cron(분산 락)                                  |

@@ -199,9 +199,11 @@ async function callApi(
     const headers = new Headers()
     const accept = request.headers.get('accept')
     const contentType = request.headers.get('content-type')
+    const idempotencyKey = request.headers.get('idempotency-key')
     const clientIp = resolveForwardedClientIp(request.headers, TRUST_PROXY_HEADERS)
     if (accept) headers.set('Accept', accept)
     if (contentType) headers.set('Content-Type', contentType)
+    if (idempotencyKey) headers.set('Idempotency-Key', idempotencyKey)
     // 명시적으로 신뢰한 ingress가 연결 IP를 체인 오른쪽에 append하는 배포에서만 전달한다.
     if (clientIp) headers.set('X-Forwarded-For', clientIp)
     if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`)

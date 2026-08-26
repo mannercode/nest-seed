@@ -29,6 +29,11 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
 
     async create(createDto: CreatePurchaseRecordDto, status: PurchaseRecordStatus) {
         const purchaseRecord = this.newDocument()
+        purchaseRecord.idempotencyKey = createDto.idempotencyKey ?? null
+        purchaseRecord.idempotencyFingerprint = createDto.idempotencyFingerprint ?? null
+        purchaseRecord.idempotencyErrorStatus = null
+        purchaseRecord.idempotencyErrorResponse = null
+        purchaseRecord.idempotencyResponse = null
         purchaseRecord.userId = createDto.userId
         purchaseRecord.paymentId = createDto.paymentId ?? null
         purchaseRecord.completionId = null
@@ -48,6 +53,11 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         await purchaseRecord.save()
 
         return purchaseRecord.toJSON()
+    }
+
+    async findByIdempotencyKey(userId: string, idempotencyKey: string) {
+        const record = await this.model.findOne({ idempotencyKey, userId }).lean().exec()
+        return leanOneToPublic<PurchaseRecord>(record)
     }
 
     async findPendingBefore(before: Date, now: Date) {
@@ -89,13 +99,15 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
             leaseUntil,
             now,
             reconciliationId,
-            completionId
+            completionId,
+            idempotencyError
         }: {
             before: Date
             leaseUntil: Date
             now: Date
             reconciliationId: string
             completionId?: string
+            idempotencyError?: { response: Record<string, unknown>; status: number }
         }
     ) {
         const candidates = [
@@ -111,6 +123,12 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
                     $set: {
                         completionId: null,
                         completionLeaseUntil: null,
+                        ...(idempotencyError
+                            ? {
+                                  idempotencyErrorResponse: idempotencyError.response,
+                                  idempotencyErrorStatus: idempotencyError.status
+                              }
+                            : {}),
                         reconciliationId,
                         reconciliationLeaseUntil: leaseUntil,
                         status: PurchaseRecordStatus.Compensating
@@ -212,13 +230,17 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     async markCompleted(
         purchaseRecordId: string,
         completionId: string,
-        session: ClientSession | undefined = undefined
+        session: ClientSession | undefined = undefined,
+        idempotencyResponse: object | undefined = undefined
     ) {
         const purchaseRecord = await this.model
             .findOneAndUpdate(
                 { _id: purchaseRecordId, completionId, status: PurchaseRecordStatus.Completing },
                 {
-                    $set: { status: PurchaseRecordStatus.Completed },
+                    $set: {
+                        ...(idempotencyResponse ? { idempotencyResponse } : {}),
+                        status: PurchaseRecordStatus.Completed
+                    },
                     $unset: {
                         completionId: 1,
                         completionLeaseUntil: 1,

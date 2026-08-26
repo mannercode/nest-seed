@@ -12,9 +12,15 @@ import {
     ShowtimeBulkCreatorService,
     ShowtimeBulkValidatorService,
     ShowtimeCreationOrchestratorService,
-    ShowtimeCreationPersistenceService
+    ShowtimeCreationPersistenceService,
+    ShowtimeCreationSubmissionRepository
 } from './internal'
-import { ShowtimeCreationOperation, ShowtimeCreationOperationSchema } from './internal/models'
+import {
+    ShowtimeCreationOperation,
+    ShowtimeCreationOperationSchema,
+    ShowtimeCreationSubmission,
+    ShowtimeCreationSubmissionSchema
+} from './internal/models'
 import { ShowtimeCreationOperationRepository } from './internal/showtime-creation-operation.repository'
 import {
     getLegacyShowtimeCreationTaskQueue,
@@ -42,7 +48,10 @@ const SHOWTIME_CREATION_WORKER = Symbol('SHOWTIME_CREATION_WORKER')
             redisName: REDIS_CONNECTION_NAME
         }),
         MongooseModule.forFeature(
-            [{ name: ShowtimeCreationOperation.name, schema: ShowtimeCreationOperationSchema }],
+            [
+                { name: ShowtimeCreationOperation.name, schema: ShowtimeCreationOperationSchema },
+                { name: ShowtimeCreationSubmission.name, schema: ShowtimeCreationSubmissionSchema }
+            ],
             MONGO_CONNECTION_NAME
         ),
         MoviesModule,
@@ -57,6 +66,7 @@ const SHOWTIME_CREATION_WORKER = Symbol('SHOWTIME_CREATION_WORKER')
         ShowtimeBulkValidatorService,
         ShowtimeBulkCreatorService,
         ShowtimeCreationOperationRepository,
+        ShowtimeCreationSubmissionRepository,
         ShowtimeCreationPersistenceService,
         LegacyShowtimeCreationActivities,
         ShowtimeCreationActivities,
