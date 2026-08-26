@@ -18,7 +18,7 @@ services:
 
     minio-setup:
         extends: { file: ./compose.common.yml, service: common-options }
-        image: amazon/aws-cli:2.36.27@sha256:be4059632dbcc8c5a94b2ac93aee02a9b09d51c85ac764df65412db266a8bd6e
+        image: amazon/aws-cli:2.36.29@sha256:6a1305a37e63914356f9d1808f3349c06a650cbd6e7c777f5dc4b44d630d6b39
         depends_on:
             minio:
                 condition: service_healthy
