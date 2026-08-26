@@ -84,6 +84,16 @@ test('installed dependency specs are exact while peer compatibility ranges stay 
     }
 })
 
+test('Next transitive overrides survive routine Next version updates', async () => {
+    const packageJson = JSON.parse(await read('package.json'))
+
+    assert.deepEqual(packageJson.overrides.next, { postcss: '8.5.26', sharp: '0.35.3' })
+    assert.equal(
+        Object.keys(packageJson.overrides).some((dependency) => dependency.startsWith('next@')),
+        false
+    )
+})
+
 test('devcontainer preserves install, naming, and credential mount behavior', async () => {
     const config = await read('.devcontainer/devcontainer.json')
     const lock = JSON.parse(await read('.devcontainer/devcontainer-lock.json'))
@@ -325,19 +335,35 @@ test('Stability keeps 60 API repetitions within three timeout-safe jobs', async 
     )
 })
 
-test('Dependabot only proposes grouped routine updates and keeps major updates manual', async () => {
+test('Dependabot keeps routine updates direct, related, and non-major', async () => {
     const config = await read('.github/dependabot.yml')
     const workflow = await read('.github/workflows/dependabot-auto-merge.yaml')
 
     const ecosystems = [...config.matchAll(/^\s+- package-ecosystem:/gm)]
-    const routineAllowLists = [
+    const directRoutineAllowLists = [
         ...config.matchAll(
-            /allow:\s+- dependency-name: '\*'\s+update-types:\s+- version-update:semver-minor\s+- version-update:semver-patch/g
+            /allow:\s+- dependency-type: direct\s+update-types:\s+- version-update:semver-minor\s+- version-update:semver-patch/g
         )
     ]
     assert.equal(ecosystems.length, 4)
-    assert.equal(routineAllowLists.length, ecosystems.length)
-    assert.equal(config.match(/update-types:\s*\['minor', 'patch'\]/g)?.length, ecosystems.length)
+    assert.equal(directRoutineAllowLists.length, ecosystems.length)
+
+    const npm = config.slice(
+        config.indexOf('- package-ecosystem: npm'),
+        config.indexOf('- package-ecosystem: github-actions')
+    )
+    assert.doesNotMatch(npm, /patterns:\s*\['\*'\]/)
+    for (const group of [
+        'aws-sdk',
+        'next',
+        'nestjs',
+        'temporal',
+        'react',
+        'eslint',
+        'commitlint'
+    ]) {
+        assert.match(npm, new RegExp(`${group}-minor-patch:`))
+    }
     assert.match(
         config,
         /package-ecosystem: docker\s+directories:\s+- '\/\.devcontainer'\s+- '\/apps\/api'\s+- '\/deploy'/

@@ -20,7 +20,7 @@
 
 PostgreSQL 18 공식 이미지는 실제 데이터 디렉터리를 major별 하위 경로에 두므로 Temporal DB volume은 `/var/lib/postgresql/data`가 아니라 상위 경로 `/var/lib/postgresql`에 연결한다. 이 경로는 PostgreSQL major 업그레이드 도구가 이전·새 데이터 디렉터리를 함께 다룰 수 있게 한 이미지 계약이므로 임의로 예전 경로로 되돌리지 않는다.
 
-Dependabot은 설정된 Dockerfile 디렉터리(`.devcontainer`, `deploy`)와 Compose 디렉터리(`deploy`, `infra`)의 직접 참조를 매주 minor/patch 범위로 확인한다. 변수로 간접 참조하는 `.env.infra` 이미지와 감시 대상 밖인 `apps/api/Dockerfile`의 외부 runtime `FROM`은 자동 갱신되지 않으므로, 버전 갱신 때 사람이 태그와 multi-architecture digest를 함께 확인한다.
+Dependabot은 설정된 Dockerfile 디렉터리(`.devcontainer`, `apps/api`, `deploy`)와 Compose 디렉터리(`deploy`, `infra`)의 직접 참조를 매주 minor/patch 범위로 확인한다. 변수로 간접 참조하는 `.env.infra` 이미지는 자동 갱신 범위가 아니므로, 버전 갱신 때 사람이 태그와 multi-architecture digest를 함께 확인한다.
 
 ---
 

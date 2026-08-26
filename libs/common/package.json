@@ -37,7 +37,7 @@
         "rxjs": "^7.0.0"
     },
     "devDependencies": {
-        "@aws-sdk/client-s3": "3.1114.0",
+        "@aws-sdk/client-s3": "3.1116.0",
         "@mannercode/jest-helpers": "*",
         "@mannercode/testing": "*",
         "@temporalio/testing": "1.22.0",

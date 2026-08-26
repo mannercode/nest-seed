@@ -23,7 +23,7 @@ describe('createMongoDriverOptions', () => {
             appName: 'test-file',
             maxPoolSize: 200,
             minPoolSize: 0,
-            waitQueueTimeoutMS: 5000,
+            waitQueueTimeoutMS: 0,
             writeConcern: { journal: true, w: 'majority', wtimeoutMS: 5000 }
         })
     })
