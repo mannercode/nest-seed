@@ -1,7 +1,7 @@
 {
     "name": "${containerWorkspaceFolderBasename}",
     "hostRequirements": { "cpus": 4, "memory": "16gb", "storage": "32gb" },
-    "build": { "dockerfile": "Dockerfile", "context": "." },
+    "build": { "dockerfile": "Dockerfile" },
     "features": {
         "ghcr.io/devcontainers/features/docker-outside-of-docker:1": { "moby": false },
         "ghcr.io/devcontainers/features/github-cli:1": {}
@@ -49,8 +49,6 @@
                 "dbaeumer.vscode-eslint",
                 "firsttris.vscode-jest-runner",
                 "ms-vscode.live-server",
-                "ms-azuretools.vscode-docker",
-                "ms-azuretools.vscode-containers",
                 "jebbs.plantuml",
                 "esbenp.prettier-vscode",
                 "mutantdino.resourcemonitor",
