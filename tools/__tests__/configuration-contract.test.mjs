@@ -216,9 +216,14 @@ test('dependency image hashing failure stops before Docker', async (t) => {
     await assert.rejects(readFile(dockerLog), { code: 'ENOENT' })
 })
 
-test('network-facing development ports bind only to loopback', async () => {
+test('network-facing deployment port binds only to loopback', async () => {
     assert.match(await read('deploy/compose.yml'), /127\.0\.0\.1:3000:80/)
-    assert.match(await read('infra/compose.minio.yml'), /127\.0\.0\.1:9001:9001/)
+})
+
+test('optional MinIO console is disabled and unpublished', async () => {
+    const minioCompose = await read('infra/compose.minio.yml')
+    assert.doesNotMatch(minioCompose, /^\s*ports:/m)
+    assert.match(minioCompose, /MINIO_BROWSER:\s*'off'/)
 })
 
 test('container base and infrastructure image references are digest-pinned', async () => {

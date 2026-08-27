@@ -30,7 +30,7 @@ infra·deploy compose와 devcontainer는 같은 Docker 네트워크로 묶인다
 
 베이스·인프라 이미지를 올릴 때는 버전 태그만 바꾸지 않고 multi-architecture digest를 함께 확인·갱신한다. Dockerfile에서 직접 받는 도구는 정확한 릴리스 URL과 amd64·arm64 자산의 존재를 확인한다.
 
-네트워크·컨테이너·volume 이름은 사용자명과 workspace basename으로 구분한다. 같은 basename의 clone은 이름이 겹치고, MinIO 웹 콘솔의 호스트 포트도 `127.0.0.1:9001` 하나로 고정된다. 같은 호스트에서 두 clone의 인프라를 동시에 띄우려면 폴더 이름과 포트 구성을 별도로 조정해야 한다.
+네트워크·컨테이너·volume 이름은 사용자명과 workspace basename으로 구분한다. 같은 basename의 clone은 이름이 겹치므로, 같은 호스트에서 두 clone을 동시에 띄울 때는 서로 다른 폴더 이름을 사용한다. 개발 인프라는 host 포트를 publish하지 않는다. 선택 기능인 MinIO 웹 콘솔도 비활성화해 devcontainer를 추가로 띄워도 host 포트 때문에 부팅이 실패하지 않는다.
 
 ## 호스트 자격증명 마운트
 
