@@ -254,7 +254,6 @@ describe('BookingService', () => {
         })
 
         it('형식은 맞지만 실제 달력에 없는 날짜이면 400을 반환한다', async () => {
-            // 20240230은 2월 30일이라 달력에 없다.
             // `Date.UTC`는 이 값을 조용히 다음 달로 넘기므로, 파이프가 만든 Date를 다시 분해해 원본과 비교할 때 잘못된 값임을 확인한다.
             await fix.httpClient
                 .get(

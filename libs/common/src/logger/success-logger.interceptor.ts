@@ -25,6 +25,7 @@ export class HttpSuccessLoggerInterceptor implements NestInterceptor {
     async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
         const contextType = context.getType()
 
+        // 이 전역 인터셉터는 HTTP 앱에만 등록된다. 비HTTP 분기는 오등록 진단용이라 coverage에서 제외한다.
         /* istanbul ignore else */
         if (contextType === 'http') {
             markRequestStart(context.switchToHttp().getRequest<Request>())
@@ -38,6 +39,7 @@ export class HttpSuccessLoggerInterceptor implements NestInterceptor {
                     responseData = data
                 },
                 complete: () => {
+                    // 비HTTP 완료 경로도 위와 같은 오등록 진단 분기다.
                     /* istanbul ignore else */
                     if (contextType === 'http') {
                         this.logHttp(context, responseData)

@@ -12,21 +12,19 @@ import { AppConfigService, REDIS_CONNECTION_NAME } from 'config'
                     const redisOptions: RedisModuleOptions = {
                         nodes,
                         options: {
-                            // ioredis 기본값은 16이다.
-                            // 순간적으로 여러 슬롯에 연달아 접근하면 클라이언트의 슬롯 캐시가 안정화되기 전에 한도가 먼저 소진된다.
-                            // 32로 두면 이 구간을 벗어난다.
+                            // 한 명령이 MOVED/ASK redirection을 반복할 때 적용되는 ioredis 기본 상한은 16이다.
+                            // failover 뒤 topology가 수렴하는 동안의 일시적인 redirection에 여유를 두려고 32로 높인다.
                             maxRedirections: 32,
                             retryDelayOnFailover: 200,
                             retryDelayOnClusterDown: 200,
                             slotsRefreshTimeout: 5000,
-                            // `keepAlive`가 0이면 유휴 소켓이 NAT나 방화벽 타임아웃에 조용히 끊긴다.
-                            // 다음에 그 소켓을 다시 사용하려고 하면 트래픽이 몰릴 때 `Connection is closed`로 실패한다.
-                            // 30초마다 keep-alive 패킷을 보내 소켓을 유지한다.
+                            // TCP keep-alive를 켜고 첫 probe까지의 idle 지연을 30초로 고정한다.
+                            // 이후 probe 간격은 OS TCP 설정이 결정한다.
                             redisOptions: {
                                 keepAlive: 30_000,
                                 connectTimeout: 10_000,
-                                // `null`은 무한 재시도라서 Redis가 종료되면 HTTP 요청이 끝나지 않고 쌓인다.
-                                // 유한 값으로 두면 정해진 시간 안에 `Connection is closed`로 실패시키고 클라이언트가 다시 시도할 수 있게 한다.
+                                // `null`이면 연결이 복구될 때까지 pending 명령이 무기한 대기해 요청이 쌓일 수 있다.
+                                // 20회 연결 재시도마다 pending queue를 MaxRetriesPerRequestError로 비운다.
                                 maxRetriesPerRequest: 20
                             }
                         },

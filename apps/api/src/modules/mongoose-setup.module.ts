@@ -95,7 +95,7 @@ export function registerMongoClientDiagnostics(
             try {
                 listener(event)
             } catch {
-                // Diagnostics must never affect the MongoDB operation that emitted the event.
+                // 진단 코드의 오류가 이벤트를 발생시킨 MongoDB 작업에 영향을 주지 않게 한다.
             }
         }) as MongoClientEvents[EventName]
         client.on(eventName, safeListener)
@@ -398,7 +398,7 @@ export function registerMongoClientDiagnostics(
                                           appName
                                       )
                                   } catch {
-                                      // Test diagnostics are best effort and must not block application startup.
+                                      // 테스트 진단은 best effort이며 애플리케이션 기동을 막아서는 안 된다.
                                   }
                               }
                           }

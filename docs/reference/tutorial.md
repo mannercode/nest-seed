@@ -391,7 +391,10 @@ describe('생성 도중 티켓 생성이 실패하면', () => {
         const { body } = await fix.httpClient
             .post('/showtime-creation/showtimes')
             .body({
-                // 정상 흐름과 같은 형태
+                durationInMinutes: 120,
+                movieId: movie.id,
+                startTimes: [new Date('2013-01-31T12:00')],
+                theaterIds: [theater.id]
             })
             .accepted()
         sagaId = body.sagaId

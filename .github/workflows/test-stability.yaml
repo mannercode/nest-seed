@@ -14,7 +14,7 @@ concurrency:
     cancel-in-progress: false
 jobs:
     stability:
-        # Original repository immutable ID; do not rename this guard when adapting a fork.
+        # 원본 저장소의 불변 ID다. fork에 맞출 때도 이 보호 조건의 의미는 유지한다.
         if: ${{ github.event_name != 'schedule' || github.repository_id == '849585972' || vars.ENABLE_SCHEDULED_CI == 'true' }}
         strategy:
             fail-fast: false

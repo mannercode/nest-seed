@@ -33,7 +33,6 @@ export async function createCacheServiceFixture() {
     const cacheA = module.get(CacheService.getName('a'))
     const cacheB = module.get(CacheService.getName('b'))
 
-    // 연결 종료는 RedisConnectionRegistry가 모듈 destroy에서 책임진다.
     const teardown = async () => {
         await close()
     }

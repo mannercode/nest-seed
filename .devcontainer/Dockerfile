@@ -47,7 +47,7 @@ RUN set -eu; \
     chmod -R a+rX "$PLAYWRIGHT_BROWSERS_PATH"; \
     rm -rf /var/lib/apt/lists/*
 
-# 도구 다운로드는 Chromium 계층 뒤에 둔다.
+# 개별 도구 버전 변경이 큰 Chromium 설치 계층의 캐시를 무효화하지 않도록 뒤에 둔다.
 ARG PLANTUML_VERSION=1.2026.6
 RUN set -eu; \
     curl -fsSL \

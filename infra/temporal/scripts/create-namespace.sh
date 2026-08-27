@@ -25,7 +25,7 @@ while :; do
 done
 
 # dev/test에서 완료 워크플로가 누적돼 transfer-queue를 정체시키지 않도록 1h로 짧게 잡는다.
-# Temporal 디폴트(72h)는 운영용.
+# Temporal의 기본 보존 기간 72h보다 짧게 유지한다.
 # minRetentionDays=0이 dynamic config로 풀려 있어야 1h 설정이 허용된다.
 NAMESPACE_RETENTION=1h0m0s
 

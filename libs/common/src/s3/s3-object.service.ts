@@ -23,7 +23,7 @@ import {
     S3UploadCompleteOptions
 } from './s3-object.types'
 
-// S3가 content-length-range의 상한을 요구하므로 하한 전용 정책에는 사실상 무제한 값을 쓴다.
+// S3가 content-length-range의 상한을 요구하므로 하한 전용 정책에는 1 TiB를 sentinel 상한으로 쓴다.
 const UNBOUNDED_CONTENT_LENGTH = 1024 * 1024 * 1024 * 1024 // 1 TiB
 
 @Injectable()

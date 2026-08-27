@@ -169,7 +169,7 @@ TEST "관리자가 사용자를 삭제한다" \
 	204 DELETE /users/${USER_ID} \
 	-H "Authorization: Bearer ${ADMIN_ACCESS_TOKEN}"
 
-# 본인 삭제(DELETE /me)는 일반 사용자 권한이라 별도 사용자로 보여준다.
+# 앞에서 관리자 삭제에 사용한 계정과 분리된 새 사용자로 DELETE /users/me를 검증한다.
 SELF_EMAIL=$(random_email)
 TEST "본인 삭제 데모용 사용자를 생성한다" \
 	201 POST /users \

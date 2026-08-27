@@ -103,13 +103,25 @@ async function dropMatchingBuckets(s3Client, pattern) {
     }
 }
 
-// 연결 생성은 호출부에 맡기고 Jest 워커별 Mongo/S3 준비·정리 순서만 공통화한다.
+/** @typedef {import('mongodb').MongoClient} MongoClient */
+/** @typedef {{client: MongoClient, dbName: string}} WorkerMongoConnection */
+
+/**
+ * 연결 생성은 호출부에 맡기고 Jest 워커별 Mongo/S3 준비·정리 순서만 공통화한다.
+ *
+ * @param {object} options
+ * @param {(workerId: string) => Promise<WorkerMongoConnection>} options.connectMongo
+ * @param {() => import('@aws-sdk/client-s3').S3Client} options.createS3Client
+ * @param {(workerId: string) => string} options.bucketName
+ * @param {(client: MongoClient, dbName: string) => Promise<void>} [options.afterMongoConnect]
+ * @param {(testId: string) => void | Promise<void>} [options.onBeforeEach]
+ */
 function setupJestLifecycle({
-    connectMongo, // (workerId) => Promise<{ client, dbName }>
-    createS3Client, // () => S3Client
-    bucketName, // (workerId) => string
-    afterMongoConnect, // 선택: (client, dbName) => Promise<void>
-    onBeforeEach // 선택: (testId) => void | Promise<void>
+    connectMongo,
+    createS3Client,
+    bucketName,
+    afterMongoConnect,
+    onBeforeEach
 }) {
     let mongoClient
     let s3Client
@@ -148,17 +160,30 @@ function setupJestLifecycle({
     })
 }
 
-// 워커 풀이 끝난 뒤 공용 인프라와 워크스페이스별 extra를 함께 정리한다.
+/**
+ * 워커 풀이 끝난 뒤 공용 인프라와 워크스페이스별 추가 자원을 함께 정리한다.
+ *
+ * @param {object} options
+ * @param {boolean} [options.allowRedisFlushAll=false]
+ * @param {() => Promise<MongoClient>} options.connectMongo
+ * @param {() => import('@aws-sdk/client-s3').S3Client} options.createS3Client
+ * @param {() => import('ioredis').Redis | import('ioredis').Cluster} options.connectRedis
+ * @param {RegExp} [options.databasePattern]
+ * @param {RegExp} [options.bucketPattern]
+ * @param {string} [options.redisKeyPattern]
+ * @param {string} [options.redisKeyScope]
+ * @param {() => Promise<void>} [options.extra]
+ */
 function createGlobalTeardown({
     allowRedisFlushAll = false,
-    connectMongo, // () => Promise<MongoClient>
-    createS3Client, // () => S3Client
-    connectRedis, // () => Redis (single or Cluster)
+    connectMongo,
+    createS3Client,
+    connectRedis,
     databasePattern = WORKER_DB_PATTERN,
     bucketPattern = WORKER_BUCKET_PATTERN,
     redisKeyPattern,
     redisKeyScope,
-    extra // 선택: () => Promise<void>
+    extra
 }) {
     if (redisKeyPattern !== undefined && allowRedisFlushAll) {
         throw new Error(

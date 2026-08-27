@@ -27,7 +27,7 @@ import { AdminAuthGuard, AuthErrors, UserAuthGuard } from './guards'
 import { LoginRateLimiterService } from './login-rate-limiter.service'
 import { UserAuthRequest } from './types'
 
-// Nest는 클래스와 메서드 가드를 모두 요구하므로 역할별 가드는 메서드에만 둔다.
+// 클래스와 메서드 가드는 누적 적용된다. 공개·user·admin 라우트가 섞여 있으므로 역할 가드는 메서드에만 둔다.
 @Controller('users')
 export class UsersHttpController {
     constructor(

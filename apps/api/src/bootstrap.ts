@@ -38,7 +38,7 @@ export async function bootstrap() {
     app.enableShutdownHooks()
 
     const server = await app.listen(http.port)
-    // NGINX의 60초 keep-alive보다 먼저 닫혀 재사용 소켓에서 502가 나지 않게 한다.
+    // NGINX가 60초에 upstream 유휴 연결을 먼저 닫도록 Node keep-alive를 65초로 둔다.
     server.keepAliveTimeout = 65_000
     server.headersTimeout = 66_000
 

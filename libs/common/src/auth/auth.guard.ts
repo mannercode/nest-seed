@@ -67,7 +67,8 @@ export abstract class AuthGuard implements CanActivate {
             throw new UnauthorizedException(this.options.errorBody)
         }
 
-        // RFC 7235: 스킴과 값은 공백으로 구분된다. 공백이 없으면 형식 오류로 즉시 거절한다.
+        // Basic(RFC 7617)과 Bearer(RFC 6750)는 스킴 뒤에 공백과 자격증명 값을 요구한다.
+        // 이 두 형식에 필요한 공백이 없으면 지원하는 인증값으로 해석하지 않는다.
         const sep = authorization.indexOf(' ')
         if (sep === -1) {
             throw new UnauthorizedException(this.options.errorBody)
@@ -75,7 +76,7 @@ export abstract class AuthGuard implements CanActivate {
         const scheme = authorization.slice(0, sep)
         const value = authorization.slice(sep + 1).trim()
 
-        // RFC 7235에 따라 인증 스킴 비교는 대소문자를 가리지 않는다.
+        // RFC 9110 §11.1에 따라 인증 스킴 이름은 대소문자를 구분하지 않는다.
         const lower = scheme.toLowerCase()
 
         const { bearer, basic } = this.options

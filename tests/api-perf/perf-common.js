@@ -2,7 +2,7 @@ import crypto from 'k6/crypto'
 
 /**
  * k6 메트릭 모델에서 주의할 점:
- *  - Trend는 percentile만 보고 count는 없으므로 표본 수는 Counter(`measured_status`)로 같이 잰다.
+ *  - 상태 코드별 표본 수를 분리하기 위해 Counter(`measured_status`)를 Trend와 같이 기록한다.
  *  - 태그별 Counter 집계는 thresholds로 사전 정의해야 handleSummary에서 분리해 볼 수 있다.
  *    그래서 추적 대상 status code는 미리 박아 둔다(`TRACKED_STATUSES`).
  *  - 레플리카 ID 같은 동적 값은 thresholds에 박을 수 없으므로 별도 추적하지 않는다.

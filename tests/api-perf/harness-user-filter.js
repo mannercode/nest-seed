@@ -56,8 +56,8 @@ export function setup() {
     }))
     const createResponses = http.batch(createReqs)
     for (let i = 0; i < creds.length; i++) {
-        // seed가 매 회차마다 다르므로(`Date.now()`) 이메일은 항상 unique하다.
-        // 409가 떴다면 무언가 비정상(같은 ms에 두 번 시작 등)이라 그대로 던진다.
+        // 한 실행 안에서는 seed와 VU 번호로 이메일을 구분한다.
+        // 같은 밀리초에 별도 실행이 시작되면 충돌할 수 있으며, 그때의 409는 실패로 처리한다.
         if (createResponses[i].status !== 201) {
             throw new Error(`vu ${creds[i].vu} create returned ${createResponses[i].status}`)
         }

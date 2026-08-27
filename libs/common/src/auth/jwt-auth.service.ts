@@ -53,11 +53,13 @@ type JwtExpiresIn = NonNullable<JwtSignOptionsArg>['expiresIn']
 
 /**
  * 리프레시 토큰은 SHA-256 해시만 Redis에 저장하고 사용할 때마다 회전한다.
- * 소비된 토큰이 다시 오면 해당 family 전체를 폐기한다.
+ * 소비 후 2초 안에 같은 토큰이 다시 오면 동시 요청으로 보고 409로 거절한다.
+ * 이 유예가 지난 소비 토큰의 재사용은 해당 family 전체를 폐기한다.
  *
- * `{prefix}:{familyId}:token:{tokenId}` → 토큰 해시
+ * `{prefix}:{familyId}:token:{tokenId}` → `{ familyId, hash }` JSON
  * `{prefix}:{familyId}:family` → 살아 있는 tokenId 집합
  * `{prefix}:{familyId}:revoked` → 폐기 후 늦은 토큰 저장을 막는 fence
+ * `{prefix}:{familyId}:consumed:{tokenId}` → 2초 동안 유지하는 소비 토큰 해시
  * `{prefix}:user:{userId}:families` → 사용자별 family 집합
  */
 @Injectable()

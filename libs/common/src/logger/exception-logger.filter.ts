@@ -12,7 +12,6 @@ export class HttpExceptionLoggerFilter extends BaseExceptionFilter {
     catch(exception: Error, host: ArgumentsHost) {
         const contextType = host.getType()
 
-        /* istanbul ignore else */
         if (contextType === 'http') {
             this.logHttp(exception, host)
         } else {

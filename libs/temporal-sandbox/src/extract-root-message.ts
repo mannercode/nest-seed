@@ -1,4 +1,4 @@
-// Temporal 오류의 suppressed/cause 사슬에서 실제 메시지를 찾고 순환 참조에서는 멈춘다.
+// Temporal 오류의 suppressed/cause 사슬에서 실제 메시지를 찾고 직접 자기 참조에서는 멈춘다.
 export function extractRootMessage(error: unknown): string {
     let current: unknown = error
     let message = ''

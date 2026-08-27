@@ -29,6 +29,7 @@ export class TemporalWorkerService implements OnModuleInit, OnModuleDestroy {
 
         // 의존 모듈이 액티비티보다 먼저 닫히지 않도록 완전 종료 Promise를 보관한다.
         this.runPromise = this.worker.run().catch(
+            // 실제 Worker를 쓰는 통합 테스트에서는 비동기 run 실패를 안정적으로 만들 수 없어 로그 분기만 제외한다.
             /* istanbul ignore next */ (err: unknown) => {
                 this.logger.error('temporal worker run() failed', err)
             }

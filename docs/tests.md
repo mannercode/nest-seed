@@ -37,7 +37,7 @@ npm test -w tests/api-race              # 배포 없이 HTTP/SSE 공통 클라�
 | ------------------------ | ------------------------------------------------------------------------- |
 | `mixed-runner.sh`        | 읽기·쓰기 혼합 행렬 — 단독 케이스(`iso-*`) 대비 혼합 케이스의 간섭을 본다 |
 | `harness-crud.js`        | 시나리오 10종(Mongo 읽기/쓰기, 비인덱스 정규식 스캔, health 등) 지속 부하 |
-| `harness-refresh.js`     | `/users/refresh` — 호출당 Redis 4왕복이라 ioredis 클러스터 처리량을 잰다  |
+| `harness-refresh.js`     | `/users/refresh` — Redis 토큰 회전과 MongoDB 계정 상태 조회가 결합된 경로 |
 | `harness-user-filter.js` | 비인덱스 부분 문자열 검색의 전체 컬렉션 스캔 비용                         |
 
 ```bash

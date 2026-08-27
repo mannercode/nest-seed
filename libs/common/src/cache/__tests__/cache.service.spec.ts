@@ -78,7 +78,6 @@ describe('CacheService', () => {
         })
 
         it('스크립트 실행이 실패하면 예외를 그대로 던진다', async () => {
-            // 잘못된 Lua 스크립트이므로 Redis가 에러를 반환한다.
             await expect(
                 fix.cacheService.executeScript('this is not lua', [], [])
             ).rejects.toThrow()
@@ -284,7 +283,6 @@ describe('CacheService', () => {
 
     describe('복구 경로', () => {
         it('Lua 스크립트가 실패한 뒤에도 같은 인스턴스의 다음 호출이 정상 동작한다', async () => {
-            // executeScript가 한 번 실패해도 service 인스턴스는 손상되지 않는다.
             await expect(
                 fix.cacheService.executeScript('this is not lua', [], [])
             ).rejects.toThrow()

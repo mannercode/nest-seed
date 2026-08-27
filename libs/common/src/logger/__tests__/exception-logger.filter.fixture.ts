@@ -64,6 +64,7 @@ class TestController {
 
     @Get('throw-string')
     getThrowString() {
+        // @Catch(Error)가 Error 이외의 thrown 값을 건너뛰는지 검증하려고 문자열을 던진다.
         // eslint-disable-next-line @typescript-eslint/only-throw-error
         throw 'literal string thrown'
     }

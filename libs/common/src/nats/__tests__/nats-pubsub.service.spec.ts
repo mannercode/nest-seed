@@ -96,7 +96,6 @@ describe('NatsPubSubService', () => {
 
         await fix.pubSubB.subscribe(otherSubject, (msg) => received.push(msg))
 
-        // 가입한 적 없는 subject에 대해 해제를 호출해도 otherSubject 구독은 살아 있어야 한다.
         await fix.pubSubB.unsubscribe(subject, () => {})
 
         await fix.pubSubA.publish(otherSubject, 'survived')
@@ -174,7 +173,6 @@ describe('NatsPubSubService', () => {
 
         await waitFor(() => errorSpy.mock.calls.some((c) => String(c[0]).includes(subject)))
 
-        // 루프가 종료됐으므로 후속 메시지도 도달하지 않는다.
         await fix.pubSubA.publish(subject, 'next')
         await new Promise((r) => setTimeout(r, 100))
 

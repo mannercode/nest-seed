@@ -22,8 +22,8 @@ USER_EMAIL="user@example.com"
 #
 # ADMIN_ACCESS_TOKEN은 `:=`로 spec 사이에 유지한다(첫 spec이 만든 admin 도큐먼트와 토큰을
 # 다음 spec이 재사용해 root Basic Auth + admin 생성을 반복하지 않는다).
-# 반면 CURRENT_AUTH_TOKEN은 매 spec에서 빈 값으로 리셋해야 user spec의 "인증 없이" 케이스가
-# 이전 spec의 admin 토큰을 자동 주입받아 500이 되는 일을 막는다.
+# CURRENT_AUTH_TOKEN은 매 spec에서 비워, 이전 spec의 admin 토큰이 "인증 없이" 케이스를
+# admin 인증 또는 잘못된 user 서명 경로로 바꾸지 않게 한다.
 : "${ROOT_PASSWORD:?ROOT_PASSWORD must be set}"
 ROOT_BASIC_AUTH="Basic $(printf 'root:%s' "${ROOT_PASSWORD}" | base64)"
 

@@ -3,7 +3,8 @@
         "module": "commonjs",
         // "node10"과 각 프로젝트 tsconfig의 "baseUrl"은 TypeScript 7에서 제거될 예정이다.
         // 지금은 ignoreDeprecations로 경고만 숨긴다.
-        // TypeScript 7로 올릴 때는 moduleResolution을 "bundler" 또는 "node16"으로 바꾸고 baseUrl을 제거한다.
+        // TypeScript 7로 올릴 때는 module과 moduleResolution의 호환 조합을 함께 정하고 baseUrl을 제거한다.
+        // 예를 들어 moduleResolution을 "node16"으로 바꾸면 module도 "node16"이어야 한다.
         // 현재 TypeScript는 paths를 tsconfig 기준으로 해석한다.
         "moduleResolution": "node10",
         "ignoreDeprecations": "6.0",
@@ -14,7 +15,7 @@
         "types": ["node"],
 
         "strict": true,
-        // NestJS DI는 컨테이너가 생성자 파라미터를 주입하므로, 프로퍼티 초기화가 없어도 된다.
+        // DTO와 저장 모델은 class-transformer·ODM이 생성 뒤 필드를 채우므로 생성자 초기화를 두지 않는다.
         "strictPropertyInitialization": false,
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
