@@ -3,8 +3,6 @@ _output/
 .next/
 coverage/
 dist/
-playwright-report/
-test-results/
 package-lock.json
 *.tsbuildinfo
 # Next.js 자동 생성 파일이라 직접 손대지 않는다.

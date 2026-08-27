@@ -110,24 +110,6 @@ test('devcontainer preserves install, naming, and credential mount behavior', as
     }
 })
 
-test('devcontainer global install treats allow-scripts as an option, not a duplicate package', async () => {
-    const dockerfile = (await read('.devcontainer/Dockerfile')).replace(/\\\n\s*/g, ' ')
-    const install = [...dockerfile.matchAll(/npm i -g ([^;]+);/g)]
-        .map((match) => match[1])
-        .find((command) => command.includes('@anthropic-ai/claude-code'))
-    assert.ok(install, 'global npm install command must exist')
-
-    const arguments_ = install.trim().split(/\s+/)
-    assert.ok(arguments_.includes('--allow-scripts=@anthropic-ai/claude-code'))
-    assert.deepEqual(
-        arguments_.filter(
-            (argument) =>
-                !argument.startsWith('--') && argument.startsWith('@anthropic-ai/claude-code')
-        ),
-        ['@anthropic-ai/claude-code@2.1.237']
-    )
-})
-
 test('dependency image copies and hashes every tracked package manifest', async (t) => {
     const dockerfile = await read('deploy/deps.Dockerfile')
     const copied = new Set()

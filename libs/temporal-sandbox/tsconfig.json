@@ -1,12 +1,6 @@
 {
     "extends": "../../tsconfig.json",
-    "compilerOptions": {
-        "declaration": true,
-        "declarationMap": true,
-        "noEmit": true,
-        "baseUrl": ".",
-        "paths": {}
-    },
+    "compilerOptions": { "declaration": true, "declarationMap": true, "noEmit": true },
     "include": ["src/**/*"],
     "exclude": ["src/**/__tests__/**"]
 }
