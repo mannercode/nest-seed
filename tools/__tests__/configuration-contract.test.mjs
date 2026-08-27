@@ -28,8 +28,11 @@ test('root scripts keep cleanup and shell lint gates explicit', async () => {
     const npmrc = await read('.npmrc')
 
     assert.equal(packageJson.scripts.clean, 'node tools/clean-workspace.mjs')
-    assert.match(packageJson.scripts.postlint, /node tools\/lint-shell\.mjs/)
+    assert.match(packageJson.scripts['lint:root'], /node tools\/lint-shell\.mjs/)
+    assert.match(packageJson.scripts.lint, /npm run lint:root/)
     assert.match(packageJson.scripts.atoz, /npm run test:config/)
+    assert.match(packageJson.scripts.atoz, /npm run lint:root/)
+    assert.doesNotMatch(packageJson.scripts.atoz, /npm run lint(?:\s|&&)/)
     assert.match(lintStagedJavaScript, /tests\/api-race/)
     assert.match(lintStaged, /apps\/api\/api-docs\/\*\.\{fixture,spec\}/)
     assert.match(lintStaged, /\.husky\/\*/)
