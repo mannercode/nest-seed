@@ -107,7 +107,7 @@ nest-seed/
 │   ├── api-perf/            ← performance measurement tools against a deployed API stack
 │   └── console-e2e/         ← Playwright console/user-app e2e + shared BFF contract tests
 │
-├── infra/                   ← development infrastructure Compose (MongoDB, Redis, MinIO, NATS, Temporal)
+├── infra/                   ← development infrastructure Compose (MongoDB, Redis, VersityGW, NATS, Temporal)
 ├── deploy/                  ← Docker Compose, NGINX (app deployment entry point)
 ├── tools/                   ← dev/test helper tools (free-port, jest helpers, quick tunnel)
 ├── docs/                    ← folder documents plus cross-cutting references (reference/)
@@ -128,7 +128,7 @@ If a tool is new to you, start from the code path or document in the "Where it's
 | Redis (Cluster) + ioredis        | Cache and distributed locks — `libs/common/redis`, `libs/common/cache`                                                                                          |
 | NATS                             | Pub/sub across containers — `libs/common/nats`                                                                                                                  |
 | Temporal                         | Saga workflows — `application/showtime-creation/worker`                                                                                                         |
-| MinIO (S3 API)                   | Presigned file upload/download — `libs/common/s3`, `infrastructure/assets`                                                                                      |
+| VersityGW (S3 API)               | Presigned file upload/download — `libs/common/s3`, `infrastructure/assets`                                                                                      |
 | NestJS                           | API server. Guards and pipes implemented directly, without Passport — `gateway/`                                                                                |
 | Next.js                          | console and user-app minimal demos                                                                                                                              |
 | @nestjs/jwt + bcrypt             | Per-role token signing/verification — `gateway/guards`; password hashing — `core/{users,admins}/internal`                                                       |
@@ -173,7 +173,7 @@ JWT-based, with three roles. **root** only creates and deletes admins, using Bas
 
 ## Documentation
 
-The detail behind this README lives in six folder documents, four references, and operations/contributor documents. **Korean is the source language for the detailed documents and code comments.** This file is a translation of [README.md](README.md); where the two disagree, the Korean version wins. Keeping the detailed documents in one source language avoids silent drift between two copies.
+The detail behind this README lives in six folder documents, four references, and one operations document. **Korean is the source language for the detailed documents and code comments.** This file is a translation of [README.md](README.md); where the two disagree, the Korean version wins. Keeping the detailed documents in one source language avoids silent drift between two copies.
 
 **Folder documents** — what each folder is and why it is split this way. Start here:
 
@@ -196,13 +196,6 @@ The detail behind this README lives in six folder documents, four references, an
 - [Environment variables](docs/reference/environment.md) — env-variable flow for the Dev Container, API, API docs, and console/user-app, plus the fork checklist
 - [Design decisions](docs/reference/decisions.md) — the key design decisions (distributed tooling, the View layer, and more) and the alternatives not taken
 
-**Operations and participation**:
+**Operations**:
 
 - [GitHub operations setup](docs/github-setup.md) — rulesets, Actions secrets, Dependabot, security features, and scheduled-CI opt-in for a fork
-- [Contributing guide](CONTRIBUTING.md) — development flow, RED→GREEN evidence, and the PR checklist
-- [Security policy](SECURITY.md) — supported versions and the private vulnerability-reporting path
-- [Code of Conduct](CODE_OF_CONDUCT.md) — participation standards
-
-## License
-
-[MIT](LICENSE).

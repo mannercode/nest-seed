@@ -88,7 +88,7 @@ gh api -X PATCH repos/OWNER/REPO \
 - Settings → Code security에서 Dependabot alerts와 Dependabot security updates를 활성화한다.
 - Automated security fixes를 활성화한다.
 - Secret scanning과 push protection을 활성화한다. 원본은 secret scanning만 활성화되어 있으므로 push protection 추가를 권장한다.
-- Private vulnerability reporting을 활성화하고 [SECURITY.md](../SECURITY.md)의 원본 저장소 제보 URL을 fork의 URL로 바꾼다.
+- Private vulnerability reporting을 활성화한다.
 
 일부 설정은 CLI로 적용할 수 있다.
 

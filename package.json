@@ -92,6 +92,7 @@
         "@swc/core@1.16.1": true,
         "bcrypt@6.0.0": true,
         "cpu-features@0.0.10": true,
+        "esbuild@0.28.2": true,
         "fsevents@2.3.2": true,
         "fsevents@2.3.3": true,
         "protobufjs@7.6.5": true,

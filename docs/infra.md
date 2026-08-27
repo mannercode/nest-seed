@@ -6,7 +6,7 @@ devcontainer가 부팅할 때 `postStartCommand`로 `bash infra/reset.sh`를 실
 - `compose.common.yml` — 모든 서비스가 공유하는 로깅·healthcheck 공통 옵션.
 - `compose.mongo.yml` — MongoDB Replica Set. 트랜잭션이 Replica Set을 요구한다.
 - `compose.redis.yml` — Redis Cluster. 스탠드얼론에서는 통과하지만 Cluster에서만 실패하는 코드가 개발 단계에서 드러나게 한다.
-- `compose.minio.yml` — S3 호환 스토리지. presigned 업로드·다운로드의 대상이다.
+- `compose.s3.yml` — VersityGW POSIX backend 기반 S3 호환 스토리지. 애플리케이션은 구현체 전용 API 없이 AWS SDK v3의 S3 API만 사용한다.
 - `compose.nats.yml` — 컨테이너 사이 pub/sub.
 - `temporal/` — Temporal 서버 + PostgreSQL + 스키마·네임스페이스 준비 컨테이너.
 

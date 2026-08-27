@@ -15,7 +15,7 @@ setup_exit="$(docker wait "${setup_id}")"
 if [ "${setup_exit}" -ne 0 ]; then
     echo "infra-setup failed with exit code ${setup_exit}" >&2
     docker compose ps -a
-    docker compose logs --no-color mongo-setup infra-setup
+    docker compose logs --no-color mongo-setup s3 s3-setup infra-setup
     exit "${setup_exit}"
 fi
 
