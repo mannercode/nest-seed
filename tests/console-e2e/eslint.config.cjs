@@ -9,7 +9,7 @@ module.exports = [
             'playwright.config.ts',
             'playwright.unit.config.ts'
         ],
-        languageOptions: { parser: tseslint.parser, parserOptions: { sourceType: 'module' } },
+        languageOptions: { parser: tseslint.parser },
         plugins: { '@typescript-eslint': tseslint.plugin },
         rules: { ...tseslint.plugin.configs.recommended.rules }
     }

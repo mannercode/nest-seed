@@ -93,20 +93,13 @@ const baseRules = {
 }
 
 function createBaseConfigs({ tsconfigRootDir, srcGlob = 'src/**', parserOptions = {} }) {
-    const typeAwareParserOptions = {
-        sourceType: 'module',
-        tsconfigRootDir,
-        ...(parserOptions.project ? { projectService: false } : { projectService: true }),
-        ...parserOptions
-    }
-
     return [
         {
             files: [`${srcGlob}/*.ts`],
             linterOptions: { reportUnusedDisableDirectives: true },
             languageOptions: {
                 parser: tseslint.parser,
-                parserOptions: typeAwareParserOptions,
+                parserOptions: { tsconfigRootDir, ...parserOptions },
                 globals: { ...baseGlobals }
             },
             plugins: { ...basePlugins },

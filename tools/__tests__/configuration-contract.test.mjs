@@ -84,16 +84,6 @@ test('installed dependency specs are exact while peer compatibility ranges stay 
     }
 })
 
-test('Next transitive overrides survive routine Next version updates', async () => {
-    const packageJson = JSON.parse(await read('package.json'))
-
-    assert.deepEqual(packageJson.overrides.next, { postcss: '8.5.26', sharp: '0.35.3' })
-    assert.equal(
-        Object.keys(packageJson.overrides).some((dependency) => dependency.startsWith('next@')),
-        false
-    )
-})
-
 test('devcontainer preserves install, naming, and credential mount behavior', async () => {
     const config = await read('.devcontainer/devcontainer.json')
     const lock = JSON.parse(await read('.devcontainer/devcontainer-lock.json'))

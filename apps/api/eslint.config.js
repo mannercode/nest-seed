@@ -87,11 +87,11 @@ module.exports = [
     {
         files: ['src/**/*.ts', 'scripts/**/*.ts'],
         plugins: { allowed: allowedDependenciesPlugin },
-        rules: { 'default-case': 'off', 'allowed/dependencies': ['warn', sourceDependencyOptions] }
+        rules: { 'allowed/dependencies': ['warn', sourceDependencyOptions] }
     },
     { files: ['scripts/**/*.ts'], rules: { 'no-restricted-imports': 'off' } },
     {
-        files: ['src/**/__tests__/**/*.ts', 'src/development.ts'],
+        files: ['src/**/__tests__/**/*.ts'],
         languageOptions: { globals: { ...baseGlobals, ...globals.jest } },
         plugins: { jest: jestPlugin },
         rules: {
