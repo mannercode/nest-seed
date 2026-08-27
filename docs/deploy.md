@@ -4,7 +4,7 @@
 
 Docker Compose로 API 컨테이너를 여러 개 띄우고 NGINX로 요청을 나눈다. Node.js는 기본적으로 한 프로세스가 한 이벤트 루프를 쓰기 때문에, 컨테이너를 나누어 여러 CPU 코어를 활용한다.
 
-MongoDB, Redis, MinIO, NATS, Temporal 같은 인프라는 이미 실행 중이라고 가정한다.
+MongoDB, Redis, VersityGW, NATS, Temporal 같은 인프라는 이미 실행 중이라고 가정한다.
 
 토폴로지는 다음과 같다(다이어그램은 devcontainer의 VS Code 미리보기에서 렌더된다).
 
@@ -23,7 +23,7 @@ rectangle "Docker 네트워크 (COMPOSE_PROJECT_NAME)" {
     database "Redis\nCluster ×3" as redis
     queue NATS as nats
     [Temporal\n(+PostgreSQL)] as temporal
-    [MinIO] as minio
+    [VersityGW\n(S3 API)] as s3
     [devcontainer] as dev
 }
 
@@ -36,7 +36,7 @@ a1 --> mongo
 a1 --> redis
 a1 --> nats
 a1 --> temporal
-a1 --> minio
+a1 --> s3
 note bottom of a1
   네 컨테이너 모두 같은 인프라에
   서비스 이름(mongo1, redis1, ...)으로 접근한다
@@ -83,7 +83,7 @@ DEPLOY_IMAGES_PREBUILT=true bash tests/api-race/runner.sh <scenario>
 
 API 컨테이너 개수(4)와 NGINX가 호스트에 노출하는 포트(3000)는 운영자가 바꾸는 값이 아니라 검증 정책이므로 [compose.yml](../deploy/compose.yml)에 직접 고정한다. 복제본을 여러 개로 두는 것 자체가 시드의 전제다. NATS fan-out, 락·lease owner CAS, Mongo 트랜잭션 경합, 원자 상태 전이는 모두 복제본 사이 경쟁을 다루므로, 1개로 줄이면 핵심 패턴이 실제로 경쟁하지 않은 채 통과한다.
 
-API 컨테이너는 `${COMPOSE_PROJECT_NAME}` Docker 네트워크에 붙은 뒤, 서비스 이름(`mongo1`, `redis1`, `nats`, `temporal`, `minio` 등)으로 인프라에 접근한다. devcontainer에서는 `infra` compose와 `deploy/compose.yml`이 같은 네트워크를 공유한다.
+API 컨테이너는 `${COMPOSE_PROJECT_NAME}` Docker 네트워크에 붙은 뒤, 서비스 이름(`mongo1`, `redis1`, `nats`, `temporal`, `s3` 등)으로 인프라에 접근한다. devcontainer에서는 `infra` compose와 `deploy/compose.yml`이 같은 네트워크를 공유한다.
 
 환경 변수가 컨테이너로 들어오는 경로는 [환경 변수](reference/environment.md)가 정리한다. deploy 고유의 값은 배포 시점에 덮어쓰는 `NODE_ENV=production`, `LOG_DIRECTORY=/app/logs` 등이며, compose.yml의 `environment`에 둔다.
 

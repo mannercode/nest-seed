@@ -1,9 +1,10 @@
 import { DynamicModule, Inject, Injectable, Logger, Module, OnModuleDestroy } from '@nestjs/common'
-import { StringCodec, type NatsConnection, type Subscription } from 'nats'
+import type { NatsConnection } from './nats.types'
 import { defaultTo } from '../utils'
 import { getNatsConnectionToken } from './nats.tokens'
 
 type MessageHandler = (message: string) => void
+type Subscription = ReturnType<NatsConnection['subscribe']>
 
 type SubscriptionState = {
     handlers: Set<MessageHandler>
@@ -20,7 +21,6 @@ function getSubscriptionKey(subject: string, queue?: string) {
 @Injectable()
 export class NatsPubSubService implements OnModuleDestroy {
     private readonly logger = new Logger(NatsPubSubService.name)
-    private readonly codec = StringCodec()
     private readonly subscriptions = new Map<string, SubscriptionState>()
 
     constructor(private readonly connection: NatsConnection) {}
@@ -37,7 +37,7 @@ export class NatsPubSubService implements OnModuleDestroy {
     }
 
     async publish(subject: string, message: string): Promise<void> {
-        this.connection.publish(subject, this.codec.encode(message))
+        this.connection.publish(subject, message)
         // 반환 전에 서버 왕복까지 확인한다.
         await this.connection.flush()
     }
@@ -78,7 +78,7 @@ export class NatsPubSubService implements OnModuleDestroy {
         void (async () => {
             try {
                 for await (const msg of state.sub) {
-                    const text = this.codec.decode(msg.data)
+                    const text = msg.string()
                     for (const handler of state.handlers) {
                         handler(text)
                     }

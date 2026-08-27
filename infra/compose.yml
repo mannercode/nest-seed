@@ -1,6 +1,6 @@
 include:
     - ./compose.mongo.yml
-    - ./compose.minio.yml
+    - ./compose.s3.yml
     - ./compose.redis.yml
     - ./compose.nats.yml
     - ./temporal/compose.temporal.yml
@@ -14,7 +14,7 @@ services:
         depends_on:
             mongo-setup: { condition: service_completed_successfully }
             redis-setup: { condition: service_completed_successfully }
-            minio-setup: { condition: service_completed_successfully }
+            s3-setup: { condition: service_completed_successfully }
             temporal-create-namespace: { condition: service_completed_successfully }
             nats: { condition: service_healthy }
         command: ['true']

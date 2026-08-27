@@ -1,10 +1,10 @@
-const { GenericContainer } = require('testcontainers')
+const { GenericContainer, Wait } = require('testcontainers')
 const { MongoDBContainer } = require('@testcontainers/mongodb')
 const { NatsContainer } = require('@testcontainers/nats')
 const { TestWorkflowEnvironment } = require('@temporalio/testing')
 
 module.exports = async function globalSetup() {
-    const [mongo, redis, minio, nats, temporalEnv] = await Promise.all([
+    const [mongo, redis, s3, nats, temporalEnv] = await Promise.all([
         new MongoDBContainer(process.env.MONGO_IMAGE)
             .withCommand(['--replSet', 'rs0', '--bind_ip_all', '--wiredTigerCacheSizeGB', '0.25'])
             .withResourcesQuota({ memory: 1 })
@@ -15,10 +15,19 @@ module.exports = async function globalSetup() {
             .withResourcesQuota({ memory: 0.125 })
             .start(),
 
-        new GenericContainer(process.env.MINIO_IMAGE)
-            .withExposedPorts(9000)
-            .withEnvironment({ MINIO_ROOT_USER: 'admin', MINIO_ROOT_PASSWORD: 'password' })
-            .withCommand(['server', '/data'])
+        new GenericContainer(process.env.S3_IMAGE)
+            .withExposedPorts(7070)
+            .withEnvironment({
+                ROOT_ACCESS_KEY_ID: 'admin',
+                ROOT_SECRET_ACCESS_KEY: 'password',
+                VGW_REGION: 'us-east-1',
+                VGW_PORT: ':7070',
+                VGW_HEALTH: '/_/health',
+                VGW_BACKEND: 'posix',
+                VGW_BACKEND_ARGS: '/data'
+            })
+            .withTmpFs({ '/data': 'rw' })
+            .withWaitStrategy(Wait.forHttp('/_/health', 7070))
             .withResourcesQuota({ memory: 0.5 })
             .start(),
 
@@ -32,7 +41,7 @@ module.exports = async function globalSetup() {
 
     process.env.TESTLIB_MONGO_URI = `${mongo.getConnectionString()}?directConnection=true`
     process.env.TESTLIB_REDIS_URL = `redis://${redis.getHost()}:${redis.getMappedPort(6379)}`
-    process.env.TESTLIB_S3_ENDPOINT = `http://${minio.getHost()}:${minio.getMappedPort(9000)}`
+    process.env.TESTLIB_S3_ENDPOINT = `http://${s3.getHost()}:${s3.getMappedPort(7070)}`
     process.env.TESTLIB_S3_ACCESS_KEY = 'admin'
     process.env.TESTLIB_S3_SECRET_KEY = 'password'
     // `NatsContainer`는 기본으로 사용자/비밀번호 인증을 켠다.

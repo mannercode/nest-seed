@@ -220,10 +220,16 @@ test('network-facing deployment port binds only to loopback', async () => {
     assert.match(await read('deploy/compose.yml'), /127\.0\.0\.1:3000:80/)
 })
 
-test('optional MinIO console is disabled and unpublished', async () => {
-    const minioCompose = await read('infra/compose.minio.yml')
-    assert.doesNotMatch(minioCompose, /^\s*ports:/m)
-    assert.match(minioCompose, /MINIO_BROWSER:\s*'off'/)
+test('local S3 service is internal-only and exposes a dedicated health endpoint', async () => {
+    const s3Compose = await read('infra/compose.s3.yml')
+    assert.doesNotMatch(s3Compose, /^\s*ports:/m)
+    assert.match(s3Compose, /image:\s*\$\{S3_IMAGE\}/)
+    assert.match(s3Compose, /VGW_HEALTH:\s*\/_\/health/)
+    assert.match(s3Compose, /VGW_BACKEND:\s*posix/)
+    assert.match(s3Compose, /-\s+s3_data:\/data/)
+    assert.match(s3Compose, /wget -q -O \/dev\/null/)
+    assert.doesNotMatch(s3Compose, /^\s*test:.*--spider/m)
+    assert.doesNotMatch(s3Compose, /VGW_(?:ADMIN|WEBUI)_PORT/)
 })
 
 test('container base and infrastructure image references are digest-pinned', async () => {
@@ -270,7 +276,7 @@ test('container base and infrastructure image references are digest-pinned', asy
         'devcontainer, dependency builder, and API runtime must use one Node tag and digest'
     )
 
-    for (const compose of ['deploy/compose.yml', 'infra/compose.minio.yml', 'infra/compose.yml']) {
+    for (const compose of ['deploy/compose.yml', 'infra/compose.s3.yml', 'infra/compose.yml']) {
         const contents = await read(compose)
         for (const [, image] of contents.matchAll(/^\s*image:\s+([^$\s][^\s]*)/gm)) {
             if (image === 'nest-seed-api') continue

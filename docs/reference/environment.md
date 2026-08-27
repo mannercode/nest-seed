@@ -6,13 +6,13 @@
 
 ## 1. 파일 역할
 
-| 파일                     | 읽는 곳                                                        | 역할                                                                                                                                                                      |
-| ------------------------ | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.env.infra`             | Dev Container `runArgs`, `infra` compose, `deploy/compose.yml` | 개발 인프라 이미지 태그·digest와 접속 값. MongoDB, Redis, MinIO, NATS, Temporal 서비스 이름·포트와 dev 서버 포트(`API_PORT`, `CONSOLE_PORT`, `USER_APP_PORT`)를 정의한다. |
-| `.env.api`               | Dev Container `runArgs`, `deploy/compose.yml` `env_file`       | API 런타임의 앱 설정. `NODE_ENV`(개발·테스트는 test, deploy가 production으로 덮어씀), `PROJECT_ID`, HTTP, 인증, 로그 값, `ROOT_PASSWORD`를 둔다.                          |
-| `apps/api/api-docs/.env` | `apps/api/api-docs/run.sh`                                     | curl 기반 API 문서 실행 설정. `SERVER_URL`과 업로드 fixture 값을 둔다.                                                                                                    |
-| `apps/console/.env`      | Next.js console                                                | 관리 콘솔이 호출할 API 기준 URL과 선택적인 trusted-proxy opt-in을 둔다.                                                                                                   |
-| `apps/user-app/.env`     | Next.js user-app                                               | 사용자 앱이 호출할 API 기준 URL과 선택적인 trusted-proxy opt-in을 둔다.                                                                                                   |
+| 파일                     | 읽는 곳                                                        | 역할                                                                                                                                                                          |
+| ------------------------ | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.env.infra`             | Dev Container `runArgs`, `infra` compose, `deploy/compose.yml` | 개발 인프라 이미지 태그·digest와 접속 값. MongoDB, Redis, VersityGW, NATS, Temporal 서비스 이름·포트와 dev 서버 포트(`API_PORT`, `CONSOLE_PORT`, `USER_APP_PORT`)를 정의한다. |
+| `.env.api`               | Dev Container `runArgs`, `deploy/compose.yml` `env_file`       | API 런타임의 앱 설정. `NODE_ENV`(개발·테스트는 test, deploy가 production으로 덮어씀), `PROJECT_ID`, HTTP, 인증, 로그 값, `ROOT_PASSWORD`를 둔다.                              |
+| `apps/api/api-docs/.env` | `apps/api/api-docs/run.sh`                                     | curl 기반 API 문서 실행 설정. `SERVER_URL`과 업로드 fixture 값을 둔다.                                                                                                        |
+| `apps/console/.env`      | Next.js console                                                | 관리 콘솔이 호출할 API 기준 URL과 선택적인 trusted-proxy opt-in을 둔다.                                                                                                       |
+| `apps/user-app/.env`     | Next.js user-app                                               | 사용자 앱이 호출할 API 기준 URL과 선택적인 trusted-proxy opt-in을 둔다.                                                                                                       |
 
 `.env` 파일은 역할별로 분리한다. 인프라가 소유한 값은 `.env.infra`, API가 소유한 값은 `.env.api`에 둔다.
 
@@ -36,7 +36,7 @@ Dev Container
   -> process.env 안의 NODE_ENV, API_PORT, CONSOLE_PORT, USER_APP_PORT, HTTP_*, AUTH_*, ROOT_PASSWORD, MONGO_*, REDIS_*, S3_*, NATS_*, TEMPORAL_*
 ```
 
-`postStartCommand`는 `infra/reset.sh`를 실행한다. 이 스크립트는 `infra`의 compose 파일들로 MongoDB Replica Set, Redis Cluster, MinIO, NATS, Temporal을 시작한다. 이미지 태그와 `S3_BUCKET`·`TEMPORAL_NAMESPACE`는 컨테이너 환경에 이미 주입된 `.env.infra` 변수로 보간되고, 서비스 이름·포트는 compose 파일의 리터럴이다(그래서 3절의 포트 표가 필요하다).
+`postStartCommand`는 `infra/reset.sh`를 실행한다. 이 스크립트는 `infra`의 compose 파일들로 MongoDB Replica Set, Redis Cluster, VersityGW, NATS, Temporal을 시작한다. 이미지 태그와 `S3_BUCKET`·`TEMPORAL_NAMESPACE`는 컨테이너 환경에 이미 주입된 `.env.infra` 변수로 보간되고, 서비스 이름·포트는 compose 파일의 리터럴이다(그래서 3절의 포트 표가 필요하다).
 
 API는 Nest `ConfigModule`에서 `.env` 파일을 직접 읽지 않는다. `ignoreEnvFile: true`로 두고, 실행 경로가 준비한 `process.env`만 검증한다. Dev Container가 두 `.env`를 미리 주입했으므로 모든 워크스페이스의 npm 프로세스는 그 환경을 그대로 상속한다.
 
@@ -71,26 +71,26 @@ env 파일은 자기 보간이 안 되고 compose 서비스 정의와 스크립�
 | Redis `redis1~3:6379`          | `infra/compose.redis.yml`                                                          | `.env.infra` `REDIS_HOST1~3`/`REDIS_PORT1~3`                                                                                                                                                                                    |
 | NATS `nats:4222`               | `infra/compose.nats.yml` 서비스 이름(4222는 NATS 기본 포트라 파일에 리터럴이 없다) | `.env.infra` `NATS_HOST`/`NATS_PORT`                                                                                                                                                                                            |
 | Temporal `temporal:7233`       | `infra/temporal/compose.temporal.yml`                                              | `.env.infra` `TEMPORAL_HOST`/`TEMPORAL_PORT`                                                                                                                                                                                    |
-| MinIO `minio:9000`             | `infra/compose.minio.yml`                                                          | `.env.infra` `S3_ENDPOINT` (선택 기능인 웹 콘솔은 비활성화)                                                                                                                                                                     |
+| VersityGW `s3:7070`            | `infra/compose.s3.yml`                                                             | `.env.infra` `S3_ENDPOINT` (Admin API와 WebUI는 비활성화)                                                                                                                                                                       |
 | 배포 NGINX `http://nginx` (80) | `deploy/compose.yml`·`deploy/nginx.conf`                                           | `deploy/verify.sh`·`tests/api-race/runner.sh`·`tests/api-perf/runner.sh`의 `SERVER_URL`                                                                                                                                         |
 
 ---
 
 ## 4. 포크할 때 확인할 값
 
-`nest-seed`나 `mannercode`라는 문자열을 저장소 전체에서 일괄 치환하지 않는다. 같은 문자열이어도 내부 식별자, 저자 소유 URL, 보안 연락처, 원 프로젝트의 운영 sentinel처럼 소유권과 의미가 다르다. 아래 대상만 새 프로젝트 정책에 맞춰 하나씩 바꾸고, 나머지 검색 결과는 용도를 확인한 뒤 유지하거나 수정한다.
+`nest-seed`나 `mannercode`라는 문자열을 저장소 전체에서 일괄 치환하지 않는다. 같은 문자열이어도 내부 식별자, 저자 소유 URL, 원 프로젝트의 운영 sentinel처럼 소유권과 의미가 다르다. 아래 대상만 새 프로젝트 정책에 맞춰 하나씩 바꾸고, 나머지 검색 결과는 용도를 확인한 뒤 유지하거나 수정한다.
 
-| 대상                     | 확인할 값                                                                                                                                                                                                       |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 패키지 식별자            | 루트 `package.json`의 `name`, 내부 워크스페이스의 `@mannercode/*` 이름·의존성·import·도구 alias. 새 내부 scope로 바꾸면 `package-lock.json`도 함께 갱신한다.                                                    |
-| Dev Container 식별자     | `.devcontainer/devcontainer.json`의 `${localEnv:USER:unknown}-${localWorkspaceFolderBasename}` network·Compose project 이름                                                                                     |
-| API 런타임               | `.env.api`의 `PROJECT_ID`, `AUTH_ISSUER`, `AUTH_AUDIENCE`, `ROOT_PASSWORD`                                                                                                                                      |
-| 인프라 런타임            | `.env.infra`의 `MONGO_DATABASE`, `S3_BUCKET`, `TEMPORAL_NAMESPACE`                                                                                                                                              |
-| 배포 이미지              | `deploy/compose.yml`의 `nest-seed-api`와 deps 이미지 이름. replica 수는 배포 검증 정책이므로 줄이면 api-race·test-stability의 분산 전제가 깨진다([deploy 문서](../deploy.md) 참고).                             |
-| 앱 세션·테스트 격리 이름 | 두 BFF의 cookie 접두사, Jest Mongo `appName`, API 문서 fixture 이메일처럼 프로젝트끼리 충돌하면 안 되는 내부 값                                                                                                 |
-| 프런트엔드 환경          | `apps/console/.env`·`apps/user-app/.env`의 `API_BASE_URL`; 신뢰 edge 뒤에서만 `BFF_TRUST_PROXY_HEADERS=true`                                                                                                    |
-| 저장소 링크·연락처       | README badge, 취약점 제보 URL, 행동 강령 연락처, 저자 블로그·라이선스·귀속 표시는 새 소유권과 유지할 원 저작자 정보를 구분해 의도적으로 검토한다. URL이나 `mannercode.com`·이메일을 기계적으로 치환하지 않는다. |
-| GitHub Settings          | ruleset, Actions/Dependabot 권한, `DOCKERHUB_*` secrets, 필요한 fork에만 `ENABLE_SCHEDULED_CI=true` — [GitHub 운영 설정](../github-setup.md)                                                                    |
+| 대상                     | 확인할 값                                                                                                                                                                           |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 패키지 식별자            | 루트 `package.json`의 `name`, 내부 워크스페이스의 `@mannercode/*` 이름·의존성·import·도구 alias. 새 내부 scope로 바꾸면 `package-lock.json`도 함께 갱신한다.                        |
+| Dev Container 식별자     | `.devcontainer/devcontainer.json`의 `${localEnv:USER:unknown}-${localWorkspaceFolderBasename}` network·Compose project 이름                                                         |
+| API 런타임               | `.env.api`의 `PROJECT_ID`, `AUTH_ISSUER`, `AUTH_AUDIENCE`, `ROOT_PASSWORD`                                                                                                          |
+| 인프라 런타임            | `.env.infra`의 `MONGO_DATABASE`, `S3_BUCKET`, `TEMPORAL_NAMESPACE`                                                                                                                  |
+| 배포 이미지              | `deploy/compose.yml`의 `nest-seed-api`와 deps 이미지 이름. replica 수는 배포 검증 정책이므로 줄이면 api-race·test-stability의 분산 전제가 깨진다([deploy 문서](../deploy.md) 참고). |
+| 앱 세션·테스트 격리 이름 | 두 BFF의 cookie 접두사, Jest Mongo `appName`, API 문서 fixture 이메일처럼 프로젝트끼리 충돌하면 안 되는 내부 값                                                                     |
+| 프런트엔드 환경          | `apps/console/.env`·`apps/user-app/.env`의 `API_BASE_URL`; 신뢰 edge 뒤에서만 `BFF_TRUST_PROXY_HEADERS=true`                                                                        |
+| 저장소 링크·연락처       | README badge, 저자 블로그·귀속 표시는 새 소유권과 유지할 원 저작자 정보를 구분해 의도적으로 검토한다. URL이나 `mannercode.com`·이메일을 기계적으로 치환하지 않는다.                 |
+| GitHub Settings          | ruleset, Actions/Dependabot 권한, `DOCKERHUB_*` secrets, 필요한 fork에만 `ENABLE_SCHEDULED_CI=true` — [GitHub 운영 설정](../github-setup.md)                                        |
 
 정기 CI 조건의 `repository_id == '849585972'`는 원본 저장소만 변수 없이 schedule을 실행하게 하는 immutable sentinel이다. fork에서 자기 repository ID로 바꾸면 opt-in 안전장치를 우회하므로 치환하지 않는다.
 

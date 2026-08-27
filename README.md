@@ -105,7 +105,7 @@ nest-seed/
 │   ├── api-perf/            ← 배포된 API 스택을 대상으로 하는 성능 측정 도구
 │   └── console-e2e/         ← Playwright console·user-app e2e + 공통 BFF 계약 테스트
 │
-├── infra/                   ← 개발 인프라 Compose (MongoDB·Redis·MinIO·NATS·Temporal)
+├── infra/                   ← 개발 인프라 Compose (MongoDB·Redis·VersityGW·NATS·Temporal)
 ├── deploy/                  ← Docker Compose, NGINX (앱 배포 진입점)
 ├── tools/                   ← 개발·테스트 보조 도구 (free-port, jest 헬퍼, quick tunnel)
 ├── docs/                    ← 폴더 문서와 횡단 주제 참고 문서(reference/)
@@ -126,7 +126,7 @@ nest-seed/
 | Redis (Cluster) + ioredis        | 캐시와 분산 락 — `libs/common/redis`, `libs/common/cache`                                                                          |
 | NATS                             | 컨테이너 사이 pub/sub — `libs/common/nats`                                                                                         |
 | Temporal                         | 사가 워크플로 — `application/showtime-creation/worker`                                                                             |
-| MinIO (S3 API)                   | presigned 파일 업로드·다운로드 — `libs/common/s3`, `infrastructure/assets`                                                         |
+| VersityGW (S3 API)               | presigned 파일 업로드·다운로드 — `libs/common/s3`, `infrastructure/assets`                                                         |
 | NestJS                           | API 서버. 가드·파이프를 Passport 없이 직접 구현 — `gateway/`                                                                       |
 | Next.js                          | console·user-app 최소 데모                                                                                                         |
 | @nestjs/jwt + bcrypt             | 역할별 토큰 서명·검증 — `gateway/guards`; 비밀번호 해시 — `core/{users,admins}/internal`                                           |
@@ -171,7 +171,7 @@ JWT 기반으로 세 역할을 둔다. **root**는 `.env.api` 자격증명의 Ba
 
 ## 문서
 
-README 뒤의 상세는 폴더 문서 여섯과 참고 자료 넷, 운영·참여 문서가 맡는다. 문서와 주석은 한국어가 원본이다. README는 [영어 번역](README.en.md)을 같이 제공하지만, 상세 문서는 두 언어를 동시에 유지하며 생길 드리프트를 피하려고 한국어 하나로 유지한다.
+README 뒤의 상세는 폴더 문서 여섯과 참고 자료 넷, 운영 문서 하나가 맡는다. 문서와 주석은 한국어가 원본이다. README는 [영어 번역](README.en.md)을 같이 제공하지만, 상세 문서는 두 언어를 동시에 유지하며 생길 드리프트를 피하려고 한국어 하나로 유지한다.
 
 **폴더 문서** — 각 폴더가 무엇이고 왜 이렇게 나뉘었는지. 여기서 시작한다:
 
@@ -194,13 +194,6 @@ README 뒤의 상세는 폴더 문서 여섯과 참고 자료 넷, 운영·참�
 - [환경 변수](docs/reference/environment.md) — Dev Container, API, API 문서, console·user-app 환경 변수 흐름과 포크 체크리스트
 - [설계 결정](docs/reference/decisions.md) — 분산 도구·View 계층 등 핵심 설계 결정과 쓰지 않기로 한 대안
 
-**운영·참여 문서**:
+**운영 문서**:
 
 - [GitHub 운영 설정](docs/github-setup.md) — fork에 복사되지 않는 ruleset·Actions secret·Dependabot·보안 기능·정기 CI opt-in 체크리스트
-- [기여 가이드](CONTRIBUTING.md) — 개발 절차, RED→GREEN 증거, PR 체크리스트
-- [보안 정책](SECURITY.md) — 지원 버전과 비공개 취약점 제보 경로
-- [행동 강령](CODE_OF_CONDUCT.md) — 프로젝트 참여 기준
-
-## 라이선스
-
-[MIT](LICENSE).

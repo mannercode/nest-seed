@@ -1,7 +1,6 @@
-import type { NatsConnection } from 'nats'
 import { createTestContext } from '@mannercode/testing'
 import { HealthIndicatorService } from '@nestjs/terminus'
-import { getNatsConnectionToken, NatsModule } from '../../nats'
+import { getNatsConnectionToken, NatsModule, type NatsConnection } from '../../nats'
 import { NatsHealthIndicator } from '../nats.health-indicator'
 
 export type NatsHealthIndicatorFixture = {
