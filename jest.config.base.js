@@ -1,6 +1,5 @@
 module.exports = {
     testRegex: '(__tests__/.*\\.spec\\.ts)$',
-    testEnvironment: 'node',
     resetMocks: true,
     restoreMocks: true,
     // worker 재시작이 메모리 누수를 가리지 않도록 idle memory limit은 두지 않는다.

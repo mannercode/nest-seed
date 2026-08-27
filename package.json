@@ -2,11 +2,6 @@
     "name": "nest-seed",
     "private": true,
     "license": "MIT",
-    "comments": {
-        "workspaces": [
-            "workspaces 항목 순서 = 빌드 순서. 의존성이 먼저 오도록 유지할 것."
-        ]
-    },
     "workspaces": [
         "libs/temporal-sandbox",
         "libs/common",
@@ -29,7 +24,6 @@
         "preatoz": "npm run clean && bash infra/reset.sh && for i in 1 2 3 4 5; do npm ci && break; [ $i = 5 ] && exit 1; sleep $((i*10)); done",
         "atoz": "npm run test:config && npm run atoz --workspaces --if-present && npm run lint && bash deploy/verify.sh",
         "test:config": "node --test tools/__tests__/*.test.mjs",
-        "postatoz": "echo '✅ ATOZ PASS'",
         "predev": "npm run build -w libs",
         "dev": "concurrently 'npm:dev:*'",
         "dev:common": "npm run dev -w libs/common",
@@ -59,8 +53,6 @@
         "@types/express": "5.0.6",
         "@types/jest": "30.0.0",
         "@types/node": "24.13.3",
-        "@types/superagent": "8.1.11",
-        "@typescript-eslint/parser": "8.67.0",
         "class-transformer": "0.5.1",
         "class-validator": "0.15.1",
         "concurrently": "10.0.5",

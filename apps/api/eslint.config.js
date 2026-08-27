@@ -63,11 +63,7 @@ module.exports = [
         // Generated bundles live under _output and are deliberately outside these source globs.
         files: ['*.js', 'scripts/**/*.js'],
         linterOptions: { reportUnusedDisableDirectives: true },
-        languageOptions: {
-            ecmaVersion: 'latest',
-            globals: { ...baseGlobals },
-            sourceType: 'commonjs'
-        },
+        languageOptions: { globals: { ...baseGlobals }, sourceType: 'commonjs' },
         rules: {
             ...js.configs.recommended.rules,
             'no-unused-vars': [

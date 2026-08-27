@@ -27,8 +27,6 @@
 
         "sourceMap": true,
 
-        "esModuleInterop": true,
-
         "skipLibCheck": true
     }
 }
