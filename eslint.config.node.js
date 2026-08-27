@@ -4,7 +4,7 @@ const perfectionistPlugin = require('eslint-plugin-perfectionist')
 const globals = require('globals')
 const unusedImportsPlugin = require('eslint-plugin-unused-imports')
 
-const baseGlobals = { ...globals.node, ...globals.es2025, module: 'readonly', require: 'readonly' }
+const baseGlobals = { ...globals.node }
 const barrelImportPatterns = [
     {
         regex: '\\.\\./(?!\\.)[^/]+/[^/]+',
@@ -74,10 +74,7 @@ const baseRules = {
     'consistent-return': 'error',
     'no-constant-condition': 'warn',
     '@typescript-eslint/no-shadow': 'error',
-    '@typescript-eslint/explicit-function-return-type': 'off',
-    '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
-    '@typescript-eslint/no-empty-function': 'off',
     '@typescript-eslint/no-empty-object-type': 'off',
     '@typescript-eslint/no-unused-vars': 'off',
     'unused-imports/no-unused-imports': 'warn',
@@ -92,27 +89,17 @@ const baseRules = {
     ],
     '@typescript-eslint/no-non-null-assertion': 'warn',
     'no-duplicate-imports': 'warn',
-    // 실제 재선언은 TypeScript가 이미 검출한다.
-    // 이 규칙은 `as const` enum 대체 패턴(같은 이름의 const와 type alias 한 쌍)도 재선언으로 판단하므로, 타입스크립트 프로젝트에서 흔한 패턴을 허용하기 위해 비활성화한다.
-    '@typescript-eslint/no-redeclare': 'off',
     '@typescript-eslint/adjacent-overload-signatures': 'warn'
 }
 
 function createBaseConfigs({ tsconfigRootDir, srcGlob = 'src/**', parserOptions = {} }) {
-    const typeAwareParserOptions = {
-        sourceType: 'module',
-        tsconfigRootDir,
-        ...(parserOptions.project ? { projectService: false } : { projectService: true }),
-        ...parserOptions
-    }
-
     return [
         {
             files: [`${srcGlob}/*.ts`],
             linterOptions: { reportUnusedDisableDirectives: true },
             languageOptions: {
                 parser: tseslint.parser,
-                parserOptions: typeAwareParserOptions,
+                parserOptions: { tsconfigRootDir, ...parserOptions },
                 globals: { ...baseGlobals }
             },
             plugins: { ...basePlugins },

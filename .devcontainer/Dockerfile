@@ -1,63 +1,156 @@
-FROM node:24.19.0-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03
-ENV LANG=C.UTF-8
+FROM node:24.19.0-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03
+ARG TARGETARCH
 
-ARG REQUIRED="git curl jq ca-certificates unzip xz-utils"
-ARG DEV_TOOLS="tree tmux iproute2"
-ARG PLANTUML="openjdk-17-jre-headless graphviz fonts-noto-cjk"
-ARG SHELL_FORMATTER="shfmt"
-RUN set -Eeu; \
+ENV LANG=C.UTF-8 \
+    PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
+
+RUN set -eu; \
+    case "$TARGETARCH" in \
+        amd64 | arm64) ;; \
+        *) \
+            echo "Unsupported architecture: $TARGETARCH" >&2; \
+            exit 1; \
+            ;; \
+    esac
+
+RUN set -eu; \
     apt-get update; \
-    apt-get install -y --no-install-recommends \
-    $REQUIRED \
-    $DEV_TOOLS \
-    $PLANTUML \
-    $SHELL_FORMATTER; \
-    rm -rf /var/lib/apt/lists/*; \
-    curl -fsSL "https://github.com/plantuml/plantuml/releases/download/v1.2026.6/plantuml.jar" -o /opt/plantuml.jar; \
-    npm i -g npm@12.0.2; \
-    npm i -g --allow-scripts=@anthropic-ai/claude-code @commitlint/cli@21.2.2 @anthropic-ai/claude-code@2.1.237 playwright@1.62.1; \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        fonts-noto-cjk \
+        git \
+        graphviz \
+        iproute2 \
+        jq \
+        openjdk-17-jre-headless \
+        shfmt \
+        tmux \
+        tree \
+        unzip \
+        xz-utils; \
+    rm -rf /var/lib/apt/lists/*
+
+ARG NPM_VERSION=12.0.2
+ARG PLAYWRIGHT_VERSION=1.62.1
+RUN set -eu; \
+    npm install --global --no-audit --no-fund \
+        "npm@${NPM_VERSION}"; \
+    npm install --global --no-audit --no-fund \
+        "playwright@${PLAYWRIGHT_VERSION}"; \
     npm cache clean --force
 
-# features/docker-outside-of-docker에 포함된 buildx는 ECR 푸시 중 TLS 버그로 죽는다.
-# docker 공식 버전을 /usr/local/lib에 설치하면 기본 위치보다 먼저 검색돼 대체된다.
-# 로컬은 amd64, GitHub Actions 러너는 arm64라 호스트 아키텍처를 감지해 같은 ABI의 바이너리를 받는다.
-RUN ARCH=$(dpkg --print-architecture) \
-    && mkdir -p /usr/local/lib/docker/cli-plugins \
-    && curl -fsSL "https://github.com/docker/buildx/releases/download/v0.36.1/buildx-v0.36.1.linux-${ARCH}" \
-    -o /usr/local/lib/docker/cli-plugins/docker-buildx \
-    && chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
+# Chromium은 node 사용자도 읽을 수 있는 공용 경로에 설치한다.
+RUN set -eu; \
+    install -d -m 0755 "$PLAYWRIGHT_BROWSERS_PATH"; \
+    playwright install --with-deps chromium; \
+    chmod -R a+rX "$PLAYWRIGHT_BROWSERS_PATH"; \
+    rm -rf /var/lib/apt/lists/*
 
-# k6: tests/api-perf 부하 테스트 러너. 공식 GitHub release에서 v2.2.0을 고정해 받는다.
-# (dl.k6.io apt 저장소도 있지만 그쪽은 stable 최신만 제공해 seed 사용자 간 버전이 어긋날 수 있다.)
-RUN ARCH=$(dpkg --print-architecture) \
-    && curl -fsSL "https://github.com/grafana/k6/releases/download/v2.2.0/k6-v2.2.0-linux-${ARCH}.tar.gz" \
-    -o /tmp/k6.tar.gz \
-    && tar -xzf /tmp/k6.tar.gz -C /tmp \
-    && mv "/tmp/k6-v2.2.0-linux-${ARCH}/k6" /usr/local/bin/k6 \
-    && rm -rf /tmp/k6.tar.gz "/tmp/k6-v2.2.0-linux-${ARCH}"
+# 도구 다운로드는 Chromium 계층 뒤에 둔다.
+ARG PLANTUML_VERSION=1.2026.6
+RUN set -eu; \
+    curl -fsSL \
+        --retry 3 \
+        --retry-all-errors \
+        "https://github.com/plantuml/plantuml/releases/download/v${PLANTUML_VERSION}/plantuml.jar" \
+        -o /tmp/plantuml.jar; \
+    printf '%s  %s\n' \
+        '89948f14c93756c7a3fb7b69078ff37e8489fd79dd430c582b931e2f65358690' \
+        /tmp/plantuml.jar | sha256sum -c -; \
+    install -m 0644 \
+        /tmp/plantuml.jar \
+        /opt/plantuml.jar; \
+    rm -f /tmp/plantuml.jar
 
-# shellcheck·lychee: `npm run lint`의 postlint가 셸 스크립트 정적 검사와 문서 내부 링크·앵커 검사에 사용한다.
-# k6와 같은 이유로 GitHub release에서 버전을 고정해 받는다(seed 사용자 간 버전 일치).
-RUN ARCH=$(dpkg --print-architecture) \
-    && BIN_ARCH=$([ "$ARCH" = "arm64" ] && echo aarch64 || echo x86_64) \
-    && curl -fsSL "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.${BIN_ARCH}.tar.xz" \
-    | tar -xJ -C /tmp \
-    && mv /tmp/shellcheck-v0.11.0/shellcheck /usr/local/bin/shellcheck \
-    && rm -rf /tmp/shellcheck-v0.11.0 \
-    && curl -fsSL "https://github.com/lycheeverse/lychee/releases/download/lychee-v0.24.2/lychee-${BIN_ARCH}-unknown-linux-musl.tar.gz" \
-    | tar -xz -C /tmp \
-    && mv "/tmp/lychee-${BIN_ARCH}-unknown-linux-musl/lychee" /usr/local/bin/lychee \
-    && rm -rf "/tmp/lychee-${BIN_ARCH}-unknown-linux-musl"
+ARG SHELLCHECK_VERSION=0.11.0
+ARG LYCHEE_VERSION=0.24.2
+RUN set -eu; \
+    case "$TARGETARCH" in \
+        amd64) \
+            bin_arch=x86_64; \
+            shellcheck_sha256=8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198; \
+            lychee_sha256=73657a111819a30c47c08352896796f23d64e4eb2b3ed39b6d32149241566fc5 \
+            ;; \
+        arm64) \
+            bin_arch=aarch64; \
+            shellcheck_sha256=12b331c1d2db6b9eb13cfca64306b1b157a86eb69db83023e261eaa7e7c14588; \
+            lychee_sha256=5d0b0e3aeab240f41920c633a6eaf97599be6eedda034b36e858ede7dba5e535 \
+            ;; \
+    esac; \
+    \
+    curl -fsSL \
+        --retry 3 \
+        --retry-all-errors \
+        "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.${bin_arch}.tar.xz" \
+        -o /tmp/shellcheck.tar.xz; \
+    printf '%s  %s\n' "$shellcheck_sha256" /tmp/shellcheck.tar.xz | sha256sum -c -; \
+    tar -xJf /tmp/shellcheck.tar.xz -C /tmp; \
+    install -m 0755 \
+        "/tmp/shellcheck-v${SHELLCHECK_VERSION}/shellcheck" \
+        /usr/local/bin/shellcheck; \
+    rm -rf \
+        /tmp/shellcheck.tar.xz \
+        "/tmp/shellcheck-v${SHELLCHECK_VERSION}"; \
+    \
+    curl -fsSL \
+        --retry 3 \
+        --retry-all-errors \
+        "https://github.com/lycheeverse/lychee/releases/download/lychee-v${LYCHEE_VERSION}/lychee-${bin_arch}-unknown-linux-musl.tar.gz" \
+        -o /tmp/lychee.tar.gz; \
+    printf '%s  %s\n' "$lychee_sha256" /tmp/lychee.tar.gz | sha256sum -c -; \
+    tar -xzf /tmp/lychee.tar.gz -C /tmp; \
+    install -m 0755 \
+        "/tmp/lychee-${bin_arch}-unknown-linux-musl/lychee" \
+        /usr/local/bin/lychee; \
+    rm -rf \
+        /tmp/lychee.tar.gz \
+        "/tmp/lychee-${bin_arch}-unknown-linux-musl"
 
-# cloudflared: 개발 중 로컬 dev 서버들(api·console·user-app)을 공개 https 도메인으로 노출하는 quick tunnel(npx tunnel).
-# 계정·도메인 없이 임시 *.trycloudflare.com URL을 발급해 OAuth 콜백·웹훅 수신을 로컬에서 받게 한다.
-# k6와 같은 이유로 GitHub release에서 버전을 고정해 받는다(seed 사용자 간 버전 일치).
-RUN ARCH=$(dpkg --print-architecture) \
-    && curl -fsSL "https://github.com/cloudflare/cloudflared/releases/download/2026.8.2/cloudflared-linux-${ARCH}" \
-    -o /usr/local/bin/cloudflared \
-    && chmod +x /usr/local/bin/cloudflared
+ARG K6_VERSION=2.2.0
+RUN set -eu; \
+    case "$TARGETARCH" in \
+        amd64) k6_sha256=b5a8003c86f35f5cd5ceef1490312c48e587696c94d998cefc6d7b3b4cb1597d ;; \
+        arm64) k6_sha256=4ecd64cadcc792402d16293836115480419c4447c032858f564852d98f1bf54c ;; \
+    esac; \
+    curl -fsSL \
+        --retry 3 \
+        --retry-all-errors \
+        "https://github.com/grafana/k6/releases/download/v${K6_VERSION}/k6-v${K6_VERSION}-linux-${TARGETARCH}.tar.gz" \
+        -o /tmp/k6.tar.gz; \
+    printf '%s  %s\n' "$k6_sha256" /tmp/k6.tar.gz | sha256sum -c -; \
+    tar -xzf /tmp/k6.tar.gz -C /tmp; \
+    install -m 0755 \
+        "/tmp/k6-v${K6_VERSION}-linux-${TARGETARCH}/k6" \
+        /usr/local/bin/k6; \
+    rm -rf \
+        /tmp/k6.tar.gz \
+        "/tmp/k6-v${K6_VERSION}-linux-${TARGETARCH}"
 
-# 브라우저 바이너리는 이미지 빌드 중 root 권한으로 설치되지만, 테스트는 node 사용자로 실행된다.
-# 기본 경로(`/root/.cache/ms-playwright`) 대신 두 사용자가 모두 접근할 수 있는 `/opt/playwright`에 설치한다.
-ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
-RUN playwright install --with-deps chromium
+ARG CLOUDFLARED_VERSION=2026.8.2
+RUN set -eu; \
+    case "$TARGETARCH" in \
+        amd64) cloudflared_sha256=fcfb02b575a52ca1af2e3267af4e1517bcdeb30ac48c834c69abaed3c0576ad2 ;; \
+        arm64) cloudflared_sha256=7747d94570fb390cf47dcb4f9555c193c6355cda9793f0d878d9049e5d6a7790 ;; \
+    esac; \
+    curl -fsSL \
+        --retry 3 \
+        --retry-all-errors \
+        "https://github.com/cloudflare/cloudflared/releases/download/${CLOUDFLARED_VERSION}/cloudflared-linux-${TARGETARCH}" \
+        -o /tmp/cloudflared; \
+    printf '%s  %s\n' "$cloudflared_sha256" /tmp/cloudflared | sha256sum -c -; \
+    install -m 0755 \
+        /tmp/cloudflared \
+        /usr/local/bin/cloudflared; \
+    rm -f /tmp/cloudflared
+
+RUN set -eu; \
+    node --version; \
+    npm --version; \
+    shfmt -version; \
+    java -jar /opt/plantuml.jar -version; \
+    shellcheck --version; \
+    lychee --version; \
+    k6 version; \
+    cloudflared --version; \
+    playwright --version

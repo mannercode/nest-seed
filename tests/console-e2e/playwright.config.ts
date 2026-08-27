@@ -21,7 +21,6 @@ const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT
 export default defineConfig({
     testDir: './tests',
     outputDir: './_output/test-results',
-    fullyParallel: false,
     forbidOnly: !!process.env.CI,
     retries: Number(process.env.PLAYWRIGHT_RETRIES ?? 0),
     workers: 1,

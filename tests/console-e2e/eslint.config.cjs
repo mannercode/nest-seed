@@ -1,7 +1,7 @@
 const tseslint = require('typescript-eslint')
 
 module.exports = [
-    { ignores: ['playwright-report/**', 'test-results/**', 'node_modules/**', '_output/**'] },
+    { ignores: ['_output/**'] },
     {
         files: [
             'tests/**/*.ts',
@@ -9,7 +9,7 @@ module.exports = [
             'playwright.config.ts',
             'playwright.unit.config.ts'
         ],
-        languageOptions: { parser: tseslint.parser, parserOptions: { sourceType: 'module' } },
+        languageOptions: { parser: tseslint.parser },
         plugins: { '@typescript-eslint': tseslint.plugin },
         rules: { ...tseslint.plugin.configs.recommended.rules }
     }

@@ -48,7 +48,7 @@ const HOME_MOVIE_COUNT = 12 // 사용하는 코드 옆 상수 (view/user-app/hom
 
 ## 4. npm 스크립트 계약
 
-루트 package.json이 진입점이다. 루트는 동사를 워크스페이스로 팬아웃하고(`npm run <동사> --workspaces --if-present`), 각 워크스페이스는 자기가 지원하는 동사만 같은 이름으로 구현한다. 보조 단계는 npm의 pre/post 훅(`postlint`, `postformat`, `preatoz`)으로 잇는다. 워크스페이스에 속하지 않는 파일의 검사(저장소 전체 Prettier, 셸 스크립트 shellcheck, 문서 내부 링크 lychee)는 `postlint`가 맡는다 — `lint`는 워크스페이스 검사 뒤 항상 이 경로를 지나고, `atoz`도 워크스페이스 검증 뒤 `npm run lint`를 호출하므로 같은 경로를 지난다.
+루트 package.json이 진입점이다. 루트는 동사를 워크스페이스로 팬아웃하고(`npm run <동사> --workspaces --if-present`), 각 워크스페이스는 자기가 지원하는 동사만 같은 이름으로 구현한다. 보조 단계는 npm의 pre/post 훅(`postlint`, `postformat`, `preatoz`, `postatoz`)으로 잇는다. 워크스페이스에 속하지 않는 파일의 검사(저장소 전체 Prettier, 셸 스크립트 shellcheck, 문서 내부 링크 lychee)는 `postlint`가 맡는다 — `lint`는 워크스페이스 검사 뒤 항상 이 경로를 지나고, `atoz`도 워크스페이스 검증 뒤 `npm run lint`를 호출하므로 같은 경로를 지난다.
 
 | 동사     | 의미                                                                                                  |
 | -------- | ----------------------------------------------------------------------------------------------------- |

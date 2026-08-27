@@ -63,11 +63,7 @@ module.exports = [
         // Generated bundles live under _output and are deliberately outside these source globs.
         files: ['*.js', 'scripts/**/*.js'],
         linterOptions: { reportUnusedDisableDirectives: true },
-        languageOptions: {
-            ecmaVersion: 'latest',
-            globals: { ...baseGlobals },
-            sourceType: 'commonjs'
-        },
+        languageOptions: { globals: { ...baseGlobals }, sourceType: 'commonjs' },
         rules: {
             ...js.configs.recommended.rules,
             'no-unused-vars': [
@@ -91,11 +87,11 @@ module.exports = [
     {
         files: ['src/**/*.ts', 'scripts/**/*.ts'],
         plugins: { allowed: allowedDependenciesPlugin },
-        rules: { 'default-case': 'off', 'allowed/dependencies': ['warn', sourceDependencyOptions] }
+        rules: { 'allowed/dependencies': ['warn', sourceDependencyOptions] }
     },
     { files: ['scripts/**/*.ts'], rules: { 'no-restricted-imports': 'off' } },
     {
-        files: ['src/**/__tests__/**/*.ts', 'src/development.ts'],
+        files: ['src/**/__tests__/**/*.ts'],
         languageOptions: { globals: { ...baseGlobals, ...globals.jest } },
         plugins: { jest: jestPlugin },
         rules: {

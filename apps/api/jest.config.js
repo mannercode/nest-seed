@@ -16,11 +16,8 @@ module.exports = {
     globalTeardown: path.resolve(__dirname, 'jest.teardown.js'),
     reporters: ['default', path.resolve(__dirname, 'scripts/jest-failure-diagnostics-reporter.js')],
     setupFilesAfterEnv: [path.resolve(__dirname, 'jest.setup.js')],
-    moduleFileExtensions: ['js', 'json', 'ts'],
-    rootDir: appDir,
     roots: ['<rootDir>/src'],
     moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/' }),
-    modulePaths: [compilerOptions.baseUrl],
     collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
     coveragePathIgnorePatterns: [
         '__tests__',
