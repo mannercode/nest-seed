@@ -71,7 +71,7 @@ async function runInner(movieId, theaterId, iteration, baseOffsetMs) {
     }
 
     // validator가 거부하지 않도록 각각 서로 겹치지 않는 startTime을 사용한다.
-    const sagaSpacingMs = 3 * 60 * 60 * 1000 // 3h
+    const sagaSpacingMs = 3 * 60 * 60 * 1000
     const sagaPromises = Array.from({ length: SAGAS_PER_INNER }, (_, i) => {
         const startTime = new Date(
             Date.now() + 24 * 60 * 60 * 1000 + baseOffsetMs + i * sagaSpacingMs
@@ -137,8 +137,8 @@ async function main() {
 
     const { movieId, theaterId } = await setupFixture()
 
-    // 각 내부 회차는 baseOffset부터 SAGAS_PER_INNER × 3h 길이의 시간 범위를 사용한다.
-    // 회차 사이 간격을 충분히 설정해 서로 충돌하지 않도록 한다.
+    // 한 회차가 점유하는 범위는 (SAGAS_PER_INNER - 1) × 3h + 상영 2h다.
+    // 여기에 하루보다 긴 여유를 더해 다음 회차와 충돌하지 않게 한다.
     const iterSpacingMs = SAGAS_PER_INNER * 3 * 60 * 60 * 1000 + 24 * 60 * 60 * 1000
 
     for (let i = 1; i <= INNER_ITERATIONS; i++) {

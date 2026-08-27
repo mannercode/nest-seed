@@ -627,7 +627,6 @@ TEST "영화를 생성한다" \
 `SETUP <METHOD> <경로>`는 시나리오 준비 요청이다. 설명과 기대 상태 없이 요청만 적고, 실패하면 문서 실행을 중단한다. 다만 API 목록에는 넣지 않는다 — 목록은 검증 대상인 `TEST`만 기록한다.
 
 ```bash
-# 구매 TEST의 전제(티켓 선점)를 만든다 — 준비 요청이라 API 목록에는 남지 않는다 (purchases.spec)
 SETUP POST /booking/showtimes/${SHOWTIME_ID}/tickets/hold \
     -H 'Content-Type: application/json' \
     -d '{ "ticketIds": ["'${TICKET_ID_1}'", "'${TICKET_ID_2}'"] }'

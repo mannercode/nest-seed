@@ -15,7 +15,7 @@ RUN npm run build --workspace=libs/common
 
 COPY apps/api/ apps/api/
 RUN npm run build --workspace=apps/api
-# API runtime workspace의 production dependency만 남긴다.
+# prune가 API 런타임에 필요한 workspace만 따라가도록 목록을 줄인 뒤 production 의존성만 남긴다.
 RUN npm pkg set 'workspaces=["apps/api","libs/common","libs/temporal-sandbox"]' --json \
     && npm prune --omit=dev --no-audit --no-fund
 

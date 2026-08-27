@@ -2,7 +2,7 @@ import { HttpUtil } from '../http'
 
 describe('HttpUtil', () => {
     describe('buildContentDisposition', () => {
-        it('ASCII 파일명은 RFC 5987 형식 그대로 반환한다', () => {
+        it('ASCII 파일명은 RFC 8187 형식 그대로 반환한다', () => {
             const filename = 'hello_world-1.0.txt'
             const contentDisposition = HttpUtil.buildContentDisposition(filename)
 
@@ -38,7 +38,7 @@ describe('HttpUtil', () => {
             )
         })
 
-        it('공백은 filename*에서 %20으로 인코딩한다 (RFC 5987)', () => {
+        it('공백은 filename*에서 %20으로 인코딩한다 (RFC 8187)', () => {
             const filename = 'my file name.txt'
             const contentDisposition = HttpUtil.buildContentDisposition(filename)
 

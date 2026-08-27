@@ -5,7 +5,7 @@ import { validate } from 'class-validator'
 import { UserAuthPayload, UserCredentialsDto } from '../dtos'
 import { UsersRepository } from '../users.repository'
 
-// OWASP 권장 비용 계수다.
+// OWASP가 legacy bcrypt에 제시하는 최소 work factor다. 운영 하드웨어에 맞춰 더 큰 값을 검토한다.
 const BCRYPT_SALT_ROUNDS = 10
 
 // 없는 이메일도 bcrypt를 거쳐 가입 여부가 응답 시간으로 드러나지 않게 한다.

@@ -59,8 +59,8 @@ const layerImportBlocks = layers.map((layer, index) => {
 
 module.exports = [
     {
-        // Runtime helpers, Jest wiring, and repository-local config are CommonJS Node files.
-        // Generated bundles live under _output and are deliberately outside these source globs.
+        // 런타임 도우미·Jest 연결·저장소 설정은 CommonJS Node 파일이다.
+        // 생성 번들은 _output 아래에 있어 이 소스 glob에 포함되지 않는다.
         files: ['*.js', 'scripts/**/*.js'],
         linterOptions: { reportUnusedDisableDirectives: true },
         languageOptions: { globals: { ...baseGlobals }, sourceType: 'commonjs' },
@@ -89,6 +89,7 @@ module.exports = [
         plugins: { allowed: allowedDependenciesPlugin },
         rules: { 'allowed/dependencies': ['warn', sourceDependencyOptions] }
     },
+    // 번들 스크립트는 앱 밖에서 workflow 내부 entry를 직접 참조하므로 barrel import 제한을 적용하지 않는다.
     { files: ['scripts/**/*.ts'], rules: { 'no-restricted-imports': 'off' } },
     {
         files: ['src/**/__tests__/**/*.ts'],
@@ -146,6 +147,7 @@ module.exports = [
         // SoLA 레이어 의존을 import 경로 해석으로 강제한다.
         // 위 no-restricted-imports는 alias 기반 위반만 막아, `../theaters`처럼 형제 도메인을 상대경로로 참조하면 빠져나간다.
         // boundaries는 import를 실제 파일로 해석해 element 타입(레이어·도메인)을 판정하므로 상대경로 우회까지 막는다.
+        // 테스트는 여러 도메인 fixture를 조합하므로 운영 소스의 레이어 경계 검사에서 제외한다.
         files: ['src/services/**/*.ts'],
         ignores: ['src/services/**/__tests__/**'],
         plugins: { boundaries: boundariesPlugin },
@@ -155,6 +157,7 @@ module.exports = [
                     ? { capture: ['domain'], pattern: `src/services/${layer}/*`, type: layer }
                     : { pattern: `src/services/${layer}`, type: layer }
             ),
+            // resolver가 테스트 import를 element로 분류하지 않도록 plugin 설정에서도 제외한다.
             'boundaries/ignore': ['**/__tests__/**'],
             'import/resolver': { typescript: { project: path.resolve(__dirname, 'tsconfig.json') } }
         },

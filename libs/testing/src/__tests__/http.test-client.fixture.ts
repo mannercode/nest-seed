@@ -60,7 +60,7 @@ class HttpTestClientController {
         })
     }
 
-    // 동기로 연속 발행하면 여러 이벤트가 한 TCP 청크로 도착해, 클라이언트의 이벤트 분할 파싱을 검증할 수 있다.
+    // 이벤트를 연속 발행해 각각 빠짐없이 분리해 파싱하는지 검증한다.
     @Sse('events')
     events(): Observable<{ data: { sagaId: string; status: string } }> {
         return new Observable((subscriber) => {

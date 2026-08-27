@@ -1,8 +1,8 @@
 #!/bin/sh
 # `temporalio/server` 이미지는 PostgreSQL 스키마를 준비하지 않는다.
 # 첫 부팅 때 admin-tools에서 `temporal`과 `temporal_visibility` 스키마를 적용한다.
-# `create` 단계는 이미 존재하는 DB에서 실패할 수 있으므로 무시한다.
-# versioned schema update는 매번 실행해 필요한 migration을 반영한다.
+# 재실행을 허용하려고 `create`와 `setup-schema`의 모든 오류를 일단 무시한다.
+# 이어지는 versioned `update-schema`는 오류를 억제하지 않아 연결·권한·migration의 최종 성공 여부를 판정한다.
 set -eu
 
 : "${POSTGRES_SEEDS:?ERROR: POSTGRES_SEEDS environment variable is required}"

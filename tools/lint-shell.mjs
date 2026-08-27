@@ -8,8 +8,7 @@ const sourcedFixture = resolve(workspaceRoot, 'apps/api/api-docs/common.fixture'
 const shellShebang = /^#!.*(?:\/| )(?:ba)?sh(?:\s|$)/
 
 const workspaceFiles = () => {
-    // Include new, non-ignored scripts before their first commit; generated/vendor paths stay
-    // excluded by the repository's ignore rules.
+    // 아직 커밋하지 않은 새 스크립트도 검사하되, 생성물·vendor 경로는 저장소 ignore 규칙으로 제외한다.
     const result = spawnSync(
         'git',
         ['ls-files', '-z', '--cached', '--others', '--exclude-standard'],
@@ -50,8 +49,8 @@ if (requestedFiles.some((file) => !insideWorkspace(file))) {
 const selected = new Set(
     (requestedFiles.length > 0 ? requestedFiles : allWorkspaceFiles).filter(isShellFile)
 )
-// common.fixture is sourced rather than executed. Checking every spec with -x parses the fixture
-// in its real context and avoids false unused-variable warnings from a standalone pass.
+// common.fixture는 직접 실행하지 않고 source한다. 모든 spec을 -x로 검사하면 실제 문맥에서 fixture를
+// 해석하므로, fixture만 따로 검사할 때 생기는 잘못된 미사용 변수 경고를 피할 수 있다.
 if (selected.delete(sourcedFixture)) {
     for (const file of allWorkspaceFiles) {
         const pathFromRoot = relative(workspaceRoot, file).replaceAll(sep, '/')

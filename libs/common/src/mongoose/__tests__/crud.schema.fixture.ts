@@ -41,6 +41,7 @@ export class SchemaTypeSample extends CrudSchema {
     mixed: any
 
     @Prop({
+        // 대소문자·악센트를 무시하는 문자열 비교를 검증하기 위한 collation이다.
         // https://mongoosejs.com/docs/guide.html#collation
         collation: { locale: 'en_US', strength: 1 }
     })

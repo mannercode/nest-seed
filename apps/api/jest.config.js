@@ -21,15 +21,16 @@ module.exports = {
     collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
     coveragePathIgnorePatterns: [
         '__tests__',
-        // `src` 바로 아래의 `.ts` 파일은 진입점이나 모듈 연결 코드이다.
-        // (`main`, `bootstrap`, `development`, `app.module`.)
-        // 커버리지를 따로 잴 의미가 없다.
+        // 프로세스 진입점·HTTP bootstrap·루트 DI 조립은 단위 coverage에서 제외한다.
+        // AppModule 동작은 통합 테스트가, 실제 기동 경로는 deploy 검증과 stability bootup이 확인한다.
         '/src/[^/]+\\.ts$',
+        // barrel과 Nest 모듈은 export·프레임워크 조립 경계라 coverage 수집 대상에서 제외한다.
+        // 모듈 조립은 앱 통합 테스트로, 업무 로직은 각 구현 파일의 coverage로 검증한다.
         '/index\\.ts$',
         '\\.module\\.ts$',
         // Temporal 워크플로 본문은 `bundleWorkflowCode`가 만든 샌드박스 안에서 실행된다.
         // 그 안에서는 Jest의 Istanbul 계측이 닿지 않으므로, 통합 테스트를 실행해도 0%로 기록된다.
-        // 순수 로직은 옆 파일로 분리해 단위 테스트로 따로 덮는다.
+        // 동작은 worker/__tests__의 실제 Temporal Worker 테스트로 검증한다.
         '/worker/workflow(?:-v2)?\\.ts$'
     ],
     coverageDirectory: jestRun.coverageDirectory

@@ -184,7 +184,7 @@ export class HttpTestClient {
         return response
     }
     sse(messageHandler: (data: string) => void, errorHandler: (reason: any) => void): this {
-        // SSE는 빈 줄(\n\n)이 이벤트 구분자이고, TCP 청크 경계는 이벤트 경계와 무관하다.
+        // 이 클라이언트는 LF 빈 줄(\n\n)을 이벤트 구분자로 사용하며, TCP 청크 경계는 이벤트 경계와 무관하다.
         // 청크를 버퍼에 모아 완성된 이벤트만 하나씩 전달한다. 한 청크에 이벤트 여러 개가 와도 모두 처리된다.
         const dispatch = (rawEvent: string) => {
             const message = this.parseEventMessage(rawEvent)

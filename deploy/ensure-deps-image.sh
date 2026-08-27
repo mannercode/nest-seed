@@ -6,8 +6,9 @@
 
 : "${WORKSPACE_ROOT:?}"
 
-# Dockerfile의 COPY 목록에 새 workspace를 추가하고 이 목록을 빠뜨리면 캐시가 낡을 수 있다.
-# Git metadata가 없는 source archive에서도 동작하도록 workspace 디렉터리의 모든 manifest를 찾는다.
+# 현재 규약인 apps/libs/tests/tools 바로 아래 한 단계의 workspace manifest를 모두 찾는다.
+# 새 최상위 경로나 중첩 깊이를 도입하면 이 탐색 범위와 Dockerfile의 COPY를 함께 갱신해야 해시에 반영된다.
+# Git metadata가 없는 source archive에서도 동작하도록 파일 시스템에서 찾는다.
 mapfile -d '' -t PACKAGE_MANIFESTS < <(
     cd "${WORKSPACE_ROOT}" || exit 1
     {

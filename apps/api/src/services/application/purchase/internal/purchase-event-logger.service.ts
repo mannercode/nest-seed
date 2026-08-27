@@ -2,7 +2,7 @@ import { InjectNatsPubSub, JsonUtil, NatsPubSubService } from '@mannercode/commo
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { PurchaseEvents, TicketPurchasedEvent } from '../purchase.events'
 
-// 큐 그룹 없이 구독해 모든 복제본에서 실행되는 부수 효과를 보여 준다.
+// 큐 그룹을 지정하지 않아 구매 이벤트를 모든 API 복제본의 관측 로그에 남긴다.
 @Injectable()
 export class PurchaseEventLoggerService implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(PurchaseEventLoggerService.name)

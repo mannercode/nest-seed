@@ -16,6 +16,7 @@ class TestNamedRedisConsumer {
     constructor(@Inject(getRedisConnectionToken('named')) readonly redis: RedisConnection) {}
 }
 
+// 아래 fixture의 teardown은 모듈만 닫고, 등록된 연결 종료는 RedisConnectionRegistry에 맡긴다.
 export async function createRedisModuleFixture() {
     const { close, module } = await createTestContext({
         imports: [RedisModule.forRoot({ type: 'single', url: process.env.TESTLIB_REDIS_URL })],
@@ -24,7 +25,6 @@ export async function createRedisModuleFixture() {
 
     const redis = module.get<RedisConnection>(getRedisConnectionToken())
 
-    // 연결 종료는 RedisConnectionRegistry가 모듈 destroy에서 책임진다.
     const teardown = async () => {
         await close()
     }
@@ -42,7 +42,6 @@ export async function createRedisModuleNamedFixture() {
 
     const redis = module.get<RedisConnection>(getRedisConnectionToken('named'))
 
-    // 연결 종료는 RedisConnectionRegistry가 모듈 destroy에서 책임진다.
     const teardown = async () => {
         await close()
     }
@@ -62,7 +61,6 @@ export async function createRedisModuleAsyncFixture() {
 
     const redis = module.get<RedisConnection>(getRedisConnectionToken())
 
-    // 연결 종료는 RedisConnectionRegistry가 모듈 destroy에서 책임진다.
     const teardown = async () => {
         await close()
     }
@@ -84,7 +82,6 @@ export async function createRedisModuleOptionsOnlyFixture() {
 
     const redis = module.get<RedisConnection>(getRedisConnectionToken())
 
-    // 연결 종료는 RedisConnectionRegistry가 모듈 destroy에서 책임진다.
     const teardown = async () => {
         await close()
     }
@@ -121,7 +118,6 @@ export async function createRedisModuleUrlWithOptionsFixture() {
 
     const redis = module.get<RedisConnection>(getRedisConnectionToken())
 
-    // 연결 종료는 RedisConnectionRegistry가 모듈 destroy에서 책임진다.
     const teardown = async () => {
         await close()
     }
@@ -144,7 +140,6 @@ export async function createRedisModuleDbSelectionFixture() {
     const redisDb0 = module.get<RedisConnection>(getRedisConnectionToken('db0'))
     const redisDb1 = module.get<RedisConnection>(getRedisConnectionToken('db1'))
 
-    // 연결 종료는 RedisConnectionRegistry가 모듈 destroy에서 책임진다.
     const teardown = async () => {
         await close()
     }

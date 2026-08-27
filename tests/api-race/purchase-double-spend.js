@@ -36,7 +36,7 @@ async function setupMovieTheater() {
         throw new Error(`publish: ${publish.status}`)
     }
 
-    // USER_GROUPS만큼 서로 겹치지 않는 티켓 쌍을 만들 수 있도록 큰 좌석 배치도를 쓴다.
+    // 기본 5그룹에 충분한 20석을 만들며, 티켓 쌍 기준 최대 10그룹까지 지원한다.
     const theater = await request('POST', '/theaters', {
         body: {
             name: 'purchase-race',

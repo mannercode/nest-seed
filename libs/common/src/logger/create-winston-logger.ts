@@ -1,3 +1,5 @@
+// 터미널 색상과 transport 조합처럼 환경에 따라 달라지는 분기가 있어 파일 전체를 coverage 계산에서 제외한다.
+// 로거 생성 동작은 create-winston-logger.spec.ts에서 별도로 검증한다.
 /* istanbul ignore file */
 import { styleText } from 'node:util'
 import winston from 'winston'

@@ -479,7 +479,6 @@ describe('JwtAuthService', () => {
                 'not-json{{{'
             )
 
-            // SyntaxError가 401로 감싸이지 않고 그대로 전파되는지 확인한다.
             await expect(fix.jwtService.refreshAuthTokens(refreshToken)).rejects.toThrow(
                 SyntaxError
             )
@@ -719,7 +718,6 @@ describe('JwtAuthService', () => {
         })
 
         it('이벤트 훅이 예외를 던지면 generateAuthTokens도 실패한다', async () => {
-            // emit은 훅 실패를 숨기지 않는다. 훅이 던지면 호출 흐름이 그대로 무너진다.
             jest.spyOn(fix.events, 'push').mockImplementationOnce(() => {
                 throw new Error('hook failure')
             })

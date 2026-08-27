@@ -57,8 +57,7 @@ async function runInner(iteration, movieId, theaterId, sse, baseOffsetMs) {
     // 직전 회차는 모든 사가가 종료 상태에 도달한 뒤에야 끝났으므로 비워도 잃을 정보가 없다.
     sse.events.length = 0
 
-    // startTime이 10분 간격이고 길이가 120분이라 어떤 두 사가를 골라도 시간이 겹친다.
-    // 겹침이 가장 좁은 처음/끝 쌍도 120m - (N-1)×10m만큼 겹친다(OVERLAP_COUNT ≤ 12라 양수, 위에서 강제).
+    // 위에서 강제한 범위에서는 10분 간격의 120분 상영이 모두 서로 겹친다.
     const base = new Date(Date.now() + 24 * 60 * 60 * 1000 + baseOffsetMs)
     base.setUTCSeconds(0, 0)
     base.setUTCMinutes(0)
@@ -130,7 +129,7 @@ async function main() {
     const sse = openEventStream()
     await sse.connected
 
-    // 각 회차는 대략 OVERLAP_COUNT × 10min + 120min 길이의 시간 범위를 사용한다.
+    // 각 회차는 (OVERLAP_COUNT - 1) × 10min + 120min 길이의 시간 범위를 사용한다.
     // 회차 간격을 12h로 설정해 성공한 상영이 다음 회차와 충돌하지 않게 한다.
     const spacingMs = 12 * 60 * 60 * 1000
 

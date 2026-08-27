@@ -5,14 +5,16 @@ function isDateString(value: unknown): value is string {
 
 export class JsonUtil {
     /**
-     * JSON 문자열을 파싱하며 64비트 정수를 문자열로, 날짜 문자열을 Date 객체로 변환한다.
+     * JSON 문자열을 파싱한다. JavaScript 안전 정수 범위를 벗어난 부호 있는 64비트 정수는
+     * 문자열로 보존하고, `Date.toISOString()` 형태의 값은 Date 객체로 변환한다.
      */
     static parse(text: string): any {
         return JSON.parse(JsonUtil.quoteIntegers(text), JsonUtil.dateReviver)
     }
 
     /**
-     * JSON 형태의 객체를 재귀적으로 순회하며 날짜 문자열을 Date 객체로 변환한다.
+     * JSON 형태의 객체를 재귀적으로 순회하며 `Date.toISOString()` 형태의 문자열을
+     * Date 객체로 변환한다.
      */
     static reviveDates(input: any): any {
         if (isDateString(input)) {
@@ -55,7 +57,8 @@ export class JsonUtil {
     }
 
     /**
-     * JSON 문자열 안의 64비트 정수를 문자열로 감싸 정밀도를 유지한다.
+     * JSON 문자열 안에서 JavaScript 안전 정수 범위를 벗어난 부호 있는 64비트 정수 리터럴만
+     * 문자열로 감싸 정밀도를 유지한다.
      * 정규식 한 방이면 문자열 리터럴 내부의 숫자까지 건드리므로,
      * 따옴표 구간(이스케이프 포함)을 통째로 건너뛰며 구조 토큰만 검사한다.
      */

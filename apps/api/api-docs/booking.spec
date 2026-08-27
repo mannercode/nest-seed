@@ -1,7 +1,7 @@
 #!/bin/bash
 . ./common.fixture
 
-# admin 흐름으로 setup, 이후 user로 전환해 본 TEST를 진행한다.
+# 관리자 권한으로 상영 자원을 준비한 뒤 일반 사용자로 로그인해 예매 흐름을 검증한다.
 login_admin
 setup_showtime_resources
 

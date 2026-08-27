@@ -1,6 +1,6 @@
 import type { ConfigService } from '@nestjs/config'
 
-// ConfigService가 환경 변수 문자열을 그대로 돌려주는 경우에도 요청한 원시 타입을 보장한다.
+// ConfigService가 돌려주는 환경 변수 문자열은 boolean/number getter에서 변환하고 검증한다.
 export abstract class BaseConfigService {
     constructor(private readonly configService: ConfigService) {}
 

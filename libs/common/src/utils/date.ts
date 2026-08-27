@@ -37,6 +37,7 @@ export class DateUtil {
      * `YYYYMMDD` 또는 `YYYYMMDDHHmm` 형식의 문자열을 로컬 시간대 Date로 변환한다.
      * 시간이 없으면 00:00으로 채운다.
      * 형식 길이가 다르면 예외를 던지지만, 달력에 없는 날짜 보정 여부는 JavaScript Date 동작을 그대로 따른다.
+     * 숫자 여부는 검사하지 않으므로 숫자가 아닌 입력은 parseInt 결과에 따라 예상 밖 날짜나 Invalid Date가 된다.
      */
     static fromYMD(dateString: string): Date {
         if (!(dateString.length === 8 || dateString.length === 12)) {

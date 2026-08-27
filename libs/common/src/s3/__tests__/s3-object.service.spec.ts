@@ -243,7 +243,7 @@ describe('S3ObjectService', () => {
             })
 
             it('하한 이상이면 크기에 상관없이 업로드를 허용한다', async () => {
-                // 하한만 지정하면 상한은 사실상 무제한이라 하한보다 훨씬 큰 본문도 허용된다.
+                // 서비스가 설정한 1 TiB sentinel 상한 안에서는 하한보다 큰 본문을 허용한다.
                 const largeBody = Buffer.alloc(minContentLength * 20, 'a')
                 const form = buildPresignedPostForm(presigned.fields, largeBody, 'text/plain')
 
@@ -446,7 +446,6 @@ describe('S3ObjectService', () => {
 
             await expect(fix.s3Service.isUploadComplete({ key: 'k' })).rejects.toThrow('transient')
 
-            // 다음 호출은 mock 구현이 풀려 정상 동작한다.
             const isCompleted = await fix.s3Service.isUploadComplete({ key: created.key })
             expect(isCompleted).toBe(true)
         })
