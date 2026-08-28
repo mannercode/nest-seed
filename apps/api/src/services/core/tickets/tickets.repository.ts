@@ -27,14 +27,6 @@ export class TicketsRepository extends CrudRepository<Ticket> {
         super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
     }
 
-    async deleteBySagaIds(
-        sagaIds: string[],
-        session: ClientSession | undefined = undefined,
-        signal: AbortSignal | undefined = undefined
-    ) {
-        await this.model.deleteMany({ sagaId: { $in: sagaIds } }, { session, signal })
-    }
-
     async aggregateSales(aggregateDto: AggregateTicketSalesDto) {
         const query = this.buildQuery(aggregateDto)
 

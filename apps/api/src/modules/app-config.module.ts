@@ -4,7 +4,6 @@ import { AppConfigService, PROJECT_ID_TOKEN, readProjectId } from 'config'
 import { MongooseSetupModule } from './mongoose-setup.module'
 import { NatsSetupModule } from './nats-setup.module'
 import { RedisSetupModule } from './redis-setup.module'
-import { TemporalSetupModule } from './temporal-setup.module'
 
 @Global()
 @Module({
@@ -17,8 +16,7 @@ import { TemporalSetupModule } from './temporal-setup.module'
         }),
         MongooseSetupModule,
         RedisSetupModule,
-        NatsSetupModule,
-        TemporalSetupModule
+        NatsSetupModule
     ],
     providers: [{ provide: PROJECT_ID_TOKEN, useFactory: readProjectId }, AppConfigService],
     exports: [
@@ -26,8 +24,7 @@ import { TemporalSetupModule } from './temporal-setup.module'
         PROJECT_ID_TOKEN,
         MongooseSetupModule,
         RedisSetupModule,
-        NatsSetupModule,
-        TemporalSetupModule
+        NatsSetupModule
     ]
 })
 export class AppConfigModule {}

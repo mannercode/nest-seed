@@ -6,8 +6,6 @@ const apiConfig = require(path.join(apiDir, 'jest.config.js'))
 process.env.JEST_ISOLATION_PROBE_COVERAGE_DIRECTORY = String(apiConfig.coverageDirectory)
 process.env.JEST_ISOLATION_PROBE_OUTPUT_DIRECTORY =
     process.env.API_JEST_OUTPUT_DIRECTORY ?? path.join(apiDir, '_output')
-process.env.JEST_ISOLATION_PROBE_WORKFLOW_DIRECTORY =
-    process.env.API_JEST_WORKFLOW_DIRECTORY ?? path.join(apiDir, '_output/workflows')
 
 module.exports = {
     ...apiConfig,

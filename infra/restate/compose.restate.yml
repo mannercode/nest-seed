@@ -1,0 +1,23 @@
+services:
+    restate:
+        extends: { file: ../compose.common.yml, service: common-options }
+        image: $RESTATE_IMAGE
+        environment:
+            RESTATE_NODE_NAME: restate-1
+            RESTATE_ROCKSDB_TOTAL_MEMORY_SIZE: 1 GiB
+            RESTATE_ADMIN__QUERY_ENGINE__MEMORY_SIZE: 256 MiB
+            RESTATE_BIFROST__RECORD_CACHE_MEMORY_SIZE: 128 MiB
+        volumes:
+            - restate_data:/restate-data
+        healthcheck:
+            test:
+                [
+                    'CMD-SHELL',
+                    'curl -fsS http://localhost:9070/health >/dev/null && curl -fsS http://localhost:8080/restate/health >/dev/null'
+                ]
+            interval: 5s
+            start_period: 30s
+        deploy: { resources: { limits: { memory: 2g } } }
+
+volumes:
+    restate_data: {}

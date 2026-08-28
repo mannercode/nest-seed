@@ -7,7 +7,6 @@ function initializeApiJestRun(appDir, env = process.env) {
 
     const context = buildApiJestRunContext(appDir, runId)
     env.API_JEST_OUTPUT_DIRECTORY = context.outputDirectory
-    env.API_JEST_WORKFLOW_DIRECTORY = context.workflowDirectory
     env.LOG_DIRECTORY = context.logDirectory
     return context
 }
@@ -18,7 +17,6 @@ function readApiJestRun(appDir, env = process.env) {
 
     const context = buildApiJestRunContext(appDir, runId)
     assertEnvironmentPath(env, 'API_JEST_OUTPUT_DIRECTORY', context.outputDirectory)
-    assertEnvironmentPath(env, 'API_JEST_WORKFLOW_DIRECTORY', context.workflowDirectory)
     assertEnvironmentPath(env, 'LOG_DIRECTORY', context.logDirectory)
     return context
 }
@@ -29,8 +27,7 @@ function buildApiJestRunContext(appDir, runId) {
         coverageDirectory: path.join(outputDirectory, 'coverage'),
         logDirectory: path.join(outputDirectory, 'logs'),
         outputDirectory,
-        runId,
-        workflowDirectory: path.join(outputDirectory, 'workflows')
+        runId
     }
 }
 

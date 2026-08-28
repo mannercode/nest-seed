@@ -84,12 +84,6 @@ test(
         assert.notEqual(first.outputDirectory, second.outputDirectory)
         assert.notEqual(first.coverageDirectory, second.coverageDirectory)
         assert.notEqual(first.logDirectory, second.logDirectory)
-        assert.notEqual(first.workflowDirectory, second.workflowDirectory)
-        assert.equal(first.workflowPaths.length, 2)
-        assert.equal(second.workflowPaths.length, 2)
-        for (const workflowPath of [...first.workflowPaths, ...second.workflowPaths]) {
-            assert.ok(fs.statSync(workflowPath).size > 0)
-        }
         assert.equal(second.sentinelsPreserved, true)
         assert.equal(second.peerResourcesRemoved, true)
     }

@@ -9,14 +9,6 @@ import { ShowtimesRepository } from './showtimes.repository'
 export class ShowtimesService {
     constructor(private readonly repository: ShowtimesRepository) {}
 
-    async deleteBySagaIds(
-        sagaIds: string[],
-        session: ClientSession | undefined = undefined,
-        signal: AbortSignal | undefined = undefined
-    ) {
-        await this.repository.deleteBySagaIds(sagaIds, session, signal)
-    }
-
     async createMany(
         createDtos: CreateShowtimeDto[],
         session: ClientSession | undefined = undefined,

@@ -1,7 +1,7 @@
 import type { ClientSession } from 'mongoose'
 import { DateTimeRange, DateUtil, Require } from '@mannercode/common'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { MoviesService, ShowtimeDto, ShowtimesService, TheatersService } from 'core'
+import { MoviesService, ShowtimeDto, ShowtimesService } from 'core'
 import { BulkCreateShowtimesDto } from '../dtos'
 import { ShowtimeCreationErrors } from '../errors'
 
@@ -16,18 +16,16 @@ export class ShowtimeBulkValidatorService {
     private readonly logger = new Logger(ShowtimeBulkValidatorService.name)
 
     constructor(
-        private readonly theatersService: TheatersService,
         private readonly moviesService: MoviesService,
         private readonly showtimesService: ShowtimesService
     ) {}
 
     async validate(
         createDto: BulkCreateShowtimesDto,
-        session: ClientSession | undefined = undefined,
-        signal: AbortSignal | undefined = undefined
+        session: ClientSession,
+        signal: AbortSignal | undefined
     ) {
         await this.verifyMovieExists(createDto.movieId, session, signal)
-        await this.verifyTheatersExist(createDto.theaterIds, session, signal)
 
         const conflictingShowtimes = await this.findConflictingShowtimes(createDto, session, signal)
 
@@ -115,18 +113,6 @@ export class ShowtimeBulkValidatorService {
 
         if (!movieExists) {
             throw new NotFoundException(ShowtimeCreationErrors.MovieNotFound(movieId))
-        }
-    }
-
-    private async verifyTheatersExist(
-        theaterIds: string[],
-        session: ClientSession | undefined,
-        signal: AbortSignal | undefined
-    ) {
-        const theatersExist = await this.theatersService.allExist(theaterIds, session, signal)
-
-        if (!theatersExist) {
-            throw new NotFoundException(ShowtimeCreationErrors.TheatersNotFound(theaterIds))
         }
     }
 }

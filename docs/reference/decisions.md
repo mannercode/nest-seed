@@ -24,13 +24,13 @@
 
 건너뛰어도 사용자에게 영향이 없는 만료 업로드 정리 cron은 `withLock`으로 한 복제본만 실행한다. 구매 흐름은 같은 티켓 묶음의 요청을 `withLockBlocking`으로 직렬화해, 경쟁에서 진 요청이 결제 생성과 보상까지 진행하는 낭비를 줄인다. 이중 판매 방지 자체는 티켓의 원자 조건부 전이(Available→Sold)가 보장한다.
 
-상영 생성 v2는 극장 스케줄 guard CAS와 MongoDB 트랜잭션으로 경쟁을 해결한다. 현재 v2 Activity에 남은 `withLockBlocking`은 배포 전부터 실행 중인 v1 워크플로와 교차 직렬화하는 롤링 마이그레이션 fence다. v1 queue·worker drain 후에는 신규 경로의 정합성에 필요하지 않다.
+상영 생성은 Redis 락을 쓰지 않는다. 같은 극장의 동시 작업은 극장 스케줄 guard CAS와 MongoDB 트랜잭션으로 해결한다. 같은 `sagaId`의 중복 제출은 Restate workflow key가 합치지만, 서로 다른 요청의 경쟁은 DB 경계가 처리한다.
 
 ### 검토했던 대안
 
 - **Mongo 트랜잭션이나 조건부 갱신** — 락의 대안이자 정합성이 필요한 곳의 기본이다. 티켓 판매는 원자 조건부 전이, 상영 생성은 극장 guard CAS와 트랜잭션을 쓴다. 트랜잭션은 상영 생성 안전 상한 200건과 45초 전체 제한으로 짧게 유지한다.
 - **Redlock** — Redis 마스터 여러 대를 전제로 한 분산 락이다. 이 시드는 이미 안정적인 Redis 클러스터 한 곳을 사용한다. 키 하나에 `SET NX`를 거는 방식이면 충분하다.
-- **Temporal task queue의 `concurrency: 1`** — 큐 전체의 동시 실행 수를 1로 묶을 수 있다. 하지만 우리는 전체 큐가 아니라 **같은 키**만 순서대로 처리하고 싶다. 이 옵션으로는 키별 직렬화를 만들 수 없다.
+- **Restate workflow key를 분산 락으로 사용** — 같은 `sagaId`의 재제출에는 맞지만 서로 다른 `sagaId`가 같은 극장 시간을 건드리는 경쟁은 합치지 않는다. workflow key는 HTTP 제출 멱등성을, MongoDB CAS·트랜잭션은 도메인 정합성을 맡는다.
 
 ---
 
@@ -42,7 +42,7 @@
 
 ### 근거
 
-API는 기본 4개 컨테이너로 동작한다. NestJS의 `EventEmitter2`는 같은 프로세스 안에서만 이벤트를 전달한다. Temporal 워커가 만든 사가 진행 이벤트를 다른 컨테이너에 붙은 SSE(Server-Sent Events) 클라이언트에게 보내려면, 컨테이너 사이 메시지 통로가 필요하다.
+API는 기본 4개 컨테이너로 동작한다. NestJS의 `EventEmitter2`는 같은 프로세스 안에서만 이벤트를 전달한다. Restate가 호출한 API endpoint에서 만든 사가 진행 이벤트를 다른 컨테이너에 붙은 SSE(Server-Sent Events) 클라이언트에게 보내려면, 컨테이너 사이 메시지 통로가 필요하다.
 
 NATS를 고른 이유는 한 도구로 여러 동작을 처리할 수 있기 때문이다.
 
@@ -64,46 +64,47 @@ NATS를 고른 이유는 한 도구로 여러 동작을 처리할 수 있기 때
 
 - **`EventEmitter2` 그대로 사용** — 다른 컨테이너로 이벤트가 가지 않는다. SSE 시나리오가 성립하지 않는다.
 - **Redis Pub/Sub** — 모든 구독자에게 뿌리는 용도에는 잘 맞다. 하지만 큐처럼 동작해야 할 때는 BullMQ를 따로 들여야 한다.
-- **sticky session(NGINX)** — 클라이언트를 한 컨테이너에 계속 붙이는 방법이다. 하지만 이벤트를 만드는 워커가 다른 컨테이너에 있을 수 있으므로 근본적인 해결책은 되지 않는다.
+- **sticky session(NGINX)** — 클라이언트를 한 컨테이너에 계속 붙이는 방법이다. 하지만 이벤트를 만드는 workflow endpoint가 다른 컨테이너에 있을 수 있으므로 근본적인 해결책은 되지 않는다.
 - **Kafka** — 운영해야 할 구성요소가 많다. 지금 시드 규모에는 과하다.
 
 ---
 
-## 3. Saga 오케스트레이션: Temporal 워크플로
+## 3. Saga 오케스트레이션: Restate 워크플로
 
 ### 결정
 
-시간이 오래 걸리거나 워커 종료 후에도 이어서 실행해야 하는 일은 Temporal 워크플로와 액티비티로 표현한다. 워크플로 함수는 결정적으로 작성하고, DB 쓰기나 외부 API 호출 같은 부수효과는 액티비티로 분리한다. 서로 다른 시스템의 단계를 묶으면 보상 액티비티를 쓰지만, 한 DB의 짧은 쓰기는 보상보다 트랜잭션으로 원자적 커밋한다.
+시간이 오래 걸리거나 복제본 종료 후에도 이어서 실행해야 하는 일은 Restate 워크플로와 `ctx.run` durable step으로 표현한다. 같은 논리 작업의 `sagaId`를 workflow key로 사용하고, DB 쓰기나 NATS 발행 같은 외부 효과는 이름 있는 step으로 감싼다. 한 DB의 짧은 묶음 쓰기는 workflow 단계별 보상보다 MongoDB 트랜잭션으로 원자적 커밋한다.
 
 ### 근거
 
-이전 showtime-creation 구현은 BullMQ 큐 위에 직접 만든 상태 머신과 수동 `compensate()` 함수로 되어 있었다. 사가 단계가 하나뿐일 때는 감당할 수 있었지만, 단계가 늘면 문제가 빠르게 커진다.
+durable execution runtime 없이 showtime-creation을 만들면 재시도·상태 순서·멱등성·중단 후 재개를 애플리케이션이 각각 관리해야 한다. 사가 단계가 늘면 다음 부담이 빠르게 커진다.
 
 1. **상태 누락이 쉽다** — 단계마다 status를 emit해야 SSE가 이어진다. 한 곳이라도 빠지면 클라이언트가 계속 기다린다.
-2. **재시도와 멱등성을 직접 챙겨야 한다** — 컨테이너가 종료되면 처리 중이던 작업이 불완전한 상태로 남을 수 있다. BullMQ의 ack만으로는 일부만 진행된 작업을 자동으로 보상할 수 없다.
+2. **재시도와 멱등성을 직접 챙겨야 한다** — 컨테이너가 종료되면 처리 중이던 작업이 불완전한 상태로 남을 수 있다. 메시지 ack만으로는 일부만 진행된 외부 효과를 안전하게 이어 갈 수 없다.
 3. **진행 상황을 밖에서 보기 어렵다** — 단계가 코드 안에만 있다. 운영 중 “지금 어디까지 갔나?”를 보려면 로그를 따라가야 한다.
 
-Temporal로 옮기면 부담이 줄어든다.
+Restate로 옮기면 실행 기록과 애플리케이션 코드를 가깝게 두면서 부담이 줄어든다.
 
-- 워크플로 실행 기록이 자동으로 저장된다. 워커가 종료되어도 다른 워커가 이어받는다.
-- 액티비티별 재시도 규칙을 코드로 적을 수 있다.
-- 복구 동작은 Activity 재시도, DB 트랜잭션 롤백, 필요하면 워크플로 `try/catch`의 보상 Activity로 명시한다.
-- Temporal Web UI에서 워크플로의 현재 위치와 실행 기록을 볼 수 있다.
+- Restate가 workflow key별 invocation과 durable step 결과를 journal에 저장한다. endpoint 복제본이 종료되어도 다른 복제본에서 이어받는다.
+- `ctx.run`마다 retry와 timeout을 코드로 적고, `waiting → processing → 종결 상태` 순서도 journal에 남긴다.
+- Admin API와 query를 통해 invocation과 journal 상태를 애플리케이션 로그 밖에서 조회할 수 있다.
+- 별도 worker bundle·결정성 sandbox 없이 NestJS 제공자와 같은 API 코드에서 workflow endpoint를 제공한다.
+- 개발 인프라는 Restate 단일 컨테이너와 volume만 필요하고 별도 workflow DB·schema/namespace setup이 없다.
 
-현재 showtime-creation v2의 `validateAndCreate` Activity는 상영 시간·티켓·`sagaId` operation 기록을 MongoDB 트랜잭션 하나로 묶는다. 극장별 스케줄 guard를 읽기보다 먼저 CAS 갱신해 동시 작업을 WriteConflict로 직렬화하고, 완료된 operation은 재시도 시 결과로 재사용한다. 트랜잭션이 롤백되므로 v2에는 삭제 보상 Activity가 없다.
-
-반면 v1 워크플로·Activity는 배포 전부터 실행 중인 Temporal history의 replay 결정성을 유지하는 마이그레이션 호환 경로다. v1의 분산 락·비-트랜잭션 쓰기·삭제 보상과 timeout/retry 명령은 legacy task queue가 drain될 때까지 동결한다. 신규 요청은 별도 v2 queue에서만 시작한다.
+현재 `validate and create` step은 상영 시간·티켓·`sagaId` operation 기록을 MongoDB 트랜잭션 하나로 묶는다. 극장별 스케줄 guard를 읽기보다 먼저 CAS 갱신해 동시 작업을 WriteConflict로 직렬화하고, 완료된 operation은 재시도 시 결과로 재사용한다. 트랜잭션이 롤백되므로 삭제 보상 step이 없다.
 
 ### 트레이드오프
 
-- 워크플로 코드는 샌드박스에서 실행된다. 같은 입력이면 항상 같은 결과가 나와야 한다. `Date.now()`, 랜덤, 외부 I/O, NestJS DI처럼 실행마다 결과가 달라질 수 있는 것은 워크플로 안에서 직접 쓰지 않고 액티비티로 빼야 한다.
-- 워크플로 번들링은 webpack 기반 `bundleWorkflowCode`로 이뤄진다. 워크플로 파일이 가져온 모듈의 하위 모듈까지 함께 묶인다. NestJS 데코레이터가 있는 모듈을 가져오면 번들이 깨질 수 있다. 그래서 status enum 같은 값도 NestJS 모듈에 두지 않고 string literal로 직접 적는다.
-- 인프라가 늘어난다. Temporal server와 backend PostgreSQL이 함께 떠야 한다. 개발과 테스트에서는 compose가 준비 컨테이너(스키마·네임스페이스 생성)까지 자동으로 띄워 부담이 작지만, 운영에서는 관리 대상이 늘어난다.
+- Journal은 완료된 step 결과를 재사용하지만 외부 효과 성공과 journal 기록 사이의 장애까지 원자적으로 묶지는 않는다. `ctx.run` 함수는 다시 호출될 수 있으므로 MongoDB operation unique key나 외부 provider idempotency key가 여전히 필요하다.
+- 상태 이벤트 step도 재시도되므로 같은 이벤트가 중복될 수 있다. Core NATS는 저장·redelivery를 제공하지 않아 SSE 연결 전 이벤트를 복구하지 않는다. MongoDB가 업무 결과의 기준이고 SSE는 진행 알림이다.
+- 모든 API 복제본이 HTTP/2 endpoint(:9080)를 열고 Admin API에 배포 URI를 등록해야 한다. 운영에서는 revision별 endpoint와 이전 invocation drain을 설계해야 하며 검증 스택의 고정 NGINX URI만으로 무중단 versioning이 완성되지 않는다.
+- Temporal history를 Restate journal로 이관할 수 없다. 운영 execution이 있는 전환은 신규 제출 중지와 drain/cancel을 먼저 해야 한다([deploy 문서](../deploy.md#restate-endpoint-등록과-운영-전환)).
 
 ### 검토했던 대안
 
-- **BullMQ에 수동 compensate를 계속 사용** — 사가 단계가 늘수록 보상 처리, 재시도, 상태 관리를 직접 챙겨야 한다.
+- **BullMQ에 수동 compensate를 사용** — 사가 단계가 늘수록 보상 처리, 재시도, 상태 관리를 직접 챙겨야 한다.
 - **NATS JetStream 컨슈머** — 메시지 저장과 재시도는 가능하다. 하지만 사가의 보상과 상태 머신은 직접 만들어야 한다. 워크플로라는 추상이 없다.
+- **Temporal 유지** — durable workflow 기능은 충족하지만 별도 worker bundle·sandbox와 서버용 PostgreSQL·setup 경로가 필요했다. 이 시드의 한 workflow에는 Restate의 서비스 endpoint 방식이 더 작다. 단, 기존 Temporal 운영 history가 있다면 단순 패키지 교체가 아니라 위 direct-cutover 절차가 필요하다.
 
 ---
 
@@ -133,7 +134,7 @@ Temporal로 옮기면 부담이 줄어든다.
 
 ### 근거
 
-이 시드는 MongoDB Replica Set, Redis Cluster, VersityGW, NATS, Temporal(+PostgreSQL)을 함께 띄워야 동작한다. 이 구성을 각자 로컬에서 손으로 맞추게 하면 버전·설정 차이가 곧바로 "내 컴퓨터에서는 되는데"로 이어지고, 문서는 OS별 설치 절차로 불어난다. 컨테이너 정의 하나로 환경을 고정하면 포크한 사람 누구나 같은 환경에서 시작하고, 환경 문제의 디버깅 범위도 컨테이너 안으로 좁혀진다.
+이 시드는 MongoDB Replica Set, Redis Cluster, VersityGW, NATS와 Restate를 함께 띄워야 동작한다. 이 구성을 각자 로컬에서 손으로 맞추게 하면 버전·설정 차이가 곧바로 "내 컴퓨터에서는 되는데"로 이어지고, 문서는 OS별 설치 절차로 불어난다. 컨테이너 정의 하나로 환경을 고정하면 포크한 사람 누구나 같은 환경에서 시작하고, 환경 문제의 디버깅 범위도 컨테이너 안으로 좁혀진다.
 
 인프라 토폴로지도 운영과 같게 둔다. MongoDB 트랜잭션은 Replica Set에서만 동작하고, Redis는 여러 키를 한 명령으로 묶는 호출처럼 Cluster에서만 실패하는 코드가 있다. 개발에서 스탠드얼론으로 줄이면 이런 코드가 운영에 가서야 깨진다.
 
@@ -147,7 +148,7 @@ Temporal로 옮기면 부담이 줄어든다.
 
 ### 결정
 
-커버리지를 수집하는 구현 워크스페이스는 100%를 요구한다. 현재 대상은 `apps/api`, `libs/common`, `libs/temporal-sandbox`, `tools/jest-helpers`다. 이 네 곳은 안정성 반복에서 속도·산출물 절약을 위해 커버리지를 끄더라도 정기 AtoZ의 `npm test`에서 반드시 100% 게이트를 별도로 통과한다.
+커버리지를 수집하는 구현 워크스페이스는 100%를 요구한다. 현재 대상은 `apps/api`, `libs/common`, `tools/jest-helpers`다. 이 세 곳은 안정성 반복에서 속도·산출물 절약을 위해 커버리지를 끄더라도 정기 AtoZ의 `npm test`에서 반드시 100% 게이트를 별도로 통과한다.
 
 ### 근거
 
@@ -201,7 +202,7 @@ Temporal로 옮기면 부담이 줄어든다.
 ### 검토했던 대안
 
 - **요청 코드의 즉시 `catch` 보상만 사용** — 프로세스가 종료되면 `catch`는 실행되지 않는다. 재시작 후 어느 작업을 되돌려야 하는지 알 기준점도 없다.
-- **구매 전체를 Temporal workflow로 전환** — 가능하지만, 현재 API는 결제 결과를 동기 HTTP 응답으로 줄 수 있고 트랜잭션·lease 상태만으로 종료 상태를 수렴시킬 수 있다. 장기 인간 승인이나 다단계 provider 오케스트레이션이 추가되면 다시 검토한다.
+- **구매 전체를 Restate workflow로 전환** — 가능하지만, 현재 API는 결제 결과를 동기 HTTP 응답으로 줄 수 있고 트랜잭션·lease 상태만으로 종료 상태를 수렴시킬 수 있다. 장기 인간 승인이나 다단계 provider 오케스트레이션이 추가되면 다시 검토한다.
 
 ---
 
@@ -212,7 +213,7 @@ Temporal로 옮기면 부담이 줄어든다.
 | 도구              | 거부 사유                                                                                                                                                                |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Kafka             | NATS로 충분하다. broker와 controller를 여러 개 운영해야 하고, 토픽을 미리 만들어야 하는 부담이 크다.                                                                     |
-| BullMQ            | Temporal로 대체했다. 사가의 보상 처리·재시도·상태 머신을 직접 작성해야 하는 부담을 워크플로가 줄여 준다.                                                                 |
+| BullMQ            | Restate로 대체했다. 사가의 보상 처리·재시도·상태 머신을 직접 작성해야 하는 부담을 workflow와 durable step이 줄여 준다.                                                   |
 | OpenAPI / Swagger | bash + curl로 만든 실행 가능한 API 문서(`apps/api/api-docs/*.spec`)로 대신한다. 문서가 실제 동작과 다르면 검증(`npm run atoz`의 `deploy/verify.sh`)이 실패하는 방식이다. |
 | Passport          | NestJS의 Guard 인터페이스(`CanActivate`)를 직접 구현해도 충분하다. 코드가 더 짧고 흐름이 바로 보인다.                                                                    |
 | Nx / Turborepo    | npm workspaces로 충분하다. 워크스페이스가 한 자릿수라 빌드 캐시와 작업 그래프가 절감해 주는 시간이 도구를 학습하고 설정을 유지하는 비용에 못 미친다.                     |

@@ -14,6 +14,37 @@ diagnose_and_exit() {
 
 trap 'diagnose_and_exit "$?"' ERR
 
+cleanup_legacy_temporal() {
+    local service
+    local -a container_ids=()
+    local -a matched=()
+    local -a volume_ids=()
+
+    # Compose 파일에서 제거된 서비스는 down --remove-orphans 없이는 남는다. deploy와
+    # project를 공유하므로 전체 orphan 대신 이 project의 옛 Temporal 자원만 고른다.
+    for service in temporal temporal-postgresql temporal-setup temporal-create-namespace; do
+        mapfile -t matched < <(
+            docker ps -aq \
+                --filter "label=com.docker.compose.project=${COMPOSE_PROJECT_NAME}" \
+                --filter "label=com.docker.compose.service=${service}"
+        )
+        container_ids+=("${matched[@]}")
+    done
+    if [ "${#container_ids[@]}" -gt 0 ]; then
+        docker rm -f "${container_ids[@]}"
+    fi
+
+    mapfile -t volume_ids < <(
+        docker volume ls -q \
+            --filter "label=com.docker.compose.project=${COMPOSE_PROJECT_NAME}" \
+            --filter 'label=com.docker.compose.volume=temporal_pgdata'
+    )
+    if [ "${#volume_ids[@]}" -gt 0 ]; then
+        docker volume rm "${volume_ids[@]}"
+    fi
+}
+
+cleanup_legacy_temporal
 docker compose down -v -t 0
 docker compose up -d
 
@@ -30,5 +61,4 @@ if [ "${setup_exit}" -ne 0 ]; then
 fi
 
 docker compose rm -f \
-    infra-setup mongo-setup redis-setup s3-setup \
-    temporal-setup temporal-create-namespace
+    infra-setup mongo-setup redis-setup s3-setup

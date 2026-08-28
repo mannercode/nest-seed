@@ -38,7 +38,29 @@ services:
         volumes: ['./nginx.conf:/etc/nginx/nginx.conf:ro']
         depends_on:
             api: { condition: service_healthy }
+        healthcheck:
+            # Alpine은 localhost를 ::1로 먼저 해석하지만 이 검증용 NGINX는 IPv4만 listen한다.
+            test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1/health >/dev/null']
+            interval: 5s
+            timeout: 3s
         restart: unless-stopped
+
+    restate-register:
+        profiles: [setup]
+        image: nest-seed-api
+        env_file:
+            - ../.env.infra
+        environment:
+            RESTATE_DEPLOYMENT_URI: http://nginx:9080
+        entrypoint: ['/bin/sh', '-ec']
+        # Compose가 문자열 command를 단어별 argv로 나누지 않도록 shell 본문 하나로 넘긴다.
+        command:
+            - |
+                curl -fsS "$$RESTATE_ADMIN_URL/health" >/dev/null
+                curl -fsS \
+                  -H 'content-type: application/json' \
+                  --data "{\"uri\":\"$$RESTATE_DEPLOYMENT_URI\",\"force\":false,\"use_http_11\":false}" \
+                  "$$RESTATE_ADMIN_URL/deployments"
 
 networks:
     default:

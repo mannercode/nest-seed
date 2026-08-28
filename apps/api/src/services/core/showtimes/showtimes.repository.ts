@@ -21,14 +21,6 @@ export class ShowtimesRepository extends CrudRepository<Showtime> {
         super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
     }
 
-    async deleteBySagaIds(
-        sagaIds: string[],
-        session: ClientSession | undefined = undefined,
-        signal: AbortSignal | undefined = undefined
-    ) {
-        await this.model.deleteMany({ sagaId: { $in: sagaIds } }, { session, signal })
-    }
-
     async createMany(
         createDtos: CreateShowtimeDto[],
         session: ClientSession | undefined = undefined,

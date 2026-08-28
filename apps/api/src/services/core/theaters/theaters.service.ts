@@ -27,14 +27,6 @@ export class TheatersService {
         return this.repository.acquireShowtimeScheduleGuards(theaterIds, session, signal)
     }
 
-    async allExist(
-        theaterIds: string[],
-        session: ClientSession | undefined = undefined,
-        signal: AbortSignal | undefined = undefined
-    ) {
-        return this.repository.allExist(theaterIds, session, signal)
-    }
-
     async getMany(
         theaterIds: string[],
         session: ClientSession | undefined = undefined,

@@ -7,6 +7,7 @@
 | 영역                 | 검증 이유                                                            | 기본 명령                    | 결과                                |
 | -------------------- | -------------------------------------------------------------------- | ---------------------------- | ----------------------------------- |
 | `api-race/contracts` | 실제 race가 쓰는 HTTP/SSE deadline과 workflow 목록이 유지되는지 확인 | `npm test -w tests/api-race` | 터미널 `node:test` 결과             |
+| `api-race/probes`    | Restate 재시작 뒤 journal replay와 중단 step 재실행을 확인           | `npm run atoz`               | 터미널 `node:test` 결과             |
 | `web/contracts`      | 두 BFF의 proxy·refresh 보안 경계와 ESLint 계약 확인                  | `npm test -w tests/web`      | 터미널 Playwright 결과              |
 | `web/e2e`            | 관리자·사용자의 실제 브라우저 흐름과 세션 보안 확인                  | `npm run e2e`                | 터미널, HTML, 실패 trace·screenshot |
 | `api-race` 시나리오  | 4개 API replica 사이의 경합·fanout·장애 복구 불변식 확인             | `npm run race -- <scenario>` | 터미널 `node:test` 결과와 실패 진단 |
@@ -20,7 +21,7 @@
 
 ### `npm run atoz`
 
-`npm test` 범위에 정적 검사, 앱 build, 브라우저 E2E와 배포 검증을 더한다. 실제 API race는 Stability workflow가 담당하고 benchmark는 수동 비교용이라 포함하지 않는다. 성공하면 마지막에 전체 결과 요약과 브라우저 보고서 경로를 출력한다.
+`npm test` 범위에 정적 검사, 앱 build, 브라우저 E2E와 배포 검증을 더한다. 배포 검증은 Restate를 실제 `SIGKILL` 후 같은 volume으로 재시작해 완료된 durable step은 replay되고 중단된 step만 재실행되는지도 확인한다. 실제 API race는 Stability workflow가 담당하고 benchmark는 수동 비교용이라 포함하지 않는다. 성공하면 마지막에 전체 결과 요약과 브라우저 보고서 경로를 출력한다.
 
 ## 결과 보기
 

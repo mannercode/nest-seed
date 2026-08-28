@@ -83,7 +83,7 @@ gh api -X PATCH repos/OWNER/REPO \
 
 ## 4. Dependabot과 보안 기능
 
-`.github/dependabot.yml`은 npm, GitHub Actions와 추적 가능한 Dockerfile/Compose 이미지 참조의 minor/patch를 매주 확인한다. npm routine update는 manifest의 직접 의존성만 대상으로 하고 AWS SDK, Next, NestJS, Temporal, React, ESLint, commitlint처럼 같은 release train을 따르는 계열만 묶는다. 그 밖의 npm 패키지는 개별 PR로 유지해 무관한 변경 하나가 전체 갱신을 막지 않게 한다. 같은 이미지를 여러 디렉터리에서 쓰면 dependency name으로 묶어 한 PR에서 갱신한다. routine major update는 생성하지 않는다. TypeScript와 ESLint 생태계, Node 이미지와 OS 패키지처럼 major에서 함께 바뀌어야 하는 범위는 관리자가 한 PR에서 올려 AtoZ로 검증한다. 이 제한은 security update에는 적용되지 않으므로 major 보안 수정도 PR로 열리며 자동 머지하지 않는다. `.env.infra` 변수로 간접 참조한 digest는 자동 갱신 범위가 아니므로 인프라 이미지 갱신 시 수동으로 맞춘다. install script 허용 목록은 정확한 패키지 버전별 보안 경계이므로 새 버전이 들어오면 스크립트와 lockfile integrity를 검토한 뒤 명시적으로 갱신한다. 파일이 있다고 다음 저장소 설정까지 자동으로 켜지는 것은 아니다.
+`.github/dependabot.yml`은 npm, GitHub Actions와 추적 가능한 Dockerfile/Compose 이미지 참조의 minor/patch를 매주 확인한다. npm routine update는 manifest의 직접 의존성만 대상으로 하고 AWS SDK, Next, NestJS, Restate, React, ESLint, commitlint처럼 같은 release train을 따르는 계열만 묶는다. 그 밖의 npm 패키지는 개별 PR로 유지해 무관한 변경 하나가 전체 갱신을 막지 않게 한다. 같은 이미지를 여러 디렉터리에서 쓰면 dependency name으로 묶어 한 PR에서 갱신한다. routine major update는 생성하지 않는다. TypeScript와 ESLint 생태계, Node 이미지와 OS 패키지처럼 major에서 함께 바뀌어야 하는 범위는 관리자가 한 PR에서 올려 AtoZ로 검증한다. 이 제한은 security update에는 적용되지 않으므로 major 보안 수정도 PR로 열리며 자동 머지하지 않는다. `.env.infra` 변수로 간접 참조한 Restate 등 이미지 digest는 자동 갱신 범위가 아니므로 인프라 이미지 갱신 시 수동으로 맞춘다. install script 허용 목록은 정확한 패키지 버전별 보안 경계이므로 새 버전이 들어오면 스크립트와 lockfile integrity를 검토한 뒤 명시적으로 갱신한다. 파일이 있다고 다음 저장소 설정까지 자동으로 켜지는 것은 아니다.
 
 - Settings → Code security에서 Dependabot alerts와 Dependabot security updates를 활성화한다.
 - Automated security fixes를 활성화한다.

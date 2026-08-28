@@ -17,14 +17,14 @@ describe('Health', () => {
     afterEach(() => teardown?.())
 
     describe('GET /health', () => {
-        it('mongo·redis·nats·temporal이 정상이면 200과 상태 정보를 반환한다', async () => {
+        it('mongo·redis·nats·restate가 정상이면 200과 상태 정보를 반환한다', async () => {
             const { body } = await fix.httpClient.get('/health').ok()
 
             const allUp = {
                 mongodb: { status: 'up' },
                 redis: { status: 'up' },
                 nats: { status: 'up' },
-                temporal: { status: 'up' }
+                restate: { status: 'up' }
             }
             expect(body).toEqual({ status: 'ok', info: allUp, error: {}, details: allUp })
         })
@@ -40,7 +40,7 @@ describe('Health', () => {
             const info = {
                 redis: { status: 'up' },
                 nats: { status: 'up' },
-                temporal: { status: 'up' }
+                restate: { status: 'up' }
             }
             const error = { mongodb: { reason: 'Error: mongo down', status: 'down' } }
 

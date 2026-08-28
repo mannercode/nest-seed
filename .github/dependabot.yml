@@ -28,8 +28,8 @@ updates:
           nestjs-minor-patch:
               patterns: ['@nestjs/*']
               update-types: ['minor', 'patch']
-          temporal-minor-patch:
-              patterns: ['@temporalio/*']
+          restate-minor-patch:
+              patterns: ['@restatedev/*']
               update-types: ['minor', 'patch']
           react-minor-patch:
               patterns: ['react', 'react-dom', '@types/react', '@types/react-dom']

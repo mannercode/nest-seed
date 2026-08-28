@@ -1,58 +1,145 @@
-import { extractRootMessage, proxyActivities } from '@mannercode/temporal-sandbox'
-import type { LegacyShowtimeCreationActivities } from './legacy-activities'
-import type { LegacyShowtimeCreationWorkflowInput } from './legacy-types'
+import { JsonUtil } from '@mannercode/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import * as restate from '@restatedev/restate-sdk'
+import { AppConfigService } from 'config'
+import type { ShowtimeCreationEvent, ValidateAndCreateResult } from '../internal'
+import type { ShowtimeCreationWorkflowInput } from './types'
+// 이 직접 import는 internal barrel → orchestrator → worker로 되돌아오는 Nest DI 순환을 피한다.
+// eslint-disable-next-line no-restricted-imports
+import { ShowtimeCreationPersistenceService } from '../internal/showtime-creation-persistence.service'
+import { ShowtimeCreationEvents } from '../showtime-creation.events'
 
-// 이 v1 정의는 이미 실행 중인 Temporal history를 재생하기 위한 호환 코드다.
-// timeout/retry/activity command를 바꾸면 결정성이 깨지므로 v1 queue가 완전히 drain될 때까지 동결한다.
-const { validateAndCreate } = proxyActivities<ReturnType<LegacyShowtimeCreationActivities['bind']>>(
-    { startToCloseTimeout: '15 minutes', retry: { maximumAttempts: 1 } }
-)
+const EVENT_RETRY = { initialRetryInterval: 1_000, maxRetryAttempts: 3, maxRetryDuration: 35_000 }
+const EVENT_ATTEMPT_TIMEOUT_MS = 10_000
+const VALIDATE_AND_CREATE_RETRY = {
+    initialRetryInterval: 1_000,
+    maxRetryAttempts: 4,
+    maxRetryDuration: 195_000
+}
+const DEFAULT_RUN_TIMEOUT_MS = 60_000
 
-const { compensate } = proxyActivities<ReturnType<LegacyShowtimeCreationActivities['bind']>>({
-    startToCloseTimeout: '15 minutes',
-    retry: { maximumAttempts: 3, initialInterval: '1 second' }
-})
+type WorkflowDependencies = {
+    events: Pick<ShowtimeCreationEvents, 'emitStatusChanged'>
+    persistence: Pick<ShowtimeCreationPersistenceService, 'validateAndCreate'>
+    projectId: string
+    runTimeoutMs?: number
+}
 
-// 상태 알림은 같은 요청을 다시 실행해도 결과가 달라지지 않아 자동 재시도한다.
-// 구독자는 사가 이벤트를 최대 5분 기다린다(race 테스트의 SSE_DEADLINE_MS).
-// 일시적인 발행 지연이 그 안에 회복되도록 한 번의 제한 시간은 짧게, 재시도 간격은 빠르게 둔다.
-const { emitStatusChanged } = proxyActivities<ReturnType<LegacyShowtimeCreationActivities['bind']>>(
-    {
-        startToCloseTimeout: '30 seconds',
-        retry: { maximumAttempts: 3, initialInterval: '1 second' }
-    }
-)
+export function getShowtimeCreationWorkflowName(projectId: string) {
+    return `ShowtimeCreation-${projectId}`
+}
 
-export async function showtimeCreationWorkflow(
-    input: LegacyShowtimeCreationWorkflowInput
-): Promise<void> {
-    // 상태값은 다른 모듈의 타입과 맞춰 문자열로 직접 적는다.
-    // 이 파일은 격리된 실행 환경에서 묶이므로, enum을 가져오다가 NestJS 코드까지 포함되면 빌드에 실패한다.
-    await emitStatusChanged({ sagaId: input.sagaId, status: 'processing' })
+export function createShowtimeCreationWorkflow({
+    events,
+    persistence,
+    projectId,
+    runTimeoutMs = DEFAULT_RUN_TIMEOUT_MS
+}: WorkflowDependencies) {
+    const emit = (ctx: restate.WorkflowContext, name: string, event: ShowtimeCreationEvent) =>
+        ctx.run(name, () => withEventAttemptTimeout(events.emitStatusChanged(event)), EVENT_RETRY)
+
+    return restate.workflow({
+        handlers: {
+            run: async (
+                ctx: restate.WorkflowContext,
+                input: ShowtimeCreationWorkflowInput
+            ): Promise<void> => {
+                await emit(ctx, 'emit waiting', { sagaId: input.sagaId, status: 'waiting' })
+                await emit(ctx, 'emit processing', { sagaId: input.sagaId, status: 'processing' })
+
+                let result: ValidateAndCreateResult
+                try {
+                    result = await ctx.run(
+                        'validate and create',
+                        () => {
+                            const { createDto, sagaId } = JsonUtil.reviveDates(input)
+                            const signal = AbortSignal.any([
+                                ctx.request().attemptCompletedSignal,
+                                AbortSignal.timeout(runTimeoutMs)
+                            ])
+
+                            return persistence.validateAndCreate(createDto, sagaId, signal)
+                        },
+                        VALIDATE_AND_CREATE_RETRY
+                    )
+                } catch (error: unknown) {
+                    if (error instanceof restate.CancelledError) throw error
+
+                    await emit(ctx, 'emit error', {
+                        message: error instanceof Error ? error.message : String(error),
+                        sagaId: input.sagaId,
+                        status: 'error'
+                    })
+                    return
+                }
+
+                if (result.kind === 'succeeded') {
+                    await emit(ctx, 'emit succeeded', {
+                        createdShowtimeCount: result.createdShowtimeCount,
+                        createdTicketCount: result.createdTicketCount,
+                        sagaId: input.sagaId,
+                        status: 'succeeded'
+                    })
+                } else {
+                    await emit(ctx, 'emit failed', {
+                        conflictingShowtimes: result.conflictingShowtimes,
+                        sagaId: input.sagaId,
+                        status: 'failed'
+                    })
+                }
+            }
+        },
+        name: getShowtimeCreationWorkflowName(projectId),
+        options: {
+            abortTimeout: 5_000,
+            asTerminalError: (error: unknown) => {
+                if (error instanceof BadRequestException || error instanceof NotFoundException) {
+                    return new restate.TerminalError(error.message, {
+                        errorCode: error.getStatus()
+                    })
+                }
+                return undefined
+            },
+            inactivityTimeout: runTimeoutMs + 5_000,
+            workflowRetention: 60 * 60 * 1_000
+        }
+    })
+}
+
+async function withEventAttemptTimeout(operation: Promise<void>) {
+    let timer!: ReturnType<typeof setTimeout>
+    const timeout = new Promise<never>((_, reject) => {
+        timer = setTimeout(
+            () =>
+                reject(
+                    new Error(`Status event publish timed out after ${EVENT_ATTEMPT_TIMEOUT_MS}ms.`)
+                ),
+            EVENT_ATTEMPT_TIMEOUT_MS
+        )
+    })
 
     try {
-        const result = await validateAndCreate(input)
+        await Promise.race([operation, timeout])
+    } finally {
+        clearTimeout(timer)
+    }
+}
 
-        if (result.kind === 'succeeded') {
-            await emitStatusChanged({
-                createdShowtimeCount: result.createdShowtimeCount,
-                createdTicketCount: result.createdTicketCount,
-                sagaId: input.sagaId,
-                status: 'succeeded'
-            })
-        } else {
-            await emitStatusChanged({
-                conflictingShowtimes: result.conflictingShowtimes,
-                sagaId: input.sagaId,
-                status: 'failed'
-            })
-        }
-    } catch (error: unknown) {
-        await compensate(input.sagaId)
-        await emitStatusChanged({
-            message: extractRootMessage(error),
-            sagaId: input.sagaId,
-            status: 'error'
+export type ShowtimeCreationWorkflowDefinition = ReturnType<typeof createShowtimeCreationWorkflow>
+
+@Injectable()
+export class ShowtimeCreationWorkflow {
+    readonly definition: ShowtimeCreationWorkflowDefinition
+
+    constructor(
+        events: ShowtimeCreationEvents,
+        persistence: ShowtimeCreationPersistenceService,
+        config: AppConfigService
+    ) {
+        this.definition = createShowtimeCreationWorkflow({
+            events,
+            persistence,
+            projectId: config.projectId
         })
     }
 }

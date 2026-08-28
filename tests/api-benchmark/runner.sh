@@ -58,6 +58,9 @@ if ! docker compose up -d --build --wait; then
     exit 1
 fi
 
+# Restate를 직접 쓰지 않는 benchmark leg도 실제 배포 스택과 같은 등록 상태로 검증한다.
+docker compose run --rm --no-deps restate-register
+
 # compose up --wait가 돌아온 직후에는 nginx가 아직 첫 연결을 못 받을 수 있다. 상한을 두고 기다린다.
 for i in {1..30}; do
     if curl -fsS "${SERVER_URL}/health" >/dev/null 2>&1; then

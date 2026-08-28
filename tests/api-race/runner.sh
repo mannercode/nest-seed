@@ -87,6 +87,10 @@ bring_up_stack() {
 
     echo ""
     docker compose ps
+
+    # Restate는 실행 endpoint를 자동 발견하지 않는다. AtoZ/Stability는 시작 전에
+    # infra를 reset하므로 최초 등록되고, 같은 코드 반복은 기존 등록을 그대로 쓴다.
+    docker compose run --rm --no-deps restate-register
 }
 
 # admin은 API가 부팅 시 만들지 않는다.

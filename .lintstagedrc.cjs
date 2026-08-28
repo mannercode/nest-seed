@@ -12,10 +12,6 @@ module.exports = {
         'npm exec --workspace libs/common -- eslint --fix',
         'prettier --write'
     ],
-    'libs/temporal-sandbox/**/*.{ts,tsx}': [
-        'npm exec --workspace libs/temporal-sandbox -- eslint --fix',
-        'prettier --write'
-    ],
     'libs/testing/**/*.{ts,tsx}': [
         'npm exec --workspace libs/testing -- eslint --fix',
         'prettier --write'

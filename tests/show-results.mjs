@@ -13,7 +13,7 @@ const baseSuites = [
     { name: '공용 라이브러리', reason: '공통 도메인·인프라 헬퍼의 단위/통합 동작과 coverage 계약' },
     {
         name: 'Nest API',
-        reason: '도메인·서비스·저장소·Temporal 흐름의 단위/통합 동작과 coverage 계약'
+        reason: '도메인·서비스·저장소·Restate 흐름의 단위/통합 동작과 coverage 계약'
     },
     { name: '개발 도구', reason: '터널 접근 정책과 Jest 실행 자원 격리 헬퍼 계약' },
     {

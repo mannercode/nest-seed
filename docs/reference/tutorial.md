@@ -162,8 +162,8 @@ svc --> orch
 orch ..> validator
 orch ..> creator
 note on link
-    조율자는 Temporal 워크플로를 시작하고,
-    워크플로가 검증·생성을 호출한다(4장)
+    조율자는 sagaId를 key로 Restate 워크플로를 제출하고,
+    durable step이 검증·생성을 호출한다(4장)
 end note
 validator --> movies
 validator --> theaters
@@ -191,17 +191,15 @@ SoLA는 원래 마이크로서비스 — 서비스가 서로 다른 프로세스
 
 - 서버는 작업을 접수만 하고 **`202 Accepted` + 작업 식별자(`sagaId`)** 를 즉시 응답한다.
 - 진행 상황(waiting → processing → succeeded/failed/error)은 **SSE**(Server-Sent Events)로 흘려보낸다.
-- Temporal 워크플로가 비동기 실행 기록·timeout·재시도를 맡고, 상영 시간·티켓·멱등 작업 기록은 MongoDB 트랜잭션 하나로 생성한다.
+- Restate 워크플로가 비동기 실행 기록·timeout·재시도를 맡고, 상영 시간·티켓·멱등 작업 기록은 MongoDB 트랜잭션 하나로 생성한다.
 
-이 흐름 전체는 [apps 문서의 Temporal 시퀀스 다이어그램](../apps.md#saga-오케스트레이션--temporal)에 있다. 종결 상태를 구분하자. `failed`는 요청은 유효하지만 기존 상영 시간과 충돌해 자원을 만들지 않은 도메인 결과다. `error`는 재시도해도 시스템 오류를 해결하지 못한 결과다. v2에서는 실패한 트랜잭션이 상영 시간·티켓 부분 쓰기를 전부 롤백하므로, `error`를 내기 전 별도 삭제 보상을 할 필요가 없다.
-
-v1 코드에 보상 삭제가 남아 있는 것은 신규 설계가 아니다. 배포 전부터 실행 중이던 Temporal history를 끝까지 replay하려는 마이그레이션 호환 경로다. 신규 요청은 v2 queue와 `showtimeCreationWorkflowV2`로만 들어간다.
+이 흐름 전체는 [apps 문서의 Restate 시퀀스 다이어그램](../apps.md#saga-오케스트레이션--restate)에 있다. 종결 상태를 구분하자. `failed`는 요청은 유효하지만 기존 상영 시간과 충돌해 자원을 만들지 않은 도메인 결과다. `error`는 재시도해도 시스템 오류를 해결하지 못한 결과다. 실패한 트랜잭션이 상영 시간·티켓 부분 쓰기를 전부 롤백하므로, `error`를 내기 전 별도 삭제 보상을 할 필요가 없다. 같은 `sagaId`의 durable step이 다시 호출되어도 MongoDB operation 기록을 읽어 결과를 재사용한다.
 
 1장의 나머지 점선(결제)은 트랜잭션 하나로 묶을 수 없는 외부 효과다. 티켓 구매는 외부 효과보다 `pending` 기록을 먼저 남기고, 완료 또는 보상을 lease 기반 상태 머신으로 재시도한다([apps 문서의 구매 상태 머신](../apps.md#구매-상태-머신과-재조정)).
 
 ### 동시성은 별도의 문제다
 
-흔한 오해가 있다. "큐에 넣으면 동시성도 해결된다"는 것이다. 워커가 하나일 때만 맞는 말이다. 시드처럼 컨테이너를 여러 개 띄우면(기본 4개) 충돌하는 두 작업이 서로 다른 워커에서 동시에 예전 DB snapshot을 보고 검증을 통과할 수 있다. 그래서 읽기 검증만 믿지 않고, 충돌하는 쓰기가 하나만 성공하는 DB 원어를 둘 수 있는 조건을 만든다.
+흔한 오해가 있다. "워크플로에 넣으면 동시성도 해결된다"는 것이다. 같은 workflow key를 공유할 때만 맞는 말이다. 시드처럼 컨테이너를 여러 개 띄우면(기본 4개) 서로 다른 `sagaId`의 충돌 작업이 서로 다른 endpoint 복제본에서 동시에 예전 DB snapshot을 보고 검증을 통과할 수 있다. 그래서 읽기 검증만 믿지 않고, 충돌하는 쓰기가 하나만 성공하는 DB 원어를 둘 수 있는 조건을 만든다.
 
 - 상영시간 **검증+삽입**은 트랜잭션에서 대상 극장의 스케줄 guard를 먼저 CAS 갱신한다. 같은 극장을 다루는 동시 쓰기는 WriteConflict로 재시도된 뒤 최신 상태를 다시 검증한다([showtime-creation-persistence.service.ts](../../apps/api/src/services/application/showtime-creation/internal/showtime-creation-persistence.service.ts)).
 - 티켓 **이중 판매**는 락이 아니라 원자 조건부 전이로 막는다 — "Available인 것만 Sold로" 조건을 갱신 쿼리 자체에 넣는다 ([tickets.repository.ts](../../apps/api/src/services/core/tickets/tickets.repository.ts)의 `transitStatusMany`)
@@ -264,9 +262,11 @@ top-down에서는 이것이 자연스럽다. REST API부터 시작하므로:
 ```ts
 describe('ShowtimeCreationService', () => {
     let fix: AppTestContext
+    let adminAccessToken: string
 
     beforeEach(async () => {
-        fix = await createAppTestContext({ ignoreGuards: [AdminAuthGuard] })
+        fix = await createAppTestContext({ enableRestate: true })
+        ;({ accessToken: adminAccessToken } = await createAndLoginAdmin(fix))
         showtimesService = fix.module.get(ShowtimesService)
         ticketsService = fix.module.get(TicketsService)
 
@@ -276,7 +276,7 @@ describe('ShowtimeCreationService', () => {
     afterEach(() => fix.teardown())
 ```
 
-`createAppTestContext`는 NestJS 앱을 통째로 만들어 devcontainer가 띄워 둔 실제 MongoDB·Redis·Temporal에 붙이고, `createMovie`·`createTheater`는 실제 DB에 픽스처를 만든다. 끄는 것은 관리자 인가 가드 하나뿐이다 — 이 스위트의 관심사는 사가이지 인가가 아니고, 인증·인가는 전용 스위트([admin-auth.spec.ts](../../apps/api/src/__tests__/core/admin-auth.spec.ts) 등)가 따로 검증한다.
+`createAppTestContext`는 NestJS 앱을 통째로 만들어 devcontainer가 띄워 둔 실제 MongoDB·Redis·NATS·Restate에 붙이고, 이 스위트에서는 `enableRestate: true`로 임시 HTTP/2 endpoint까지 등록한다. `createMovie`·`createTheater`는 실제 DB에 픽스처를 만들고, 요청은 실제 admin 로그인 토큰을 사용한다. 인증·인가의 세부 조건은 전용 스위트([admin-auth.spec.ts](../../apps/api/src/__tests__/core/admin-auth.spec.ts) 등)가 따로 검증한다.
 
 **정상 흐름.** 4장에서 바뀐 계약(202 + `sagaId` + SSE)이 그대로 테스트 문장이 된다.
 
@@ -288,6 +288,8 @@ describe('POST /showtime-creation/showtimes', () => {
         beforeEach(async () => {
             createPromise = fix.httpClient
                 .post('/showtime-creation/showtimes')
+                .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                .headers({ 'Idempotency-Key': randomUUID() })
                 .body({
                     durationInMinutes: 1,
                     movieId: movie.id,
@@ -304,7 +306,11 @@ describe('POST /showtime-creation/showtimes', () => {
 
         it('상영 시간을 생성한다', async () => {
             const { body } = await createPromise
-            const { createdShowtimeCount } = await waitForCompletion(fix, 'succeeded')
+            const { createdShowtimeCount } = await waitForCompletion(
+                fix,
+                adminAccessToken,
+                'succeeded'
+            )
 
             const createdShowtimes = await showtimesService.search({ sagaIds: [body.sagaId] })
             expect(createdShowtimes).toHaveLength(createdShowtimeCount)
@@ -312,7 +318,11 @@ describe('POST /showtime-creation/showtimes', () => {
 
         it('티켓을 생성한다', async () => {
             const { body } = await createPromise
-            const { createdTicketCount } = await waitForCompletion(fix, 'succeeded')
+            const { createdTicketCount } = await waitForCompletion(
+                fix,
+                adminAccessToken,
+                'succeeded'
+            )
 
             const createdTickets = await ticketsService.search({ sagaIds: [body.sagaId] })
             expect(createdTickets).toHaveLength(createdTicketCount)
@@ -340,10 +350,12 @@ it('기존 상영 시간과 겹치면 충돌 목록과 함께 실패 상태를 �
         }))
     )
 
-    const completionPromise = waitForCompletion(fix, 'failed')
+    const completionPromise = waitForCompletion(fix, adminAccessToken, 'failed')
 
     await fix.httpClient
         .post('/showtime-creation/showtimes')
+        .headers({ Authorization: `Bearer ${adminAccessToken}` })
+        .headers({ 'Idempotency-Key': randomUUID() })
         .body({
             durationInMinutes: 30,
             movieId: movie.id,
@@ -371,7 +383,7 @@ it('기존 상영 시간과 겹치면 충돌 목록과 함께 실패 상태를 �
 
 시작 시각 세 개 중 무엇이 충돌이고 무엇이 아닌지 — 끝 시각을 포함하지 않는다는 경계 정책까지 — 테스트가 문서화한다. 이런 조건 분기(영화가 없을 때, 요청 안에서 시각이 서로 겹칠 때, 시작 분이 어긋난 겹침)가 이 파일에 케이스별로 쌓여 있다.
 
-**트랜잭션 롤백과 재시도(`error`).** 티켓 쓰기가 상영 시간 쓰기 후 실패해도 부분 데이터가 남지 않아야 한다. 일시 실패라면 Activity 재시도가 결국 한 세트만 생성해야 한다. 이 두 계약을 통합 테스트가 고정한다.
+**트랜잭션 롤백과 재시도(`error`).** 티켓 쓰기가 상영 시간 쓰기 후 실패해도 부분 데이터가 남지 않아야 한다. 일시 실패라면 Restate durable step 재시도가 결국 한 세트만 생성해야 한다. 이 두 계약을 통합 테스트가 고정한다.
 
 ```ts
 describe('생성 도중 티켓 생성이 실패하면', () => {
@@ -379,7 +391,7 @@ describe('생성 도중 티켓 생성이 실패하면', () => {
 
     beforeEach(async () => {
         // 실제 transaction session으로 티켓을 insert한 뒤 예외를 던진다.
-        // Temporal이 재시도해도 모든 시도가 같이 실패하게 한다.
+        // Restate durable step이 재시도해도 모든 시도가 같이 실패하게 한다.
         jest.spyOn(ticketsService, 'createMany').mockImplementation(
             async (createDtos, session, signal) => {
                 await realCreateMany(createDtos, session, signal)
@@ -387,9 +399,11 @@ describe('생성 도중 티켓 생성이 실패하면', () => {
             }
         )
 
-        const completionPromise = waitForCompletion(fix, 'error')
+        const completionPromise = waitForCompletion(fix, adminAccessToken, 'error')
         const { body } = await fix.httpClient
             .post('/showtime-creation/showtimes')
+            .headers({ Authorization: `Bearer ${adminAccessToken}` })
+            .headers({ 'Idempotency-Key': randomUUID() })
             .body({
                 durationInMinutes: 120,
                 movieId: movie.id,
@@ -410,7 +424,7 @@ describe('생성 도중 티켓 생성이 실패하면', () => {
 })
 ```
 
-티켓 생성 실패는 현실에서 임의로 일으킬 수 없으므로, 여기서만 spy로 **실패를 주입**한다. 의존성 전체를 가짜로 바꿔치기하는 mock과는 용도가 다르다. insert는 실제 MongoDB transaction session으로 수행되고, 예외가 트랜잭션 전체를 롤백하는지를 실물 DB 재조회로 단언한다. 같은 스위트의 다른 테스트는 첫 티켓 쓰기만 실패시켜 Activity가 재시도한 뒤 상영 시간과 티켓을 중복 없이 한 세트만 생성하는지도 검증한다.
+티켓 생성 실패는 현실에서 임의로 일으킬 수 없으므로, 여기서만 spy로 **실패를 주입**한다. 의존성 전체를 가짜로 바꿔치기하는 mock과는 용도가 다르다. insert는 실제 MongoDB transaction session으로 수행되고, 예외가 트랜잭션 전체를 롤백하는지를 실물 DB 재조회로 단언한다. 같은 스위트의 다른 테스트는 첫 티켓 쓰기만 실패시켜 durable step이 재시도한 뒤 상영 시간과 티켓을 중복 없이 한 세트만 생성하는지도 검증한다.
 
 시드의 테스트 규칙은 여기서 나온 결론들이다 — 동작 단위로 쓴다, mock 대신 실제 인프라로 돈다, spy는 실패 주입처럼 실물로 만들 수 없는 조건에만 쓴다, 커버리지 100%를 못 채우면 실패한다. describe는 조건·it은 결과라는 문장 규칙까지 포함한 전체 규칙은 [apps 문서의 테스트](../apps.md#테스트) 절에 있다.
 
@@ -453,12 +467,12 @@ npm test -w apps/api -- theaters.spec --coverage=false   # 같은 도메인의 J
 
 ## 요약
 
-| 단계        | 산출물                                | 정의처                                                                              |
-| ----------- | ------------------------------------- | ----------------------------------------------------------------------------------- |
-| 유스케이스  | 액터·유스케이스 지도                  | [apps 문서](../apps.md#application-service는-조립이-필요할-때만-만든다)             |
-| API 설계    | 리소스 경로·namespace                 | [REST API 설계](../apps.md#rest-api-설계)                                           |
-| 계층 배치   | Core 직행 or Application              | [SoLA 5계층](../apps.md#sola-5계층)                                                 |
-| 비동기·분산 | 202+SSE, Temporal, 트랜잭션·CAS·lease | [분산 협력](../apps.md#분산-협력--msa-준비형-모놀리스)                              |
-| 구현·테스트 | spec(curl) → 스텁 → 구현              | [실행 가능한 API 문서](../apps.md#실행-가능한-api-문서)·[테스트](../apps.md#테스트) |
+| 단계        | 산출물                               | 정의처                                                                              |
+| ----------- | ------------------------------------ | ----------------------------------------------------------------------------------- |
+| 유스케이스  | 액터·유스케이스 지도                 | [apps 문서](../apps.md#application-service는-조립이-필요할-때만-만든다)             |
+| API 설계    | 리소스 경로·namespace                | [REST API 설계](../apps.md#rest-api-설계)                                           |
+| 계층 배치   | Core 직행 or Application             | [SoLA 5계층](../apps.md#sola-5계층)                                                 |
+| 비동기·분산 | 202+SSE, Restate, 트랜잭션·CAS·lease | [분산 협력](../apps.md#분산-협력--msa-준비형-모놀리스)                              |
+| 구현·테스트 | spec(curl) → 스텁 → 구현             | [실행 가능한 API 문서](../apps.md#실행-가능한-api-문서)·[테스트](../apps.md#테스트) |
 
-분석, 설계, 구현, 테스트는 별개의 활동이 아니라 하나의 흐름이다. 도메인 전문가와의 대화가 유스케이스가 되고, 유스케이스가 REST API가 되고, API가 테스트 코드가 되고, 테스트 코드가 구현을 이끈다. 도구 선택의 이유(왜 Temporal인지, 왜 MongoDB인지)는 [설계 결정](decisions.md)이 소유한다.
+분석, 설계, 구현, 테스트는 별개의 활동이 아니라 하나의 흐름이다. 도메인 전문가와의 대화가 유스케이스가 되고, 유스케이스가 REST API가 되고, API가 테스트 코드가 되고, 테스트 코드가 구현을 이끈다. 도구 선택의 이유(왜 Restate인지, 왜 MongoDB인지)는 [설계 결정](decisions.md)이 소유한다.

@@ -63,8 +63,8 @@ export class ShowtimeCreationSubmissionRepository extends CrudRepository<Showtim
         if (existing.acceptedAt) return { kind: 'accepted', sagaId: existing.sagaId }
         if (existing.claimUntil && now < existing.claimUntil) return { kind: 'in-progress' }
 
-        // 이전 서버가 Temporal 시작 결과를 기록하기 전에 종료됐다면 같은 saga ID로 이어받는다.
-        // Temporal의 REJECT_DUPLICATE가 실제 workflow를 한 번만 시작하게 보장한다.
+        // 이전 서버가 Restate 제출 결과를 기록하기 전에 종료됐다면 같은 saga ID로 이어받는다.
+        // 같은 workflow key의 재제출은 기존 invocation을 가리키므로 실행은 하나만 유지된다.
         const claimed = await this.model
             .findOneAndUpdate(
                 {

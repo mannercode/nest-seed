@@ -1,8 +1,4 @@
-import type {
-    LegacyShowtimeCreationActivities,
-    ShowtimeBulkValidatorService,
-    ShowtimeCreationPersistenceService
-} from 'application'
+import type { ShowtimeCreationPersistenceService } from 'application'
 import type { MovieDto, ShowtimesService, TheaterDto, TicketsService } from 'core'
 import { DateUtil, JsonUtil, newObjectIdString, sleep } from '@mannercode/common'
 import { HttpTestClient, nullObjectId, type Response } from '@mannercode/testing'
@@ -24,8 +20,6 @@ describe('ShowtimeCreationService', () => {
     let showtimesService: ShowtimesService
     let ticketsService: TicketsService
     let persistence: ShowtimeCreationPersistenceService
-    let validatorService: ShowtimeBulkValidatorService
-    let legacyActivities: LegacyShowtimeCreationActivities
     let movie: MovieDto
     let theater: TheaterDto
 
@@ -33,19 +27,13 @@ describe('ShowtimeCreationService', () => {
         teardown = undefined
         const { createAppTestContext } = await import('../helpers')
         const { ShowtimesService, TicketsService } = await import('core')
-        const {
-            LegacyShowtimeCreationActivities,
-            ShowtimeBulkValidatorService,
-            ShowtimeCreationPersistenceService
-        } = await import('application')
-        fix = await createAppTestContext()
+        const { ShowtimeCreationPersistenceService } = await import('application')
+        fix = await createAppTestContext({ enableRestate: true })
         teardown = fix.teardown
         ;({ accessToken: adminAccessToken } = await createAndLoginAdmin(fix))
         showtimesService = fix.module.get(ShowtimesService)
         ticketsService = fix.module.get(TicketsService)
         persistence = fix.module.get(ShowtimeCreationPersistenceService)
-        validatorService = fix.module.get(ShowtimeBulkValidatorService)
-        legacyActivities = fix.module.get(LegacyShowtimeCreationActivities)
 
         movie = await createMovie(fix)
         theater = await createTheater(fix)
@@ -164,10 +152,9 @@ describe('ShowtimeCreationService', () => {
         })
 
         it('같은 키의 최초 요청을 처리 중이면 409를 반환한다', async () => {
-            const { getTemporalClientToken } = await import('@mannercode/common')
-            const { TEMPORAL_CLIENT_NAME } = await import('config')
-            const temporal = fix.module.get(getTemporalClientToken(TEMPORAL_CLIENT_NAME))
-            const startWorkflow = temporal.workflow.start.bind(temporal.workflow)
+            const { ShowtimeCreationWorkflowClient } = await import('application')
+            const workflow = fix.module.get(ShowtimeCreationWorkflowClient)
+            const submitWorkflow = workflow.submit.bind(workflow)
             let workflowStartEntered!: () => void
             const didEnterWorkflowStart = new Promise<void>((resolve) => {
                 workflowStartEntered = resolve
@@ -176,10 +163,10 @@ describe('ShowtimeCreationService', () => {
             const mayContinueWorkflowStart = new Promise<void>((resolve) => {
                 continueWorkflowStart = resolve
             })
-            jest.spyOn(temporal.workflow, 'start').mockImplementationOnce(async (...args) => {
+            jest.spyOn(workflow, 'submit').mockImplementationOnce(async (...args) => {
                 workflowStartEntered()
                 await mayContinueWorkflowStart
-                return startWorkflow(...args)
+                return submitWorkflow(...args)
             })
 
             const idempotencyKey = randomUUID()
@@ -206,13 +193,12 @@ describe('ShowtimeCreationService', () => {
             await first
         })
 
-        it('Temporal 시작 실패 뒤 같은 키를 재시도하면 같은 submission을 이어서 시작한다', async () => {
-            const { getTemporalClientToken } = await import('@mannercode/common')
-            const { TEMPORAL_CLIENT_NAME } = await import('config')
-            const temporal = fix.module.get(getTemporalClientToken(TEMPORAL_CLIENT_NAME))
-            const startWorkflow = jest
-                .spyOn(temporal.workflow, 'start')
-                .mockRejectedValueOnce(new Error('Temporal unavailable before workflow start'))
+        it('Restate 제출 실패 뒤 같은 키를 재시도하면 같은 submission을 이어서 시작한다', async () => {
+            const { ShowtimeCreationWorkflowClient } = await import('application')
+            const workflow = fix.module.get(ShowtimeCreationWorkflowClient)
+            const submitWorkflow = jest
+                .spyOn(workflow, 'submit')
+                .mockRejectedValueOnce(new Error('Restate unavailable before workflow submission'))
             const idempotencyKey = randomUUID()
             const createDto = buildCreateDto()
 
@@ -230,20 +216,20 @@ describe('ShowtimeCreationService', () => {
                 .body(createDto)
                 .accepted()
 
-            expect(startWorkflow).toHaveBeenCalledTimes(2)
-            const firstOptions = startWorkflow.mock.calls[0]?.[1] as { workflowId: string }
-            expect(startWorkflow.mock.calls[1]?.[1]).toEqual(
-                expect.objectContaining({ workflowId: firstOptions.workflowId })
-            )
+            expect(submitWorkflow).toHaveBeenCalledTimes(2)
+            expect(submitWorkflow.mock.calls[1]?.[1]).toBe(submitWorkflow.mock.calls[0]?.[1])
         })
 
-        it('Temporal은 시작됐지만 accepted 저장이 실패하면 같은 saga로 복구한다', async () => {
-            const { ShowtimeCreationEvents } = await import('application')
+        it('Restate에는 제출됐지만 accepted 저장이 실패하면 같은 saga로 복구한다', async () => {
+            const { ShowtimeCreationEvents, ShowtimeCreationWorkflowClient } =
+                await import('application')
             const { ShowtimeCreationSubmissionRepository } =
                 await import('../../services/application/showtime-creation/internal')
             const events = fix.module.get(ShowtimeCreationEvents)
+            const workflow = fix.module.get(ShowtimeCreationWorkflowClient)
             const submissions = fix.module.get(ShowtimeCreationSubmissionRepository)
             const emitStatusChanged = jest.spyOn(events, 'emitStatusChanged')
+            const submitWorkflow = jest.spyOn(workflow, 'submit')
             const markAccepted = jest
                 .spyOn(submissions, 'markAccepted')
                 .mockRejectedValueOnce(new Error('accepted marker write failed'))
@@ -266,6 +252,11 @@ describe('ShowtimeCreationService', () => {
 
             expect(markAccepted).toHaveBeenCalledTimes(2)
             expect(markAccepted.mock.calls[1]?.[1]).toBe(idempotencyKey)
+            await expect(
+                Promise.all(submitWorkflow.mock.results.map(({ value }) => value)).then((results) =>
+                    results.map(({ status }) => status)
+                )
+            ).resolves.toEqual(['Accepted', 'PreviouslyAccepted'])
             expect(
                 emitStatusChanged.mock.calls.filter(([event]) => event.status === 'waiting')
             ).toHaveLength(1)
@@ -299,13 +290,12 @@ describe('ShowtimeCreationService', () => {
         })
 
         it('submission 저장 실패 시 workflow를 시작하지 않는다', async () => {
-            const { getTemporalClientToken } = await import('@mannercode/common')
-            const { TEMPORAL_CLIENT_NAME } = await import('config')
+            const { ShowtimeCreationWorkflowClient } = await import('application')
             const { ShowtimeCreationSubmissionRepository } =
                 await import('../../services/application/showtime-creation/internal')
-            const temporal = fix.module.get(getTemporalClientToken(TEMPORAL_CLIENT_NAME))
+            const workflow = fix.module.get(ShowtimeCreationWorkflowClient)
             const submissions = fix.module.get(ShowtimeCreationSubmissionRepository)
-            const startWorkflow = jest.spyOn(temporal.workflow, 'start')
+            const submitWorkflow = jest.spyOn(workflow, 'submit')
             jest.spyOn(submissions.model.prototype, 'save').mockRejectedValueOnce(
                 new Error('submission storage unavailable')
             )
@@ -317,7 +307,7 @@ describe('ShowtimeCreationService', () => {
                 .body(buildCreateDto())
                 .internalServerError()
 
-            expect(startWorkflow).not.toHaveBeenCalled()
+            expect(submitWorkflow).not.toHaveBeenCalled()
         })
 
         it('만료된 submission을 두 replica가 회수해도 하나만 claim을 얻는다', async () => {
@@ -640,7 +630,7 @@ describe('ShowtimeCreationService', () => {
                 await completionPromise
             })
 
-            it('Temporal 재시도마다 생성 쓰기까지 실제로 실행한다', () => {
+            it('Restate durable step 재시도마다 생성 쓰기까지 실제로 실행한다', () => {
                 expect(createShowtimesSpy).toHaveBeenCalledTimes(4)
                 expect(attemptedTicketCount).toBeGreaterThan(0)
             })
@@ -653,7 +643,7 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        it('티켓 저장이 한 번 실패해도 Activity 재시도로 한 세트만 생성한다', async () => {
+        it('티켓 저장이 한 번 실패해도 durable step 재시도로 한 세트만 생성한다', async () => {
             jest.spyOn(ticketsService, 'createMany').mockRejectedValueOnce(
                 new Error('transient ticket write failure')
             )
@@ -678,10 +668,9 @@ describe('ShowtimeCreationService', () => {
             const persistenceSpy = jest
                 .spyOn(persistence, 'validateAndCreate')
                 .mockImplementationOnce(async (...args) => {
-                    // 실제 Activity heartbeat interval이 한 번 실행되는 장기 작업 경로도 함께 검증한다.
                     await sleep(5_100)
                     await realValidateAndCreate(...args)
-                    throw new Error('activity completion response lost after commit')
+                    throw new Error('durable step completion response lost after commit')
                 })
             const createShowtimesSpy = jest.spyOn(showtimesService, 'createMany')
 
@@ -766,27 +755,6 @@ describe('ShowtimeCreationService', () => {
                 response: { code: 'ERR_SHOWTIME_CREATION_TOO_MANY_TICKETS', maximum: 10_000 }
             })
             await expect(showtimesService.search({ sagaIds: [sagaId] })).resolves.toEqual([])
-        })
-
-        it('drain 중인 v1 Activity도 기존 비-transaction 호출 경로로 생성하고 보상한다', async () => {
-            const sagaId = newObjectIdString()
-            const result = await legacyActivities.validateAndCreate({
-                createDto: buildCreateDto(),
-                sagaId
-            })
-
-            expect(result.kind).toBe('succeeded')
-            await legacyActivities.compensate(sagaId)
-            await expect(showtimesService.search({ sagaIds: [sagaId] })).resolves.toEqual([])
-            await expect(ticketsService.search({ sagaIds: [sagaId] })).resolves.toEqual([])
-        })
-
-        it('v1 validator도 존재하지 않는 극장을 거부한다', async () => {
-            await expect(
-                validatorService.validate({ ...buildCreateDto(), theaterIds: [nullObjectId] })
-            ).rejects.toMatchObject({
-                response: { code: 'ERR_SHOWTIME_CREATION_THEATERS_NOT_FOUND' }
-            })
         })
 
         it('같은 saga를 동시에 재실행해도 두 호출이 같은 한 세트에 수렴한다', async () => {

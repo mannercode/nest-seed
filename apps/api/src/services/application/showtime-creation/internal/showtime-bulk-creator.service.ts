@@ -28,8 +28,8 @@ export class ShowtimeBulkCreatorService {
     async create(
         createDto: BulkCreateShowtimesDto,
         sagaId: string,
-        session: ClientSession | undefined = undefined,
-        signal: AbortSignal | undefined = undefined
+        session: ClientSession,
+        signal: AbortSignal | undefined
     ) {
         const createdShowtimes = await this.bulkCreateShowtimes(createDto, sagaId, session, signal)
 

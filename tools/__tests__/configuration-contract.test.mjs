@@ -260,22 +260,15 @@ test('container base and infrastructure image references are digest-pinned', asy
     }
 })
 
-test('Temporal PostgreSQL 18 persists its versioned data directory through the parent mount', async () => {
+test('Restate keeps durable execution data on its named volume', async () => {
     const infraEnv = await read('.env.infra')
-    assert.match(infraEnv, /^TEMPORAL_POSTGRES_IMAGE=postgres:18\.4-alpine@sha256:[a-f0-9]{64}$/m)
+    assert.match(infraEnv, /^RESTATE_IMAGE=.+@sha256:[a-f0-9]{64}$/m)
 
-    const temporalCompose = await read('infra/temporal/compose.temporal.yml')
-    assert.match(temporalCompose, /temporal_pgdata:\/var\/lib\/postgresql(?:\s|$)/)
-    assert.doesNotMatch(temporalCompose, /temporal_pgdata:\/var\/lib\/postgresql\/data/)
-    assert.equal(
-        temporalCompose.match(/^\s+DB: postgres12$/gm)?.length,
-        2,
-        'Temporal keeps the postgres12 compatibility plugin for PostgreSQL 12 and later'
-    )
-
-    const schemaSetup = await read('infra/temporal/scripts/setup-postgres.sh')
-    assert.equal(schemaSetup.match(/--plugin postgres12/g)?.length, 6)
-    assert.equal(schemaSetup.match(/\/schema\/postgresql\/v12\//g)?.length, 2)
+    const restateCompose = await read('infra/restate/compose.restate.yml')
+    assert.match(restateCompose, /RESTATE_NODE_NAME: restate-1/)
+    assert.match(restateCompose, /restate_data:\/restate-data/)
+    assert.match(restateCompose, /http:\/\/localhost:9070\/health/)
+    assert.match(restateCompose, /http:\/\/localhost:8080\/restate\/health/)
 })
 
 test('GitHub workflows pin actions, protect scheduled forks, and retain diagnostics', async () => {
@@ -339,15 +332,7 @@ test('Dependabot keeps routine updates direct, related, and non-major', async ()
         config.indexOf('- package-ecosystem: github-actions')
     )
     assert.doesNotMatch(npm, /patterns:\s*\['\*'\]/)
-    for (const group of [
-        'aws-sdk',
-        'next',
-        'nestjs',
-        'temporal',
-        'react',
-        'eslint',
-        'commitlint'
-    ]) {
+    for (const group of ['aws-sdk', 'next', 'nestjs', 'restate', 'react', 'eslint', 'commitlint']) {
         assert.match(npm, new RegExp(`${group}-minor-patch:`))
     }
     assert.match(

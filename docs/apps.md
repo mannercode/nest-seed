@@ -4,15 +4,15 @@ NestJS 백엔드인 `api`가 이 시드의 목적이고, `console`과 `user-app`
 
 `apps/api/src`의 최상위는 다음과 같이 나뉜다. 이 문서의 대부분은 `services/`를 다룬다.
 
-| 경로            | 역할                                                                                                                |
-| --------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `services/`     | 도메인 — SoLA 5계층(아래 전체 절)                                                                                   |
-| `modules/`      | 인프라 배선 — Mongo·Redis·NATS·Temporal 연결 모듈(`*-setup`), 공용 제공자(`GlobalModule`), health. 도메인 로직 없음 |
-| `config/`       | `AppConfigService` — `process.env`를 검증해 타입 있는 설정으로 바꾸는 단일 정의처                                   |
-| `__tests__/`    | 통합 테스트([테스트](#테스트) 절)                                                                                   |
-| `app.module.ts` | 루트 모듈 — modules와 services의 모듈·컨트롤러·전역 가드/파이프를 한곳에서 조립한다                                 |
-| `bootstrap.ts`  | 앱 기동 — 로거, `x-replica-id` 미들웨어, listen                                                                     |
-| `main.ts`       | 배포 엔트리. `development.ts`는 `NODE_ENV=development`를 강제하는 dev 전용 엔트리                                   |
+| 경로            | 역할                                                                                                                    |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `services/`     | 도메인 — SoLA 5계층(아래 전체 절)                                                                                       |
+| `modules/`      | 인프라 배선 — Mongo·Redis·NATS 연결 모듈(`*-setup`), 공용 제공자(`GlobalModule`), Restate 포함 health. 도메인 로직 없음 |
+| `config/`       | `AppConfigService` — `process.env`를 검증해 타입 있는 설정으로 바꾸는 단일 정의처                                       |
+| `__tests__/`    | 통합 테스트([테스트](#테스트) 절)                                                                                       |
+| `app.module.ts` | 루트 모듈 — modules와 services의 모듈·컨트롤러·전역 가드/파이프를 한곳에서 조립한다                                     |
+| `bootstrap.ts`  | 앱 기동 — 로거, `x-replica-id` 미들웨어, listen                                                                         |
+| `main.ts`       | 배포 엔트리. `development.ts`는 `NODE_ENV=development`를 강제하는 dev 전용 엔트리                                       |
 
 ## SoLA 5계층
 
@@ -142,11 +142,11 @@ SoLA는 원래 마이크로서비스를 염두에 둔 원칙이다. 마이크로
 
 ## 분산 협력 — MSA 준비형 모놀리스
 
-검증용 deploy 스택은 API를 **기본 4개** 컨테이너로 실행하고, NATS와 Temporal 같은 분산 인프라도 함께 사용한다. 컨테이너가 여러 개라면 한 컨테이너 안에서만 생각해서는 안 된다. 예를 들어 다음 상황을 처리해야 한다.
+검증용 deploy 스택은 API를 **기본 4개** 컨테이너로 실행하고, NATS와 Restate 같은 분산 인프라도 함께 사용한다. 컨테이너가 여러 개라면 한 컨테이너 안에서만 생각해서는 안 된다. 예를 들어 다음 상황을 처리해야 한다.
 
 - 여러 컨테이너가 같은 자원을 동시에 수정하려는 상황
 - 한 컨테이너에 붙은 클라이언트에게 다른 컨테이너에서 생긴 이벤트를 보내야 하는 상황
-- 워커가 종료되어도 오래 걸리는 작업을 재시도·완료해야 하는 상황
+- workflow endpoint를 실행하던 복제본이 종료되어도 오래 걸리는 작업을 재시도·완료해야 하는 상황
 - DB·Redis·외부 결제처럼 한 트랜잭션으로 묶을 수 없는 단계가 중간에 멈춘 상황
 
 이 시드는 이런 문제를 아래 도구로 푼다.
@@ -155,7 +155,7 @@ SoLA는 원래 마이크로서비스를 염두에 둔 원칙이다. 마이크로
 | ------------------------------------------ | ------------------------------------- | ------------------------------------------------------- |
 | 중복 실행을 줄이거나 같은 키를 직렬화할 때 | Redis 분산 락                         | 건너뛰거나 기다림. 핵심 정합성은 DB CAS·트랜잭션이 보장 |
 | 다른 컨테이너의 클라이언트로 알림          | NATS pub/sub                          | 모두에게 보내거나 그룹 안 한 명만                       |
-| 장기 비동기 작업의 실행 기록·재시도        | Temporal 워크플로 + Activity          | 결정적 오케스트레이션, timeout, 멱등 Activity 재시도    |
+| 장기 비동기 작업의 실행 기록·재시도        | Restate 워크플로 + durable step       | journal 기반 재개, step별 timeout·재시도                |
 | 한 시스템의 묶음 쓰기                      | MongoDB 트랜잭션·CAS                  | 상영 생성과 티켓 판매를 원자적으로 커밋·롤백            |
 | 여러 시스템에 걸친 외부 효과·보상          | durable 상태 머신·lease 재조정·outbox | 구매를 완료 또는 취소로 수렴시키고 완료 이벤트를 재발행 |
 
@@ -167,14 +167,12 @@ SoLA는 원래 마이크로서비스를 염두에 둔 원칙이다. 마이크로
 
 현재 사용 위치는 다음과 같다.
 
-| 위치                                                                                                                        | 유형               | 목적                                                                                      |
-| --------------------------------------------------------------------------------------------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
-| [AssetsService.cleanupExpiredUploads](../apps/api/src/services/infrastructure/assets/assets.service.ts)                     | `withLock`         | 4개 컨테이너의 cron 중 한 번만 실행                                                       |
-| [PurchaseService.processPurchase](../apps/api/src/services/application/purchase/purchase.service.ts)                        | `withLockBlocking` | 동일한 티켓 묶음의 결제를 직렬화해 불필요한 결제·보상을 줄임(이중 판매는 티켓 CAS가 방지) |
-| [LegacyShowtimeCreationActivities](../apps/api/src/services/application/showtime-creation/worker/legacy-activities.ts)      | `withLockBlocking` | 배포 전부터 실행 중인 v1 Temporal history의 검증·삽입·보상을 동일 키로 직렬화             |
-| [ShowtimeCreationActivities.validateAndCreate](../apps/api/src/services/application/showtime-creation/worker/activities.ts) | `withLockBlocking` | v1 worker가 남은 롤링 마이그레이션 기간에만 v1과 v2를 교차 직렬화하는 호환 fence          |
+| 위치                                                                                                    | 유형               | 목적                                                                                      |
+| ------------------------------------------------------------------------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
+| [AssetsService.cleanupExpiredUploads](../apps/api/src/services/infrastructure/assets/assets.service.ts) | `withLock`         | 4개 컨테이너의 cron 중 한 번만 실행                                                       |
+| [PurchaseService.processPurchase](../apps/api/src/services/application/purchase/purchase.service.ts)    | `withLockBlocking` | 동일한 티켓 묶음의 결제를 직렬화해 불필요한 결제·보상을 줄임(이중 판매는 티켓 CAS가 방지) |
 
-상영 생성 v2의 정합성은 이 호환 락에 의존하지 않는다. 신규 v2 작업 끼리의 경합은 MongoDB 트랜잭션 안에서 극장별 스케줄 guard를 먼저 CAS 갱신해 WriteConflict로 직렬화한다. v1 queue와 worker가 완전히 drain되면 상영 생성 경로의 Redis 락은 별도 후속 릴리스에서 제거할 수 있는 마이그레이션 장치다.
+상영 생성은 Redis 락을 쓰지 않는다. 같은 극장의 동시 작업은 MongoDB 트랜잭션 안에서 극장별 스케줄 guard를 먼저 CAS 갱신해 WriteConflict로 직렬화하고, Restate의 workflow key는 같은 `sagaId`의 중복 실행만 합친다. 서로 다른 `sagaId` 사이의 정합성을 workflow key에 맡기지 않는다.
 
 ### 컨테이너 사이 메시지 — `NatsPubSubService`
 
@@ -182,7 +180,7 @@ SoLA는 원래 마이크로서비스를 염두에 둔 원칙이다. 마이크로
 
 현재 두 경로가 이 서비스를 탄다.
 
-- **showtime-creation 사가의 상태 브로드캐스트** — 사가가 상태를 NATS에 발행하면 모든 컨테이너의 구독 핸들러가 그 이벤트를 받는다. 각 핸들러는 이벤트를 로컬 RxJS Subject로 넘기고, SSE 컨트롤러는 자기 컨테이너에 붙은 클라이언트에게 흘려보낸다.
+- **showtime-creation 사가의 상태 브로드캐스트** — 사가가 상태를 NATS에 발행하면 모든 컨테이너의 구독 핸들러가 그 이벤트를 받는다. 각 핸들러는 이벤트를 로컬 RxJS Subject로 넘기고, SSE 컨트롤러는 자기 컨테이너에 붙은 클라이언트에게 흘려보낸다. 서버는 saga별로 스트림을 나누지 않으므로 클라이언트가 payload의 `sagaId`로 자기 작업을 골라야 한다.
 - **purchase 이벤트** — 완료된 구매 기록의 `purchaseEventStatus=pending`이 durable outbox이다. 복제본 중 publication lease를 CAS로 획득한 하나가 NATS `publish()`와 `flush()`를 실행하고, 두 호출이 성공하면 MongoDB 기록을 `published`로 바꾼다. NATS `flush()`는 서버가 이전 명령을 처리했다는 신호일 뿐 소비자 처리·durable ack가 아니다. 브로드캐스트 구독은 [PurchaseEventLoggerService](../apps/api/src/services/application/purchase/internal/purchase-event-logger.service.ts), 큐 그룹 구독은 [PurchaseNotificationService](../apps/api/src/services/application/purchase/internal/purchase-notification.service.ts)가 예시다.
 
 Core NATS publish/flush와 MongoDB의 `published` 갱신은 한 트랜잭션으로 묶을 수 없다. publish/flush는 성공했지만 DB 갱신이 실패하면 lease 만료 후 같은 이벤트가 다시 나갈 수 있으므로 발행은 **at-least-once**다. 반대로 Core NATS 자체는 메시지를 저장하는 durable broker가 아니므로 소비자 전달을 보장하지 않는다. 실제 알림·메일·외부 제공자 호출을 구독자에 추가할 때는 안정적인 `purchaseRecordId`를 durable inbox의 unique key 또는 provider idempotency key로 써야 한다. 현재 두 구독자는 `dedupeKey`를 로그로 보여 주는 예시이며 실제 알림을 보내지 않는다.
@@ -204,60 +202,70 @@ pending ── completion lease 획득 ──> completing ── Mongo transacti
 - 구매 완료 트랜잭션과 재조정 lease 회수가 경합하면 MongoDB write conflict와 owner ID CAS로 승자 하나만 `completed` 또는 `cancelled`로 수렴한다.
 - 완료 후에는 위의 durable outbox가 별도로 이벤트를 발행한다. 이벤트 발행 실패는 이미 완료된 구매를 되돌리지 않고 재시도한다.
 
-### Saga 오케스트레이션 — Temporal
+### Saga 오케스트레이션 — Restate
 
-오래 걸리거나 여러 단계를 거치는 작업은 Temporal 워크플로로 작성한다. 워크플로 함수는 결정적으로(같은 입력이면 항상 같은 실행 경로를 타도록) 작성하고, DB 쓰기나 외부 API 호출 같은 부수효과는 액티비티로 분리한다. Temporal을 고른 이유와 결정성 제약의 상세는 [설계 결정 §3](reference/decisions.md#3-saga-오케스트레이션-temporal-워크플로)에 있다.
+오래 걸리거나 여러 단계를 거치는 작업은 [Restate 워크플로](../apps/api/src/services/application/showtime-creation/worker/workflow.ts)로 작성한다. `ctx.run`으로 감싼 각 단계의 결과를 Restate journal에 남기므로 API 복제본이 종료되어도 완료된 단계 다음부터 이어 간다. DB 쓰기와 NATS 발행은 일반 NestJS 제공자를 그대로 호출하고, 단계별 timeout·재시도 경계를 워크플로 코드에 둔다. Restate를 고른 이유와 보장 범위는 [설계 결정 §3](reference/decisions.md#3-saga-오케스트레이션-restate-워크플로)에 있다.
 
-신규 요청은 [showtimeCreationWorkflowV2](../apps/api/src/services/application/showtime-creation/worker/workflow-v2.ts)와 v2 전용 task queue로 들어간다. 워크플로는 _processing emit → validate/create → result emit_을 조율하고, `waiting` 이벤트는 워크플로 시작에 성공한 뒤에 오케스트레이터([ShowtimeCreationOrchestratorService](../apps/api/src/services/application/showtime-creation/internal/showtime-creation-orchestrator.service.ts))가 발행한다.
+HTTP `Idempotency-Key`와 Restate workflow key는 역할이 다르지만 같은 `sagaId`로 이어진다.
 
-v2의 `validateAndCreate`는 [ShowtimeCreationPersistenceService](../apps/api/src/services/application/showtime-creation/internal/showtime-creation-persistence.service.ts)에서 다음 쓰기를 MongoDB 트랜잭션 하나로 묶는다.
+1. [ShowtimeCreationSubmissionRepository](../apps/api/src/services/application/showtime-creation/internal/showtime-creation-submission.repository.ts)가 인증 주체+HTTP 키를 한 `sagaId`에 고정하고 짧은 submission lease를 잡는다.
+2. [ShowtimeCreationWorkflowClient](../apps/api/src/services/application/showtime-creation/worker/restate-workflow-client.service.ts)가 그 `sagaId`를 workflow key로 제출한다. 제출 응답을 잃고 lease가 만료되어 다른 복제본이 재제출해도 새 invocation을 만들지 않고 기존 실행을 가리킨다.
+3. 워크플로의 첫 durable step이 `waiting`, 다음 단계가 `processing`을 NATS에 발행한다. 따라서 접수 API가 이벤트를 따로 발행하다가 순서가 뒤집히는 경로가 없다.
+4. `validate and create` 단계가 [ShowtimeCreationPersistenceService](../apps/api/src/services/application/showtime-creation/internal/showtime-creation-persistence.service.ts)를 호출하고, `succeeded`·`failed`·`error` 중 하나를 후속 durable step으로 발행한다.
+
+`validateAndCreate`는 다음 쓰기를 MongoDB 트랜잭션 하나로 묶는다.
 
 1. `sagaId`로 완료된 operation을 찾아 이미 있으면 저장된 결과를 반환한다. 같은 ID에 다른 입력이 오면 거부한다.
 2. 대상 극장의 스케줄 guard를 검증 조회보다 먼저 CAS 갱신한다. 동시 트랜잭션은 WriteConflict를 내고 MongoDB 드라이버가 재시도하므로, 각자 예전 snapshot을 보고 둘 다 검증을 통과하는 일이 없다.
 3. 시간대를 검증하고 상영 시간·티켓을 생성한 뒤 operation 결과를 저장한다.
 
-일시적 워커·네트워크·DB 오류는 Temporal Activity가 최대 네 번 시도한다. 실패한 트랜잭션은 부분 데이터를 남기지 않고, 커밋 후 완료 응답만 잃은 경우에도 다음 시도가 `sagaId` operation을 읽어 중복 생성 없이 같은 결과를 반환한다. 모든 시도가 실패해 `error`를 발행하더라도 별도 보상 삭제는 필요 없다. 해당 시도의 쓰기 전체가 롤백되기 때문이다.
+Restate journal은 완료한 durable step을 재실행하지 않게 하지만, 외부 효과의 성공과 journal 기록 사이에서 연결이 끊기면 step 함수가 다시 호출될 수 있다. 그래서 MongoDB operation unique key와 입력 fingerprint가 최종 멱등성 경계다. NATS 상태 이벤트도 순서는 유지하지만 같은 이유로 at-least-once이며, 각 발행 시도는 10초 안에 끝나지 않으면 Restate 재시도로 넘긴다. 완료 workflow 보존 기간도 1시간이므로 workflow key를 영구 멱등 저장소로 취급하지 않는다. `validate and create`는 일시 오류를 최대 네 번 시도하고 각 시도의 DB 작업에 60초 abort 신호를 전달한다. 실패한 트랜잭션은 부분 데이터를 남기지 않고, 커밋 응답만 잃은 경우에도 다음 시도가 저장된 operation 결과를 돌려준다. 모든 시도가 실패하면 `error`를 발행하며 삭제 보상은 필요 없다.
 
-단, [showtimeCreationWorkflow](../apps/api/src/services/application/showtime-creation/worker/workflow.ts)과 [LegacyShowtimeCreationActivities](../apps/api/src/services/application/showtime-creation/worker/legacy-activities.ts)는 배포 전에 이미 시작한 v1 Temporal history를 replay·완료하려고 남겨 둔 **마이그레이션 호환 경로**다. v1은 기존 분산 락, 비-트랜잭션 생성, 실패 후 보상 삭제 순서를 그대로 보존한다. 워크플로 history의 명령·timeout·retry를 바꾸면 결정성이 깨지므로, v1 queue가 drain될 때까지 이 코드를 일반 v2 경로로 합치지 않는다. 배포 절차는 [deploy 문서](deploy.md#상영-생성-v1--v2-마이그레이션)를 따른다.
+상태 이벤트도 durable step으로 재시도하지만 전달 통로는 저장하지 않는 Core NATS다. 이벤트가 중복될 수 있고 연결 전에 지나간 이벤트를 replay하지 않으므로, SSE는 작업 추적용 알림이지 영구 상태 저장소가 아니다. 자원 생성 결과와 멱등성의 기준은 MongoDB다.
 
 전체 흐름을 시퀀스로 보면 다음과 같다(다이어그램은 devcontainer의 VS Code 미리보기에서 렌더된다).
 
 ```plantuml
 @startuml
 actor Client
-participant "API 컨테이너" as API
-participant Temporal
-participant "액티비티(워커)" as Worker
+participant "접수 API 복제본" as API
+participant "Restate ingress/journal" as Restate
+participant "API Restate endpoint\nHTTP/2 :9080" as Endpoint
+database MongoDB as mongo
 queue NATS
 
-Client -> API: POST /showtime-creation/showtimes
-API -> mongo: 인증 주체+Idempotency-Key claim
+Client -> API: POST /showtime-creation/showtimes\nIdempotency-Key
+API -> mongo: 인증 주체+키 claim → sagaId 고정
 note right of API
-  같은 본문+완료: 기존 sagaId 반환
+  같은 본문+접수 완료: 기존 sagaId 반환
   다른 본문/처리 중: 409
 end note
-API -> Temporal: workflow.start(workflowId=sagaId,\nREJECT_DUPLICATE)
+API -> Restate: workflowSubmit(key=sagaId)
 API -> mongo: submission accepted
-API -> NATS: waiting 발행 — 시작 성공 후에만
 API --> Client: 202 { sagaId }
-note right of Client
-  이후 모든 이벤트는 NATS → 각 API 컨테이너
-  → SSE(event-stream)로 클라이언트에 전달된다
+note over API, Restate
+  Restate dispatch는 접수 API의 mark/202와 병렬로 진행될 수 있다.
+  보장하는 순서는 workflow 내부 waiting → processing → 종결 상태다.
 end note
 
-Temporal -> Worker: showtimeCreationWorkflowV2 실행
-Worker -> NATS: processing
-Worker -> Worker: validateAndCreate Activity\n(일시 실패 재시도)
-Worker -> mongo: transaction\noperation 멱등 조회 → 극장 guard CAS\n→ 검증 → 상영·티켓·operation 쓰기
+Restate -> Endpoint: workflow invocation
+Endpoint -> NATS: ctx.run("emit waiting")
+Endpoint -> NATS: ctx.run("emit processing")
+note right of NATS
+  NATS → 모든 API 복제본의 로컬 RxJS
+  → SSE(event-stream)
+end note
+Endpoint -> Endpoint: ctx.run("validate and create")\n(일시 실패 재시도)
+Endpoint -> mongo: transaction\noperation 멱등 조회 → 극장 guard CAS\n→ 검증 → 상영·티켓·operation 쓰기
 alt 성공
-    mongo --> Worker: commit
-    Worker -> NATS: succeeded(생성 수)
+    mongo --> Endpoint: commit
+    Endpoint -> NATS: succeeded(생성 수)
 else 시간대 충돌
-    mongo --> Worker: 충돌 결과 commit(자원 생성 없음)
-    Worker -> NATS: failed(충돌 상영 목록)
+    mongo --> Endpoint: 충돌 결과 commit(자원 생성 없음)
+    Endpoint -> NATS: failed(충돌 상영 목록)
 else 예외
-    mongo --> Worker: rollback(부분 쓰기 없음)
-    Worker -> NATS: error — 재시도 소진 후
+    mongo --> Endpoint: rollback(부분 쓰기 없음)
+    Endpoint -> NATS: error — 재시도 소진 후
 end
 @enduml
 ```
@@ -298,8 +306,8 @@ SearchTheatersPageDto
 경로 변수는 파일 이름까지 포함하면 `Path`, 디렉터리만 가리키면 `Dir`로 끝낸다. 변수 이름만 보고 호출 측에서 `path.join`을 더 붙여야 하는지 판단할 수 있어야 한다.
 
 ```ts
-workflowBundleDir = '_output/workflows/showtime-creation' // 디렉터리
-workflowBundlePath = '_output/workflows/showtime-creation/workflow.js' // 파일까지 포함
+reportDir = 'tests/web/_output/report' // 디렉터리
+reportPath = 'tests/web/_output/report/index.html' // 파일까지 포함
 ```
 
 환경 변수와 설정 키도 디렉터리를 가리키면 이름에 그대로 드러낸다 (`LOG_DIRECTORY` 등).
@@ -403,10 +411,9 @@ Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000
   정합성은 티켓 원자 전이, MongoDB 트랜잭션과 업무 상태 검증이 담당한다.
 
 구매는 인증 주체+키 unique index와 완료 응답 스냅샷을 구매 기록에 함께 저장한다. 상영 생성은
-인증 주체+키를 고정 `sagaId`에 매핑하고 lease를 저장한다. API 컨테이너가 Temporal 시작 응답을
-잃고 종료되어도 다른 컨테이너가 같은 `sagaId`로 이어받으며, Temporal의
-`REJECT_DUPLICATE`가 workflow를 한 번만 시작하게 한다. 메모리 캐시나 프로세스 로컬 중복 방지는
-정합성 근거로 쓰지 않는다.
+인증 주체+키를 고정 `sagaId`에 매핑하고 lease를 저장한다. API 컨테이너가 Restate 제출 응답을
+잃고 종료되어도 다른 컨테이너가 같은 `sagaId`로 이어받으며, 같은 Restate workflow key의 재제출은
+기존 invocation을 가리킨다. 메모리 캐시나 프로세스 로컬 중복 방지는 정합성 근거로 쓰지 않는다.
 
 #### ID만 받는 API는 처음부터 복수형으로 둔다
 
@@ -482,7 +489,7 @@ async delete(@Param('userId') userId: string) {
 
 ## 테스트
 
-이 시드의 테스트는 mock 객체를 거의 사용하지 않는다. 인덱스, 트랜잭션, 레이스 컨디션처럼 mock으로는 놓치기 쉬운 문제를 실제 환경에 가깝게 확인하기 위해서다. `apps/api` 통합 테스트는 devcontainer가 띄운 MongoDB Replica Set, Redis Cluster, VersityGW, NATS, Temporal을 재사용하고, `libs/common` 테스트는 Testcontainers와 Temporal local test environment로 필요한 인프라를 직접 시작한다. 커버리지를 수집하는 `apps/api`·`libs/common`·`libs/temporal-sandbox`·`tools/jest-helpers`는 100%를 못 채우면 실패한다. 하네스·BFF·shell 계약 테스트처럼 커버리지를 수집하지 않는 예외는 목적과 실행 경로를 [설계 결정 §6](reference/decisions.md#6-테스트-커버리지-100-게이트)에 명시한다.
+이 시드의 테스트는 mock 객체를 거의 사용하지 않는다. 인덱스, 트랜잭션, 레이스 컨디션처럼 mock으로는 놓치기 쉬운 문제를 실제 환경에 가깝게 확인하기 위해서다. `apps/api` 통합 테스트는 devcontainer가 띄운 MongoDB Replica Set, Redis Cluster, VersityGW, NATS와 Restate를 재사용하고, `libs/common` 테스트는 Testcontainers로 MongoDB·Redis·VersityGW·NATS를 직접 시작한다. 커버리지를 수집하는 `apps/api`·`libs/common`·`tools/jest-helpers`는 100%를 못 채우면 실패한다. 하네스·BFF·shell 계약 테스트처럼 커버리지를 수집하지 않는 예외는 목적과 실행 경로를 [설계 결정 §6](reference/decisions.md#6-테스트-커버리지-100-게이트)에 명시한다.
 
 이 구조는 테스트 주도 개발과 잘 맞고, 그 이점은 모듈 경계 설계에서 나온다. 테스트가 필요한 환경(인프라·해당 모듈)을 코드로 세우므로, 한 모듈을 작업할 때 다른 앱이나 서비스를 함께 띄울 필요가 없다 — 모듈을 독립 서비스로 떼어내도 그 모듈의 작업 루프는 그대로다. 반대로 `npm run dev`로 앱을 직접 띄우는 방식은 서비스가 늘수록 기동 대상이 늘어 부담이 커진다. 단, 이 이점은 단위·단일 모듈 통합 테스트의 inner-loop에 한한다 — 여러 서비스를 가로지르는 e2e·분산 레이스 테스트는 여전히 배포 스택 전체가 필요하다([tests 문서](tests.md)).
 
@@ -566,11 +573,11 @@ describe('PATCH /theaters/:id', () => {
 
 ### 테스트별 자원 격리
 
-각 테스트가 다른 테스트와 부딪히지 않도록, `jest.config`가 Jest 명령마다 고유한 실행 ID를 만든다. `jest.setup`은 app 모듈을 읽기 전에 먼저 실행 ID와 worker 번호가 들어간 startup `PROJECT_ID`를 설정하고, `beforeEach`에서 테스트별 `TEST_ID` suffix로 다시 갱신한다. Redis/cache prefix, NATS subject, Temporal task queue 이름이 이 값을 따라 갈라진다. MongoDB 데이터베이스와 S3 버킷도 실행 ID와 Jest worker 번호를 조합해 만든다. coverage·로그·Temporal workflow bundle은 `_output/jest-runs/<실행 ID>/` 아래에서 실행별로 분리된다. 따라서 같은 devcontainer에서 API Jest 명령을 동시에 실행해도 같은 번호의 worker나 파일 산출물을 공유하지 않는다.
+각 테스트가 다른 테스트와 부딪히지 않도록, `jest.config`가 Jest 명령마다 고유한 실행 ID를 만든다. `jest.setup`은 app 모듈을 읽기 전에 먼저 실행 ID와 worker 번호가 들어간 startup `PROJECT_ID`를 설정하고, `beforeEach`에서 테스트별 `TEST_ID` suffix로 다시 갱신한다. Redis/cache prefix, NATS subject와 Restate workflow 서비스 이름이 이 값을 따라 갈라진다. MongoDB 데이터베이스와 S3 버킷도 실행 ID와 Jest worker 번호를 조합해 만든다. coverage·로그는 `_output/jest-runs/<실행 ID>/` 아래에서 실행별로 분리된다. 따라서 같은 devcontainer에서 API Jest 명령을 동시에 실행해도 같은 번호의 worker나 파일 산출물을 공유하지 않는다.
 
-Nest 모듈 파일은 프로세스에서 한 번만 평가된다. 따라서 데코레이터 인자에서 `process.env.PROJECT_ID`를 읽으면 첫 테스트의 값에 고정된다. cache와 JWT 모듈은 정적인 값을 캡처하지 않고, 제공자를 만들 때 `AppConfigService.projectId`를 주입받아 prefix를 계산한다. NATS subject와 Temporal queue도 서비스나 worker를 생성할 때 같은 설정값으로 만든다.
+Nest 모듈 파일은 프로세스에서 한 번만 평가된다. 따라서 데코레이터 인자에서 `process.env.PROJECT_ID`를 읽으면 첫 테스트의 값에 고정된다. cache와 JWT 모듈은 정적인 값을 캡처하지 않고, 제공자를 만들 때 `AppConfigService.projectId`를 주입받아 prefix를 계산한다. NATS subject와 Restate workflow definition 이름도 제공자를 생성할 때 같은 설정값으로 만든다.
 
-이 구조에서는 Jest 모듈 레지스트리를 테스트마다 초기화할 필요가 없다. 애플리케이션 코드와 Nest/Temporal 의존성은 worker 안에서 한 번 로드되고, 테스트별 애플리케이션 컨텍스트만 새로 만든다. 픽스처는 정적으로 가져와도 자원 격리가 유지된다.
+이 구조에서는 Jest 모듈 레지스트리를 테스트마다 초기화할 필요가 없다. 애플리케이션 코드와 Nest/Restate 의존성은 worker 안에서 한 번 로드되고, 테스트별 애플리케이션 컨텍스트만 새로 만든다. 픽스처는 정적으로 가져와도 자원 격리가 유지된다.
 
 ```ts
 import { createAppTestContext, type AppTestContext } from '../helpers'
@@ -589,11 +596,10 @@ describe('Users', () => {
 Jest 기반 테스트 인프라는 네 단계로 동작한다.
 
 ```
-jest.config.js    apps/api 명령별 실행 ID 발급, coverage·로그·workflow 출력 경로 분리
+jest.config.js    apps/api 명령별 실행 ID 발급, coverage·로그 출력 경로 분리
 jest.global.js    workspace별 전역 준비
-                   - apps/api: config의 실행 ID 검증, 실행별 workflow bundle 생성
-                   - libs/common: Testcontainers로 MongoDB · Redis · VersityGW · NATS 기동,
-                     Temporal local test environment 생성
+                   - apps/api: config의 실행 ID 검증, 로그 디렉터리 생성
+                   - libs/common: Testcontainers로 MongoDB · Redis · VersityGW · NATS 기동
 jest.setup.js     app 모듈 로드 전에 startup PROJECT_ID 설정, 실행 ID + worker별 DB·버킷 준비
                    beforeEach마다 TEST_ID 발급 (apps/api는 실행 ID + TEST_ID로 PROJECT_ID 갱신)
                    afterEach에서 컬렉션과 버킷 내용 정리
@@ -601,7 +607,9 @@ jest.setup.js     app 모듈 로드 전에 startup PROJECT_ID 설정, 실행 ID 
 jest.teardown.js  전체 워커 종료 후 한 번: 현재 실행의 DB·버킷·Redis key만 제거
 ```
 
-`apps/api`의 통합 테스트는 devcontainer가 시작해 둔 공용 인프라(Mongo / Redis / VersityGW / NATS / Temporal 컨테이너)를 재사용한다. 정상 teardown은 실행 ID에 정확히 대응하는 자원만 제거하며, 실행 ID가 없거나 형식이 잘못되면 넓은 범위를 정리하지 않고 실패한다. Redis teardown도 scoped glob이 필수이고, 전체 flush는 실행 전용 Testcontainers Redis를 쓰는 `libs/common`만 명시적으로 허용한다. 강제 종료로 teardown을 건너뛰면 실행별 디렉터리와 외부 자원이 남을 수 있지만 다음 실행과 이름이 겹치지는 않는다. `npm run clean`은 남은 `_output`을 제거하고, `npm run preatoz`는 그 작업과 인프라 reset을 함께 수행한다. AtoZ의 격리 하네스는 실제 setup/teardown을 켠 Jest 두 개를 병렬로 띄운다. B 실행이 실제 Mongo·S3·Redis sentinel을 만든 뒤 기다리고, A teardown이 끝난 다음 B의 세 sentinel이 남고 A의 세 자원은 제거됐는지 확인한다. 성공한 두 child의 출력 디렉터리는 run 경로 형식을 검증한 뒤 하네스가 제거한다. 이 probe spec은 일반 API suite에서도 skip하지 않고 namespace assertion만 수행한다. stability의 apps/api 반복은 run별 coverage 디렉터리가 누적되지 않도록 coverage를 끈다. `libs/testing`과 `libs/temporal-sandbox`는 인프라 없는 단위 테스트로 돈다.
+`apps/api`의 통합 테스트는 devcontainer가 시작해 둔 공용 인프라(Mongo / Redis / VersityGW / NATS / Restate 컨테이너)를 재사용한다. 대부분의 앱 컨텍스트는 Restate endpoint와 client를 끄고, 전체 상영 생성 스위트만 `enableRestate: true`로 실제 endpoint를 임시 포트에 열어 고유한 `PROJECT_ID`의 서비스를 등록한다. 정상 teardown은 현재 컨텍스트가 제출한 workflow 완료를 먼저 기다리고, 등록 응답으로 받은 정확한 deployment ID만 Admin API에서 제거한 뒤 endpoint를 닫는다. Restate의 삭제 API가 force를 요구하므로 `?force=true`를 쓰되, 자기 invocation을 drain한 테스트 전용 deployment에만 한정한다. 등록·정리 도중 오류가 나도 앱 close는 `finally`에서 실행한다.
+
+Mongo·S3·Redis teardown은 실행 ID에 정확히 대응하는 자원만 제거하며, 실행 ID가 없거나 형식이 잘못되면 넓은 범위를 정리하지 않고 실패한다. Redis teardown도 scoped glob이 필수이고, 전체 flush는 실행 전용 Testcontainers Redis를 쓰는 `libs/common`만 명시적으로 허용한다. 강제 종료로 teardown을 건너뛰면 실행별 디렉터리와 외부 자원이 남을 수 있지만 다음 실행과 이름이 겹치지는 않는다. `npm run clean`은 남은 `_output`을 제거하고, `npm run preatoz`는 그 작업과 인프라 reset을 함께 수행한다. AtoZ의 격리 하네스는 실제 setup/teardown을 켠 Jest 두 개를 병렬로 띄운다. B 실행이 실제 Mongo·S3·Redis sentinel을 만든 뒤 기다리고, A teardown이 끝난 다음 B의 세 sentinel이 남고 A의 세 자원은 제거됐는지 확인한다. 성공한 두 child의 출력 디렉터리는 run 경로 형식을 검증한 뒤 하네스가 제거한다. 이 probe spec은 일반 API suite에서도 skip하지 않고 namespace assertion만 수행한다. stability의 apps/api 반복은 run별 coverage 디렉터리가 누적되지 않도록 coverage를 끈다. `libs/testing`은 인프라 없는 단위 테스트로 돈다.
 
 단일 spec만 실행하려면 Jest에 파일 패턴을 넘기고 커버리지 게이트를 끈다. VS Code에서는 devcontainer에 포함된 Jest Runner 확장으로 describe/it 단위 실행도 된다.
 
@@ -672,7 +680,7 @@ bash deploy/verify.sh
 bash apps/api/api-docs/run.sh
 ```
 
-번들은 둘로 갈린다 — 배포 번들은 `nest build -b webpack`(`webpack.config.js`, 왜 webpack인지는 머리 주석)이 만들고, Temporal 워크플로 번들은 `scripts/bundle-workflows.ts`가 별도로 만든다(워크플로 샌드박스 제약 때문에 프로젝트 webpack 설정을 쓰지 않는다).
+API 배포 번들은 `nest build -b webpack`으로 만든다. Restate 워크플로는 NestJS 제공자와 같은 API 번들 안에서 실행되므로 별도 workflow bundle이나 sandbox 패키지가 없다. 현재 Webpack을 유지하는 이유는 [webpack.config.js](../apps/api/webpack.config.js)의 머리 주석과 [스택 검토](../STACK_REVIEW.md)에 있다.
 
 ## console·user-app — 최소 데모
 

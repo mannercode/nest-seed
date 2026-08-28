@@ -19,19 +19,6 @@ describe('ShowtimesService', () => {
     })
     afterEach(() => teardown?.())
 
-    describe('deleteBySagaIds', () => {
-        it('사가 식별자 목록에 해당하는 상영 시간을 삭제한다', async () => {
-            const sagaId = oid(0x1)
-
-            await showtimesService.createMany([buildCreateShowtimeDto({ sagaId })])
-            await showtimesService.deleteBySagaIds([sagaId])
-
-            const showtimes = await showtimesService.search({ sagaIds: [sagaId] })
-
-            expect(showtimes).toHaveLength(0)
-        })
-    })
-
     describe('createMany', () => {
         it('생성된 상영 시간 수를 반환한다', async () => {
             const createDtos = [buildCreateShowtimeDto({ sagaId: oid(0x1) })]

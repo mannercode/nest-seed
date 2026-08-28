@@ -18,7 +18,7 @@
 세 문제는 각각 이렇게 푼다.
 
 - **이중 판매** — 락이 아니라 원자 조건부 전이(상태를 필터에 박은 갱신)로 막는다 (`core/tickets`)
-- **부분 실패** — 상영 시간·티켓·멱등 작업 기록을 MongoDB 트랜잭션 하나로 커밋하고, Temporal이 일시 실패를 재시도한다 (`application/showtime-creation`)
+- **부분 실패** — Restate가 durable step을 재시도하고, 상영 시간·티켓·멱등 작업 기록은 MongoDB 트랜잭션 하나로 커밋한다 (`application/showtime-creation`)
 - **진행 상황 전달** — NATS pub/sub가 다른 컨테이너에 붙은 SSE 클라이언트까지 이벤트를 나른다 (`application/showtime-creation`)
 
 이 해법들이 실제로 동작하는지는 mock 없는 실제 인프라 테스트(커버리지를 수집하는 구현 워크스페이스는 100% 게이트)와 분산 레이스 하네스, CI 반복이 검증한다. 전체 패턴 목록은 [도메인 둘러보기](#도메인-둘러보기)에, 도구 선택의 이유는 [설계 결정](docs/reference/decisions.md)에 있다.
@@ -53,13 +53,14 @@
 
 개발은 테스트 주도다 — 테스트가 필요한 환경(인프라·해당 모듈)을 코드로 띄우므로, 서비스를 나눠 가도 한 모듈을 작업하는 루프가 그대로다(왜 이게 설계와 맞는지는 [apps 문서](docs/apps.md#테스트)). 작업 루프는 주로 단일 spec 실행이고(아래 [테스트](#테스트)), `npm run dev`로 앱을 직접 띄우는 건 서비스가 늘수록 기동 부담이 커지니 실제 앱이 필요할 때만 쓴다.
 
-| 명령              | 용도                                                                            |
-| ----------------- | ------------------------------------------------------------------------------- |
-| `npm test`        | 워크스페이스 단위·통합·계약 테스트. 커버리지 수집 대상 구현은 100% 게이트       |
-| `npm run lint`    | 정적 검사 전부 — 타입 체크·ESLint·Prettier·shellcheck·문서 링크                 |
-| `npm run dev`     | 실제 앱을 띄워 볼 때 — api(3000)·console(3100)·user-app(3200) + libs watch      |
-| `npm run dev:api` | API만 띄울 때                                                                   |
-| `npm run atoz`    | 포크 직후/배포 전 전체 검증 — 깨끗한 상태에서 lint·테스트·API 문서·e2e·배포까지 |
+| 명령                  | 용도                                                                            |
+| --------------------- | ------------------------------------------------------------------------------- |
+| `npm test`            | 워크스페이스 단위·통합·계약 테스트. 커버리지 수집 대상 구현은 100% 게이트       |
+| `npm run lint`        | 정적 검사 전부 — 타입 체크·ESLint·Prettier·shellcheck·문서 링크                 |
+| `npm run dev`         | 실제 앱을 띄워 볼 때 — api(3000)·console(3100)·user-app(3200) + libs watch      |
+| `npm run dev:api`     | API만 띄울 때                                                                   |
+| `npm run dev:restate` | `dev:api`를 따로 띄운 경우 개발 Restate endpoint 등록. 전체 `dev`에는 포함      |
+| `npm run atoz`        | 포크 직후/배포 전 전체 검증 — 깨끗한 상태에서 lint·테스트·API 문서·e2e·배포까지 |
 
 > `npm run atoz`가 내부 호출하는 `npm run clean`은 `tools/clean-workspace.mjs`의 allowlist에 적은 `node_modules`·`_output`·coverage·build 산출물만 지운다. 개인 env·설정 파일은 `.gitignore`에 있다는 이유로 지우지 않는다. 나머지 스크립트는 [package.json](package.json)을 본다.
 
@@ -92,8 +93,7 @@ Swagger/OpenAPI는 의도적으로 두지 않았다(이유는 [설계 결정](do
 ```
 nest-seed/
 ├── libs/                    ← 공유 라이브러리(npm 패키지)
-│   ├── temporal-sandbox/    ← @mannercode/temporal-sandbox — Temporal workflow 샌드박스 헬퍼
-│   ├── common/              ← @mannercode/common — Mongoose, Redis, JWT, S3, Logger, NATS, Temporal
+│   ├── common/              ← @mannercode/common — Mongoose, Redis, JWT, S3, Logger, NATS
 │   └── testing/             ← @mannercode/testing — HttpTestClient, 픽스처 헬퍼
 │
 ├── apps/
@@ -106,7 +106,7 @@ nest-seed/
 │   ├── api-benchmark/       ← 배포된 API 스택을 대상으로 하는 성능 비교 도구
 │   └── web/                 ← Playwright browser e2e + 공통 BFF 계약 테스트
 │
-├── infra/                   ← 개발 인프라 Compose (MongoDB·Redis·VersityGW·NATS·Temporal)
+├── infra/                   ← 개발 인프라 Compose (MongoDB·Redis·VersityGW·NATS·Restate)
 ├── deploy/                  ← Docker Compose, NGINX (앱 배포 진입점)
 ├── tools/                   ← 개발·테스트 보조 도구 (free-port, jest 헬퍼, quick tunnel)
 ├── docs/                    ← 폴더 문서와 횡단 주제 참고 문서(reference/)
@@ -126,7 +126,7 @@ nest-seed/
 | MongoDB (Replica Set) + Mongoose | 주 데이터베이스. 트랜잭션, soft delete — `libs/common/mongoose`                                                                    |
 | Redis (Cluster) + ioredis        | 캐시와 분산 락 — `libs/common/redis`, `libs/common/cache`                                                                          |
 | NATS                             | 컨테이너 사이 pub/sub — `libs/common/nats`                                                                                         |
-| Temporal                         | 사가 워크플로 — `application/showtime-creation/worker`                                                                             |
+| Restate                          | durable 사가 워크플로 — `application/showtime-creation/worker`                                                                     |
 | VersityGW (S3 API)               | presigned 파일 업로드·다운로드 — `libs/common/s3`, `infrastructure/assets`                                                         |
 | NestJS                           | API 서버. 가드·파이프를 Passport 없이 직접 구현 — `gateway/`                                                                       |
 | Next.js                          | console·user-app 최소 데모                                                                                                         |
@@ -147,7 +147,7 @@ nest-seed/
 
 1. `core/theaters` — 가장 단순한 도메인. 모델→리포지토리→서비스→컨트롤러→DTO의 기본 골격
 2. `application/booking` — 여러 Core를 조합하는 유스케이스
-3. `application/showtime-creation` — 사가 전체: 202 응답 → Temporal 워크플로 → NATS → SSE
+3. `application/showtime-creation` — 사가 전체: 202 응답 → Restate 워크플로 → NATS → SSE
 4. 각 단계마다 같은 이름의 통합 테스트(`apps/api/src/__tests__`)를 나란히 읽는다
 
 | 서비스                                    | 보여주는 것                                                                                     |
@@ -160,7 +160,7 @@ nest-seed/
 | `core/purchase-records` · `watch-records` | 사용자 기록 도메인. watch-records는 추천의 입력이 된다                                          |
 | `application/booking`                     | 예매 동선 조회와 좌석 선점, 요청 검증                                                           |
 | `application/purchase`                    | HTTP 멱등 응답, durable 상태 머신·lease 재조정·outbox, 멱등 이벤트의 at-least-once 발행         |
-| `application/showtime-creation`           | HTTP 키→`sagaId` 매핑, Temporal 202+SSE, Mongo 트랜잭션·극장 guard CAS·멱등 재시도              |
+| `application/showtime-creation`           | HTTP 키→`sagaId`·Restate workflow key 매핑, 202+SSE, Mongo 트랜잭션·guard CAS·멱등 재시도       |
 | `application/recommendation`              | 관람 기록 기반 추천. 도메인 로직을 순수 모듈로 분리                                             |
 | `view/user-app/home`                      | 화면 전용 응답 조합 — View 계층                                                                 |
 | `infrastructure/assets`                   | presigned 업로드와 체크섬 검증, 만료 업로드 정리 cron(분산 락)                                  |
@@ -178,7 +178,7 @@ README 뒤의 상세는 폴더 문서 여섯과 참고 자료 넷, 운영 문서
 
 - [apps/](docs/apps.md) — 본체 API와 최소 데모 두 앱
     - [SoLA 5계층](docs/apps.md#sola-5계층) — 순환 참조를 없애는 계층 규칙
-    - [분산 협력](docs/apps.md#분산-협력--msa-준비형-모놀리스) — 분산 락·NATS·Temporal을 쓰는 곳
+    - [분산 협력](docs/apps.md#분산-협력--msa-준비형-모놀리스) — 분산 락·NATS·Restate를 쓰는 곳
     - [코드 컨벤션](docs/apps.md#코드-컨벤션) — 이름·에러·가져오기·REST·비정규화
     - [테스트](docs/apps.md#테스트) — 실제 인프라 테스트 규칙과 픽스처
     - [실행 가능한 API 문서](docs/apps.md#실행-가능한-api-문서) — spec 작성 규약과 산출물

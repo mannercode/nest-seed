@@ -59,8 +59,6 @@ async function runInfrastructureProbe(role: 'A' | 'B'): Promise<void> {
         runId,
         s3Key,
         startupProjectId,
-        workflowDirectory: requiredEnvironment('JEST_ISOLATION_PROBE_WORKFLOW_DIRECTORY'),
-        workflowPaths: workflowPaths(),
         workerId
     }
 
@@ -141,14 +139,6 @@ function createRedisCluster() {
             port: Number(requiredEnvironment('REDIS_PORT3'))
         }
     ])
-}
-
-function workflowPaths(): string[] {
-    const directory = requiredEnvironment('JEST_ISOLATION_PROBE_WORKFLOW_DIRECTORY')
-    return [
-        path.join(directory, 'showtime-creation/v1/workflow.js'),
-        path.join(directory, 'showtime-creation/v2/workflow.js')
-    ]
 }
 
 async function readJsonAtBarrier(filePath: string): Promise<Record<string, unknown>> {

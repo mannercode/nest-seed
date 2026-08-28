@@ -15,14 +15,6 @@ import { TicketsRepository } from './tickets.repository'
 export class TicketsService {
     constructor(private readonly repository: TicketsRepository) {}
 
-    async deleteBySagaIds(
-        sagaIds: string[],
-        session: ClientSession | undefined = undefined,
-        signal: AbortSignal | undefined = undefined
-    ) {
-        await this.repository.deleteBySagaIds(sagaIds, session, signal)
-    }
-
     async aggregateSales(aggregateDto: AggregateTicketSalesDto) {
         const salesByShowtime = await this.repository.aggregateSales(aggregateDto)
         return salesByShowtime

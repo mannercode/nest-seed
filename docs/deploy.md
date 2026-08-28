@@ -4,7 +4,7 @@
 
 Docker Compose로 API 컨테이너를 여러 개 띄우고 NGINX로 요청을 나눈다. Node.js는 기본적으로 한 프로세스가 한 이벤트 루프를 쓰기 때문에, 컨테이너를 나누어 여러 CPU 코어를 활용한다.
 
-MongoDB, Redis, VersityGW, NATS, Temporal 같은 인프라는 이미 실행 중이라고 가정한다.
+MongoDB, Redis, VersityGW, NATS, Restate 같은 인프라는 이미 실행 중이라고 가정한다.
 
 토폴로지는 다음과 같다(다이어그램은 devcontainer의 VS Code 미리보기에서 렌더된다).
 
@@ -22,20 +22,21 @@ rectangle "Docker 네트워크 (COMPOSE_PROJECT_NAME)" {
     database "MongoDB\nReplica Set ×3" as mongo
     database "Redis\nCluster ×3" as redis
     queue NATS as nats
-    [Temporal\n(+PostgreSQL)] as temporal
+    [Restate\ningress :8080 · admin :9070] as restate
     [VersityGW\n(S3 API)] as s3
     [devcontainer] as dev
 }
 
 hostport --> nginx
-nginx --> a1
+nginx --> a1 : HTTP :3000 / HTTP2 :9080
 nginx --> a2
 nginx --> a3
 nginx --> a4
 a1 --> mongo
 a1 --> redis
 a1 --> nats
-a1 --> temporal
+a1 --> restate : workflow submit
+restate --> nginx : durable invocation :9080
 a1 --> s3
 note bottom of a1
   네 컨테이너 모두 같은 인프라에
@@ -47,14 +48,14 @@ dev ..> nginx : http://nginx\n(verify.sh · api-race/api-benchmark 러너)
 
 ## 구성
 
-| 파일                   | 설명                                                                                                |
-| ---------------------- | --------------------------------------------------------------------------------------------------- |
-| `compose.yml`          | API 컨테이너 N개 + NGINX 로드밸런서                                                                 |
-| `nginx.conf`           | 연결 수가 가장 적은 컨테이너로 보내는(`least_conn`) 리버스 프록시, upstream 정보를 담은 액세스 로그 |
-| `deps.Dockerfile`      | lockfile 기준 node_modules를 담은 베이스 이미지 (API 이미지 빌드가 참조)                            |
-| `ensure-deps-image.sh` | 의존성 입력의 합본 해시로 `DEPS_TAG`를 계산하고, 해당 태그 이미지가 없으면 빌드                     |
-| `prebuild-images.sh`   | Stability 반복 전 deps·API·NGINX 이미지를 한 번만 준비. 실패하면 짧은 backoff로 최대 3회 시도       |
-| `verify.sh`            | deps 이미지 보장 → compose up → [../apps/api/api-docs/run.sh](../apps/api/api-docs/run.sh) → down   |
+| 파일                   | 설명                                                                                                   |
+| ---------------------- | ------------------------------------------------------------------------------------------------------ |
+| `compose.yml`          | API 컨테이너 N개 + NGINX 로드밸런서 + Restate endpoint 등록용 one-shot 서비스                          |
+| `nginx.conf`           | HTTP API(:80)와 Restate HTTP/2 endpoint(:9080)를 API 복제본에 `least_conn`으로 분배                    |
+| `deps.Dockerfile`      | lockfile 기준 node_modules를 담은 베이스 이미지 (API 이미지 빌드가 참조)                               |
+| `ensure-deps-image.sh` | 의존성 입력의 합본 해시로 `DEPS_TAG`를 계산하고, 해당 태그 이미지가 없으면 빌드                        |
+| `prebuild-images.sh`   | Stability 반복 전 deps·API·NGINX 이미지를 한 번만 준비. 실패하면 짧은 backoff로 최대 3회 시도          |
+| `verify.sh`            | deps 이미지 보장 → compose up → Restate endpoint 등록 → [API 문서](../apps/api/api-docs/run.sh) → down |
 
 ## 주요 설정
 
@@ -67,8 +68,11 @@ dev ..> nginx : http://nginx\n(verify.sh · api-race/api-benchmark 러너)
 
 스택을 띄워 둔 채 쓰려면(예: api-benchmark 반복 측정 — `verify.sh`는 검증 후 바로 내린다) 다음처럼 직접 띄운다.
 
+고정 등록 URI를 `force: false`로 쓰므로, Restate가 이미 `http://nginx:9080`을 알고 있는 상태에서 API 코드·workflow manifest를 바꿨다면 먼저 `bash infra/reset.sh`로 개발 Restate를 초기화한다. 이 reset은 journal volume도 지우므로 운영 절차가 아니라 보존할 execution이 없는 개발·검증 환경에서만 실행한다.
+
 ```bash
 cd deploy && export COMPOSE_IGNORE_ORPHANS=True && source ensure-deps-image.sh && docker compose up -d --build --wait
+docker compose run --rm --no-deps restate-register
 # 끝나면: docker compose down -v
 ```
 
@@ -83,7 +87,7 @@ DEPLOY_IMAGES_PREBUILT=true bash tests/api-race/runner.sh <scenario>
 
 API 컨테이너 개수(4)와 NGINX가 호스트에 노출하는 포트(3000)는 운영자가 바꾸는 값이 아니라 검증 정책이므로 [compose.yml](../deploy/compose.yml)에 직접 고정한다. 복제본을 여러 개로 두는 것 자체가 시드의 전제다. NATS fan-out, 락·lease owner CAS, Mongo 트랜잭션 경합, 원자 상태 전이는 모두 복제본 사이 경쟁을 다루므로, 1개로 줄이면 핵심 패턴이 실제로 경쟁하지 않은 채 통과한다.
 
-API 컨테이너는 `${COMPOSE_PROJECT_NAME}` Docker 네트워크에 붙은 뒤, 서비스 이름(`mongo1`, `redis1`, `nats`, `temporal`, `s3` 등)으로 인프라에 접근한다. devcontainer에서는 `infra` compose와 `deploy/compose.yml`이 같은 네트워크를 공유한다.
+API 컨테이너는 `${COMPOSE_PROJECT_NAME}` Docker 네트워크에 붙은 뒤, 서비스 이름(`mongo1`, `redis1`, `nats`, `restate`, `s3` 등)으로 인프라에 접근한다. devcontainer에서는 `infra` compose와 `deploy/compose.yml`이 같은 네트워크를 공유한다.
 
 환경 변수가 컨테이너로 들어오는 경로는 [환경 변수](reference/environment.md)가 정리한다. deploy 고유의 값은 배포 시점에 덮어쓰는 `NODE_ENV=production`, `LOG_DIRECTORY=/app/logs` 등이며, compose.yml의 `environment`에 둔다.
 
@@ -103,19 +107,27 @@ API는 `loopback`·`linklocal`·`uniquelocal` 프록시만 신뢰하므로, API 
 - Playwright는 두 BFF를 의도적으로 `BFF_TRUST_PROXY_HEADERS=true`로 시작한다. 브라우저가 보낸 `X-Forwarded-For`로 신뢰 edge를 모사해 서로 다른 주소의 로그인 실패가 별도 IP 버킷에 쌓이는 opt-in wiring을 검증한다. 이것은 실제 public edge가 외부 헤더를 덮어쓰는지는 증명하지 않는다.
 - API 인증 통합 테스트는 프로세스 안에서 trusted-proxy 해석과 로그인 rate-limit 동작을 검증한다. Compose의 BFF·edge 경계를 통과하는 통합 검증은 아니다.
 
-## 상영 생성 v1 → v2 마이그레이션
+## Restate endpoint 등록과 운영 전환
 
-신규 상영 생성은 `showtimeCreationWorkflowV2`와 v2 task queue로 들어가고, MongoDB 트랜잭션·극장 스케줄 guard CAS·`sagaId` operation으로 멱등 재시도한다. 동시에 새 바이너리는 배포 전부터 시작한 `showtimeCreationWorkflow` v1 history를 완료하는 legacy queue·worker·bundle·Activity도 함께 포함한다.
+각 API 복제본은 일반 HTTP 포트 3000과 별도로 [Restate HTTP/2 endpoint](../apps/api/src/services/application/showtime-creation/worker/restate-endpoint.service.ts)를 9080에 연다. Restate에는 복제본 주소를 하나씩 등록하지 않고 NGINX의 안정적인 `http://nginx:9080`을 등록한다. NGINX가 Restate invocation을 healthy한 API 복제본으로 분배하므로 4개 복제본이 하나의 서비스 endpoint처럼 동작한다.
 
-v1 워크플로의 Activity 명·timeout·retry·보상 순서를 v2와 맞추려고 바꾸지 않는다. Temporal history에 이미 기록된 명령과 다르면 replay가 비결정적 오류로 실패한다. v2 Activity가 v1과 같은 Redis 키를 잠시 사용하는 것도 구 바이너리와 공존할 때 비-트랜잭션 v1 쓰기를 교차 직렬화하는 호환 fence이지 v2 정합성 장치가 아니다.
+[`verify.sh`](../deploy/verify.sh)는 API와 NGINX가 healthy가 된 다음 `restate-register` one-shot 서비스를 실행한다. 이 서비스는 Restate Admin API의 `/deployments`에 `{ uri: "http://nginx:9080", force: false, use_http_11: false }`를 보낸다. 등록을 빼면 일반 REST health는 통과해도 상영 생성 workflow는 dispatch되지 않으므로, compose를 직접 띄울 때도 위 명령을 함께 실행한다.
 
-롤링 교체 중에도 데이터 경쟁은 차단되지만, v1 Activity가 긴 락을 보유하면 v2의 5분 SSE 대기 상한 안에 끝나지 못할 수 있다. 상영 생성의 무중단 완료까지 필요하면 다음 순서로 drain한다.
+같은 URI가 이미 있으면 `force: false` 등록은 기존 deployment를 그대로 반환하며 service manifest를 다시 발견하지 않는다. AtoZ와 Stability는 시작 시 `infra/reset.sh`로 fresh Restate를 만들고, 반복 안에서는 미리 빌드한 같은 코드를 재사용하기 때문에 이 동작이 맞다. 수동 검증에서 코드를 바꿨다면 위 초기화 절차를 먼저 따른다.
 
-1. 새 상영 생성 유입을 잠시 중지하고, 구 복제본이 더 이상 v1 워크플로를 enqueue하지 않게 한다.
-2. Temporal Web UI/운영 조회에서 v1 workflow type과 legacy task queue의 open execution·실행 중 Activity가 0인지 확인한다. 실행 중인 건은 구 worker 또는 새 바이너리의 legacy worker가 끝내게 둔다.
-3. 구 복제본을 모두 내리고 v1·v2 worker를 모두 포함한 동일한 새 이미지로 교체한다.
-4. v2 상영 생성 하나를 실행해 `succeeded`/의도한 `failed`로 종결하고, 상영 시간·티켓·operation 기록이 일치하는지 확인한 뒤 유입을 재개한다.
-5. legacy 코드와 호환 락 제거는 v1 open execution이 0임을 운영에서 확인한 **다음 별도 릴리스**로 미룬다.
+API `/health`의 Restate 항목은 ingress의 `/restate/health`만 확인한다. NGINX 9080 endpoint의 등록 여부와 도달 가능성까지 확인하는 readiness probe가 아니므로, health 통과를 등록 성공으로 해석하지 않는다.
+
+이 폴더는 같은 URI 뒤의 컨테이너 이미지를 바꿔 가는 **검증 스택**이다. 실제 운영의 무중단 버전 전환 계약은 아니다. 운영에서는 새 revision마다 구별되는 endpoint URI를 등록하고, 기존 deployment에 묶인 invocation이 끝날 때까지 이전 revision을 유지한 뒤 제거한다. `force: true`로 같은 URI의 정의를 덮어쓰면 실행 중인 invocation의 호환성을 깨뜨릴 수 있다. 개발 스크립트의 강제 등록을 운영 절차로 복사하지 않는다.
+
+Temporal에서 Restate로는 workflow history를 옮길 수 없으므로 이 저장소는 두 런타임을 함께 싣지 않는 **direct cutover**를 택했다. 시드 자체에는 보존할 운영 execution이 없다는 전제다. 이미 Temporal을 운영 중인 포크는 다음 순서 없이 바로 교체하면 안 된다.
+
+1. 신규 Temporal 상영 생성 제출을 중지한다.
+2. **구 API 바이너리와 worker가 살아 있는 동안** Temporal의 open workflow와 실행 중 Activity를 조회해 모두 완료시키거나 명시적으로 취소한다. 필요한 history와 업무 상태를 별도로 보존한다.
+3. open execution이 0임을 확인한 뒤에만 Temporal worker가 빠진 새 API revision과 Restate 서버를 배포하고, version-specific endpoint를 등록한다.
+4. 같은 `Idempotency-Key` 재요청, `waiting → processing → succeeded/failed/error`, MongoDB의 상영·티켓·operation 일치를 smoke test한다.
+5. 그 뒤에만 남은 Temporal 서버·DB와 구 worker 배포 자원을 제거한다. Temporal history가 Restate journal로 자동 변환된다고 가정하지 않는다.
+
+Restate의 deployment/version 동작은 [공식 versioning 문서](https://docs.restate.dev/services/versioning)를 기준으로 운영 환경에 맞게 설계한다.
 
 ## 인증·구매 상태 스키마 교체
 

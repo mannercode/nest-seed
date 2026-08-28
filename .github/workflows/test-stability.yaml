@@ -49,7 +49,7 @@ jobs:
                           bash .github/scripts/repeat.sh 50 bash infra/reset.sh
                     # 분산 레이스 50회는 의도된 누적 검증량이다.
                     # 240분은 가장 느린 시나리오(user-signup-race 50회 ~200분)에 여유를 둔 값.
-                    # 사가를 만드는 레그는 기본 RESET_EVERY=10에서 Temporal transfer-queue 정체가 재현됐으므로 5회마다 초기화한다.
+                    # 사가 기록과 앱 데이터가 많이 누적되는 레그는 5회마다 개발 인프라를 초기화한다.
                     - leg: sse-fanout-race
                       timeout: 240
                       prebuild_deploy: true
@@ -69,7 +69,7 @@ jobs:
                     - leg: purchase-double-spend
                       timeout: 240
                       prebuild_deploy: true
-                      # 50-way 경쟁 강도는 유지하되 fixture Temporal saga의 중복 soak는 분리한다.
+                      # 50-way 경쟁 강도는 유지하되 fixture saga의 중복 soak는 분리한다.
                       run: INNER_ITERATIONS=30 RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh purchase-double-spend
                     - leg: purchase-overlap-race
                       timeout: 240

@@ -1,259 +1,226 @@
-import type { ShowtimeDto } from 'core'
-import { newObjectIdString } from '@mannercode/common'
-import { nullObjectId, withTestId } from '@mannercode/testing'
-import { Client, Connection, WorkflowFailedError } from '@temporalio/client'
-import { NativeConnection, Worker } from '@temporalio/worker'
-import { readFileSync } from 'fs'
-import type { ShowtimeCreationEvent } from '../../internal'
-import type { ValidateAndCreateResult } from '../activities'
+import type { AppConfigService } from 'config'
+import { JsonUtil } from '@mannercode/common'
+import { BadRequestException, NotFoundException } from '@nestjs/common'
+import { CancelledError, TerminalError, type WorkflowContext } from '@restatedev/restate-sdk'
+import type { ShowtimeCreationEvent, ValidateAndCreateResult } from '../../internal'
 import type { ShowtimeCreationWorkflowInput } from '../types'
-import { showtimeCreationBundle } from '../bundle'
+import {
+    createShowtimeCreationWorkflow,
+    getShowtimeCreationWorkflowName,
+    ShowtimeCreationWorkflow,
+    type ShowtimeCreationWorkflowDefinition
+} from '../workflow'
 
-// 샌드박스 워크플로는 Istanbul이 계측할 수 없어 실제 Temporal 워커에 mock 액티비티를 주입한다.
-type WorkflowActivities = {
-    emitStatusChanged: (payload: ShowtimeCreationEvent) => Promise<void>
-    validateAndCreate: (input: ShowtimeCreationWorkflowInput) => Promise<ValidateAndCreateResult>
-}
+describe('Showtime creation Restate workflow', () => {
+    const input = {
+        createDto: {
+            durationInMinutes: 90,
+            movieId: 'movie-id',
+            startTimes: [new Date('2100-01-01T09:00:00.000Z')],
+            theaterIds: ['theater-id']
+        },
+        sagaId: 'saga-id'
+    }
 
-const address = `${process.env.TEMPORAL_HOST}:${process.env.TEMPORAL_PORT}`
-const namespace = process.env.TEMPORAL_NAMESPACE as string
-
-describe('showtimeCreationWorkflowV2', () => {
-    let connection: Connection
-    let nativeConnection: NativeConnection
-    let client: Client
-    let bundleCode: string
-
-    beforeAll(async () => {
-        connection = await Connection.connect({ address })
-        nativeConnection = await NativeConnection.connect({ address })
-        client = new Client({ connection, namespace })
-        bundleCode = readFileSync(showtimeCreationBundle.bundlePath, 'utf8')
-    }, 60_000)
-
-    afterAll(async () => {
-        await connection.close()
-        await nativeConnection.close()
+    it('project별 workflow 이름을 만든다', () => {
+        expect(getShowtimeCreationWorkflowName('project-a')).toBe('ShowtimeCreation-project-a')
     })
 
-    async function runWorkflow(
-        input: ShowtimeCreationWorkflowInput,
-        activities: WorkflowActivities
-    ) {
-        const taskQueue = withTestId('showtime-creation-unit')
-        const worker = await Worker.create({
-            activities,
-            connection: nativeConnection,
-            namespace,
-            taskQueue,
-            workflowBundle: { code: bundleCode }
-        })
-
-        await worker.runUntil(
-            client.workflow.execute('showtimeCreationWorkflowV2', {
-                args: [input],
-                taskQueue,
-                workflowId: withTestId('showtime-creation-wf')
-            })
-        )
-    }
-
-    function buildInput(): ShowtimeCreationWorkflowInput {
-        return {
-            createDto: {
-                durationInMinutes: 1,
-                movieId: nullObjectId,
-                startTimes: [new Date('2100-01-01T09:00')],
-                theaterIds: [nullObjectId]
-            },
-            sagaId: newObjectIdString()
-        }
-    }
-
-    it('성공하면 processing 다음 생성 수와 함께 succeeded 상태를 알린다', async () => {
-        const statuses: ShowtimeCreationEvent[] = []
-        const validateAndCreate = jest.fn(async (): Promise<ValidateAndCreateResult> => ({
-            createdShowtimeCount: 3,
-            createdTicketCount: 30,
+    it('waiting → processing → succeeded를 durable step으로 실행한다', async () => {
+        const result: ValidateAndCreateResult = {
+            createdShowtimeCount: 2,
+            createdTicketCount: 20,
             kind: 'succeeded'
-        }))
-        const emitStatusChanged = jest.fn(async (payload: ShowtimeCreationEvent) => {
-            statuses.push(payload)
-        })
-
-        const input = buildInput()
-        await runWorkflow(input, { emitStatusChanged, validateAndCreate })
-
-        expect(validateAndCreate).toHaveBeenCalledTimes(1)
-        expect(statuses.map((s) => s.status)).toEqual(['processing', 'succeeded'])
-
-        const succeeded = statuses[1]
-        expect(succeeded?.status).toBe('succeeded')
-        if (succeeded?.status === 'succeeded') {
-            expect(succeeded.sagaId).toBe(input.sagaId)
-            expect(succeeded.createdShowtimeCount).toBe(3)
-            expect(succeeded.createdTicketCount).toBe(30)
         }
-    })
+        const fix = createFixture({ result })
 
-    it('충돌하면 보상 없이 충돌 목록과 함께 failed 상태를 알린다', async () => {
-        const conflicting: ShowtimeDto[] = [
+        await run(fix)
+
+        expect(fix.events).toEqual([
+            { sagaId: input.sagaId, status: 'waiting' },
+            { sagaId: input.sagaId, status: 'processing' },
             {
-                endTime: new Date('2013-01-31T13:30:00.000Z'),
-                id: nullObjectId,
-                movieId: nullObjectId,
-                startTime: new Date('2013-01-31T12:00:00.000Z'),
-                theaterId: nullObjectId
+                createdShowtimeCount: 2,
+                createdTicketCount: 20,
+                sagaId: input.sagaId,
+                status: 'succeeded'
             }
-        ]
-        const statuses: ShowtimeCreationEvent[] = []
-        const validateAndCreate = jest.fn(async (): Promise<ValidateAndCreateResult> => ({
-            conflictingShowtimes: conflicting,
-            kind: 'failed'
-        }))
-        const emitStatusChanged = jest.fn(async (payload: ShowtimeCreationEvent) => {
-            statuses.push(payload)
+        ])
+        expect(fix.persistence).toHaveBeenCalledWith(
+            expect.objectContaining({ startTimes: [expect.any(Date)] }),
+            input.sagaId,
+            expect.any(AbortSignal)
+        )
+        expect(fix.runStep.mock.calls.map(([name]) => name)).toEqual([
+            'emit waiting',
+            'emit processing',
+            'validate and create',
+            'emit succeeded'
+        ])
+        expect(fix.runStep.mock.calls[0]?.[2]).toEqual({
+            initialRetryInterval: 1_000,
+            maxRetryAttempts: 3,
+            maxRetryDuration: 35_000
+        })
+        expect(fix.runStep.mock.calls[2]?.[2]).toEqual({
+            initialRetryInterval: 1_000,
+            maxRetryAttempts: 4,
+            maxRetryDuration: 195_000
+        })
+    })
+
+    it('업무 충돌은 failed 상태로 끝낸다', async () => {
+        const conflictingShowtimes = [{ id: 'conflict' }]
+        const fix = createFixture({
+            result: { conflictingShowtimes, kind: 'failed' } as ValidateAndCreateResult
         })
 
-        const input = buildInput()
-        await runWorkflow(input, { emitStatusChanged, validateAndCreate })
+        await run(fix)
 
-        expect(statuses.map((s) => s.status)).toEqual(['processing', 'failed'])
+        expect(fix.events.at(-1)).toEqual({
+            conflictingShowtimes,
+            sagaId: input.sagaId,
+            status: 'failed'
+        })
+    })
 
-        const failed = statuses[1]
-        expect(failed?.status).toBe('failed')
-        if (failed?.status === 'failed') {
-            expect(failed.sagaId).toBe(input.sagaId)
-            expect(failed.conflictingShowtimes).toHaveLength(1)
+    it.each([
+        [new Error('database unavailable'), 'database unavailable'],
+        ['non-error rejection', 'non-error rejection']
+    ])('실행 오류 %p를 error 상태로 바꾼다', async (failure, message) => {
+        const fix = createFixture({ failure })
+
+        await run(fix)
+
+        expect(fix.events.at(-1)).toEqual({ message, sagaId: input.sagaId, status: 'error' })
+    })
+
+    it('취소는 error 이벤트로 바꾸지 않고 다시 던진다', async () => {
+        const failure = new CancelledError()
+        const fix = createFixture({ failure })
+
+        await expect(run(fix)).rejects.toBe(failure)
+        expect(fix.events.map(({ status }) => status)).toEqual(['waiting', 'processing'])
+    })
+
+    it('상태 이벤트 발행 한 번이 10초를 넘으면 Restate 재시도로 넘긴다', async () => {
+        jest.useFakeTimers()
+        try {
+            const fix = createFixture({
+                emitStatusChanged: () => new Promise<void>(() => undefined),
+                result: { conflictingShowtimes: [], kind: 'failed' }
+            })
+            const completion = run(fix).catch((error: unknown) => error)
+
+            await jest.advanceTimersByTimeAsync(10_000)
+
+            await expect(completion).resolves.toThrow(
+                'Status event publish timed out after 10000ms.'
+            )
+            expect(fix.runStep).toHaveBeenCalledTimes(1)
+        } finally {
+            jest.useRealTimers()
         }
     })
 
-    it('validateAndCreate가 재시도를 소진하면 오류 상태를 알린다', async () => {
-        const timeline: string[] = []
-        const validateAndCreate = jest.fn(async (): Promise<ValidateAndCreateResult> => {
-            throw new Error('boom during create')
-        })
-        const emitStatusChanged = jest.fn(async (payload: ShowtimeCreationEvent) => {
-            timeline.push(`emit:${payload.status}`)
-        })
+    it('업무 예외만 Restate terminal error로 분류한다', () => {
+        const fix = createFixture({ result: { kind: 'failed', conflictingShowtimes: [] } })
+        const classify = fix.definition.options?.asTerminalError
+        if (!classify) throw new Error('terminal error classifier is missing')
 
-        const input = buildInput()
-        await runWorkflow(input, { emitStatusChanged, validateAndCreate })
+        const badRequest = classify(new BadRequestException('bad request'))
+        const notFound = classify(new NotFoundException('not found'))
 
-        // 검증·생성은 sagaId로 멱등이므로 일시 장애를 위해 정해진 횟수만 재시도한다.
-        expect(validateAndCreate).toHaveBeenCalledTimes(4)
-        expect(timeline).toEqual(['emit:processing', 'emit:error'])
-
-        const errorEvent = emitStatusChanged.mock.calls
-            .map((call) => call[0])
-            .find((payload) => payload.status === 'error')
-        expect(errorEvent).toBeDefined()
-        if (errorEvent) {
-            expect(errorEvent.sagaId).toBe(input.sagaId)
-            expect(errorEvent.message).toContain('boom during create')
-        }
+        expect(badRequest).toBeInstanceOf(TerminalError)
+        expect(badRequest).toMatchObject({ code: 400, message: 'bad request' })
+        expect(notFound).toBeInstanceOf(TerminalError)
+        expect(notFound).toMatchObject({ code: 404, message: 'not found' })
+        expect(classify(new Error('retry me'))).toBeUndefined()
     })
 
-    it('validateAndCreate가 일시적으로 실패해도 재시도해 성공한다', async () => {
-        const statuses: ShowtimeCreationEvent[] = []
-        const validateAndCreate = jest
-            .fn(async (): Promise<ValidateAndCreateResult> => ({
-                createdShowtimeCount: 1,
-                createdTicketCount: 10,
-                kind: 'succeeded'
-            }))
-            .mockRejectedValueOnce(new Error('stale compatibility lock'))
-            .mockRejectedValueOnce(new Error('stale compatibility lock'))
-            .mockRejectedValueOnce(new Error('stale compatibility lock'))
-        const emitStatusChanged = jest.fn(async (payload: ShowtimeCreationEvent) => {
-            statuses.push(payload)
+    it('기본 timeout과 명시한 테스트 timeout을 workflow 옵션에 반영한다', () => {
+        const defaults = createFixture({ result: { kind: 'failed', conflictingShowtimes: [] } })
+        const shortened = createFixture({
+            result: { kind: 'failed', conflictingShowtimes: [] },
+            runTimeoutMs: 123
         })
 
-        const input = buildInput()
-        await runWorkflow(input, { emitStatusChanged, validateAndCreate })
-
-        expect(validateAndCreate).toHaveBeenCalledTimes(4)
-        expect(statuses.map((status) => status.status)).toEqual(['processing', 'succeeded'])
+        expect(defaults.definition.options).toMatchObject({
+            abortTimeout: 5_000,
+            inactivityTimeout: 65_000,
+            workflowRetention: 3_600_000
+        })
+        expect(shortened.definition.options).toMatchObject({ inactivityTimeout: 5_123 })
     })
 
-    it('시작된 시도가 heartbeat 없이 멈춰도 timeout 뒤 다음 시도로 회복한다', async () => {
-        const statuses: ShowtimeCreationEvent[] = []
-        const succeeded: ValidateAndCreateResult = {
-            createdShowtimeCount: 1,
-            createdTicketCount: 10,
-            kind: 'succeeded'
-        }
-        let releaseFirst: (() => void) | undefined
-        const validateAndCreate = jest.fn(async (): Promise<ValidateAndCreateResult> => {
-            if (validateAndCreate.mock.calls.length === 1) {
-                return new Promise<ValidateAndCreateResult>((resolve) => {
-                    releaseFirst = () => resolve(succeeded)
-                })
-            }
-
-            // timeout된 첫 handler도 종료시켜 Worker가 drain될 수 있게 한다. 늦은 완료 보고는 Temporal이 무시한다.
-            releaseFirst?.()
-            return succeeded
-        })
-        const emitStatusChanged = jest.fn(async (payload: ShowtimeCreationEvent) => {
-            statuses.push(payload)
-        })
-
-        const input = buildInput()
-        await runWorkflow(input, { emitStatusChanged, validateAndCreate })
-
-        expect(validateAndCreate).toHaveBeenCalledTimes(2)
-        expect(statuses.map((status) => status.status)).toEqual(['processing', 'succeeded'])
-    }, 45_000)
-
-    it('성공 상태 발행이 재시도를 소진하면 error로 바꾸지 않고 워크플로 실패로 남긴다', async () => {
-        const statuses: ShowtimeCreationEvent[] = []
-        const validateAndCreate = jest.fn(async (): Promise<ValidateAndCreateResult> => ({
-            createdShowtimeCount: 1,
-            createdTicketCount: 1,
-            kind: 'succeeded'
-        }))
-        const emitStatusChanged = jest.fn(async (payload: ShowtimeCreationEvent) => {
-            if (payload.status === 'succeeded') {
-                throw new Error('terminal publish keeps failing')
-            }
-            statuses.push(payload)
-        })
-
-        const input = buildInput()
-        await expect(runWorkflow(input, { emitStatusChanged, validateAndCreate })).rejects.toThrow(
-            WorkflowFailedError
+    it('Nest 제공자는 설정의 project ID로 definition을 만든다', () => {
+        const workflow = new ShowtimeCreationWorkflow(
+            { emitStatusChanged: jest.fn() } as never,
+            { validateAndCreate: jest.fn() } as never,
+            { projectId: 'nest-project' } as AppConfigService
         )
 
-        expect(
-            emitStatusChanged.mock.calls.filter(([payload]) => payload.status === 'succeeded')
-        ).toHaveLength(3)
-        expect(statuses.map((s) => s.status)).toEqual(['processing'])
+        expect(workflow.definition.name).toBe('ShowtimeCreation-nest-project')
     })
 
-    it('상태 알림이 일시적으로 실패해도 재시도해 사가를 끝까지 진행한다', async () => {
-        // emitStatusChanged는 자동 재시도하므로, 첫 시도가 실패해도 다음 시도에서 회복되어야 한다.
-        const recorded: string[] = []
-        let processingAttempts = 0
-        const validateAndCreate = jest.fn(async (): Promise<ValidateAndCreateResult> => ({
-            createdShowtimeCount: 1,
-            createdTicketCount: 1,
-            kind: 'succeeded'
-        }))
-        const emitStatusChanged = jest.fn(async (payload: ShowtimeCreationEvent) => {
-            if (payload.status === 'processing') {
-                processingAttempts++
-                if (processingAttempts === 1) {
-                    throw new Error('transient publish failure')
-                }
-            }
-            recorded.push(payload.status)
+    type FixtureOptions = {
+        emitStatusChanged?: (event: ShowtimeCreationEvent) => Promise<void>
+        failure?: unknown
+        result?: ValidateAndCreateResult
+        runTimeoutMs?: number
+    }
+
+    function createFixture({ emitStatusChanged, failure, result, runTimeoutMs }: FixtureOptions) {
+        const events: ShowtimeCreationEvent[] = []
+        const persistence = jest.fn(async () => {
+            // workflow가 외부 promise의 비표준 rejection도 안전하게 상태로 바꾸는지 검증한다.
+            // eslint-disable-next-line @typescript-eslint/only-throw-error
+            if (failure !== undefined) throw failure
+            return result as ValidateAndCreateResult
+        })
+        const runStep = jest.fn(async (_name: string, action: () => unknown, _options: unknown) =>
+            action()
+        )
+        const context = {
+            request: () => ({ attemptCompletedSignal: new AbortController().signal }),
+            run: runStep
+        } as unknown as WorkflowContext
+        const definition = createShowtimeCreationWorkflow({
+            events: {
+                emitStatusChanged:
+                    emitStatusChanged ??
+                    (async (event) => {
+                        events.push(event)
+                    })
+            },
+            persistence: { validateAndCreate: persistence },
+            projectId: 'unit-test',
+            runTimeoutMs
         })
 
-        const input = buildInput()
-        await runWorkflow(input, { emitStatusChanged, validateAndCreate })
+        return {
+            context,
+            definition: definition as unknown as RuntimeWorkflowDefinition,
+            events,
+            persistence,
+            runStep
+        }
+    }
 
-        expect(processingAttempts).toBeGreaterThanOrEqual(2)
-        expect(recorded).toEqual(['processing', 'succeeded'])
-    })
+    function run(fix: ReturnType<typeof createFixture>) {
+        const serializedInput = JsonUtil.parse(JSON.stringify(input))
+        return fix.definition.workflow.run(fix.context, serializedInput)
+    }
+
+    type RuntimeWorkflowDefinition = ShowtimeCreationWorkflowDefinition & {
+        options?: {
+            abortTimeout?: number
+            asTerminalError?: (error: unknown) => TerminalError | undefined
+            inactivityTimeout?: number
+            workflowRetention?: number
+        }
+        workflow: {
+            run: (context: WorkflowContext, input: ShowtimeCreationWorkflowInput) => Promise<void>
+        }
+    }
 })

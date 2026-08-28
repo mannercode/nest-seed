@@ -15,7 +15,7 @@
 | `sse-fanout-race.js`       | SSE 이벤트가 모든 API 컨테이너의 클라이언트에게 빠짐없이 전달되는가                                      |
 | `user-signup-race.js`      | 같은 이메일 동시 가입 → unique index로 1개만 201, 나머지는 409                                           |
 | `ticket-holding-race.js`   | 같은 좌석 동시 선점 → Redis Lua script로 1개만 204, 나머지는 409                                         |
-| `showtime-overlap-race.js` | 겹치는 시간대 상영 등록 v2 동시 요청 → Mongo 트랜잭션·극장 guard CAS로 1개만 성공                        |
+| `showtime-overlap-race.js` | 겹치는 시간대의 Restate 상영 workflow 동시 요청 → Mongo 트랜잭션·극장 guard CAS로 1개만 성공             |
 | `purchase-double-spend.js` | 같은 티켓 묶음 동시 구매 → 1개만 성공, 나머지는 4xx(409/400), 결제는 1건                                 |
 | `purchase-overlap-race.js` | 겹치되 다른 티켓 묶음 동시 구매(락 키가 달라 직렬화를 우회) → 원자 전이로 1개만 성공, 패자는 보상 후 4xx |
 | `replica-chaos.js`         | API 컨테이너 4개 중 1개 종료 → NGINX 우회 처리로 5xx 1% 미만 유지                                        |
@@ -30,6 +30,8 @@ npm test -w tests/api-race       # 배포 없이 HTTP/SSE 공통 클라이언트
 
 러너가 배포 스택을 띄우고 내리는 것까지 맡는다. 각 시나리오는 Node 내장 `node:test`의 상위 테스트 하나로 실행되어 검증할 불변식의 이름, 성공·실패, 소요 시간과 stack을 표준 형식으로 출력한다. 내부 반복은 subtest로 늘리지 않고 기존 진행 로그로 남긴다. 각 시나리오의 실패 조건은 스크립트 머리 주석에 있다.
 공통 HTTP 요청은 시작부터 응답 body 종료까지 30초, SSE는 응답 헤더 handshake까지 30초를 기본 기한으로 둔다. 느린 환경에서는 양의 정수 밀리초 값인 `HTTP_REQUEST_TIMEOUT_MS`와 `SSE_HANDSHAKE_TIMEOUT_MS`로 각각 덮어쓴다.
+
+api-race와 api-benchmark 러너는 compose stack이 healthy가 된 뒤 NGINX의 Restate endpoint `http://nginx:9080`도 등록한다. 등록은 `force: false`라 같은 URI 뒤의 service manifest를 덮어쓰지 않는다. AtoZ·Stability는 시작 시 fresh Restate를 만들고 같은 prebuilt 이미지를 반복하므로 그대로 재사용한다. 수동으로 API/workflow 코드를 바꾼 뒤 다시 측정할 때는 먼저 `bash infra/reset.sh`를 실행한다. 이 명령은 개발용 Restate journal도 지운다.
 
 ## api-benchmark — 성능 비교
 

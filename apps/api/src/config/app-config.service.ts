@@ -46,9 +46,8 @@ export class AppConfigService extends BaseConfigService {
         NATS_HOST: Joi.string().required(),
         NATS_PORT: Joi.number().required(),
 
-        TEMPORAL_HOST: Joi.string().required(),
-        TEMPORAL_PORT: Joi.number().required(),
-        TEMPORAL_NAMESPACE: Joi.string().required(),
+        RESTATE_INGRESS_URL: Joi.string().uri().required(),
+        RESTATE_SERVICE_PORT: Joi.number().port().required(),
 
         S3_ACCESS_KEY: Joi.string().required(),
         S3_BUCKET: Joi.string().required(),
@@ -138,10 +137,10 @@ export class AppConfigService extends BaseConfigService {
         return { servers: [`${this.getString('NATS_HOST')}:${this.getNumber('NATS_PORT')}`] }
     }
 
-    get temporal() {
+    get restate() {
         return {
-            address: `${this.getString('TEMPORAL_HOST')}:${this.getNumber('TEMPORAL_PORT')}`,
-            namespace: this.getString('TEMPORAL_NAMESPACE')
+            ingressUrl: this.getString('RESTATE_INGRESS_URL'),
+            servicePort: this.getNumber('RESTATE_SERVICE_PORT')
         }
     }
 

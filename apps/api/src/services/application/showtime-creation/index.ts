@@ -4,4 +4,4 @@ export { ShowtimeBulkValidatorService, ShowtimeCreationPersistenceService } from
 export * from './showtime-creation.events'
 export * from './showtime-creation.module'
 export * from './showtime-creation.service'
-export { LegacyShowtimeCreationActivities } from './worker/legacy-activities'
+export { ShowtimeCreationRestateEndpoint, ShowtimeCreationWorkflowClient } from './worker'

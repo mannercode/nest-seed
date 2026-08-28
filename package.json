@@ -7,7 +7,6 @@
         "node": "^26.0.0"
     },
     "workspaces": [
-        "libs/temporal-sandbox",
         "libs/common",
         "libs/testing",
         "tools/*",
@@ -40,6 +39,7 @@
         "dev:common": "npm run dev -w libs/common",
         "dev:testing": "npm run dev -w libs/testing",
         "dev:api": "npm run dev -w apps/api",
+        "dev:restate": "node apps/api/scripts/register-restate.js",
         "dev:console": "npm run dev -w apps/console",
         "dev:user-app": "npm run dev -w apps/user-app"
     },
@@ -55,9 +55,6 @@
         "@nestjs/jwt": "12.0.1",
         "@nestjs/mongoose": "12.0.0",
         "@nestjs/testing": "12.0.1",
-        "@temporalio/client": "1.22.0",
-        "@temporalio/testing": "1.22.0",
-        "@temporalio/worker": "1.22.0",
         "@testcontainers/mongodb": "12.1.0",
         "@testcontainers/nats": "12.1.0",
         "@types/express": "5.0.6",

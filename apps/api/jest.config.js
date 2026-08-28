@@ -27,11 +27,7 @@ module.exports = {
         // barrel과 Nest 모듈은 export·프레임워크 조립 경계라 coverage 수집 대상에서 제외한다.
         // 모듈 조립은 앱 통합 테스트로, 업무 로직은 각 구현 파일의 coverage로 검증한다.
         '/index\\.ts$',
-        '\\.module\\.ts$',
-        // Temporal 워크플로 본문은 `bundleWorkflowCode`가 만든 샌드박스 안에서 실행된다.
-        // 그 안에서는 Jest의 Istanbul 계측이 닿지 않으므로, 통합 테스트를 실행해도 0%로 기록된다.
-        // 동작은 worker/__tests__의 실제 Temporal Worker 테스트로 검증한다.
-        '/worker/workflow(?:-v2)?\\.ts$'
+        '\\.module\\.ts$'
     ],
     coverageDirectory: jestRun.coverageDirectory
 }
