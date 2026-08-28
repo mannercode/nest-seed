@@ -4,103 +4,18 @@
  */
 
 const {
+    createAndLoginUser,
+    createPublishedMovieAndTheater,
+    createShowtimeWithTickets,
     readPositiveInt,
     request,
     secureRandomHex,
-    SERVER_URL,
-    waitForSagaSuccess
+    SERVER_URL
 } = require('./race-common')
 
 const USER_GROUPS = readPositiveInt('PURCHASE_USER_GROUPS', 5)
 const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 150)
 const SHOWTIME_DEADLINE_MS = readPositiveInt('SHOWTIME_DEADLINE_MS', 60_000)
-
-async function setupMovieTheater() {
-    const movie = await request('POST', '/movies', {
-        body: {
-            title: 'purchase-overlap-race',
-            genres: ['action'],
-            releaseDate: '2024-01-01T00:00:00.000Z',
-            plot: 'plot',
-            durationInSeconds: 7200,
-            director: 'dir',
-            rating: 'PG',
-            assetIds: []
-        }
-    })
-    if (movie.status !== 201) throw new Error(`movie: ${movie.status}`)
-
-    const publish = await request('POST', `/movies/${movie.body.id}/publish`)
-    if (publish.status !== 200 && publish.status !== 201) {
-        throw new Error(`publish: ${publish.status}`)
-    }
-
-    // 기본 5그룹에 충분한 20석을 만들며, 티켓 3장 묶음 기준 최대 6그룹까지 지원한다.
-    const theater = await request('POST', '/theaters', {
-        body: {
-            name: 'purchase-overlap-race',
-            location: { latitude: 37.5665, longitude: 126.978 },
-            seatmap: { blocks: [{ name: 'A', rows: [{ name: '1', layout: 'O'.repeat(20) }] }] }
-        }
-    })
-    if (theater.status !== 201) throw new Error(`theater: ${theater.status}`)
-
-    return { movieId: movie.body.id, theaterId: theater.body.id }
-}
-
-async function createShowtimeTickets(movieId, theaterId, startTimeOffsetMs) {
-    const startTime = new Date(Date.now() + 24 * 60 * 60 * 1000 + startTimeOffsetMs)
-        .toISOString()
-        .replace(/\.\d{3}Z$/, '.000Z')
-    const created = await request('POST', '/showtime-creation/showtimes', {
-        body: { movieId, theaterIds: [theaterId], durationInMinutes: 120, startTimes: [startTime] },
-        headers: { 'idempotency-key': secureRandomHex() }
-    })
-    if (created.status !== 202) throw new Error(`showtime: ${created.status}`)
-    await waitForSagaSuccess(created.body.sagaId, SHOWTIME_DEADLINE_MS)
-
-    const search = await request('POST', '/showtime-creation/showtimes/search', {
-        body: { theaterIds: [theaterId] }
-    })
-    if (search.status !== 200 || !Array.isArray(search.body) || search.body.length === 0) {
-        throw new Error(`showtimes search: ${search.status}`)
-    }
-    const showtime = search.body.find((s) => s.startTime === startTime)
-    if (!showtime) {
-        throw new Error(`showtimes search: no showtime with startTime ${startTime}`)
-    }
-    const showtimeId = showtime.id
-
-    const tickets = await request('GET', `/booking/showtimes/${showtimeId}/tickets`)
-    if (tickets.status !== 200 || !Array.isArray(tickets.body)) {
-        throw new Error(`tickets: ${tickets.status}`)
-    }
-    if (tickets.body.length < USER_GROUPS * 3) {
-        throw new Error(`tickets: need ${USER_GROUPS * 3}, got ${tickets.body.length}`)
-    }
-
-    const triples = Array.from({ length: USER_GROUPS }, (_, g) => [
-        tickets.body[g * 3].id,
-        tickets.body[g * 3 + 1].id,
-        tickets.body[g * 3 + 2].id
-    ])
-    return { showtimeId, triples }
-}
-
-async function createAndLoginUser(index) {
-    const email = `overlap.${Date.now()}.${index}.${secureRandomHex()}@example.com`
-    const password = 'overlappass'
-    const create = await request('POST', '/users', {
-        body: { name: `ovl-${index}`, birthDate: '1990-01-01T00:00:00.000Z', email, password }
-    })
-    if (create.status !== 201) throw new Error(`user create ${index}: ${create.status}`)
-
-    const login = await request('POST', '/users/login', { body: { email, password } })
-    if (login.status !== 200 && login.status !== 201) {
-        throw new Error(`user login ${index}: ${login.status}`)
-    }
-    return { userId: create.body.id, accessToken: login.body.accessToken }
-}
 
 function toPurchaseBody(ticketIds) {
     return {
@@ -175,10 +90,15 @@ async function verifyGroup(iteration, g, cust, triple, responses, showtimeId) {
 }
 
 async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs) {
-    const { showtimeId, triples } = await createShowtimeTickets(
+    const { showtimeId, ticketIds } = await createShowtimeWithTickets({
         movieId,
         theaterId,
-        startTimeOffsetMs
+        startTimeOffsetMs,
+        minimumTicketCount: USER_GROUPS * 3,
+        deadlineMs: SHOWTIME_DEADLINE_MS
+    })
+    const triples = Array.from({ length: USER_GROUPS }, (_, group) =>
+        ticketIds.slice(group * 3, group * 3 + 3)
     )
 
     await Promise.all(
@@ -237,9 +157,14 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
 async function main() {
     console.log(`[overlap] server=${SERVER_URL} groups=${USER_GROUPS} inner=${INNER_ITERATIONS}`)
 
-    const { movieId, theaterId } = await setupMovieTheater()
+    const { movieId, theaterId } = await createPublishedMovieAndTheater({
+        label: 'purchase-overlap-race',
+        seatCount: 20
+    })
     const users = await Promise.all(
-        Array.from({ length: USER_GROUPS }, (_, i) => createAndLoginUser(i))
+        Array.from({ length: USER_GROUPS }, (_, index) =>
+            createAndLoginUser({ prefix: 'overlap', index })
+        )
     )
 
     const spacingMs = 3 * 60 * 60 * 1000

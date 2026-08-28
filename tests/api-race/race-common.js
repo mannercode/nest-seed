@@ -300,8 +300,104 @@ async function waitForSagaSuccess(sagaId, deadlineMs) {
     }
 }
 
+async function createPublishedMovieAndTheater({ label, seatCount }) {
+    const movie = await request('POST', '/movies', {
+        body: {
+            title: label,
+            genres: ['action'],
+            releaseDate: '2024-01-01T00:00:00.000Z',
+            plot: 'plot',
+            durationInSeconds: 7200,
+            director: 'director',
+            rating: 'PG',
+            assetIds: []
+        }
+    })
+    if (movie.status !== 201) throw new Error(`movie: ${movie.status}`)
+
+    const publish = await request('POST', `/movies/${movie.body.id}/publish`)
+    if (publish.status !== 200 && publish.status !== 201) {
+        throw new Error(`publish: ${publish.status}`)
+    }
+
+    const theater = await request('POST', '/theaters', {
+        body: {
+            name: label,
+            location: { latitude: 37.5665, longitude: 126.978 },
+            seatmap: {
+                blocks: [{ name: 'A', rows: [{ name: '1', layout: 'O'.repeat(seatCount) }] }]
+            }
+        }
+    })
+    if (theater.status !== 201) throw new Error(`theater: ${theater.status}`)
+
+    return { movieId: movie.body.id, theaterId: theater.body.id }
+}
+
+async function createShowtimeWithTickets({
+    movieId,
+    theaterId,
+    startTimeOffsetMs,
+    minimumTicketCount,
+    deadlineMs
+}) {
+    const startTime = new Date(Date.now() + 24 * 60 * 60 * 1000 + startTimeOffsetMs)
+        .toISOString()
+        .replace(/\.\d{3}Z$/, '.000Z')
+    const created = await request('POST', '/showtime-creation/showtimes', {
+        body: { movieId, theaterIds: [theaterId], durationInMinutes: 120, startTimes: [startTime] },
+        headers: { 'idempotency-key': secureRandomHex() }
+    })
+    if (created.status !== 202) throw new Error(`showtime: ${created.status}`)
+    await waitForSagaSuccess(created.body.sagaId, deadlineMs)
+
+    const search = await request('POST', '/showtime-creation/showtimes/search', {
+        body: { theaterIds: [theaterId] }
+    })
+    if (search.status !== 200 || !Array.isArray(search.body) || search.body.length === 0) {
+        throw new Error(`showtimes search: ${search.status}`)
+    }
+    const showtime = search.body.find((candidate) => candidate.startTime === startTime)
+    if (!showtime) {
+        throw new Error(`showtimes search: no showtime with startTime ${startTime}`)
+    }
+
+    const tickets = await request('GET', `/booking/showtimes/${showtime.id}/tickets`)
+    if (tickets.status !== 200 || !Array.isArray(tickets.body)) {
+        throw new Error(`tickets: ${tickets.status}`)
+    }
+    if (tickets.body.length < minimumTicketCount) {
+        throw new Error(`tickets: need ${minimumTicketCount}, got ${tickets.body.length}`)
+    }
+
+    return { showtimeId: showtime.id, ticketIds: tickets.body.map((ticket) => ticket.id) }
+}
+
+async function createAndLoginUser({ prefix, index }) {
+    const email = `${prefix}.${Date.now()}.${index}.${secureRandomHex()}@example.com`
+    const password = `${prefix}password`
+    const created = await request('POST', '/users', {
+        body: { name: `${prefix}-${index}`, birthDate: '1990-01-01T00:00:00.000Z', email, password }
+    })
+    if (created.status !== 201) throw new Error(`user create ${index}: ${created.status}`)
+
+    const loggedIn = await request('POST', '/users/login', { body: { email, password } })
+    if (loggedIn.status !== 200 && loggedIn.status !== 201) {
+        throw new Error(`user login ${index}: ${loggedIn.status}`)
+    }
+
+    return {
+        userId: created.body.id,
+        accessToken: loggedIn.body.accessToken,
+        refreshToken: loggedIn.body.refreshToken
+    }
+}
+
 module.exports = {
     SERVER_URL,
+    createAndLoginUser,
+    createPublishedMovieAndTheater,
+    createShowtimeWithTickets,
     readPositiveInt,
     request,
     secureRandomHex,

@@ -1,11 +1,12 @@
 // 같은 티켓 쌍을 여러 복제본에서 동시에 선점해 그룹마다 한 건만 204가 되는지 검증한다.
 
 const {
+    createAndLoginUser,
+    createPublishedMovieAndTheater,
+    createShowtimeWithTickets,
     readPositiveInt,
     request,
-    secureRandomHex,
-    SERVER_URL,
-    waitForSagaSuccess
+    SERVER_URL
 } = require('./race-common')
 
 const TICKET_GROUPS = readPositiveInt('HOLD_TICKET_GROUPS', 5)
@@ -15,96 +16,16 @@ const SHOWTIME_DEADLINE_MS = readPositiveInt('SHOWTIME_DEADLINE_MS', 60_000)
 
 const TOTAL_USERS = TICKET_GROUPS * USERS_PER_GROUP
 
-async function setupMovieTheater() {
-    const movie = await request('POST', '/movies', {
-        body: {
-            title: 'hold-race',
-            genres: ['action'],
-            releaseDate: '2024-01-01T00:00:00.000Z',
-            plot: 'plot',
-            durationInSeconds: 7200,
-            director: 'director',
-            rating: 'PG',
-            assetIds: []
-        }
-    })
-    if (movie.status !== 201) throw new Error(`movie: ${movie.status}`)
-
-    const publish = await request('POST', `/movies/${movie.body.id}/publish`)
-    if (publish.status !== 200 && publish.status !== 201) {
-        throw new Error(`publish: ${publish.status}`)
-    }
-
-    const theater = await request('POST', '/theaters', {
-        body: {
-            name: 'hold-race',
-            location: { latitude: 37.5665, longitude: 126.978 },
-            seatmap: { blocks: [{ name: 'A', rows: [{ name: '1', layout: 'O'.repeat(20) }] }] }
-        }
-    })
-    if (theater.status !== 201) throw new Error(`theater: ${theater.status}`)
-
-    return { movieId: movie.body.id, theaterId: theater.body.id }
-}
-
-async function createShowtimeTickets(movieId, theaterId, startTimeOffsetMs) {
-    const startTime = new Date(Date.now() + 24 * 60 * 60 * 1000 + startTimeOffsetMs)
-        .toISOString()
-        .replace(/\.\d{3}Z$/, '.000Z')
-    const created = await request('POST', '/showtime-creation/showtimes', {
-        body: { movieId, theaterIds: [theaterId], durationInMinutes: 120, startTimes: [startTime] },
-        headers: { 'idempotency-key': secureRandomHex() }
-    })
-    if (created.status !== 202) throw new Error(`showtime: ${created.status}`)
-    await waitForSagaSuccess(created.body.sagaId, SHOWTIME_DEADLINE_MS)
-
-    const search = await request('POST', '/showtime-creation/showtimes/search', {
-        body: { theaterIds: [theaterId] }
-    })
-    if (search.status !== 200 || !Array.isArray(search.body) || search.body.length === 0) {
-        throw new Error(`showtimes search: ${search.status}`)
-    }
-    const showtime = search.body.find((s) => s.startTime === startTime)
-    if (!showtime) {
-        throw new Error(`showtimes search: no showtime with startTime ${startTime}`)
-    }
-    const showtimeId = showtime.id
-
-    const tickets = await request('GET', `/booking/showtimes/${showtimeId}/tickets`)
-    if (tickets.status !== 200 || !Array.isArray(tickets.body)) {
-        throw new Error(`tickets: ${tickets.status}`)
-    }
-    if (tickets.body.length < TICKET_GROUPS * 2) {
-        throw new Error(`tickets: need ${TICKET_GROUPS * 2}, got ${tickets.body.length}`)
-    }
-
-    const groups = Array.from({ length: TICKET_GROUPS }, (_, g) => [
-        tickets.body[g * 2].id,
-        tickets.body[g * 2 + 1].id
-    ])
-    return { showtimeId, groups }
-}
-
-async function createAndLoginUser(index) {
-    const email = `hold.${Date.now()}.${index}.${secureRandomHex()}@example.com`
-    const password = 'holdpassword'
-    const create = await request('POST', '/users', {
-        body: { name: `hold-${index}`, birthDate: '1990-01-01T00:00:00.000Z', email, password }
-    })
-    if (create.status !== 201) throw new Error(`user create ${index}: ${create.status}`)
-
-    const login = await request('POST', '/users/login', { body: { email, password } })
-    if (login.status !== 200 && login.status !== 201) {
-        throw new Error(`user login ${index}: ${login.status}`)
-    }
-    return login.body.accessToken
-}
-
 async function runInner(iteration, movieId, theaterId, tokens, startTimeOffsetMs) {
-    const { showtimeId, groups } = await createShowtimeTickets(
+    const { showtimeId, ticketIds } = await createShowtimeWithTickets({
         movieId,
         theaterId,
-        startTimeOffsetMs
+        startTimeOffsetMs,
+        minimumTicketCount: TICKET_GROUPS * 2,
+        deadlineMs: SHOWTIME_DEADLINE_MS
+    })
+    const groups = Array.from({ length: TICKET_GROUPS }, (_, group) =>
+        ticketIds.slice(group * 2, group * 2 + 2)
     )
 
     const attempts = []
@@ -170,9 +91,15 @@ async function main() {
         `[hold] server=${SERVER_URL} groups=${TICKET_GROUPS} users/group=${USERS_PER_GROUP} inner=${INNER_ITERATIONS}`
     )
 
-    const { movieId, theaterId } = await setupMovieTheater()
+    const { movieId, theaterId } = await createPublishedMovieAndTheater({
+        label: 'hold-race',
+        seatCount: 20
+    })
     const tokens = await Promise.all(
-        Array.from({ length: TOTAL_USERS }, (_, i) => createAndLoginUser(i))
+        Array.from({ length: TOTAL_USERS }, async (_, index) => {
+            const user = await createAndLoginUser({ prefix: 'hold', index })
+            return user.accessToken
+        })
     )
 
     const spacingMs = 3 * 60 * 60 * 1000
