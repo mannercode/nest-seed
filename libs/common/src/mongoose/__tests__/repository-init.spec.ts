@@ -1,5 +1,4 @@
 import type { Model } from 'mongoose'
-import { AppendOnlyRepository } from '../append-only.repository'
 import { CrudRepository } from '../crud.repository'
 
 type Sample = { name: string }
@@ -10,18 +9,13 @@ class SampleCrudRepository extends CrudRepository<Sample> {
     }
 }
 
-class SampleAppendOnlyRepository extends AppendOnlyRepository<Sample> {}
-
 describe('repository initialization', () => {
-    it.each([
-        ['CrudRepository', (model: Model<Sample>) => new SampleCrudRepository(model)],
-        ['AppendOnlyRepository', (model: Model<Sample>) => new SampleAppendOnlyRepository(model)]
-    ])('%s는 Mongoose가 시작한 모델 초기화만 기다린다', async (_name, createRepository) => {
+    it('Mongoose가 시작한 모델 초기화만 기다린다', async () => {
         const init = jest.fn(async () => undefined)
         const createCollection = jest.fn()
         const createIndexes = jest.fn()
         const model = { createCollection, createIndexes, init } as unknown as Model<Sample>
-        const repository = createRepository(model)
+        const repository = new SampleCrudRepository(model)
 
         await repository.onModuleInit()
 

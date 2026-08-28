@@ -4,7 +4,6 @@ import {
     differenceWith,
     escapeRegExp,
     getByPath,
-    isEqual,
     maxBy,
     minBy,
     omit,
@@ -154,92 +153,6 @@ describe('orderBy', () => {
     it('방향 배열이 비어 있으면 모두 오름차순으로 정렬한다', () => {
         const result = orderBy([{ v: 3 }, { v: 1 }, { v: 2 }], ['v'], [])
         expect(result).toEqual([{ v: 1 }, { v: 2 }, { v: 3 }])
-    })
-})
-
-describe('isEqual', () => {
-    it('두 수가 같으면 true를 반환한다', () => {
-        expect(isEqual(1, 1)).toBe(true)
-    })
-
-    it('양쪽이 null이면 true를 반환한다', () => {
-        expect(isEqual(null, null)).toBe(true)
-    })
-
-    it('배열 요소가 모두 같으면 true를 반환한다', () => {
-        expect(isEqual([1, 2], [1, 2])).toBe(true)
-    })
-
-    it('객체 키와 값이 모두 같으면 true를 반환한다', () => {
-        expect(isEqual({ a: 1 }, { a: 1 })).toBe(true)
-    })
-
-    it('중첩 배열까지 모두 같으면 true를 반환한다', () => {
-        expect(isEqual({ a: [1] }, { a: [1] })).toBe(true)
-    })
-
-    it('두 수가 다르면 false를 반환한다', () => {
-        expect(isEqual(1, 2)).toBe(false)
-    })
-
-    it('두 문자열이 다르면 false를 반환한다', () => {
-        expect(isEqual('a', 'b')).toBe(false)
-    })
-
-    it('null과 undefined를 비교하면 false를 반환한다', () => {
-        expect(isEqual(null, undefined)).toBe(false)
-    })
-
-    it('수와 문자열을 비교하면 false를 반환한다', () => {
-        expect(isEqual(1, '1')).toBe(false)
-    })
-
-    it('수와 null을 비교하면 false를 반환한다', () => {
-        expect(isEqual(1, null)).toBe(false)
-    })
-
-    it('배열 요소가 하나라도 다르면 false를 반환한다', () => {
-        expect(isEqual([1, 2], [1, 3])).toBe(false)
-    })
-
-    it('배열 길이가 다르면 false를 반환한다', () => {
-        expect(isEqual([1], [1, 2])).toBe(false)
-    })
-
-    it('객체 값이 다르면 false를 반환한다', () => {
-        expect(isEqual({ a: 1 }, { a: 2 })).toBe(false)
-    })
-
-    it('객체 키 개수가 다르면 false를 반환한다', () => {
-        expect(isEqual({ a: 1 }, { a: 1, b: 2 })).toBe(false)
-    })
-
-    it('빈 배열과 빈 객체를 비교하면 false를 반환한다', () => {
-        expect(isEqual([], {})).toBe(false)
-    })
-
-    it('빈 객체와 빈 배열을 비교하면 true를 반환한다 (얕은 비교 한계)', () => {
-        // 배열 가드가 첫 인자만 검사해 a가 객체면 키 비교로 넘어가고, 양쪽 키가 모두 비어 true가 된다.
-        expect(isEqual({}, [])).toBe(true)
-    })
-
-    it('순환 참조 객체끼리 비교하면 RangeError를 던진다', () => {
-        const a: any = { x: 1 }
-        a.self = a
-        const b: any = { x: 1 }
-        b.self = b
-
-        expect(() => isEqual(a, b)).toThrow(RangeError)
-    })
-
-    it('두 Date는 시각이 달라도 같다고 판정한다 (얕은 비교 한계)', () => {
-        // Date는 own enumerable 키가 없어 양쪽 Object.keys가 모두 []이다.
-        expect(isEqual(new Date(0), new Date(1))).toBe(true)
-    })
-
-    it('두 Map은 내용이 달라도 같다고 판정한다 (얕은 비교 한계)', () => {
-        // Map도 own enumerable 키가 없다.
-        expect(isEqual(new Map([['a', 1]]), new Map([['b', 2]]))).toBe(true)
     })
 })
 
