@@ -1,5 +1,5 @@
 ARG DEPS_TAG
-FROM node:24.19.0-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03 AS runtime-base
+FROM node:26.8.1-bookworm-slim@sha256:367679cf9792759492a486e4aa4b421764d71a9546a6dae8aab81a99eb797b3e AS runtime-base
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \

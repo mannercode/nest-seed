@@ -9,7 +9,7 @@
         "moduleResolution": "node10",
         "ignoreDeprecations": "6.0",
         // "ESNext"는 TS 버전마다 의미가 바뀌어 emit/타입이 흔들린다.
-        // Node 24에서 안전한 구체 에디션으로 고정한다.
+        // Node 26에서 안전한 구체 에디션으로 고정한다.
         "target": "ES2024",
         "lib": ["ES2024"],
         "types": ["node"],

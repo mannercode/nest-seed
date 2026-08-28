@@ -22,7 +22,7 @@ infra·deploy compose와 devcontainer는 같은 Docker 네트워크로 묶인다
 ## 부팅 순서
 
 1. `initializeCommand` — 사용자명과 workspace basename을 조합한 Docker 네트워크와 도구 설정 디렉터리 준비 (호스트에서 실행)
-2. 이미지 빌드 — `Dockerfile`이 digest로 고정한 Node 24 베이스에 k6, cloudflared, shellcheck, lychee, PlantUML, Playwright Chromium을 설치한다. 직접 다운로드하는 파일은 버전과 SHA-256을 함께 고정한다.
+2. 이미지 빌드 — `Dockerfile`이 digest로 고정한 Node 26 베이스에 k6, cloudflared, shellcheck, lychee, PlantUML, Playwright Chromium을 설치한다. 직접 다운로드하는 파일은 버전과 SHA-256을 함께 고정한다.
 3. `postCreateCommand` — `npm install`(최초 1회). manifest와 lockfile을 동기화하며 설치한다.
 4. `postStartCommand` — `bash infra/reset.sh`로 개발 인프라 기동 + PlantUML 서버
 

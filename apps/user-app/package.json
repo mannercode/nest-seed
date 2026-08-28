@@ -21,7 +21,7 @@
     "devDependencies": {
         "@mannercode/dev-tools": "*",
         "@tailwindcss/postcss": "4.3.3",
-        "@types/node": "24.13.3",
+        "@types/node": "26.4.0",
         "@types/react": "19.2.18",
         "@types/react-dom": "19.2.4",
         "eslint-config-next": "16.3.2",

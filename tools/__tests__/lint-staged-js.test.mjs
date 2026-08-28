@@ -52,7 +52,7 @@ test('lint-staged preserves spaces and apostrophes while partitioning JavaScript
         ]
     ]) {
         const result = spawnSync('git', args, { cwd: repository, encoding: 'utf8' })
-        assert.equal(result.status, 0, result.stderr)
+        assert.equal(result.status, 0, result.stderr || 'git command failed')
     }
 
     const lintStaged = spawnSync(

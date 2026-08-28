@@ -49,7 +49,7 @@ test('shell lint discovers extensionless hooks and checks sourced fixtures throu
         ['add', '.']
     ]) {
         const result = spawnSync('git', args, { cwd: repository, encoding: 'utf8' })
-        assert.equal(result.status, 0, result.stderr)
+        assert.equal(result.status, 0, result.stderr || 'git command failed')
     }
     await writeFile(join(repository, 'untracked-check.sh'), '#!/bin/bash\nexit 0\n')
 
@@ -63,14 +63,14 @@ test('shell lint discovers extensionless hooks and checks sourced fixtures throu
         encoding: 'utf8',
         env: environment
     })
-    assert.equal(fullRun.status, 0, fullRun.stderr)
+    assert.equal(fullRun.status, 0, fullRun.stderr || 'full shell lint failed')
 
     const fixtureRun = spawnSync(
         process.execPath,
         [lintShell, join(repository, 'apps/api/api-docs/common.fixture')],
         { cwd: repository, encoding: 'utf8', env: environment }
     )
-    assert.equal(fixtureRun.status, 0, fixtureRun.stderr)
+    assert.equal(fixtureRun.status, 0, fixtureRun.stderr || 'fixture shell lint failed')
 
     const calls = (await readFile(argumentLog, 'utf8'))
         .trim()
