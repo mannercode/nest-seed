@@ -184,7 +184,7 @@ The detail behind this README lives in six folder documents, four references, an
     - [Code conventions](docs/apps.md#코드-컨벤션) — naming, errors, imports, REST, denormalization
     - [Tests](docs/apps.md#테스트) — real-infrastructure testing rules and fixtures
     - [Executable API docs](docs/apps.md#실행-가능한-api-문서) — spec conventions and outputs
-- [libs/](docs/libs.md) — how the three shared packages are split
+- [libs/](docs/libs.md) — how the shared packages are split
 - [tests/](docs/tests.md) — the tests that verify a deployed stack from the outside, and how to run them
 - [infra/](docs/infra.md) — the development-infrastructure compose bundle and its consumers
 - [deploy/](docs/deploy.md) — Docker Compose multi-API-container + NGINX, the `x-replica-id` response header
