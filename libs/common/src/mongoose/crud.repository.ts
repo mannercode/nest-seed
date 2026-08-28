@@ -7,7 +7,7 @@ import type {
 } from 'mongoose'
 import { BadRequestException, NotFoundException, type OnModuleInit } from '@nestjs/common'
 import type { PaginationDto, PaginationResult } from '../pagination'
-import { Assume, defaultTo, differenceWith, uniq } from '../utils'
+import { Assume, defaultTo, differenceWith, Require, uniq } from '../utils'
 import { MongooseErrors } from './errors'
 import { objectId, objectIds } from './mongoose.util'
 
@@ -36,6 +36,7 @@ export function leanOneToPublic<T>(doc: unknown): null | T {
     return doc ? (leanToPublic(doc as any) as T) : null
 }
 
+// 일반 엔티티의 CRUD·페이지네이션·트랜잭션 기반이다. 변경 불가 이력은 AppendOnlyRepository를 쓴다.
 export abstract class CrudRepository<Doc> implements OnModuleInit {
     // 기본 페이지 크기와 요청 상한은 독립적으로 조정할 수 있어야 한다.
     constructor(
@@ -195,12 +196,11 @@ export abstract class CrudRepository<Doc> implements OnModuleInit {
             options
         )
 
-        const savedCount = insertedCount + matchedCount + deletedCount
-        if (docs.length !== savedCount) {
-            throw new Error(
-                `${docs.length} !== ${savedCount}, The number of inserted documents should match the requested count`
-            )
-        }
+        Require.equals(
+            docs.length,
+            insertedCount + matchedCount + deletedCount,
+            `The number of inserted documents should match the requested count`
+        )
     }
 
     async withTransaction<T>(

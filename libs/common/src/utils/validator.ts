@@ -1,4 +1,5 @@
 import { Logger } from '@nestjs/common'
+import { isEqual } from './lodash'
 
 export class Assume {
     static equalLength(a: any[] | undefined, b: any[] | undefined, message: string) {
@@ -27,6 +28,12 @@ export class Require {
 
         if (aLen === undefined || bLen === undefined || aLen !== bLen) {
             throw new Error(`${message} first: ${aLen}, second: ${bLen}`)
+        }
+    }
+
+    static equals<T>(a: T, b: T, message: string) {
+        if (!isEqual(a, b)) {
+            throw new Error(`${JSON.stringify(a)} !== ${JSON.stringify(b)}, ${message}`)
         }
     }
 }

@@ -1,4 +1,4 @@
-import { ensure, pickIds } from '@mannercode/common'
+import { DateUtil, ensure, pickIds } from '@mannercode/common'
 import { nullObjectId, oid, step } from '@mannercode/testing'
 import {
     TicketStatus,
@@ -82,7 +82,7 @@ describe('BookingService', () => {
             })
 
             await step('3. 선택한 상영일의 상영 시간 목록을 조회한다', async () => {
-                const yymmdd = showdate.toISOString().slice(0, 10).replaceAll('-', '')
+                const yymmdd = DateUtil.toYMD(showdate)
                 const url = `/booking/movies/${movie.id}/theaters/${theater.id}/showdates/${yymmdd}/showtimes`
 
                 const { body: showtimes } = await fix.httpClient.get(url).ok(

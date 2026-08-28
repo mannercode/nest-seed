@@ -1,7 +1,6 @@
 import fs from 'fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { Checksum } from '../checksum'
+import { PathUtil } from '../path'
 
 describe('Checksum', () => {
     describe('fromFile', () => {
@@ -9,14 +8,14 @@ describe('Checksum', () => {
         let filePath: string
 
         beforeEach(async () => {
-            tempDir = await fs.mkdtemp(join(tmpdir(), 'nest-seed-checksum-'))
-            filePath = join(tempDir, 'original.txt')
+            tempDir = await PathUtil.createTempDirectory()
+            filePath = PathUtil.join(tempDir, 'original.txt')
 
             await fs.writeFile(filePath, 'Hello, World!')
         })
 
         afterEach(async () => {
-            await fs.rm(tempDir, { force: true, recursive: true })
+            await PathUtil.delete(tempDir)
         })
 
         it('같은 내용이면 fromBuffer와 동일한 해시를 산출한다', async () => {

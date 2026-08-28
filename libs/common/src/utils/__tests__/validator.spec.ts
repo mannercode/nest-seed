@@ -39,6 +39,16 @@ describe('Require', () => {
             expect(() => Require.equalLength([1], [2], 'mismatch')).not.toThrow()
         })
     })
+
+    describe('equals', () => {
+        it('값이 다르면 예외를 던진다', () => {
+            expect(() => Require.equals(1, 2, 'not equal')).toThrow(/1 !== 2, not equal/)
+        })
+
+        it('값이 같으면 통과한다', () => {
+            expect(() => Require.equals(1, 1, 'not equal')).not.toThrow()
+        })
+    })
 })
 
 describe('Assume', () => {

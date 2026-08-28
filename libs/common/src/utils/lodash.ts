@@ -33,6 +33,18 @@ export function omit<T extends object, K extends keyof T>(
     return result
 }
 
+export function pick<T extends object, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> {
+    const result = {} as Pick<T, K>
+
+    for (const key of keys) {
+        if (key in obj) {
+            result[key] = obj[key]
+        }
+    }
+
+    return result
+}
+
 export function uniq<T>(arr: T[]): T[] {
     return [...new Set(arr)]
 }
@@ -68,6 +80,26 @@ export function orderBy<T>(
     })
 }
 
+export function isEqual(a: any, b: any): boolean {
+    if (a === b) return true
+    if (a == null || b == null) return a === b
+    if (typeof a !== typeof b) return false
+
+    if (Array.isArray(a)) {
+        if (!Array.isArray(b) || a.length !== b.length) return false
+        return a.every((v, i) => isEqual(v, b[i]))
+    }
+
+    if (typeof a === 'object') {
+        const keysA = Object.keys(a)
+        const keysB = Object.keys(b)
+        if (keysA.length !== keysB.length) return false
+        return keysA.every((k) => isEqual(a[k], b[k]))
+    }
+
+    return false
+}
+
 export function differenceWith<T, U = T>(
     arr: T[],
     values: U[],
@@ -101,4 +133,17 @@ export function countBy<T>(arr: T[], fn?: (item: T) => string): Record<string, n
 
 export function sumBy<T>(arr: T[], fn: (item: T) => number): number {
     return arr.reduce((sum, item) => sum + fn(item), 0)
+}
+
+export function pickBy<T extends object>(
+    obj: T,
+    predicate: (value: T[keyof T], key: string) => boolean
+): Partial<T> {
+    const result: Partial<T> = {}
+    for (const [key, value] of Object.entries(obj) as Array<[keyof T, T[keyof T]]>) {
+        if (predicate(value, key as string)) {
+            result[key] = value
+        }
+    }
+    return result
 }

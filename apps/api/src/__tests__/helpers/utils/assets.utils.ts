@@ -5,13 +5,13 @@ import type {
     CreateAssetDto,
     FinalizeAssetDto
 } from 'infrastructure'
+import { pick } from '@mannercode/common'
 import { readFile } from 'fs/promises'
 import { basename } from 'path'
 import { testAssets, type TestAsset } from '../assets'
 
 export function buildCreateAssetDto(file: TestAsset = testAssets.image): CreateAssetDto {
-    const { checksum, mimeType, originalName, size } = file
-    return { checksum, mimeType, originalName, size }
+    return pick(file, ['originalName', 'mimeType', 'size', 'checksum'])
 }
 
 export function buildFinalizeAssetDto(

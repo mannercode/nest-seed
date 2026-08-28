@@ -1,3 +1,5 @@
+export * from './append-only.repository'
+export * from './append-only.schema'
 export * from './crud.repository'
 export * from './crud.schema'
 export * from './errors'
