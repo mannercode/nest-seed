@@ -8,8 +8,6 @@ import {
     minBy,
     omit,
     orderBy,
-    pick,
-    pickBy,
     sortBy,
     sumBy,
     uniq
@@ -80,16 +78,6 @@ describe('omit', () => {
         const input = { a: 1, b: 2, c: 3 }
         omit(input, ['b'])
         expect(input).toEqual({ a: 1, b: 2, c: 3 })
-    })
-})
-
-describe('pick', () => {
-    it('지정된 키만 포함한 객체를 반환한다', () => {
-        expect(pick({ a: 1, b: 2, c: 3 }, ['a', 'c'])).toEqual({ a: 1, c: 3 })
-    })
-
-    it('존재하지 않는 키는 무시한다', () => {
-        expect(pick({ a: 1 } as any, ['a', 'b'])).toEqual({ a: 1 })
     })
 })
 
@@ -210,11 +198,5 @@ describe('sumBy', () => {
 
     it('빈 배열이면 0을 반환한다', () => {
         expect(sumBy([], (i: { v: number }) => i.v)).toBe(0)
-    })
-})
-
-describe('pickBy', () => {
-    it('조건 함수가 true를 반환하는 항목만 남긴다', () => {
-        expect(pickBy({ a: 1, b: null, c: 3 }, (v) => v != null)).toEqual({ a: 1, c: 3 })
     })
 })

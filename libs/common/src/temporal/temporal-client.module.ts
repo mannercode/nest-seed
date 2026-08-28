@@ -1,11 +1,4 @@
-import {
-    DynamicModule,
-    Inject,
-    Injectable,
-    Module,
-    OnModuleDestroy,
-    Provider
-} from '@nestjs/common'
+import { DynamicModule, Injectable, Module, OnModuleDestroy, Provider } from '@nestjs/common'
 import { Client, Connection } from '@temporalio/client'
 import {
     DEFAULT_TEMPORAL_CLIENT_NAME,
@@ -13,10 +6,6 @@ import {
     getTemporalConnectionToken
 } from './temporal.tokens'
 import { TemporalClientConfig, TemporalClientModuleAsyncOptions } from './temporal.types'
-
-export function InjectTemporalClient(name?: string): ParameterDecorator {
-    return Inject(getTemporalClientToken(name))
-}
 
 // 앱 단위로 만든 Temporal 연결을 모아 module destroy에서 닫는다.
 @Injectable()

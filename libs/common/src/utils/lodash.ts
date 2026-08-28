@@ -33,18 +33,6 @@ export function omit<T extends object, K extends keyof T>(
     return result
 }
 
-export function pick<T extends object, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> {
-    const result = {} as Pick<T, K>
-
-    for (const key of keys) {
-        if (key in obj) {
-            result[key] = obj[key]
-        }
-    }
-
-    return result
-}
-
 export function uniq<T>(arr: T[]): T[] {
     return [...new Set(arr)]
 }
@@ -113,17 +101,4 @@ export function countBy<T>(arr: T[], fn?: (item: T) => string): Record<string, n
 
 export function sumBy<T>(arr: T[], fn: (item: T) => number): number {
     return arr.reduce((sum, item) => sum + fn(item), 0)
-}
-
-export function pickBy<T extends object>(
-    obj: T,
-    predicate: (value: T[keyof T], key: string) => boolean
-): Partial<T> {
-    const result: Partial<T> = {}
-    for (const [key, value] of Object.entries(obj) as Array<[keyof T, T[keyof T]]>) {
-        if (predicate(value, key as string)) {
-            result[key] = value
-        }
-    }
-    return result
 }

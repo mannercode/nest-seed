@@ -35,18 +35,6 @@ afterAll(async () => {
     fs.unlinkSync(bundlePath)
 })
 
-describe('InjectTemporalClient', () => {
-    it('이름 없이 호출하면 파라미터 데코레이터를 반환한다', async () => {
-        const { InjectTemporalClient } = await import('../temporal-client.module')
-        expect(typeof InjectTemporalClient(undefined)).toBe('function')
-    })
-
-    it('이름과 함께 호출해도 파라미터 데코레이터를 반환한다', async () => {
-        const { InjectTemporalClient } = await import('../temporal-client.module')
-        expect(typeof InjectTemporalClient('my-client')).toBe('function')
-    })
-})
-
 describe('TemporalClientModule.forRootAsync', () => {
     it('이름 없이 등록하면 기본 토큰에 Connection과 Client를 노출한다', async () => {
         const { TemporalClientModule } = await import('../temporal-client.module')
