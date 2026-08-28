@@ -1,8 +1,10 @@
-import { AppLoggerService, PathUtil } from '@mannercode/common'
+import { AppLoggerService } from '@mannercode/common'
 import { NestFactory } from '@nestjs/core'
 import compression from 'compression'
 import { AppConfigService } from 'config'
 import express from 'express'
+import { constants } from 'node:fs'
+import { access, mkdir } from 'node:fs/promises'
 import { hostname } from 'os'
 import { exit } from 'process'
 import { AppModule } from './app.module'
@@ -15,9 +17,10 @@ export async function bootstrap() {
     // 사설 프록시 홉만 신뢰하면 Express가 오른쪽부터 첫 외부 주소를 클라이언트 IP로 고른다.
     app.getHttpAdapter().getInstance().set('trust proxy', ['loopback', 'linklocal', 'uniquelocal'])
 
-    await PathUtil.mkdir(log.directory)
-
-    if (!(await PathUtil.isWritable(log.directory))) {
+    await mkdir(log.directory, { recursive: true })
+    try {
+        await access(log.directory, constants.W_OK)
+    } catch {
         console.error(`Error: Directory is not writable: '${log.directory}'`)
         exit(1)
     }
