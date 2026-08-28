@@ -1,5 +1,6 @@
 // 같은 이메일 가입을 여러 복제본에 동시에 보내 정확히 한 건만 201이 되는지 검증한다.
 
+const { test } = require('node:test')
 const { readPositiveInt, request, secureRandomHex, SERVER_URL } = require('./race-common')
 
 const EMAIL_GROUPS = readPositiveInt('RACE_EMAIL_GROUPS', 10)
@@ -71,7 +72,7 @@ async function runInner(iteration) {
     return { groups: EMAIL_GROUPS, total: results.length, replicas: replicaSet.size }
 }
 
-async function main() {
+test('같은 이메일의 동시 가입은 여러 복제본에서도 정확히 하나만 성공한다', async () => {
     console.log(
         `[race] server=${SERVER_URL} groups=${EMAIL_GROUPS} clients/group=${CLIENTS_PER_GROUP} inner=${INNER_ITERATIONS}`
     )
@@ -86,9 +87,4 @@ async function main() {
     console.log(
         `[race] PASS: ${INNER_ITERATIONS} iters × ${EMAIL_GROUPS} groups × ${CLIENTS_PER_GROUP} clients`
     )
-}
-
-main().catch((err) => {
-    console.error('[race] error:', err)
-    process.exit(1)
 })

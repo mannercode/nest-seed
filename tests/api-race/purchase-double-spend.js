@@ -3,6 +3,7 @@
  * 성공 응답은 구매 목록에서 다시 읽어 phantom 성공도 함께 막는다.
  */
 
+const { test } = require('node:test')
 const {
     createAndLoginUser,
     createPublishedMovieAndTheater,
@@ -133,7 +134,7 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
     return { total: results.length, replicas: replicaSet.size }
 }
 
-async function main() {
+test('같은 티켓 묶음의 동시 결제는 하나만 성공하고 영속화된다', async () => {
     console.log(
         `[purchase] server=${SERVER_URL} groups=${USER_GROUPS} purchases/group=${PURCHASES_PER_GROUP} inner=${INNER_ITERATIONS}`
     )
@@ -160,9 +161,4 @@ async function main() {
     console.log(
         `[purchase] PASS: ${INNER_ITERATIONS} iters × ${USER_GROUPS} groups × ${PURCHASES_PER_GROUP} purchases`
     )
-}
-
-main().catch((err) => {
-    console.error('[purchase] error:', err)
-    process.exit(1)
 })

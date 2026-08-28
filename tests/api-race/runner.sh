@@ -5,15 +5,11 @@
 
 set -Eeuo pipefail
 
-: "${WORKSPACE_ROOT:?}"
-: "${ROOT_PASSWORD:?ROOT_PASSWORD must be set (devcontainer가 .env.api에서 inject)}"
-
 # infra compose와 docker network를 공유하므로 docker compose가 infra 컨테이너를 orphan으로 표시한다.
 # 의미적으로 별개의 묶음이라 경고만 끈다.
 export COMPOSE_IGNORE_ORPHANS=True
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-COMPOSE_DIR="${WORKSPACE_ROOT}/deploy"
 
 list_scenarios() {
     echo "Scenarios:"
@@ -28,7 +24,7 @@ TEST_NAME="${1:-}"
 if [ -z "${TEST_NAME}" ]; then
     echo "Usage: $0 <scenario>"
     list_scenarios
-    exit 1
+    exit 0
 fi
 TEST_SCRIPT="${SCRIPT_DIR}/${TEST_NAME}.js"
 
@@ -37,6 +33,10 @@ if [ ! -f "${TEST_SCRIPT}" ]; then
     list_scenarios
     exit 1
 fi
+
+: "${WORKSPACE_ROOT:?}"
+: "${ROOT_PASSWORD:?ROOT_PASSWORD must be set (devcontainer가 .env.api에서 inject)}"
+COMPOSE_DIR="${WORKSPACE_ROOT}/deploy"
 
 cd "${COMPOSE_DIR}"
 
@@ -128,7 +128,7 @@ seed_admin_and_login() {
 run_scenario() {
     echo ""
     echo "=== ${TEST_NAME} ==="
-    if SERVER_URL="${SERVER_URL}" node "${TEST_SCRIPT}"; then
+    if SERVER_URL="${SERVER_URL}" node --test --test-reporter=spec "${TEST_SCRIPT}"; then
         echo "[PASS] ${TEST_NAME}"
         return 0
     fi

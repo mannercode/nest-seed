@@ -4,6 +4,7 @@
  * 승자의 새 refresh token은 다시 회전돼 토큰 패밀리가 폐기되지 않았음을 증명해야 한다.
  */
 
+const { test } = require('node:test')
 const { readPositiveInt, request, secureRandomHex, SERVER_URL } = require('./race-common')
 
 const USER_GROUPS = readPositiveInt('RACE_USER_GROUPS', 5)
@@ -111,7 +112,7 @@ async function runInner(iteration) {
     return { groups: USER_GROUPS, total: results.length, replicas: replicaSet.size }
 }
 
-async function main() {
+test('같은 refresh token의 동시 회전은 하나만 성공하고 승자 token family를 유지한다', async () => {
     console.log(
         `[race] server=${SERVER_URL} groups=${USER_GROUPS} clients/user=${CLIENTS_PER_USER} inner=${INNER_ITERATIONS}`
     )
@@ -126,9 +127,4 @@ async function main() {
     console.log(
         `[race] PASS: ${INNER_ITERATIONS} iters × ${USER_GROUPS} groups × ${CLIENTS_PER_USER} clients`
     )
-}
-
-main().catch((err) => {
-    console.error('[race] error:', err)
-    process.exit(1)
 })

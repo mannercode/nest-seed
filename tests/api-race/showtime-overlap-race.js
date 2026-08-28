@@ -1,5 +1,6 @@
 // 모든 쌍이 겹치는 상영 생성 사가를 동시에 보내 분산 락이 정확히 한 건만 성공시키는지 검증한다.
 
+const { test } = require('node:test')
 const {
     readPositiveInt,
     request,
@@ -122,7 +123,7 @@ async function runInner(iteration, movieId, theaterId, sse, baseOffsetMs) {
     return { succeeded, failed }
 }
 
-async function main() {
+test('서로 겹치는 상영 생성 사가는 여러 복제본에서도 정확히 하나만 성공한다', async () => {
     console.log(`[overlap] server=${SERVER_URL} overlap=${OVERLAP_COUNT} inner=${INNER_ITERATIONS}`)
 
     const { movieId, theaterId } = await setupFixture()
@@ -145,9 +146,4 @@ async function main() {
     }
 
     console.log(`[overlap] PASS: ${INNER_ITERATIONS} iters × ${OVERLAP_COUNT}-way race`)
-}
-
-main().catch((err) => {
-    console.error('[overlap] error:', err)
-    process.exit(1)
 })

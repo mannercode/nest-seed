@@ -1,5 +1,6 @@
 // 같은 티켓 쌍을 여러 복제본에서 동시에 선점해 그룹마다 한 건만 204가 되는지 검증한다.
 
+const { test } = require('node:test')
 const {
     createAndLoginUser,
     createPublishedMovieAndTheater,
@@ -86,7 +87,7 @@ async function runInner(iteration, movieId, theaterId, tokens, startTimeOffsetMs
     return { total: results.length, replicas: replicaSet.size }
 }
 
-async function main() {
+test('같은 티켓 묶음의 동시 선점은 여러 복제본에서도 한 사용자만 성공한다', async () => {
     console.log(
         `[hold] server=${SERVER_URL} groups=${TICKET_GROUPS} users/group=${USERS_PER_GROUP} inner=${INNER_ITERATIONS}`
     )
@@ -114,9 +115,4 @@ async function main() {
     console.log(
         `[hold] PASS: ${INNER_ITERATIONS} iters × ${TICKET_GROUPS} groups × ${USERS_PER_GROUP} users`
     )
-}
-
-main().catch((err) => {
-    console.error('[hold] error:', err)
-    process.exit(1)
 })

@@ -3,6 +3,7 @@
  * 그룹마다 구매 기록 한 건과 Sold 티켓 두 장만 남아야 한다.
  */
 
+const { test } = require('node:test')
 const {
     createAndLoginUser,
     createPublishedMovieAndTheater,
@@ -154,7 +155,7 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
     return { total: results.length, replicas: replicaSet.size }
 }
 
-async function main() {
+test('겹치는 티켓 묶음의 동시 구매는 원자 전이와 패자 보상을 유지한다', async () => {
     console.log(`[overlap] server=${SERVER_URL} groups=${USER_GROUPS} inner=${INNER_ITERATIONS}`)
 
     const { movieId, theaterId } = await createPublishedMovieAndTheater({
@@ -177,9 +178,4 @@ async function main() {
     }
 
     console.log(`[overlap] PASS: ${INNER_ITERATIONS} iters × ${USER_GROUPS} groups × 2 purchases`)
-}
-
-main().catch((err) => {
-    console.error('[overlap] error:', err)
-    process.exit(1)
 })

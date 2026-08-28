@@ -1,5 +1,6 @@
 // 여러 복제본의 모든 SSE 클라이언트가 동시에 시작한 모든 사가의 succeeded 이벤트를 받는지 검증한다.
 
+const { test } = require('node:test')
 const {
     readPositiveInt,
     request,
@@ -130,7 +131,7 @@ async function runInner(movieId, theaterId, iteration, baseOffsetMs) {
     return { events: totalEvents, replicas: replicaSet.size }
 }
 
-async function main() {
+test('모든 SSE client는 여러 복제본에서 완료된 모든 saga event를 받는다', async () => {
     console.log(
         `[sse] server=${SERVER_URL} clients=${SSE_CLIENT_COUNT} sagas=${SAGAS_PER_INNER} inner=${INNER_ITERATIONS}`
     )
@@ -151,9 +152,4 @@ async function main() {
     console.log(
         `[sse] PASS: ${INNER_ITERATIONS} iters × ${SSE_CLIENT_COUNT} clients × ${SAGAS_PER_INNER} sagas`
     )
-}
-
-main().catch((err) => {
-    console.error('[sse] error:', err)
-    process.exit(1)
 })

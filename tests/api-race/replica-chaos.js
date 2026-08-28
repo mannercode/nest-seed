@@ -3,6 +3,7 @@
  * 전송 오류와 5xx 응답의 비율은 1% 이하여야 하고 복구 구간에는 네 복제본이 모두 응답해야 한다.
  */
 
+const { test } = require('node:test')
 const { execSync } = require('child_process')
 const { readPositiveInt, request, secureRandomHex, secureRandomIndex } = require('./race-common')
 
@@ -70,7 +71,7 @@ function summarize(label, bucket) {
     return `${label}: total=${bucket.total} replicas=${replicas} | ${status}`
 }
 
-async function main() {
+test('트래픽 중 복제본을 재시작해도 오류율과 복구 조건을 유지한다', async () => {
     const replicas = dockerReplicaIds()
     if (replicas.length < 4) {
         throw new Error(`expected 4 app replicas, got ${replicas.length}: ${replicas.join(',')}`)
@@ -148,9 +149,4 @@ async function main() {
         throw new Error(`overall: only ${allReplicas.size} distinct replicas served`)
     }
     console.log('[chaos] PASS')
-}
-
-main().catch((err) => {
-    console.error('[chaos] error:', err)
-    process.exit(1)
 })
