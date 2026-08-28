@@ -15,7 +15,9 @@ function buildPresignedPostForm(
         form.append(key, value)
     })
 
-    const blob = new Blob([body], { type: contentType ?? 'application/octet-stream' })
+    const blob = new Blob([new Uint8Array(body)], {
+        type: contentType ?? 'application/octet-stream'
+    })
     form.append('file', blob, filename)
 
     return form
