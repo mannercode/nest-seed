@@ -9,7 +9,9 @@ export class ApiError extends Error {
     }
 }
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+type RequestOptions = { body?: unknown }
+
+async function request<T>(method: string, path: string, { body }: RequestOptions = {}): Promise<T> {
     const headers: Record<string, string> = {}
     if (body !== undefined) headers['Content-Type'] = 'application/json'
 
@@ -19,9 +21,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
         body: body === undefined ? undefined : JSON.stringify(body)
     })
 
-    if (response.status === 204) {
-        return undefined as T
-    }
+    if (response.status === 204) return undefined as T
 
     const text = await response.text()
     const parsed = text ? (JSON.parse(text) as unknown) : null
@@ -41,5 +41,9 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     return parsed as T
 }
 
-export const getJson = <T>(path: string) => request<T>('GET', path)
-export const postJson = <T>(path: string, body: unknown) => request<T>('POST', path, body)
+export const api = {
+    get: <T>(path: string, options?: RequestOptions) => request<T>('GET', path, options),
+    post: <T>(path: string, options?: RequestOptions) => request<T>('POST', path, options),
+    patch: <T>(path: string, options?: RequestOptions) => request<T>('PATCH', path, options),
+    delete: <T>(path: string, options?: RequestOptions) => request<T>('DELETE', path, options)
+}

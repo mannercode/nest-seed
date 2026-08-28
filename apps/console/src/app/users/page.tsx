@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { LogoutButton } from '@/app/_components/logout-button'
-import { ApiError, api } from '@/lib/api-client'
+import { ApiError, api } from '@mannercode/frontend/api-client'
 
 type User = { id: string; name: string; email: string; birthDate: string }
 type UsersPage = { items: User[]; page: number; size: number; total: number }

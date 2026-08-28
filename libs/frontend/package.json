@@ -4,6 +4,7 @@
     "private": true,
     "type": "module",
     "exports": {
+        "./api-client": "./src/api-client.ts",
         "./bff": "./src/bff.ts"
     },
     "scripts": {

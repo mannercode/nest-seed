@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { ApiError, postJson } from '@/lib/api-client'
+import { ApiError, api } from '@mannercode/frontend/api-client'
 
 export default function SignupPage() {
     const router = useRouter()
@@ -19,11 +19,8 @@ export default function SignupPage() {
         setError(null)
         setBusy(true)
         try {
-            await postJson('/users', {
-                name,
-                email,
-                password,
-                birthDate: new Date(birthDate).toISOString()
+            await api.post('/users', {
+                body: { name, email, password, birthDate: new Date(birthDate).toISOString() }
             })
             router.push('/login')
         } catch (err) {
