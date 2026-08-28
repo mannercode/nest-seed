@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { LogoutButton } from '@/app/_components/logout-button'
-import { ApiError, api } from '@mannercode/frontend/api-client'
+import { ApiError, api } from '@/lib/api-client'
 
 type Theater = { id: string; name: string; location: { latitude: number; longitude: number } }
 type TheatersPage = { items: Theater[]; page: number; size: number; total: number }

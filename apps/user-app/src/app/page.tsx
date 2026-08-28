@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { ApiError, api } from '@mannercode/frontend/api-client'
+import { ApiError, getJson, postJson } from '@/lib/api-client'
 
 type ShowtimeView = {
     id: string
@@ -26,7 +26,7 @@ export default function HomePage() {
 
         async function load() {
             try {
-                const user = await api.get<CurrentUser>('/users/me')
+                const user = await getJson<CurrentUser>('/users/me')
                 if (!cancelled) setEmail(user.email)
             } catch (err) {
                 if (!(err instanceof ApiError && err.status === 401) && !cancelled) {
@@ -36,7 +36,7 @@ export default function HomePage() {
             }
 
             try {
-                const view = await api.get<HomeView>('/views/user-app/home')
+                const view = await getJson<HomeView>('/views/user-app/home')
                 if (!cancelled) setHome(view)
             } catch (err) {
                 if (!cancelled) {
@@ -61,9 +61,9 @@ export default function HomePage() {
         setLoggingOut(true)
         setError(null)
         try {
-            await api.post('/users/logout', { body: {} })
+            await postJson('/users/logout', {})
             setEmail(null)
-            setHome(await api.get<HomeView>('/views/user-app/home'))
+            setHome(await getJson<HomeView>('/views/user-app/home'))
         } catch (err) {
             setEmail(null)
             setError(err instanceof Error ? err.message : '로그아웃에 실패했다')

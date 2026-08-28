@@ -6,7 +6,6 @@ RUN npm install --global npm@12.0.2
 
 WORKDIR /workspace
 COPY .npmrc package.json package-lock.json ./
-COPY libs/frontend/package.json libs/frontend/
 COPY libs/temporal-sandbox/package.json libs/temporal-sandbox/
 COPY libs/common/package.json libs/common/
 COPY libs/testing/package.json libs/testing/

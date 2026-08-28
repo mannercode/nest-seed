@@ -99,7 +99,7 @@ API는 `loopback`·`linklocal`·`uniquelocal` 프록시만 신뢰하므로, API 
 
 이 경계는 `deploy/verify.sh`가 아니라 각 테스트 계층이 자기 범위만 검증한다.
 
-- [BFF pure 계약 테스트](../tests/console-e2e/unit/bff-proxy.spec.ts)는 두 Next.js 앱의 공용 구현에서 기본값으로 proxy IP 헤더를 무시하는 규칙, opt-in에서 오른쪽 끝 IP만 선택하는 규칙, 잘못된 끝값에서 앞쪽 공격자 값으로 후퇴하지 않는 규칙을 검증한다.
+- [BFF pure 계약 테스트](../tests/console-e2e/unit/bff-proxy.spec.ts)는 기본값에서 proxy IP 헤더를 무시하는 규칙, opt-in에서 오른쪽 끝 IP만 선택하는 규칙, 잘못된 끝값에서 앞쪽 공격자 값으로 후퇴하지 않는 규칙을 두 Next.js 앱에 공통으로 검증한다.
 - Playwright는 두 BFF를 의도적으로 `BFF_TRUST_PROXY_HEADERS=true`로 시작한다. 브라우저가 보낸 `X-Forwarded-For`로 신뢰 edge를 모사해 서로 다른 주소의 로그인 실패가 별도 IP 버킷에 쌓이는 opt-in wiring을 검증한다. 이것은 실제 public edge가 외부 헤더를 덮어쓰는지는 증명하지 않는다.
 - API 인증 통합 테스트는 프로세스 안에서 trusted-proxy 해석과 로그인 rate-limit 동작을 검증한다. Compose의 BFF·edge 경계를 통과하는 통합 검증은 아니다.
 

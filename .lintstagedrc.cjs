@@ -8,10 +8,6 @@ module.exports = {
         'npm exec --workspace apps/user-app -- eslint --fix',
         'prettier --write'
     ],
-    'libs/frontend/**/*.{ts,tsx}': [
-        'npm exec --workspace libs/frontend -- eslint --fix',
-        'prettier --write'
-    ],
     'libs/common/**/*.{ts,tsx}': [
         'npm exec --workspace libs/common -- eslint --fix',
         'prettier --write'

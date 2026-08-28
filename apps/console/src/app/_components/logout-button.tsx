@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { api } from '@mannercode/frontend/api-client'
+import { api } from '@/lib/api-client'
 
 export function LogoutButton() {
     const router = useRouter()

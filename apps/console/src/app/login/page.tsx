@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { ApiError, api } from '@mannercode/frontend/api-client'
+import { ApiError, api } from '@/lib/api-client'
 
 export default function LoginPage() {
     const router = useRouter()

@@ -6,6 +6,6 @@ if (!API_BASE_URL) {
 }
 
 /** @type {import('next').NextConfig} */
-const nextConfig = { transpilePackages: ['@mannercode/frontend'] }
+const nextConfig = {}
 
 export default nextConfig
