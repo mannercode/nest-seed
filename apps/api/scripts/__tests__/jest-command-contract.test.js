@@ -4,6 +4,7 @@ const path = require('node:path')
 const test = require('node:test')
 
 const apiDirectory = path.resolve(__dirname, '../..')
+const workspaceRoot = path.resolve(apiDirectory, '../..')
 
 test('병렬 invocation fixture는 실제 API setup과 teardown을 사용한다', () => {
     const fixtureConfig = require('./fixtures/jest-invocation/jest.config')
@@ -21,6 +22,21 @@ test('API의 일반 test는 Jest만 실행하고 atoz가 isolation harness를 �
         scripts.atoz,
         'npm run lint && npm run test:api-docs-redaction && npm run test:jest-isolation && npm test'
     )
+})
+
+test('API stability 반복은 run별 coverage 산출물을 만들지 않는다', () => {
+    const workflow = fs.readFileSync(
+        path.join(workspaceRoot, '.github/workflows/test-stability.yaml'),
+        'utf8'
+    )
+    const apiRepeatCommands = workflow
+        .split('\n')
+        .filter((line) => line.includes('repeat.sh 20 npm test -w apps/api'))
+
+    assert.equal(apiRepeatCommands.length, 3)
+    for (const command of apiRepeatCommands) {
+        assert.match(command, /--coverage=false(?:\s|$)/)
+    }
 })
 
 test('API integration spec은 setup 실패 뒤 이전 fixture를 다시 닫지 않는다', () => {

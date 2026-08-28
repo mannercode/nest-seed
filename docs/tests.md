@@ -70,7 +70,7 @@ SERVER_URL=http://localhost:3000 bash tests/api-perf/mixed-runner.sh # 떠 있�
 
 ## console-e2e — 프런트엔드 e2e와 BFF 계약
 
-Playwright가 `apps/api`·`apps/console`·`apps/user-app`을 빌드해 띄운 뒤, 브라우저에서 관리자 로그인과 영화·극장·사용자 관리, 사용자 가입·로그인·세션 회전 흐름을 검증한다. 개발 중 이미 서버가 떠 있으면 재사용한다(`reuseExistingServer`). CI는 재시도 없이 첫 실패를 게이트한다. 실패 시 trace·screenshot·JUnit·HTML report는 workflow artifact로 보존한다.
+Playwright가 `apps/api`·`apps/console`·`apps/user-app`을 빌드해 띄운 뒤, 브라우저에서 관리자 로그인과 영화·극장·사용자 관리, 사용자 가입·로그인·세션 회전 흐름을 검증한다. 개발 중 이미 서버가 떠 있으면 재사용한다(`reuseExistingServer`). PR/push CI는 재시도 없이 첫 실패를 게이트하고, 정기 실행만 한 번 재시도한다. 실패 시 trace·screenshot·JUnit·HTML report는 workflow artifact로 보존한다.
 
 같은 워크스페이스의 `unit/bff-proxy.spec.ts`는 두 앱이 함께 쓰는 BFF 구현의 proxy IP 경계와 refresh 재시도 쿠키 보존을 검증한다. 별도 Playwright 설정을 써서 webServer와 브라우저를 시작하지 않는다.
 
@@ -82,12 +82,12 @@ npm run e2e:ui -w tests/console-e2e   # 로컬 디버그: 인터랙티브 실행
 
 ## CI 반복 — test-stability
 
-CI 워크플로는 둘이다. [test-atoz.yaml](../.github/workflows/test-atoz.yaml)은 PR·main push·수동 실행에서 전체 회귀(atoz)를 한 번 돌려 기능 회귀를 잡고, test-stability는 같은 시나리오의 작은 표본을 반복해 흔들림(간헐 실패)을 드러낸다. Stability는 원본 저장소를 GitHub의 immutable `repository_id == 849585972`로 식별해 매주 한 번 실행한다. fork의 cron event는 repository variable `ENABLE_SCHEDULED_CI=true`를 명시해야만 job을 실행하고, 수동 실행은 이 변수와 무관하다. 저장소 이름을 재사용해도 원본 권한을 얻지 않으며, fork의 ID로 workflow sentinel을 바꾸지 않는다. 비용·secret·ruleset 준비는 [GitHub 운영 설정](github-setup.md#1-actions와-정기-실행-opt-in)을 따른다.
+CI 워크플로는 둘이다. [test-atoz.yaml](../.github/workflows/test-atoz.yaml)은 PR·main push·수동 실행에서 전체 회귀(atoz)를 한 번 돌려 기능 회귀를 잡고, test-stability는 같은 시나리오를 누적 반복해 흔들림(간헐 실패)을 드러낸다. 원본 저장소는 GitHub의 immutable `repository_id == 849585972`로 식별되어 test-atoz가 3시간마다, test-stability가 6시간마다 변수 없이 정기 실행된다. fork의 cron event는 repository variable `ENABLE_SCHEDULED_CI=true`를 명시해야만 job을 실행하고, 수동 실행은 이 변수와 무관하다. 저장소 이름을 재사용해도 원본 권한을 얻지 않으며, fork의 ID로 workflow sentinel을 바꾸지 않는다. 비용·secret·ruleset 준비는 [GitHub 운영 설정](github-setup.md#1-actions와-정기-실행-opt-in)을 따른다.
 
-[test-stability.yaml](../.github/workflows/test-stability.yaml)은 행렬의 각 레그를 독립된 잡으로 실행한다. libs와 apps/api는 각각 5회, 인프라 부팅은 10회 반복한다. 분산 race는 시나리오 내부 반복과 workflow 반복이 곱해지지 않도록 `INNER_ITERATIONS=1`인 batch를 5회 실행하며, 두 분 동안 복제본을 내렸다 복구하는 replica chaos는 3회 실행한다. 한 batch 안의 동시 client·group 수는 그대로라 경쟁 강도는 줄이지 않는다.
+[test-stability.yaml](../.github/workflows/test-stability.yaml)은 행렬의 각 레그를 독립된 잡으로 실행한다. 각 분산 시나리오는 50회, libs 단위/통합 테스트는 75회, 부팅 검증은 50회를 반복한다. apps/api는 한 러너에 장시간 부하가 누적되지 않고 240분 제한 안에 끝나도록 20회씩 세 레그로 나누어 총 60회를 유지한다.
 
 apps/api 반복은 실행별 coverage 디렉터리를 누적하지 않도록 coverage를 끄고 반복 흔들림만 본다. 이것은 커버리지 게이트를 우회하는 경로가 아니다. `test-atoz`의 전체 `npm test`가 별도로 커버리지 100% 게이트를 통과해야 하고, apps/api AtoZ는 실제 setup/teardown을 켠 Jest 명령 두 개를 동시에 돌리는 격리 하네스도 검증한다.
 
 분산 레이스 레그는 반복을 시작하기 전 `deploy/prebuild-images.sh`로 deps·API·NGINX 이미지를 한 번만 준비한다. 각 회차는 `DEPLOY_IMAGES_PREBUILT=true`로 `docker compose up --no-build`를 써서 같은 이미지를 재사용한다. 이렇게 해야 반복 횟수가 이미지 레지스트리 메타데이터 장애와 빌드 시간을 반복 추출하지 않고, 같은 바이너리의 안정성을 측정한다.
 
-부팅 레그는 `infra/reset.sh`(인프라 compose 전체 재기동)를 반복한다. 실패하면 Actions 로그에서 `[Run i/N]` 마커로 실패 회차를 찾는다. 이어지는 컨테이너 로그 덤프는 `repeat.sh`가 남기는 진단이다. 더 긴 soak가 필요하면 내부·외부 반복을 동시에 키우지 말고 수동 실행에서 한쪽 반복량만 조정한다.
+부팅 레그는 `infra/reset.sh`(인프라 compose 전체 재기동)를 반복한다. 레이스 코드는 한 번 통과했다고 안전하다고 보기 어렵다. 그래서 결과가 얼마나 흔들리는지 누적으로 확인한다. 반복 횟수와 timeout은 각 레그가 GitHub Actions 상한 안에서 진단 표본을 모으도록 맞춘 값이다. 실패하면 Actions 로그에서 `[Run i/N]` 마커로 실패 회차를 찾는다. 이어지는 컨테이너 로그 덤프는 `repeat.sh`가 의도적으로 남기는 진단이다.

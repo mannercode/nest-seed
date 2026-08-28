@@ -31,20 +31,23 @@ gh api repos/OWNER/REPO/automated-security-fixes
 
 fork에서는 workflow를 활성화하기 전에 파일과 비용을 검토한다. GitHub가 fork의 Actions를 처음에는 비활성 상태로 둘 수 있으므로, Settings → Actions → General의 정책과 각 workflow의 활성 상태를 확인한다.
 
-원본 `mannercode/nest-seed`의 주간 Stability 실행은 바뀌지 않는 GitHub repository ID로 식별되어 별도 변수 없이 활성화된다. 저장소 이름을 바꿔도 이 ID는 fork에 복사되지 않는다. fork에서는 비용을 모르고 cron이 시작되지 않도록 repository variable이 정확히 다음 값일 때만 실제 job을 실행한다.
+원본 `mannercode/nest-seed`의 두 정기 실행은 바뀌지 않는 GitHub repository ID로 식별되어 별도 변수 없이 활성화된다. 저장소 이름을 바꿔도 이 ID는 fork에 복사되지 않는다. fork에서는 비용을 모르고 cron이 시작되지 않도록 repository variable이 정확히 다음 값일 때만 실제 job을 실행한다.
 
 ```text
 ENABLE_SCHEDULED_CI=true
 ```
 
-Settings → Secrets and variables → Actions → Variables에서 추가한다. fork에서 값이 없거나 `true`가 아니면 주간 cron event는 job을 건너뛴다. 이 opt-in은 다음 실행에는 영향을 주지 않는다.
+Settings → Secrets and variables → Actions → Variables에서 추가한다. fork에서 값이 없거나 `true`가 아니면 cron event는 job을 건너뛴다. 이 opt-in은 다음 실행에는 영향을 주지 않는다.
 
 - `test-atoz`: pull request, main push, 수동 `workflow_dispatch`는 항상 실행
 - `test-stability`: 수동 `workflow_dispatch`는 항상 실행
 
-`test-stability`는 UTC 기준 매주 일요일 03:27에 11개 matrix job을 실행한다. 설정된 timeout 합은 한 회 최대 9.5 runner-hours다. 각 race는 동시에 보내는 요청 수는 유지하면서 inner batch 하나를 다섯 번 실행하고, 더 긴 replica chaos는 세 번 실행한다.
+정기 실행량은 작지 않다.
 
-실제 실행 시간과 과금은 GitHub 요금제·runner 정책에 따라 달라진다. 먼저 수동 실행으로 시간과 필요 자원을 확인한 뒤 opt-in하고, Actions usage와 실패 알림을 지속해서 본다. 주간 표본이 필요 없는 fork는 변수를 만들지 않는다.
+- `test-atoz`는 UTC 기준 3시간마다 실행되며 한 회 timeout은 60분이다.
+- `test-stability`는 UTC 기준 6시간마다 13개 matrix job을 실행한다. 설정된 timeout 합은 한 회 최대 49 runner-hours다.
+
+실제 실행 시간과 과금은 GitHub 요금제·runner 정책에 따라 달라진다. 먼저 수동 실행으로 시간과 필요 자원을 확인한 뒤 opt-in하고, Actions usage와 실패 알림을 지속해서 본다. 정기 soak가 필요 없는 fork는 변수를 만들지 않는다.
 
 ## 2. Docker Hub secret
 

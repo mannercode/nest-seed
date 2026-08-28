@@ -4,6 +4,10 @@ on:
         branches: ['main']
     push:
         branches: ['main']
+    schedule:
+        # UTC 기준 3 시간마다 매시 :27에 실행한다.
+        # 새 커밋이 없어도 main이 주기적으로 통과하는지 확인해, 의존성이나 인프라 변경으로 생긴 회귀를 조기에 검출한다.
+        - cron: '27 */3 * * *'
     workflow_dispatch:
 permissions:
     contents: read
@@ -12,6 +16,8 @@ concurrency:
     cancel-in-progress: true
 jobs:
     test-atoz:
+        # 원본 저장소의 불변 ID다. fork에 맞출 때도 이 보호 조건의 의미는 유지한다.
+        if: ${{ github.event_name != 'schedule' || github.repository_id == '849585972' || vars.ENABLE_SCHEDULED_CI == 'true' }}
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 60
         steps:
@@ -22,11 +28,14 @@ jobs:
               uses: devcontainers/ci@513af61f4de4f75d37e4438f184ba4358f0fc1ca # v0.3.1900000450
               env:
                   MONGO_DIAGNOSTICS_ON_TEST_FAILURE: 'true'
+                  # PR/push는 첫 실패를 그대로 게이트하고, 정기 진단 실행만 한 번 재시도한다.
+                  PLAYWRIGHT_RETRIES: ${{ github.event_name == 'schedule' && '1' || '0' }}
               with:
                   configFile: .devcontainer/devcontainer.json
                   push: never
                   env: |
                       MONGO_DIAGNOSTICS_ON_TEST_FAILURE
+                      PLAYWRIGHT_RETRIES
                   runCmd: |
                       set -Eeuo pipefail
                       git diff --exit-code -- package-lock.json

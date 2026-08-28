@@ -2,13 +2,15 @@ name: Test Stability
 on:
     workflow_dispatch:
     schedule:
-        # UTC 기준 매주 일요일 03:27에 실행한다.
-        - cron: '27 3 * * 0'
+        # UTC 기준 6 시간마다 매시 :27에 실행한다.
+        # test-atoz가 3시간마다 회귀를 잡는다면, 이 워크플로는 같은 시나리오를 누적 반복해 "한 번은 통과하지만 흔들리는" 코드를 드러내는 용도이다.
+        - cron: '27 */6 * * *'
 permissions:
     contents: read
 concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
-    # 정기·수동 실행이 겹쳐도 진행 중인 표본을 버리지 않고 다음 실행을 대기시킨다.
+    # 가장 긴 레그가 240분이라도 러너 대기와 정리 시간이 있으므로, 새 회차가 시작됐다고 진행 중인 회차를 버리지 않는다.
+    # 새 회차는 이전 회차가 끝날 때까지 대기한다.
     cancel-in-progress: false
 jobs:
     stability:
@@ -18,55 +20,69 @@ jobs:
             fail-fast: false
             matrix:
                 include:
+                    # libs는 75회라도 ~140분이지만, apps/api는 컨텍스트 부팅 비용 때문에 회당 8~9분 걸린다.
+                    # 30회짜리 잡은 240분 상한에 닿으므로 20회씩 세 독립 잡으로 나눠 총 60회 반복량을 유지한다.
                     - leg: unit-libs
-                      timeout: 30
+                      timeout: 180
                       run: |
                           npm run build
-                          bash .github/scripts/repeat.sh 5 npm test -w libs -- --coverageThreshold='{}'
-                    - leg: unit-api
-                      timeout: 60
+                          bash .github/scripts/repeat.sh 75 npm test -w libs -- --coverageThreshold='{}'
+                    - leg: unit-api-1
+                      timeout: 240
                       run: |
                           npm run build
-                          bash .github/scripts/repeat.sh 5 npm test -w apps/api -- --coverage=false --coverageThreshold='{}'
+                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 npm test -w apps/api -- --coverage=false --coverageThreshold='{}'
+                    - leg: unit-api-2
+                      timeout: 240
+                      run: |
+                          npm run build
+                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 npm test -w apps/api -- --coverage=false --coverageThreshold='{}'
+                    - leg: unit-api-3
+                      timeout: 240
+                      run: |
+                          npm run build
+                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 npm test -w apps/api -- --coverage=false --coverageThreshold='{}'
                     - leg: bootup
-                      timeout: 30
+                      timeout: 120
                       run: |
                           npm run build
-                          bash .github/scripts/repeat.sh 10 bash infra/reset.sh
-                    # 각 race는 동시 요청 수를 유지하되 자체 INNER_ITERATIONS와 workflow 반복이
-                    # 곱해지지 않도록 회차당 inner batch 하나만 실행한다.
+                          bash .github/scripts/repeat.sh 50 bash infra/reset.sh
+                    # 분산 레이스 50회는 의도된 누적 검증량이다.
+                    # 240분은 가장 느린 시나리오(user-signup-race 50회 ~200분)에 여유를 둔 값.
+                    # 사가를 만드는 레그는 기본 RESET_EVERY=10에서 Temporal transfer-queue 정체가 재현됐으므로 5회마다 초기화한다.
                     - leg: sse-fanout-race
-                      timeout: 60
+                      timeout: 240
                       prebuild_deploy: true
-                      run: INNER_ITERATIONS=1 bash .github/scripts/repeat.sh 5 bash tests/api-race/runner.sh sse-fanout-race
+                      run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh sse-fanout-race
                     - leg: user-signup-race
-                      timeout: 60
+                      timeout: 240
                       prebuild_deploy: true
-                      run: INNER_ITERATIONS=1 bash .github/scripts/repeat.sh 5 bash tests/api-race/runner.sh user-signup-race
+                      run: bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh user-signup-race
                     - leg: ticket-holding-race
-                      timeout: 60
+                      timeout: 240
                       prebuild_deploy: true
-                      run: INNER_ITERATIONS=1 bash .github/scripts/repeat.sh 5 bash tests/api-race/runner.sh ticket-holding-race
+                      run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh ticket-holding-race
                     - leg: showtime-overlap-race
-                      timeout: 60
+                      timeout: 240
                       prebuild_deploy: true
-                      run: INNER_ITERATIONS=1 bash .github/scripts/repeat.sh 5 bash tests/api-race/runner.sh showtime-overlap-race
+                      run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh showtime-overlap-race
                     - leg: purchase-double-spend
-                      timeout: 60
+                      timeout: 240
                       prebuild_deploy: true
-                      run: INNER_ITERATIONS=1 bash .github/scripts/repeat.sh 5 bash tests/api-race/runner.sh purchase-double-spend
+                      # 50-way 경쟁 강도는 유지하되 fixture Temporal saga의 중복 soak는 분리한다.
+                      run: INNER_ITERATIONS=30 RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh purchase-double-spend
                     - leg: purchase-overlap-race
-                      timeout: 60
+                      timeout: 240
                       prebuild_deploy: true
-                      run: INNER_ITERATIONS=1 bash .github/scripts/repeat.sh 5 bash tests/api-race/runner.sh purchase-overlap-race
+                      run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh purchase-overlap-race
                     - leg: replica-chaos
-                      timeout: 30
+                      timeout: 240
                       prebuild_deploy: true
-                      run: bash .github/scripts/repeat.sh 3 bash tests/api-race/runner.sh replica-chaos
+                      run: bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh replica-chaos
                     - leg: jwt-refresh-race
-                      timeout: 60
+                      timeout: 240
                       prebuild_deploy: true
-                      run: INNER_ITERATIONS=1 bash .github/scripts/repeat.sh 5 bash tests/api-race/runner.sh jwt-refresh-race
+                      run: bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh jwt-refresh-race
         runs-on: ubuntu-24.04-arm
         timeout-minutes: ${{ matrix.timeout }}
         steps:
