@@ -6,27 +6,28 @@
 
 이 저장소에는 도구가 많지만, 대부분은 서로 다른 실제 경계를 검증하거나 운영한다. 이름이 많다는 이유만으로 합치면 코드보다 검증 능력을 먼저 잃는다. 이번 검토에서 정리 가치가 확인된 범위는 다음과 같다.
 
-| 분류                       | 대상                                             | 판단                                                                                   |
-| -------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| 지금 제거                  | 사용하지 않는 NATS JetStream 설정                | Core NATS는 유지하고 `-js`, 저장 volume, JetStream 전용 health와 테스트 옵션만 제거    |
-| 승인 전환에서 제거         | Temporal 전체 잔재                               | SDK, sandbox, bundle, PostgreSQL, setup, CI 진단까지 Restate 구현과 함께 제거          |
-| 지금 제거 후보             | 컨테이너 내부 회전 파일 로그                     | stdout 로그는 유지하고 영속 volume이 없는 `DailyRotateFile`과 전용 설정을 제거         |
-| 확정 유지                  | Quick Tunnel, PlantUML                           | 외부 HTTPS 검증과 현재 다이어그램 작성·미리보기 경로를 유지                            |
-| TS 7.1 도구 지원까지 유지  | CommonJS, Webpack + `ts-loader`, Jest            | 중간 우회 구성을 만들지 않고 현재 검증 계약을 유지                                     |
-| 사용 금지                  | SWC와 Nest 기본 Rspack 경로                      | Nest 12 Rspack의 TypeScript 변환이 내장 SWC loader를 사용하므로 Rspack도 도입하지 않음 |
-| TS 7.1 도구 지원 뒤 재검토 | ESM, Vitest, TypeScript compiler 중심 build      | TypeScript 7 API와 Nest·`ts-loader` 호환성이 확인된 뒤 한 번의 전환으로 검증           |
-| 보류                       | pnpm, Zod 전면화, Oxlint, Argon2id, Winston 제거 | 새 기본값이라는 이유만으로 바꾸기에는 검증 계약 또는 호환성 비용이 더 큼               |
-| 유지                       | 나머지 핵심 스택                                 | 현재 사용처와 역할이 분명하며 서로 대체 관계가 아님                                    |
+| 분류                       | 대상                                             | 판단                                                                                                |
+| -------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| 지금 제거                  | 사용하지 않는 NATS JetStream 설정                | Core NATS는 유지하고 `-js`, 저장 volume, JetStream 전용 health와 테스트 옵션만 제거                 |
+| 승인 전환에서 제거         | Temporal 전체 잔재                               | SDK, sandbox, bundle, PostgreSQL, setup, CI 진단까지 Restate 구현과 함께 제거                       |
+| 지금 전환                  | Nest 백엔드와 내부 라이브러리 ESM                | TypeScript 6과 Webpack + `ts-loader`를 유지하고 build wrapper와 ESM을 별도 커밋으로 전환            |
+| 별도 실험                  | SWC 없는 Vitest                                  | decorator metadata와 기존 test·coverage 계약 동등성이 확인될 때만 Jest를 교체                       |
+| 지금 제거 후보             | 컨테이너 내부 회전 파일 로그                     | stdout 로그는 유지하고 영속 volume이 없는 `DailyRotateFile`과 전용 설정을 제거                      |
+| 확정 유지                  | Quick Tunnel, PlantUML                           | 외부 HTTPS 검증과 현재 다이어그램 작성·미리보기 경로를 유지                                         |
+| 백엔드 사용 금지           | SWC와 Nest 기본 Rspack 경로                      | Nest 12 Rspack의 TypeScript 변환이 내장 SWC loader를 사용하므로 백엔드 build·test에는 도입하지 않음 |
+| TS 7.1 도구 지원 뒤 재검토 | TypeScript 7 compiler 전환                       | TypeScript 7 API와 Nest·`ts-loader`·typescript-eslint 호환성이 확인된 뒤 TypeScript만 별도로 전환   |
+| 보류                       | pnpm, Zod 전면화, Oxlint, Argon2id, Winston 제거 | 새 기본값이라는 이유만으로 바꾸기에는 검증 계약 또는 호환성 비용이 더 큼                            |
+| 유지                       | 나머지 핵심 스택                                 | 현재 사용처와 역할이 분명하며 서로 대체 관계가 아님                                                 |
 
 ## 확정 방향과 후속 작업
 
 다음 작업자는 아래 기준으로 진행한다.
 
 1. 진행 중인 Temporal → Restate 전환을 현재 검증 계약까지 완료하고 먼저 독립 커밋한다. 다른 build·module·test runner 변경을 이 작업에 섞지 않는다.
-2. SWC는 직접 의존성뿐 아니라 다른 도구에 내장된 변환 경로도 사용하지 않는다. Nest CLI 12의 Rspack builder는 `builtin:swc-loader`를 사용하므로 Rspack pilot과 전환도 하지 않는다.
-3. TypeScript 7.0은 2026-07-08 정식 출시됐지만 programmatic API가 없다. 현재 Nest CLI 12는 TypeScript `~6.0.2`를 사용하고 `ts-loader` 같은 도구도 compiler API가 필요하므로, TypeScript 7.0 CLI와 TypeScript 6 API를 함께 설치하는 이중 compiler 구성은 만들지 않는다.
-4. TypeScript 7.1의 새 API와 Nest·`ts-loader` 생태계 호환성이 확인될 때까지 CommonJS, Webpack + `ts-loader`, Jest를 유지한다. 그 뒤 TypeScript compiler 중심 build, ESM, Vitest를 한 흐름으로 다시 검토한다. 전환 시 lint, build, test, Docker와 decorator metadata, type check, path alias, `@mannercode/*` 포함, 서드파티 external, source map, 단일 런타임 bundle 계약을 모두 보존한다.
-5. 향후 Vitest를 검토할 때도 SWC plugin은 사용하지 않는다. 기존 infrastructure lifecycle, 테스트 격리, fake timer·mock 동작, 명시적 coverage include를 통한 미실행 파일 포함 100% coverage와 결과 출력 계약을 유지한다. 순수 JavaScript 계약·race 테스트의 `node:test`는 계속 유지한다.
+2. SWC 금지는 Nest 백엔드의 build·test 경로에 적용한다. 직접 의존성뿐 아니라 다른 도구에 내장된 변환 경로도 쓰지 않는다. Nest CLI 12의 Rspack builder는 `builtin:swc-loader`를 사용하므로 Rspack pilot과 전환도 하지 않는다. Next.js 16 프런트엔드의 `@next/swc-*`는 이 결정에 섞지 않고 별도 검토한다.
+3. TypeScript 6과 Webpack + `ts-loader`를 유지한 채 Nest 백엔드와 내부 라이브러리를 ESM으로 지금 전환한다. 현재 Nest CLI 12의 Webpack wrapper는 ESM 프로젝트를 거부하므로, CommonJS 상태에서 먼저 직접 Webpack build 경로로 분리해 산출물·Docker 동등성을 확인하고 다음 커밋에서 ESM으로 전환한다.
+4. ESM 전환 중에는 Jest를 유지한다. 그 뒤 SWC 없이 decorator metadata가 보존되는 Vitest 경로를 독립적으로 실험하고, 기존 infrastructure lifecycle, 테스트 격리, fake timer·mock 동작, 명시적 coverage include를 통한 미실행 파일 포함 100% coverage와 결과 출력 계약이 모두 같을 때만 Jest를 교체한다. 순수 JavaScript 계약·race 테스트의 `node:test`는 계속 유지한다.
+5. TypeScript 7.0은 2026-07-08 정식 출시됐지만 programmatic API가 없다. 현재 Nest CLI 12는 TypeScript `~6.0.2`를 사용하고 `ts-loader`·typescript-eslint 같은 도구도 compiler API가 필요하므로, TypeScript 7.0 CLI와 TypeScript 6 API를 함께 설치하는 이중 compiler 구성은 만들지 않는다. TypeScript 7.1 API와 관련 도구 지원이 확인되면 ESM·Vitest와 별개로 TypeScript 전환을 검토한다.
 6. PlantUML은 Mermaid로 전환하지 않고 유지한다. Quick Tunnel도 외부 HTTPS 테스트용 선택 기능과 현재의 공개 차단 정책을 함께 유지한다.
 7. 전환은 원인 분리가 가능하도록 각각 별도 작업과 커밋으로 진행한다.
 
@@ -35,6 +36,7 @@
 ## 검토 전제
 
 - 이 시드는 **NestJS 백엔드가 본체**다. `apps/console`과 `apps/user-app`은 최소 동작과 BFF·브라우저 계약을 보여 주는 구색이므로, 프런트엔드 공용 계층이나 별도 `libs/frontend`를 만들지 않는다.
+- SWC 금지는 Nest 백엔드의 build·test 경로에 한정한다. Next.js 16이 설치한 `@next/swc-*`까지 같은 작업에서 제거하면 구색용 프런트엔드 전체 교체로 범위가 커지므로 별도 판단한다.
 - 안정성 검증의 반복 횟수와 3시간/6시간 정기 실행은 줄이지 않는다. 늦게 드러나는 분산 오류를 찾는 장치라서 코드량 절감 대상으로 보지 않는다.
 - `PathUtil`은 Node API를 숨기려는 추상화가 아니라 경로·임시 디렉터리·복사·이동을 한 곳에서 읽게 하는 프로젝트 유틸리티다. 사용 코드의 직관성을 우선해 유지한다.
 - 이미 승인된 Temporal → Restate 전환 외에는, 단순히 더 새롭거나 벤치마크가 빠르다는 이유로 도구를 교체하지 않는다.
@@ -44,35 +46,36 @@
 
 제안표에는 Nest 12의 실제 변경, 새 프로젝트의 생성 기본값, 이 저장소와 무관한 설계 선호가 섞여 있다. 따라서 표 전체를 한 번에 적용하지 않고 다음처럼 판정한다.
 
-| 영역                    | 판정                       | 저장소 기준 실익과 전환 비용                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| ----------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Node.js 26              | 적용 완료·유지             | devcontainer는 `v26.8.1`이다. 다만 검토일 현재 Node 26은 Current이고 LTS 예정일은 2026-10-28이므로, 아직 LTS라는 설명은 틀리다. [Node 릴리스 상태](https://nodejs.org/en/about/previous-releases)                                                                                                                                                                                                                                                                                                                 |
-| NestJS 12               | 적용 완료·유지             | Nest 패키지는 12.x로 맞췄다.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| 애플리케이션 ESM        | TS 7.1 도구 지원 뒤 재검토 | Nest 12 패키지가 ESM-only인 것과 앱을 ESM으로 바꾸는 것은 별개다. 공식 가이드도 기존 CommonJS 앱의 전환은 선택 사항이라고 명시한다. 검토 시점에 확장자 없는 상대 import/export가 약 787곳이고 JS/CJS 파일도 53개다. TypeScript 7.1 API와 관련 도구 호환성이 확인된 뒤 compiler·module·test 경로를 함께 정하고 독립 작업으로 전환한다. [이행 가이드](https://docs.nestjs.com/migration-guide#esm-packages)                                                                                                         |
-| TypeScript strict       | 실질 적용·예외 유지        | `strict`, `noUncheckedIndexedAccess`, `noImplicitReturns` 등이 이미 켜져 있다. `strictPropertyInitialization`을 켜면 DTO·ODM이 외부에서 채우는 필드 약 262개가 걸리며, `!`를 일괄 추가하는 것은 안전성 없이 표기만 늘린다. [TS 필드 초기화 규칙](https://www.typescriptlang.org/docs/handbook/2/classes.html#--strictpropertyinitialization)                                                                                                                                                                      |
-| pnpm                    | 기각에 가까운 보류         | pnpm의 엄격한 dependency 접근과 `workspace:` 보장은 장점이다. 그러나 현재 npm 12도 workspace와 strict install-script allowlist를 제공하고, npm 명령은 Docker·CI·문서·계약 테스트까지 29개 파일에 걸쳐 있다. 제품 기능 이득 없이 큰 치환이 된다. [pnpm workspace](https://pnpm.io/workspaces), [npm workspace](https://docs.npmjs.com/cli/using-npm/workspaces/)                                                                                                                                                   |
-| Zod + Standard Schema   | 전면 전환 보류             | Nest 12의 좋은 새 선택지지만 대체 의무는 아니다. Joi 18도 Standard Schema를 구현하고 기존 `ValidationPipe`·class-validator도 계속 지원된다. 현재 class-validator 사용 파일이 47개라 Zod를 함께 넣으면 검증 체계만 둘이 된다. [Nest validation](https://docs.nestjs.com/techniques/validation)                                                                                                                                                                                                                     |
-| MongoDB 공식 driver     | 기각                       | Mongoose import 71개 파일, schema decorator 124곳, common Mongoose 계층 약 2,575줄이 schema·hook·CAS·transaction을 소유한다. 공식 driver로 바꾸면 이 계층을 직접 재구현해야 한다. Nest도 Mongoose를 공식 Mongo 통합으로 안내한다. [Nest Mongo](https://docs.nestjs.com/techniques/mongodb)                                                                                                                                                                                                                        |
-| Restate                 | 적용·검증 중               | durable step, 재시도와 Saga를 맡기고 Temporal 전용 worker·sandbox·DB를 제거한 승인된 교체다. 검증 조건과 제거 범위는 아래 1.1을 따른다. [Restate durable steps](https://docs.restate.dev/develop/ts/durable-steps)                                                                                                                                                                                                                                                                                                |
-| NATS v3                 | 적용 완료·유지             | `@nats-io/transport-node@3.4.0`을 사용해 Nest 12의 NATS v3 전환 요구를 이미 만족한다. [Nest NATS v3](https://docs.nestjs.com/migration-guide#nats-v3)                                                                                                                                                                                                                                                                                                                                                             |
-| JetStream               | 미사용 설정만 제거         | 앱은 Core NATS의 `publish`·`subscribe`·`flush`만 사용한다. `-js`, 저장 volume과 전용 health를 제거하고, 저장·ack·replay 요구가 생길 때 다시 도입한다. 상세 근거는 아래 1.2를 따른다.                                                                                                                                                                                                                                                                                                                              |
-| Vitest                  | TS 7.1 도구 지원 뒤 재검토 | Nest 12 새 ESM 프로젝트의 기본이며 전체 `node:test` 전환보다 현실적이다. 그러나 ESM보다 먼저 옮겨 중간 설정을 만들지 않는다. TypeScript 7.1 도구 호환성이 확인된 뒤 SWC 없이 global infra lifecycle, 격리, fake timer·mock과 명시적 include 기반 100% coverage 동등성을 검증한다. 순수 JS 계약·race는 `node:test`를 유지한다. [Nest testing](https://docs.nestjs.com/migration-guide#testing-stack), [Vitest 이행](https://vitest.dev/guide/migration), [Vitest coverage](https://vitest.dev/guide/coverage.html) |
-| Rspack / SWC            | 사용 금지                  | Nest CLI 12의 Rspack builder는 TypeScript 규칙에 `builtin:swc-loader`를 사용한다. SWC를 직접 설치하지 않아도 SWC 변환 경로이므로 이 저장소에서는 Rspack까지 제외한다. 현재 Webpack + `ts-loader`를 유지하고 TypeScript 7.1 API와 관련 도구 지원 뒤 compiler 중심 build를 다시 검토한다. [Nest Webpack 전환 안내](https://docs.nestjs.com/migration-guide#webpack-deprecation-in-cli-workflows)                                                                                                                    |
-| Oxlint                  | 보류                       | 새 생성 프로젝트의 기본인 것은 맞지만 이 저장소의 ESLint는 SoLA layer, domain boundary와 허용 dependency를 강제한다. Oxlint의 외부 JS plugin은 아직 alpha라 parity 증명 없이 바꾸면 중요한 검사가 조용히 사라질 수 있다. [Oxlint JS plugin 제한](https://oxc.rs/docs/guide/usage/linter/js-plugins.html)                                                                                                                                                                                                          |
-| OpenTelemetry + Observe | 조합 기각·개별 도입도 보류 | `@nestjs/observe`는 OpenTelemetry SDK가 아니라 Nest Observe 전용 collector/dashboard로 보내는 별도 SDK다. 반대로 OpenTelemetry 공식 Nest 계측기는 현재 Nest `<12`만 지원한다. backend·비용·데이터 반출 정책을 정하기 전에 둘을 함께 넣지 않는다. [Nest Observe](https://github.com/nestjs/observe), [OTel Nest 지원 범위](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-nestjs-core)                                                                              |
-| REST/OpenAPI            | REST 유지·OpenAPI 보류     | REST는 이미 본체다. OpenAPI는 Nest CLI의 필수 기본이 아니며, 현재 실행 가능한 curl spec과 병행하면 문서 계약이 중복된다. client 생성이나 외부 schema 배포가 필요할 때 기존 spec을 대체할 수 있는지 검토한다. [Nest OpenAPI](https://docs.nestjs.com/openapi/introduction)                                                                                                                                                                                                                                         |
-| Docker                  | 적용 완료·유지             | 로컬 인프라와 4-replica 배포 검증이 같은 container 경계를 사용하므로 현재 역할이 분명하다.                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 영역                    | 판정                       | 저장소 기준 실익과 전환 비용                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ----------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Node.js 26              | 적용 완료·유지             | devcontainer는 `v26.8.1`이다. 다만 검토일 현재 Node 26은 Current이고 LTS 예정일은 2026-10-28이므로, 아직 LTS라는 설명은 틀리다. [Node 릴리스 상태](https://nodejs.org/en/about/previous-releases)                                                                                                                                                                                                                                                                                               |
+| NestJS 12               | 적용 완료·유지             | Nest 패키지는 12.x로 맞췄다.                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| 애플리케이션 ESM        | 지금 전환                  | Nest 12 패키지가 ESM-only인 것과 앱을 ESM으로 바꾸는 것은 별개지만 공식 가이드가 독립 migration을 지원한다. TypeScript 6의 `NodeNext`와 Webpack + `ts-loader`로 가능하다. 현재 Nest CLI Webpack wrapper는 ESM을 거부하므로 직접 Webpack build 분리와 ESM 변환을 별도 커밋으로 진행한다. 검토 시점에 확장자 없는 상대 import/export가 약 787곳이고 JS/CJS 파일도 53개다. [이행 가이드](https://docs.nestjs.com/migration-guide#switching-your-project-to-esm)                                    |
+| TypeScript strict       | 실질 적용·예외 유지        | `strict`, `noUncheckedIndexedAccess`, `noImplicitReturns` 등이 이미 켜져 있다. `strictPropertyInitialization`을 켜면 DTO·ODM이 외부에서 채우는 필드 약 262개가 걸리며, `!`를 일괄 추가하는 것은 안전성 없이 표기만 늘린다. [TS 필드 초기화 규칙](https://www.typescriptlang.org/docs/handbook/2/classes.html#--strictpropertyinitialization)                                                                                                                                                    |
+| pnpm                    | 기각에 가까운 보류         | pnpm의 엄격한 dependency 접근과 `workspace:` 보장은 장점이다. 그러나 현재 npm 12도 workspace와 strict install-script allowlist를 제공하고, npm 명령은 Docker·CI·문서·계약 테스트까지 29개 파일에 걸쳐 있다. 제품 기능 이득 없이 큰 치환이 된다. [pnpm workspace](https://pnpm.io/workspaces), [npm workspace](https://docs.npmjs.com/cli/using-npm/workspaces/)                                                                                                                                 |
+| Zod + Standard Schema   | 전면 전환 보류             | Nest 12의 좋은 새 선택지지만 대체 의무는 아니다. Joi 18도 Standard Schema를 구현하고 기존 `ValidationPipe`·class-validator도 계속 지원된다. 현재 class-validator 사용 파일이 47개라 Zod를 함께 넣으면 검증 체계만 둘이 된다. [Nest validation](https://docs.nestjs.com/techniques/validation)                                                                                                                                                                                                   |
+| MongoDB 공식 driver     | 기각                       | Mongoose import 71개 파일, schema decorator 124곳, common Mongoose 계층 약 2,575줄이 schema·hook·CAS·transaction을 소유한다. 공식 driver로 바꾸면 이 계층을 직접 재구현해야 한다. Nest도 Mongoose를 공식 Mongo 통합으로 안내한다. [Nest Mongo](https://docs.nestjs.com/techniques/mongodb)                                                                                                                                                                                                      |
+| Restate                 | 적용·검증 중               | durable step, 재시도와 Saga를 맡기고 Temporal 전용 worker·sandbox·DB를 제거한 승인된 교체다. 검증 조건과 제거 범위는 아래 1.1을 따른다. [Restate durable steps](https://docs.restate.dev/develop/ts/durable-steps)                                                                                                                                                                                                                                                                              |
+| NATS v3                 | 적용 완료·유지             | `@nats-io/transport-node@3.4.0`을 사용해 Nest 12의 NATS v3 전환 요구를 이미 만족한다. [Nest NATS v3](https://docs.nestjs.com/migration-guide#nats-v3)                                                                                                                                                                                                                                                                                                                                           |
+| JetStream               | 미사용 설정만 제거         | 앱은 Core NATS의 `publish`·`subscribe`·`flush`만 사용한다. `-js`, 저장 volume과 전용 health를 제거하고, 저장·ack·replay 요구가 생길 때 다시 도입한다. 상세 근거는 아래 1.2를 따른다.                                                                                                                                                                                                                                                                                                            |
+| Vitest                  | ESM 뒤 별도 pilot          | Nest 12 새 ESM 프로젝트의 기본이며 전체 `node:test` 전환보다 현실적이다. TypeScript 7과 묶지 않고 SWC 없이 decorator metadata, global infra lifecycle, 격리, fake timer·mock과 명시적 include 기반 100% coverage 동등성을 검증한다. 성공할 때만 Jest를 교체하며 순수 JS 계약·race는 `node:test`를 유지한다. [Nest testing](https://docs.nestjs.com/migration-guide#testing-stack), [Vitest 이행](https://vitest.dev/guide/migration), [Vitest coverage](https://vitest.dev/guide/coverage.html) |
+| Rspack / SWC            | 백엔드 사용 금지           | Nest CLI 12의 Rspack builder는 TypeScript 규칙에 `builtin:swc-loader`를 사용한다. SWC를 직접 설치하지 않아도 SWC 변환 경로이므로 Nest 백엔드에서는 Rspack까지 제외한다. 현재 Webpack + `ts-loader`를 유지한다. Next.js 16의 `@next/swc-*`는 프런트엔드 범위에서 별도 검토한다. [Nest Webpack 전환 안내](https://docs.nestjs.com/migration-guide#webpack-deprecation-in-cli-workflows)                                                                                                           |
+| Oxlint                  | 보류                       | 새 생성 프로젝트의 기본인 것은 맞지만 이 저장소의 ESLint는 SoLA layer, domain boundary와 허용 dependency를 강제한다. Oxlint의 외부 JS plugin은 아직 alpha라 parity 증명 없이 바꾸면 중요한 검사가 조용히 사라질 수 있다. [Oxlint JS plugin 제한](https://oxc.rs/docs/guide/usage/linter/js-plugins.html)                                                                                                                                                                                        |
+| OpenTelemetry + Observe | 조합 기각·개별 도입도 보류 | `@nestjs/observe`는 OpenTelemetry SDK가 아니라 Nest Observe 전용 collector/dashboard로 보내는 별도 SDK다. 반대로 OpenTelemetry 공식 Nest 계측기는 현재 Nest `<12`만 지원한다. backend·비용·데이터 반출 정책을 정하기 전에 둘을 함께 넣지 않는다. [Nest Observe](https://github.com/nestjs/observe), [OTel Nest 지원 범위](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-nestjs-core)                                                            |
+| REST/OpenAPI            | REST 유지·OpenAPI 보류     | REST는 이미 본체다. OpenAPI는 Nest CLI의 필수 기본이 아니며, 현재 실행 가능한 curl spec과 병행하면 문서 계약이 중복된다. client 생성이나 외부 schema 배포가 필요할 때 기존 spec을 대체할 수 있는지 검토한다. [Nest OpenAPI](https://docs.nestjs.com/openapi/introduction)                                                                                                                                                                                                                       |
+| Docker                  | 적용 완료·유지             | 로컬 인프라와 4-replica 배포 검증이 같은 container 경계를 사용하므로 현재 역할이 분명하다.                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ### 사실관계 바로잡기
 
 - Nest 12는 framework package가 ESM-only이지만 기존 애플리케이션의 ESM 전환은 선택 사항이다.
-- Vitest는 새 **ESM** 프로젝트, Oxlint는 새 생성 프로젝트의 기본값이다. 기존 프로젝트의 의무 migration이 아니며 TypeScript 7.1 도구 호환성 확인 전에는 옮기지 않는다.
-- TypeScript 7.0은 이미 정식 출시됐지만 programmatic API는 7.1 예정이다. 현재처럼 compiler API를 사용하는 build·lint 도구가 있으면 TypeScript 6과의 side-by-side 구성이 필요하므로 즉시 교체하지 않는다.
+- Vitest는 새 **ESM** 프로젝트, Oxlint는 새 생성 프로젝트의 기본값이다. 기존 프로젝트의 의무 migration은 아니지만 Vitest 검토를 TypeScript 7.1까지 미룰 이유도 없다. SWC 없는 decorator metadata 경로의 동등성이 독립 선행조건이다.
+- TypeScript 7.0은 이미 정식 출시됐지만 programmatic API는 7.1 예정이다. 이는 TypeScript compiler 자체의 전환 조건이지 TypeScript 6으로 가능한 ESM 전환의 선행조건이 아니다.
+- Next.js 16은 `@next/swc-*`를 선택 의존성으로 사용한다. SWC 금지는 Nest 백엔드의 build·test 경로로 범위를 명시하고 프런트엔드는 별도로 판단한다.
 - Zod는 새 Standard Schema 선택지이며 class-validator를 폐기하지 않는다.
 - `@nestjs/observe`의 “native observability”는 OpenTelemetry 호환을 뜻하지 않는다.
 - Node 26은 앞으로 LTS가 될 기준선이지만 검토일 현재는 아직 Current다.
 
-표에 없지만 Nest 12와 더 직접 관련된 변경은 Webpack 중심 CLI 경로의 deprecation이다. 그러나 Nest CLI 12의 대체 Rspack 경로가 내장 SWC 변환을 사용하므로 이 저장소에서는 채택하지 않는다. 현재 custom bundle·external·source map 계약은 Webpack + `ts-loader`로 유지하고 TypeScript 7.1 API와 관련 도구 지원 뒤 다시 설계한다.
+표에 없지만 Nest 12와 더 직접 관련된 변경은 Webpack 중심 CLI 경로의 deprecation이다. Nest CLI 12의 대체 Rspack 경로는 내장 SWC 변환을 사용하므로 이 저장소의 백엔드에는 채택하지 않는다. ESM 전환을 막지는 않으며, 현재 custom bundle·external·source map 계약을 유지하는 직접 Webpack + `ts-loader` build로 CLI wrapper만 분리한다.
 
 ## 1. 지금 제거하거나 승인된 전환에서 제거
 
@@ -196,9 +199,9 @@ Mermaid로 바꾸면 일부 도구를 줄일 수 있지만 9개 그림의 배치
 
 - [GitHub의 Mermaid 다이어그램 지원](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-diagrams)
 
-## 3. 지금은 보류
+## 3. 독립 전환과 보류
 
-### 3.1 Jest 유지와 Vitest 재검토 조건
+### 3.1 ESM 전환 중 Jest 유지와 SWC 없는 Vitest pilot
 
 현재 혼합 사용이 가장 단순하다.
 
@@ -209,7 +212,9 @@ Mermaid로 바꾸면 일부 도구를 줄일 수 있지만 9개 그림의 배치
 
 Node 26의 TypeScript type stripping은 `tsconfig.json`과 `paths`를 읽지 않는다. Nest 코드는 decorator metadata와 alias를 사용하므로 소스 TS를 `node --test`로 바로 실행할 수 없다. `tsc`로 별도 test build를 만든 뒤 실행하는 구조는 가능하지만 lifecycle adapter, Jest mock 호환, 진단 형식과 100% coverage 계약을 다시 만들어야 한다. Node 내장 test coverage도 현재 공식 문서상 experimental이다.
 
-Nest 12가 새 ESM 프로젝트에서 Vitest를 기본으로 고르는 것도 기존 프로젝트의 즉시 교체 사유가 아니다. Jest를 실제로 없앨 때의 우선 후보는 Nest 테스트까지 억지로 `node:test`에 맞추는 방식보다 Vitest다. 다만 TypeScript 7.1 API와 관련 도구 호환성이 확인된 뒤 ESM 전환과 같은 흐름에서 검토하고, SWC plugin은 사용하지 않는다. 한 workspace에서 infrastructure lifecycle·격리·coverage·결과 출력을 먼저 비교하며 시작 전에 `TESTS_REVIEW.md`를 함께 갱신한다.
+Nest 12가 새 ESM 프로젝트에서 Vitest를 기본으로 고르는 것도 기존 프로젝트의 즉시 교체 사유는 아니다. ESM 전환에는 먼저 Jest를 그대로 유지해 module 변경과 runner 변경의 실패 원인을 분리한다.
+
+Jest를 실제로 없앨 때의 우선 후보는 Nest 테스트까지 억지로 `node:test`에 맞추는 방식보다 Vitest다. 이 pilot은 TypeScript 7.1과 무관하게 ESM 전환 뒤 진행할 수 있다. 다만 SWC plugin 없이 Nest DI의 decorator metadata가 보존되는 변환 경로를 먼저 증명해야 한다. 한 workspace에서 infrastructure lifecycle·격리·fake timer·mock·미실행 파일을 포함한 100% coverage·결과 출력을 비교하며 시작 전에 `TESTS_REVIEW.md`를 함께 갱신한다.
 
 - [Node TypeScript 제한](https://nodejs.org/api/typescript.html)
 - [Node test runner와 experimental coverage](https://nodejs.org/api/test.html#collecting-code-coverage)
@@ -227,7 +232,11 @@ Nest 12는 CLI의 Webpack 중심 경로를 deprecated로 표시하고 Rspack을 
 - 단일 런타임 bundle과 source map 출력
 - Docker runtime 이미지의 현재 복사 구조
 
-TypeScript 7.0은 정식 출시됐지만 programmatic API가 없어서 현재 `ts-loader`가 직접 사용할 수 없다. TypeScript 7 CLI와 TypeScript 6 API를 함께 두는 구성도 만들지 않는다. TypeScript 7.1의 새 API와 Nest·`ts-loader` 지원이 확인될 때까지 현재 build를 유지하고, 그때 TypeScript compiler 중심 ESM build를 다시 검토한다.
+Rspack을 쓰지 않아도 TypeScript 6 + Webpack + `ts-loader`는 ESM output을 만들 수 있다. 다만 Nest CLI 12의 Webpack compiler는 `"type": "module"` 프로젝트를 명시적으로 거부하므로 현재 `nest build -b webpack`을 그대로 둔 채 ESM으로 바꿀 수는 없다.
+
+먼저 CommonJS 상태에서 Webpack Node API를 직접 호출하는 build runner와 완전한 config를 마련해 현재 `main.ts → index.js + index.js.map`, type check, alias, internal bundle, external과 Docker 실행 동등성을 확인한다. 다음 커밋에서 `NodeNext`, `"type": "module"`, 상대 `.js` specifier와 Webpack ESM output을 전환한다. 새 transpiler는 추가하지 않는다.
+
+TypeScript 7.0은 별도 문제다. programmatic API가 없어 현재 `ts-loader`가 직접 사용할 수 없으므로 TypeScript 7 CLI와 TypeScript 6 API를 함께 두지 않는다. TypeScript 7.1 API와 Nest·`ts-loader`·typescript-eslint 지원이 확인되면 이미 끝난 ESM·Vitest 여부와 독립적으로 compiler 버전만 검토한다.
 
 - `apps/api/webpack.config.js`
 - [Nest 12 Webpack deprecation 안내](https://docs.nestjs.com/migration-guide#webpack-deprecation-in-cli-workflows)
@@ -259,7 +268,7 @@ Node 26이 LTS가 된 뒤 `bcrypt verify → 성공 시 Argon2id 재해시` 이�
 
 ### 3.5 새 기본값을 따라가는 연쇄 교체
 
-위 제안표에서 보류한 pnpm·Zod·Oxlint와 Express → Fastify 같은 교체는 각자 독립된 이익과 현재 계약의 parity가 확인될 때만 검토한다. ESM·Vitest·build 경로는 TypeScript 7.1 도구 호환성 확인 뒤 SWC 없이 함께 재검토한다. Nest 12 신규 프로젝트의 기본값은 기존 저장소의 사용자 정의 계층 규칙, coverage와 build 계약을 폐기할 근거가 아니다. 여러 축을 한 커밋에서 바꾸지 않는다.
+위 제안표에서 보류한 pnpm·Zod·Oxlint와 Express → Fastify 같은 교체는 각자 독립된 이익과 현재 계약의 parity가 확인될 때만 검토한다. ESM은 TypeScript 6 + Webpack + `ts-loader`로 지금 전환하고, Vitest는 그 뒤 SWC 없는 별도 pilot으로 검증하며, TypeScript 7은 7.1 API와 관련 도구 지원 뒤 별도로 검토한다. Nest 12 신규 프로젝트의 기본값은 기존 저장소의 사용자 정의 계층 규칙, coverage와 build 계약을 폐기할 근거가 아니다. 여러 축을 한 커밋에서 바꾸지 않는다.
 
 ## 4. 유지
 
@@ -322,19 +331,23 @@ Node 26이 LTS가 된 뒤 `bcrypt verify → 성공 시 Argon2id 재해시` 이�
 
 1. `refactor(saga): replace temporal with restate`
     - Restate 동작·인프라·테스트를 완성하고 Temporal 전용 범위를 남김없이 제거
-2. `chore(nats): disable unused jetstream storage`
-    - Core NATS 동작과 stability 반복은 유지
-3. `refactor(logging): remove ephemeral file transport`
-    - stdout, 구조화 필드와 redaction은 유지
-4. TypeScript 7.1 API와 Nest·`ts-loader` 지원이 확인될 때까지 현재 build·module·test stack 유지
-    - TypeScript 7.0 CLI와 TypeScript 6 API를 함께 설치하지 않음
-    - Rspack과 모든 SWC 변환 경로를 도입하지 않음
-5. 도구 호환성이 확인된 뒤 TypeScript compiler 중심 build·ESM을 별도 검토
-6. 그 뒤 SWC 없는 Vitest 동등성 pilot
+2. `build(api): run webpack without nest cli wrapper`
+    - CommonJS 상태에서 TypeScript 6 + Webpack + `ts-loader` 산출물과 Docker 동등성을 먼저 증명
+3. `refactor(module): migrate backend workspaces to esm`
+    - API·common·testing을 `NodeNext`와 `"type": "module"`로 전환하고 Jest는 유지
+4. `test: pilot swc-free vitest parity`
     - Nest 구현 workspace 하나만 대상으로 infrastructure lifecycle, 격리, 미실행 파일 포함 100% coverage와 결과 출력을 비교
     - 순수 JavaScript 계약·race의 `node:test`는 유지
+    - decorator metadata를 SWC 없이 보존하지 못하면 Jest 유지
+5. 동등성 통과 시 workspace별 Jest → Vitest 전환을 각각 커밋
+6. `chore(nats): disable unused jetstream storage`
+    - Core NATS 동작과 stability 반복은 유지
+7. `refactor(logging): remove ephemeral file transport`
+    - stdout, 구조화 필드와 redaction은 유지
+8. TypeScript 7.1 API와 Nest·`ts-loader`·typescript-eslint 지원 확인 뒤 TypeScript 7 전환 재검토
+    - TypeScript 7.0 CLI와 TypeScript 6 API를 함께 설치하지 않음
 
-Quick Tunnel과 PlantUML은 유지한다. pnpm, Zod, Oxlint, Argon2id와 Winston 전면 제거는 각각 별도 근거가 생길 때만 다시 검토한다. Jest → Vitest pilot도 `TESTS_REVIEW.md`의 유지 결론과 선행 조건을 먼저 갱신하기 전에는 시작하지 않는다. 제안표 전체를 한 번에 전환하지 않는다.
+Nest 백엔드에는 Rspack과 모든 SWC 변환 경로를 도입하지 않는다. Next.js 프런트엔드의 `@next/swc-*`는 별도 검토한다. Quick Tunnel과 PlantUML은 유지한다. pnpm, Zod, Oxlint, Argon2id와 Winston 전면 제거는 각각 별도 근거가 생길 때만 다시 검토한다. Jest → Vitest pilot도 `TESTS_REVIEW.md`의 유지 결론과 선행 조건을 먼저 갱신하기 전에는 시작하지 않는다. 제안표 전체를 한 번에 전환하지 않는다.
 
 ## 재검토에 사용한 명령
 
