@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # deploy 스택 기동, theater 시드, 혼합 성능 측정, deploy 정리를 한 번에 실행한다.
-# 결과는 tests/api-perf/_output/에 남는다 — 집계 JSON과 dashboard-*.html(시간축 추이).
+# 결과는 tests/api-benchmark/_output/에 남는다 — 집계 JSON과 dashboard-*.html(시간축 추이).
 # 시드한 theaters는 인프라 Mongo에 남는다. 지우려면 bash infra/reset.sh를 실행한다.
 #
-# 사용: bash tests/api-perf/runner.sh
-#   재정의: SEED_TARGET=10000 DURATION_MS=10000 bash tests/api-perf/runner.sh
+# 사용: bash tests/api-benchmark/runner.sh
+#   재정의: SEED_TARGET=10000 DURATION_MS=10000 bash tests/api-benchmark/runner.sh
 
 set -Eeuo pipefail
 

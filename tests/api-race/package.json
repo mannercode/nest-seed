@@ -3,9 +3,9 @@
     "version": "0.0.1",
     "private": true,
     "scripts": {
-        "test": "node --test __tests__/*.test.js",
-        "lint": "for file in *.js __tests__/*.test.js; do node --check \"$file\"; done && node --check eslint.config.cjs && eslint '*.js' '__tests__/*.test.js' --max-warnings=0 && prettier --check '*.js' '__tests__/*.test.js' eslint.config.cjs package.json",
-        "format": "eslint '*.js' '__tests__/*.test.js' --fix && prettier --write '*.js' '__tests__/*.test.js' eslint.config.cjs package.json",
+        "test": "node --test contracts/*.test.js",
+        "lint": "for file in *.js contracts/*.test.js; do node --check \"$file\"; done && node --check eslint.config.cjs && eslint '*.js' 'contracts/*.test.js' --max-warnings=0 && prettier --check '*.js' 'contracts/*.test.js' eslint.config.cjs package.json",
+        "format": "eslint '*.js' 'contracts/*.test.js' --fix && prettier --write '*.js' 'contracts/*.test.js' eslint.config.cjs package.json",
         "atoz": "npm run lint && npm test"
     }
 }

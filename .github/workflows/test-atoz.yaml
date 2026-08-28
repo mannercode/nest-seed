@@ -47,7 +47,7 @@ jobs:
               with:
                   name: atoz-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
                   path: |
-                      tests/console-e2e/_output/
+                      tests/web/_output/
                       _output/ci-diagnostics/
                       _output/deploy-diagnostics/
                   if-no-files-found: warn

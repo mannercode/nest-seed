@@ -1,8 +1,8 @@
 import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
-    testDir: './unit',
-    outputDir: './_output/unit-results',
+    testDir: './contracts',
+    outputDir: './_output/contract-results',
     forbidOnly: true,
     reporter: [['list']],
     workers: 1

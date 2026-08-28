@@ -41,7 +41,7 @@ note bottom of a1
   네 컨테이너 모두 같은 인프라에
   서비스 이름(mongo1, redis1, ...)으로 접근한다
 end note
-dev ..> nginx : http://nginx\n(verify.sh · api-race/api-perf 러너)
+dev ..> nginx : http://nginx\n(verify.sh · api-race/api-benchmark 러너)
 @enduml
 ```
 
@@ -65,7 +65,7 @@ dev ..> nginx : http://nginx\n(verify.sh · api-race/api-perf 러너)
 
 베이스·NGINX·인프라 이미지 참조는 사람이 읽을 버전 태그와 실제 바이트를 고정하는 multi-architecture digest를 같이 둔다. 버전을 올릴 때는 태그와 digest를 함께 확인·갱신한다.
 
-스택을 띄워 둔 채 쓰려면(예: api-perf 반복 측정 — `verify.sh`는 검증 후 바로 내린다) 다음처럼 직접 띄운다.
+스택을 띄워 둔 채 쓰려면(예: api-benchmark 반복 측정 — `verify.sh`는 검증 후 바로 내린다) 다음처럼 직접 띄운다.
 
 ```bash
 cd deploy && export COMPOSE_IGNORE_ORPHANS=True && source ensure-deps-image.sh && docker compose up -d --build --wait
@@ -99,7 +99,7 @@ API는 `loopback`·`linklocal`·`uniquelocal` 프록시만 신뢰하므로, API 
 
 이 경계는 `deploy/verify.sh`가 아니라 각 테스트 계층이 자기 범위만 검증한다.
 
-- [BFF pure 계약 테스트](../tests/console-e2e/unit/bff-proxy.spec.ts)는 기본값에서 proxy IP 헤더를 무시하는 규칙, opt-in에서 오른쪽 끝 IP만 선택하는 규칙, 잘못된 끝값에서 앞쪽 공격자 값으로 후퇴하지 않는 규칙을 두 Next.js 앱에 공통으로 검증한다.
+- [BFF 계약 테스트](../tests/web/contracts/bff-proxy.spec.ts)는 기본값에서 proxy IP 헤더를 무시하는 규칙, opt-in에서 오른쪽 끝 IP만 선택하는 규칙, 잘못된 끝값에서 앞쪽 공격자 값으로 후퇴하지 않는 규칙을 두 Next.js 앱에 공통으로 검증한다.
 - Playwright는 두 BFF를 의도적으로 `BFF_TRUST_PROXY_HEADERS=true`로 시작한다. 브라우저가 보낸 `X-Forwarded-For`로 신뢰 edge를 모사해 서로 다른 주소의 로그인 실패가 별도 IP 버킷에 쌓이는 opt-in wiring을 검증한다. 이것은 실제 public edge가 외부 헤더를 덮어쓰는지는 증명하지 않는다.
 - API 인증 통합 테스트는 프로세스 안에서 trusted-proxy 해석과 로그인 rate-limit 동작을 검증한다. Compose의 BFF·edge 경계를 통과하는 통합 검증은 아니다.
 

@@ -3,7 +3,7 @@ const globals = require('globals')
 
 module.exports = [
     {
-        files: ['*.js', '__tests__/*.test.js'],
+        files: ['*.js', 'contracts/*.test.js'],
         languageOptions: { sourceType: 'commonjs', globals: globals.node },
         rules: {
             ...js.configs.recommended.rules,

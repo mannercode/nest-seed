@@ -39,7 +39,7 @@ export function readOptions() {
     const serverUrl = __ENV.SERVER_URL
     if (!serverUrl) {
         throw new Error(
-            'SERVER_URL must be set (예: bash tests/api-perf/mixed-runner.sh 사용법 참고)'
+            'SERVER_URL must be set (예: bash tests/api-benchmark/mixed-runner.sh 사용법 참고)'
         )
     }
     return {
@@ -159,21 +159,21 @@ export function buildSummary({ data, scenario, opts, extra = {} }) {
     }
 }
 
-/** `tests/api-perf/_output/<scenario>-<timestamp>[-<label>].json` 절대 경로. */
+/** `tests/api-benchmark/_output/<scenario>-<timestamp>[-<label>].json` 절대 경로. */
 export function summaryFilePath(scenario, label) {
     if (!__ENV.WORKSPACE_ROOT) {
         throw new Error('WORKSPACE_ROOT must be set')
     }
     const stamp = new Date().toISOString().replace(/[:.]/g, '-')
     const suffix = label ? `-${label}` : ''
-    return `${__ENV.WORKSPACE_ROOT}/tests/api-perf/_output/${scenario}-${stamp}${suffix}.json`
+    return `${__ENV.WORKSPACE_ROOT}/tests/api-benchmark/_output/${scenario}-${stamp}${suffix}.json`
 }
 
 /**
  * handleSummary 표준 반환.
  *  - stdout: 한 줄 JSON (파이프 후처리용)
  *  - stderr: 사람이 읽을 요약
- *  - file:   `tests/api-perf/_output/...` 보존본
+ *  - file:   `tests/api-benchmark/_output/...` 보존본
  */
 export function summaryReturn({ summary, logTag }) {
     const file = summaryFilePath(summary.scenario, summary.label)

@@ -68,8 +68,9 @@
 ```bash
 npm test -w apps/api -- users.spec --coverage=false   # 단일 spec만 실행 (게이트 끔)
 npm run e2e                                           # console·user-app 브라우저 e2e (Playwright)
-bash tests/api-race/runner.sh <scenario>              # 분산 레이스 — 다중 복제본 배포 스택을 직접 띄운다
-bash tests/api-perf/runner.sh                         # 성능 측정 — 스택 기동·시드·측정·정리까지 한 번에
+npm run e2e:report                                    # 마지막 브라우저 e2e HTML 결과 열기
+npm run race -- <scenario>                            # 분산 레이스 — 다중 복제본 배포 스택을 직접 띄운다
+npm run benchmark:api                                # 성능 측정 — 스택 기동·시드·측정·정리까지 한 번에
 ```
 
 테스트 체계와 작성 규칙은 [apps 문서](docs/apps.md#테스트)가, 분산 레이스·성능 측정의 실행과 해석은 [tests 문서](docs/tests.md)가 설명한다.
@@ -102,8 +103,8 @@ nest-seed/
 │
 ├── tests/
 │   ├── api-race/            ← 배포된 API 스택을 대상으로 하는 분산 레이스 시나리오
-│   ├── api-perf/            ← 배포된 API 스택을 대상으로 하는 성능 측정 도구
-│   └── console-e2e/         ← Playwright console·user-app e2e + 공통 BFF 계약 테스트
+│   ├── api-benchmark/       ← 배포된 API 스택을 대상으로 하는 성능 비교 도구
+│   └── web/                 ← Playwright browser e2e + 공통 BFF 계약 테스트
 │
 ├── infra/                   ← 개발 인프라 Compose (MongoDB·Redis·VersityGW·NATS·Temporal)
 ├── deploy/                  ← Docker Compose, NGINX (앱 배포 진입점)
@@ -133,8 +134,8 @@ nest-seed/
 | class-validator                  | DTO 검증 — 각 서비스의 `dtos/`                                                                                                     |
 | npm workspaces                   | 모노레포 구성. libs를 내부 패키지로 공유                                                                                           |
 | Jest + Testcontainers            | 단위·통합 테스트. `libs/common`은 인프라를 직접 띄운다 — [apps 문서](docs/apps.md#테스트)                                          |
-| Playwright                       | console·user-app 브라우저 e2e와 공통 BFF 계약 — `tests/console-e2e`                                                                |
-| k6                               | 성능 측정 하네스 — `tests/api-perf`                                                                                                |
+| Playwright                       | console·user-app 브라우저 e2e와 공통 BFF 계약 — `tests/web`                                                                        |
+| k6                               | 성능 비교 하네스 — `tests/api-benchmark`                                                                                           |
 | Docker Compose + NGINX           | 개발 인프라(`infra/`)와 다중 컨테이너 배포(`deploy/`)                                                                              |
 | GitHub Actions                   | atoz 회귀와 반복 안정성 검증 — `.github/workflows`                                                                                 |
 | cloudflared (`npx tunnel`)       | direct API는 항상 거부. 두 앱+BFF가 일부 auth를 제외한 대부분 API를 proxy하므로 두 opt-in 플래그를 준 폐기성 환경에서만 공개       |

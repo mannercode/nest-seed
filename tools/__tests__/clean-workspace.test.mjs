@@ -20,7 +20,7 @@ test('cleanWorkspace removes only generated paths and preserves personal files',
     await Promise.all([
         mkdir(join(root, 'apps/api/_output'), { recursive: true }),
         mkdir(join(root, 'apps/console/.next'), { recursive: true }),
-        mkdir(join(root, 'tests/console-e2e/test-results'), { recursive: true }),
+        mkdir(join(root, 'tests/web/test-results'), { recursive: true }),
         mkdir(join(root, 'node_modules'), { recursive: true }),
         mkdir(join(root, 'notes'), { recursive: true })
     ])

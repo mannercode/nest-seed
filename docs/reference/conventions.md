@@ -57,7 +57,7 @@ const HOME_MOVIE_COUNT = 12 // 사용하는 코드 옆 상수 (view/user-app/hom
 | `test`   | 개발 루프용 빠른 회귀. devcontainer 인프라를 재사용하는 Jest                                          |
 | `lint`   | 타입 체크 + ESLint + Prettier 검사. 루트 `lint:root`가 셸·문서 링크 검사를 더한다                     |
 | `format` | ESLint `--fix` + Prettier 쓰기                                                                        |
-| `e2e`    | console·user-app 브라우저 시나리오 (tests/console-e2e)                                                |
+| `e2e`    | console·user-app 브라우저 시나리오 (`tests/web/e2e`)                                                  |
 | `atoz`   | 클린룸 전체 회귀 — clean·인프라 리셋·`npm ci` 후 lint·build·test·e2e·배포 검증까지. `test`를 포함한다 |
 | `clean`  | (루트 전용) allowlist에 적은 `node_modules`·`_output`·coverage·build 산출물만 정리                    |
 

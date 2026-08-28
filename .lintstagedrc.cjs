@@ -20,8 +20,8 @@ module.exports = {
         'npm exec --workspace libs/testing -- eslint --fix',
         'prettier --write'
     ],
-    'tests/console-e2e/**/*.{ts,tsx}': [
-        'npm exec --workspace tests/console-e2e -- eslint --fix',
+    'tests/web/**/*.{ts,tsx}': [
+        'npm exec --workspace tests/web -- eslint --fix',
         'prettier --write'
     ],
     '*.{cjs,js,mjs}': 'node tools/lint-staged-js.mjs',

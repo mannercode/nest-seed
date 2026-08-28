@@ -72,7 +72,7 @@ env 파일은 자기 보간이 안 되고 compose 서비스 정의와 스크립�
 | NATS `nats:4222`               | `infra/compose.nats.yml` 서비스 이름(4222는 NATS 기본 포트라 파일에 리터럴이 없다) | `.env.infra` `NATS_HOST`/`NATS_PORT`                                                                                                                                                                                            |
 | Temporal `temporal:7233`       | `infra/temporal/compose.temporal.yml`                                              | `.env.infra` `TEMPORAL_HOST`/`TEMPORAL_PORT`                                                                                                                                                                                    |
 | VersityGW `s3:7070`            | `infra/compose.s3.yml`                                                             | `.env.infra` `S3_ENDPOINT` (Admin API와 WebUI는 비활성화)                                                                                                                                                                       |
-| 배포 NGINX `http://nginx` (80) | `deploy/compose.yml`·`deploy/nginx.conf`                                           | `deploy/verify.sh`·`tests/api-race/runner.sh`·`tests/api-perf/runner.sh`의 `SERVER_URL`                                                                                                                                         |
+| 배포 NGINX `http://nginx` (80) | `deploy/compose.yml`·`deploy/nginx.conf`                                           | `deploy/verify.sh`·`tests/api-race/runner.sh`·`tests/api-benchmark/runner.sh`의 `SERVER_URL`                                                                                                                                    |
 
 ---
 

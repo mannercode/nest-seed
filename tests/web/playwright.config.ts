@@ -19,7 +19,7 @@ if (!process.env.WORKSPACE_ROOT) {
 const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT
 
 export default defineConfig({
-    testDir: './tests',
+    testDir: './e2e',
     outputDir: './_output/test-results',
     forbidOnly: !!process.env.CI,
     retries: Number(process.env.PLAYWRIGHT_RETRIES ?? 0),

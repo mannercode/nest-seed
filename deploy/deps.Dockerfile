@@ -14,7 +14,7 @@ COPY apps/console/package.json apps/console/
 COPY apps/user-app/package.json apps/user-app/
 # npm은 lockfile만으로 워크스페이스 그래프를 완성하지 못한다.
 # 배포 이미지에서 실행하지 않는 `tests/*` 워크스페이스도 manifest가 없으면 `npm ci`가 실패한다.
-COPY tests/console-e2e/package.json tests/console-e2e/
+COPY tests/web/package.json tests/web/
 COPY tests/api-race/package.json tests/api-race/
 # `tools/*`는 devDependency지만 워크스페이스 의존성이다.
 # manifest를 복사하지 않으면 npm이 같은 이름의 패키지를 registry에서 찾으려 해 404로 실패한다.

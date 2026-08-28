@@ -157,7 +157,7 @@ Temporal로 옮기면 부담이 줄어든다.
 
 - `libs/testing`은 테스트 지원 라이브러리다. 헬퍼 대부분이 `libs/common`·`apps/api` 소비자 스펙에서 간접 검증되고, 자체 Jest는 남은 순수 동작을 검증하지만 coverage를 수집하지 않는다.
 - `tests/api-race`는 외부 HTTP/SSE 하네스다. Node 계약 테스트와 4-replica 시나리오, Stability 50회 반복으로 검증하며 앱 코드 커버리지로 포장하지 않는다.
-- `tests/console-e2e`는 Playwright 브라우저 시나리오와 두 BFF의 pure 계약을 검증한다. 브라우저·proxy 행동을 게이트하며 선 커버리지 임계치는 두지 않는다.
+- `tests/web`은 Playwright 브라우저 시나리오와 두 BFF의 브라우저 없는 계약을 검증한다. 브라우저·proxy 행동을 게이트하며 선 커버리지 임계치는 두지 않는다.
 - `tools/dev-tools`의 tunnel 정책은 Bash 계약 테스트와 shellcheck로, root `tools/__tests__`의 clean·구성 계약은 AtoZ `test:config`로 검증한다. 여기에는 언어 커버리지 임계치를 붙이지 않는다.
 
 이 구분은 커버리지 임계치를 낮추는 편법이 아니다. 수집 대상 코드에는 100% 외의 임계치가 없고, 수집하지 않는 하네스·계약은 각자의 실제 소비 경로를 통과해야 한다.

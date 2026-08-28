@@ -1,0 +1,22 @@
+{
+    "name": "web-tests",
+    "version": "0.0.1",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "test": "playwright test --config=playwright.contract.config.ts",
+        "e2e": "playwright test",
+        "e2e:list": "playwright test --list --reporter=list",
+        "e2e:report": "playwright show-report _output/report",
+        "e2e:ui": "playwright test --ui",
+        "format": "eslint e2e/ contracts/ playwright.config.ts playwright.contract.config.ts --fix && prettier --write e2e/ contracts/ playwright.config.ts playwright.contract.config.ts",
+        "lint": "tsc --noEmit && eslint e2e/ contracts/ playwright.config.ts playwright.contract.config.ts --max-warnings=0 && prettier --check e2e/ contracts/ playwright.config.ts playwright.contract.config.ts",
+        "atoz": "npm run lint && npm test && CI=1 playwright test"
+    },
+    "devDependencies": {
+        "@playwright/test": "1.62.1",
+        "@types/node": "24.13.3",
+        "mongodb": "7.5.0",
+        "typescript": "6.0.3"
+    }
+}

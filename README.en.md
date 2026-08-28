@@ -70,8 +70,9 @@ Development is test-driven — a test brings up the environment it needs (infras
 ```bash
 npm test -w apps/api -- users.spec --coverage=false   # run a single spec (gate off)
 npm run e2e                                           # console and user-app browser e2e (Playwright)
-bash tests/api-race/runner.sh <scenario>              # distributed races — brings up a multi-replica deployment stack
-bash tests/api-perf/runner.sh                         # performance measurement — stack boot, seeding, measurement, teardown in one go
+npm run e2e:report                                    # open the latest browser e2e HTML report
+npm run race -- <scenario>                            # distributed races — brings up a multi-replica deployment stack
+npm run benchmark:api                                # performance measurement — stack boot, seeding, measurement, teardown in one go
 ```
 
 The test system and writing rules are described in the [apps document](docs/apps.md#테스트); how to run and interpret the distributed race and performance tools, in the [tests document](docs/tests.md).
@@ -104,8 +105,8 @@ nest-seed/
 │
 ├── tests/
 │   ├── api-race/            ← distributed race scenarios against a deployed API stack
-│   ├── api-perf/            ← performance measurement tools against a deployed API stack
-│   └── console-e2e/         ← Playwright console/user-app e2e + shared BFF contract tests
+│   ├── api-benchmark/       ← performance comparison tools against a deployed API stack
+│   └── web/                 ← Playwright browser e2e + shared BFF contract tests
 │
 ├── infra/                   ← development infrastructure Compose (MongoDB, Redis, VersityGW, NATS, Temporal)
 ├── deploy/                  ← Docker Compose, NGINX (app deployment entry point)
@@ -135,8 +136,8 @@ If a tool is new to you, start from the code path or document in the "Where it's
 | class-validator                  | DTO validation — each service's `dtos/`                                                                                                                         |
 | npm workspaces                   | Monorepo layout. Shares libs as internal packages                                                                                                               |
 | Jest + Testcontainers            | Unit and integration tests. `libs/common` brings up its own infrastructure — [apps document](docs/apps.md#테스트)                                               |
-| Playwright                       | Console/user-app browser e2e and shared BFF contracts — `tests/console-e2e`                                                                                     |
-| k6                               | Performance measurement harness — `tests/api-perf`                                                                                                              |
+| Playwright                       | Console/user-app browser e2e and shared BFF contracts — `tests/web`                                                                                             |
+| k6                               | Performance comparison harness — `tests/api-benchmark`                                                                                                          |
 | Docker Compose + NGINX           | Development infrastructure (`infra/`) and multi-container deployment (`deploy/`)                                                                                |
 | GitHub Actions                   | atoz regression and repeated stability verification — `.github/workflows`                                                                                       |
 | cloudflared (`npx tunnel`)       | Always refuses direct API; app BFFs proxy most API routes except selected auth endpoints, so exposure requires both opt-in flags in a disposable environment    |

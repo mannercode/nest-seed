@@ -4,10 +4,10 @@ module.exports = [
     { ignores: ['_output/**'] },
     {
         files: [
-            'tests/**/*.ts',
-            'unit/**/*.ts',
+            'e2e/**/*.ts',
+            'contracts/**/*.ts',
             'playwright.config.ts',
-            'playwright.unit.config.ts'
+            'playwright.contract.config.ts'
         ],
         languageOptions: { parser: tseslint.parser },
         plugins: { '@typescript-eslint': tseslint.plugin },

@@ -1,6 +1,8 @@
 # tests/ — 배포 스택 대상 테스트
 
-단위·통합 테스트는 보통 각 워크스페이스 안(`apps/api/src/__tests__`, `libs/*/src/**/__tests__`)에 살고 `npm test`로 돈다([apps 문서의 테스트 절](apps.md#테스트) 참고). `tests/`에 모인 것은 주로 **배포된 스택을 밖에서 검증하는** 무거운 테스트라 폴더가 따로 있다. 다만 하네스 자체의 계약은 같은 워크스페이스 안에 둔다. `tests/api-race/__tests__`는 공통 HTTP/SSE client·repository 계약을 `npm test -w tests/api-race`로, `tests/console-e2e/unit`은 두 Next.js BFF의 공통 보안 계약을 `npm test -w tests/console-e2e`로 실행한다. 둘 다 배포 스택이나 브라우저를 시작하지 않고 기본 `npm test`에 포함된다.
+단위·통합 테스트는 보통 각 워크스페이스 안(`apps/api/src/__tests__`, `libs/*/src/**/__tests__`)에 살고 `npm test`로 돈다([apps 문서의 테스트 절](apps.md#테스트) 참고). `tests/`에 모인 것은 주로 **배포된 스택을 밖에서 검증하는** 무거운 테스트라 폴더가 따로 있다. 다만 하네스 자체의 계약은 같은 워크스페이스 안에 둔다. `tests/api-race/contracts`는 공통 HTTP/SSE client·repository 계약을 `npm test -w tests/api-race`로, `tests/web/contracts`는 두 Next.js BFF의 공통 보안·ESLint 계약을 `npm test -w tests/web`으로 실행한다. 둘 다 배포 스택이나 브라우저를 시작하지 않고 기본 `npm test`에 포함된다.
+
+한 화면의 실행 명령과 결과 위치는 [`tests/README.md`](../tests/README.md)에 있다. 루트 `npm test`와 `npm run atoz`가 성공하면 마지막에 통과한 영역, 각 영역을 검증하는 이유와 포함되지 않은 장시간 검증을 함께 요약한다.
 
 ## api-race — 분산 레이스 시나리오
 
@@ -22,14 +24,14 @@
 각 스크립트는 요청마다 별도 `http.Agent({keepAlive:false})`를 만든다. NGINX의 `least_conn`이 실제로 여러 컨테이너로 요청을 나누도록 keep-alive 풀을 공유하지 않기 위해서다. 응답의 `x-replica-id` 헤더(정의는 [배포](deploy.md#x-replica-id-응답-헤더))로 요청이 여러 컨테이너에 분산되었는지도 확인한다. 이렇게 해서 "사실은 한 컨테이너에만 갔는데 통과한" 거짓 성공을 막는다.
 
 ```bash
-bash tests/api-race/runner.sh <scenario>   # 인자 없이 실행하면 시나리오 목록이 나온다
-npm test -w tests/api-race              # 배포 없이 HTTP/SSE 공통 클라이언트만 검증한다
+npm run race -- <scenario>       # 인자 없이 실행하면 시나리오 목록이 나온다
+npm test -w tests/api-race       # 배포 없이 HTTP/SSE 공통 클라이언트만 검증한다
 ```
 
-러너가 배포 스택을 띄우고 내리는 것까지 맡는다. 각 시나리오의 실패 조건은 스크립트 머리 주석에 있다.
+러너가 배포 스택을 띄우고 내리는 것까지 맡는다. 각 시나리오는 Node 내장 `node:test`의 상위 테스트 하나로 실행되어 검증할 불변식의 이름, 성공·실패, 소요 시간과 stack을 표준 형식으로 출력한다. 내부 반복은 subtest로 늘리지 않고 기존 진행 로그로 남긴다. 각 시나리오의 실패 조건은 스크립트 머리 주석에 있다.
 공통 HTTP 요청은 시작부터 응답 body 종료까지 30초, SSE는 응답 헤더 handshake까지 30초를 기본 기한으로 둔다. 느린 환경에서는 양의 정수 밀리초 값인 `HTTP_REQUEST_TIMEOUT_MS`와 `SSE_HANDSHAKE_TIMEOUT_MS`로 각각 덮어쓴다.
 
-## api-perf — 성능 측정
+## api-benchmark — 성능 비교
 
 같은 배포 스택을 대상으로 하는 성능 측정 도구다. 하네스는 k6 스크립트라 `k6 run`으로 실행된다(devcontainer에 설치돼 있고, 아래 러너 두 개가 호출을 대신한다). 실행 전제(스택 기동, 시드 데이터)와 환경 변수는 각 스크립트의 머리 주석에 있다.
 
@@ -41,11 +43,11 @@ npm test -w tests/api-race              # 배포 없이 HTTP/SSE 공통 클라�
 | `harness-user-filter.js` | 비인덱스 부분 문자열 검색의 전체 컬렉션 스캔 비용                         |
 
 ```bash
-bash tests/api-perf/runner.sh                                        # 스택 기동·시드·측정·정리까지 한 번에
-SERVER_URL=http://localhost:3000 bash tests/api-perf/mixed-runner.sh # 떠 있는 스택 반복 측정 — 쓰기 레그는 ADMIN_ACCESS_TOKEN 필요(발급은 runner.sh의 seed_admin_and_login)
+npm run benchmark:api                                                    # 스택 기동·시드·측정·정리까지 한 번에
+SERVER_URL=http://localhost:3000 bash tests/api-benchmark/mixed-runner.sh # 떠 있는 스택 반복 측정 — 쓰기 레그는 ADMIN_ACCESS_TOKEN 필요(발급은 runner.sh의 seed_admin_and_login)
 ```
 
-결과는 콘솔 한 줄 요약과 `tests/api-perf/_output/<scenario>-<ts>-<label>.json`으로 남고, mixed-runner는 런 내부의 시간축 추이를 담은 HTML 대시보드(`tests/api-perf/_output/dashboard-*.html`)도 함께 남긴다.
+결과는 콘솔 한 줄 요약과 `tests/api-benchmark/_output/<scenario>-<ts>-<label>.json`으로 남고, mixed-runner는 런 내부의 시간축 추이를 담은 HTML 대시보드(`tests/api-benchmark/_output/dashboard-*.html`)도 함께 남긴다.
 
 수치에 절대 합격선은 없다 — 같은 머신의 이전 결과(JSON의 `label`·`serverUrl`로 짝지음)와 비교하는 회귀-비교용이다. 결과 JSON은 이런 모양이다(일부 필드 생략).
 
@@ -68,16 +70,18 @@ SERVER_URL=http://localhost:3000 bash tests/api-perf/mixed-runner.sh # 떠 있�
 1. `statusCodes`부터 본다. `0`(연결 실패)이 섞이면 측정 자체가 무효이고, 5xx가 많으면 지연 수치는 에러 경로를 잰 것이다. 쓰기 시나리오에 401이 섞이면 `ADMIN_ACCESS_TOKEN` 누락이다.
 2. 혼합 케이스의 read/write RPS·p95를 단독 케이스(`iso-*`)와 견줘 간섭 정도를 본다.
 
-## console-e2e — 프런트엔드 e2e와 BFF 계약
+## web — 브라우저 e2e와 BFF 계약
 
 Playwright가 `apps/api`·`apps/console`·`apps/user-app`을 빌드해 띄운 뒤, 브라우저에서 관리자 로그인과 영화·극장·사용자 관리, 사용자 가입·로그인·세션 회전 흐름을 검증한다. 개발 중 이미 서버가 떠 있으면 재사용한다(`reuseExistingServer`). PR/push CI는 재시도 없이 첫 실패를 게이트하고, 정기 실행만 한 번 재시도한다. 실패 시 trace·screenshot·JUnit·HTML report는 workflow artifact로 보존한다.
 
-같은 워크스페이스의 `unit/bff-proxy.spec.ts`는 BFF의 proxy IP 경계와 refresh 재시도 쿠키 보존을 두 앱에 동일하게 적용하는 계약 테스트다. 별도 Playwright 설정을 써서 webServer와 브라우저를 시작하지 않는다.
+같은 워크스페이스의 `contracts/bff-proxy.spec.ts`는 BFF의 proxy IP 경계와 refresh 재시도 쿠키 보존을 두 앱에 동일하게 적용하는 계약 테스트다. 별도 Playwright 설정을 써서 webServer와 브라우저를 시작하지 않는다.
 
 ```bash
-npm test -w tests/console-e2e   # pure BFF unit contract
-npm run e2e        # atoz에도 포함되어 돈다
-npm run e2e:ui -w tests/console-e2e   # 로컬 디버그: 인터랙티브 실행·트레이스 뷰
+npm test -w tests/web   # 브라우저 없는 BFF·ESLint 계약
+npm run e2e             # AtoZ에도 포함되는 browser e2e
+npm run e2e:list        # 서버를 띄우지 않고 테스트 이름 확인
+npm run e2e:ui          # 인터랙티브 실행·트레이스 뷰
+npm run e2e:report      # 마지막 HTML 결과 열기
 ```
 
 ## CI 반복 — test-stability
