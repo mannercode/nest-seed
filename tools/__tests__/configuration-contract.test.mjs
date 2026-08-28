@@ -87,11 +87,16 @@ test('installed dependency specs are exact while peer compatibility ranges stay 
     }
 })
 
-test('devcontainer pins features and isolates project naming', async () => {
+test('devcontainer preserves install, naming, and credential mount behavior', async () => {
     const config = await read('.devcontainer/devcontainer.json')
     const lock = JSON.parse(await read('.devcontainer/devcontainer-lock.json'))
 
+    assert.match(config, /"postCreateCommand"\s*:\s*\{\s*"install"\s*:\s*"npm install"/)
     assert.match(config, /\$\{localEnv:USER:unknown\}-\$\{localWorkspaceFolderBasename\}/)
+    assert.match(config, /\.codex,target=\/home\/node\/\.codex,type=bind/)
+    assert.match(config, /\.config\/gh,target=\/home\/node\/\.config\/gh,type=bind/)
+    assert.match(config, /\.claude,target=\/home\/node\/\.claude,type=bind/)
+    assert.match(config, /\.claude\.json,target=\/home\/node\/\.claude\.json,type=bind/)
     for (const feature of Object.values(lock.features)) {
         assert.match(feature.resolved, /@sha256:[a-f0-9]{64}$/)
         assert.match(feature.integrity, /^sha256:[a-f0-9]{64}$/)
@@ -316,12 +321,44 @@ test('Stability keeps 60 API repetitions within three timeout-safe jobs', async 
     )
 })
 
-test('Dependabot auto-merge action is pinned and excludes major updates', async () => {
+test('Dependabot keeps routine updates direct, related, and non-major', async () => {
+    const config = await read('.github/dependabot.yml')
     const workflow = await read('.github/workflows/dependabot-auto-merge.yaml')
 
-    assert.match(workflow, /dependabot\/fetch-metadata@[a-f0-9]{40}/)
-    assert.match(
-        workflow,
-        /if:\s*steps\.metadata\.outputs\.update-type != 'version-update:semver-major'/
+    const ecosystems = [...config.matchAll(/^\s+- package-ecosystem:/gm)]
+    const directRoutineAllowLists = [
+        ...config.matchAll(
+            /allow:\s+- dependency-type: direct\s+update-types:\s+- version-update:semver-minor\s+- version-update:semver-patch/g
+        )
+    ]
+    assert.equal(ecosystems.length, 4)
+    assert.equal(directRoutineAllowLists.length, ecosystems.length)
+
+    const npm = config.slice(
+        config.indexOf('- package-ecosystem: npm'),
+        config.indexOf('- package-ecosystem: github-actions')
     )
+    assert.doesNotMatch(npm, /patterns:\s*\['\*'\]/)
+    for (const group of [
+        'aws-sdk',
+        'next',
+        'nestjs',
+        'temporal',
+        'react',
+        'eslint',
+        'commitlint'
+    ]) {
+        assert.match(npm, new RegExp(`${group}-minor-patch:`))
+    }
+    assert.match(
+        config,
+        /package-ecosystem: docker\s+directories:\s+- '\/\.devcontainer'\s+- '\/apps\/api'\s+- '\/deploy'/
+    )
+    assert.equal(config.match(/group-by: dependency-name/g)?.length, 2)
+    assert.match(
+        config,
+        /package-ecosystem: docker-compose\s+directories:\s+- '\/deploy'\s+- '\/infra'/
+    )
+    assert.match(workflow, /dependabot\/fetch-metadata@[a-f0-9]{40}/)
+    assert.match(workflow, /version-update:semver-major/)
 })
