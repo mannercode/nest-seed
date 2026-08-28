@@ -89,9 +89,13 @@ test('installed dependency specs are exact while peer compatibility ranges stay 
 
 test('devcontainer preserves install, naming, and credential mount behavior', async () => {
     const config = await read('.devcontainer/devcontainer.json')
+    const dockerfile = await read('.devcontainer/Dockerfile')
     const lock = JSON.parse(await read('.devcontainer/devcontainer-lock.json'))
 
     assert.match(config, /"postCreateCommand"\s*:\s*\{\s*"install"\s*:\s*"npm install"/)
+    assert.match(dockerfile, /ARG PNPM_VERSION=\d+\.\d+\.\d+/)
+    assert.match(dockerfile, /"pnpm@\$\{PNPM_VERSION\}"/)
+    assert.match(dockerfile, /pnpm --version/)
     assert.match(config, /\$\{localEnv:USER:unknown\}-\$\{localWorkspaceFolderBasename\}/)
     assert.match(config, /\.codex,target=\/home\/node\/\.codex,type=bind/)
     assert.match(config, /\.config\/gh,target=\/home\/node\/\.config\/gh,type=bind/)

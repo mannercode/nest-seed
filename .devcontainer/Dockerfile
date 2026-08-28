@@ -32,11 +32,13 @@ RUN set -eu; \
     rm -rf /var/lib/apt/lists/*
 
 ARG NPM_VERSION=12.0.2
+ARG PNPM_VERSION=11.24.0
 ARG PLAYWRIGHT_VERSION=1.62.1
 RUN set -eu; \
     npm install --global --no-audit --no-fund \
         "npm@${NPM_VERSION}"; \
     npm install --global --no-audit --no-fund \
+        "pnpm@${PNPM_VERSION}" \
         "playwright@${PLAYWRIGHT_VERSION}" \
         "@openai/codex"; \
     npm cache clean --force
@@ -148,6 +150,7 @@ RUN set -eu; \
 RUN set -eu; \
     node --version; \
     npm --version; \
+    pnpm --version; \
     shfmt -version; \
     java -jar /opt/plantuml.jar -version; \
     shellcheck --version; \
