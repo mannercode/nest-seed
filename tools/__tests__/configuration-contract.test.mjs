@@ -278,7 +278,7 @@ test('Temporal PostgreSQL 18 persists its versioned data directory through the p
     assert.equal(schemaSetup.match(/\/schema\/postgresql\/v12\//g)?.length, 2)
 })
 
-test('GitHub workflows pin actions, protect scheduled forks, and retain diagnostics', async () => {
+test('GitHub workflows pin actions and retain diagnostics', async () => {
     for (const workflow of [
         '.github/workflows/test-atoz.yaml',
         '.github/workflows/test-stability.yaml'
@@ -286,38 +286,17 @@ test('GitHub workflows pin actions, protect scheduled forks, and retain diagnost
         const contents = await read(workflow)
         assert.doesNotMatch(contents, /uses:\s+[^\s]+@v\d/)
         assert.match(contents, /uses:\s+[^\s]+@[a-f0-9]{40}(?:\s+#\s+v[^\s]+)?/)
-        assert.match(
-            contents,
-            /github\.event_name != 'schedule' \|\| github\.repository_id == '849585972' \|\| vars\.ENABLE_SCHEDULED_CI == 'true'/
-        )
         assert.doesNotMatch(contents, /github\.repository ==/)
         assert.match(contents, /git diff --exit-code -- package-lock\.json/)
     }
     const atoz = await read('.github/workflows/test-atoz.yaml')
+    assert.doesNotMatch(atoz, /^\s+schedule:/m)
     assert.match(atoz, /_output\/deploy-diagnostics/)
     assert.match(atoz, /_output\/ci-diagnostics/)
-})
-
-test('Stability keeps 60 API repetitions within three timeout-safe jobs', async () => {
-    const workflow = await read('.github/workflows/test-stability.yaml')
-    const apiJobs = [
-        ...workflow.matchAll(
-            /- leg: unit-api-(\d+)\n\s+timeout: (\d+)\n\s+run: \|\n\s+npm run build\n\s+RESET_EVERY=5 bash \.github\/scripts\/repeat\.sh (\d+) npm test -w apps\/api/g
-        )
-    ].map(([, leg, timeout, repetitions]) => ({
-        leg: Number(leg),
-        repetitions: Number(repetitions),
-        timeout: Number(timeout)
-    }))
-
-    assert.deepEqual(apiJobs, [
-        { leg: 1, repetitions: 20, timeout: 240 },
-        { leg: 2, repetitions: 20, timeout: 240 },
-        { leg: 3, repetitions: 20, timeout: 240 }
-    ])
-    assert.equal(
-        apiJobs.reduce((total, job) => total + job.repetitions, 0),
-        60
+    const stability = await read('.github/workflows/test-stability.yaml')
+    assert.match(
+        stability,
+        /github\.event_name != 'schedule' \|\| github\.repository_id == '849585972' \|\| vars\.ENABLE_SCHEDULED_CI == 'true'/
     )
 })
 

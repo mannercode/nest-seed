@@ -92,7 +92,7 @@ env 파일은 자기 보간이 안 되고 compose 서비스 정의와 스크립�
 | 저장소 링크·연락처       | README badge, 저자 블로그·귀속 표시는 새 소유권과 유지할 원 저작자 정보를 구분해 의도적으로 검토한다. URL이나 `mannercode.com`·이메일을 기계적으로 치환하지 않는다.                 |
 | GitHub Settings          | ruleset, Actions/Dependabot 권한, `DOCKERHUB_*` secrets, 필요한 fork에만 `ENABLE_SCHEDULED_CI=true` — [GitHub 운영 설정](../github-setup.md)                                        |
 
-정기 CI 조건의 `repository_id == '849585972'`는 원본 저장소만 변수 없이 schedule을 실행하게 하는 immutable sentinel이다. fork에서 자기 repository ID로 바꾸면 opt-in 안전장치를 우회하므로 치환하지 않는다.
+주간 Stability 조건의 `repository_id == '849585972'`는 원본 저장소만 변수 없이 schedule을 실행하게 하는 immutable sentinel이다. fork에서 자기 repository ID로 바꾸면 opt-in 안전장치를 우회하므로 치환하지 않는다.
 
 패키지 scope를 바꿨다면 의존성과 lockfile을 갱신한 뒤 `npm run format`으로 import 정렬과 줄바꿈을 정리한다. 끝나면 devcontainer를 재생성(Rebuild Container)해 바뀐 `.env.*` 값이 `--env-file`로 다시 주입되게 한다. 컨테이너의 `process.env`는 생성 시점에 굳으므로, 재생성하지 않으면 인프라(`infra/reset.sh`)는 옛 `TEMPORAL_NAMESPACE`로 뜨고 deploy는 새 값으로 접속해 `atoz`의 deploy 단계가 깨진다.
 
