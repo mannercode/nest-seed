@@ -63,4 +63,4 @@ const HOME_MOVIE_COUNT = 12 // 사용하는 코드 옆 상수 (view/user-app/hom
 
 `clean`은 workspace 밖의 경로와 workspace 밖으로 향하는 symlink를 거부한다. `.gitignore`에 있다는 이유만으로 개인 env·설정 파일을 지우지 않으며, 새 산출물을 추가할 때는 `tools/clean-workspace.mjs`의 allowlist와 구성 계약 테스트를 함께 갱신한다.
 
-워크스페이스별 `atoz`는 해당 패키지에 필요한 검증을 모두 수행한다. 루트 `atoz`는 구성 계약, 워크스페이스별 `atoz`, `lint:root`, 배포 검증을 연결한다.
+`atoz`의 워크스페이스 구현은 "그 워크스페이스를 전부 검증한다"는 의미만 같고 단계는 각자 다르다. libs는 build→lint→test, Next 앱은 테스트가 없어 lint→build, api는 배포 검증에서 Docker가 빌드를 맡으므로 lint→test다.
