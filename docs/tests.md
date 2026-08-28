@@ -72,7 +72,7 @@ SERVER_URL=http://localhost:3000 bash tests/api-perf/mixed-runner.sh # 떠 있�
 
 Playwright가 `apps/api`·`apps/console`·`apps/user-app`을 빌드해 띄운 뒤, 브라우저에서 관리자 로그인과 영화·극장·사용자 관리, 사용자 가입·로그인·세션 회전 흐름을 검증한다. 개발 중 이미 서버가 떠 있으면 재사용한다(`reuseExistingServer`). PR/push CI는 재시도 없이 첫 실패를 게이트하고, 정기 실행만 한 번 재시도한다. 실패 시 trace·screenshot·JUnit·HTML report는 workflow artifact로 보존한다.
 
-같은 워크스페이스의 `unit/bff-proxy.spec.ts`는 BFF의 proxy IP 경계와 refresh 재시도 쿠키 보존을 두 앱에 동일하게 적용하는 계약 테스트다. 별도 Playwright 설정을 써서 webServer와 브라우저를 시작하지 않는다.
+같은 워크스페이스의 `unit/bff-proxy.spec.ts`는 두 앱이 함께 쓰는 BFF 구현의 proxy IP 경계와 refresh 재시도 쿠키 보존을 검증한다. 별도 Playwright 설정을 써서 webServer와 브라우저를 시작하지 않는다.
 
 ```bash
 npm test -w tests/console-e2e   # pure BFF unit contract

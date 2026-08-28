@@ -11,6 +11,10 @@ if (!API_BASE_URL) {
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 /** @type {import('next').NextConfig} */
-const nextConfig = { output: 'standalone', outputFileTracingRoot: path.join(__dirname, '../..') }
+const nextConfig = {
+    output: 'standalone',
+    outputFileTracingRoot: path.join(__dirname, '../..'),
+    transpilePackages: ['@mannercode/frontend']
+}
 
 export default nextConfig

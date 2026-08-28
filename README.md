@@ -91,6 +91,7 @@ Swagger/OpenAPI는 의도적으로 두지 않았다(이유는 [설계 결정](do
 ```
 nest-seed/
 ├── libs/                    ← 공유 라이브러리(npm 패키지)
+│   ├── frontend/            ← @mannercode/frontend — 두 Next.js 앱의 공용 BFF
 │   ├── temporal-sandbox/    ← @mannercode/temporal-sandbox — Temporal workflow 샌드박스 헬퍼
 │   ├── common/              ← @mannercode/common — Mongoose, Redis, JWT, S3, Logger, NATS, Temporal
 │   └── testing/             ← @mannercode/testing — HttpTestClient, 픽스처 헬퍼

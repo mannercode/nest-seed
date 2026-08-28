@@ -12,6 +12,7 @@
         "atoz": "npm run lint && npm test && CI=1 playwright test"
     },
     "devDependencies": {
+        "@mannercode/frontend": "*",
         "@playwright/test": "1.62.1",
         "@types/node": "24.13.3",
         "mongodb": "7.5.0",

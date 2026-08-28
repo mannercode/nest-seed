@@ -93,6 +93,7 @@ There is deliberately no Swagger/OpenAPI (the reasoning is in [Design decisions]
 ```
 nest-seed/
 ├── libs/                    ← shared libraries (npm packages)
+│   ├── frontend/            ← @mannercode/frontend — shared BFF for both Next.js apps
 │   ├── temporal-sandbox/    ← @mannercode/temporal-sandbox — Temporal workflow sandbox helper
 │   ├── common/              ← @mannercode/common — Mongoose, Redis, JWT, S3, Logger, NATS, Temporal
 │   └── testing/             ← @mannercode/testing — HttpTestClient, fixture helpers
