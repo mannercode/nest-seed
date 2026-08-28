@@ -1,6 +1,5 @@
 import type Redis from 'ioredis'
 import { createTestContext } from '@mannercode/testing'
-import { HealthIndicatorService } from '@nestjs/terminus'
 import { getRedisConnectionToken, RedisModule } from '../../redis'
 import { RedisHealthIndicator } from '../redis.health-indicator'
 
@@ -13,7 +12,7 @@ export type RedisHealthIndicatorFixture = {
 export async function createRedisHealthIndicatorFixture() {
     const { close, module } = await createTestContext({
         imports: [RedisModule.forRoot({ type: 'single', url: process.env.TESTLIB_REDIS_URL })],
-        providers: [RedisHealthIndicator, HealthIndicatorService]
+        providers: [RedisHealthIndicator]
     })
 
     const redisIndicator = module.get(RedisHealthIndicator)

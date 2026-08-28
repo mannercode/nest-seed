@@ -1,6 +1,5 @@
 import type { Connection } from '@temporalio/client'
 import { createTestContext } from '@mannercode/testing'
-import { HealthIndicatorService } from '@nestjs/terminus'
 import { getTemporalConnectionToken, TemporalClientModule } from '../../temporal'
 import { TemporalHealthIndicator } from '../temporal.health-indicator'
 
@@ -20,7 +19,7 @@ export async function createTemporalHealthIndicatorFixture() {
                 })
             })
         ],
-        providers: [TemporalHealthIndicator, HealthIndicatorService]
+        providers: [TemporalHealthIndicator]
     })
 
     const temporalIndicator = module.get(TemporalHealthIndicator)

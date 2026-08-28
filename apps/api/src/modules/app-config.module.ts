@@ -12,7 +12,7 @@ import { TemporalSetupModule } from './temporal-setup.module'
         ConfigModule.forRoot({
             cache: true,
             ignoreEnvFile: true,
-            validationOptions: { abortEarly: false },
+            validationOptions: { libraryOptions: { abortEarly: false } },
             validationSchema: AppConfigService.schema
         }),
         MongooseSetupModule,

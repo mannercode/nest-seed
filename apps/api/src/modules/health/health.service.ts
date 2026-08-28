@@ -7,9 +7,8 @@ import {
     TemporalHealthIndicator,
     type NatsConnection
 } from '@mannercode/common'
-import { Inject, Injectable } from '@nestjs/common'
+import { Inject, Injectable, ServiceUnavailableException } from '@nestjs/common'
 import { getConnectionToken } from '@nestjs/mongoose'
-import { HealthCheckService, MongooseHealthIndicator } from '@nestjs/terminus'
 import { Connection } from '@temporalio/client'
 import {
     MONGO_CONNECTION_NAME,
@@ -20,11 +19,12 @@ import {
 import Redis from 'ioredis'
 import mongoose from 'mongoose'
 
+type HealthState = { status: 'down' | 'up' } & Record<string, unknown>
+type HealthCheckResult = Record<string, HealthState>
+
 @Injectable()
 export class HealthService {
     constructor(
-        private readonly health: HealthCheckService,
-        private readonly mongooseHealth: MongooseHealthIndicator,
         private readonly redisHealth: RedisHealthIndicator,
         private readonly natsHealth: NatsHealthIndicator,
         private readonly temporalHealth: TemporalHealthIndicator,
@@ -38,16 +38,41 @@ export class HealthService {
         private readonly temporalConnection: Connection
     ) {}
 
-    check() {
+    async check() {
         // 이벤트 전달(NATS)과 사가(Temporal)도 핵심 기능이므로, 끊겨 있으면 healthy로 보고하지 않는다.
-        const checks = [
-            async () =>
-                this.mongooseHealth.pingCheck('mongodb', { connection: this.mongoConnection }),
-            async () => this.redisHealth.isHealthy('redis', this.redisConnection),
-            async () => this.natsHealth.isHealthy('nats', this.natsConnection),
-            async () => this.temporalHealth.isHealthy('temporal', this.temporalConnection)
-        ]
+        const results: HealthCheckResult[] = await Promise.all([
+            this.checkMongo(),
+            this.redisHealth.isHealthy('redis', this.redisConnection),
+            this.natsHealth.isHealthy('nats', this.natsConnection),
+            this.temporalHealth.isHealthy('temporal', this.temporalConnection)
+        ])
+        const info: HealthCheckResult = {}
+        const error: HealthCheckResult = {}
 
-        return this.health.check(checks)
+        results.forEach((result) => {
+            Object.entries(result).forEach(([key, state]) => {
+                const target = state.status === 'up' ? info : error
+                target[key] = state
+            })
+        })
+
+        const response = { details: { ...info, ...error }, error, info }
+
+        if (Object.keys(error).length > 0) {
+            throw new ServiceUnavailableException({ status: 'error', ...response })
+        }
+
+        return { status: 'ok', ...response }
+    }
+
+    private async checkMongo(): Promise<HealthCheckResult> {
+        try {
+            const database = this.mongoConnection.db as NonNullable<mongoose.Connection['db']>
+            await database.command({ ping: 1 })
+
+            return { mongodb: { status: 'up' } }
+        } catch (caught: unknown) {
+            return { mongodb: { reason: String(caught), status: 'down' } }
+        }
     }
 }

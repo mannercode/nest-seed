@@ -1,5 +1,4 @@
 import { createTestContext } from '@mannercode/testing'
-import { HealthIndicatorService } from '@nestjs/terminus'
 import { getNatsConnectionToken, NatsModule, type NatsConnection } from '../../nats'
 import { NatsHealthIndicator } from '../nats.health-indicator'
 
@@ -12,7 +11,7 @@ export type NatsHealthIndicatorFixture = {
 export async function createNatsHealthIndicatorFixture() {
     const { close, module } = await createTestContext({
         imports: [NatsModule.forRoot(JSON.parse(process.env.TESTLIB_NATS_OPTIONS as string))],
-        providers: [NatsHealthIndicator, HealthIndicatorService]
+        providers: [NatsHealthIndicator]
     })
 
     const natsIndicator = module.get(NatsHealthIndicator)

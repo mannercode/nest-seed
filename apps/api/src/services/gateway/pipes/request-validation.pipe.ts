@@ -1,4 +1,4 @@
-import { BadRequestException, ValidationPipe } from '@nestjs/common'
+import { BadRequestException, Injectable, ValidationPipe } from '@nestjs/common'
 
 export const RequestValidationPipeErrors = {
     Failed: (
@@ -6,6 +6,7 @@ export const RequestValidationPipeErrors = {
     ) => ({ code: 'ERR_REQUEST_VALIDATION_FAILED', message: 'Validation failed', details })
 }
 
+@Injectable()
 export class RequestValidationPipe extends ValidationPipe {
     constructor() {
         super({

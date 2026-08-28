@@ -16,8 +16,8 @@
         "superagent": "10.3.0"
     },
     "peerDependencies": {
-        "@nestjs/common": "^11.0.0",
-        "@nestjs/testing": "^11.0.0"
+        "@nestjs/common": "^12.0.0",
+        "@nestjs/testing": "^12.0.0"
     },
     "devDependencies": {
         "@types/superagent": "8.1.11",
