@@ -38,7 +38,7 @@
 
 ### 결정
 
-한 프로세스에서 다른 프로세스로 이벤트를 보내야 하는 곳은 NATS pub/sub을 사용한다. 앱 코드에서는 NATS를 직접 쓰지 않고, NestJS 제공자로 감싼 `NatsPubSubService`를 통해서만 사용한다. 큐 그룹 옵션도 함께 열어 두어, 필요하면 큐처럼 동작하게 만들 수 있다.
+한 프로세스에서 다른 프로세스로 이벤트를 보내야 하는 곳은 NATS를 사용한다. 저장이 필요 없는 실시간 fan-out은 NestJS 제공자로 감싼 Core NATS `NatsPubSubService`가 맡고, 소비자 중단 중에도 보존해야 하는 구매 완료 알림만 `PurchaseEvents`가 JetStream을 사용한다.
 
 ### 근거
 
@@ -48,7 +48,7 @@ NATS를 고른 이유는 한 도구로 여러 동작을 처리할 수 있기 때
 
 - 같은 subject를 그대로 구독하면 모든 컨테이너가 이벤트를 받는다.
 - 큐 그룹을 붙이면 같은 그룹 안에서 한 컨테이너만 이벤트를 받는다.
-- JetStream 컨슈머를 쓰면 메시지를 저장하는 큐처럼 확장할 수도 있다.
+- JetStream consumer를 쓰면 선택한 이벤트만 저장·ack·재전달할 수 있다.
 
 도구 하나로 브로드캐스트와 큐를 모두 처리하면, 별도 큐 도구를 들일 때보다 선택 기준과 운영 부담이 줄어든다.
 
@@ -56,9 +56,11 @@ NATS를 고른 이유는 한 도구로 여러 동작을 처리할 수 있기 때
 
 ### 전달 보장의 경계
 
-현재 구현은 Core NATS pub/sub이다. `publish()` 후 `flush()`는 NATS 서버가 이전 명령을 처리했다는 것만 확인하며, 메시지 저장이나 소비자 처리 ack를 뜻하지 않는다. SSE 진행 상태처럼 현재 연결된 구독자에게 빠르게 보내는 통로에는 맞지만, 나중에 반드시 처리해야 할 작업 큐로 간주하면 안 된다.
+상영 생성의 SSE 진행 상태와 구매 관측 로그는 Core NATS pub/sub이다. `publish()` 후 `flush()`는 NATS 서버가 이전 명령을 처리했다는 것만 확인하며, 메시지 저장이나 소비자 처리 ack를 뜻하지 않는다. 현재 연결된 구독자에게 빠르게 보내고 다음 상태 조회로 복구할 수 있는 신호에는 맞지만, 나중에 반드시 처리해야 할 작업 큐로 간주하면 안 된다.
 
-구매 이벤트는 완료된 구매 문서의 `purchaseEventStatus=pending`을 durable outbox로 쓴다. publication lease를 획득한 복제본이 publish/flush한 뒤 MongoDB를 `published`로 갱신한다. 두 시스템의 갱신은 원자적이지 않아, publish/flush 성공 후 MongoDB 갱신을 잃으면 `purchaseRecordId`가 같은 이벤트를 재발행할 수 있다. 따라서 발행은 at-least-once이고, 실제 부수 효과를 실행하는 소비자는 `purchaseRecordId`를 durable inbox 또는 외부 provider의 idempotency key로 써야 한다. 저장·redelivery·consumer ack까지 broker가 맡아야 하는 요구가 생기면 그때 JetStream 전환을 검토한다.
+구매 이벤트는 완료된 구매 문서의 `purchaseEventStatus=pending`을 durable outbox로 쓴다. publication lease를 획득한 복제본이 JetStream PubAck를 받은 뒤 MongoDB를 `published`로 갱신한다. 알림 복제본들은 하나의 durable pull consumer를 공유하고 처리 성공 뒤 ack하며, 중단 중 쌓인 이벤트는 복구 후 이어서 처리한다. stream은 exact 구매 subject 하나를 파일에 최대 7일·256 MiB 보존하고 `DiscardNew`를 사용한다. 용량 한계에서는 새 PubAck가 실패하므로 Mongo outbox가 pending으로 남는다.
+
+MongoDB와 JetStream 갱신은 원자적이지 않고 부수 효과와 consumer ack도 원자적이지 않다. `purchaseRecordId` message ID의 10분 중복 억제 구간 밖이거나 ack를 잃으면 같은 이벤트가 다시 전달될 수 있다. 따라서 계약은 at-least-once이고, 실제 부수 효과를 실행하는 소비자는 `purchaseRecordId`를 durable inbox 또는 외부 provider의 idempotency key로 써야 한다. JetStream은 이 선택된 알림 경로에만 사용하며 모든 NATS subject의 기본값으로 확장하지 않는다.
 
 ### 검토했던 대안
 

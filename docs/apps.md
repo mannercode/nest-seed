@@ -174,16 +174,18 @@ SoLA는 원래 마이크로서비스를 염두에 둔 원칙이다. 마이크로
 
 상영 생성은 Redis 락을 쓰지 않는다. 같은 극장의 동시 작업은 MongoDB 트랜잭션 안에서 극장별 스케줄 guard를 먼저 CAS 갱신해 WriteConflict로 직렬화하고, Restate의 workflow key는 같은 `sagaId`의 중복 실행만 합친다. 서로 다른 `sagaId` 사이의 정합성을 workflow key에 맡기지 않는다.
 
-### 컨테이너 사이 메시지 — `NatsPubSubService`
+### 컨테이너 사이 메시지 — Core NATS와 JetStream
 
-`NatsPubSubService`는 NATS subject 기반 pub/sub을 감싼 서비스이다. 같은 subject를 구독하는 모든 컨테이너에 이벤트를 보내고, 큐 그룹 옵션을 쓰면 같은 그룹 안에서 한 컨테이너만 이벤트를 받는다. 컨테이너 사이 메시지 통로가 필요한 이유와 NATS를 고른 근거는 [설계 결정 §2](reference/decisions.md#2-컨테이너-사이-메시지-nats-pubsub)에 있다.
+`NatsPubSubService`는 저장이 필요 없는 Core NATS pub/sub을 감싼다. 같은 subject를 구독하는 모든 컨테이너에 이벤트를 보내고, 큐 그룹 옵션을 쓰면 같은 그룹 안에서 한 컨테이너만 이벤트를 받는다. 소비자가 중단된 동안에도 보존해야 하는 구매 완료 이벤트만 `PurchaseEvents`가 JetStream API를 직접 사용한다. 컨테이너 사이 메시지 통로가 필요한 이유와 NATS를 고른 근거는 [설계 결정 §2](reference/decisions.md#2-컨테이너-사이-메시지-nats-pubsub)에 있다.
 
 현재 두 경로가 이 서비스를 탄다.
 
 - **showtime-creation 사가의 상태 브로드캐스트** — 사가가 상태를 NATS에 발행하면 모든 컨테이너의 구독 핸들러가 그 이벤트를 받는다. 각 핸들러는 이벤트를 로컬 RxJS Subject로 넘기고, SSE 컨트롤러는 자기 컨테이너에 붙은 클라이언트에게 흘려보낸다. 서버는 saga별로 스트림을 나누지 않으므로 클라이언트가 payload의 `sagaId`로 자기 작업을 골라야 한다.
-- **purchase 이벤트** — 완료된 구매 기록의 `purchaseEventStatus=pending`이 durable outbox이다. 복제본 중 publication lease를 CAS로 획득한 하나가 NATS `publish()`와 `flush()`를 실행하고, 두 호출이 성공하면 MongoDB 기록을 `published`로 바꾼다. NATS `flush()`는 서버가 이전 명령을 처리했다는 신호일 뿐 소비자 처리·durable ack가 아니다. 브로드캐스트 구독은 [PurchaseEventLoggerService](../apps/api/src/services/application/purchase/internal/purchase-event-logger.service.ts), 큐 그룹 구독은 [PurchaseNotificationService](../apps/api/src/services/application/purchase/internal/purchase-notification.service.ts)가 예시다.
+- **purchase 이벤트** — 완료된 구매 기록의 `purchaseEventStatus=pending`이 durable outbox이다. 복제본 중 publication lease를 CAS로 획득한 하나가 JetStream에 `purchaseRecordId`를 message ID로 발행하고, 서버의 저장 확인(PubAck)을 받은 뒤 MongoDB 기록을 `published`로 바꾼다. [PurchaseNotificationService](../apps/api/src/services/application/purchase/internal/purchase-notification.service.ts)는 네 복제본이 같은 durable pull consumer를 공유하고, 처리 성공 뒤 명시적으로 ack한다. 같은 subject의 [PurchaseEventLoggerService](../apps/api/src/services/application/purchase/internal/purchase-event-logger.service.ts)는 Core NATS 구독을 유지해 현재 연결된 모든 복제본에 관측 로그를 남긴다.
 
-Core NATS publish/flush와 MongoDB의 `published` 갱신은 한 트랜잭션으로 묶을 수 없다. publish/flush는 성공했지만 DB 갱신이 실패하면 lease 만료 후 같은 이벤트가 다시 나갈 수 있으므로 발행은 **at-least-once**다. 반대로 Core NATS 자체는 메시지를 저장하는 durable broker가 아니므로 소비자 전달을 보장하지 않는다. 실제 알림·메일·외부 제공자 호출을 구독자에 추가할 때는 안정적인 `purchaseRecordId`를 durable inbox의 unique key 또는 provider idempotency key로 써야 한다. 현재 두 구독자는 `dedupeKey`를 로그로 보여 주는 예시이며 실제 알림을 보내지 않는다.
+JetStream PubAck와 MongoDB의 `published` 갱신은 한 트랜잭션으로 묶을 수 없다. 저장은 성공했지만 DB 갱신을 잃으면 lease 만료 뒤 같은 이벤트가 다시 발행될 수 있고, 부수 효과 실행 뒤 consumer ack를 잃어도 재전달될 수 있으므로 전체 계약은 **at-least-once**다. `purchaseRecordId` message ID는 10분 duplicate window 안의 재발행을 줄일 뿐 exactly-once를 만들지 않는다. 실제 알림·메일·외부 제공자 호출을 추가할 때는 이 ID를 durable inbox unique key나 provider idempotency key로 사용해야 한다. 현재 알림 소비자는 실제 발송 대신 `dedupeKey`가 포함된 로그만 남긴다.
+
+구매 stream은 이 subject 하나만 파일 저장소에 최대 7일·256 MiB 보존한다. 용량 한계에서는 오래된 미처리 이벤트를 밀어내지 않고 새 발행을 실패시켜 Mongo outbox가 계속 pending 상태로 재시도하게 한다. 현재 NATS는 단일 서버와 named volume이므로 컨테이너 재시작은 견디지만 broker HA는 아니다. 상영 상태 SSE처럼 다음 상태 조회로 복구 가능한 실시간 신호는 계속 Core NATS를 사용한다.
 
 ### 구매 상태 머신과 재조정
 
@@ -573,7 +575,7 @@ describe('PATCH /theaters/:id', () => {
 
 ### 테스트별 자원 격리
 
-각 테스트가 다른 테스트와 부딪히지 않도록, `apps/api/vitest.config.mjs`가 Vitest 명령마다 고유한 실행 ID를 만든다. `setupFiles`로 지정한 `src/__tests__/vitest.setup.ts`는 app 모듈을 읽기 전에 실행 ID와 `VITEST_POOL_ID`가 들어간 startup `PROJECT_ID`를 설정하고, `beforeEach`에서 테스트별 `TEST_ID` suffix로 다시 갱신한다. Redis/cache prefix, NATS subject와 Restate workflow 서비스 이름이 이 값을 따라 갈라진다. MongoDB 데이터베이스와 S3 버킷도 실행 ID와 `VITEST_POOL_ID`를 조합해 만든다. coverage·로그는 `_output/vitest-runs/r<실행 ID>/` 아래에서 실행별로 분리된다. 따라서 같은 devcontainer의 두 API Vitest 명령이 같은 pool ID를 받아도 자원이나 파일 산출물을 공유하지 않는다.
+각 테스트가 다른 테스트와 부딪히지 않도록, `apps/api/vitest.config.mjs`가 Vitest 명령마다 고유한 실행 ID를 만든다. `setupFiles`로 지정한 `src/__tests__/vitest.setup.ts`는 app 모듈을 읽기 전에 실행 ID와 `VITEST_POOL_ID`가 들어간 startup `PROJECT_ID`를 설정하고, `beforeEach`에서 테스트별 `TEST_ID` suffix로 다시 갱신한다. Redis/cache prefix, NATS subject·JetStream stream과 Restate workflow 서비스 이름이 이 값을 따라 갈라진다. MongoDB 데이터베이스와 S3 버킷도 실행 ID와 `VITEST_POOL_ID`를 조합해 만든다. coverage·로그는 `_output/vitest-runs/r<실행 ID>/` 아래에서 실행별로 분리된다. global teardown은 subject가 현재 실행 ID와 정확히 일치하는 JetStream stream만 삭제한다. 따라서 같은 devcontainer의 두 API Vitest 명령이 같은 pool ID를 받아도 자원이나 파일 산출물을 공유하지 않는다.
 
 Nest 모듈 파일은 프로세스에서 한 번만 평가된다. 따라서 데코레이터 인자에서 `process.env.PROJECT_ID`를 읽으면 첫 테스트의 값에 고정된다. cache와 JWT 모듈은 정적인 값을 캡처하지 않고, 제공자를 만들 때 `AppConfigService.projectId`를 주입받아 prefix를 계산한다. NATS subject와 Restate workflow definition 이름도 제공자를 생성할 때 같은 설정값으로 만든다.
 

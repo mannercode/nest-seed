@@ -28,6 +28,7 @@
         "@aws-sdk/s3-presigned-post": "3.1116.0",
         "@aws-sdk/s3-request-presigner": "3.1116.0",
         "@mannercode/common": "workspace:*",
+        "@nats-io/jetstream": "3.4.0",
         "@nats-io/transport-node": "3.4.0",
         "@nestjs/common": "12.0.1",
         "@nestjs/config": "12.0.0",

@@ -3,7 +3,7 @@
 최초 검토일: 2026-08-28
 상태 갱신: 2026-08-29
 
-2026-08-29 후속 결정으로 `pnpm@11.24.0`, Rspack + `ts-loader`, 백엔드 ESM, Vitest, Zod + Standard Schema, MongoDB 공식 driver를 각각 독립 전환했다. 이 문서의 2026-08-28 최초 보류 판단과 Mongoose 규모 수치는 당시 기록으로 읽는다.
+2026-08-29 후속 결정으로 `pnpm@11.24.0`, Rspack + `ts-loader`, 백엔드 ESM, Vitest, Zod + Standard Schema, MongoDB 공식 driver를 각각 독립 전환했다. 구매 완료 알림에는 Mongo outbox를 유지한 채 JetStream을 선택 적용했다. 이 문서의 2026-08-28 최초 보류 판단과 Mongoose 규모 수치는 당시 기록으로 읽는다.
 
 ## 한 줄 결론
 
@@ -11,8 +11,8 @@
 
 내 최종안은 다음 두 줄로 구분된다.
 
-- Greenfield 분산 시드: **Node 26(LTS 전환 뒤 운영 기준) + Nest 12 ESM + TypeScript strict + pnpm + Vitest + Zod + MongoDB driver + Restate + Core NATS + Docker + OpenTelemetry 또는 Nest Observe 중 하나**
-- 현재 저장소: **Node 26(Current) + Nest 12 ESM + TypeScript 6 strict + pnpm 11 + Rspack/`ts-loader` + Vitest 4/`node:test` + Zod/Standard Schema + MongoDB 공식 driver + Restate + Core NATS + Docker**
+- Greenfield 분산 시드: **Node 26(LTS 전환 뒤 운영 기준) + Nest 12 ESM + TypeScript strict + pnpm + Vitest + Zod + MongoDB driver + Restate + Core NATS/필요한 이벤트만 JetStream + Docker + OpenTelemetry 또는 Nest Observe 중 하나**
+- 현재 저장소: **Node 26(Current) + Nest 12 ESM + TypeScript 6 strict + pnpm 11 + Rspack/`ts-loader` + Vitest 4/`node:test` + Zod/Standard Schema + MongoDB 공식 driver + Restate + Core NATS/구매 알림 JetStream + Docker**
 
 두 번째 줄은 낡은 구성을 고집하자는 뜻이 아니다. 이 저장소가 이미 검증하는 경쟁 조건, 재시작, 4개 복제본, 100% coverage와 배포 산출물이 자산이므로, 새 도구가 그 계약을 실제로 더 작고 명확하게 대체할 때만 옮기자는 뜻이다. 더 넓은 과잉 검토는 [STACK_REVIEW.md](./STACK_REVIEW.md), 테스트 구조와 결과 확인 방식은 [TESTS_REVIEW.md](./TESTS_REVIEW.md)를 함께 참고한다.
 
@@ -58,8 +58,8 @@
 | NestJS 12                              | 동의·적용됨           | 12.x 정렬은 유지한다. 앱 ESM 전환과는 별개다.                                                               |
 | TypeScript strict                      | 동의·적용됨           | `strict`와 추가 안전 옵션은 유지한다. 외부에서 채워지는 DTO·document 필드를 위한 예외까지 없앨 필요는 없다. |
 | Restate로 durable execution            | 동의·적용됨           | Temporal을 대체해 command/workflow/retry/timer/Saga/compensation을 맡는다.                                  |
-| NATS v3와 Core NATS fan-out            | 동의·적용됨           | domain notification, pub/sub와 queue group에 사용한다.                                                      |
-| JetStream opt-in                       | 동의                  | 저장·ack·replay 요구가 생긴 subject에만 도입한다. 현재 미사용 설정은 제거한다.                              |
+| NATS v3와 Core NATS fan-out            | 동의·적용됨           | 상영 상태와 관측 로그처럼 저장하지 않을 pub/sub에 사용한다.                                                 |
+| JetStream opt-in                       | 동의·적용됨           | 소비자 중단 중에도 보존할 구매 완료 알림 subject 하나에만 적용했다.                                         |
 | Docker                                 | 동의·적용됨           | 로컬 인프라와 실제 4-replica 경계를 같은 방식으로 검증한다.                                                 |
 | `type: module` ESM                     | 동의·적용됨           | API·common·testing을 NodeNext ESM으로 옮기고 bundle·TSC dev·Docker parity를 검증한다.                       |
 | pnpm workspace                         | 당시 조건부 → 적용됨  | 2026-08-28에는 보류했지만, 후속 승인으로 package manager만 `pnpm@11.24.0`으로 별도 전환했다.                |

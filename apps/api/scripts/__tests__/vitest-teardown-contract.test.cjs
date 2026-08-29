@@ -13,7 +13,7 @@ const RUN_A = '0123456789abcdef0123456789abcdef'
 const RUN_B = 'fedcba9876543210fedcba9876543210'
 const teardownPath = path.resolve(__dirname, '../../vitest.teardown.cjs')
 
-test('actual vitest.teardown은 현재 run의 Mongo, S3, Redis sentinel만 선택한다', async () => {
+test('actual vitest.teardown은 현재 run의 Mongo, S3, Redis, JetStream 자원만 선택한다', async () => {
     const first = createVitestResourceScope(RUN_A)
     const second = createVitestResourceScope(RUN_B)
     const ownDatabase = first.databaseName('1')
@@ -22,9 +22,13 @@ test('actual vitest.teardown은 현재 run의 Mongo, S3, Redis sentinel만 선�
     const otherBucket = second.bucketName('1')
     const ownRedisKey = `cache:${first.projectId('one')}:value`
     const otherRedisKey = `cache:${second.projectId('one')}:value`
+    const ownJetStreamSubject = `${first.projectId('one')}.purchase.ticketPurchased`
+    const otherJetStreamSubject = `${second.projectId('one')}.purchase.ticketPurchased`
     const droppedDatabases = []
     const deletedBuckets = []
     const deletedRedisKeys = []
+    const deletedStreams = []
+    let natsDrained = false
 
     class FakeMongoClient {
         async close() {}
@@ -69,11 +73,23 @@ test('actual vitest.teardown은 현재 run의 Mongo, S3, Redis sentinel만 선�
             deletedRedisKeys.push(key)
         }
     }
+    const fakeNatsConnection = { drain: async () => (natsDrained = true) }
+    const fakeJetStreamManager = {
+        streams: {
+            delete: async (name) => deletedStreams.push(name),
+            async *list() {
+                yield { config: { name: 'own-stream', subjects: [ownJetStreamSubject] } }
+                yield { config: { name: 'other-stream', subjects: [otherJetStreamSubject] } }
+            }
+        }
+    }
 
     const originalLoad = Module._load
     const previousEnvironment = snapshotEnvironment([
         'API_VITEST_RUN_ID',
         'MONGO_URI',
+        'NATS_HOST',
+        'NATS_PORT',
         'REDIS_HOST1',
         'REDIS_HOST2',
         'REDIS_HOST3',
@@ -89,6 +105,8 @@ test('actual vitest.teardown은 현재 run의 Mongo, S3, Redis sentinel만 선�
     Object.assign(process.env, {
         API_VITEST_RUN_ID: RUN_A,
         MONGO_URI: 'mongodb://mock',
+        NATS_HOST: 'nats.mock',
+        NATS_PORT: '4222',
         REDIS_HOST1: 'redis-1',
         REDIS_HOST2: 'redis-2',
         REDIS_HOST3: 'redis-3',
@@ -112,6 +130,12 @@ test('actual vitest.teardown은 현재 run의 Mongo, S3, Redis sentinel만 선�
         if (parent?.filename === teardownPath && request === 'ioredis') {
             return { Cluster: FakeRedisCluster }
         }
+        if (parent?.filename === teardownPath && request === '@nats-io/transport-node') {
+            return { connect: async () => fakeNatsConnection }
+        }
+        if (parent?.filename === teardownPath && request === '@nats-io/jetstream') {
+            return { jetstreamManager: async () => fakeJetStreamManager }
+        }
         return Reflect.apply(originalLoad, this, [request, parent, isMain])
     }
 
@@ -128,6 +152,8 @@ test('actual vitest.teardown은 현재 run의 Mongo, S3, Redis sentinel만 선�
     assert.deepEqual(droppedDatabases, [ownDatabase])
     assert.deepEqual(deletedBuckets, [ownBucket])
     assert.deepEqual(deletedRedisKeys, [ownRedisKey])
+    assert.deepEqual(deletedStreams, ['own-stream'])
+    assert.equal(natsDrained, true)
 })
 
 function snapshotEnvironment(names) {

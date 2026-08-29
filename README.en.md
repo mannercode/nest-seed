@@ -161,7 +161,7 @@ Each service is built to show one distinct pattern. For a first pass, this order
 | `core/ticket-holding`                     | Redis Lua-script seat holds — keys grouped into one hash slot so Lua can handle multiple keys atomically |
 | `core/purchase-records` · `watch-records` | User-record domains. watch-records feeds the recommendations                                             |
 | `application/booking`                     | Booking-flow queries and seat holds, request validation                                                  |
-| `application/purchase`                    | Durable state machine, lease-based reconciliation and outbox; at-least-once NATS event publication       |
+| `application/purchase`                    | Durable state machine, lease reconciliation and outbox; at-least-once JetStream notification handling    |
 | `application/showtime-creation`           | Restate workflow keyed by `sagaId`, 202+SSE, Mongo transaction, theater-guard CAS, and idempotent retry  |
 | `application/recommendation`              | Watch-history-based recommendations. Domain logic split into a pure module                               |
 | `view/user-app/home`                      | Screen-specific response composition — the View layer                                                    |

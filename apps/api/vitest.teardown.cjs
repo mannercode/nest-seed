@@ -1,4 +1,6 @@
 const { S3Client } = require('@aws-sdk/client-s3')
+const { jetstreamManager } = require('@nats-io/jetstream')
+const { connect: connectNats } = require('@nats-io/transport-node')
 const { MongoClient } = require('mongodb')
 const Redis = require('ioredis')
 const { createApiVitestGlobalTeardown } = require('./scripts/vitest-resource-wiring.cjs')
@@ -28,5 +30,32 @@ module.exports = async function globalTeardown() {
             ])
     })
 
-    await teardown()
+    await Promise.all([teardown(), cleanupJetStreamStreams()])
+}
+
+async function cleanupJetStreamStreams() {
+    const runId = process.env.API_VITEST_RUN_ID
+    if (!/^[a-f0-9]{32}$/.test(runId ?? '')) {
+        throw new Error('API_VITEST_RUN_ID must identify one Vitest run')
+    }
+
+    const purchasedSubject = new RegExp(
+        `^project-r${runId}-[A-Za-z0-9_-]+\\.purchase\\.ticketPurchased$`
+    )
+    const connection = await connectNats({
+        servers: [`${process.env.NATS_HOST}:${process.env.NATS_PORT}`]
+    })
+
+    try {
+        const manager = await jetstreamManager(connection)
+        const targets = []
+        for await (const stream of manager.streams.list()) {
+            if (stream.config.subjects.some((subject) => purchasedSubject.test(subject))) {
+                targets.push(stream.config.name)
+            }
+        }
+        await Promise.all(targets.map((name) => manager.streams.delete(name)))
+    } finally {
+        await connection.drain()
+    }
 }
