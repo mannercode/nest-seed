@@ -9,7 +9,7 @@
 | 파일                     | 읽는 곳                                                        | 역할                                                                                                                                                                         |
 | ------------------------ | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `.env.infra`             | Dev Container `runArgs`, `infra` compose, `deploy/compose.yml` | 개발 인프라 이미지 태그·digest와 접속 값. MongoDB, Redis, VersityGW, NATS, Restate 서비스 이름·포트와 dev 서버 포트(`API_PORT`, `CONSOLE_PORT`, `USER_APP_PORT`)를 정의한다. |
-| `.env.api`               | Dev Container `runArgs`, `deploy/compose.yml` `env_file`       | API 런타임의 앱 설정. `NODE_ENV`(개발·테스트는 test, deploy가 production으로 덮어씀), `PROJECT_ID`, HTTP, 인증, 로그 값, `ROOT_PASSWORD`를 둔다.                             |
+| `.env.api`               | Dev Container `runArgs`, `deploy/compose.yml` `env_file`       | API 런타임의 앱 설정. `NODE_ENV`(개발·테스트는 test, deploy가 production으로 덮어씀), `PROJECT_ID`, HTTP, 인증, 콘솔 로그 레벨, `ROOT_PASSWORD`를 둔다.                      |
 | `apps/api/api-docs/.env` | `apps/api/api-docs/run.sh`                                     | curl 기반 API 문서 실행 설정. `SERVER_URL`과 업로드 fixture 값을 둔다.                                                                                                       |
 | `apps/console/.env`      | Next.js console                                                | 관리 콘솔이 호출할 API 기준 URL과 선택적인 trusted-proxy opt-in을 둔다.                                                                                                      |
 | `apps/user-app/.env`     | Next.js user-app                                               | 사용자 앱이 호출할 API 기준 URL과 선택적인 trusted-proxy opt-in을 둔다.                                                                                                      |
@@ -31,7 +31,7 @@ Dev Container가 시작될 때 `.devcontainer/devcontainer.json`은 `.env.infra`
 ```
 Dev Container
   -> .env.infra, .env.api
-  -> process.env 안의 NODE_ENV, API_PORT, CONSOLE_PORT, USER_APP_PORT, HTTP_*, AUTH_*, ROOT_PASSWORD, MONGO_*, REDIS_*, S3_*, NATS_*, RESTATE_*
+  -> process.env 안의 NODE_ENV, API_PORT, CONSOLE_PORT, USER_APP_PORT, HTTP_*, AUTH_*, LOG_CONSOLE_LEVEL, ROOT_PASSWORD, MONGO_*, REDIS_*, S3_*, NATS_*, RESTATE_*
 ```
 
 `postStartCommand`는 `infra/reset.sh`를 실행한다. 이 스크립트는 `infra`의 compose 파일들로 MongoDB Replica Set, Redis Cluster, VersityGW, NATS와 단일 Restate 서버를 시작한다. 이미지 태그와 `S3_BUCKET` 등은 컨테이너 환경에 이미 주입된 `.env.infra` 변수로 보간되고, 서비스 이름·포트는 compose 파일의 리터럴이다(그래서 3절의 포트 표가 필요하다).

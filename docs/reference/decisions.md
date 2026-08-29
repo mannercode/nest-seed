@@ -208,7 +208,26 @@ Restate로 옮기면 실행 기록과 애플리케이션 코드를 가깝게 두
 
 ---
 
-## 9. 명시적으로 거부한 도구
+## 9. 로그 저장: 구조화 stdout과 선택형 Elastic 수집
+
+### 결정
+
+개발·테스트는 사람이 읽는 콘솔 포맷을 유지하고 production API는 ECS JSON 한 줄을 stdout/stderr로 내보낸다. NGINX access log도 JSON 한 줄이다. 애플리케이션 컨테이너 안에는 별도 로그 파일을 만들지 않는다.
+
+중앙 검색이 필요한 경우에만 `infra/logging/`의 Filebeat → Elasticsearch → Kibana 스택을 띄운다. Docker `json-file`은 컨테이너별 10MB × 3으로 회전하고, Filebeat는 읽은 이벤트를 512MB 디스크 큐에 보존하며, Elasticsearch ILM은 7일 뒤 삭제한다. 이 스택의 volume은 일반 개발 인프라 reset과 분리한다.
+
+### 근거
+
+- 컨테이너 내부 회전 파일은 영속 volume도 수집기도 없어 교체 때 사라졌고 stdout과 같은 이벤트를 중복 직렬화했다.
+- stdout을 단일 계약으로 두면 Docker·Compose·오케스트레이터의 표준 수집 경로를 그대로 쓸 수 있다.
+- 현재는 단순 수집과 검색만 필요하므로 Filebeat가 Elasticsearch에 직접 보내면 충분하다. Logstash는 복잡한 변환, persistent queue 경계, 여러 목적지 라우팅이 실제로 필요할 때 추가한다.
+- Elasticsearch·Kibana는 기본 개발과 테스트의 필수 의존성이 아니다. 무거운 관측 스택을 opt-in으로 격리해 평소 부팅 비용을 늘리지 않는다.
+
+로컬 스택은 인증을 끄고 loopback에만 노출한 검증 도구다. 운영의 TLS·인증·백업·다중 노드 구성까지 결정한 것은 아니다.
+
+---
+
+## 10. 명시적으로 거부한 도구
 
 도입을 검토했지만 시드에는 넣지 않기로 한 도구이다. 공통 기준은 도구를 늘리지 않는 것이다 — 새 도구를 학습하는 비용이 도입으로 절감되는 비용보다 크면 넣지 않는다.
 
@@ -219,5 +238,5 @@ Restate로 옮기면 실행 기록과 애플리케이션 코드를 가깝게 두
 | OpenAPI / Swagger | bash + curl로 만든 실행 가능한 API 문서(`apps/api/api-docs/*.spec`)로 대신한다. 문서가 실제 동작과 다르면 검증(`pnpm run atoz`의 `deploy/verify.sh`)이 실패하는 방식이다. |
 | Passport          | NestJS의 Guard 인터페이스(`CanActivate`)를 직접 구현해도 충분하다. 코드가 더 짧고 흐름이 바로 보인다.                                                                     |
 | Nx / Turborepo    | pnpm workspace로 충분하다. 워크스페이스가 한 자릿수라 빌드 캐시와 작업 그래프가 절감해 주는 시간이 도구를 학습하고 설정을 유지하는 비용에 못 미친다.                      |
-| pino              | winston으로 충분하다. pino의 강점은 로그 직렬화 처리량인데 이 시드의 병목은 로깅이 아니다. 파일 회전도 winston은 transport에 내장이지만 pino는 외부 도구를 얹어야 한다.   |
+| pino              | winston으로 충분하다. 기존 HTTP context·민감정보 redaction·Nest logger 연결을 다시 작성할 만큼 로그 직렬화 처리량이 병목이 아니다.                                        |
 | Service Mesh      | 지금 시드에는 과하다. Kubernetes 운영으로 옮기는 시점에 다시 검토할 만하다.                                                                                               |

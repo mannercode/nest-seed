@@ -76,7 +76,7 @@ pnpm run race <scenario>                                         # distributed r
 pnpm run benchmark:api                                           # performance measurement — stack boot, seeding, measurement, teardown in one go
 ```
 
-Vitest prints the `describe`/`it` hierarchy in the terminal with its tree reporter. A full API run stores per-invocation coverage and logs under `apps/api/_output/vitest-runs/r<run ID>/`; common-library coverage goes to `libs/common/_output/coverage/`. The test system and writing rules are described in the [apps document](docs/apps.md#테스트); how to run and interpret the distributed race and performance tools, in the [tests document](docs/tests.md).
+Vitest prints the `describe`/`it` hierarchy in the terminal with its tree reporter. A full API run stores per-invocation coverage under `apps/api/_output/vitest-runs/r<run ID>/coverage/`; common-library coverage goes to `libs/common/_output/coverage/`. Test logs stay in the terminal instead of being duplicated to files. The test system and writing rules are described in the [apps document](docs/apps.md#테스트); how to run and interpret the distributed race and performance tools, in the [tests document](docs/tests.md).
 
 ## Deployment
 

@@ -238,7 +238,7 @@ Node에도 hook과 mock 기능이 있지만 API와 격리 방식이 같지 않�
 2. `tsconfig` 경로 별칭과 ESM 해석이 앱 build 경로와 어긋나지 않는다.
 3. global setup/teardown, 실제 인프라 정리, mock·spy·fake timer를 빠짐없이 옮겼다.
 4. import되지 않은 파일까지 포함한 기존 100% coverage gate를 유지한다.
-5. 병렬 worker별 자원과 실행별 coverage·로그 경로를 격리하고 실패 시 컨테이너 진단을 유지한다.
+5. 병렬 worker별 자원과 실행별 coverage 경로를 격리하고 실패 시 컨테이너 진단을 유지한다.
 6. Jest·ts-jest 설정과 의존성을 제거해 장기 이중 실행기를 남기지 않았다.
 7. 기본 tree reporter로 suite·test 계층과 실패 위치를 터미널에서 바로 확인할 수 있다.
 

@@ -312,7 +312,7 @@ reportDir = 'tests/web/_output/report' // 디렉터리
 reportPath = 'tests/web/_output/report/index.html' // 파일까지 포함
 ```
 
-환경 변수와 설정 키도 디렉터리를 가리키면 이름에 그대로 드러낸다 (`LOG_DIRECTORY` 등).
+환경 변수와 설정 키도 디렉터리를 가리키면 이름에 그대로 드러낸다 (`API_VITEST_OUTPUT_DIRECTORY` 등).
 
 ### 에러 규칙
 
@@ -575,7 +575,7 @@ describe('PATCH /theaters/:id', () => {
 
 ### 테스트별 자원 격리
 
-각 테스트가 다른 테스트와 부딪히지 않도록, `apps/api/vitest.config.mjs`가 Vitest 명령마다 고유한 실행 ID를 만든다. `setupFiles`로 지정한 `src/__tests__/vitest.setup.ts`는 app 모듈을 읽기 전에 실행 ID와 `VITEST_POOL_ID`가 들어간 startup `PROJECT_ID`를 설정하고, `beforeEach`에서 테스트별 `TEST_ID` suffix로 다시 갱신한다. Redis/cache prefix, NATS subject·JetStream stream과 Restate workflow 서비스 이름이 이 값을 따라 갈라진다. MongoDB 데이터베이스와 S3 버킷도 실행 ID와 `VITEST_POOL_ID`를 조합해 만든다. coverage·로그는 `_output/vitest-runs/r<실행 ID>/` 아래에서 실행별로 분리된다. global teardown은 subject가 현재 실행 ID와 정확히 일치하는 JetStream stream만 삭제한다. 따라서 같은 devcontainer의 두 API Vitest 명령이 같은 pool ID를 받아도 자원이나 파일 산출물을 공유하지 않는다.
+각 테스트가 다른 테스트와 부딪히지 않도록, `apps/api/vitest.config.mjs`가 Vitest 명령마다 고유한 실행 ID를 만든다. `setupFiles`로 지정한 `src/__tests__/vitest.setup.ts`는 app 모듈을 읽기 전에 실행 ID와 `VITEST_POOL_ID`가 들어간 startup `PROJECT_ID`를 설정하고, `beforeEach`에서 테스트별 `TEST_ID` suffix로 다시 갱신한다. Redis/cache prefix, NATS subject·JetStream stream과 Restate workflow 서비스 이름이 이 값을 따라 갈라진다. MongoDB 데이터베이스와 S3 버킷도 실행 ID와 `VITEST_POOL_ID`를 조합해 만든다. coverage는 `_output/vitest-runs/r<실행 ID>/coverage/`에서 실행별로 분리된다. global teardown은 subject가 현재 실행 ID와 정확히 일치하는 JetStream stream만 삭제한다. 따라서 같은 devcontainer의 두 API Vitest 명령이 같은 pool ID를 받아도 자원이나 coverage 산출물을 공유하지 않는다.
 
 Nest 모듈 파일은 프로세스에서 한 번만 평가된다. 따라서 데코레이터 인자에서 `process.env.PROJECT_ID`를 읽으면 첫 테스트의 값에 고정된다. cache와 JWT 모듈은 정적인 값을 캡처하지 않고, 제공자를 만들 때 `AppConfigService.projectId`를 주입받아 prefix를 계산한다. NATS subject와 Restate workflow definition 이름도 제공자를 생성할 때 같은 설정값으로 만든다.
 
@@ -600,9 +600,9 @@ Vitest 설정과 lifecycle은 다음 순서로 동작한다.
 ```
 vitest.config.base.mjs                 TypeScript 변환, forks pool, tree reporter 공통 설정
 <workspace>/vitest.config.mjs          alias·coverage·globalSetup·setupFiles 지정
-                                         - apps/api: 실행 ID 발급, coverage·로그 출력 경로 분리
+                                         - apps/api: 실행 ID 발급, coverage 출력 경로 분리
 <workspace>/vitest.global.cjs          workspace별 전역 준비
-                                         - apps/api: config의 실행 ID 검증, 로그 디렉터리 생성
+                                         - apps/api: config의 실행 ID와 출력 경로 검증
                                          - libs/common: Testcontainers로 MongoDB · Redis · VersityGW · NATS 기동
 <workspace>/src/__tests__/vitest.setup.ts
                                        app 모듈 로드 전에 startup PROJECT_ID 설정
