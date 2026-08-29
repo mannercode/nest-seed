@@ -1,24 +1,28 @@
+import type { ClientSession } from 'mongodb'
 import {
     QueryBuilderOptions,
     CrudRepository,
     QueryBuilder,
-    leanArrayToPublic
+    mongoArrayToPublic
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { InjectModel } from '@nestjs/mongoose'
-import { ClientSession, Model } from 'mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import { AppConfigService, MongoConnection } from '#config'
 import { CreateShowtimeDto, SearchShowtimesDto } from './dtos/index.js'
 import { Showtime } from './models/index.js'
 
 @Injectable()
 export class ShowtimesRepository extends CrudRepository<Showtime> {
-    constructor(
-        @InjectModel(Showtime.name, MONGO_CONNECTION_NAME)
-        readonly model: Model<Showtime>,
-        config: AppConfigService
-    ) {
-        super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
+    constructor(connection: MongoConnection, config: AppConfigService) {
+        super(
+            connection.db.collection('showtimes'),
+            connection.client,
+            config.http.paginationDefaultSize,
+            config.http.paginationMaxSize,
+            {
+                hardDelete: true,
+                indexes: [{ key: { theaterId: 1, startTime: 1 } }, { key: { sagaId: 1 } }]
+            }
+        )
     }
 
     async createMany(
@@ -37,16 +41,22 @@ export class ShowtimesRepository extends CrudRepository<Showtime> {
             return doc
         })
 
-        await this.saveMany(showtimes, session, signal)
+        await this.insertMany(showtimes, session, signal)
     }
 
     async existsByMovieIds(movieIds: string[]): Promise<boolean> {
-        const found = await this.model.exists({ movieId: { $in: movieIds } }).lean()
+        const found = await this.collection.findOne(
+            { movieId: { $in: movieIds } },
+            { projection: { _id: 1 } }
+        )
         return !!found
     }
 
     async existsByTheaterIds(theaterIds: string[]): Promise<boolean> {
-        const found = await this.model.exists({ theaterId: { $in: theaterIds } }).lean()
+        const found = await this.collection.findOne(
+            { theaterId: { $in: theaterIds } },
+            { projection: { _id: 1 } }
+        )
         return !!found
     }
 
@@ -57,30 +67,35 @@ export class ShowtimesRepository extends CrudRepository<Showtime> {
     ) {
         const query = this.buildQuery(searchDto)
 
-        const showtimes = await this.model
-            .find(query, null, { session, signal })
+        const showtimes = await this.collection
+            .find(query, { session, signal })
             .sort({ startTime: 1 })
-            .lean()
-            .exec()
-        return leanArrayToPublic<Showtime>(showtimes)
+            .toArray()
+        return mongoArrayToPublic<Showtime>(showtimes)
     }
 
     async searchMovieIds(searchDto: SearchShowtimesDto) {
         const query = this.buildQuery(searchDto)
 
-        const movieIds = await this.model.distinct('movieId', query).exec()
+        const movieIds = await this.collection.distinct<string>('movieId', query)
         return movieIds.map((id) => id.toString())
     }
 
     async searchShowdates(searchDto: SearchShowtimesDto) {
         const query = this.buildQuery(searchDto)
 
-        const showdates = await this.model.aggregate([
-            { $match: query },
-            { $project: { date: { $dateToString: { date: '$startTime', format: '%Y-%m-%d' } } } },
-            { $group: { _id: '$date' } },
-            { $sort: { _id: 1 } }
-        ])
+        const showdates = await this.collection
+            .aggregate<{ _id: string }>([
+                { $match: query },
+                {
+                    $project: {
+                        date: { $dateToString: { date: '$startTime', format: '%Y-%m-%d' } }
+                    }
+                },
+                { $group: { _id: '$date' } },
+                { $sort: { _id: 1 } }
+            ])
+            .toArray()
 
         return showdates.map((item) => new Date(item._id))
     }
@@ -88,7 +103,7 @@ export class ShowtimesRepository extends CrudRepository<Showtime> {
     async searchTheaterIds(searchDto: SearchShowtimesDto) {
         const query = this.buildQuery(searchDto)
 
-        const theaterIds = await this.model.distinct('theaterId', query).exec()
+        const theaterIds = await this.collection.distinct<string>('theaterId', query)
         return theaterIds.map((id) => id.toString())
     }
 

@@ -1,36 +1,48 @@
+import type { ClientSession } from 'mongodb'
 import {
     QueryBuilderOptions,
     assignIfDefined,
     CrudRepository,
+    mongoToPublic,
+    MongoErrors,
+    objectId,
     objectIds,
     QueryBuilder,
     uniq
 } from '@mannercode/common'
-import { Injectable } from '@nestjs/common'
-import { InjectModel } from '@nestjs/mongoose'
-import { ClientSession, Model } from 'mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
-import { CreateTheaterDto, SearchTheatersPageDto, UpdateTheaterDto } from './dtos/index.js'
+import { Injectable, NotFoundException } from '@nestjs/common'
+import { AppConfigService, MongoConnection } from '#config'
+import {
+    CreateTheaterSchema,
+    type CreateTheaterDto,
+    type SearchTheatersPageDto,
+    type UpdateTheaterDto
+} from './dtos/index.js'
 import { Theater } from './models/index.js'
+
+const TheaterPatchSchema = CreateTheaterSchema.partial()
 
 @Injectable()
 export class TheatersRepository extends CrudRepository<Theater> {
-    constructor(
-        @InjectModel(Theater.name, MONGO_CONNECTION_NAME)
-        readonly model: Model<Theater>,
-        config: AppConfigService
-    ) {
-        super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
+    constructor(connection: MongoConnection, config: AppConfigService) {
+        super(
+            connection.db.collection('theaters'),
+            connection.client,
+            config.http.paginationDefaultSize,
+            config.http.paginationMaxSize,
+            { projection: { showtimeScheduleVersion: 0 } }
+        )
     }
 
     async create(createDto: CreateTheaterDto) {
+        CreateTheaterSchema.parse(createDto)
         const theater = this.newDocument()
         theater.name = createDto.name
         theater.location = createDto.location
         theater.seatmap = createDto.seatmap
-        await theater.save()
+        theater.showtimeScheduleVersion = 0
 
-        return theater.toJSON()
+        return this.insertOne(theater)
     }
 
     async acquireShowtimeScheduleGuards(
@@ -42,9 +54,9 @@ export class TheatersRepository extends CrudRepository<Theater> {
         // 이 갱신에서 직렬화되고, 드라이버는 TransientTransactionError를 새 snapshot으로 재시도한다.
         const ids = objectIds(uniq(theaterIds))
         const options = { session, signal }
-        const result = await this.model.updateMany(
-            { _id: { $in: ids } },
-            { $inc: { showtimeScheduleVersion: 1 } },
+        const result = await this.collection.updateMany(
+            this.activeFilter({ _id: { $in: ids } }),
+            this.timestamped({ $inc: { showtimeScheduleVersion: 1 } }),
             options
         )
 
@@ -55,11 +67,7 @@ export class TheatersRepository extends CrudRepository<Theater> {
         const { orderby, page, size } = searchDto
 
         const pagination = await this.findWithPagination({
-            configureQuery: async (queryHelper) => {
-                const query = this.buildQuery(searchDto, { allowEmpty: true })
-
-                queryHelper.setQuery(query)
-            },
+            filter: this.buildQuery(searchDto, { allowEmpty: true }),
             pagination: {
                 orderby: orderby ?? undefined,
                 page: page ?? undefined,
@@ -71,13 +79,19 @@ export class TheatersRepository extends CrudRepository<Theater> {
     }
 
     async update(theaterId: string, updateDto: UpdateTheaterDto) {
-        const theater = await this.getDocumentById(theaterId)
-        assignIfDefined(theater, updateDto, 'name')
-        assignIfDefined(theater, updateDto, 'location')
-        assignIfDefined(theater, updateDto, 'seatmap')
-        await theater.save()
+        TheaterPatchSchema.parse(updateDto)
+        const fields: Partial<Pick<Theater, 'location' | 'name' | 'seatmap'>> = {}
+        assignIfDefined(fields, updateDto, 'name')
+        assignIfDefined(fields, updateDto, 'location')
+        assignIfDefined(fields, updateDto, 'seatmap')
+        const theater = await this.collection.findOneAndUpdate(
+            this.activeFilter({ _id: objectId(theaterId) }),
+            this.timestamped({ $set: fields }),
+            { projection: this.projection, returnDocument: 'after' }
+        )
 
-        return theater.toJSON()
+        if (!theater) throw new NotFoundException(MongoErrors.DocumentNotFound(theaterId))
+        return mongoToPublic<Theater>(theater)
     }
 
     private buildQuery(searchDto: SearchTheatersPageDto, options: QueryBuilderOptions) {

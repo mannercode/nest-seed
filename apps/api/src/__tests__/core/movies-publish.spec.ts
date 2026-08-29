@@ -1,5 +1,5 @@
 import { nullObjectId } from '@mannercode/testing'
-import { MovieGenre, MovieRating, type MovieDto } from '#core'
+import { MovieDefaults, MovieGenre, MovieRating, type MovieDto } from '#core'
 import {
     createMovie,
     createUnpublishedMovie,
@@ -112,9 +112,73 @@ describe('MoviesPublish', () => {
         const moviesService = fix.module.get(MoviesService)
         const movie = await createMovie(fix)
 
-        // publish()의 사전 검사와 별개로 스키마 검증자가 공개 후 불변식을 지키는 유일한 방어선이다
+        // publish()의 사전 검사와 별개로 저장소 경계가 공개 후 불변식을 지키는 최종 방어선이다.
         const promise = moviesService.update(movie.id, { genres: [] })
 
         await expect(promise).rejects.toThrow('Published movies must have at least one genre')
+    })
+
+    it('공개된 영화의 필수값을 비우는 수정은 모두 저장소 경계에서 거부한다', async () => {
+        const { MoviesService } = await import('#core')
+        const moviesService = fix.module.get(MoviesService)
+        const movie = await createMovie(fix)
+        const invalidUpdates = [
+            [
+                { durationInSeconds: 0 },
+                'Published movies must have a duration of at least 1 second'
+            ],
+            [{ rating: MovieRating.Unrated }, 'Published movies cannot be unrated'],
+            [
+                { releaseDate: new Date(MovieDefaults.releaseDate.getTime()) },
+                'Published movies must have a release date'
+            ],
+            [{ director: '' }, 'Published movies must have director'],
+            [{ plot: '' }, 'Published movies must have plot'],
+            [{ title: '' }, 'Published movies must have title']
+        ] as const
+
+        for (const [update, message] of invalidUpdates) {
+            await expect(moviesService.update(movie.id, update)).rejects.toThrow(message)
+        }
+    })
+
+    it('공개 여부와 무관하게 저장 타입을 깨뜨리는 null 수정은 거부한다', async () => {
+        const { MoviesService } = await import('#core')
+        const moviesService = fix.module.get(MoviesService)
+        const movie = await createUnpublishedMovie(fix)
+
+        for (const update of [{ genres: null }, { rating: null }, { releaseDate: null }]) {
+            await expect(moviesService.update(movie.id, update)).rejects.toThrow()
+        }
+    })
+
+    it('동시 갱신으로 CAS가 한 번 빗나가면 최신 문서를 다시 읽어 갱신한다', async () => {
+        const { MoviesService } = await import('#core')
+        const { MoviesRepository } = await import('../../services/core/movies/movies.repository.js')
+        const moviesService = fix.module.get(MoviesService)
+        const repository = fix.module.get(MoviesRepository)
+        const movie = await createMovie(fix)
+        const update = vi
+            .spyOn(repository.collection, 'findOneAndUpdate')
+            .mockResolvedValueOnce(null)
+
+        await expect(moviesService.update(movie.id, { title: 'retried title' })).resolves.toEqual(
+            expect.objectContaining({ title: 'retried title' })
+        )
+        expect(update).toHaveBeenCalledTimes(2)
+    })
+
+    it('CAS가 반복해서 빗나가면 정해진 횟수 뒤 명시적으로 실패한다', async () => {
+        const { MoviesService } = await import('#core')
+        const { MoviesRepository } = await import('../../services/core/movies/movies.repository.js')
+        const moviesService = fix.module.get(MoviesService)
+        const repository = fix.module.get(MoviesRepository)
+        const movie = await createMovie(fix)
+        const update = vi.spyOn(repository.collection, 'findOneAndUpdate').mockResolvedValue(null)
+
+        await expect(moviesService.update(movie.id, { title: 'never written' })).rejects.toThrow(
+            'Movie update did not converge after 5 attempts'
+        )
+        expect(update).toHaveBeenCalledTimes(5)
     })
 })

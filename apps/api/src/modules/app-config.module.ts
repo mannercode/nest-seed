@@ -1,7 +1,7 @@
 import { Global, Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { AppConfigService, PROJECT_ID_TOKEN, readProjectId } from '#config'
-import { MongooseSetupModule } from './mongoose-setup.module.js'
+import { MongoSetupModule } from './mongo-setup.module.js'
 import { NatsSetupModule } from './nats-setup.module.js'
 import { RedisSetupModule } from './redis-setup.module.js'
 
@@ -13,7 +13,7 @@ import { RedisSetupModule } from './redis-setup.module.js'
             ignoreEnvFile: true,
             validationSchema: AppConfigService.schema
         }),
-        MongooseSetupModule,
+        MongoSetupModule,
         RedisSetupModule,
         NatsSetupModule
     ],
@@ -21,7 +21,7 @@ import { RedisSetupModule } from './redis-setup.module.js'
     exports: [
         AppConfigService,
         PROJECT_ID_TOKEN,
-        MongooseSetupModule,
+        MongoSetupModule,
         RedisSetupModule,
         NatsSetupModule
     ]

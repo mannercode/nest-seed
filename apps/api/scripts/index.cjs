@@ -1,1 +1,1 @@
-module.exports = require('./shared-test-mongoose-connection.cjs')
+module.exports = require('./shared-test-mongo-connection.cjs')

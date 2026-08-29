@@ -4,7 +4,7 @@
 
 ## common — 런타임 공유 코드
 
-앱이 운영 중에 실행하는 공유 코드다. Mongoose CRUD 기반 클래스, Redis 캐시·분산 락, JWT 인증, S3, NATS, 로거 등이 들어 있다. Restate 워크플로는 showtime-creation 도메인의 NestJS 제공자를 직접 사용하므로 공용 패키지에 억지로 추상화하지 않는다. 각 모듈의 사용법은 내보낸 심볼의 JSDoc(에디터 hover)이 소유하고, 도구 선택의 이유는 [설계 결정](reference/decisions.md)이 소유한다.
+앱이 운영 중에 실행하는 공유 코드다. MongoDB 공식 driver CRUD 기반 클래스, Redis 캐시·분산 락, JWT 인증, S3, NATS, 로거 등이 들어 있다. Restate 워크플로는 showtime-creation 도메인의 NestJS 제공자를 직접 사용하므로 공용 패키지에 억지로 추상화하지 않는다. 각 모듈의 사용법은 내보낸 심볼의 JSDoc(에디터 hover)이 소유하고, 도구 선택의 이유는 [설계 결정](reference/decisions.md)이 소유한다.
 
 ## testing — 테스트 전용 헬퍼
 

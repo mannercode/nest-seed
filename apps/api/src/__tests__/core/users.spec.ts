@@ -91,7 +91,7 @@ describe('UsersService', () => {
             const { ConflictException } = await import('@nestjs/common')
             const service = fix.module.get(UsersService)
 
-            // `birthDate`에 잘못된 형식을 넣어 Mongoose의 CastError를 일으킨다.
+            // `birthDate`에 잘못된 형식을 넣어 저장 경계 검증 오류를 일으킨다.
             // 컨트롤러의 요청 스키마가 먼저 검출하지 않도록 서비스를 직접 호출한다.
             const invalidDto = buildCreateUserDto({ birthDate: 'not-a-date' as unknown as Date })
 

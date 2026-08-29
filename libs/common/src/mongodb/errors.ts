@@ -1,4 +1,5 @@
-export const MongooseErrors = {
+// 오류 code는 기존 API 응답 호환성을 위해 Mongoose 제거 뒤에도 유지한다.
+export const MongoErrors = {
     DocumentNotFound: (notFoundId: string) => ({
         code: 'ERR_MONGOOSE_DOCUMENT_NOT_FOUND',
         message: 'Document not found',
@@ -30,3 +31,6 @@ export const MongooseErrors = {
         size
     })
 }
+
+// 외부 오류 namespace 호환용이다. 새 구현에서는 MongoErrors를 사용한다.
+export const MongooseErrors = MongoErrors

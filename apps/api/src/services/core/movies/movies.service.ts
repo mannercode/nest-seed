@@ -1,4 +1,4 @@
-import type { ClientSession } from 'mongoose'
+import type { ClientSession } from 'mongodb'
 import { ensure, mapDocToDto, pickIds, uniq } from '@mannercode/common'
 import {
     BadRequestException,

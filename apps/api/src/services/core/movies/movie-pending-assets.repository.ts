@@ -1,27 +1,24 @@
 import { CrudRepository, QueryBuilder } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { InjectModel } from '@nestjs/mongoose'
-import { Model } from 'mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import { AppConfigService, MongoConnection } from '#config'
 import { MoviePendingAsset } from './models/index.js'
 
 @Injectable()
 export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAsset> {
-    constructor(
-        @InjectModel(MoviePendingAsset.name, MONGO_CONNECTION_NAME)
-        readonly model: Model<MoviePendingAsset>,
-        config: AppConfigService
-    ) {
-        super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
+    constructor(connection: MongoConnection, config: AppConfigService) {
+        super(
+            connection.db.collection('moviependingassets'),
+            connection.client,
+            config.http.paginationDefaultSize,
+            config.http.paginationMaxSize
+        )
     }
 
     async addPendingAsset(movieId: string, assetId: string) {
         const pendingAsset = this.newDocument()
         pendingAsset.assetId = assetId
         pendingAsset.movieId = movieId
-        await pendingAsset.save()
-
-        return pendingAsset.toJSON()
+        return this.insertOne(pendingAsset)
     }
 
     async hasPendingAsset(movieId: string, assetId: string): Promise<boolean> {
@@ -30,7 +27,7 @@ export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAss
         builder.addEquals('assetId', assetId)
         const query = builder.build({})
 
-        const count = await this.model.countDocuments(query)
+        const count = await this.collection.countDocuments(this.activeFilter(query))
         return 0 < count
     }
 
@@ -39,7 +36,7 @@ export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAss
         builder.addIn('movieId', movieIds)
         const query = builder.build({})
 
-        return this.model.distinct('assetId', query).exec()
+        return this.collection.distinct<string>('assetId', this.activeFilter(query))
     }
 
     async removeByMovieIds(movieIds: string[]): Promise<void> {
@@ -47,7 +44,10 @@ export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAss
         builder.addIn('movieId', movieIds)
         const query = builder.build({})
 
-        await this.model.deleteMany(query)
+        await this.collection.updateMany(
+            this.activeFilter(query),
+            this.timestamped({ $set: { deletedAt: new Date() } })
+        )
     }
 
     async removePendingAsset(movieId: string, assetId: string): Promise<void> {
@@ -56,7 +56,9 @@ export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAss
         builder.addEquals('assetId', assetId)
         const query = builder.build({})
 
-        // soft-delete 정적 메서드는 Query가 아니라 Promise를 직접 반환한다.
-        await this.model.deleteOne(query)
+        await this.collection.updateOne(
+            this.activeFilter(query),
+            this.timestamped({ $set: { deletedAt: new Date() } })
+        )
     }
 }

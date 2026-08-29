@@ -1,3 +1,4 @@
+import type { ConfigService } from '@nestjs/config'
 import { AppConfigService } from '../app-config.service.js'
 
 describe('AppConfigService schema', () => {
@@ -26,5 +27,14 @@ describe('AppConfigService schema', () => {
             S3_FORCE_PATH_STYLE: false
         })
         expect(schema.safeParse({ S3_FORCE_PATH_STYLE: 'yes' }).success).toBe(false)
+    })
+
+    it('MongoDB URI와 database 이름을 한 설정으로 반환한다', () => {
+        const values = { MONGO_DATABASE: 'test-database', MONGO_URI: 'mongodb://mongo.test' }
+        const configService = { get: (key: keyof typeof values) => values[key] } as ConfigService
+
+        const config = new AppConfigService(configService, 'test-project')
+
+        expect(config.mongo).toEqual({ dbName: 'test-database', uri: 'mongodb://mongo.test' })
     })
 })

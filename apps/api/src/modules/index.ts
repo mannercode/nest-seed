@@ -1,6 +1,6 @@
 export * from './app-config.module.js'
 export * from './global.module.js'
 export * from './health/index.js'
-export * from './mongoose-setup.module.js'
+export * from './mongo-setup.module.js'
 export * from './nats-setup.module.js'
 export * from './redis-setup.module.js'

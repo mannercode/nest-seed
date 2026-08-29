@@ -1,24 +1,42 @@
 import { BadRequestException } from '@nestjs/common'
-import { Types, type QueryFilter } from 'mongoose'
+import { ObjectId, type Document, type Filter } from 'mongodb'
 import { Assume, escapeRegExp, uniq } from '../utils/index.js'
-import { MongooseErrors } from './errors.js'
+import { MongoErrors } from './errors.js'
 
-export const newObjectIdString = () => new Types.ObjectId().toString()
-export const objectId = (id: string) => {
-    // 잘못된 형식의 id는 BSONError(500)가 아니라 입력 오류(400)로 드러낸다.
-    if (!Types.ObjectId.isValid(id)) {
-        throw new BadRequestException(MongooseErrors.InvalidObjectId(id))
+export const newObjectIdString = () => new ObjectId().toHexString()
+
+export const objectId = (id: string | ObjectId) => {
+    if (id instanceof ObjectId) return id
+    if (!ObjectId.isValid(id)) {
+        throw new BadRequestException(MongoErrors.InvalidObjectId(id))
     }
-    return new Types.ObjectId(id)
+    return new ObjectId(id)
 }
-export const objectIds = (ids: string[]) => ids.map((id) => objectId(id))
+
+export const objectIds = (ids: Array<ObjectId | string>) => ids.map((id) => objectId(id))
+
+export function mongoToPublic<T>(doc: Document & { _id: ObjectId }): T
+export function mongoToPublic<T>(doc: null | (Document & { _id: ObjectId })): null | T
+export function mongoToPublic<T>(doc: null | (Document & { _id: ObjectId })): null | T {
+    if (!doc) return null
+    return Object.assign(doc, { id: doc._id.toHexString() }) as T
+}
+
+export function mongoArrayToPublic<T>(docs: Array<Document & { _id: ObjectId }>): T[] {
+    return docs.map((doc) => mongoToPublic<T>(doc))
+}
+
+export function withoutPublicId<T>(doc: T & { id?: string }): Omit<T, 'id'> {
+    const stored = { ...doc }
+    delete stored.id
+    return stored
+}
 
 export function isDuplicateKeyError(error: unknown): boolean {
     return typeof error === 'object' && error !== null && 'code' in error && error.code === 11000
 }
 
 const WRITE_CONCERN_FAILED_CODE = 64
-
 type ErrorRecord = Record<string, unknown>
 
 export function isWriteConcernTimeoutError(error: unknown): boolean {
@@ -33,7 +51,6 @@ export function isWriteConcernTimeoutError(error: unknown): boolean {
 
         const record = current.value
         visited.add(record)
-
         const errInfo = isErrorRecord(record.errInfo) ? record.errInfo : undefined
         const identifiesWriteConcern =
             current.isWriteConcernField ||
@@ -71,30 +88,24 @@ function isWriteConcernTimeoutMessage(value: string): boolean {
 }
 
 export type QueryBuilderOptions = { allowEmpty?: boolean }
-
 type Transform<T> = (value: T) => any
 
-export class QueryBuilder<T> {
-    private query: any = {}
+export class QueryBuilder<_T> {
+    private query: Record<string, any> = {}
 
     addEquals(field: string, value?: any): this {
-        if (value !== undefined && value !== null) {
-            this.query[field] = value
-        }
+        if (value !== undefined && value !== null) this.query[field] = value
         return this
     }
 
     addId(field: string, id?: string): this {
-        if (id) {
-            this.query[field] = objectId(id)
-        }
+        if (id) this.query[field] = objectId(id)
         return this
     }
 
     addIn(field: string, ids?: string[]): this {
         if (ids && ids.length > 0) {
             const uniqueIds = uniq(ids)
-
             Assume.equalLength(
                 uniqueIds,
                 ids,
@@ -108,16 +119,10 @@ export class QueryBuilder<T> {
     addRange(field: string, range?: { end?: Date; start?: Date }): this {
         if (range) {
             const { end, start } = range
-
-            if (start && end) {
-                this.query[field] = { $gte: start, $lte: end }
-            } else if (start) {
-                this.query[field] = { $gte: start }
-            } else if (end) {
-                this.query[field] = { $lte: end }
-            }
+            if (start && end) this.query[field] = { $gte: start, $lte: end }
+            else if (start) this.query[field] = { $gte: start }
+            else if (end) this.query[field] = { $lte: end }
         }
-
         return this
     }
 
@@ -127,7 +132,6 @@ export class QueryBuilder<T> {
         options?: { caseSensitive?: boolean; prefix?: boolean }
     ): this {
         if (value) {
-            // 일반 인덱스를 쓰려면 prefix와 caseSensitive를 함께 켜 범위 스캔이 가능해야 한다.
             const pattern = options?.prefix ? '^' + escapeRegExp(value) : escapeRegExp(value)
             this.query[field] = options?.caseSensitive
                 ? new RegExp(pattern)
@@ -136,12 +140,11 @@ export class QueryBuilder<T> {
         return this
     }
 
-    build({ allowEmpty }: QueryBuilderOptions): QueryFilter<T> {
+    build({ allowEmpty }: QueryBuilderOptions = {}): Filter<Document> {
         if (!allowEmpty && Object.keys(this.query).length === 0) {
-            throw new BadRequestException(MongooseErrors.FiltersRequired())
+            throw new BadRequestException(MongoErrors.FiltersRequired())
         }
-
-        return this.query
+        return this.query as Filter<Document>
     }
 }
 
@@ -152,7 +155,6 @@ export function assignIfDefined<
 >(target: Target, source: Source, key: K, transform?: Transform<NonNullable<Source[K]>>): void {
     const value = source[key]
     if (value === undefined) return
-
     target[key] = transform ? transform(value) : value
 }
 
@@ -163,11 +165,6 @@ export function mapDocToDto<Doc extends object, Dto extends object, K extends ke
 ): Dto {
     const dto = new dtoClass()
     const record = doc as Record<string, unknown>
-
-    for (const key of keys) {
-        const value = record[key as string]
-        dto[key] = value as Dto[K]
-    }
-
+    for (const key of keys) dto[key] = record[key as string] as Dto[K]
     return dto
 }

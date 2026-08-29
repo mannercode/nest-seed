@@ -1,14 +1,7 @@
-import { createCrudSchema, CrudSchema } from '@mannercode/common'
-import { Prop, Schema } from '@nestjs/mongoose'
-import { MONGOOSE_SCHEMA_OPTIONS } from '#config'
+import { CrudDocument } from '@mannercode/common'
 
-@Schema(MONGOOSE_SCHEMA_OPTIONS)
-export class MoviePendingAsset extends CrudSchema {
-    @Prop({ required: true })
+export class MoviePendingAsset extends CrudDocument {
     assetId: string
 
-    @Prop({ required: true })
     movieId: string
 }
-
-export const MoviePendingAssetSchema = createCrudSchema(MoviePendingAsset)

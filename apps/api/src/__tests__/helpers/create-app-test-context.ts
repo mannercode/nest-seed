@@ -5,13 +5,12 @@ import {
     type HttpTestContext,
     type ModuleMetadataEx
 } from '@mannercode/testing'
-import { getConnectionToken } from '@nestjs/mongoose'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import compression from 'compression'
 import express from 'express'
 import { ShowtimeCreationRestateEndpoint, ShowtimeCreationWorkflowClient } from '#application'
-import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
-import { getSharedTestMongooseConnection } from '../../../scripts/index.cjs'
+import { AppConfigService, MongoConnection } from '#config'
+import { getSharedTestMongoConnection } from '../../../scripts/index.cjs'
 import { AppModule } from '../../app.module.js'
 
 type AppTestOptions = ModuleMetadataEx & { enableRestate?: boolean }
@@ -23,11 +22,11 @@ export async function createAppTestContext({
     let restateDeploymentId: string | undefined
     const restateCompletions = new Set<Promise<void>>()
     const imports = [AppModule, ...(metadata.imports ?? [])]
-    const sharedMongo = getSharedTestMongooseConnection()
+    const sharedMongo = getSharedTestMongoConnection()
     const overrideProviders = [
         {
-            original: getConnectionToken(MONGO_CONNECTION_NAME),
-            replacement: sharedMongo.connection
+            original: MongoConnection,
+            replacement: new MongoConnection(sharedMongo.client, sharedMongo.db, false)
         },
         ...(enableRestate
             ? []
@@ -81,7 +80,7 @@ export async function createAppTestContext({
         throw setupError
     }
 
-    // 앱별 자원과 모델은 close에서 정리하고, 파일이 공유하는 MongoClient는 Vitest afterAll에서 닫는다.
+    // 앱별 자원은 close에서 정리하고, 파일이 공유하는 MongoClient는 Vitest afterAll에서 닫는다.
     const teardown = async () => {
         try {
             if (enableRestate) {

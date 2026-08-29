@@ -173,7 +173,7 @@ Restate로 옮기면 실행 기록과 애플리케이션 코드를 가깝게 두
 
 ### 결정
 
-주 데이터베이스는 MongoDB를 Mongoose로 사용한다.
+주 데이터베이스는 MongoDB 공식 Node.js driver로 사용한다. 애플리케이션은 단일 `MongoClient`를 공유하고 각 도메인 repository가 collection·index·document 변환을 소유한다.
 
 ### 근거
 

@@ -1,8 +1,6 @@
-import type { MongoClient, MongoClientEvents } from 'mongodb'
-import type { Connection } from 'mongoose'
 import { Module } from '@nestjs/common'
-import { MongooseModule } from '@nestjs/mongoose'
-import { AppConfigService, createMongoDriverOptions, MONGO_CONNECTION_NAME } from '#config'
+import { MongoClient, type MongoClientEvents } from 'mongodb'
+import { AppConfigService, createMongoDriverOptions, MongoConnection } from '#config'
 
 type ConnectionId = number | string
 type MongoClientEvent<EventName extends keyof MongoClientEvents> = Parameters<
@@ -373,44 +371,40 @@ export function registerMongoClientDiagnostics(
 }
 
 @Module({
-    imports: [
-        MongooseModule.forRootAsync({
-            connectionName: MONGO_CONNECTION_NAME,
+    exports: [MongoConnection],
+    providers: [
+        {
             inject: [AppConfigService],
+            provide: MongoConnection,
             useFactory: async (config: AppConfigService) => {
                 const { uri, dbName } = config.mongo
                 const testDiagnostics = process.env.NODE_ENV === 'test'
-                const appName = `nest-seed-test-w${process.env.VITEST_POOL_ID ?? '0'}-p${process.pid}-${process.env.TEST_ID ?? 'startup'}`
+                const appName = testDiagnostics
+                    ? `nest-seed-test-w${process.env.VITEST_POOL_ID ?? '0'}-p${process.pid}-${process.env.TEST_ID ?? 'startup'}`
+                    : undefined
+                const client = new MongoClient(
+                    uri,
+                    createMongoDriverOptions({ appName, lifetime: 'application' })
+                )
 
-                return {
-                    ...createMongoDriverOptions({
-                        appName: testDiagnostics ? appName : undefined,
-                        lifetime: 'application'
-                    }),
-                    ...(testDiagnostics
-                        ? {
-                              appName,
-                              onConnectionCreate: (connection: Connection) => {
-                                  try {
-                                      registerMongoClientDiagnostics(
-                                          connection.getClient(),
-                                          dbName,
-                                          appName
-                                      )
-                                  } catch {
-                                      // 테스트 진단은 best effort이며 애플리케이션 기동을 막아서는 안 된다.
-                                  }
-                              }
-                          }
-                        : {}),
-                    autoCreate: true,
-                    autoIndex: true,
-                    bufferCommands: true,
-                    dbName,
-                    uri
+                if (appName) {
+                    try {
+                        registerMongoClientDiagnostics(client, dbName, appName)
+                    } catch {
+                        // 테스트 진단은 best effort이며 애플리케이션 기동을 막아서는 안 된다.
+                    }
                 }
+
+                try {
+                    await client.connect()
+                } catch (error) {
+                    await client.close().catch(() => undefined)
+                    throw error
+                }
+
+                return new MongoConnection(client, client.db(dbName))
             }
-        })
+        }
     ]
 })
-export class MongooseSetupModule {}
+export class MongoSetupModule {}

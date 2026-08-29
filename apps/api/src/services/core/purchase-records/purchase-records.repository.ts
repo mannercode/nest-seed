@@ -1,30 +1,67 @@
-import { CrudRepository, ensure, leanArrayToPublic, leanOneToPublic } from '@mannercode/common'
+import type { ClientSession, Document, FindOneAndUpdateOptions, UpdateFilter } from 'mongodb'
+import {
+    CrudRepository,
+    ensure,
+    mongoArrayToPublic,
+    mongoToPublic,
+    objectId
+} from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { InjectModel } from '@nestjs/mongoose'
-import { ClientSession, Model } from 'mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import { AppConfigService, MongoConnection } from '#config'
 import { CreatePurchaseRecordDto } from './dtos/index.js'
 import { PurchaseEventStatus, PurchaseRecord, PurchaseRecordStatus } from './models/index.js'
 
 @Injectable()
 export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
-    constructor(
-        @InjectModel(PurchaseRecord.name, MONGO_CONNECTION_NAME)
-        readonly model: Model<PurchaseRecord>,
-        config: AppConfigService
-    ) {
-        super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
+    constructor(connection: MongoConnection, config: AppConfigService) {
+        super(
+            connection.db.collection('purchaserecords'),
+            connection.client,
+            config.http.paginationDefaultSize,
+            config.http.paginationMaxSize,
+            {
+                indexes: [
+                    {
+                        key: { userId: 1, idempotencyKey: 1 },
+                        name: 'user_idempotency_key_unique',
+                        partialFilterExpression: { idempotencyKey: { $type: 'string' } },
+                        unique: true
+                    },
+                    { key: { status: 1, updatedAt: 1 } },
+                    { key: { status: 1, completionLeaseUntil: 1 } },
+                    { key: { status: 1, reconciliationLeaseUntil: 1 } },
+                    { key: { status: 1, purchaseEventStatus: 1, updatedAt: 1 } },
+                    {
+                        key: {
+                            status: 1,
+                            purchaseEventStatus: 1,
+                            purchaseEventPublicationLeaseUntil: 1,
+                            updatedAt: 1
+                        }
+                    },
+                    {
+                        key: { paymentId: 1 },
+                        name: 'paymentId_partial_lookup',
+                        partialFilterExpression: { paymentId: { $type: 'string' } }
+                    }
+                ]
+            }
+        )
     }
 
     async findByUserId(userId: string) {
-        const purchaseRecords = await this.model
-            // status가 생기기 전에 저장된 기록도 완료된 구매로 취급한다.
-            .find({ status: { $in: [PurchaseRecordStatus.Completed, null] }, userId })
+        const purchaseRecords = await this.collection
+            .find(
+                this.activeFilter({
+                    // status가 생기기 전에 저장된 기록도 완료된 구매로 취급한다.
+                    status: { $in: [PurchaseRecordStatus.Completed, null] },
+                    userId
+                })
+            )
             .sort({ createdAt: -1 })
-            .lean()
-            .exec()
+            .toArray()
 
-        return leanArrayToPublic<PurchaseRecord>(purchaseRecords)
+        return mongoArrayToPublic<PurchaseRecord>(purchaseRecords)
     }
 
     async create(createDto: CreatePurchaseRecordDto, status: PurchaseRecordStatus) {
@@ -50,46 +87,46 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
                 ? PurchaseEventStatus.Pending
                 : PurchaseEventStatus.Published
 
-        await purchaseRecord.save()
-
-        return purchaseRecord.toJSON()
+        return this.insertOne(purchaseRecord)
     }
 
     async findByIdempotencyKey(userId: string, idempotencyKey: string) {
-        const record = await this.model.findOne({ idempotencyKey, userId }).lean().exec()
-        return leanOneToPublic<PurchaseRecord>(record)
+        const record = await this.collection.findOne(this.activeFilter({ idempotencyKey, userId }))
+        return mongoToPublic<PurchaseRecord>(record)
     }
 
     async findPendingBefore(before: Date, now: Date) {
-        const purchaseRecords = await this.model
-            .find({
-                $or: [
-                    { status: PurchaseRecordStatus.Pending, updatedAt: { $lte: before } },
-                    {
-                        completionLeaseUntil: { $lte: now },
-                        status: PurchaseRecordStatus.Completing
-                    },
-                    {
-                        reconciliationLeaseUntil: { $lte: now },
-                        status: PurchaseRecordStatus.Compensating
-                    }
-                ]
-            })
+        const purchaseRecords = await this.collection
+            .find(
+                this.activeFilter({
+                    $or: [
+                        { status: PurchaseRecordStatus.Pending, updatedAt: { $lte: before } },
+                        {
+                            completionLeaseUntil: { $lte: now },
+                            status: PurchaseRecordStatus.Completing
+                        },
+                        {
+                            reconciliationLeaseUntil: { $lte: now },
+                            status: PurchaseRecordStatus.Compensating
+                        }
+                    ]
+                })
+            )
             .sort({ updatedAt: 1 })
             .limit(100)
-            .lean()
-            .exec()
+            .toArray()
 
-        return leanArrayToPublic<PurchaseRecord>(purchaseRecords)
+        return mongoArrayToPublic<PurchaseRecord>(purchaseRecords)
     }
 
     async findPendingById(purchaseRecordId: string) {
-        const record = await this.model
-            .findOne({ _id: purchaseRecordId, status: PurchaseRecordStatus.Pending })
-            .lean()
-            .exec()
-
-        return leanOneToPublic<PurchaseRecord>(record)
+        const record = await this.collection.findOne(
+            this.activeFilter({
+                _id: objectId(purchaseRecordId),
+                status: PurchaseRecordStatus.Pending
+            })
+        )
+        return mongoToPublic<PurchaseRecord>(record)
     }
 
     async claimForReconciliation(
@@ -116,54 +153,52 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
             { reconciliationLeaseUntil: { $lte: now }, status: PurchaseRecordStatus.Compensating },
             ...(completionId ? [{ completionId, status: PurchaseRecordStatus.Completing }] : [])
         ]
-        const record = await this.model
-            .findOneAndUpdate(
-                { _id: purchaseRecordId, $or: candidates },
-                {
-                    $set: {
-                        completionId: null,
-                        completionLeaseUntil: null,
-                        ...(idempotencyError
-                            ? {
-                                  idempotencyErrorResponse: idempotencyError.response,
-                                  idempotencyErrorStatus: idempotencyError.status
-                              }
-                            : {}),
-                        reconciliationId,
-                        reconciliationLeaseUntil: leaseUntil,
-                        status: PurchaseRecordStatus.Compensating
-                    }
-                },
-                { returnDocument: 'after' }
-            )
-            .lean()
-            .exec()
+        const record = await this.updateById(
+            purchaseRecordId,
+            { $or: candidates },
+            {
+                $set: {
+                    completionId: null,
+                    completionLeaseUntil: null,
+                    ...(idempotencyError
+                        ? {
+                              idempotencyErrorResponse: idempotencyError.response,
+                              idempotencyErrorStatus: idempotencyError.status
+                          }
+                        : {}),
+                    reconciliationId,
+                    reconciliationLeaseUntil: leaseUntil,
+                    status: PurchaseRecordStatus.Compensating
+                }
+            }
+        )
 
-        return leanOneToPublic<PurchaseRecord>(record)
+        return mongoToPublic<PurchaseRecord>(record)
     }
 
     async findByPaymentId(paymentId: string) {
-        const purchaseRecord = await this.model.findOne({ paymentId }).lean().exec()
-        return leanOneToPublic<PurchaseRecord>(purchaseRecord)
+        const purchaseRecord = await this.collection.findOne(this.activeFilter({ paymentId }))
+        return mongoToPublic<PurchaseRecord>(purchaseRecord)
     }
 
     async findUnpublishedBefore(before: Date, now: Date) {
-        const purchaseRecords = await this.model
-            .find({
-                purchaseEventStatus: PurchaseEventStatus.Pending,
-                status: PurchaseRecordStatus.Completed,
-                updatedAt: { $lte: before },
-                $or: [
-                    { purchaseEventPublicationLeaseUntil: null },
-                    { purchaseEventPublicationLeaseUntil: { $lte: now } }
-                ]
-            })
+        const purchaseRecords = await this.collection
+            .find(
+                this.activeFilter({
+                    purchaseEventStatus: PurchaseEventStatus.Pending,
+                    status: PurchaseRecordStatus.Completed,
+                    updatedAt: { $lte: before },
+                    $or: [
+                        { purchaseEventPublicationLeaseUntil: null },
+                        { purchaseEventPublicationLeaseUntil: { $lte: now } }
+                    ]
+                })
+            )
             .sort({ updatedAt: 1 })
             .limit(100)
-            .lean()
-            .exec()
+            .toArray()
 
-        return leanArrayToPublic<PurchaseRecord>(purchaseRecords)
+        return mongoArrayToPublic<PurchaseRecord>(purchaseRecords)
     }
 
     async claimEventPublication(
@@ -175,30 +210,26 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
             publicationId
         }: { before: Date; leaseUntil: Date; now: Date; publicationId: string }
     ) {
-        const purchaseRecord = await this.model
-            .findOneAndUpdate(
-                {
-                    _id: purchaseRecordId,
-                    purchaseEventStatus: PurchaseEventStatus.Pending,
-                    status: PurchaseRecordStatus.Completed,
-                    updatedAt: { $lte: before },
-                    $or: [
-                        { purchaseEventPublicationLeaseUntil: null },
-                        { purchaseEventPublicationLeaseUntil: { $lte: now } }
-                    ]
-                },
-                {
-                    $set: {
-                        purchaseEventPublicationId: publicationId,
-                        purchaseEventPublicationLeaseUntil: leaseUntil
-                    }
-                },
-                { returnDocument: 'after' }
-            )
-            .lean()
-            .exec()
+        const purchaseRecord = await this.updateById(
+            purchaseRecordId,
+            {
+                purchaseEventStatus: PurchaseEventStatus.Pending,
+                status: PurchaseRecordStatus.Completed,
+                updatedAt: { $lte: before },
+                $or: [
+                    { purchaseEventPublicationLeaseUntil: null },
+                    { purchaseEventPublicationLeaseUntil: { $lte: now } }
+                ]
+            },
+            {
+                $set: {
+                    purchaseEventPublicationId: publicationId,
+                    purchaseEventPublicationLeaseUntil: leaseUntil
+                }
+            }
+        )
 
-        return leanOneToPublic<PurchaseRecord>(purchaseRecord)
+        return mongoToPublic<PurchaseRecord>(purchaseRecord)
     }
 
     async claimForCompletion(
@@ -206,25 +237,22 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         completionId: string,
         completionLeaseUntil: Date
     ) {
-        const purchaseRecord = await this.model
-            .findOneAndUpdate(
-                { _id: purchaseRecordId, status: PurchaseRecordStatus.Pending },
-                {
-                    $set: {
-                        completionId,
-                        completionLeaseUntil,
-                        status: PurchaseRecordStatus.Completing
-                    }
-                },
-                { returnDocument: 'after' }
-            )
-            .lean()
-            .exec()
+        const purchaseRecord = await this.updateById(
+            purchaseRecordId,
+            { status: PurchaseRecordStatus.Pending },
+            {
+                $set: {
+                    completionId,
+                    completionLeaseUntil,
+                    status: PurchaseRecordStatus.Completing
+                }
+            }
+        )
         if (!purchaseRecord) {
             throw new Error(`Purchase record is no longer pending: ${purchaseRecordId}`)
         }
 
-        return ensure(leanOneToPublic<PurchaseRecord>(purchaseRecord))
+        return ensure(mongoToPublic<PurchaseRecord>(purchaseRecord))
     }
 
     async markCompleted(
@@ -233,118 +261,115 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         session: ClientSession | undefined = undefined,
         idempotencyResponse: object | undefined = undefined
     ) {
-        const purchaseRecord = await this.model
-            .findOneAndUpdate(
-                { _id: purchaseRecordId, completionId, status: PurchaseRecordStatus.Completing },
-                {
-                    $set: {
-                        ...(idempotencyResponse ? { idempotencyResponse } : {}),
-                        status: PurchaseRecordStatus.Completed
-                    },
-                    $unset: {
-                        completionId: 1,
-                        completionLeaseUntil: 1,
-                        reconciliationId: 1,
-                        reconciliationLeaseUntil: 1
-                    }
+        const purchaseRecord = await this.updateById(
+            purchaseRecordId,
+            { completionId, status: PurchaseRecordStatus.Completing },
+            {
+                $set: {
+                    ...(idempotencyResponse ? { idempotencyResponse } : {}),
+                    status: PurchaseRecordStatus.Completed
                 },
-                { returnDocument: 'after', session }
-            )
-            .lean()
-            .exec()
+                $unset: {
+                    completionId: 1,
+                    completionLeaseUntil: 1,
+                    reconciliationId: 1,
+                    reconciliationLeaseUntil: 1
+                }
+            },
+            { session }
+        )
         if (!purchaseRecord) {
             throw new Error(`Purchase completion lease was lost: ${purchaseRecordId}`)
         }
 
-        return ensure(leanOneToPublic<PurchaseRecord>(purchaseRecord))
+        return ensure(mongoToPublic<PurchaseRecord>(purchaseRecord))
     }
 
     async setPaymentId(purchaseRecordId: string, paymentId: string) {
-        const purchaseRecord = await this.model
-            .findOneAndUpdate(
-                { _id: purchaseRecordId, status: PurchaseRecordStatus.Pending },
-                { $set: { paymentId } },
-                { returnDocument: 'after' }
-            )
-            .lean()
-            .exec()
+        const purchaseRecord = await this.updateById(
+            purchaseRecordId,
+            { status: PurchaseRecordStatus.Pending },
+            { $set: { paymentId } }
+        )
         if (!purchaseRecord) {
             throw new Error(`Purchase record is no longer pending: ${purchaseRecordId}`)
         }
 
-        return ensure(leanOneToPublic<PurchaseRecord>(purchaseRecord))
+        return ensure(mongoToPublic<PurchaseRecord>(purchaseRecord))
     }
 
     async markCancelled(purchaseRecordId: string, reconciliationId: string) {
-        await this.model
-            .updateOne(
-                {
-                    _id: purchaseRecordId,
-                    reconciliationId,
-                    status: PurchaseRecordStatus.Compensating
-                },
-                {
-                    $set: {
-                        reconciliationId: null,
-                        reconciliationLeaseUntil: null,
-                        status: PurchaseRecordStatus.Cancelled
-                    }
+        await this.collection.updateOne(
+            this.activeFilter({
+                _id: objectId(purchaseRecordId),
+                reconciliationId,
+                status: PurchaseRecordStatus.Compensating
+            }),
+            this.timestamped({
+                $set: {
+                    reconciliationId: null,
+                    reconciliationLeaseUntil: null,
+                    status: PurchaseRecordStatus.Cancelled
                 }
-            )
-            .exec()
+            })
+        )
     }
 
     async releaseReconciliationClaim(purchaseRecordId: string, reconciliationId: string) {
-        await this.model
-            .updateOne(
-                {
-                    _id: purchaseRecordId,
-                    reconciliationId,
-                    status: PurchaseRecordStatus.Compensating
-                },
-                { $set: { reconciliationLeaseUntil: new Date(0) } }
-            )
-            .exec()
+        await this.collection.updateOne(
+            this.activeFilter({
+                _id: objectId(purchaseRecordId),
+                reconciliationId,
+                status: PurchaseRecordStatus.Compensating
+            }),
+            this.timestamped({ $set: { reconciliationLeaseUntil: new Date(0) } })
+        )
     }
 
     async markEventPublished(purchaseRecordId: string, publicationId: string) {
-        const result = await this.model
-            .updateOne(
-                {
-                    _id: purchaseRecordId,
-                    purchaseEventPublicationId: publicationId,
-                    purchaseEventStatus: PurchaseEventStatus.Pending,
-                    status: PurchaseRecordStatus.Completed
-                },
-                {
-                    $set: {
-                        purchaseEventPublicationId: null,
-                        purchaseEventPublicationLeaseUntil: null,
-                        purchaseEventStatus: PurchaseEventStatus.Published
-                    }
+        const result = await this.collection.updateOne(
+            this.activeFilter({
+                _id: objectId(purchaseRecordId),
+                purchaseEventPublicationId: publicationId,
+                purchaseEventStatus: PurchaseEventStatus.Pending,
+                status: PurchaseRecordStatus.Completed
+            }),
+            this.timestamped({
+                $set: {
+                    purchaseEventPublicationId: null,
+                    purchaseEventPublicationLeaseUntil: null,
+                    purchaseEventStatus: PurchaseEventStatus.Published
                 }
-            )
-            .exec()
+            })
+        )
 
         return result.modifiedCount === 1
     }
 
     async releaseEventPublicationClaim(purchaseRecordId: string, publicationId: string) {
-        await this.model
-            .updateOne(
-                {
-                    _id: purchaseRecordId,
-                    purchaseEventPublicationId: publicationId,
-                    purchaseEventStatus: PurchaseEventStatus.Pending,
-                    status: PurchaseRecordStatus.Completed
-                },
-                {
-                    $set: {
-                        purchaseEventPublicationId: null,
-                        purchaseEventPublicationLeaseUntil: null
-                    }
-                }
-            )
-            .exec()
+        await this.collection.updateOne(
+            this.activeFilter({
+                _id: objectId(purchaseRecordId),
+                purchaseEventPublicationId: publicationId,
+                purchaseEventStatus: PurchaseEventStatus.Pending,
+                status: PurchaseRecordStatus.Completed
+            }),
+            this.timestamped({
+                $set: { purchaseEventPublicationId: null, purchaseEventPublicationLeaseUntil: null }
+            })
+        )
+    }
+
+    private updateById(
+        purchaseRecordId: string,
+        filter: Document,
+        update: UpdateFilter<Document>,
+        options: FindOneAndUpdateOptions = {}
+    ) {
+        return this.collection.findOneAndUpdate(
+            this.activeFilter({ _id: objectId(purchaseRecordId), ...filter }),
+            this.timestamped(update),
+            { ...options, returnDocument: 'after' }
+        )
     }
 }

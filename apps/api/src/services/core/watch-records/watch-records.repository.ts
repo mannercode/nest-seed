@@ -1,19 +1,18 @@
 import { QueryBuilderOptions, CrudRepository, QueryBuilder } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { InjectModel } from '@nestjs/mongoose'
-import { Model } from 'mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import { AppConfigService, MongoConnection } from '#config'
 import { CreateWatchRecordDto, SearchWatchRecordsPageDto } from './dtos/index.js'
 import { WatchRecord } from './models/index.js'
 
 @Injectable()
 export class WatchRecordsRepository extends CrudRepository<WatchRecord> {
-    constructor(
-        @InjectModel(WatchRecord.name, MONGO_CONNECTION_NAME)
-        readonly model: Model<WatchRecord>,
-        config: AppConfigService
-    ) {
-        super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
+    constructor(connection: MongoConnection, config: AppConfigService) {
+        super(
+            connection.db.collection('watchrecords'),
+            connection.client,
+            config.http.paginationDefaultSize,
+            config.http.paginationMaxSize
+        )
     }
 
     async create(createDto: CreateWatchRecordDto) {
@@ -23,20 +22,14 @@ export class WatchRecordsRepository extends CrudRepository<WatchRecord> {
         watchRecord.purchaseRecordId = createDto.purchaseRecordId
         watchRecord.watchDate = createDto.watchDate
 
-        await watchRecord.save()
-
-        return watchRecord.toJSON()
+        return this.insertOne(watchRecord)
     }
 
     async searchPage(searchDto: SearchWatchRecordsPageDto) {
         const { orderby, page, size } = searchDto
 
         const pagination = await this.findWithPagination({
-            configureQuery: async (queryHelper) => {
-                const query = this.buildQuery(searchDto, { allowEmpty: true })
-
-                queryHelper.setQuery(query)
-            },
+            filter: this.buildQuery(searchDto, { allowEmpty: true }),
             pagination: { orderby, page, size }
         })
 

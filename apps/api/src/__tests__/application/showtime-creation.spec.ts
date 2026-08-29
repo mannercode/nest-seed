@@ -297,7 +297,7 @@ describe('ShowtimeCreationService', () => {
             const workflow = fix.module.get(ShowtimeCreationWorkflowClient)
             const submissions = fix.module.get(ShowtimeCreationSubmissionRepository)
             const submitWorkflow = vi.spyOn(workflow, 'submit')
-            vi.spyOn(submissions.model.prototype, 'save').mockRejectedValueOnce(
+            vi.spyOn(submissions.collection, 'insertOne').mockRejectedValueOnce(
                 new Error('submission storage unavailable')
             )
 

@@ -255,7 +255,7 @@ Node에도 hook과 mock 기능이 있지만 API와 격리 방식이 같지 않�
 
 실행기 교체 다음으로 효과가 크고 위험이 낮은 후보는 `libs/common` 테스트를 인프라 의존 여부로 나누는 것이다.
 
-현재 `libs/common`의 전역 setup은 suite 전체를 위해 MongoDB replica set, Redis, S3와 NATS를 한꺼번에 준비한다. 전환 전 파일 분류 당시 45개 spec 중 약 29개는 이 컨테이너들을 직접 사용하지 않는 순수 단위 테스트였고, 인프라를 실제로 쓰는 spec은 약 16개였다. 현재 실행 결과는 42 suites, 635 tests이며 실제 분리 전에 분류를 다시 확인한다.
+현재 `libs/common`의 전역 setup은 suite 전체를 위해 MongoDB replica set, Redis, S3와 NATS를 한꺼번에 준비한다. 전환 전 파일 분류 당시 45개 spec 중 약 29개는 이 컨테이너들을 직접 사용하지 않는 순수 단위 테스트였고, 인프라를 실제로 쓰는 spec은 약 16개였다. Mongoose 공용 계층 제거 뒤 최신 실행 결과는 36 files, 536 tests이며 실제 분리 전에 분류를 다시 확인한다.
 
 즉 빠른 유틸리티·값 객체·redaction 테스트도 통합 테스트 때문에 컨테이너 기동 비용을 같이 낸다. Saga runtime은 이 workspace에서 빠졌지만 “모든 spec이 네 인프라를 기다린다”는 구조적 문제는 그대로 남았다. Restate는 실제 Saga 경계가 필요한 `apps/api` 상영 생성 스위트에서만 켠다.
 

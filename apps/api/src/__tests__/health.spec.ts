@@ -1,6 +1,4 @@
-import type mongoose from 'mongoose'
-import { getConnectionToken } from '@nestjs/mongoose'
-import { MONGO_CONNECTION_NAME } from '#config'
+import { MongoConnection } from '#config'
 import type { AppTestContext } from './helpers/index.js'
 
 describe('Health', () => {
@@ -30,11 +28,8 @@ describe('Health', () => {
         })
 
         it('핵심 의존성 하나라도 비정상이면 503과 실패 정보를 반환한다', async () => {
-            const mongoConnection = fix.module.get<mongoose.Connection>(
-                getConnectionToken(MONGO_CONNECTION_NAME)
-            )
-            const database = mongoConnection.db as NonNullable<mongoose.Connection['db']>
-            vi.spyOn(database, 'command').mockRejectedValueOnce(new Error('mongo down'))
+            const mongo = fix.module.get(MongoConnection)
+            vi.spyOn(mongo.db, 'command').mockRejectedValueOnce(new Error('mongo down'))
 
             const { body } = await fix.httpClient.get('/health').send(503)
             const info = {

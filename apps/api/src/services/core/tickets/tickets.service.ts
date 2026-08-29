@@ -1,4 +1,4 @@
-import type { ClientSession } from 'mongoose'
+import type { ClientSession } from 'mongodb'
 import { mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import {

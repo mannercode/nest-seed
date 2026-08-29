@@ -39,7 +39,7 @@ describe('AdminAuthentication', () => {
             const { AdminsRepository } =
                 await import('../../services/core/admins/admins.repository.js')
             const repository = fix.module.get(AdminsRepository)
-            await repository.model.collection.updateOne(
+            await repository.collection.updateOne(
                 { email: credentials.email },
                 { $unset: { authVersion: '' } }
             )

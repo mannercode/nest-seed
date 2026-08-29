@@ -79,7 +79,7 @@ describe('UserAuthentication', () => {
             const { UsersRepository } =
                 await import('../../services/core/users/users.repository.js')
             const repository = fix.module.get(UsersRepository)
-            await repository.model.collection.updateOne(
+            await repository.collection.updateOne(
                 { email: credentials.email },
                 { $unset: { authVersion: '' } }
             )

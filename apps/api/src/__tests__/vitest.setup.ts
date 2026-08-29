@@ -6,8 +6,8 @@ import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
 const {
-    attachSharedTestMongooseConnection,
-    clearSharedTestMongooseConnection
+    attachSharedTestMongoConnection,
+    clearSharedTestMongoConnection
 } = require('../../scripts/index.cjs')
 const { initializeApiVitestWorkerEnvironment } = require('../../scripts/vitest-resource-wiring.cjs')
 
@@ -15,7 +15,7 @@ const { initializeApiVitestWorkerEnvironment } = require('../../scripts/vitest-r
 const resourceScope = initializeApiVitestWorkerEnvironment()
 
 const { createMongoDriverOptions } = await import('../config/mongo-driver-options.js')
-const { registerMongoClientDiagnostics } = await import('../modules/mongoose-setup.module.js')
+const { registerMongoClientDiagnostics } = await import('../modules/mongo-setup.module.js')
 
 const sharedMongoAppName = () =>
     `nest-seed-test-w${process.env.VITEST_POOL_ID ?? '0'}-p${process.pid}-shared`
@@ -34,7 +34,7 @@ setupVitestLifecycle({
         return { client, dbName }
     },
     afterMongoConnect: (client, dbName) => {
-        attachSharedTestMongooseConnection({ appName: sharedMongoAppName(), client, dbName })
+        attachSharedTestMongoConnection({ client, dbName })
     },
     createS3Client: () =>
         new S3Client({
@@ -57,7 +57,7 @@ setupVitestLifecycle({
 })
 
 afterAll(() => {
-    clearSharedTestMongooseConnection()
+    clearSharedTestMongoConnection()
 })
 
 function requiredEnvironment(name: string): string {

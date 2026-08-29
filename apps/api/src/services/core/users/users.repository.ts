@@ -1,50 +1,64 @@
+import type { Document, ObjectId } from 'mongodb'
 import {
     QueryBuilderOptions,
     assignIfDefined,
     CrudRepository,
     isWriteConcernTimeoutError,
-    MongooseErrors,
+    MongoErrors,
+    mongoToPublic,
     objectId,
     objectIds,
     QueryBuilder,
-    leanOneToPublic,
-    leanToPublic,
     sleep
 } from '@mannercode/common'
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { InjectModel } from '@nestjs/mongoose'
-import { Model, UpdateQuery } from 'mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import { z } from 'zod'
+import { AppConfigService, MongoConnection } from '#config'
 import { CreateUserDto, SearchUsersPageDto, UpdateUserDto } from './dtos/index.js'
 import { User } from './models/index.js'
+
+const UserWriteSchema = z.strictObject({
+    birthDate: z.date(),
+    email: z.string().min(1),
+    name: z.string().min(1),
+    password: z.string().min(1)
+})
+const UserPatchSchema = UserWriteSchema.partial()
 
 const CREATE_RECOVERY_POLL_MS = 100
 const CREATE_RECOVERY_READ_MAX_TIME_MS = 250
 const CREATE_RECOVERY_TIMEOUT_MS = 5_000
 
 export type CreateUserResult = { status: 'conflict' } | { status: 'created'; user: User }
-type PersistedUser = User & { _id: { toString(): string } }
+type PersistedUser = User & { _id: ObjectId }
 
 @Injectable()
 export class UsersRepository extends CrudRepository<User> {
-    constructor(
-        @InjectModel(User.name, MONGO_CONNECTION_NAME)
-        readonly model: Model<User>,
-        config: AppConfigService
-    ) {
-        super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
+    constructor(connection: MongoConnection, config: AppConfigService) {
+        super(
+            connection.db.collection('users'),
+            connection.client,
+            config.http.paginationDefaultSize,
+            config.http.paginationMaxSize,
+            {
+                indexes: [{ key: { email: 1, deletedAt: 1 }, unique: true }],
+                projection: { password: 0 }
+            }
+        )
     }
 
     async create(createDto: CreateUserDto): Promise<CreateUserResult> {
+        UserWriteSchema.parse(createDto)
         const user = this.newDocument()
         user.name = createDto.name
         user.email = createDto.email
         user.birthDate = createDto.birthDate
         user.password = createDto.password
+        user.authVersion = 0
         const attemptId = user._id.toString()
 
         try {
-            await user.save()
+            await this.insertOne(user)
         } catch (error) {
             if (!isWriteConcernTimeoutError(error)) throw error
 
@@ -57,22 +71,20 @@ export class UsersRepository extends CrudRepository<User> {
             throw error
         }
 
-        return { status: 'created', user: user.toJSON() }
+        return { status: 'created', user }
     }
 
     async findByEmailWithPassword(email: string) {
         // 인증 계층이 그대로 쓸 수 있게 ObjectId를 문자열로 변환한다.
-        const user = await this.model
-            .findOne({ email: { $eq: email } })
-            .select('+password')
-            .lean()
-            .exec()
+        const user = await this.collection.findOne(this.activeFilter({ email: { $eq: email } }))
 
-        return leanOneToPublic<User>(user)
+        return mongoToPublic<User>(user)
     }
 
     async findAuthVersionById(userId: string): Promise<number | null> {
-        const user = await this.model.findById(objectId(userId)).select('authVersion').lean().exec()
+        const user = await this.collection.findOne(this.activeFilter({ _id: objectId(userId) }), {
+            projection: { authVersion: 1 }
+        })
 
         return user ? ((user as { authVersion?: number }).authVersion ?? 0) : null
     }
@@ -83,35 +95,27 @@ export class UsersRepository extends CrudRepository<User> {
     }
 
     async advanceAuthVersion(userId: string): Promise<void> {
-        const user = await this.model
-            .findOneAndUpdate(
-                { _id: objectId(userId) },
-                { $inc: { authVersion: 1 } },
-                { returnDocument: 'after', runValidators: true }
-            )
-            .exec()
+        const user = await this.collection.findOneAndUpdate(
+            this.activeFilter({ _id: objectId(userId) }),
+            this.timestamped({ $inc: { authVersion: 1 } }),
+            { returnDocument: 'after' }
+        )
 
-        if (!user) throw new NotFoundException(MongooseErrors.DocumentNotFound(userId))
+        if (!user) throw new NotFoundException(MongoErrors.DocumentNotFound(userId))
     }
 
     async deleteByIdsWithAuthVersion(userIds: string[]): Promise<void> {
-        await this.model
-            .updateMany(
-                { _id: { $in: objectIds(userIds) } },
-                { $inc: { authVersion: 1 }, $set: { deletedAt: new Date() } }
-            )
-            .exec()
+        await this.collection.updateMany(
+            this.activeFilter({ _id: { $in: objectIds(userIds) } }),
+            this.timestamped({ $inc: { authVersion: 1 }, $set: { deletedAt: new Date() } })
+        )
     }
 
     async searchPage(searchDto: SearchUsersPageDto) {
         const { orderby, page, size } = searchDto
 
         const pagination = await this.findWithPagination({
-            configureQuery: async (queryHelper) => {
-                const query = this.buildQuery(searchDto, { allowEmpty: true })
-
-                queryHelper.setQuery(query)
-            },
+            filter: this.buildQuery(searchDto, { allowEmpty: true }),
             pagination: {
                 orderby: orderby ?? undefined,
                 page: page ?? undefined,
@@ -123,25 +127,25 @@ export class UsersRepository extends CrudRepository<User> {
     }
 
     async update(userId: string, updateDto: UpdateUserDto) {
+        UserPatchSchema.parse(updateDto)
         const patch: Partial<Pick<User, 'birthDate' | 'email' | 'name' | 'password'>> = {}
         assignIfDefined(patch, updateDto, 'name')
         assignIfDefined(patch, updateDto, 'email')
         assignIfDefined(patch, updateDto, 'birthDate')
         assignIfDefined(patch, updateDto, 'password')
 
-        const update: UpdateQuery<User> = { $set: patch }
+        const update: Document = { $set: patch }
         if (updateDto.password !== undefined) update.$inc = { authVersion: 1 }
 
-        const user = await this.model
-            .findOneAndUpdate({ _id: objectId(userId) }, update, {
-                returnDocument: 'after',
-                runValidators: true
-            })
-            .exec()
+        const user = await this.collection.findOneAndUpdate(
+            this.activeFilter({ _id: objectId(userId) }),
+            this.timestamped(update),
+            { projection: this.projection, returnDocument: 'after' }
+        )
 
-        if (!user) throw new NotFoundException(MongooseErrors.DocumentNotFound(userId))
+        if (!user) throw new NotFoundException(MongoErrors.DocumentNotFound(userId))
 
-        return user.toJSON()
+        return mongoToPublic<User>(user)
     }
 
     private async recoverAmbiguousCreate(
@@ -156,7 +160,7 @@ export class UsersRepository extends CrudRepository<User> {
                     CREATE_RECOVERY_READ_MAX_TIME_MS,
                     Math.max(1, deadline - Date.now())
                 )
-                const persisted = await this.model.collection.findOne<PersistedUser>(
+                const persisted = await this.collection.findOne<PersistedUser>(
                     { deletedAt: null, email },
                     {
                         maxTimeMS: readTimeoutMs,
@@ -168,7 +172,7 @@ export class UsersRepository extends CrudRepository<User> {
                 if (persisted) {
                     if (persisted._id.toString() !== attemptId) return { status: 'conflict' }
 
-                    return { status: 'created', user: leanToPublic(persisted) }
+                    return { status: 'created', user: mongoToPublic<User>(persisted) }
                 }
             } catch {
                 // majority commit point가 아직 따라오지 않았거나 읽기가 일시 실패하면 제한 안에서 재확인한다.

@@ -1,4 +1,4 @@
-import type { ClientSession } from 'mongoose'
+import type { ClientSession } from 'mongodb'
 import { DateTimeRange, DateUtil, Require } from '@mannercode/common'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { MoviesService, ShowtimeDto, ShowtimesService } from '#core'

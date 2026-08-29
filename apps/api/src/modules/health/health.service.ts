@@ -6,10 +6,8 @@ import {
     type NatsConnection
 } from '@mannercode/common'
 import { Inject, Injectable, ServiceUnavailableException } from '@nestjs/common'
-import { getConnectionToken } from '@nestjs/mongoose'
 import { Redis } from 'ioredis'
-import mongoose from 'mongoose'
-import { MONGO_CONNECTION_NAME, NATS_CONNECTION_NAME, REDIS_CONNECTION_NAME } from '#config'
+import { MongoConnection, NATS_CONNECTION_NAME, REDIS_CONNECTION_NAME } from '#config'
 import { RestateHealthIndicator } from './restate.health-indicator.js'
 
 type HealthState = { status: 'down' | 'up' } & Record<string, unknown>
@@ -21,8 +19,7 @@ export class HealthService {
         private readonly redisHealth: RedisHealthIndicator,
         private readonly natsHealth: NatsHealthIndicator,
         private readonly restateHealth: RestateHealthIndicator,
-        @Inject(getConnectionToken(MONGO_CONNECTION_NAME))
-        private readonly mongoConnection: mongoose.Connection,
+        private readonly mongo: MongoConnection,
         @Inject(getRedisConnectionToken(REDIS_CONNECTION_NAME))
         private readonly redisConnection: Redis,
         @Inject(getNatsConnectionToken(NATS_CONNECTION_NAME))
@@ -58,8 +55,7 @@ export class HealthService {
 
     private async checkMongo(): Promise<HealthCheckResult> {
         try {
-            const database = this.mongoConnection.db as NonNullable<mongoose.Connection['db']>
-            await database.command({ ping: 1 })
+            await this.mongo.db.command({ ping: 1 })
 
             return { mongodb: { status: 'up' } }
         } catch (caught: unknown) {

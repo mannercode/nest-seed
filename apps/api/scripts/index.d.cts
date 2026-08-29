@@ -1,1 +1,1 @@
-export * from './shared-test-mongoose-connection.cjs'
+export * from './shared-test-mongo-connection.cjs'

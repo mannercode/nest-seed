@@ -67,7 +67,7 @@ describe('AdminManagement', () => {
             const { ConflictException } = await import('@nestjs/common')
             const service = fix.module.get(AdminsService)
 
-            // required 필드를 null로 보내 Mongoose ValidatorError를 유도한다.
+            // required 필드를 null로 보내 저장 경계 검증 오류를 유도한다.
             // 요청 스키마 검증은 컨트롤러에만 적용되므로 service를 직접 호출한다.
             const invalidDto = { email: 'x@y.com', name: null as unknown as string, password: 'p' }
 

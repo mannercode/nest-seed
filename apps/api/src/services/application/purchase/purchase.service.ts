@@ -1,4 +1,3 @@
-import type { Connection } from 'mongoose'
 import {
     CacheService,
     ensure,
@@ -7,10 +6,9 @@ import {
     isDuplicateKeyError
 } from '@mannercode/common'
 import { ConflictException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
-import { InjectConnection } from '@nestjs/mongoose'
 import { Interval } from '@nestjs/schedule'
 import { createHash, randomUUID } from 'node:crypto'
-import { MONGO_CONNECTION_NAME } from '#config'
+import { MongoConnection } from '#config'
 import {
     PurchaseItemType,
     PurchaseRecordsService,
@@ -44,7 +42,7 @@ export class PurchaseService {
         private readonly ticketsService: TicketsService,
         private readonly events: PurchaseEvents,
         @InjectCache('purchase') private readonly cache: CacheService,
-        @InjectConnection(MONGO_CONNECTION_NAME) private readonly mongoConnection: Connection
+        private readonly mongoConnection: MongoConnection
     ) {}
 
     async processPurchase(createDto: CreatePurchaseDto, userId: string, idempotencyKey: string) {
@@ -335,7 +333,7 @@ export class PurchaseService {
         completionId: string
     ): Promise<PurchaseRecordDto> {
         const purchaseRecordId = response.id
-        const session = await this.mongoConnection.startSession()
+        const session = this.mongoConnection.client.startSession()
         try {
             // 같은 transaction에서 티켓과 completion lease 문서를 모두 쓰므로, lease를
             // 회수하는 reconciliation과 write conflict가 난다. 승자만 Sold+Completed를

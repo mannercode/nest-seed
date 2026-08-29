@@ -47,6 +47,13 @@ describe('PaymentsService', () => {
             const [cancelled] = await paymentsService.getMany([payment.id])
             expect(cancelled?.status).toBe('cancelled')
         })
+
+        it('결제 ID가 없으면 404를 던진다', async () => {
+            await expect(paymentsService.cancel(nullObjectId)).rejects.toMatchObject({
+                response: Errors.Mongoose.DocumentNotFound(nullObjectId),
+                status: HttpStatus.NOT_FOUND
+            })
+        })
     })
 
     describe('create', () => {
@@ -86,10 +93,9 @@ describe('PaymentsService', () => {
             const { PaymentsRepository } =
                 await import('../../services/infrastructure/payments/payments.repository.js')
             const repository = fix.module.get(PaymentsRepository)
-            vi.spyOn(repository.model, 'updateOne').mockReturnValueOnce({
-                exec: () =>
-                    Promise.reject(Object.assign(new Error('duplicate key'), { code: 11000 }))
-            } as any)
+            vi.spyOn(repository.collection, 'updateOne').mockRejectedValueOnce(
+                Object.assign(new Error('duplicate key'), { code: 11000 })
+            )
 
             const retried = await paymentsService.create(
                 buildCreatePaymentDto({ purchaseRecordId: ensure(existing.purchaseRecordId) })
@@ -103,9 +109,9 @@ describe('PaymentsService', () => {
             const { PaymentsRepository } =
                 await import('../../services/infrastructure/payments/payments.repository.js')
             const repository = fix.module.get(PaymentsRepository)
-            vi.spyOn(repository.model, 'updateOne').mockReturnValueOnce({
-                exec: () => Promise.reject(new Error('database unavailable'))
-            } as any)
+            vi.spyOn(repository.collection, 'updateOne').mockRejectedValueOnce(
+                new Error('database unavailable')
+            )
 
             await expect(paymentsService.create(buildCreatePaymentDto())).rejects.toThrow(
                 'database unavailable'
@@ -119,7 +125,10 @@ describe('PaymentsService', () => {
                 await import('../../services/infrastructure/payments/payments.repository.js')
             const repository = fix.module.get(PaymentsRepository)
             const now = new Date()
-            const { insertedId } = await repository.model.collection.insertOne({
+            // native raw insert는 repository defaults를 거치지 않는다. Mongoose가 기존 문서에
+            // 만들던 base metadata는 직접 넣고, migration 대상 두 필드만 의도적으로 생략한다.
+            const { insertedId } = await repository.collection.insertOne({
+                __v: 0,
                 amount: 1,
                 createdAt: now,
                 deletedAt: null,

@@ -1,54 +1,60 @@
+import type { Document } from 'mongodb'
 import {
     assignIfDefined,
     CrudRepository,
-    leanOneToPublic,
-    MongooseErrors,
+    mongoToPublic,
+    MongoErrors,
     objectId
 } from '@mannercode/common'
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { InjectModel } from '@nestjs/mongoose'
-import { Model, UpdateQuery } from 'mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import { z } from 'zod'
+import { AppConfigService, MongoConnection } from '#config'
 import type { CreateAdminDto, UpdateAdminDto } from './dtos/index.js'
 import { Admin } from './models/index.js'
 
+const AdminWriteSchema = z.strictObject({
+    email: z.string().min(1),
+    name: z.string().min(1),
+    password: z.string().min(1)
+})
+const AdminPatchSchema = AdminWriteSchema.partial()
+
 @Injectable()
 export class AdminsRepository extends CrudRepository<Admin> {
-    constructor(
-        @InjectModel(Admin.name, MONGO_CONNECTION_NAME)
-        readonly model: Model<Admin>,
-        config: AppConfigService
-    ) {
-        super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
+    constructor(connection: MongoConnection, config: AppConfigService) {
+        super(
+            connection.db.collection('admins'),
+            connection.client,
+            config.http.paginationDefaultSize,
+            config.http.paginationMaxSize,
+            {
+                indexes: [{ key: { email: 1, deletedAt: 1 }, unique: true }],
+                projection: { password: 0 }
+            }
+        )
     }
 
     async create(createDto: CreateAdminDto) {
+        AdminWriteSchema.parse(createDto)
         const admin = this.newDocument()
         admin.email = createDto.email
         admin.name = createDto.name
         admin.password = createDto.password
+        admin.authVersion = 0
 
-        await admin.save()
-
-        return admin.toJSON()
+        return this.insertOne(admin)
     }
 
     async findByEmailWithPassword(email: string) {
-        const admin = await this.model
-            .findOne({ email: { $eq: email } })
-            .select('+password')
-            .lean()
-            .exec()
+        const admin = await this.collection.findOne(this.activeFilter({ email: { $eq: email } }))
 
-        return leanOneToPublic<Admin>(admin)
+        return mongoToPublic<Admin>(admin)
     }
 
     async findAuthVersionById(adminId: string): Promise<number | null> {
-        const admin = await this.model
-            .findById(objectId(adminId))
-            .select('authVersion')
-            .lean()
-            .exec()
+        const admin = await this.collection.findOne(this.activeFilter({ _id: objectId(adminId) }), {
+            projection: { authVersion: 1 }
+        })
 
         return admin ? ((admin as { authVersion?: number }).authVersion ?? 0) : null
     }
@@ -59,34 +65,32 @@ export class AdminsRepository extends CrudRepository<Admin> {
     }
 
     async deleteByIdWithAuthVersion(adminId: string): Promise<void> {
-        const admin = await this.model
-            .findOneAndUpdate(
-                { _id: objectId(adminId) },
-                { $inc: { authVersion: 1 }, $set: { deletedAt: new Date() } },
-                { returnDocument: 'before' }
-            )
-            .exec()
+        const admin = await this.collection.findOneAndUpdate(
+            this.activeFilter({ _id: objectId(adminId) }),
+            this.timestamped({ $inc: { authVersion: 1 }, $set: { deletedAt: new Date() } }),
+            { returnDocument: 'before' }
+        )
 
-        if (!admin) throw new NotFoundException(MongooseErrors.DocumentNotFound(adminId))
+        if (!admin) throw new NotFoundException(MongoErrors.DocumentNotFound(adminId))
     }
 
     async update(id: string, patch: UpdateAdminDto) {
+        AdminPatchSchema.parse(patch)
         const fields: Partial<Pick<Admin, 'email' | 'name' | 'password'>> = {}
         assignIfDefined(fields, patch, 'email')
         assignIfDefined(fields, patch, 'name')
         assignIfDefined(fields, patch, 'password')
 
-        const update: UpdateQuery<Admin> = { $set: fields }
+        const update: Document = { $set: fields }
         if (patch.password !== undefined) update.$inc = { authVersion: 1 }
 
-        const doc = await this.model
-            .findOneAndUpdate({ _id: objectId(id) }, update, {
-                returnDocument: 'after',
-                runValidators: true
-            })
-            .exec()
+        const doc = await this.collection.findOneAndUpdate(
+            this.activeFilter({ _id: objectId(id) }),
+            this.timestamped(update),
+            { projection: this.projection, returnDocument: 'after' }
+        )
 
-        if (!doc) throw new NotFoundException(MongooseErrors.DocumentNotFound(id))
-        return doc.toJSON()
+        if (!doc) throw new NotFoundException(MongoErrors.DocumentNotFound(id))
+        return mongoToPublic<Admin>(doc)
     }
 }

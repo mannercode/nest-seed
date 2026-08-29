@@ -1,25 +1,15 @@
-import { Checksum, createCrudSchema, CrudSchema } from '@mannercode/common'
-import { Prop, Schema } from '@nestjs/mongoose'
-import { MONGOOSE_SCHEMA_OPTIONS } from '#config'
+import { type Checksum, CrudDocument } from '@mannercode/common'
 
-@Schema(MONGOOSE_SCHEMA_OPTIONS)
-export class Asset extends CrudSchema {
-    @Prop({ required: true, type: Object })
+export class Asset extends CrudDocument {
     checksum: Checksum
 
-    @Prop({ required: true })
     mimeType: string
 
-    @Prop({ required: true })
     originalName: string
 
-    @Prop({ default: null, type: String })
     ownerEntityId: null | string
 
-    @Prop({ default: null, type: String })
     ownerService: null | string
 
-    @Prop({ required: true })
     size: number
 }
-export const AssetSchema = createCrudSchema(Asset)

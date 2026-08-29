@@ -85,6 +85,14 @@ describe('TheatersService', () => {
                 .body({})
                 .notFound(Errors.Mongoose.DocumentNotFound(nullObjectId))
         })
+
+        it('필수 필드를 null로 바꾸는 직접 호출은 저장 전에 거부한다', async () => {
+            const { TheatersService } = await import('#core')
+            const theatersService = fix.module.get(TheatersService)
+
+            await expect(theatersService.update(theater.id, { name: null })).rejects.toThrow()
+            await fix.httpClient.get(`/theaters/${theater.id}`).ok(theater)
+        })
     })
 
     describe('DELETE /theaters/:id', () => {

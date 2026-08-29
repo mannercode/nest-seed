@@ -1,15 +1,14 @@
-import type { Model } from 'mongoose'
 import {
     CrudRepository,
     ensure,
     isDuplicateKeyError,
-    leanOneToPublic,
-    newObjectIdString
+    mongoToPublic,
+    newObjectIdString,
+    objectId
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { InjectModel } from '@nestjs/mongoose'
 import { randomUUID } from 'node:crypto'
-import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import { AppConfigService, MongoConnection } from '#config'
 import { ShowtimeCreationSubmission } from './models/index.js'
 
 export type ShowtimeCreationSubmissionClaim =
@@ -20,12 +19,24 @@ export type ShowtimeCreationSubmissionClaim =
 
 @Injectable()
 export class ShowtimeCreationSubmissionRepository extends CrudRepository<ShowtimeCreationSubmission> {
-    constructor(
-        @InjectModel(ShowtimeCreationSubmission.name, MONGO_CONNECTION_NAME)
-        readonly model: Model<ShowtimeCreationSubmission>,
-        config: AppConfigService
-    ) {
-        super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
+    constructor(connection: MongoConnection, config: AppConfigService) {
+        super(
+            connection.db.collection('showtimecreationsubmissions'),
+            connection.client,
+            config.http.paginationDefaultSize,
+            config.http.paginationMaxSize,
+            {
+                hardDelete: true,
+                indexes: [
+                    {
+                        key: { principalId: 1, idempotencyKey: 1 },
+                        name: 'principal_idempotency_key_unique',
+                        unique: true
+                    },
+                    { key: { sagaId: 1 }, unique: true }
+                ]
+            }
+        )
     }
 
     async acquire(
@@ -47,7 +58,7 @@ export class ShowtimeCreationSubmissionRepository extends CrudRepository<Showtim
         submission.sagaId = sagaId
 
         try {
-            await submission.save()
+            await this.insertOne(submission)
             return { claimId, kind: 'acquired', sagaId }
         } catch (error) {
             if (!isDuplicateKeyError(error)) throw error
@@ -65,20 +76,17 @@ export class ShowtimeCreationSubmissionRepository extends CrudRepository<Showtim
 
         // 이전 서버가 Restate 제출 결과를 기록하기 전에 종료됐다면 같은 saga ID로 이어받는다.
         // 같은 workflow key의 재제출은 기존 invocation을 가리키므로 실행은 하나만 유지된다.
-        const claimed = await this.model
-            .findOneAndUpdate(
-                {
-                    _id: existing.id,
-                    acceptedAt: null,
-                    claimUntil: { $lte: now },
-                    inputHash,
-                    principalId
-                },
-                { $set: { claimId, claimUntil } },
-                { returnDocument: 'after' }
-            )
-            .lean()
-            .exec()
+        const claimed = await this.collection.findOneAndUpdate(
+            {
+                _id: objectId(existing.id),
+                acceptedAt: null,
+                claimUntil: { $lte: now },
+                inputHash,
+                principalId
+            },
+            this.timestamped({ $set: { claimId, claimUntil } }),
+            { returnDocument: 'after' }
+        )
 
         return claimed
             ? { claimId, kind: 'acquired', sagaId: existing.sagaId }
@@ -91,29 +99,24 @@ export class ShowtimeCreationSubmissionRepository extends CrudRepository<Showtim
         claimId: string,
         acceptedAt: Date
     ) {
-        const submission = await this.model
-            .findOneAndUpdate(
-                { acceptedAt: null, claimId, idempotencyKey, principalId },
-                { $set: { acceptedAt, claimId: null, claimUntil: null } },
-                { returnDocument: 'after' }
-            )
-            .lean()
-            .exec()
+        const submission = await this.collection.findOneAndUpdate(
+            { acceptedAt: null, claimId, idempotencyKey, principalId },
+            this.timestamped({ $set: { acceptedAt, claimId: null, claimUntil: null } }),
+            { returnDocument: 'after' }
+        )
 
-        return leanOneToPublic<ShowtimeCreationSubmission>(submission)
+        return mongoToPublic<ShowtimeCreationSubmission>(submission)
     }
 
     async release(principalId: string, idempotencyKey: string, claimId: string) {
-        await this.model
-            .updateOne(
-                { acceptedAt: null, claimId, idempotencyKey, principalId },
-                { $set: { claimId: null, claimUntil: new Date(0) } }
-            )
-            .exec()
+        await this.collection.updateOne(
+            { acceptedAt: null, claimId, idempotencyKey, principalId },
+            this.timestamped({ $set: { claimId: null, claimUntil: new Date(0) } })
+        )
     }
 
     async findByKey(principalId: string, idempotencyKey: string) {
-        const submission = await this.model.findOne({ idempotencyKey, principalId }).lean().exec()
-        return leanOneToPublic<ShowtimeCreationSubmission>(submission)
+        const submission = await this.collection.findOne({ idempotencyKey, principalId })
+        return mongoToPublic<ShowtimeCreationSubmission>(submission)
     }
 }

@@ -1,4 +1,4 @@
-import type { ClientSession } from 'mongoose'
+import type { ClientSession } from 'mongodb'
 import { DateUtil, Require, uniq } from '@mannercode/common'
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 import {

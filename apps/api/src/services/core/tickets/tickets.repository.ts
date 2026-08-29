@@ -1,14 +1,13 @@
+import type { ClientSession } from 'mongodb'
 import {
     QueryBuilderOptions,
     CrudRepository,
     objectIds,
     QueryBuilder,
-    leanArrayToPublic
+    mongoArrayToPublic
 } from '@mannercode/common'
 import { ConflictException, Injectable } from '@nestjs/common'
-import { InjectModel } from '@nestjs/mongoose'
-import { ClientSession, Model } from 'mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import { AppConfigService, MongoConnection } from '#config'
 import {
     AggregateTicketSalesDto,
     CreateTicketDto,
@@ -20,35 +19,40 @@ import { Ticket, TicketStatus } from './models/index.js'
 
 @Injectable()
 export class TicketsRepository extends CrudRepository<Ticket> {
-    constructor(
-        @InjectModel(Ticket.name, MONGO_CONNECTION_NAME) readonly model: Model<Ticket>,
-        config: AppConfigService
-    ) {
-        super(model, config.http.paginationDefaultSize, config.http.paginationMaxSize)
+    constructor(connection: MongoConnection, config: AppConfigService) {
+        super(
+            connection.db.collection('tickets'),
+            connection.client,
+            config.http.paginationDefaultSize,
+            config.http.paginationMaxSize,
+            { indexes: [{ key: { deletedAt: 1, showtimeId: 1 } }, { key: { sagaId: 1 } }] }
+        )
     }
 
     async aggregateSales(aggregateDto: AggregateTicketSalesDto) {
         const query = this.buildQuery(aggregateDto)
 
-        const showtimeTicketSalesArray = await this.model.aggregate<TicketSalesForShowtimeDto>([
-            { $match: query },
-            {
-                $group: {
-                    _id: '$showtimeId',
-                    sold: { $sum: { $cond: [{ $eq: ['$status', TicketStatus.Sold] }, 1, 0] } },
-                    total: { $sum: 1 }
+        const showtimeTicketSalesArray = await this.collection
+            .aggregate<TicketSalesForShowtimeDto>([
+                { $match: this.activeFilter(query) },
+                {
+                    $group: {
+                        _id: '$showtimeId',
+                        sold: { $sum: { $cond: [{ $eq: ['$status', TicketStatus.Sold] }, 1, 0] } },
+                        total: { $sum: 1 }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        available: { $subtract: ['$total', '$sold'] },
+                        showtimeId: { $toString: '$_id' },
+                        sold: 1,
+                        total: 1
+                    }
                 }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    available: { $subtract: ['$total', '$sold'] },
-                    showtimeId: { $toString: '$_id' },
-                    sold: 1,
-                    total: 1
-                }
-            }
-        ])
+            ])
+            .toArray()
 
         return showtimeTicketSalesArray
     }
@@ -66,18 +70,22 @@ export class TicketsRepository extends CrudRepository<Ticket> {
             ticket.showtimeId = dto.showtimeId
             ticket.status = dto.status
             ticket.seat = dto.seat
+            ticket.purchaseRecordId = null
 
             return ticket
         })
 
-        await this.saveMany(tickets, session, signal)
+        await this.insertMany(tickets, session, signal)
     }
 
     async search(searchDto: SearchTicketsDto) {
         const query = this.buildQuery(searchDto)
 
-        const tickets = await this.model.find(query).sort({ sagaId: 1 }).lean().exec()
-        return leanArrayToPublic<Ticket>(tickets)
+        const tickets = await this.collection
+            .find(this.activeFilter(query))
+            .sort({ sagaId: 1 })
+            .toArray()
+        return mongoArrayToPublic<Ticket>(tickets)
     }
 
     async transitStatusMany(
@@ -105,11 +113,18 @@ export class TicketsRepository extends CrudRepository<Ticket> {
                       ? { $set: { status: to }, $unset: { purchaseRecordId: 1 } }
                       : { $set: { status: to } }
 
-            const result = await this.model.updateMany(filter, update, { session: activeSession })
+            const activeFilter = this.activeFilter(filter)
+            const result = await this.collection.updateMany(
+                activeFilter,
+                this.timestamped(update),
+                { session: activeSession }
+            )
 
             if (result.matchedCount !== ticketIds.length) {
                 // 세션 없는 조회는 커밋 전 상태를 보므로, 전이할 수 없었던 티켓이 그대로 드러난다.
-                const eligibleDocs = await this.model.find(filter, { _id: 1 }).lean()
+                const eligibleDocs = await this.collection
+                    .find(activeFilter, { projection: { _id: 1 } })
+                    .toArray()
                 const eligibleIds = new Set(eligibleDocs.map((doc) => String(doc._id)))
                 const failedIds = ticketIds.filter((ticketId) => !eligibleIds.has(ticketId))
                 throw new ConflictException(TicketErrors.StatusTransitionFailed(failedIds))
@@ -125,9 +140,11 @@ export class TicketsRepository extends CrudRepository<Ticket> {
 
     async getPurchaseReleaseIds(ticketIds: string[], purchaseRecordId: string) {
         const ids = objectIds(ticketIds)
-        const tickets = await this.model
-            .find({ _id: { $in: ids } }, { _id: 1, purchaseRecordId: 1, status: 1 })
-            .lean()
+        const tickets = await this.collection
+            .find(this.activeFilter({ _id: { $in: ids } }), {
+                projection: { _id: 1, purchaseRecordId: 1, status: 1 }
+            })
+            .toArray()
 
         const foundIds = new Set(tickets.map((ticket) => String(ticket._id)))
         const missingIds = ticketIds.filter((ticketId) => !foundIds.has(ticketId))
@@ -159,9 +176,16 @@ export class TicketsRepository extends CrudRepository<Ticket> {
     async releaseOwnedPurchaseForCompensation(ticketIds: string[], purchaseRecordId: string) {
         // 보상 재시도 시점에는 이전 owner가 이미 풀어 준 티켓이 새 구매에
         // 팔렸을 수 있다. 오직 이 구매가 아직 소유한 Sold만 풀고 나머지는 no-op한다.
-        await this.model.updateMany(
-            { _id: { $in: objectIds(ticketIds) }, purchaseRecordId, status: TicketStatus.Sold },
-            { $set: { status: TicketStatus.Available }, $unset: { purchaseRecordId: 1 } }
+        await this.collection.updateMany(
+            this.activeFilter({
+                _id: { $in: objectIds(ticketIds) },
+                purchaseRecordId,
+                status: TicketStatus.Sold
+            }),
+            this.timestamped({
+                $set: { status: TicketStatus.Available },
+                $unset: { purchaseRecordId: 1 }
+            })
         )
     }
 

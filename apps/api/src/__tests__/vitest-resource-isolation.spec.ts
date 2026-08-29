@@ -8,7 +8,7 @@ import { Redis } from 'ioredis'
 import fs from 'node:fs'
 import path from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
-import { getSharedTestMongooseConnection } from '../../scripts/index.cjs'
+import { getSharedTestMongoConnection } from '../../scripts/index.cjs'
 
 const startupProjectId = process.env.PROJECT_ID
 
@@ -43,7 +43,7 @@ async function runInfrastructureProbe(role: 'A' | 'B'): Promise<void> {
     const sentinel = `sentinel-${role.toLowerCase()}-${runId}`
     const redisKey = `vitest-isolation:${projectId}:${sentinel}`
     const s3Key = `vitest-isolation/${sentinel}`
-    const mongo = getSharedTestMongooseConnection().connection.getClient()
+    const mongo = getSharedTestMongoConnection().client
     const s3 = createS3Client()
     const redis = createRedisCluster()
 

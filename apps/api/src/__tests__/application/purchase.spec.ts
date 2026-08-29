@@ -886,12 +886,10 @@ describe('PurchaseService', () => {
                 await didStartSale
                 Require.defined(purchaseRecordId)
 
-                await purchaseRecordsRepository.model
-                    .updateOne(
-                        { _id: objectId(purchaseRecordId) },
-                        { $set: { completionLeaseUntil: new Date(0) } }
-                    )
-                    .exec()
+                await purchaseRecordsRepository.collection.updateOne(
+                    { _id: objectId(purchaseRecordId), deletedAt: null },
+                    { $set: { completionLeaseUntil: new Date(0), updatedAt: new Date() } }
+                )
                 await purchaseService.reconcilePendingPurchases(new Date(Date.now() + 1000))
 
                 continueSale()
@@ -1467,8 +1465,11 @@ describe('PurchaseService', () => {
         const paymentsRepository = fix.module.get(PaymentsRepository)
         const purchaseRecordsRepository = fix.module.get(PurchaseRecordsRepository)
         const staleAt = new Date(Date.now() - 11 * 60 * 1000)
+        // native raw insert는 repository defaults를 거치지 않는다. Mongoose가 기존 문서에
+        // 만들던 base metadata는 직접 넣고, migration 대상 marker와 연결 ID만 생략한다.
         const insertLegacyPayment = async () =>
-            paymentsRepository.model.collection.insertOne({
+            paymentsRepository.collection.insertOne({
+                __v: 0,
                 amount: 1,
                 createdAt: staleAt,
                 deletedAt: null,
@@ -1478,8 +1479,11 @@ describe('PurchaseService', () => {
             })
 
         const successfulPayment = await insertLegacyPayment()
+        // PurchaseRecord raw 문서도 __v·timestamps·deletedAt은 당시 Mongoose 생성값을
+        // 재현한다. 첫 문서의 status만 upgrade 전 호환 경로를 검증하려고 생략한다.
         const { insertedId: successfulRecordId } =
-            await purchaseRecordsRepository.model.collection.insertOne({
+            await purchaseRecordsRepository.collection.insertOne({
+                __v: 0,
                 createdAt: staleAt,
                 deletedAt: null,
                 paymentId: String(successfulPayment.insertedId),
@@ -1492,7 +1496,8 @@ describe('PurchaseService', () => {
             })
 
         const cancelledPayment = await insertLegacyPayment()
-        await purchaseRecordsRepository.model.collection.insertOne({
+        await purchaseRecordsRepository.collection.insertOne({
+            __v: 0,
             createdAt: staleAt,
             deletedAt: null,
             paymentId: String(cancelledPayment.insertedId),
@@ -1506,7 +1511,8 @@ describe('PurchaseService', () => {
         const orphanPayment = await insertLegacyPayment()
         const pendingPayment = await insertLegacyPayment()
         const { insertedId: pendingRecordId } =
-            await purchaseRecordsRepository.model.collection.insertOne({
+            await purchaseRecordsRepository.collection.insertOne({
+                __v: 0,
                 createdAt: staleAt,
                 deletedAt: null,
                 paymentId: String(pendingPayment.insertedId),
@@ -1526,7 +1532,7 @@ describe('PurchaseService', () => {
 
         const [successful, cancelled, orphan, pending] = await Promise.all(
             [successfulPayment, cancelledPayment, orphanPayment, pendingPayment].map(
-                ({ insertedId }) => paymentsRepository.model.collection.findOne({ _id: insertedId })
+                ({ insertedId }) => paymentsRepository.collection.findOne({ _id: insertedId })
             )
         )
         expect(successful).toEqual(
@@ -1606,10 +1612,13 @@ describe('PurchaseService', () => {
 
         await purchaseService.reconcilePendingPurchases(new Date(Date.now() + 1000))
 
-        const oldRecord = await purchaseRecordsRepository.model.findById(oldPurchase.id).lean()
-        const tickets = await ticketsRepository.model
-            .find({ _id: { $in: pickIds(heldTickets).map(objectId) } })
-            .lean()
+        const oldRecord = await purchaseRecordsRepository.collection.findOne({
+            _id: objectId(oldPurchase.id),
+            deletedAt: null
+        })
+        const tickets = await ticketsRepository.collection
+            .find({ _id: { $in: pickIds(heldTickets).map(objectId) }, deletedAt: null })
+            .toArray()
         expect(oldRecord?.status).toBe(PurchaseRecordStatus.Cancelled)
         expect(
             tickets.every(
