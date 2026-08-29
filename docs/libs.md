@@ -1,6 +1,6 @@
 # libs/ — 공유 패키지
 
-워크스페이스 내부 npm 패키지 두 개다. 둘로 나뉜 기준은 **어디서 실행되는 코드인가**다.
+워크스페이스 내부 공유 패키지 두 개다. 둘로 나뉜 기준은 **어디서 실행되는 코드인가**다.
 
 ## common — 런타임 공유 코드
 
@@ -10,6 +10,6 @@
 
 HttpTestClient와 픽스처 헬퍼처럼 테스트에서만 쓰는 코드다. common과 분리한 이유는 의존 방향이다 — 앱은 testing을 devDependencies로만 받으므로, 테스트 도구가 프로덕션 의존성에 섞이는 일이 패키지 경계에서 차단된다.
 
-루트 package.json의 workspaces 배열 순서가 곧 빌드 순서다 — 의존되는 패키지가 앞에 온다.
+`pnpm-workspace.yaml`이 workspace 경로를 정의하고, pnpm은 패키지 의존 그래프에 따라 의존되는 패키지를 먼저 빌드한다.
 
 테스트 지원 코드는 두 곳에 나뉜다 — 같은 기준("어디서 실행되는가")의 결과다. 테스트 코드가 import하는 헬퍼는 `libs/testing`(TS, 빌드 필요)이고, jest 설정(jest.setup/teardown)이 빌드 없이 곧장 require해야 하는 코드는 `tools/jest-helpers`(순수 CJS)다.

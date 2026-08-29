@@ -36,14 +36,14 @@ Dev Container
 
 `postStartCommand`는 `infra/reset.sh`를 실행한다. 이 스크립트는 `infra`의 compose 파일들로 MongoDB Replica Set, Redis Cluster, VersityGW, NATS와 단일 Restate 서버를 시작한다. 이미지 태그와 `S3_BUCKET` 등은 컨테이너 환경에 이미 주입된 `.env.infra` 변수로 보간되고, 서비스 이름·포트는 compose 파일의 리터럴이다(그래서 3절의 포트 표가 필요하다).
 
-API는 Nest `ConfigModule`에서 `.env` 파일을 직접 읽지 않는다. `ignoreEnvFile: true`로 두고, 실행 경로가 준비한 `process.env`만 검증한다. Dev Container가 두 `.env`를 미리 주입했으므로 모든 워크스페이스의 npm 프로세스는 그 환경을 그대로 상속한다.
+API는 Nest `ConfigModule`에서 `.env` 파일을 직접 읽지 않는다. `ignoreEnvFile: true`로 두고, 실행 경로가 준비한 `process.env`만 검증한다. Dev Container가 두 `.env`를 미리 주입했으므로 모든 워크스페이스의 pnpm 프로세스는 그 환경을 그대로 상속한다.
 
 ```
-apps/api 통합 테스트 (npm test -w apps/api)
+apps/api 통합 테스트 (pnpm --filter './apps/api' test)
   -> .env.api + .env.infra 값이 Dev Container 환경에 이미 주입되어 있음
   -> jest는 추가 .env 로드 없이 그 process.env로 동작
 
-npm run dev
+pnpm run dev
   -> dev:api가 일반 HTTP(:3000)와 Restate HTTP/2 endpoint(:9080)를 시작
   -> dev:restate가 Admin API(:9070)에 개발 endpoint를 force 등록
 
@@ -87,7 +87,7 @@ env 파일은 자기 보간이 안 되고 compose 서비스 정의와 스크립�
 
 | 대상                     | 확인할 값                                                                                                                                                                           |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 패키지 식별자            | 루트 `package.json`의 `name`, 내부 워크스페이스의 `@mannercode/*` 이름·의존성·import·도구 alias. 새 내부 scope로 바꾸면 `package-lock.json`도 함께 갱신한다.                        |
+| 패키지 식별자            | 루트 `package.json`의 `name`, 내부 워크스페이스의 `@mannercode/*` 이름·의존성·import·도구 alias. 새 내부 scope로 바꾸면 `pnpm-lock.yaml`도 함께 갱신한다.                           |
 | Dev Container 식별자     | `.devcontainer/devcontainer.json`의 `${localEnv:USER:unknown}-${localWorkspaceFolderBasename}` network·Compose project 이름                                                         |
 | API 런타임               | `.env.api`의 `PROJECT_ID`, `AUTH_ISSUER`, `AUTH_AUDIENCE`, `ROOT_PASSWORD`                                                                                                          |
 | 인프라 런타임            | `.env.infra`의 `MONGO_DATABASE`, `S3_BUCKET`; Restate workflow 서비스 이름은 `.env.api`의 `PROJECT_ID`를 따른다.                                                                    |
@@ -99,18 +99,18 @@ env 파일은 자기 보간이 안 되고 compose 서비스 정의와 스크립�
 
 정기 CI 조건의 `repository_id == '849585972'`는 원본 저장소만 변수 없이 schedule을 실행하게 하는 immutable sentinel이다. fork에서 자기 repository ID로 바꾸면 opt-in 안전장치를 우회하므로 치환하지 않는다.
 
-패키지 scope를 바꿨다면 의존성과 lockfile을 갱신한 뒤 `npm run format`으로 import 정렬과 줄바꿈을 정리한다. 끝나면 devcontainer를 재생성(Rebuild Container)해 바뀐 `.env.*` 값이 `--env-file`로 다시 주입되게 한다. 컨테이너의 `process.env`는 생성 시점에 굳으므로, 재생성하지 않으면 개발 API와 등록 스크립트가 옛 `PROJECT_ID`·`RESTATE_*` 값으로 떠서 workflow 이름이나 endpoint URI가 어긋날 수 있다.
+패키지 scope를 바꿨다면 의존성과 lockfile을 갱신한 뒤 `pnpm run format`으로 import 정렬과 줄바꿈을 정리한다. 끝나면 devcontainer를 재생성(Rebuild Container)해 바뀐 `.env.*` 값이 `--env-file`로 다시 주입되게 한다. 컨테이너의 `process.env`는 생성 시점에 굳으므로, 재생성하지 않으면 개발 API와 등록 스크립트가 옛 `PROJECT_ID`·`RESTATE_*` 값으로 떠서 workflow 이름이나 endpoint URI가 어긋날 수 있다.
 
 개발용 `.env`의 인증 secret과 `ROOT_PASSWORD`는 시드 실행을 위한 값이다. 운영 secret은 저장소에 커밋하지 않고 배포 환경의 secret 관리 경로에서 주입한다.
 
 ## 5. Quick Tunnel 공개 경계
 
-`npx tunnel`은 서버를 인터넷에 공개하는 명시적 작업이므로 무플래그 실행을 거부한다. console·user-app을 공개하려면 다음 두 값을 **모두** 설정해야 한다.
+`pnpm exec tunnel`은 서버를 인터넷에 공개하는 명시적 작업이므로 무플래그 실행을 거부한다. console·user-app을 공개하려면 다음 두 값을 **모두** 설정해야 한다.
 
 ```bash
 TUNNEL_EXPOSE_APPS=true \
 TUNNEL_ACKNOWLEDGE_PUBLIC_DEV_STACK_RISK=true \
-npx tunnel
+pnpm exec tunnel
 ```
 
 이 모드는 console·user-app Next.js 서버를 공개한다. 두 BFF는 catch-all proxy이며, 각 앱의 역할과 맞지 않는 login/logout·외부 refresh 같은 일부 auth endpoint만 차단한다. 따라서 백엔드 API surface의 대부분이 결국 인터넷에 노출되고, 최종 권한 경계는 백엔드 guard다. 두 번째 값은 이 사실을 인지했고 격리된 폐기성 환경에서만 쓴다는 명시적 승인이다.

@@ -20,18 +20,18 @@
             "type": "pickString",
             "description": "tool",
             "options": [
-                "npm run build",
-                "npm run clean",
-                "npm run lint",
-                "npm run format",
-                "npx tunnel"
+                "pnpm run build",
+                "pnpm run clean",
+                "pnpm run lint",
+                "pnpm run format",
+                "pnpm exec tunnel"
             ]
         },
         {
             "id": "testCommand",
             "type": "pickString",
             "description": "test",
-            "options": ["npm run dev", "npm test", "npm run atoz"]
+            "options": ["pnpm run dev", "pnpm test", "pnpm run atoz"]
         }
     ]
 }

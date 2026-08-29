@@ -34,9 +34,9 @@ The minimum spec is 4 CPU cores, 16GB RAM, and 32GB of disk. To run the full tes
 First boot goes like this:
 
 1. **If you forked this as a new project**, do not mechanically replace names across the entire repository. Change only the package, env, and Compose identifiers listed in [Environment variables §4](docs/reference/environment.md#4-포크할-때-확인할-값). Review author-owned external URLs, contact details, and the original-repository ID sentinel deliberately rather than replacing them in bulk. Then follow [GitHub operations setup](docs/github-setup.md#6-fork-완료-확인) for rulesets, Actions secrets, security features, and scheduled-CI opt-in that forks do not inherit.
-2. Run `Reopen in Container` in VS Code. Once the container opens, `postStartCommand` runs `bash infra/reset.sh` to prepare the development infrastructure. The first boot can take a while — Dev Container image build, `npm install`, and infrastructure image downloads. If the infrastructure ever gets into a bad state, reset it anytime with `bash infra/reset.sh`.
-3. Run `npm test` to confirm the basic tests pass. To check the full regression right after forking, run `npm run atoz`.
-4. Start watch mode with `npm run dev`, then check the API is alive with `curl http://localhost:3000/health`.
+2. Run `Reopen in Container` in VS Code. Once the container opens, `postStartCommand` runs `bash infra/reset.sh` to prepare the development infrastructure. The first boot can take a while — Dev Container image build, `pnpm install --frozen-lockfile`, and infrastructure image downloads. If the infrastructure ever gets into a bad state, reset it anytime with `bash infra/reset.sh`.
+3. Run `pnpm run test` to confirm the basic tests pass. To check the full regression right after forking, run `pnpm run atoz`.
+4. Start watch mode with `pnpm run dev`, then check the API is alive with `curl http://localhost:3000/health`.
 5. Log in to the console (3100). Right after boot there are no admins, so create the first one with Basic auth as the root account (the username is fixed to `root`; the password is `ROOT_PASSWORD` from `.env.api`, already injected into the devcontainer terminal).
 
     ```bash
@@ -53,27 +53,27 @@ First boot goes like this:
 
 ## Development commands
 
-Development is test-driven — a test brings up the environment it needs (infrastructure plus the module under test) in code, so the loop for working on one module stays the same even after services are split apart (why this matches the design: [apps document](docs/apps.md#테스트)). The working loop is mostly running a single spec ([Tests](#tests) below); starting the apps directly with `npm run dev` gets heavier as services multiply, so use it only when you need the real app.
+Development is test-driven — a test brings up the environment it needs (infrastructure plus the module under test) in code, so the loop for working on one module stays the same even after services are split apart (why this matches the design: [apps document](docs/apps.md#테스트)). The working loop is mostly running a single spec ([Tests](#tests) below); starting the apps directly with `pnpm run dev` gets heavier as services multiply, so use it only when you need the real app.
 
-| Command               | Purpose                                                                                                            |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `npm test`            | Workspace unit, integration, and contract tests; 100% gate for implementation workspaces that collect coverage     |
-| `npm run lint`        | All static checks — type check, ESLint, Prettier, shellcheck, doc links                                            |
-| `npm run dev`         | To run the real apps — api (3000), console (3100), user-app (3200) + libs watch                                    |
-| `npm run dev:api`     | API only                                                                                                           |
-| `npm run dev:restate` | Register the development Restate endpoint when `dev:api` runs separately; included in full `dev`                   |
-| `npm run atoz`        | Full verification after forking / before deploying — lint, tests, API docs, e2e, and deployment from a clean slate |
+| Command                | Purpose                                                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `pnpm run test`        | Workspace unit, integration, and contract tests; 100% gate for implementation workspaces that collect coverage     |
+| `pnpm run lint`        | All static checks — type check, ESLint, Prettier, shellcheck, doc links                                            |
+| `pnpm run dev`         | To run the real apps — api (3000), console (3100), user-app (3200) + libs watch                                    |
+| `pnpm run dev:api`     | API only                                                                                                           |
+| `pnpm run dev:restate` | Register the development Restate endpoint when `dev:api` runs separately; included in full `dev`                   |
+| `pnpm run atoz`        | Full verification after forking / before deploying — lint, tests, API docs, e2e, and deployment from a clean slate |
 
-> `npm run clean`, which `npm run atoz` calls internally, removes only the generated paths allowlisted by `tools/clean-workspace.mjs`, such as `node_modules`, `_output`, coverage, and build output. It does not delete personal env/config files merely because they are gitignored. For the remaining scripts, see [package.json](package.json).
+> `pnpm run clean`, which `pnpm run atoz` calls internally, removes only the generated paths allowlisted by `tools/clean-workspace.mjs`, such as `node_modules`, `_output`, coverage, and build output. It does not delete personal env/config files merely because they are gitignored. For the remaining scripts, see [package.json](package.json).
 
 ## Tests
 
 ```bash
-npm test -w apps/api -- users.spec --coverage=false   # run a single spec (gate off)
-npm run e2e                                           # console and user-app browser e2e (Playwright)
-npm run e2e:report                                    # open the latest browser e2e HTML report
-npm run race -- <scenario>                            # distributed races — brings up a multi-replica deployment stack
-npm run benchmark:api                                # performance measurement — stack boot, seeding, measurement, teardown in one go
+pnpm --filter './apps/api' test users.spec --coverage=false        # run a single spec (gate off)
+pnpm run e2e                                                     # console and user-app browser e2e (Playwright)
+pnpm run e2e:report                                              # open the latest browser e2e HTML report
+pnpm run race <scenario>                                         # distributed races — brings up a multi-replica deployment stack
+pnpm run benchmark:api                                           # performance measurement — stack boot, seeding, measurement, teardown in one go
 ```
 
 The test system and writing rules are described in the [apps document](docs/apps.md#테스트); how to run and interpret the distributed race and performance tools, in the [tests document](docs/tests.md).
@@ -94,7 +94,7 @@ There is deliberately no Swagger/OpenAPI (the reasoning is in [Design decisions]
 
 ```
 nest-seed/
-├── libs/                    ← shared libraries (npm packages)
+├── libs/                    ← shared libraries (workspace packages)
 │   ├── common/              ← @mannercode/common — Mongoose, Redis, JWT, S3, Logger, NATS
 │   └── testing/             ← @mannercode/testing — HttpTestClient, fixture helpers
 │
@@ -134,13 +134,13 @@ If a tool is new to you, start from the code path or document in the "Where it's
 | Next.js                          | console and user-app minimal demos                                                                                                                              |
 | @nestjs/jwt + bcrypt             | Per-role token signing/verification — `gateway/guards`; password hashing — `core/{users,admins}/internal`                                                       |
 | class-validator                  | DTO validation — each service's `dtos/`                                                                                                                         |
-| npm workspaces                   | Monorepo layout. Shares libs as internal packages                                                                                                               |
+| pnpm workspace                   | Monorepo layout. Shares libs as internal packages                                                                                                               |
 | Jest + Testcontainers            | Unit and integration tests. `libs/common` brings up its own infrastructure — [apps document](docs/apps.md#테스트)                                               |
 | Playwright                       | Console/user-app browser e2e and shared BFF contracts — `tests/web`                                                                                             |
 | k6                               | Performance comparison harness — `tests/api-benchmark`                                                                                                          |
 | Docker Compose + NGINX           | Development infrastructure (`infra/`) and multi-container deployment (`deploy/`)                                                                                |
 | GitHub Actions                   | atoz regression and repeated stability verification — `.github/workflows`                                                                                       |
-| cloudflared (`npx tunnel`)       | Always refuses direct API; app BFFs proxy most API routes except selected auth endpoints, so exposure requires both opt-in flags in a disposable environment    |
+| cloudflared (`pnpm exec tunnel`) | Always refuses direct API; app BFFs proxy most API routes except selected auth endpoints, so exposure requires both opt-in flags in a disposable environment    |
 | ESLint·Prettier·husky·commitlint | Layer-dependency enforcement (eslint-plugin-boundaries) — [apps document](docs/apps.md#sola-5계층); commit hooks — [Conventions](docs/reference/conventions.md) |
 
 ## Domain tour
@@ -193,7 +193,7 @@ The detail behind this README lives in six folder documents, four references, an
 **References** — cross-cutting topics that belong to no single folder live in `docs/reference/`:
 
 - [Tutorial](docs/reference/tutorial.md) — from use cases to tests, walking this seed's design flow from the start (for backend beginners)
-- [Conventions](docs/reference/conventions.md) — commit rules, fail-fast, where values live, npm script contracts
+- [Conventions](docs/reference/conventions.md) — commit rules, fail-fast, where values live, pnpm script contracts
 - [Environment variables](docs/reference/environment.md) — env-variable flow for the Dev Container, API, API docs, and console/user-app, plus the fork checklist
 - [Design decisions](docs/reference/decisions.md) — the key design decisions (distributed tooling, the View layer, and more) and the alternatives not taken
 

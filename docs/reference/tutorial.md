@@ -450,7 +450,7 @@ jest --> impl
 
 ```sh
 bash apps/api/api-docs/run.sh theaters.spec              # spec 실행 — 테스트이자 문서
-npm test -w apps/api -- theaters.spec --coverage=false   # 같은 도메인의 Jest 통합 테스트
+pnpm --filter './apps/api' test theaters.spec --coverage=false # 같은 도메인의 Jest 통합 테스트
 ```
 
 ## 6. 직접 걸어보기 — 새 기능을 추가한다면

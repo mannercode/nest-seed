@@ -25,18 +25,33 @@ test('root scripts keep cleanup and shell lint gates explicit', async () => {
     const packageJson = JSON.parse(await read('package.json'))
     const lintStaged = await read('.lintstagedrc.cjs')
     const lintStagedJavaScript = await read('tools/lint-staged-js.mjs')
-    const npmrc = await read('.npmrc')
+    const workspace = await read('pnpm-workspace.yaml')
 
+    assert.equal(packageJson.packageManager, 'pnpm@11.24.0')
+    assert.equal(packageJson.workspaces, undefined)
     assert.equal(packageJson.scripts.clean, 'node tools/clean-workspace.mjs')
     assert.match(packageJson.scripts['lint:root'], /node tools\/lint-shell\.mjs/)
-    assert.match(packageJson.scripts.lint, /npm run lint:root/)
-    assert.match(packageJson.scripts.atoz, /npm run test:config/)
-    assert.match(packageJson.scripts.atoz, /npm run lint:root/)
-    assert.doesNotMatch(packageJson.scripts.atoz, /npm run lint(?:\s|&&)/)
+    assert.match(packageJson.scripts.lint, /pnpm run lint:root/)
+    assert.match(packageJson.scripts.atoz, /pnpm run test:config/)
+    assert.match(
+        packageJson.scripts.atoz,
+        /--filter '\.\/libs\/\*\*'[^&]*--fail-if-no-match run atoz/
+    )
+    assert.match(packageJson.scripts.atoz, /--filter '!\.\/libs\/\*\*'[^&]*run atoz/)
+    assert.match(packageJson.scripts.atoz, /pnpm run lint:root/)
+    assert.doesNotMatch(packageJson.scripts.atoz, /pnpm run lint(?:\s|&&)/)
+    for (const script of ['pretest', 'predev']) {
+        assert.match(packageJson.scripts[script], /--fail-if-no-match/)
+        assert.doesNotMatch(packageJson.scripts[script], /--if-present/)
+    }
     assert.match(lintStagedJavaScript, /tests\/api-race/)
     assert.match(lintStaged, /apps\/api\/api-docs\/\*\.\{fixture,spec\}/)
     assert.match(lintStaged, /\.husky\/\*/)
-    assert.match(npmrc, /^save-exact=true$/m)
+    assert.match(workspace, /^saveExact: true$/m)
+    assert.match(workspace, /^strictDepBuilds: true$/m)
+    for (const pattern of ['apps/*', 'libs/*', 'tests/*', 'tools/*']) {
+        assert.match(workspace, new RegExp(`^\\s+- '${pattern.replace('*', '\\*')}'$`, 'm'))
+    }
 })
 
 test('lint-staged delegates JavaScript paths without shell re-quoting', () => {
@@ -51,12 +66,12 @@ test('API JavaScript uses the Node recommended rules in workspace lint', async (
 
     const printedConfig = JSON.parse(
         execFileSync(
-            'npm',
+            'pnpm',
             [
+                '--filter',
+                './apps/api',
+                '--fail-if-no-match',
                 'exec',
-                '--workspace',
-                'apps/api',
-                '--',
                 'eslint',
                 '--print-config',
                 'scripts/index.js'
@@ -74,7 +89,11 @@ test('installed dependency specs are exact while peer compatibility ranges stay 
         for (const section of ['dependencies', 'devDependencies', 'optionalDependencies']) {
             for (const [dependency, spec] of Object.entries(packageJson[section] ?? {})) {
                 if (dependency.startsWith('@mannercode/')) {
-                    assert.equal(spec, '*', `${manifest} ${section}.${dependency} must be local`)
+                    assert.equal(
+                        spec,
+                        'workspace:*',
+                        `${manifest} ${section}.${dependency} must be local`
+                    )
                 } else {
                     assert.match(
                         spec,
@@ -92,7 +111,10 @@ test('devcontainer preserves install, naming, and credential mount behavior', as
     const dockerfile = await read('.devcontainer/Dockerfile')
     const lock = JSON.parse(await read('.devcontainer/devcontainer-lock.json'))
 
-    assert.match(config, /"postCreateCommand"\s*:\s*\{\s*"install"\s*:\s*"npm install"/)
+    assert.match(
+        config,
+        /"postCreateCommand"\s*:\s*\{\s*"install"\s*:\s*"pnpm install --frozen-lockfile"/
+    )
     assert.match(dockerfile, /ARG PNPM_VERSION=\d+\.\d+\.\d+/)
     assert.match(dockerfile, /"pnpm@\$\{PNPM_VERSION\}"/)
     assert.match(dockerfile, /pnpm --version/)
@@ -137,9 +159,11 @@ test('dependency image copies and hashes every tracked package manifest', async 
         }
     )
     const inputs = [
-        '.npmrc',
         'deploy/deps.Dockerfile',
-        'package-lock.json',
+        'pnpm-lock.yaml',
+        'pnpm-workspace.yaml',
+        'tools/dev-tools/free-port.js',
+        'tools/dev-tools/tunnel.sh',
         ...trackedPackageManifests()
     ]
     const checksums = []
@@ -151,6 +175,12 @@ test('dependency image copies and hashes every tracked package manifest', async 
     }
     const expected = createHash('sha256').update(checksums.join('')).digest('hex').slice(0, 16)
     assert.equal(actual, expected)
+})
+
+test('API image passes production mode to pnpm deploy without mutating the build workspace', async () => {
+    const dockerfile = await read('apps/api/Dockerfile')
+    assert.match(dockerfile, /--fail-if-no-match deploy --prod --legacy/)
+    assert.doesNotMatch(dockerfile, /--prod deploy/)
 })
 
 test('dependency image hashing failure stops before Docker', async (t) => {
@@ -288,7 +318,7 @@ test('GitHub workflows pin actions, protect scheduled forks, and retain diagnost
             /github\.event_name != 'schedule' \|\| github\.repository_id == '849585972' \|\| vars\.ENABLE_SCHEDULED_CI == 'true'/
         )
         assert.doesNotMatch(contents, /github\.repository ==/)
-        assert.match(contents, /git diff --exit-code -- package-lock\.json/)
+        assert.match(contents, /git diff --exit-code -- pnpm-lock\.yaml pnpm-workspace\.yaml/)
     }
     const atoz = await read('.github/workflows/test-atoz.yaml')
     assert.match(atoz, /_output\/deploy-diagnostics/)
@@ -299,7 +329,7 @@ test('Stability keeps 60 API repetitions within three timeout-safe jobs', async 
     const workflow = await read('.github/workflows/test-stability.yaml')
     const apiJobs = [
         ...workflow.matchAll(
-            /- leg: unit-api-(\d+)\n\s+timeout: (\d+)\n\s+run: \|\n\s+npm run build\n\s+RESET_EVERY=5 bash \.github\/scripts\/repeat\.sh (\d+) npm test -w apps\/api/g
+            /- leg: unit-api-(\d+)\n\s+timeout: (\d+)\n\s+run: \|\n\s+pnpm run build\n\s+RESET_EVERY=5 bash \.github\/scripts\/repeat\.sh (\d+) pnpm --filter '\.\/apps\/api' --fail-if-no-match run test/g
         )
     ].map(([, leg, timeout, repetitions]) => ({
         leg: Number(leg),

@@ -33,7 +33,8 @@ export default defineConfig({
     projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
     webServer: [
         {
-            command: 'npm run build -w apps/api && npm run start -w apps/api',
+            command:
+                "pnpm --filter './apps/api' --fail-if-no-match run build && pnpm --filter './apps/api' --fail-if-no-match run start",
             url: `${API_BASE_URL}/health`,
             reuseExistingServer: !process.env.CI,
             timeout: 240_000,
@@ -41,7 +42,7 @@ export default defineConfig({
         },
         {
             command:
-                'BFF_TRUST_PROXY_HEADERS=true npm run build -w apps/console && BFF_TRUST_PROXY_HEADERS=true npm run start -w apps/console',
+                "BFF_TRUST_PROXY_HEADERS=true pnpm --filter './apps/console' --fail-if-no-match run build && BFF_TRUST_PROXY_HEADERS=true pnpm --filter './apps/console' --fail-if-no-match run start",
             url: BASE_URL,
             reuseExistingServer: !process.env.CI,
             timeout: 240_000,
@@ -49,7 +50,7 @@ export default defineConfig({
         },
         {
             command:
-                'BFF_TRUST_PROXY_HEADERS=true npm run build -w apps/user-app && BFF_TRUST_PROXY_HEADERS=true npm run start -w apps/user-app',
+                "BFF_TRUST_PROXY_HEADERS=true pnpm --filter './apps/user-app' --fail-if-no-match run build && BFF_TRUST_PROXY_HEADERS=true pnpm --filter './apps/user-app' --fail-if-no-match run start",
             url: USER_APP_BASE_URL,
             reuseExistingServer: !process.env.CI,
             timeout: 240_000,

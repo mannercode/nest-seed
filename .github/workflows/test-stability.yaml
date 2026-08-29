@@ -25,27 +25,27 @@ jobs:
                     - leg: unit-libs
                       timeout: 180
                       run: |
-                          npm run build
-                          bash .github/scripts/repeat.sh 75 npm test -w libs -- --coverageThreshold='{}'
+                          pnpm run build
+                          bash .github/scripts/repeat.sh 75 pnpm --recursive --filter './libs/**' --workspace-concurrency=1 --fail-if-no-match run test --coverageThreshold='{}'
                     - leg: unit-api-1
                       timeout: 240
                       run: |
-                          npm run build
-                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 npm test -w apps/api -- --coverage=false --coverageThreshold='{}'
+                          pnpm run build
+                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 pnpm --filter './apps/api' --fail-if-no-match run test --coverage=false --coverageThreshold='{}'
                     - leg: unit-api-2
                       timeout: 240
                       run: |
-                          npm run build
-                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 npm test -w apps/api -- --coverage=false --coverageThreshold='{}'
+                          pnpm run build
+                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 pnpm --filter './apps/api' --fail-if-no-match run test --coverage=false --coverageThreshold='{}'
                     - leg: unit-api-3
                       timeout: 240
                       run: |
-                          npm run build
-                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 npm test -w apps/api -- --coverage=false --coverageThreshold='{}'
+                          pnpm run build
+                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 pnpm --filter './apps/api' --fail-if-no-match run test --coverage=false --coverageThreshold='{}'
                     - leg: bootup
                       timeout: 120
                       run: |
-                          npm run build
+                          pnpm run build
                           bash .github/scripts/repeat.sh 50 bash infra/reset.sh
                     # 분산 레이스 50회는 의도된 누적 검증량이다.
                     # 240분은 가장 느린 시나리오(user-signup-race 50회 ~200분)에 여유를 둔 값.
@@ -109,11 +109,11 @@ jobs:
                       MONGO_DIAGNOSTICS_ON_TEST_FAILURE
                   runCmd: |
                       set -Eeuo pipefail
-                      git diff --exit-code -- package-lock.json
+                      git diff --exit-code -- pnpm-lock.yaml pnpm-workspace.yaml
                       echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
                       if [ "${{ matrix.prebuild_deploy }}" = "true" ]; then
                           bash deploy/prebuild-images.sh
                           export DEPLOY_IMAGES_PREBUILT=true
                       fi
                       ${{ matrix.run }}
-                      git diff --exit-code -- package-lock.json
+                      git diff --exit-code -- pnpm-lock.yaml pnpm-workspace.yaml

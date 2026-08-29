@@ -46,20 +46,20 @@ const HOME_MOVIE_COUNT = 12 // 사용하는 코드 옆 상수 (view/user-app/hom
 
 ---
 
-## 4. npm 스크립트 계약
+## 4. pnpm 스크립트 계약
 
-루트 package.json이 진입점이다. 루트는 동사를 워크스페이스로 팬아웃하고(`npm run <동사> --workspaces --if-present`), 각 워크스페이스는 자기가 지원하는 동사만 같은 이름으로 구현한다. 워크스페이스 밖의 Prettier·셸·문서 링크 검사는 `lint:root`가 맡고, 루트 `lint`와 `atoz`가 이를 호출한다. 구체적인 실행 순서는 각 package.json을 기준으로 한다.
+루트 package.json이 진입점이다. 루트는 동사를 워크스페이스로 순차 팬아웃하고(`pnpm --recursive --workspace-concurrency=1 --if-present run <동사>`), 각 워크스페이스는 자기가 지원하는 동사만 같은 이름으로 구현한다. 한 워크스페이스만 실행할 때는 경로 filter(`pnpm --filter './apps/api' run <동사>`)를 쓴다. `atoz`만은 브라우저 테스트가 API를 직접 빌드하기 전에 내부 라이브러리 산출물이 필요하므로 `libs/*`의 `atoz`를 먼저 끝내고 나머지 워크스페이스를 순차 실행한다. 워크스페이스 밖의 Prettier·셸·문서 링크 검사는 `lint:root`가 맡고, 루트 `lint`와 `atoz`가 이를 호출한다. 구체적인 실행 순서는 각 package.json을 기준으로 한다.
 
-| 동사     | 의미                                                                                                  |
-| -------- | ----------------------------------------------------------------------------------------------------- |
-| `dev`    | watch 모드 실행                                                                                       |
-| `build`  | 빌드 산출물 생성                                                                                      |
-| `test`   | 개발 루프용 빠른 회귀. devcontainer 인프라를 재사용하는 Jest                                          |
-| `lint`   | 타입 체크 + ESLint + Prettier 검사. 루트 `lint:root`가 셸·문서 링크 검사를 더한다                     |
-| `format` | ESLint `--fix` + Prettier 쓰기                                                                        |
-| `e2e`    | console·user-app 브라우저 시나리오 (`tests/web/e2e`)                                                  |
-| `atoz`   | 클린룸 전체 회귀 — clean·인프라 리셋·`npm ci` 후 lint·build·test·e2e·배포 검증까지. `test`를 포함한다 |
-| `clean`  | (루트 전용) allowlist에 적은 `node_modules`·`_output`·coverage·build 산출물만 정리                    |
+| 동사     | 의미                                                                                                                          |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `dev`    | watch 모드 실행                                                                                                               |
+| `build`  | 빌드 산출물 생성                                                                                                              |
+| `test`   | 개발 루프용 빠른 회귀. devcontainer 인프라를 재사용하는 Jest                                                                  |
+| `lint`   | 타입 체크 + ESLint + Prettier 검사. 루트 `lint:root`가 셸·문서 링크 검사를 더한다                                             |
+| `format` | ESLint `--fix` + Prettier 쓰기                                                                                                |
+| `e2e`    | console·user-app 브라우저 시나리오 (`tests/web/e2e`)                                                                          |
+| `atoz`   | 클린룸 전체 회귀 — clean·인프라 리셋·`pnpm install --frozen-lockfile` 후 lint·build·test·e2e·배포 검증까지. `test`를 포함한다 |
+| `clean`  | (루트 전용) allowlist에 적은 `node_modules`·`_output`·coverage·build 산출물만 정리                                            |
 
 `clean`은 workspace 밖의 경로와 workspace 밖으로 향하는 symlink를 거부한다. `.gitignore`에 있다는 이유만으로 개인 env·설정 파일을 지우지 않으며, 새 산출물을 추가할 때는 `tools/clean-workspace.mjs`의 allowlist와 구성 계약 테스트를 함께 갱신한다.
 

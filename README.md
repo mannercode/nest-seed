@@ -32,9 +32,9 @@
 처음 부팅 순서는 다음과 같다.
 
 1. **새 프로젝트로 포크했다면** 저장소 전체를 기계적으로 치환하지 말고, [환경 변수 §4](docs/reference/environment.md#4-포크할-때-확인할-값)의 패키지·env·compose 식별자만 새 이름으로 바꾼다. 저자 외부 URL·연락처·원본 `repository_id` sentinel은 일괄 치환 대상이 아니며 각각 의도적으로 검토한다. fork에 복사되지 않는 ruleset·Actions secret·보안 기능과 정기 CI opt-in은 [GitHub 운영 설정](docs/github-setup.md#6-fork-완료-확인)을 따른다.
-2. VS Code에서 `Reopen in Container`를 실행한다. 컨테이너가 열리면 `postStartCommand`가 `bash infra/reset.sh`를 실행해 개발 인프라를 준비한다. 첫 부팅은 Dev Container 이미지 빌드, `npm install`, 인프라 이미지 다운로드 때문에 시간이 걸릴 수 있다. 인프라가 꼬이면 `bash infra/reset.sh`로 언제든 초기화한다.
-3. `npm test`로 기본 테스트가 통과하는지 확인한다. 포크 직후 전체 회귀까지 확인하려면 `npm run atoz`를 실행한다.
-4. `npm run dev`로 watch 모드를 띄운 뒤 `curl http://localhost:3000/health`로 API가 살아 있는지 본다.
+2. VS Code에서 `Reopen in Container`를 실행한다. 컨테이너가 열리면 `postStartCommand`가 `bash infra/reset.sh`를 실행해 개발 인프라를 준비한다. 첫 부팅은 Dev Container 이미지 빌드, `pnpm install --frozen-lockfile`, 인프라 이미지 다운로드 때문에 시간이 걸릴 수 있다. 인프라가 꼬이면 `bash infra/reset.sh`로 언제든 초기화한다.
+3. `pnpm run test`로 기본 테스트가 통과하는지 확인한다. 포크 직후 전체 회귀까지 확인하려면 `pnpm run atoz`를 실행한다.
+4. `pnpm run dev`로 watch 모드를 띄운 뒤 `curl http://localhost:3000/health`로 API가 살아 있는지 본다.
 5. 콘솔(3100)에 로그인한다. 부팅 직후엔 admin이 없으므로 root 계정(사용자명은 `root` 고정, 비밀번호는 `.env.api`의 `ROOT_PASSWORD` — devcontainer 터미널에 주입되어 있다)의 Basic 인증으로 첫 admin을 만든다.
 
     ```bash
@@ -51,27 +51,27 @@
 
 ## 개발 명령
 
-개발은 테스트 주도다 — 테스트가 필요한 환경(인프라·해당 모듈)을 코드로 띄우므로, 서비스를 나눠 가도 한 모듈을 작업하는 루프가 그대로다(왜 이게 설계와 맞는지는 [apps 문서](docs/apps.md#테스트)). 작업 루프는 주로 단일 spec 실행이고(아래 [테스트](#테스트)), `npm run dev`로 앱을 직접 띄우는 건 서비스가 늘수록 기동 부담이 커지니 실제 앱이 필요할 때만 쓴다.
+개발은 테스트 주도다 — 테스트가 필요한 환경(인프라·해당 모듈)을 코드로 띄우므로, 서비스를 나눠 가도 한 모듈을 작업하는 루프가 그대로다(왜 이게 설계와 맞는지는 [apps 문서](docs/apps.md#테스트)). 작업 루프는 주로 단일 spec 실행이고(아래 [테스트](#테스트)), `pnpm run dev`로 앱을 직접 띄우는 건 서비스가 늘수록 기동 부담이 커지니 실제 앱이 필요할 때만 쓴다.
 
-| 명령                  | 용도                                                                            |
-| --------------------- | ------------------------------------------------------------------------------- |
-| `npm test`            | 워크스페이스 단위·통합·계약 테스트. 커버리지 수집 대상 구현은 100% 게이트       |
-| `npm run lint`        | 정적 검사 전부 — 타입 체크·ESLint·Prettier·shellcheck·문서 링크                 |
-| `npm run dev`         | 실제 앱을 띄워 볼 때 — api(3000)·console(3100)·user-app(3200) + libs watch      |
-| `npm run dev:api`     | API만 띄울 때                                                                   |
-| `npm run dev:restate` | `dev:api`를 따로 띄운 경우 개발 Restate endpoint 등록. 전체 `dev`에는 포함      |
-| `npm run atoz`        | 포크 직후/배포 전 전체 검증 — 깨끗한 상태에서 lint·테스트·API 문서·e2e·배포까지 |
+| 명령                   | 용도                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------- |
+| `pnpm run test`        | 워크스페이스 단위·통합·계약 테스트. 커버리지 수집 대상 구현은 100% 게이트       |
+| `pnpm run lint`        | 정적 검사 전부 — 타입 체크·ESLint·Prettier·shellcheck·문서 링크                 |
+| `pnpm run dev`         | 실제 앱을 띄워 볼 때 — api(3000)·console(3100)·user-app(3200) + libs watch      |
+| `pnpm run dev:api`     | API만 띄울 때                                                                   |
+| `pnpm run dev:restate` | `dev:api`를 따로 띄운 경우 개발 Restate endpoint 등록. 전체 `dev`에는 포함      |
+| `pnpm run atoz`        | 포크 직후/배포 전 전체 검증 — 깨끗한 상태에서 lint·테스트·API 문서·e2e·배포까지 |
 
-> `npm run atoz`가 내부 호출하는 `npm run clean`은 `tools/clean-workspace.mjs`의 allowlist에 적은 `node_modules`·`_output`·coverage·build 산출물만 지운다. 개인 env·설정 파일은 `.gitignore`에 있다는 이유로 지우지 않는다. 나머지 스크립트는 [package.json](package.json)을 본다.
+> `pnpm run atoz`가 내부 호출하는 `pnpm run clean`은 `tools/clean-workspace.mjs`의 allowlist에 적은 `node_modules`·`_output`·coverage·build 산출물만 지운다. 개인 env·설정 파일은 `.gitignore`에 있다는 이유로 지우지 않는다. 나머지 스크립트는 [package.json](package.json)을 본다.
 
 ## 테스트
 
 ```bash
-npm test -w apps/api -- users.spec --coverage=false   # 단일 spec만 실행 (게이트 끔)
-npm run e2e                                           # console·user-app 브라우저 e2e (Playwright)
-npm run e2e:report                                    # 마지막 브라우저 e2e HTML 결과 열기
-npm run race -- <scenario>                            # 분산 레이스 — 다중 복제본 배포 스택을 직접 띄운다
-npm run benchmark:api                                # 성능 측정 — 스택 기동·시드·측정·정리까지 한 번에
+pnpm --filter './apps/api' test users.spec --coverage=false        # 단일 spec만 실행 (게이트 끔)
+pnpm run e2e                                                     # console·user-app 브라우저 e2e (Playwright)
+pnpm run e2e:report                                              # 마지막 브라우저 e2e HTML 결과 열기
+pnpm run race <scenario>                                         # 분산 레이스 — 다중 복제본 배포 스택을 직접 띄운다
+pnpm run benchmark:api                                           # 성능 측정 — 스택 기동·시드·측정·정리까지 한 번에
 ```
 
 테스트 체계와 작성 규칙은 [apps 문서](docs/apps.md#테스트)가, 분산 레이스·성능 측정의 실행과 해석은 [tests 문서](docs/tests.md)가 설명한다.
@@ -92,7 +92,7 @@ Swagger/OpenAPI는 의도적으로 두지 않았다(이유는 [설계 결정](do
 
 ```
 nest-seed/
-├── libs/                    ← 공유 라이브러리(npm 패키지)
+├── libs/                    ← 공유 라이브러리(workspace 패키지)
 │   ├── common/              ← @mannercode/common — Mongoose, Redis, JWT, S3, Logger, NATS
 │   └── testing/             ← @mannercode/testing — HttpTestClient, 픽스처 헬퍼
 │
@@ -132,13 +132,13 @@ nest-seed/
 | Next.js                          | console·user-app 최소 데모                                                                                                         |
 | @nestjs/jwt + bcrypt             | 역할별 토큰 서명·검증 — `gateway/guards`; 비밀번호 해시 — `core/{users,admins}/internal`                                           |
 | class-validator                  | DTO 검증 — 각 서비스의 `dtos/`                                                                                                     |
-| npm workspaces                   | 모노레포 구성. libs를 내부 패키지로 공유                                                                                           |
+| pnpm workspace                   | 모노레포 구성. libs를 내부 패키지로 공유                                                                                           |
 | Jest + Testcontainers            | 단위·통합 테스트. `libs/common`은 인프라를 직접 띄운다 — [apps 문서](docs/apps.md#테스트)                                          |
 | Playwright                       | console·user-app 브라우저 e2e와 공통 BFF 계약 — `tests/web`                                                                        |
 | k6                               | 성능 비교 하네스 — `tests/api-benchmark`                                                                                           |
 | Docker Compose + NGINX           | 개발 인프라(`infra/`)와 다중 컨테이너 배포(`deploy/`)                                                                              |
 | GitHub Actions                   | atoz 회귀와 반복 안정성 검증 — `.github/workflows`                                                                                 |
-| cloudflared (`npx tunnel`)       | direct API는 항상 거부. 두 앱+BFF가 일부 auth를 제외한 대부분 API를 proxy하므로 두 opt-in 플래그를 준 폐기성 환경에서만 공개       |
+| cloudflared (`pnpm exec tunnel`) | direct API는 항상 거부. 두 앱+BFF가 일부 auth를 제외한 대부분 API를 proxy하므로 두 opt-in 플래그를 준 폐기성 환경에서만 공개       |
 | ESLint·Prettier·husky·commitlint | 계층 의존 강제(eslint-plugin-boundaries) — [apps 문서](docs/apps.md#sola-5계층), 커밋 훅 — [컨벤션](docs/reference/conventions.md) |
 
 ## 도메인 둘러보기
@@ -191,7 +191,7 @@ README 뒤의 상세는 폴더 문서 여섯과 참고 자료 넷, 운영 문서
 **참고 자료** — 폴더 하나에 속하지 않는 횡단 주제는 `docs/reference/`가 맡는다:
 
 - [튜토리얼](docs/reference/tutorial.md) — 유스케이스에서 테스트까지, 이 시드의 설계 흐름을 처음부터 걷는다 (백엔드 초급자 대상)
-- [컨벤션](docs/reference/conventions.md) — 커밋 규칙, fail-fast, 값의 위치, npm 스크립트 계약
+- [컨벤션](docs/reference/conventions.md) — 커밋 규칙, fail-fast, 값의 위치, pnpm 스크립트 계약
 - [환경 변수](docs/reference/environment.md) — Dev Container, API, API 문서, console·user-app 환경 변수 흐름과 포크 체크리스트
 - [설계 결정](docs/reference/decisions.md) — 분산 도구·View 계층 등 핵심 설계 결정과 쓰지 않기로 한 대안
 

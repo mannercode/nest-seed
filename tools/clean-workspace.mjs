@@ -49,11 +49,29 @@ const workspaceDirectories = async (root, patterns) => {
     return directories
 }
 
+export function parseWorkspacePatterns(source) {
+    const lines = source.split(/\r?\n/)
+    const packagesLine = lines.findIndex((line) => line === 'packages:')
+    if (packagesLine < 0) throw new Error('pnpm-workspace.yaml must contain a packages list')
+
+    const patterns = []
+    for (const line of lines.slice(packagesLine + 1)) {
+        if (/^\S/.test(line) && !line.startsWith('#')) break
+        if (line.trim() === '' || line.trimStart().startsWith('#')) continue
+
+        const entry = line.match(/^\s+-\s+(['"])(.+)\1\s*$/)
+        if (!entry) throw new Error(`Unsupported pnpm workspace entry: ${line.trim()}`)
+        patterns.push(entry[2])
+    }
+    if (patterns.length === 0) throw new Error('pnpm-workspace.yaml packages list is empty')
+    return patterns
+}
+
 export async function cleanWorkspace(workspaceRoot) {
     const root = resolve(workspaceRoot)
     const resolvedRoot = await realpath(root)
-    const packageJson = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'))
-    const workspacePaths = await workspaceDirectories(root, packageJson.workspaces ?? [])
+    const workspaceConfig = await readFile(join(root, 'pnpm-workspace.yaml'), 'utf8')
+    const workspacePaths = await workspaceDirectories(root, parseWorkspacePatterns(workspaceConfig))
     const candidates = new Set(rootGeneratedPaths)
 
     for (const workspace of workspacePaths) {

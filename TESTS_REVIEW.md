@@ -1,6 +1,9 @@
 # 테스트 구조 검토와 운영 기준
 
-검토일: 2026-08-28
+최초 검토일: 2026-08-28
+운영 명령 갱신: 2026-08-29
+
+2026-08-29부터 저장소의 package manager 기준은 `pnpm@11.24.0`이다. 아래 운영 명령은 pnpm 기준이며, 문서 끝의 2026-08-28 npm 실행 결과는 전환 전 기준선으로 보존한다. 테스트 실행기와 반복 횟수는 이 package manager 전환에서 바꾸지 않았다.
 
 ## 결론
 
@@ -22,7 +25,7 @@
 ```text
 tests/
 ├── README.md                 # 명령, 검증 이유, 결과 위치를 한 화면에 설명
-├── show-results.mjs          # npm test·atoz 종료 요약
+├── show-results.mjs          # pnpm test·atoz 종료 요약
 ├── api-race/
 │   ├── contracts/            # race 하네스와 저장소 계약의 빠른 node:test
 │   ├── probes/               # AtoZ의 실제 인프라 장애·복구 probe
@@ -48,28 +51,28 @@ tests/
 
 ## 전체 명령이 실제로 하는 일
 
-| 영역                      | `npm test` | `npm run atoz` | 전용 실행                    | 결과                           |
-| ------------------------- | ---------- | -------------- | ---------------------------- | ------------------------------ |
-| Nest API·공용 라이브러리  | 실행       | 실행           | workspace별 Jest             | 터미널, coverage               |
-| `api-race/contracts`      | 실행       | 실행           | `npm test -w tests/api-race` | `node:test` 결과               |
-| `api-race/probes`         | 미실행     | 실행           | 배포 검증 내부               | `node:test` 결과               |
-| `web/contracts`           | 실행       | 실행           | `npm test -w tests/web`      | Playwright list 결과           |
-| 실제 브라우저 E2E         | 미실행     | 실행           | `npm run e2e`                | HTML, JUnit, trace, screenshot |
-| 실제 API race             | 미실행     | 미실행         | `npm run race -- <scenario>` | `node:test`, 실패 진단         |
-| API benchmark             | 미실행     | 미실행         | `npm run benchmark:api`      | JSON, HTML dashboard           |
-| 정적 검사·build·배포 검증 | 미실행     | 실행           | 각 workspace 명령            | 터미널                         |
+| 영역                      | `pnpm test` | `pnpm run atoz` | 전용 실행                               | 결과                           |
+| ------------------------- | ----------- | --------------- | --------------------------------------- | ------------------------------ |
+| Nest API·공용 라이브러리  | 실행        | 실행            | workspace별 Jest                        | 터미널, coverage               |
+| `api-race/contracts`      | 실행        | 실행            | `pnpm --filter './tests/api-race' test` | `node:test` 결과               |
+| `api-race/probes`         | 미실행      | 실행            | 배포 검증 내부                          | `node:test` 결과               |
+| `web/contracts`           | 실행        | 실행            | `pnpm --filter './tests/web' test`      | Playwright list 결과           |
+| 실제 브라우저 E2E         | 미실행      | 실행            | `pnpm run e2e`                          | HTML, JUnit, trace, screenshot |
+| 실제 API race             | 미실행      | 미실행          | `pnpm run race <scenario>`              | `node:test`, 실패 진단         |
+| API benchmark             | 미실행      | 미실행          | `pnpm run benchmark:api`                | JSON, HTML dashboard           |
+| 정적 검사·build·배포 검증 | 미실행      | 실행            | 각 workspace 명령                       | 터미널                         |
 
-`npm test`가 성공하면 마지막에 다음을 별도 화면으로 출력한다.
+`pnpm test`가 성공하면 마지막에 다음을 별도 화면으로 출력한다.
 
 - 통과한 영역
 - 각 영역을 실행한 이유
 - 이 명령에서 의도적으로 제외한 브라우저 E2E, 실제 race, benchmark
 
-`npm run atoz`가 성공하면 정적 검사, build, 브라우저 E2E, 배포 검증까지 같은 형식으로 요약한다. 브라우저 JUnit 결과가 있으면 테스트 수와 실행 시간도 표시하고 HTML 보고서 경로를 알려준다. GitHub Actions에서는 같은 내용을 Job Summary에도 남긴다.
+`pnpm run atoz`가 성공하면 정적 검사, build, 브라우저 E2E, 배포 검증까지 같은 형식으로 요약한다. 브라우저 JUnit 결과가 있으면 테스트 수와 실행 시간도 표시하고 HTML 보고서 경로를 알려준다. GitHub Actions에서는 같은 내용을 Job Summary에도 남긴다.
 
 성공 시 단순히 `PASS` 한 줄만 보고 끝나는 것이 아니라, 무엇을 확인했고 무엇은 확인하지 않았는지를 마지막 화면에서 구분할 수 있다.
 
-실패하면 npm lifecycle 특성상 성공용 종료 요약은 실행되지 않는다. 이때는 요약이 없다는 사실 자체보다, 바로 위에 출력된 첫 실패 suite와 assertion·stack을 먼저 보면 된다. E2E 실패는 trace와 screenshot을 이어서 확인한다.
+실패하면 pnpm lifecycle 특성상 성공용 종료 요약은 실행되지 않는다. 이때는 요약이 없다는 사실 자체보다, 바로 위에 출력된 첫 실패 suite와 assertion·stack을 먼저 보면 된다. E2E 실패는 trace와 screenshot을 이어서 확인한다.
 
 요약 구현과 최신 명령은 [`tests/show-results.mjs`](tests/show-results.mjs)와 [`tests/README.md`](tests/README.md)에 있다.
 
@@ -78,23 +81,23 @@ tests/
 ### 전체 단위·통합·계약 테스트
 
 ```bash
-npm test
+pnpm test
 ```
 
 주로 에이전트가 기능 작업을 마무리할 때 실행한다. Jest workspace의 상세 성공·실패와 coverage가 먼저 나오고, 모든 workspace가 성공했을 때만 영역별 최종 요약이 나온다.
 
-`npm test`에는 다음이 포함되지 않는다.
+`pnpm test`에는 다음이 포함되지 않는다.
 
 - 서버를 실제로 띄우는 브라우저 E2E
 - 4개 API replica를 띄우는 장시간 race
 - 합격선 없는 benchmark
 
-따라서 `npm test` 성공을 “저장소의 모든 장시간 검증을 방금 실행했다”는 의미로 해석하면 안 된다.
+따라서 `pnpm test` 성공을 “저장소의 모든 장시간 검증을 방금 실행했다”는 의미로 해석하면 안 된다.
 
 ### 전체 AtoZ 검증
 
 ```bash
-npm run atoz
+pnpm run atoz
 ```
 
 정적 검사, workspace 테스트, build, 브라우저 E2E, 실제 배포 스택 검증까지 실행한다. 배포 검증은 Restate 서버를 `SIGKILL`한 뒤 같은 volume으로 재시작해 완료 step replay와 중단 step 재실행도 확인한다. 실제 race는 Stability workflow가 담당하고 benchmark는 수동 비교 도구라 여전히 제외한다.
@@ -102,10 +105,10 @@ npm run atoz
 ### 브라우저 E2E
 
 ```bash
-npm run e2e:list       # 서버 없이 테스트 이름만 확인
-npm run e2e            # 실제 실행
-npm run e2e:report     # 마지막 HTML 보고서 열기
-npm run e2e:ui         # 사람이 선택 실행·디버깅할 때만 사용
+pnpm run e2e:list       # 서버 없이 테스트 이름만 확인
+pnpm run e2e            # 실제 실행
+pnpm run e2e:report     # 마지막 HTML 보고서 열기
+pnpm run e2e:ui         # 사람이 선택 실행·디버깅할 때만 사용
 ```
 
 결과는 다음 위치에 남는다.
@@ -125,8 +128,8 @@ tests/web/_output/
 ### 실제 API race
 
 ```bash
-npm run race                         # 시나리오 목록
-npm run race -- ticket-holding-race  # 한 시나리오 실행
+pnpm run race                         # 시나리오 목록
+pnpm run race ticket-holding-race     # 한 시나리오 실행
 ```
 
 각 파일을 `node:test`의 상위 테스트 하나로 실행하므로 터미널에서 다음을 확인할 수 있다.
@@ -144,7 +147,7 @@ Compose 기동·정리, admin 준비, 실패 시 컨테이너와 데이터 저�
 ### API benchmark
 
 ```bash
-npm run benchmark:api
+pnpm run benchmark:api
 ```
 
 결과는 다음 위치에 남는다.
@@ -249,8 +252,8 @@ Jest를 제거하는 것보다 효과가 크고 위험이 낮은 후보는 `libs
 Vitest 전환 전에 Jest 전용 fast config를 새로 만들면 곧 버릴 설정이 늘어난다. 실행기 교체가 끝난 뒤 다음 방향을 검토한다.
 
 - 컨테이너 없는 `test:fast`와 인프라가 필요한 `test:integration`을 같은 Jest 안에서 분리한다.
-- `npm test`는 두 경로를 모두 실행하고 기존 100% coverage 계약을 유지한다.
-- 에이전트는 순수 코드 수정 중 `test:fast`를 반복 실행하고, 작업 완료 전 전체 `npm test`를 실행한다.
+- `pnpm test`는 두 경로를 모두 실행하고 기존 100% coverage 계약을 유지한다.
+- 에이전트는 순수 코드 수정 중 `test:fast`를 반복 실행하고, 작업 완료 전 전체 `pnpm test`를 실행한다.
 - 파일 이동보다 명시적인 패턴 또는 별도 config가 더 작다면 그것을 선택한다.
 - 공용 setup을 테스트마다 복제하거나 범용 fixture DSL을 새로 만들지는 않는다.
 - 실제 분리 후에는 실행 시간과 설정 줄 수를 비교해 유지 가치가 없으면 되돌린다.
@@ -261,8 +264,8 @@ Vitest 전환 전에 Jest 전용 fast config를 새로 만들면 곧 버릴 설�
 작은 순수 코드 변경
   → 해당 workspace의 fast 테스트
   → 관련 전체 workspace 테스트
-  → 작업 경계에서 npm test
-  → 배포 경계에서 npm run atoz
+  → 작업 경계에서 pnpm test
+  → 배포 경계에서 pnpm run atoz
 ```
 
 이는 사람이 매번 선택해야 하는 UI를 추가하는 개선이 아니다. 에이전트가 더 짧은 피드백 경로를 쓰되 최종 검증 범위는 줄이지 않는 개선이다.
@@ -277,7 +280,7 @@ Vitest 전환 전에 Jest 전용 fast config를 새로 만들면 곧 버릴 설�
 
 ### 2. container-free fast lane 검증
 
-가장 먼저 작은 변경으로 실험한다. 전체 coverage와 최종 `npm test` 동작은 유지하고, 에이전트의 반복 실행 시간만 줄이는 것이 목표다.
+가장 먼저 작은 변경으로 실험한다. 전체 coverage와 최종 `pnpm test` 동작은 유지하고, 에이전트의 반복 실행 시간만 줄이는 것이 목표다.
 
 ### 3. race 결과의 작은 요약 파일
 
@@ -313,11 +316,11 @@ RPS·latency 절대 기준은 두지 않되, 의도한 API 대신 401·500 경�
 2. 전체 실행 뒤 무엇을 확인했고 제외했는지 보이는 것
 3. 실행기 교체 뒤에도 기존 coverage·인프라 정리·실패 진단 강도를 낮추지 않는 것
 
-## 2026-08-28 현재 검증 기준선
+## 2026-08-28 npm 기준 검증 기준선
 
-Restate 전환 직후 다음 결과를 확인했다. 후속 실행기 전환은 최소한 이 기준선을 그대로 통과해야 한다.
+Restate 전환 직후, pnpm 전환 전에 다음 결과를 확인했다. 후속 package manager·실행기 전환은 최소한 이 기준선을 그대로 통과해야 한다.
 
-- `npm test`: 전체 workspace 성공
+- 당시 `npm test`: 전체 workspace 성공
 - Nest API: 36 suites, 414 tests, statements·branches·functions·lines 100%
 - 공용 라이브러리: 42 suites, 635 tests, 네 coverage 항목 100%
 - `libs/testing`: 11 suites, 61 tests

@@ -1,8 +1,8 @@
 # tests/ — 배포 스택 대상 테스트
 
-단위·통합 테스트는 보통 각 워크스페이스 안(`apps/api/src/__tests__`, `libs/*/src/**/__tests__`)에 살고 `npm test`로 돈다([apps 문서의 테스트 절](apps.md#테스트) 참고). `tests/`에 모인 것은 주로 **배포된 스택을 밖에서 검증하는** 무거운 테스트라 폴더가 따로 있다. 다만 하네스 자체의 계약은 같은 워크스페이스 안에 둔다. `tests/api-race/contracts`는 공통 HTTP/SSE client·repository 계약을 `npm test -w tests/api-race`로, `tests/web/contracts`는 두 Next.js BFF의 공통 보안·ESLint 계약을 `npm test -w tests/web`으로 실행한다. 둘 다 배포 스택이나 브라우저를 시작하지 않고 기본 `npm test`에 포함된다.
+단위·통합 테스트는 보통 각 워크스페이스 안(`apps/api/src/__tests__`, `libs/*/src/**/__tests__`)에 살고 `pnpm run test`로 돈다([apps 문서의 테스트 절](apps.md#테스트) 참고). `tests/`에 모인 것은 주로 **배포된 스택을 밖에서 검증하는** 무거운 테스트라 폴더가 따로 있다. 다만 하네스 자체의 계약은 같은 워크스페이스 안에 둔다. `tests/api-race/contracts`는 공통 HTTP/SSE client·repository 계약을 `pnpm --filter './tests/api-race' test`로, `tests/web/contracts`는 두 Next.js BFF의 공통 보안·ESLint 계약을 `pnpm --filter './tests/web' test`로 실행한다. 둘 다 배포 스택이나 브라우저를 시작하지 않고 기본 `pnpm run test`에 포함된다.
 
-한 화면의 실행 명령과 결과 위치는 [`tests/README.md`](../tests/README.md)에 있다. 루트 `npm test`와 `npm run atoz`가 성공하면 마지막에 통과한 영역, 각 영역을 검증하는 이유와 포함되지 않은 장시간 검증을 함께 요약한다.
+한 화면의 실행 명령과 결과 위치는 [`tests/README.md`](../tests/README.md)에 있다. 루트 `pnpm run test`와 `pnpm run atoz`가 성공하면 마지막에 통과한 영역, 각 영역을 검증하는 이유와 포함되지 않은 장시간 검증을 함께 요약한다.
 
 ## api-race — 분산 레이스 시나리오
 
@@ -24,8 +24,8 @@
 각 스크립트는 요청마다 별도 `http.Agent({keepAlive:false})`를 만든다. NGINX의 `least_conn`이 실제로 여러 컨테이너로 요청을 나누도록 keep-alive 풀을 공유하지 않기 위해서다. 응답의 `x-replica-id` 헤더(정의는 [배포](deploy.md#x-replica-id-응답-헤더))로 요청이 여러 컨테이너에 분산되었는지도 확인한다. 이렇게 해서 "사실은 한 컨테이너에만 갔는데 통과한" 거짓 성공을 막는다.
 
 ```bash
-npm run race -- <scenario>       # 인자 없이 실행하면 시나리오 목록이 나온다
-npm test -w tests/api-race       # 배포 없이 HTTP/SSE 공통 클라이언트만 검증한다
+pnpm run race <scenario>                               # 인자 없이 실행하면 시나리오 목록이 나온다
+pnpm --filter './tests/api-race' test                  # 배포 없이 HTTP/SSE 공통 클라이언트만 검증한다
 ```
 
 러너가 배포 스택을 띄우고 내리는 것까지 맡는다. 각 시나리오는 Node 내장 `node:test`의 상위 테스트 하나로 실행되어 검증할 불변식의 이름, 성공·실패, 소요 시간과 stack을 표준 형식으로 출력한다. 내부 반복은 subtest로 늘리지 않고 기존 진행 로그로 남긴다. 각 시나리오의 실패 조건은 스크립트 머리 주석에 있다.
@@ -45,7 +45,7 @@ api-race와 api-benchmark 러너는 compose stack이 healthy가 된 뒤 NGINX의
 | `harness-user-filter.js` | 비인덱스 부분 문자열 검색의 전체 컬렉션 스캔 비용                         |
 
 ```bash
-npm run benchmark:api                                                    # 스택 기동·시드·측정·정리까지 한 번에
+pnpm run benchmark:api                                                   # 스택 기동·시드·측정·정리까지 한 번에
 SERVER_URL=http://localhost:3000 bash tests/api-benchmark/mixed-runner.sh # 떠 있는 스택 반복 측정 — 쓰기 레그는 ADMIN_ACCESS_TOKEN 필요(발급은 runner.sh의 seed_admin_and_login)
 ```
 
@@ -79,11 +79,11 @@ Playwright가 `apps/api`·`apps/console`·`apps/user-app`을 빌드해 띄운 �
 같은 워크스페이스의 `contracts/bff-proxy.spec.ts`는 BFF의 proxy IP 경계와 refresh 재시도 쿠키 보존을 두 앱에 동일하게 적용하는 계약 테스트다. 별도 Playwright 설정을 써서 webServer와 브라우저를 시작하지 않는다.
 
 ```bash
-npm test -w tests/web   # 브라우저 없는 BFF·ESLint 계약
-npm run e2e             # AtoZ에도 포함되는 browser e2e
-npm run e2e:list        # 서버를 띄우지 않고 테스트 이름 확인
-npm run e2e:ui          # 인터랙티브 실행·트레이스 뷰
-npm run e2e:report      # 마지막 HTML 결과 열기
+pnpm --filter './tests/web' test # 브라우저 없는 BFF·ESLint 계약
+pnpm run e2e                    # AtoZ에도 포함되는 browser e2e
+pnpm run e2e:list               # 서버를 띄우지 않고 테스트 이름 확인
+pnpm run e2e:ui                 # 인터랙티브 실행·트레이스 뷰
+pnpm run e2e:report             # 마지막 HTML 결과 열기
 ```
 
 ## CI 반복 — test-stability
@@ -92,7 +92,7 @@ CI 워크플로는 둘이다. [test-atoz.yaml](../.github/workflows/test-atoz.ya
 
 [test-stability.yaml](../.github/workflows/test-stability.yaml)은 행렬의 각 레그를 독립된 잡으로 실행한다. 각 분산 시나리오는 50회, libs 단위/통합 테스트는 75회, 부팅 검증은 50회를 반복한다. apps/api는 한 러너에 장시간 부하가 누적되지 않고 240분 제한 안에 끝나도록 20회씩 세 레그로 나누어 총 60회를 유지한다.
 
-apps/api 반복은 실행별 coverage 디렉터리를 누적하지 않도록 coverage를 끄고 반복 흔들림만 본다. 이것은 커버리지 게이트를 우회하는 경로가 아니다. `test-atoz`의 전체 `npm test`가 별도로 커버리지 100% 게이트를 통과해야 하고, apps/api AtoZ는 실제 setup/teardown을 켠 Jest 명령 두 개를 동시에 돌리는 격리 하네스도 검증한다.
+apps/api 반복은 실행별 coverage 디렉터리를 누적하지 않도록 coverage를 끄고 반복 흔들림만 본다. 이것은 커버리지 게이트를 우회하는 경로가 아니다. `test-atoz`의 전체 `pnpm run test`가 별도로 커버리지 100% 게이트를 통과해야 하고, apps/api AtoZ는 실제 setup/teardown을 켠 Jest 명령 두 개를 동시에 돌리는 격리 하네스도 검증한다.
 
 분산 레이스 레그는 반복을 시작하기 전 `deploy/prebuild-images.sh`로 deps·API·NGINX 이미지를 한 번만 준비한다. 각 회차는 `DEPLOY_IMAGES_PREBUILT=true`로 `docker compose up --no-build`를 써서 같은 이미지를 재사용한다. 이렇게 해야 반복 횟수가 이미지 레지스트리 메타데이터 장애와 빌드 시간을 반복 추출하지 않고, 같은 바이너리의 안정성을 측정한다.
 

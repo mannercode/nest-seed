@@ -11,7 +11,7 @@
         "e2e:ui": "playwright test --ui",
         "format": "eslint e2e/ contracts/ playwright.config.ts playwright.contract.config.ts --fix && prettier --write e2e/ contracts/ playwright.config.ts playwright.contract.config.ts",
         "lint": "tsc --noEmit && eslint e2e/ contracts/ playwright.config.ts playwright.contract.config.ts --max-warnings=0 && prettier --check e2e/ contracts/ playwright.config.ts playwright.contract.config.ts",
-        "atoz": "npm run lint && npm test && CI=1 playwright test"
+        "atoz": "pnpm run lint && pnpm test && CI=1 playwright test"
     },
     "devDependencies": {
         "@playwright/test": "1.62.1",

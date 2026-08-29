@@ -6,6 +6,12 @@
         "test": "node --test contracts/*.test.js",
         "lint": "for file in *.js contracts/*.test.js probes/*.js; do node --check \"$file\"; done && node --check eslint.config.cjs && eslint '*.js' 'contracts/*.test.js' 'probes/*.js' --max-warnings=0 && prettier --check '*.js' 'contracts/*.test.js' 'probes/*.js' eslint.config.cjs package.json",
         "format": "eslint '*.js' 'contracts/*.test.js' 'probes/*.js' --fix && prettier --write '*.js' 'contracts/*.test.js' 'probes/*.js' eslint.config.cjs package.json",
-        "atoz": "npm run lint && npm test"
+        "atoz": "pnpm run lint && pnpm test"
+    },
+    "devDependencies": {
+        "@eslint/js": "9.39.5",
+        "@restatedev/restate-sdk": "1.16.9",
+        "@restatedev/restate-sdk-clients": "1.16.9",
+        "globals": "17.11.0"
     }
 }

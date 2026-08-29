@@ -1,15 +1,18 @@
 # 제안된 Nest 12 최종 스택에 대한 의견
 
-검토일: 2026-08-28
+최초 검토일: 2026-08-28
+상태 갱신: 2026-08-29
+
+2026-08-29 후속 결정으로 package manager는 `pnpm@11.24.0`으로 독립 전환했다. 이 문서의 npm 전환 표면·보류 판단은 2026-08-28 최초 검토 기록으로 남기되, 현재 package 운영 기준은 pnpm이다. ESM·Vitest·Zod·MongoDB access·lint·observability는 이 단계에 섞지 않았다.
 
 ## 한 줄 결론
 
-제안안은 **새로 만드는 분산 백엔드 시드**에는 방향이 좋다. 다만 현재 저장소에 그대로 덮어쓰는 안에는 반대한다. 여기서는 Node 26·Nest 12·Restate·NATS v3처럼 목적이 확인된 축만 채택하고, ESM·pnpm·Vitest·Zod·MongoDB 공식 driver·Oxlint·observability는 각각 독립적으로 이득과 기존 계약의 동등성을 입증해야 한다.
+제안안은 **새로 만드는 분산 백엔드 시드**에는 방향이 좋다. 다만 현재 저장소에 그대로 덮어쓰는 안에는 반대한다. 여기서는 Node 26·Nest 12·Restate·NATS v3처럼 목적이 확인된 축을 채택했고, pnpm도 후속 승인 뒤 별도 단계로 적용했다. ESM·Vitest·Zod·MongoDB 공식 driver·Oxlint·observability는 각각 독립적으로 이득과 기존 계약의 동등성을 입증해야 한다.
 
 내 최종안은 다음 두 줄로 구분된다.
 
 - Greenfield 분산 시드: **Node 26(LTS 전환 뒤 운영 기준) + Nest 12 ESM + TypeScript strict + pnpm + Vitest + Zod + MongoDB driver + Restate + Core NATS + Docker + OpenTelemetry 또는 Nest Observe 중 하나**
-- 현재 저장소: **Node 26(Current) + Nest 12 + 현재 CommonJS 앱 + TypeScript strict 예외 + npm workspaces + Jest/`node:test` 역할 분리 + Joi/class-validator + Mongoose + Restate + Core NATS + Docker**
+- 현재 저장소: **Node 26(Current) + Nest 12 + 현재 CommonJS 앱 + TypeScript strict 예외 + pnpm 11 workspaces + Jest/`node:test` 역할 분리 + Joi/class-validator + Mongoose + Restate + Core NATS + Docker**
 
 두 번째 줄은 낡은 구성을 고집하자는 뜻이 아니다. 이 저장소가 이미 검증하는 경쟁 조건, 재시작, 4개 복제본, 100% coverage와 배포 산출물이 자산이므로, 새 도구가 그 계약을 실제로 더 작고 명확하게 대체할 때만 옮기자는 뜻이다. 더 넓은 과잉 검토는 [STACK_REVIEW.md](./STACK_REVIEW.md), 테스트 구조와 결과 확인 방식은 [TESTS_REVIEW.md](./TESTS_REVIEW.md)를 함께 참고한다.
 
@@ -27,9 +30,9 @@
 
 ## 2. 현재 저장소에서는 판단 기준이 다르다
 
-현재 저장소는 빈 Nest 프로젝트가 아니다. 진행 중인 Restate 변경까지 포함한 검토 시점 working tree의 대략적인 전환 표면은 다음과 같다. 검색 범위에 따라 숫자는 달라질 수 있으므로 규모 판단에만 사용한다.
+현재 저장소는 빈 Nest 프로젝트가 아니다. 아래 숫자는 진행 중이던 Restate 변경까지 포함한 **2026-08-28 최초 검토 시점** working tree의 전환 표면이다. 검색 범위에 따라 숫자는 달라질 수 있으므로 규모 판단과 의사결정 기록으로만 사용한다.
 
-| 계약 또는 표면  | 현재 근거                                                                                    |
+| 계약 또는 표면  | 2026-08-28 근거                                                                              |
 | --------------- | -------------------------------------------------------------------------------------------- |
 | 모듈 형식       | 상대 경로의 확장자 없는 import/require 약 884곳·344개 파일, JS/CJS 파일 49개, CJS 표현 164곳 |
 | package manager | `packageManager: npm@12.0.2`, npm 명령이 Docker·CI·문서·계약을 포함한 약 30개 파일에 존재    |
@@ -59,7 +62,7 @@
 | JetStream opt-in                       | 동의                  | 저장·ack·replay 요구가 생긴 subject에만 도입한다. 현재 미사용 설정은 제거한다.                         |
 | Docker                                 | 동의·적용됨           | 로컬 인프라와 실제 4-replica 경계를 같은 방식으로 검증한다.                                            |
 | `type: module` ESM                     | 조건부                | Greenfield에는 채택한다. 현재 앱에는 독립 migration과 bundle/Docker parity가 필요하다.                 |
-| pnpm workspace                         | 조건부                | Greenfield에는 좋다. 현재 npm 12 workspace를 바꿀 기능상 이유는 아직 약하다.                           |
+| pnpm workspace                         | 당시 조건부 → 적용됨  | 2026-08-28에는 보류했지만, 후속 승인으로 package manager만 `pnpm@11.24.0`으로 별도 전환했다.           |
 | Vitest                                 | 조건부                | Restate 전환 뒤 Nest workspace 하나에서 Jest 동등성을 먼저 증명한다. `node:test` 영역은 유지한다.      |
 | Zod + Standard Schema                  | 조건부                | 새 schema-first 앱에는 채택한다. 현재 DTO 체계와 병행 도입하지 않는다.                                 |
 | MongoDB 공식 driver 우선               | 조건부                | Greenfield 기본값에는 동의한다. 현재 Mongoose 계층의 일괄 교체에는 반대한다.                           |
@@ -130,9 +133,9 @@ Greenfield에는 채택한다. 현재 저장소에서는 `type: module` 한 줄�
 
 pnpm은 선언하지 않은 dependency 접근을 막고 `workspace:`가 외부 package로 잘못 해석되는 것을 거부하는 장점이 있다. [pnpm workspaces](https://pnpm.io/workspaces)
 
-그러나 현재 npm도 workspace를 공식 지원하며, lockfile·workspace script·install 정책이 이미 Docker와 CI에 연결되어 있다. [npm workspaces](https://docs.npmjs.com/cli/using-npm/workspaces/)
+최초 검토 시점에는 npm도 workspace를 공식 지원하고 lockfile·workspace script·install 정책이 Docker와 CI에 연결되어 있어 보류했다. [npm workspaces](https://docs.npmjs.com/cli/using-npm/workspaces/)
 
-따라서 package leakage나 설치 성능 문제가 측정되지 않은 현재에는 보류한다. 전환한다면 ESM이나 test runner와 같은 커밋에 넣지 않는다.
+2026-08-29에는 후속 승인에 따라 그 전환 표면을 package-manager 전용 커밋으로 받아들였다. `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `workspace:*`와 pnpm 기준 scripts·CI·Docker로 옮겼고 ESM이나 test runner 변경은 포함하지 않았다. 이로써 “한 축씩 바꾸어 실패 원인을 분리한다”는 기준은 그대로 유지된다.
 
 ### Vitest
 
@@ -173,15 +176,15 @@ Nest 12의 native instrumentation hook과 Observe 지원은 “OTel native”라
 
 ## 7. 최종 권고안과 작업 순서
 
-현재 저장소에는 다음 순서를 권고한다. 각 단계는 별도 판단과 별도 커밋이어야 한다.
+현재 저장소에는 다음 순서를 권고한다. 각 단계는 별도 판단과 별도 커밋이어야 한다. package manager는 이 원칙에 따라 pnpm으로 독립 전환한 완료 단계다.
 
 1. **Restate 전환을 먼저 완결한다.** 동일 command 중복, retry, terminal error, compensation, 재시작 replay와 4-replica routing을 검증한 뒤 Temporal SDK·worker·sandbox·DB를 제거한다.
 2. **책임 표를 코드 계약으로 고정한다.** Restate는 durable command, MongoDB는 business state, Core NATS는 best-effort notification으로 둔다. 반드시 보존할 event 목록을 먼저 정한다.
 3. **미사용 JetStream 설정만 제거한다.** 보존 event가 확인되면 해당 subject에만 JetStream을 다시 설계한다. outbox는 delivery 계약이 대체되기 전까지 유지한다.
 4. **Node 26 + Nest 12 기준선에서 전체 검증을 안정화한다.** Node 26은 LTS 전환 전까지 Current로 표기하고 devcontainer·Docker·CI 버전을 함께 고정한다.
 5. **Vitest를 한 workspace에서 pilot한다.** `TESTS_REVIEW.md`의 lifecycle·coverage·결과 가독성 기준을 먼저 갱신하고 Jest와 동등하거나 더 작은 경우에만 별도 전환한다.
-6. **앱 ESM은 bundler migration과 함께 독립 검토한다.** output, externals, source map, Docker 실행 parity를 증명하고 pnpm·Zod·Oxlint를 같은 변경에 섞지 않는다.
-7. **나머지는 명확한 trigger가 있을 때만 하나씩 검토한다.** schema 공유가 필요하면 Zod, dependency leakage가 확인되면 pnpm, architecture rule parity가 되면 Oxlint, backend와 데이터 정책이 정해지면 OTel 또는 Observe를 선택한다.
+6. **앱 ESM은 bundler migration과 함께 독립 검토한다.** output, externals, source map, Docker 실행 parity를 증명하고 이미 완료한 pnpm 전환이나 Zod·Oxlint를 같은 변경에 다시 섞지 않는다.
+7. **나머지는 명확한 trigger가 있을 때만 하나씩 검토한다.** schema 공유가 필요하면 Zod, architecture rule parity가 되면 Oxlint, backend와 데이터 정책이 정해지면 OTel 또는 Observe를 선택한다.
 8. **MongoDB 공식 driver는 다음 greenfield 시드의 기본안으로 남긴다.** 현재 Mongoose repository의 전면 교체 작업은 시작하지 않는다.
 
-결론적으로 제안안의 **책임 분리와 greenfield 기본값은 채택**하고, 현재 저장소의 **검증된 계약을 삭제 목록으로 바꾸는 해석은 기각**한다. 이 저장소에서 가장 좋은 현대화는 모든 도구의 이름을 최신으로 맞추는 것이 아니라, Restate 전환을 끝내고 실제 중복만 제거한 뒤 각 새 기본값이 기존보다 작다는 것을 하나씩 증명하는 것이다.
+결론적으로 제안안의 **책임 분리와 greenfield 기본값은 채택**하고, 현재 저장소의 **검증된 계약을 삭제 목록으로 바꾸는 해석은 기각**한다. pnpm은 이 원칙을 지키며 하나의 독립 단계로 적용했다. 이 저장소에서 가장 좋은 현대화는 모든 도구의 이름을 최신으로 맞추는 것이 아니라, 실제 중복만 제거한 뒤 각 새 기본값이 기존보다 작다는 것을 하나씩 증명하는 것이다.

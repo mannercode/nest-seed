@@ -83,7 +83,7 @@ gh api -X PATCH repos/OWNER/REPO \
 
 ## 4. Dependabot과 보안 기능
 
-`.github/dependabot.yml`은 npm, GitHub Actions와 추적 가능한 Dockerfile/Compose 이미지 참조의 minor/patch를 매주 확인한다. npm routine update는 manifest의 직접 의존성만 대상으로 하고 AWS SDK, Next, NestJS, Restate, React, ESLint, commitlint처럼 같은 release train을 따르는 계열만 묶는다. 그 밖의 npm 패키지는 개별 PR로 유지해 무관한 변경 하나가 전체 갱신을 막지 않게 한다. 같은 이미지를 여러 디렉터리에서 쓰면 dependency name으로 묶어 한 PR에서 갱신한다. routine major update는 생성하지 않는다. TypeScript와 ESLint 생태계, Node 이미지와 OS 패키지처럼 major에서 함께 바뀌어야 하는 범위는 관리자가 한 PR에서 올려 AtoZ로 검증한다. 이 제한은 security update에는 적용되지 않으므로 major 보안 수정도 PR로 열리며 자동 머지하지 않는다. `.env.infra` 변수로 간접 참조한 Restate 등 이미지 digest는 자동 갱신 범위가 아니므로 인프라 이미지 갱신 시 수동으로 맞춘다. install script 허용 목록은 정확한 패키지 버전별 보안 경계이므로 새 버전이 들어오면 스크립트와 lockfile integrity를 검토한 뒤 명시적으로 갱신한다. 파일이 있다고 다음 저장소 설정까지 자동으로 켜지는 것은 아니다.
+`.github/dependabot.yml`은 pnpm이 관리하는 registry 패키지를 Dependabot의 `npm` ecosystem으로 지정하고, GitHub Actions와 추적 가능한 Dockerfile/Compose 이미지 참조까지 minor/patch를 매주 확인한다. 패키지 routine update는 manifest의 직접 의존성만 대상으로 하고 AWS SDK, Next, NestJS, Restate, React, ESLint, commitlint처럼 같은 release train을 따르는 계열만 묶는다. 그 밖의 패키지는 개별 PR로 유지해 무관한 변경 하나가 전체 갱신을 막지 않게 한다. 같은 이미지를 여러 디렉터리에서 쓰면 dependency name으로 묶어 한 PR에서 갱신한다. routine major update는 생성하지 않는다. TypeScript와 ESLint 생태계, Node 이미지와 OS 패키지처럼 major에서 함께 바뀌어야 하는 범위는 관리자가 한 PR에서 올려 AtoZ로 검증한다. 이 제한은 security update에는 적용되지 않으므로 major 보안 수정도 PR로 열리며 자동 머지하지 않는다. `.env.infra` 변수로 간접 참조한 Restate 등 이미지 digest는 자동 갱신 범위가 아니므로 인프라 이미지 갱신 시 수동으로 맞춘다. install script 허용 목록은 정확한 패키지 버전별 보안 경계이므로 새 버전이 들어오면 스크립트와 lockfile integrity를 검토한 뒤 명시적으로 갱신한다. 파일이 있다고 다음 저장소 설정까지 자동으로 켜지는 것은 아니다.
 
 - Settings → Code security에서 Dependabot alerts와 Dependabot security updates를 활성화한다.
 - Automated security fixes를 활성화한다.
@@ -109,7 +109,7 @@ gh api -X PUT repos/OWNER/REPO/private-vulnerability-reporting
 
 운영 값은 커밋된 env 파일을 수정해 보관하지 않고 배포 환경의 secret manager에서 주입한다. 한 번 Git에 들어간 실제 secret은 파일을 고쳐도 유출 상태이므로 제공자에서 먼저 폐기·회전한다.
 
-Dev Container는 호스트 Docker daemon을 연결하며 기본 설정에서 GitHub CLI, Codex, Claude 자격증명 경로를 bind mount한다. 이런 권한을 연결한 환경에서는 신뢰한 revision만 열고, 외부 pull request는 컨테이너를 시작하기 전에 `.devcontainer/`, npm lifecycle script와 diff를 먼저 검토한다.
+Dev Container는 호스트 Docker daemon을 연결하며 기본 설정에서 GitHub CLI, Codex, Claude 자격증명 경로를 bind mount한다. 이런 권한을 연결한 환경에서는 신뢰한 revision만 열고, 외부 pull request는 컨테이너를 시작하기 전에 `.devcontainer/`, 의존성 lifecycle script와 diff를 먼저 검토한다.
 
 `tools/dev-tools/tunnel.sh`는 direct API 공개를 지원하지 않는다. 하지만 앱 BFF는 일부 auth endpoint만 막는 catch-all proxy라서, 앱 터널도 대부분의 API surface를 함께 공개한다. BFF는 API 방화벽이나 route allowlist가 아니며 최종 권한 경계는 backend guard다. 격리된 일회성 환경에서만 `TUNNEL_EXPOSE_APPS=true`와 `TUNNEL_ACKNOWLEDGE_PUBLIC_DEV_STACK_RISK=true`를 함께 설정하고, 실제 데이터·운영 secret을 넣지 않는다. 공유 환경에는 Quick Tunnel 대신 인증된 ingress(예: 접근 제어가 걸린 터널)를 사용한다. 작업 뒤 tunnel을 종료하고 사용한 임시 자격증명을 회전한다.
 

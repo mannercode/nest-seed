@@ -272,7 +272,7 @@ end
 
 ## 코드 컨벤션
 
-코드 스타일보다 **같은 방식으로 생각하고 읽기 위한 약속**이다. 자동 포맷팅으로 해결되는 내용은 적지 않는다. 주 무대는 apps/api지만 libs의 TypeScript 코드에도 같은 약속이 적용된다. 폴더가 없는 횡단 약속(커밋 메시지, fail-fast, 값의 위치, npm 스크립트 계약)은 [컨벤션](reference/conventions.md)에 있다.
+코드 스타일보다 **같은 방식으로 생각하고 읽기 위한 약속**이다. 자동 포맷팅으로 해결되는 내용은 적지 않는다. 주 무대는 apps/api지만 libs의 TypeScript 코드에도 같은 약속이 적용된다. 폴더가 없는 횡단 약속(커밋 메시지, fail-fast, 값의 위치, pnpm 스크립트 계약)은 [컨벤션](reference/conventions.md)에 있다.
 
 ### 이름 짓기
 
@@ -491,7 +491,7 @@ async delete(@Param('userId') userId: string) {
 
 이 시드의 테스트는 mock 객체를 거의 사용하지 않는다. 인덱스, 트랜잭션, 레이스 컨디션처럼 mock으로는 놓치기 쉬운 문제를 실제 환경에 가깝게 확인하기 위해서다. `apps/api` 통합 테스트는 devcontainer가 띄운 MongoDB Replica Set, Redis Cluster, VersityGW, NATS와 Restate를 재사용하고, `libs/common` 테스트는 Testcontainers로 MongoDB·Redis·VersityGW·NATS를 직접 시작한다. 커버리지를 수집하는 `apps/api`·`libs/common`·`tools/jest-helpers`는 100%를 못 채우면 실패한다. 하네스·BFF·shell 계약 테스트처럼 커버리지를 수집하지 않는 예외는 목적과 실행 경로를 [설계 결정 §6](reference/decisions.md#6-테스트-커버리지-100-게이트)에 명시한다.
 
-이 구조는 테스트 주도 개발과 잘 맞고, 그 이점은 모듈 경계 설계에서 나온다. 테스트가 필요한 환경(인프라·해당 모듈)을 코드로 세우므로, 한 모듈을 작업할 때 다른 앱이나 서비스를 함께 띄울 필요가 없다 — 모듈을 독립 서비스로 떼어내도 그 모듈의 작업 루프는 그대로다. 반대로 `npm run dev`로 앱을 직접 띄우는 방식은 서비스가 늘수록 기동 대상이 늘어 부담이 커진다. 단, 이 이점은 단위·단일 모듈 통합 테스트의 inner-loop에 한한다 — 여러 서비스를 가로지르는 e2e·분산 레이스 테스트는 여전히 배포 스택 전체가 필요하다([tests 문서](tests.md)).
+이 구조는 테스트 주도 개발과 잘 맞고, 그 이점은 모듈 경계 설계에서 나온다. 테스트가 필요한 환경(인프라·해당 모듈)을 코드로 세우므로, 한 모듈을 작업할 때 다른 앱이나 서비스를 함께 띄울 필요가 없다 — 모듈을 독립 서비스로 떼어내도 그 모듈의 작업 루프는 그대로다. 반대로 `pnpm run dev`로 앱을 직접 띄우는 방식은 서비스가 늘수록 기동 대상이 늘어 부담이 커진다. 단, 이 이점은 단위·단일 모듈 통합 테스트의 inner-loop에 한한다 — 여러 서비스를 가로지르는 e2e·분산 레이스 테스트는 여전히 배포 스택 전체가 필요하다([tests 문서](tests.md)).
 
 ### 테스트 구조와 한글 메시지 규칙
 
@@ -609,12 +609,12 @@ jest.teardown.js  전체 워커 종료 후 한 번: 현재 실행의 DB·버킷�
 
 `apps/api`의 통합 테스트는 devcontainer가 시작해 둔 공용 인프라(Mongo / Redis / VersityGW / NATS / Restate 컨테이너)를 재사용한다. 대부분의 앱 컨텍스트는 Restate endpoint와 client를 끄고, 전체 상영 생성 스위트만 `enableRestate: true`로 실제 endpoint를 임시 포트에 열어 고유한 `PROJECT_ID`의 서비스를 등록한다. 정상 teardown은 현재 컨텍스트가 제출한 workflow 완료를 먼저 기다리고, 등록 응답으로 받은 정확한 deployment ID만 Admin API에서 제거한 뒤 endpoint를 닫는다. Restate의 삭제 API가 force를 요구하므로 `?force=true`를 쓰되, 자기 invocation을 drain한 테스트 전용 deployment에만 한정한다. 등록·정리 도중 오류가 나도 앱 close는 `finally`에서 실행한다.
 
-Mongo·S3·Redis teardown은 실행 ID에 정확히 대응하는 자원만 제거하며, 실행 ID가 없거나 형식이 잘못되면 넓은 범위를 정리하지 않고 실패한다. Redis teardown도 scoped glob이 필수이고, 전체 flush는 실행 전용 Testcontainers Redis를 쓰는 `libs/common`만 명시적으로 허용한다. 강제 종료로 teardown을 건너뛰면 실행별 디렉터리와 외부 자원이 남을 수 있지만 다음 실행과 이름이 겹치지는 않는다. `npm run clean`은 남은 `_output`을 제거하고, `npm run preatoz`는 그 작업과 인프라 reset을 함께 수행한다. AtoZ의 격리 하네스는 실제 setup/teardown을 켠 Jest 두 개를 병렬로 띄운다. B 실행이 실제 Mongo·S3·Redis sentinel을 만든 뒤 기다리고, A teardown이 끝난 다음 B의 세 sentinel이 남고 A의 세 자원은 제거됐는지 확인한다. 성공한 두 child의 출력 디렉터리는 run 경로 형식을 검증한 뒤 하네스가 제거한다. 이 probe spec은 일반 API suite에서도 skip하지 않고 namespace assertion만 수행한다. stability의 apps/api 반복은 run별 coverage 디렉터리가 누적되지 않도록 coverage를 끈다. `libs/testing`은 인프라 없는 단위 테스트로 돈다.
+Mongo·S3·Redis teardown은 실행 ID에 정확히 대응하는 자원만 제거하며, 실행 ID가 없거나 형식이 잘못되면 넓은 범위를 정리하지 않고 실패한다. Redis teardown도 scoped glob이 필수이고, 전체 flush는 실행 전용 Testcontainers Redis를 쓰는 `libs/common`만 명시적으로 허용한다. 강제 종료로 teardown을 건너뛰면 실행별 디렉터리와 외부 자원이 남을 수 있지만 다음 실행과 이름이 겹치지는 않는다. `pnpm run clean`은 남은 `_output`을 제거하고, `pnpm run preatoz`는 그 작업과 인프라 reset을 함께 수행한다. AtoZ의 격리 하네스는 실제 setup/teardown을 켠 Jest 두 개를 병렬로 띄운다. B 실행이 실제 Mongo·S3·Redis sentinel을 만든 뒤 기다리고, A teardown이 끝난 다음 B의 세 sentinel이 남고 A의 세 자원은 제거됐는지 확인한다. 성공한 두 child의 출력 디렉터리는 run 경로 형식을 검증한 뒤 하네스가 제거한다. 이 probe spec은 일반 API suite에서도 skip하지 않고 namespace assertion만 수행한다. stability의 apps/api 반복은 run별 coverage 디렉터리가 누적되지 않도록 coverage를 끈다. `libs/testing`은 인프라 없는 단위 테스트로 돈다.
 
 단일 spec만 실행하려면 Jest에 파일 패턴을 넘기고 커버리지 게이트를 끈다. VS Code에서는 devcontainer에 포함된 Jest Runner 확장으로 describe/it 단위 실행도 된다.
 
 ```bash
-npm test -w apps/api -- users.spec --coverage=false
+pnpm --filter './apps/api' test users.spec --coverage=false
 ```
 
 ## 실행 가능한 API 문서

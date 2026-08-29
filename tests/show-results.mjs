@@ -72,7 +72,7 @@ const notRunSuites = mode === 'atoz' ? excludedSuites : [...atozOnlySuites, ...e
 const width = 88
 const rule = '='.repeat(width)
 const thinRule = '-'.repeat(width)
-const command = mode === 'atoz' ? 'npm run atoz' : 'npm test'
+const command = mode === 'atoz' ? 'pnpm run atoz' : 'pnpm test'
 
 console.log('')
 console.log(rule)
@@ -100,7 +100,7 @@ if (mode === 'atoz') {
     if (existsSync(reportPath)) {
         console.log(thinRule)
         console.log(` 브라우저 상세 보고서: ${reportPath}`)
-        console.log(' 열기: npm run e2e:report')
+        console.log(' 열기: pnpm run e2e:report')
     }
 }
 console.log(rule)

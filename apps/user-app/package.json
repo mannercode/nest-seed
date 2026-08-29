@@ -11,7 +11,7 @@
         "start": "next start -p ${USER_APP_PORT:?}",
         "format": "eslint src/ --fix && prettier --write src/",
         "lint": "tsc --noEmit && eslint src/ --max-warnings=0 && prettier --check src/",
-        "atoz": "npm run lint && npm run build"
+        "atoz": "pnpm run lint && pnpm run build"
     },
     "dependencies": {
         "next": "16.3.2",
@@ -19,7 +19,7 @@
         "react-dom": "19.2.8"
     },
     "devDependencies": {
-        "@mannercode/dev-tools": "*",
+        "@mannercode/dev-tools": "workspace:*",
         "@tailwindcss/postcss": "4.3.3",
         "@types/node": "26.4.0",
         "@types/react": "19.2.18",

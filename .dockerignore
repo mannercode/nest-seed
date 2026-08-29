@@ -3,8 +3,8 @@
 *
 
 !/package.json
-!/package-lock.json
-!/.npmrc
+!/pnpm-lock.yaml
+!/pnpm-workspace.yaml
 !/tsconfig.json
 
 !/libs/*/package.json
@@ -22,11 +22,11 @@
 !/apps/*/jest.*.js
 
 # `apps/api`가 `tools/` 패키지를 사용하므로 의존성을 설치할 때 이 폴더가 필요하다.
-# 없으면 npm이 외부 패키지로 찾아 내려받으려다 실패한다.
+# 없으면 local workspace dependency를 연결할 수 없다.
 !/tools/
 !/tools/*/
 
-# `tests/*`도 npm 작업 공간에 포함된다.
+# `tests/*`도 pnpm workspace에 포함된다.
 # 실제 앱 이미지에는 넣지 않더라도, 의존성을 설치할 때는 각 `package.json`이 있어야 한다.
 !/tests/*/package.json
 

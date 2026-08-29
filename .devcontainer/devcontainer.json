@@ -36,7 +36,7 @@
         "github": "mkdir -p ${localEnv:HOME}/.config/gh",
         "network": "n=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}; docker network inspect \"$n\" >/dev/null 2>&1 || docker network create \"$n\""
     },
-    "postCreateCommand": { "install": "npm install" },
+    "postCreateCommand": { "install": "pnpm install --frozen-lockfile" },
     "postStartCommand": {
         "infra": "bash infra/reset.sh",
         "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null"

@@ -4,7 +4,7 @@
     "private": true,
     "scripts": {
         "test": "bash tunnel-policy.test.sh",
-        "atoz": "npm test"
+        "atoz": "pnpm test"
     },
     "bin": {
         "free-port": "./free-port.js",

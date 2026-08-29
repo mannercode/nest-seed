@@ -26,8 +26,8 @@ test('cleanWorkspace removes only generated paths and preserves personal files',
     ])
     await Promise.all([
         writeFile(
-            join(root, 'package.json'),
-            JSON.stringify({ workspaces: ['apps/*', 'tests/*'] })
+            join(root, 'pnpm-workspace.yaml'),
+            "packages:\n    - 'apps/*'\n    - 'tests/*'\n"
         ),
         writeFile(join(root, '.env.local'), 'PRIVATE=value\n'),
         writeFile(join(root, 'notes/keep.txt'), 'keep\n'),
@@ -69,7 +69,7 @@ test('cleanWorkspace refuses generated paths beneath a symlinked workspace', asy
         mkdir(join(outside, 'node_modules'), { recursive: true })
     ])
     await Promise.all([
-        writeFile(join(root, 'package.json'), JSON.stringify({ workspaces: ['libs/common'] })),
+        writeFile(join(root, 'pnpm-workspace.yaml'), "packages:\n    - 'libs/common'\n"),
         writeFile(join(outside, 'node_modules/marker.txt'), 'outside dependency\n')
     ])
     await symlink(outside, join(root, 'libs/common'))

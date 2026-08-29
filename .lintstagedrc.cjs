@@ -1,23 +1,26 @@
 module.exports = {
-    'apps/api/**/*.{ts,tsx}': ['npm exec --workspace apps/api -- eslint --fix', 'prettier --write'],
+    'apps/api/**/*.{ts,tsx}': [
+        "pnpm --filter './apps/api' --fail-if-no-match exec eslint --fix",
+        'prettier --write'
+    ],
     'apps/console/**/*.{ts,tsx}': [
-        'npm exec --workspace apps/console -- eslint --fix',
+        "pnpm --filter './apps/console' --fail-if-no-match exec eslint --fix",
         'prettier --write'
     ],
     'apps/user-app/**/*.{ts,tsx}': [
-        'npm exec --workspace apps/user-app -- eslint --fix',
+        "pnpm --filter './apps/user-app' --fail-if-no-match exec eslint --fix",
         'prettier --write'
     ],
     'libs/common/**/*.{ts,tsx}': [
-        'npm exec --workspace libs/common -- eslint --fix',
+        "pnpm --filter './libs/common' --fail-if-no-match exec eslint --fix",
         'prettier --write'
     ],
     'libs/testing/**/*.{ts,tsx}': [
-        'npm exec --workspace libs/testing -- eslint --fix',
+        "pnpm --filter './libs/testing' --fail-if-no-match exec eslint --fix",
         'prettier --write'
     ],
     'tests/web/**/*.{ts,tsx}': [
-        'npm exec --workspace tests/web -- eslint --fix',
+        "pnpm --filter './tests/web' --fail-if-no-match exec eslint --fix",
         'prettier --write'
     ],
     '*.{cjs,js,mjs}': 'node tools/lint-staged-js.mjs',

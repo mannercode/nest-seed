@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const files = process.argv.slice(2).map((file) => resolve(workspaceRoot, file))
-const npmExecutable = process.platform === 'win32' ? 'npm.cmd' : 'npm'
+const pnpmExecutable = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
 
 const filesIn = (workspace) =>
     files.filter((file) => {
@@ -12,8 +12,8 @@ const filesIn = (workspace) =>
         return pathFromWorkspace !== '..' && !pathFromWorkspace.startsWith(`..${sep}`)
     })
 
-const runNpm = (args) => {
-    const result = spawnSync(npmExecutable, args, {
+const runPnpm = (args) => {
+    const result = spawnSync(pnpmExecutable, args, {
         cwd: workspaceRoot,
         shell: false,
         stdio: 'inherit'
@@ -24,12 +24,28 @@ const runNpm = (args) => {
 
 const raceFiles = filesIn('tests/api-race')
 if (raceFiles.length > 0) {
-    runNpm(['exec', '--workspace', 'tests/api-race', '--', 'eslint', '--fix', ...raceFiles])
+    runPnpm([
+        '--filter',
+        './tests/api-race',
+        '--fail-if-no-match',
+        'exec',
+        'eslint',
+        '--fix',
+        ...raceFiles
+    ])
 }
 
 const apiFiles = filesIn('apps/api')
 if (apiFiles.length > 0) {
-    runNpm(['exec', '--workspace', 'apps/api', '--', 'eslint', '--fix', ...apiFiles])
+    runPnpm([
+        '--filter',
+        './apps/api',
+        '--fail-if-no-match',
+        'exec',
+        'eslint',
+        '--fix',
+        ...apiFiles
+    ])
 }
 
-if (files.length > 0) runNpm(['exec', '--', 'prettier', '--write', ...files])
+if (files.length > 0) runPnpm(['exec', 'prettier', '--write', ...files])

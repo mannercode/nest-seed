@@ -1,8 +1,8 @@
 # registry에서 직접 설치하는 dependencies/devDependencies는 정확 고정한다.
-# peerDependencies의 호환 범위와 로컬 workspace 연결(`*`)은 예외이며, 고정 버전은 갱신 장치가 없으면 포크 시점부터 묵기 시작한다.
-# npm, GitHub Actions, Docker 이미지의 minor/patch만 주 1회 확인한다. major는 서로 맞물린
+# peerDependencies의 호환 범위와 로컬 workspace 연결(`workspace:*`)은 예외이며, 고정 버전은 갱신 장치가 없으면 포크 시점부터 묵기 시작한다.
+# pnpm이 관리하는 npm registry 패키지, GitHub Actions, Docker 이미지의 minor/patch만 주 1회 확인한다. major는 서로 맞물린
 # toolchain/runtime을 한 PR에서 올려야 하므로 routine version update 대상에서 제외한다.
-# npm은 manifest에 명시한 직접 의존성만 갱신 후보로 삼고, 실제로 같은 release train을
+# Dependabot의 npm 생태계 설정은 manifest에 명시한 직접 의존성만 갱신 후보로 삼고, 실제로 같은 release train을
 # 따르는 생태계만 묶는다. lockfile 간접 의존성 전체를 한 PR로 묶으면 무관한 변경 하나가
 # 모든 안전한 갱신을 막고 install-script 심사 범위도 불필요하게 커진다.
 # `allow.update-types`는 security update에는 적용되지 않아 major 보안 수정 PR도 계속 열린다.

@@ -18,9 +18,9 @@
 <!-- 실제 실행한 명령과 결과를 적습니다. 실행하지 않은 검사는 이유를 적습니다. -->
 
 - [ ] 가까운 범위 테스트
-- [ ] `npm test`
-- [ ] `npm run lint`
-- [ ] 필요하면 `npm run atoz`
+- [ ] `pnpm test`
+- [ ] `pnpm run lint`
+- [ ] 필요하면 `pnpm run atoz`
 
 ## 운영 영향
 

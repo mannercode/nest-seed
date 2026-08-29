@@ -1,0 +1,22 @@
+packages:
+    - 'apps/*'
+    - 'libs/*'
+    - 'tests/*'
+    - 'tools/*'
+
+saveExact: true
+strictDepBuilds: true
+
+allowBuilds:
+    'bcrypt@6.0.0': true
+    cpu-features: false
+    'fsevents@2.3.2': true
+    'fsevents@2.3.3': true
+    protobufjs: false
+    ssh2: false
+    'unrs-resolver@1.12.2': true
+
+# pnpm 11의 기본 24시간 보류 정책이 최초 lock 생성 당시 자동 기록한 exact-version 예외다.
+minimumReleaseAgeExclude:
+    - '@nestjs/cli@12.0.0'
+    - webpack@5.110.1
