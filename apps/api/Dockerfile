@@ -23,7 +23,6 @@ COPY --from=build /workspace/deploy/api/package.json ./
 COPY --from=build /workspace/deploy/api/node_modules ./node_modules
 COPY --from=build /workspace/apps/api/_output/dist/index.js /workspace/apps/api/_output/dist/index.js.map _output/dist/
 
-RUN install -d -o node -g node /app/logs
 USER node
 
 CMD ["node", "--enable-source-maps", "_output/dist/index.js"]

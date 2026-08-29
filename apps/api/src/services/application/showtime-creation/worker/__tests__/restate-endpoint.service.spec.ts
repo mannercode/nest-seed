@@ -1,5 +1,5 @@
 import type { AppLoggerService } from '@mannercode/common'
-import { workflow } from '@restatedev/restate-sdk'
+import { type LoggerTransport, workflow } from '@restatedev/restate-sdk'
 import { once } from 'node:events'
 import { connect } from 'node:http2'
 import type { AppConfigService } from '#config'
@@ -72,6 +72,37 @@ describe('ShowtimeCreationRestateEndpoint', () => {
             expect(session.destroy).toHaveBeenCalledTimes(1)
         } finally {
             vi.useRealTimers()
+        }
+    })
+
+    it('Restate 로그 레벨을 애플리케이션 로거에 대응시킨다', () => {
+        const logger = createLogger()
+        const endpoint = createEndpoint(9080, logger)
+        const transport = (endpoint as unknown as { restateLogger: LoggerTransport }).restateLogger
+        const mappings = [
+            ['trace', 'verbose'],
+            ['debug', 'debug'],
+            ['info', 'log'],
+            ['warn', 'warn'],
+            ['error', 'error']
+        ] as const
+
+        for (const [level, loggerMethod] of mappings) {
+            const message = `${level} message`
+            transport(
+                {
+                    level,
+                    replaying: false,
+                    source: 'USER'
+                } as unknown as Parameters<LoggerTransport>[0],
+                message,
+                `${level} detail`
+            )
+
+            expect(logger[loggerMethod]).toHaveBeenCalledWith(
+                message,
+                expect.objectContaining({ parameters: [`${level} detail`] })
+            )
         }
     })
 

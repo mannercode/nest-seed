@@ -29,7 +29,8 @@ export class ShowtimeCreationRestateEndpoint
 
     async onApplicationBootstrap() {
         const handler = createEndpointHandler({
-            logger: this.restateLogger,
+            // Restate의 재시도 로그는 통합 테스트 출력량을 크게 늘리므로 테스트에서는 끈다.
+            logger: process.env.VITEST_POOL_ID ? () => undefined : this.restateLogger,
             services: [this.workflow.definition]
         })
         const server = createServer(handler)

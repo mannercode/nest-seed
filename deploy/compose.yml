@@ -3,12 +3,11 @@ x-api-base: &api-base
         - ../.env.infra
         - ../.env.api
     environment:
-        # deploy 시에는 .env.api의 NODE_ENV=test와 LOG_DIRECTORY=./_output/logs를 덮어쓴다.
+        # deploy 시에는 .env.api의 테스트 환경값을 production으로 덮어쓴다.
         # 비밀번호 암호화(bcrypt)와 파일 작업은 같은 작업 스레드를 사용한다.
         # 기본 4개로는 요청이 몰릴 때 부족하므로 16개로 늘린다.
         - NODE_ENV=production
         - UV_THREADPOOL_SIZE=16
-        - LOG_DIRECTORY=/app/logs
     labels:
         co.elastic.logs/enabled: 'true'
         co.elastic.logs/json.add_error_key: 'true'

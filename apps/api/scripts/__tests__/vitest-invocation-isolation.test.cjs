@@ -10,7 +10,7 @@ const fixtureConfig = path.join(__dirname, 'fixtures/vitest-invocation/vitest.co
 const vitestBin = path.join(path.dirname(require.resolve('vitest/package.json')), 'vitest.mjs')
 
 test(
-    'two real Vitest invocations isolate resources and every output directory',
+    'two real Vitest invocations isolate resources and output directories',
     { timeout: 120_000 },
     async (context) => {
         const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'nest-seed-vitest-isolation-'))
@@ -30,7 +30,6 @@ test(
             }
         })
 
-        const sharedLogDirectory = path.join(tempDirectory, 'shared-logs-before-isolation')
         const firstResultPath = path.join(tempDirectory, 'first.json')
         const secondResultPath = path.join(tempDirectory, 'second.json')
         const firstTeardownPath = path.join(tempDirectory, 'first-teardown.json')
@@ -39,14 +38,12 @@ test(
             barrierDirectory: tempDirectory,
             peerResultPath: firstResultPath,
             resultPath: secondResultPath,
-            role: 'B',
-            sharedLogDirectory
+            role: 'B'
         })
         const firstProbe = runProbe({
             barrierDirectory: tempDirectory,
             resultPath: firstResultPath,
-            role: 'A',
-            sharedLogDirectory
+            role: 'A'
         }).then(
             () => writeJsonAtomic(firstTeardownPath, { ok: true }),
             (error) => {
@@ -83,13 +80,12 @@ test(
         )
         assert.notEqual(first.outputDirectory, second.outputDirectory)
         assert.notEqual(first.coverageDirectory, second.coverageDirectory)
-        assert.notEqual(first.logDirectory, second.logDirectory)
         assert.equal(second.sentinelsPreserved, true)
         assert.equal(second.peerResourcesRemoved, true)
     }
 )
 
-function runProbe({ barrierDirectory, peerResultPath, resultPath, role, sharedLogDirectory }) {
+function runProbe({ barrierDirectory, peerResultPath, resultPath, role }) {
     return new Promise((resolve, reject) => {
         const child = spawn(
             process.execPath,
@@ -111,8 +107,7 @@ function runProbe({ barrierDirectory, peerResultPath, resultPath, role, sharedLo
                         ? { VITEST_ISOLATION_PEER_RESULT_PATH: peerResultPath }
                         : {}),
                     VITEST_ISOLATION_RESULT_PATH: resultPath,
-                    VITEST_ISOLATION_ROLE: role,
-                    LOG_DIRECTORY: sharedLogDirectory
+                    VITEST_ISOLATION_ROLE: role
                 },
                 stdio: ['ignore', 'pipe', 'pipe']
             }

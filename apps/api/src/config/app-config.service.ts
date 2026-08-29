@@ -47,9 +47,6 @@ export class AppConfigService extends BaseConfigService {
 
         HTTP_REQUEST_PAYLOAD_LIMIT: requiredString,
         LOG_CONSOLE_LEVEL: requiredString,
-        LOG_DAYS_TO_KEEP: requiredString,
-        LOG_DIRECTORY: requiredString,
-        LOG_FILE_LEVEL: requiredString,
         MONGO_URI: requiredString,
         MONGO_DATABASE: requiredString,
         NODE_ENV: z.enum(['development', 'production', 'test']),
@@ -131,10 +128,7 @@ export class AppConfigService extends BaseConfigService {
     get log() {
         return {
             consoleLogLevel: this.getString('LOG_CONSOLE_LEVEL'),
-            daysToKeepLogs: this.getString('LOG_DAYS_TO_KEEP'),
-            directory: this.getString('LOG_DIRECTORY'),
             environment: this.getString('NODE_ENV'),
-            fileLogLevel: this.getString('LOG_FILE_LEVEL'),
             serviceName: this.getString('PROJECT_ID')
         }
     }

@@ -4,7 +4,6 @@ import { ecsFormat } from '@elastic/ecs-winston-format'
 /* istanbul ignore file */
 import { styleText } from 'node:util'
 import winston from 'winston'
-import DailyRotateFile from 'winston-daily-rotate-file'
 import type { HttpErrorLog, HttpSuccessLog } from './types.js'
 import { defaultTo } from '../utils/index.js'
 
@@ -91,10 +90,7 @@ export type LogFormatter = (
 export type LoggerConfig = {
     consoleLogLevel: string
     customFormatters?: Record<string, LogFormatter>
-    daysToKeepLogs: string
-    directory: string
     environment: string
-    fileLogLevel: string
     serviceName: string
     serviceNodeName: string
 }
@@ -143,38 +139,9 @@ function createConsoleLogFormat(customFormatters?: Record<string, LogFormatter>)
 }
 
 export function createWinstonLogger(config: LoggerConfig) {
-    const {
-        consoleLogLevel,
-        customFormatters,
-        daysToKeepLogs,
-        directory,
-        environment,
-        fileLogLevel,
-        serviceName,
-        serviceNodeName
-    } = config
+    const { consoleLogLevel, customFormatters, environment, serviceName, serviceNodeName } = config
 
     const transports: winston.transport[] = []
-
-    transports.push(
-        new DailyRotateFile({
-            createSymlink: true,
-            datePattern: 'YYYY-MM-DD',
-            dirname: directory,
-            filename: `%DATE%.log`,
-            format: winston.format.combine(
-                winston.format.timestamp({ format: 'HH:mm:ss.SSS' }),
-                winston.format.json()
-            ),
-            handleExceptions: true,
-            handleRejections: true,
-            level: fileLogLevel,
-            maxFiles: daysToKeepLogs,
-            maxSize: '10m',
-            symlinkName: `current.log`,
-            zippedArchive: false
-        })
-    )
 
     if (consoleLogLevel && consoleLogLevel !== 'silent') {
         const consoleFormat =

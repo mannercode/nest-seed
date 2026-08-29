@@ -51,7 +51,6 @@ async function runInfrastructureProbe(role: 'A' | 'B'): Promise<void> {
         bucketName,
         coverageDirectory: requiredEnvironment('VITEST_ISOLATION_PROBE_COVERAGE_DIRECTORY'),
         databaseName,
-        logDirectory: requiredEnvironment('LOG_DIRECTORY'),
         outputDirectory: requiredEnvironment('VITEST_ISOLATION_PROBE_OUTPUT_DIRECTORY'),
         projectId,
         redisKey,

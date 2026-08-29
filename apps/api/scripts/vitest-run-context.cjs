@@ -9,7 +9,6 @@ function initializeApiVitestRun(appDir, env = process.env) {
 
     const context = buildApiVitestRunContext(appDir, runId)
     env.API_VITEST_OUTPUT_DIRECTORY = context.outputDirectory
-    env.LOG_DIRECTORY = context.logDirectory
     return context
 }
 
@@ -19,18 +18,12 @@ function readApiVitestRun(appDir, env = process.env) {
 
     const context = buildApiVitestRunContext(appDir, runId)
     assertEnvironmentPath(env, 'API_VITEST_OUTPUT_DIRECTORY', context.outputDirectory)
-    assertEnvironmentPath(env, 'LOG_DIRECTORY', context.logDirectory)
     return context
 }
 
 function buildApiVitestRunContext(appDir, runId) {
     const outputDirectory = path.resolve(appDir, '_output/vitest-runs', `r${runId}`)
-    return {
-        coverageDirectory: path.join(outputDirectory, 'coverage'),
-        logDirectory: path.join(outputDirectory, 'logs'),
-        outputDirectory,
-        runId
-    }
+    return { coverageDirectory: path.join(outputDirectory, 'coverage'), outputDirectory, runId }
 }
 
 function assertEnvironmentPath(env, name, expected) {
