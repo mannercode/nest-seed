@@ -74,6 +74,7 @@ import { AppConfigModule, GlobalModule, HealthModule } from './modules/index.js'
         LoginRateLimiterService,
         RootAuthGuard,
         UserAuthGuard,
+        { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: ['/health'] },
         { provide: APP_PIPE, useClass: RequestValidationPipe },
         { provide: APP_FILTER, useClass: HttpExceptionLoggerFilter },
         { provide: APP_INTERCEPTOR, useClass: HttpSuccessLoggerInterceptor }

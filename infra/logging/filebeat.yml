@@ -1,0 +1,37 @@
+filebeat.autodiscover:
+    providers:
+        - type: docker
+          host: unix:///var/run/docker.sock
+          hints.enabled: true
+          # 명시적으로 opt-in한 컨테이너만 읽는다.
+          hints.default_config:
+              enabled: false
+              type: filestream
+              id: container-${data.container.id}
+              close.on_state_change.removed: false
+              parsers:
+                  - container: ~
+              paths:
+                  - /var/lib/docker/containers/${data.container.id}/*.log
+
+processors:
+    - add_docker_metadata:
+          host: unix:///var/run/docker.sock
+
+# Elasticsearch가 잠시 중단돼도 읽은 이벤트와 registry를 컨테이너 밖에 보존한다.
+queue.disk:
+    max_size: 512MB
+
+output.elasticsearch:
+    hosts: [http://log-elasticsearch:9200]
+
+setup.ilm:
+    enabled: true
+    overwrite: true
+    policy_name: nest-seed-logs
+    policy_file: /usr/share/filebeat/ilm-policy.json
+
+setup.kibana:
+    host: http://log-kibana:5601
+
+logging.level: info

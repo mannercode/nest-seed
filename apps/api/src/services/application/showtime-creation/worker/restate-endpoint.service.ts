@@ -1,5 +1,10 @@
+import { AppLoggerService } from '@mannercode/common'
 import { Injectable, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common'
-import { createEndpointHandler } from '@restatedev/restate-sdk'
+import {
+    createEndpointHandler,
+    type LoggerTransport,
+    type RestateLogLevel
+} from '@restatedev/restate-sdk'
 import { createServer, type Http2Server, type ServerHttp2Session } from 'node:http2'
 import { AppConfigService } from '#config'
 import { ShowtimeCreationWorkflow } from './workflow.js'
@@ -14,7 +19,8 @@ export class ShowtimeCreationRestateEndpoint
 
     constructor(
         private readonly workflow: ShowtimeCreationWorkflow,
-        private readonly config: AppConfigService
+        private readonly config: AppConfigService,
+        private readonly logger: AppLoggerService
     ) {}
 
     get port() {
@@ -23,7 +29,7 @@ export class ShowtimeCreationRestateEndpoint
 
     async onApplicationBootstrap() {
         const handler = createEndpointHandler({
-            logger: process.env.VITEST_POOL_ID ? () => undefined : undefined,
+            logger: this.restateLogger,
             services: [this.workflow.definition]
         })
         const server = createServer(handler)
@@ -66,5 +72,37 @@ export class ShowtimeCreationRestateEndpoint
 
     private testPortOrConfiguredPort() {
         return process.env.VITEST_POOL_ID ? 0 : this.config.restate.servicePort
+    }
+
+    private readonly restateLogger: LoggerTransport = (
+        { context, level, replaying, source },
+        message,
+        ...optionalParams
+    ) => {
+        const details = {
+            contextType: 'restate',
+            restate: {
+                handlerName: context?.handlerName,
+                invocationId: context?.invocationId,
+                key: context?.key,
+                replaying,
+                serviceName: context?.serviceName,
+                source
+            },
+            ...(optionalParams.length > 0 ? { parameters: optionalParams } : {})
+        }
+
+        this.restateLoggers[level](message, details)
+    }
+
+    private readonly restateLoggers: Record<
+        RestateLogLevel,
+        (message: unknown, details: Record<string, unknown>) => void
+    > = {
+        debug: (message, details) => this.logger.debug(message, details),
+        error: (message, details) => this.logger.error(message, details),
+        info: (message, details) => this.logger.log(message, details),
+        trace: (message, details) => this.logger.verbose(message, details),
+        warn: (message, details) => this.logger.warn(message, details)
     }
 }

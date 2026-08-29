@@ -1,3 +1,4 @@
+import type { AppLoggerService } from '@mannercode/common'
 import { workflow } from '@restatedev/restate-sdk'
 import { once } from 'node:events'
 import { connect } from 'node:http2'
@@ -27,12 +28,19 @@ describe('ShowtimeCreationRestateEndpoint', () => {
     it('Vitest 밖에서는 설정 포트를 사용한다', async () => {
         const workerId = process.env.VITEST_POOL_ID
         delete process.env.VITEST_POOL_ID
-        vi.spyOn(console, 'warn').mockImplementation(() => undefined)
-        const endpoint = createEndpoint(0)
+        const logger = createLogger()
+        const endpoint = createEndpoint(0, logger)
 
         try {
             await endpoint.onApplicationBootstrap()
             expect(endpoint.port).toBeGreaterThan(0)
+            expect(logger.warn).toHaveBeenCalledWith(
+                expect.stringContaining('Accepting requests without validating request signatures'),
+                expect.objectContaining({
+                    contextType: 'restate',
+                    restate: expect.objectContaining({ source: 'SYSTEM' })
+                })
+            )
         } finally {
             await endpoint.onApplicationShutdown()
             process.env.VITEST_POOL_ID = workerId
@@ -67,13 +75,23 @@ describe('ShowtimeCreationRestateEndpoint', () => {
         }
     })
 
-    function createEndpoint(servicePort = 9080) {
+    function createEndpoint(servicePort = 9080, logger = createLogger()) {
         const definition = workflow({
             handlers: { run: async () => undefined },
             name: `EndpointTest-${Math.random().toString(36).slice(2)}`
         })
         const workflowProvider = { definition } as ShowtimeCreationWorkflow
         const config = { restate: { servicePort } } as AppConfigService
-        return new ShowtimeCreationRestateEndpoint(workflowProvider, config)
+        return new ShowtimeCreationRestateEndpoint(workflowProvider, config, logger)
+    }
+
+    function createLogger() {
+        return {
+            debug: vi.fn(),
+            error: vi.fn(),
+            log: vi.fn(),
+            verbose: vi.fn(),
+            warn: vi.fn()
+        } as unknown as AppLoggerService
     }
 })

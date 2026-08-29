@@ -1,0 +1,66 @@
+x-container-logging: &container-logging
+    driver: json-file
+    options: { max-size: '10m', max-file: '3' }
+
+services:
+    log-elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:9.5.2@sha256:9c1e1afc2bda921b35025e21c72ec6e392266995aa35ad6a47887363592718be
+        environment:
+            - discovery.type=single-node
+            - xpack.license.self_generated.type=basic
+            # 로컬 opt-in 스택이다. 운영에서는 TLS와 인증을 반드시 별도로 구성한다.
+            - xpack.security.enabled=false
+            - ES_JAVA_OPTS=-Xms512m -Xmx512m
+        ports: ['127.0.0.1:9200:9200']
+        volumes: [elasticsearch_data:/usr/share/elasticsearch/data]
+        deploy: { resources: { limits: { memory: 1536m } } }
+        healthcheck:
+            test:
+                [
+                    'CMD-SHELL',
+                    'curl -fsS "http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=2s" >/dev/null'
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 30
+        logging: *container-logging
+        restart: unless-stopped
+
+    log-kibana:
+        image: docker.elastic.co/kibana/kibana:9.5.2@sha256:861d93114b756dd214f6d5c8824f90ac92e07d5b6223fd4a20212f7504eec2ad
+        environment:
+            - ELASTICSEARCH_HOSTS=http://log-elasticsearch:9200
+        ports: ['127.0.0.1:5601:5601']
+        depends_on: { log-elasticsearch: { condition: service_healthy } }
+        deploy: { resources: { limits: { memory: 1g } } }
+        healthcheck:
+            test: ['CMD-SHELL', 'curl -fsS http://localhost:5601/api/status >/dev/null']
+            interval: 10s
+            timeout: 5s
+            retries: 30
+        logging: *container-logging
+        restart: unless-stopped
+
+    log-filebeat:
+        image: docker.elastic.co/beats/filebeat:9.5.2@sha256:17aafbe925a43919b2eee539b1b0712e19aefd01247d4a1b855c91ca8e1ba2d6
+        user: root
+        command: ['filebeat', '-e', '--strict.perms=false']
+        volumes:
+            - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+            - ./ilm-policy.json:/usr/share/filebeat/ilm-policy.json:ro
+            - /var/lib/docker/containers:/var/lib/docker/containers:ro
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - filebeat_data:/usr/share/filebeat/data
+        depends_on: { log-elasticsearch: { condition: service_healthy } }
+        deploy: { resources: { limits: { memory: 256m } } }
+        logging: *container-logging
+        restart: unless-stopped
+
+networks:
+    default:
+        name: ${LOGGING_NETWORK_NAME:?LOGGING_NETWORK_NAME must be set}
+        external: true
+
+volumes:
+    elasticsearch_data: {}
+    filebeat_data: {}
