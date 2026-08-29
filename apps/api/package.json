@@ -2,16 +2,25 @@
     "name": "api",
     "version": "0.0.2",
     "private": true,
+    "type": "module",
+    "imports": {
+        "#application": "./_output/build/src/services/application/index.js",
+        "#config": "./_output/build/src/config/index.js",
+        "#core": "./_output/build/src/services/core/index.js",
+        "#gateway": "./_output/build/src/services/gateway/index.js",
+        "#infrastructure": "./_output/build/src/services/infrastructure/index.js",
+        "#view": "./_output/build/src/services/view/index.js"
+    },
     "scripts": {
         "start": "node --enable-source-maps _output/dist/index.js",
-        "format": "eslint src/ scripts/ '*.js' '*.cjs' --fix && prettier --write src/ scripts/ '*.js' '*.cjs'",
-        "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.jest.json && eslint src/ scripts/ '*.js' '*.cjs' --max-warnings=0 && prettier --check src/ scripts/ '*.js' '*.cjs'",
+        "format": "eslint src/ scripts/ '*.cjs' --fix && prettier --write src/ scripts/ '*.cjs'",
+        "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.jest.json && eslint src/ scripts/ '*.cjs' --max-warnings=0 && prettier --check src/ scripts/ '*.cjs'",
         "build": "nest build -b rspack --rspackPath rspack.config.cjs",
         "predev": "free-port ${API_PORT:?}",
         "dev": "nest start --watch",
         "test": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
         "test:api-docs-redaction": "bash api-docs/redaction.test.sh",
-        "test:jest-isolation": "NODE_OPTIONS='--experimental-vm-modules' node --test scripts/__tests__/*.test.js",
+        "test:jest-isolation": "NODE_OPTIONS='--experimental-vm-modules' node --test scripts/__tests__/*.test.cjs",
         "atoz": "pnpm run lint && pnpm run test:api-docs-redaction && pnpm run test:jest-isolation && pnpm test"
     },
     "dependencies": {

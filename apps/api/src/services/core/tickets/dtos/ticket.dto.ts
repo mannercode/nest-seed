@@ -1,4 +1,4 @@
-import type { SeatPosition, TicketStatus } from '../models'
+import type { SeatPosition, TicketStatus } from '../models/index.js'
 
 export class TicketDto {
     id: string

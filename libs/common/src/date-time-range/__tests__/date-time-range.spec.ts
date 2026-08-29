@@ -1,6 +1,6 @@
 import { plainToInstance } from 'class-transformer'
 import { validateSync } from 'class-validator'
-import { DateTimeRange, PartialDateTimeRange } from '../date-time-range'
+import { DateTimeRange, PartialDateTimeRange } from '../date-time-range.js'
 
 describe('DateTimeRange', () => {
     describe('검증', () => {

@@ -2,8 +2,8 @@ import { createTestContext } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
 import { getModelToken, InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { CrudRepository } from '../crud.repository'
-import { createCrudSchema, CrudSchema } from '../crud.schema'
+import { CrudRepository } from '../crud.repository.js'
+import { createCrudSchema, CrudSchema } from '../crud.schema.js'
 
 @Schema()
 class Sample extends CrudSchema {

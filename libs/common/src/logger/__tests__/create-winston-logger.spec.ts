@@ -1,8 +1,8 @@
 import type winston from 'winston'
 import { isDebuggingEnabled } from '@mannercode/testing'
 import { readFile } from 'fs/promises'
-import { PathUtil, sleep } from '../../utils'
-import { createWinstonLogger } from '../create-winston-logger'
+import { PathUtil, sleep } from '../../utils/index.js'
+import { createWinstonLogger } from '../create-winston-logger.js'
 
 const MESSAGE = Symbol.for('message')
 

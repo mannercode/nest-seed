@@ -1,6 +1,6 @@
 import { RedisModule, RedisModuleOptions } from '@mannercode/common'
 import { Module } from '@nestjs/common'
-import { AppConfigService, REDIS_CONNECTION_NAME } from 'config'
+import { AppConfigService, REDIS_CONNECTION_NAME } from '#config'
 
 @Module({
     imports: [

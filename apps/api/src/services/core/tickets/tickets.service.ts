@@ -7,9 +7,9 @@ import {
     CreateTicketsResult,
     SearchTicketsDto,
     TicketDto
-} from './dtos'
-import { Ticket, TicketStatus } from './models'
-import { TicketsRepository } from './tickets.repository'
+} from './dtos/index.js'
+import { Ticket, TicketStatus } from './models/index.js'
+import { TicketsRepository } from './tickets.repository.js'
 
 @Injectable()
 export class TicketsService {

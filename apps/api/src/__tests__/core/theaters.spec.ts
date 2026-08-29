@@ -1,12 +1,12 @@
-import type { TheaterDto } from 'core'
 import { nullObjectId } from '@mannercode/testing'
+import type { TheaterDto } from '#core'
 import {
     buildCreateTheaterDto,
     createShowtimes,
     createTheater,
     Errors,
     type AppTestContext
-} from '../helpers'
+} from '../helpers/index.js'
 
 describe('TheatersService', () => {
     let fix: AppTestContext
@@ -14,8 +14,8 @@ describe('TheatersService', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers')
-        const { AdminAuthGuard } = await import('gateway')
+        const { createAppTestContext } = await import('../helpers/index.js')
+        const { AdminAuthGuard } = await import('#gateway')
         fix = await createAppTestContext({ ignoreGuards: [AdminAuthGuard] })
         teardown = fix.teardown
     })

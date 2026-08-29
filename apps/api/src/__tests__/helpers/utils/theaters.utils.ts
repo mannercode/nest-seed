@@ -1,5 +1,5 @@
 import type { TestContext } from '@mannercode/testing'
-import type { CreateTheaterDto } from 'core'
+import type { CreateTheaterDto } from '#core'
 
 export function buildCreateTheaterDto(overrides: Partial<CreateTheaterDto> = {}): CreateTheaterDto {
     return {
@@ -11,7 +11,7 @@ export function buildCreateTheaterDto(overrides: Partial<CreateTheaterDto> = {})
 }
 
 export async function createTheater(ctx: TestContext, override: Partial<CreateTheaterDto> = {}) {
-    const { TheatersService } = await import('core')
+    const { TheatersService } = await import('#core')
     const theatersService = ctx.module.get(TheatersService)
 
     const createDto = buildCreateTheaterDto(override)

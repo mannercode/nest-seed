@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
-import { BulkCreateShowtimesDto } from '../dtos'
-import { ShowtimeCreationWorkflowClient } from '../worker'
+import { BulkCreateShowtimesDto } from '../dtos/index.js'
+import { ShowtimeCreationWorkflowClient } from '../worker/index.js'
 
 @Injectable()
 export class ShowtimeCreationOrchestratorService {

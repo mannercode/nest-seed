@@ -1,6 +1,6 @@
 import { createCrudSchema, CrudSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MONGOOSE_SCHEMA_OPTIONS } from 'config'
+import { MONGOOSE_SCHEMA_OPTIONS } from '#config'
 
 export const PaymentStatus = { Cancelled: 'cancelled', Completed: 'completed' } as const
 

@@ -1,6 +1,6 @@
 import { NatsModule } from '@mannercode/common'
 import { Module } from '@nestjs/common'
-import { AppConfigService, NATS_CONNECTION_NAME } from 'config'
+import { AppConfigService, NATS_CONNECTION_NAME } from '#config'
 
 @Module({
     imports: [

@@ -1,10 +1,10 @@
 import { ArgumentsHost, Catch, HttpException, Logger } from '@nestjs/common'
 import { BaseExceptionFilter } from '@nestjs/core'
 import { Request } from 'express'
-import { defaultTo } from '../utils'
-import { redactSensitive } from './redact'
-import { elapsedSinceRequestStart } from './request-timing'
-import { HttpErrorLog } from './types'
+import { defaultTo } from '../utils/index.js'
+import { redactSensitive } from './redact.js'
+import { elapsedSinceRequestStart } from './request-timing.js'
+import { HttpErrorLog } from './types.js'
 
 // Nest는 일치하는 예외 필터 하나만 실행하므로 동작을 확장할 때는 상속 후 super.catch()를 호출한다.
 @Catch(Error)

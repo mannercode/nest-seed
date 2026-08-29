@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { MONGO_CONNECTION_NAME } from 'config'
-import { Theater, TheaterSchema } from './models'
-import { TheatersRepository } from './theaters.repository'
-import { TheatersService } from './theaters.service'
+import { MONGO_CONNECTION_NAME } from '#config'
+import { Theater, TheaterSchema } from './models/index.js'
+import { TheatersRepository } from './theaters.repository.js'
+import { TheatersService } from './theaters.service.js'
 
 @Module({
     exports: [TheatersService],

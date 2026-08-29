@@ -1,8 +1,14 @@
 import { createTestContext, withTestId } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
-import Redis from 'ioredis'
-import { InjectJwtAuth, JwtAuthModule, JwtAuthService, OnSecurityEvent, SecurityEvent } from '..'
-import { getRedisConnectionToken, RedisModule } from '../../redis'
+import { Redis } from 'ioredis'
+import { getRedisConnectionToken, RedisModule } from '../../redis/index.js'
+import {
+    InjectJwtAuth,
+    JwtAuthModule,
+    JwtAuthService,
+    OnSecurityEvent,
+    SecurityEvent
+} from '../index.js'
 
 export const TEST_AUTH_AUDIENCE = 'test-audience'
 export const TEST_AUTH_ISSUER = 'test-issuer'

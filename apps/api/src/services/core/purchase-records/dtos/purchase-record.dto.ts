@@ -1,4 +1,4 @@
-import type { PurchaseItemDto } from './purchase-item.dto'
+import type { PurchaseItemDto } from './purchase-item.dto.js'
 
 export class PurchaseRecordDto {
     createdAt: Date

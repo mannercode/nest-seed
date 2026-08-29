@@ -7,7 +7,7 @@ import type {
 } from '@nestjs/common'
 import type { Server } from 'http'
 import { Test, type TestingModule } from '@nestjs/testing'
-import { isDebuggingEnabled } from './utils'
+import { isDebuggingEnabled } from './utils.js'
 
 export type ModuleMetadataEx = ModuleMetadata & {
     configureApp?: (app: INestApplication<Server>) => Promise<void>

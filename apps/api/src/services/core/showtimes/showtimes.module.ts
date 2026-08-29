@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { MONGO_CONNECTION_NAME } from 'config'
-import { Showtime, ShowtimeSchema } from './models'
-import { ShowtimesRepository } from './showtimes.repository'
-import { ShowtimesService } from './showtimes.service'
+import { MONGO_CONNECTION_NAME } from '#config'
+import { Showtime, ShowtimeSchema } from './models/index.js'
+import { ShowtimesRepository } from './showtimes.repository.js'
+import { ShowtimesService } from './showtimes.service.js'
 
 @Module({
     exports: [ShowtimesService],

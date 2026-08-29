@@ -1,4 +1,4 @@
-import type { ShowtimeDto } from 'core'
+import type { ShowtimeDto } from '#core'
 
 export const ShowtimeCreationStatus = {
     Error: 'error',

@@ -1,7 +1,7 @@
 import { createTestContext } from '@mannercode/testing'
 import { getModelToken, MongooseModule, Schema as NestSchema, Prop } from '@nestjs/mongoose'
 import { Model, Schema, Types, mongo } from 'mongoose'
-import { createCrudSchema, CrudSchema } from '../crud.schema'
+import { createCrudSchema, CrudSchema } from '../crud.schema.js'
 
 export type CrudSchemaFixture = { model: Model<SchemaTypeSample>; teardown: () => Promise<void> }
 

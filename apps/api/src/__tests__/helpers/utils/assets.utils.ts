@@ -1,14 +1,14 @@
 import type { TestContext } from '@mannercode/testing'
+import { pick } from '@mannercode/common'
+import { readFile } from 'fs/promises'
+import { basename } from 'path'
 import type {
     AssetDto,
     AssetPresignedUploadDto,
     CreateAssetDto,
     FinalizeAssetDto
-} from 'infrastructure'
-import { pick } from '@mannercode/common'
-import { readFile } from 'fs/promises'
-import { basename } from 'path'
-import { testAssets, type TestAsset } from '../assets'
+} from '#infrastructure'
+import { testAssets, type TestAsset } from '../assets/index.js'
 
 export function buildCreateAssetDto(file: TestAsset = testAssets.image): CreateAssetDto {
     return pick(file, ['originalName', 'mimeType', 'size', 'checksum'])
@@ -21,7 +21,7 @@ export function buildFinalizeAssetDto(
 }
 
 export async function createAsset(ctx: TestContext, file: TestAsset = testAssets.image) {
-    const { AssetsService } = await import('infrastructure')
+    const { AssetsService } = await import('#infrastructure')
     const assetsService = ctx.module.get(AssetsService)
 
     const createDto = buildCreateAssetDto(file)
@@ -46,7 +46,7 @@ export async function downloadAsset({ download }: AssetDto) {
 export async function uploadAndFinalizeAsset(ctx: TestContext, file: TestAsset) {
     const assetId = await uploadFile(ctx, file)
 
-    const { AssetsService } = await import('infrastructure')
+    const { AssetsService } = await import('#infrastructure')
     const assetsService = ctx.module.get(AssetsService)
 
     return assetsService.finalizeUpload(assetId, buildFinalizeAssetDto())

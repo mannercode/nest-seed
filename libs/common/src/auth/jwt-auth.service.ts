@@ -1,16 +1,16 @@
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { createHash } from 'crypto'
-import Redis from 'ioredis'
-import { defaultTo, generateShortId, getByPath, omit } from '../utils'
-import {
+import { Redis } from 'ioredis'
+import type {
     AuthConfig,
     EventContext,
     JwtAuthTokens,
     OnSecurityEvent,
     SecurityEvent,
     ValidateAuthPayload
-} from './jwt-auth.types'
+} from './jwt-auth.types.js'
+import { defaultTo, generateShortId, getByPath, omit } from '../utils/index.js'
 
 export const JwtAuthErrors = {
     RefreshTokenConcurrent: () => ({

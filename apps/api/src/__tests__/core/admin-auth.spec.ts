@@ -1,5 +1,5 @@
 import { HttpStatus, type INestApplication } from '@nestjs/common'
-import { createAdmin, Errors, loginAdmin, type AppTestContext } from '../helpers'
+import { createAdmin, Errors, loginAdmin, type AppTestContext } from '../helpers/index.js'
 
 const ACCOUNT_FAILURE_LIMIT = 5
 const IP_FAILURE_LIMIT = 50
@@ -19,7 +19,7 @@ describe('AdminAuthentication', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers')
+        const { createAppTestContext } = await import('../helpers/index.js')
         fix = await createAppTestContext({ configureApp: async (app) => trustPrivateProxy(app) })
         teardown = fix.teardown
 
@@ -37,7 +37,7 @@ describe('AdminAuthentication', () => {
 
         it('authVersion 필드가 없는 기존 관리자도 version 0 세션으로 로그인한다', async () => {
             const { AdminsRepository } =
-                await import('../../services/core/admins/admins.repository')
+                await import('../../services/core/admins/admins.repository.js')
             const repository = fix.module.get(AdminsRepository)
             await repository.model.collection.updateOne(
                 { email: credentials.email },

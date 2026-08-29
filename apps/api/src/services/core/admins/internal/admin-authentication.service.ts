@@ -2,8 +2,8 @@ import { InjectJwtAuth, JwtAuthService } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { compare, hash, hashSync } from 'bcrypt'
 import { validate } from 'class-validator'
-import { AdminsRepository } from '../admins.repository'
-import { AdminAuthPayload, AdminCredentialsDto } from '../dtos'
+import { AdminsRepository } from '../admins.repository.js'
+import { AdminAuthPayload, AdminCredentialsDto } from '../dtos/index.js'
 
 // JwtAuthModule.register와 @InjectJwtAuth가 이 이름을 공유해야 같은 JwtAuthService 인스턴스로 묶인다.
 export const ADMIN_JWT_AUTH_NAME = 'admins'

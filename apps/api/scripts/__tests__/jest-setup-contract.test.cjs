@@ -5,7 +5,7 @@ const test = require('node:test')
 const { createJestResourceScope } = require('@mannercode/jest-helpers')
 
 const RUN_ID = '0123456789abcdef0123456789abcdef'
-const setupPath = path.resolve(__dirname, '../../jest.setup.js')
+const setupPath = path.resolve(__dirname, '../../jest.setup.cjs')
 
 test('actual jest.setup은 app 모듈을 처음 읽기 전에 run-scoped PROJECT_ID를 설정한다', async () => {
     const originalLoad = Module._load

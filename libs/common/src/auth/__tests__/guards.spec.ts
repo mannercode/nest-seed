@@ -1,7 +1,7 @@
 import { Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
-import { AuthGuard } from '../auth.guard'
-import { basicHeader, createGuardsFixture, type GuardsFixture } from './guards.fixture'
+import { AuthGuard } from '../auth.guard.js'
+import { basicHeader, createGuardsFixture, type GuardsFixture } from './guards.fixture.js'
 
 describe('AuthGuard', () => {
     let fix: GuardsFixture

@@ -6,10 +6,10 @@ import type {
     QueryWithHelpers
 } from 'mongoose'
 import { BadRequestException, NotFoundException, type OnModuleInit } from '@nestjs/common'
-import type { PaginationDto, PaginationResult } from '../pagination'
-import { Assume, defaultTo, differenceWith, Require, uniq } from '../utils'
-import { MongooseErrors } from './errors'
-import { objectId, objectIds } from './mongoose.util'
+import type { PaginationDto, PaginationResult } from '../pagination/index.js'
+import { Assume, defaultTo, differenceWith, Require, uniq } from '../utils/index.js'
+import { MongooseErrors } from './errors.js'
+import { objectId, objectIds } from './mongoose.util.js'
 
 type BulkSaveDocs<Doc> = Parameters<Model<Doc>['bulkSave']>[0]
 type BulkSaveOptions<Doc> = NonNullable<Parameters<Model<Doc>['bulkSave']>[1]> & {

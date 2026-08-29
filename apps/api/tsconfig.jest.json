@@ -1,6 +1,11 @@
 {
     "extends": "./tsconfig.json",
-    "compilerOptions": { "types": ["node", "jest"] },
+    "compilerOptions": {
+        "module": "commonjs",
+        "moduleResolution": "bundler",
+        "isolatedModules": false,
+        "types": ["node", "jest"]
+    },
     "include": ["src/**/__tests__/**/*.ts"],
     "exclude": []
 }

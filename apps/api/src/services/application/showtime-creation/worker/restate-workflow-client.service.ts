@@ -5,9 +5,9 @@ import {
     type Ingress,
     type WorkflowSubmission
 } from '@restatedev/restate-sdk-clients'
-import { AppConfigService } from 'config'
-import type { ShowtimeCreationWorkflowInput } from './types'
-import { ShowtimeCreationWorkflow } from './workflow'
+import { AppConfigService } from '#config'
+import type { ShowtimeCreationWorkflowInput } from './types.js'
+import { ShowtimeCreationWorkflow } from './workflow.js'
 
 const SUBMIT_ATTEMPT_TIMEOUT_MS = 10_000
 

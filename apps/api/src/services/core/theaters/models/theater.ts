@@ -1,8 +1,8 @@
 import { createCrudSchema, CrudSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MONGOOSE_SCHEMA_OPTIONS } from 'config'
-import { Seatmap } from './seatmap'
-import { TheaterLocation } from './theater-location'
+import { MONGOOSE_SCHEMA_OPTIONS } from '#config'
+import { Seatmap } from './seatmap.js'
+import { TheaterLocation } from './theater-location.js'
 
 @Schema(MONGOOSE_SCHEMA_OPTIONS)
 export class Theater extends CrudSchema {

@@ -9,12 +9,15 @@ const tsJestPreset = createDefaultPreset({ tsconfig: tsconfigPath })
 module.exports = {
     ...baseConfig,
     ...tsJestPreset,
-    globalSetup: join(__dirname, 'jest.global.js'),
-    globalTeardown: join(__dirname, 'jest.teardown.js'),
-    setupFilesAfterEnv: [join(__dirname, 'jest.setup.js')],
-    moduleNameMapper: pathsToModuleNameMapper(tsconfig.compilerOptions.paths, {
-        prefix: join(__dirname, '/')
-    }),
+    globalSetup: join(__dirname, 'jest.global.cjs'),
+    globalTeardown: join(__dirname, 'jest.teardown.cjs'),
+    setupFilesAfterEnv: [join(__dirname, 'jest.setup.cjs')],
+    moduleNameMapper: {
+        ...pathsToModuleNameMapper(tsconfig.compilerOptions.paths, {
+            prefix: join(__dirname, '/')
+        }),
+        '^(\\.{1,2}/.*)\\.js$': '$1'
+    },
     roots: ['<rootDir>/src'],
     collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
     coverageDirectory: '<rootDir>/_output/coverage',

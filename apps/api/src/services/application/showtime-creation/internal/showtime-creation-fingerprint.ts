@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import type { BulkCreateShowtimesDto } from '../dtos'
+import type { BulkCreateShowtimesDto } from '../dtos/index.js'
 
 export function fingerprintShowtimeCreation(createDto: BulkCreateShowtimesDto) {
     const normalized = {

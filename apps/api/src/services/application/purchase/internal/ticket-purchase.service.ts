@@ -1,6 +1,6 @@
 import { DateUtil, uniq } from '@mannercode/common'
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
-import { AppConfigService } from 'config'
+import { AppConfigService } from '#config'
 import {
     PurchaseItemDto,
     ShowtimeDto,
@@ -8,9 +8,9 @@ import {
     TicketHoldingService,
     TicketsService,
     PurchaseItemType
-} from 'core'
-import { CreatePurchaseDto } from '../dtos'
-import { PurchaseErrors } from '../errors'
+} from '#core'
+import { CreatePurchaseDto } from '../dtos/index.js'
+import { PurchaseErrors } from '../errors.js'
 
 @Injectable()
 export class TicketPurchaseService {

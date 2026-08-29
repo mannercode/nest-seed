@@ -2,9 +2,9 @@ import { createTestContext } from '@mannercode/testing'
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { getModelToken, InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { CrudRepository } from '../crud.repository'
-import { createCrudSchema, CrudSchema } from '../crud.schema'
-import { mapDocToDto } from '../mongoose.util'
+import { CrudRepository } from '../crud.repository.js'
+import { createCrudSchema, CrudSchema } from '../crud.schema.js'
+import { mapDocToDto } from '../mongoose.util.js'
 
 @Schema({ toJSON: { virtuals: true } })
 class Sample extends CrudSchema {

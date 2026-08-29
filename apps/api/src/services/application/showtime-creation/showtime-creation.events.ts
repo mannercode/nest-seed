@@ -1,8 +1,8 @@
 import { InjectNatsPubSub, JsonUtil, NatsPubSubService } from '@mannercode/common'
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
-import { AppConfigService } from 'config'
 import { Observable, Subject } from 'rxjs'
-import type { ShowtimeCreationEvent } from './internal/types'
+import { AppConfigService } from '#config'
+import type { ShowtimeCreationEvent } from './internal/types.js'
 
 // NATS로 복제본을 건넌 상태를 로컬 RxJS 스트림에 전달하며, PROJECT_ID로 테스트를 격리한다.
 @Injectable()

@@ -1,10 +1,10 @@
-import type { TestContextFixture } from './create-test-context.fixture'
+import type { TestContextFixture } from './create-test-context.fixture.js'
 
 describe('createTestContext', () => {
     let fix: TestContextFixture
 
     beforeEach(async () => {
-        const { createTestContextFixture } = await import('./create-test-context.fixture')
+        const { createTestContextFixture } = await import('./create-test-context.fixture.js')
         fix = await createTestContextFixture()
     })
     afterEach(() => fix.teardown())

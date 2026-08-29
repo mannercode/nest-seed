@@ -1,6 +1,6 @@
 import { InjectNatsPubSub, NatsPubSubService } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { AppConfigService } from 'config'
+import { AppConfigService } from '#config'
 
 // PROJECT_ID로 테스트 이벤트를 격리한다. 구독자가 queue를 지정하지 않으면 모든 복제본에 전달된다.
 @Injectable()

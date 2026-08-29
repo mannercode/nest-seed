@@ -6,10 +6,10 @@ import {
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
 import { ClientSession, Model } from 'mongoose'
-import { CreateShowtimeDto, SearchShowtimesDto } from './dtos'
-import { Showtime } from './models'
+import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import { CreateShowtimeDto, SearchShowtimesDto } from './dtos/index.js'
+import { Showtime } from './models/index.js'
 
 @Injectable()
 export class ShowtimesRepository extends CrudRepository<Showtime> {

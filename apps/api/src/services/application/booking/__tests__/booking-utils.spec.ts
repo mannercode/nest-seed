@@ -1,5 +1,5 @@
-import type { ShowtimeDto, TicketSalesForShowtimeDto } from 'core'
-import { generateShowtimesForBooking } from '../booking.utils'
+import type { ShowtimeDto, TicketSalesForShowtimeDto } from '#core'
+import { generateShowtimesForBooking } from '../booking.utils.js'
 
 describe('generateShowtimesForBooking', () => {
     const showtime: ShowtimeDto = {

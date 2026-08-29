@@ -1,8 +1,8 @@
 import { DateUtil, OrderDirection, defaultTo } from '@mannercode/common'
 import { Injectable, Logger } from '@nestjs/common'
-import { AppConfigService } from 'config'
-import { MovieDto, MoviesService, ShowtimesService, WatchRecordsService } from 'core'
-import { MovieRecommender } from './domain'
+import { AppConfigService } from '#config'
+import { MovieDto, MoviesService, ShowtimesService, WatchRecordsService } from '#core'
+import { MovieRecommender } from './domain/index.js'
 
 const RECENT_WATCH_LIMIT = 50
 

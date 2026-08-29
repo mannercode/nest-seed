@@ -1,1 +1,1 @@
-export * from './purchase-record'
+export * from './purchase-record.js'

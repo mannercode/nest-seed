@@ -7,10 +7,10 @@ import {
 } from '@mannercode/common'
 import { Inject, Injectable, ServiceUnavailableException } from '@nestjs/common'
 import { getConnectionToken } from '@nestjs/mongoose'
-import { MONGO_CONNECTION_NAME, NATS_CONNECTION_NAME, REDIS_CONNECTION_NAME } from 'config'
-import Redis from 'ioredis'
+import { Redis } from 'ioredis'
 import mongoose from 'mongoose'
-import { RestateHealthIndicator } from './restate.health-indicator'
+import { MONGO_CONNECTION_NAME, NATS_CONNECTION_NAME, REDIS_CONNECTION_NAME } from '#config'
+import { RestateHealthIndicator } from './restate.health-indicator.js'
 
 type HealthState = { status: 'down' | 'up' } & Record<string, unknown>
 type HealthCheckResult = Record<string, HealthState>

@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer'
 import { IsArray, IsDate, IsEnum, IsInt, IsOptional, IsString, MaxLength } from 'class-validator'
-import { MovieGenre, MovieRating } from '../models'
+import { MovieGenre, MovieRating } from '../models/index.js'
 
 export class UpsertMovieDto {
     @IsArray()

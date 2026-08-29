@@ -1,6 +1,6 @@
 import { InjectNatsPubSub, JsonUtil, NatsPubSubService } from '@mannercode/common'
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
-import { PurchaseEvents, TicketPurchasedEvent } from '../purchase.events'
+import { PurchaseEvents, TicketPurchasedEvent } from '../purchase.events.js'
 
 // 큐 그룹을 지정하지 않아 구매 이벤트를 모든 API 복제본의 관측 로그에 남긴다.
 @Injectable()

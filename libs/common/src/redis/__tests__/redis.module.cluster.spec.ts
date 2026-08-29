@@ -17,7 +17,7 @@ describe('RedisModule', () => {
             }
             ;(Cluster as unknown as jest.Mock).mockReturnValue(mockCluster)
 
-            const { createRedisModuleClusterFixture } = await import('./redis.module.fixture')
+            const { createRedisModuleClusterFixture } = await import('./redis.module.fixture.js')
             const fix = await createRedisModuleClusterFixture()
             try {
                 expect(Cluster).toHaveBeenCalledWith([{ host: 'localhost', port: 7000 }], undefined)

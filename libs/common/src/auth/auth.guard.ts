@@ -1,8 +1,8 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
-import { IS_OPTIONAL_AUTH_KEY } from './optional-auth.decorator'
-import { IS_PUBLIC_KEY } from './public.decorator'
+import { IS_OPTIONAL_AUTH_KEY } from './optional-auth.decorator.js'
+import { IS_PUBLIC_KEY } from './public.decorator.js'
 
 // 발급 측과 함께 고정해 none/HS↔RS 알고리즘 혼동을 막는다.
 const ACCEPTED_ALGORITHMS = ['HS256'] as const

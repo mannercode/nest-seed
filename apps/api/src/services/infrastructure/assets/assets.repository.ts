@@ -1,10 +1,10 @@
 import { CrudRepository, leanArrayToPublic, objectId } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
 import { Model } from 'mongoose'
-import { CreateAssetDto } from './dtos'
-import { Asset } from './models'
+import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import { CreateAssetDto } from './dtos/index.js'
+import { Asset } from './models/index.js'
 
 @Injectable()
 export class AssetsRepository extends CrudRepository<Asset> {

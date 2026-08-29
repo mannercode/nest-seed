@@ -1,4 +1,4 @@
-import * as Module from './spy.fixture'
+import * as Module from './spy.fixture.js'
 
 // 정적 import 대상은 모듈 로드 시점에 바인딩되어 어느 시점에든 spyOn을 걸 수 있다.
 // 동적 import 대상은 import가 끝난 뒤에야 spyOn을 걸 수 있으므로, 그 순서를 별도 it로 보여준다.

@@ -7,16 +7,16 @@ import {
 } from '@mannercode/common'
 import { ConflictException, Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
 import { ClientSession, Model } from 'mongoose'
+import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
 import {
     AggregateTicketSalesDto,
     CreateTicketDto,
     SearchTicketsDto,
     TicketSalesForShowtimeDto
-} from './dtos'
-import { TicketErrors } from './errors'
-import { Ticket, TicketStatus } from './models'
+} from './dtos/index.js'
+import { TicketErrors } from './errors.js'
+import { Ticket, TicketStatus } from './models/index.js'
 
 @Injectable()
 export class TicketsRepository extends CrudRepository<Ticket> {

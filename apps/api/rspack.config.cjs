@@ -1,9 +1,9 @@
 // Nest CLI의 기본 Rspack 규칙은 builtin:swc-loader를 사용한다.
 // 이 프로젝트는 TypeScript compiler가 decorator metadata를 생성하도록 TS 규칙을 통째로 교체한다.
 const path = require('node:path')
-const nodeExternals = require('webpack-node-externals')
 
 module.exports = (options) => {
+    if (!options.output?.module) throw new Error('API Rspack build requires Nest ESM defaults')
     const dirname = path.dirname(options.entry)
     const appDir = __dirname
     const tsconfig = path.resolve(appDir, 'tsconfig.build.json')
@@ -25,7 +25,17 @@ module.exports = (options) => {
                           use: [
                               {
                                   loader: require.resolve('ts-loader'),
-                                  options: { configFile: tsconfig, transpileOnly: true }
+                                  options: {
+                                      configFile: tsconfig,
+                                      // transpileOnly의 TypeScript isolated transform은 NodeNext의 package type을
+                                      // 읽지 못한다. 번들러 경로만 ESM emit을 명시하고
+                                      // 전체 NodeNext 타입 검사는 Nest의 checker에 남겨 둔다.
+                                      compilerOptions: {
+                                          module: 'ESNext',
+                                          moduleResolution: 'Bundler'
+                                      },
+                                      transpileOnly: true
+                                  }
                               }
                           ]
                       }
@@ -40,14 +50,6 @@ module.exports = (options) => {
             path: path.resolve(appDir, '_output/dist'),
             filename: 'index.js'
         },
-        externals: [
-            nodeExternals({
-                modulesFromFile: true,
-                allowlist: [/^@mannercode\//],
-                ...(options.output?.module && { importType: 'module' })
-            }),
-            ...options.externals.slice(1)
-        ],
         // 번들이 단일 파일이라 소스맵이 없으면 운영 에러 스택이 index.js의 수만 번째 줄로 찍힌다.
         // node --enable-source-maps(Dockerfile CMD)가 이 맵을 읽어 TS 소스 위치로 되돌린다.
         devtool: 'source-map'

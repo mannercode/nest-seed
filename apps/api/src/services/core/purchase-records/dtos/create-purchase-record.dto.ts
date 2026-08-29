@@ -6,7 +6,7 @@ import {
     IsString,
     ValidateNested
 } from 'class-validator'
-import { PurchaseItemDto } from './purchase-item.dto'
+import { PurchaseItemDto } from './purchase-item.dto.js'
 
 export class CreatePurchaseRecordDto {
     @IsOptional()

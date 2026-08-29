@@ -1,11 +1,11 @@
-import type { RedisHealthIndicatorFixture } from './redis.health-indicator.fixture'
+import type { RedisHealthIndicatorFixture } from './redis.health-indicator.fixture.js'
 
 describe('RedisHealthIndicator', () => {
     let fix: RedisHealthIndicatorFixture
 
     beforeEach(async () => {
         const { createRedisHealthIndicatorFixture } =
-            await import('./redis.health-indicator.fixture')
+            await import('./redis.health-indicator.fixture.js')
         fix = await createRedisHealthIndicatorFixture()
     })
     afterEach(() => fix.teardown())

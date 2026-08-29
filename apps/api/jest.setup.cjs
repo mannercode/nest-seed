@@ -1,4 +1,4 @@
-const { initializeApiJestWorkerEnvironment } = require('./scripts/jest-resource-wiring')
+const { initializeApiJestWorkerEnvironment } = require('./scripts/jest-resource-wiring.cjs')
 
 // app 모듈이 PROJECT_ID를 최초 평가하기 전에 공유 .env 값을 실행별 namespace로 덮어쓴다.
 const resourceScope = initializeApiJestWorkerEnvironment()
@@ -12,7 +12,7 @@ const { registerMongoClientDiagnostics } = require('./src/modules/mongoose-setup
 const {
     attachSharedTestMongooseConnection,
     clearSharedTestMongooseConnection
-} = require('./scripts')
+} = require('./scripts/index.cjs')
 
 const sharedMongoAppName = () =>
     `nest-seed-test-w${process.env.JEST_WORKER_ID ?? '0'}-p${process.pid}-shared`

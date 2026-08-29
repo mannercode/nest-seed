@@ -2,16 +2,15 @@
     "extends": "../../tsconfig.json",
     "compilerOptions": {
         "incremental": true,
-        "baseUrl": ".",
         "rootDir": ".",
         "outDir": "./_output/build",
         "paths": {
-            "config": ["src/config/index"],
-            "application": ["src/services/application/index"],
-            "core": ["src/services/core/index"],
-            "infrastructure": ["src/services/infrastructure/index"],
-            "view": ["src/services/view/index"],
-            "gateway": ["src/services/gateway/index"]
+            "#application": ["./src/services/application/index.ts"],
+            "#config": ["./src/config/index.ts"],
+            "#core": ["./src/services/core/index.ts"],
+            "#gateway": ["./src/services/gateway/index.ts"],
+            "#infrastructure": ["./src/services/infrastructure/index.ts"],
+            "#view": ["./src/services/view/index.ts"]
         }
     },
     "include": ["src/**/*", "scripts/**/*"],

@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common'
-import { Assume, ensure, Require } from '../validator'
+import { Assume, ensure, Require } from '../validator.js'
 
 describe('Require', () => {
     describe('defined', () => {

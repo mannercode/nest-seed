@@ -14,7 +14,7 @@ import {
     sortBy,
     sumBy,
     uniq
-} from '../lodash'
+} from '../lodash.js'
 
 describe('defaultTo', () => {
     it('null이면 기본값을 반환한다', () => {

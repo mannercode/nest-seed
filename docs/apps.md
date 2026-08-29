@@ -72,7 +72,7 @@ Application, Core, Infrastructure는 단일 서비스를 제공하는 협력 관
 3. Gateway와 View는 서비스 소비자이므로 아래 계층의 공개 API를 자유롭게 호출한다. 단 View는 읽기 응답에 집중하고, 상태를 바꾸는 유스케이스는 두지 않는다.
 4. 서비스 제공 쪽(Application/Core/Infrastructure)은 Gateway와 View를 참조하지 않는다.
 
-이 규칙은 ESLint로 강제한다. 계층 간 의존 방향은 `eslint-plugin-boundaries`가 막고, 계층별 세부 금지 항목은 `no-restricted-imports`가 막는다. 설정은 [apps/api/eslint.config.js](../apps/api/eslint.config.js)에 있다.
+이 규칙은 ESLint로 강제한다. 계층 간 의존 방향은 `eslint-plugin-boundaries`가 막고, 계층별 세부 금지 항목은 `no-restricted-imports`가 막는다. 설정은 [apps/api/eslint.config.cjs](../apps/api/eslint.config.cjs)에 있다.
 
 어느 서비스부터 읽을지는 [README 도메인 둘러보기](../README.md#도메인-둘러보기)의 순서를 따른다.
 
@@ -596,15 +596,15 @@ describe('Users', () => {
 Jest 기반 테스트 인프라는 네 단계로 동작한다.
 
 ```
-jest.config.js    apps/api 명령별 실행 ID 발급, coverage·로그 출력 경로 분리
-jest.global.js    workspace별 전역 준비
+jest.config.cjs   apps/api 명령별 실행 ID 발급, coverage·로그 출력 경로 분리
+jest.global.cjs   workspace별 전역 준비
                    - apps/api: config의 실행 ID 검증, 로그 디렉터리 생성
                    - libs/common: Testcontainers로 MongoDB · Redis · VersityGW · NATS 기동
-jest.setup.js     app 모듈 로드 전에 startup PROJECT_ID 설정, 실행 ID + worker별 DB·버킷 준비
+jest.setup.cjs    app 모듈 로드 전에 startup PROJECT_ID 설정, 실행 ID + worker별 DB·버킷 준비
                    beforeEach마다 TEST_ID 발급 (apps/api는 실행 ID + TEST_ID로 PROJECT_ID 갱신)
                    afterEach에서 컬렉션과 버킷 내용 정리
 *.spec.ts         개별 테스트가 픽스처로 위 자원 사용
-jest.teardown.js  전체 워커 종료 후 한 번: 현재 실행의 DB·버킷·Redis key만 제거
+jest.teardown.cjs 전체 워커 종료 후 한 번: 현재 실행의 DB·버킷·Redis key만 제거
 ```
 
 `apps/api`의 통합 테스트는 devcontainer가 시작해 둔 공용 인프라(Mongo / Redis / VersityGW / NATS / Restate 컨테이너)를 재사용한다. 대부분의 앱 컨텍스트는 Restate endpoint와 client를 끄고, 전체 상영 생성 스위트만 `enableRestate: true`로 실제 endpoint를 임시 포트에 열어 고유한 `PROJECT_ID`의 서비스를 등록한다. 정상 teardown은 현재 컨텍스트가 제출한 workflow 완료를 먼저 기다리고, 등록 응답으로 받은 정확한 deployment ID만 Admin API에서 제거한 뒤 endpoint를 닫는다. Restate의 삭제 API가 force를 요구하므로 `?force=true`를 쓰되, 자기 invocation을 drain한 테스트 전용 deployment에만 한정한다. 등록·정리 도중 오류가 나도 앱 close는 `finally`에서 실행한다.
@@ -680,7 +680,7 @@ bash deploy/verify.sh
 bash apps/api/api-docs/run.sh
 ```
 
-API 배포 번들은 `nest build -b rspack --rspackPath rspack.config.cjs`로 만든다. Nest 기본 SWC 변환 규칙은 [rspack.config.cjs](../apps/api/rspack.config.cjs)에서 `ts-loader`로 교체한다. Restate 워크플로는 NestJS 제공자와 같은 API 번들 안에서 실행되므로 별도 workflow bundle이나 sandbox 패키지가 없다. 개발 watch는 별도 `development.ts` 진입점을 보존하기 위해 TSC를 유지한다.
+API 배포 번들은 `nest build -b rspack --rspackPath rspack.config.cjs`로 만든다. Nest 기본 SWC 변환 규칙은 [rspack.config.cjs](../apps/api/rspack.config.cjs)에서 `ts-loader`로 교체한다. ESM 번들에는 API 코드만 넣고 `@mannercode/common`을 포함한 런타임 패키지는 Nest 기본값대로 external 처리한다. Docker용 `pnpm deploy --prod` tree에는 common의 `_output/dist`가 포함된다. Restate 워크플로는 NestJS 제공자와 같은 API 번들 안에서 실행되므로 별도 workflow bundle이나 sandbox 패키지가 없다. 개발 watch는 별도 `development.ts` 진입점을 보존하기 위해 TSC를 유지한다.
 
 ## console·user-app — 최소 데모
 

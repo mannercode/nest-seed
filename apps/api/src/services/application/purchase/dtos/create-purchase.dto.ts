@@ -9,7 +9,7 @@ import {
     ValidatorConstraint,
     type ValidatorConstraintInterface
 } from 'class-validator'
-import { PurchaseItemDto, PurchaseItemType } from 'core'
+import { PurchaseItemDto, PurchaseItemType } from '#core'
 
 @ValidatorConstraint({ name: 'isTicketPurchaseItems' })
 class IsTicketPurchaseItemsConstraint implements ValidatorConstraintInterface {

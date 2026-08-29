@@ -1,4 +1,4 @@
-import { Seatmap } from '..'
+import { Seatmap } from '../index.js'
 
 describe('Seatmap', () => {
     describe('getSeatCount', () => {

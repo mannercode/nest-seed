@@ -1,13 +1,13 @@
 import type { TestContext } from '@mannercode/testing'
-import type { MovieDto } from 'core'
 import { DateUtil } from '@mannercode/common'
+import type { MovieDto } from '#core'
 import {
     createAndLoginUser,
     createMovie,
     createShowtimes,
     createTheater,
     createWatchRecord
-} from '../helpers'
+} from '../helpers/index.js'
 
 export async function createShowingMovies(ctx: TestContext, dtos: Partial<MovieDto>[]) {
     const movies = await Promise.all(dtos.map((dto) => createMovie(ctx, dto)))

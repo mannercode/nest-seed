@@ -4,7 +4,7 @@
         "declaration": true,
         "declarationMap": true,
         "noEmit": true,
-        "paths": { "@mannercode/testing": ["../testing/src"] }
+        "paths": { "@mannercode/testing": ["../testing/src/index.ts"] }
     },
     "include": ["src/**/*"],
     "exclude": ["src/**/__tests__/**"]

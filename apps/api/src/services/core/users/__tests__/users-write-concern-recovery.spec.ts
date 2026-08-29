@@ -1,8 +1,8 @@
 import { ConflictException } from '@nestjs/common'
 import { deleteModel, model, Types } from 'mongoose'
-import { type User, UserSchema } from '../models'
-import { UsersRepository } from '../users.repository'
-import { UsersService } from '../users.service'
+import { type User, UserSchema } from '../models/index.js'
+import { UsersRepository } from '../users.repository.js'
+import { UsersService } from '../users.service.js'
 
 const MODEL_NAME = 'UserWriteConcernRecoverySpec'
 const userModel = model<User>(MODEL_NAME, UserSchema.clone())

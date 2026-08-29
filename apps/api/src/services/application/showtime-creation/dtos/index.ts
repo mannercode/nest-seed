@@ -1,3 +1,3 @@
-export * from './bulk-create-showtimes.dto'
-export * from './request-showtime-creation.response'
-export * from './search-showtimes-by-theaters.body.dto'
+export * from './bulk-create-showtimes.dto.js'
+export * from './request-showtime-creation.response.js'
+export * from './search-showtimes-by-theaters.body.dto.js'

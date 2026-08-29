@@ -1,8 +1,8 @@
 import type { WorkflowSubmission } from '@restatedev/restate-sdk-clients'
-import type { AppConfigService } from 'config'
 import { workflow } from '@restatedev/restate-sdk'
-import type { ShowtimeCreationWorkflow } from '../workflow'
-import { ShowtimeCreationWorkflowClient } from '../restate-workflow-client.service'
+import type { AppConfigService } from '#config'
+import type { ShowtimeCreationWorkflow } from '../workflow.js'
+import { ShowtimeCreationWorkflowClient } from '../restate-workflow-client.service.js'
 
 describe('ShowtimeCreationWorkflowClient', () => {
     const input = {

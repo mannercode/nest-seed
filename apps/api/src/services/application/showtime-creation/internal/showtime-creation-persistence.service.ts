@@ -1,12 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
-import { TheatersService } from 'core'
-import type { BulkCreateShowtimesDto } from '../dtos'
-import type { ValidateAndCreateResult } from './types'
-import { ShowtimeCreationErrors } from '../errors'
-import { ShowtimeBulkCreatorService } from './showtime-bulk-creator.service'
-import { ShowtimeBulkValidatorService } from './showtime-bulk-validator.service'
-import { fingerprintShowtimeCreation } from './showtime-creation-fingerprint'
-import { ShowtimeCreationOperationRepository } from './showtime-creation-operation.repository'
+import { TheatersService } from '#core'
+import type { BulkCreateShowtimesDto } from '../dtos/index.js'
+import type { ValidateAndCreateResult } from './types.js'
+import { ShowtimeCreationErrors } from '../errors.js'
+import { ShowtimeBulkCreatorService } from './showtime-bulk-creator.service.js'
+import { ShowtimeBulkValidatorService } from './showtime-bulk-validator.service.js'
+import { fingerprintShowtimeCreation } from './showtime-creation-fingerprint.js'
+import { ShowtimeCreationOperationRepository } from './showtime-creation-operation.repository.js'
 
 const COMMIT_TIMEOUT_MS = 10_000
 // MongoDB 드라이버의 transaction callback 재시도까지 Activity 한 시도 안에서 끝낸다.

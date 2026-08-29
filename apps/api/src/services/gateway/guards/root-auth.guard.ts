@@ -3,8 +3,8 @@ import { Injectable } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
 import { compare, hashSync } from 'bcrypt'
-import { AppConfigService } from 'config'
-import { AuthErrors } from './errors'
+import { AppConfigService } from '#config'
+import { AuthErrors } from './errors.js'
 
 // root는 DB와 세션 없이 환경 자격증명을 Basic Auth로 검증한다.
 @Injectable()

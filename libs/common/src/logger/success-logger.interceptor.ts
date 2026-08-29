@@ -10,9 +10,9 @@ import {
 import { Request, Response } from 'express'
 import { Observable } from 'rxjs'
 import { tap } from 'rxjs/operators'
-import { redactSensitive } from './redact'
-import { elapsedSinceRequestStart, markRequestStart } from './request-timing'
-import { HttpSuccessLog } from './types'
+import { redactSensitive } from './redact.js'
+import { elapsedSinceRequestStart, markRequestStart } from './request-timing.js'
+import { HttpSuccessLog } from './types.js'
 
 @Injectable()
 export class HttpSuccessLoggerInterceptor implements NestInterceptor {

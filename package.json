@@ -32,7 +32,7 @@
         "dev:common": "pnpm --filter './libs/common' --fail-if-no-match run dev",
         "dev:testing": "pnpm --filter './libs/testing' --fail-if-no-match run dev",
         "dev:api": "pnpm --filter './apps/api' --fail-if-no-match run dev",
-        "dev:restate": "node apps/api/scripts/register-restate.js",
+        "dev:restate": "node apps/api/scripts/register-restate.cjs",
         "dev:console": "pnpm --filter './apps/console' --fail-if-no-match run dev",
         "dev:user-app": "pnpm --filter './apps/user-app' --fail-if-no-match run dev"
     },

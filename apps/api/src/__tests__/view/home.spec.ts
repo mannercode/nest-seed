@@ -1,5 +1,10 @@
 import { DateUtil, ensure } from '@mannercode/common'
-import { createMovie, createShowtimes, createTheater, type AppTestContext } from '../helpers'
+import {
+    createMovie,
+    createShowtimes,
+    createTheater,
+    type AppTestContext
+} from '../helpers/index.js'
 
 type HomeResponse = {
     showingMovies: {
@@ -17,7 +22,7 @@ describe('UserHomeView', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers')
+        const { createAppTestContext } = await import('../helpers/index.js')
         fix = await createAppTestContext()
         teardown = fix.teardown
     })

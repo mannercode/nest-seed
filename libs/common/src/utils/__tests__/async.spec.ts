@@ -1,4 +1,4 @@
-import { sleep } from '../async'
+import { sleep } from '../async.js'
 
 describe('sleep', () => {
     afterEach(() => {

@@ -1,1 +1,1 @@
-export * from './hold-tickets.dto'
+export * from './hold-tickets.dto.js'

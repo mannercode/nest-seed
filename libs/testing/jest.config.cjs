@@ -12,6 +12,7 @@ module.exports = {
     ...tsJestPreset,
     // 이 패키지는 Jest resetModules 동작 자체를 계약 테스트한다. 애플리케이션 모듈 격리에는 사용하지 않는다.
     resetModules: true,
+    moduleNameMapper: { '^(\\.{1,2}/.*)\\.js$': '$1' },
     // 이 워크스페이스 test 스크립트는 의도적으로 --coverage를 붙이지 않는다.
     // 헬퍼 대부분이 libs/common 사용자 코드를 통해 간접 검증되기 때문이다.
     roots: ['<rootDir>/src']

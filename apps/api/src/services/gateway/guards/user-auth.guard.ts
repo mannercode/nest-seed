@@ -2,9 +2,9 @@ import { AuthGuard } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
-import { AppConfigService } from 'config'
-import { UsersService } from 'core'
-import { AuthErrors } from './errors'
+import { AppConfigService } from '#config'
+import { UsersService } from '#core'
+import { AuthErrors } from './errors.js'
 
 @Injectable()
 export class UserAuthGuard extends AuthGuard {

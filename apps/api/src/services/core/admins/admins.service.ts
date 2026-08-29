@@ -1,10 +1,10 @@
 import { isDuplicateKeyError, mapDocToDto } from '@mannercode/common'
 import { ConflictException, Injectable } from '@nestjs/common'
-import { AdminsRepository } from './admins.repository'
-import { AdminCredentialsDto, AdminDto, CreateAdminDto, UpdateAdminDto } from './dtos'
-import { AdminErrors } from './errors'
-import { AdminAuthenticationService } from './internal'
-import { Admin } from './models'
+import { AdminsRepository } from './admins.repository.js'
+import { AdminCredentialsDto, AdminDto, CreateAdminDto, UpdateAdminDto } from './dtos/index.js'
+import { AdminErrors } from './errors.js'
+import { AdminAuthenticationService } from './internal/index.js'
+import { Admin } from './models/index.js'
 
 @Injectable()
 export class AdminsService {

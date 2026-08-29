@@ -1,7 +1,7 @@
-import type { MovieDto } from 'core'
-import type { AssetPresignedUploadDto, AssetsService } from 'infrastructure'
 import { ensure, Require } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
+import type { MovieDto } from '#core'
+import type { AssetPresignedUploadDto, AssetsService } from '#infrastructure'
 import {
     buildCreateAssetDto,
     createMovieAsset,
@@ -11,7 +11,7 @@ import {
     uploadAndFinalizeMovieAsset,
     uploadAsset,
     type AppTestContext
-} from '../helpers'
+} from '../helpers/index.js'
 
 describe('MoviesAssets', () => {
     let fix: AppTestContext
@@ -20,9 +20,9 @@ describe('MoviesAssets', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers')
-        const { AssetsService } = await import('infrastructure')
-        const { AdminAuthGuard } = await import('gateway')
+        const { createAppTestContext } = await import('../helpers/index.js')
+        const { AssetsService } = await import('#infrastructure')
+        const { AdminAuthGuard } = await import('#gateway')
         fix = await createAppTestContext({ ignoreGuards: [AdminAuthGuard] })
         teardown = fix.teardown
         assetsService = fix.module.get(AssetsService)
@@ -142,7 +142,7 @@ describe('MoviesAssets', () => {
 
         it('다른 영화 에셋이 잘못 연결돼 있어도 실제 owner를 확인하고 삭제하지 않는다', async () => {
             const { MoviesRepository } =
-                await import('../../services/core/movies/movies.repository')
+                await import('../../services/core/movies/movies.repository.js')
             const movie = await createUnpublishedMovie(fix)
             const ownerMovie = await createUnpublishedMovie(fix)
             const assetId = await uploadAndFinalizeMovieAsset(fix, ownerMovie.id)
@@ -167,7 +167,7 @@ describe('MoviesAssets', () => {
     describe('DELETE /movies/:movieId', () => {
         it('assetIds가 오염돼 있어도 다른 영화가 실제 소유한 에셋은 삭제하지 않는다', async () => {
             const { MoviesRepository } =
-                await import('../../services/core/movies/movies.repository')
+                await import('../../services/core/movies/movies.repository.js')
             const movie = await createUnpublishedMovie(fix)
             const ownerMovie = await createUnpublishedMovie(fix)
             const assetId = await uploadAndFinalizeMovieAsset(fix, ownerMovie.id)
@@ -182,7 +182,7 @@ describe('MoviesAssets', () => {
 
         it('삭제되는 영화의 아직 업로드 중인 pending 에셋도 함께 삭제한다', async () => {
             const { MoviePendingAssetsRepository } =
-                await import('../../services/core/movies/movie-pending-assets.repository')
+                await import('../../services/core/movies/movie-pending-assets.repository.js')
             const movie = await createUnpublishedMovie(fix)
             const upload = await createMovieAsset(fix, movie.id, testAssets.image)
             const pendingAssetsRepository = fix.module.get(MoviePendingAssetsRepository)
@@ -217,7 +217,7 @@ describe('MoviesAssets', () => {
 
             // 공개 GET은 draft를 404로 숨기므로, draft 상태의 결과 확인은 서비스로 조회한다.
             const getImageUrls = async () => {
-                const { MoviesService } = await import('core')
+                const { MoviesService } = await import('#core')
                 const moviesService = fix.module.get(MoviesService)
                 const [found] = await moviesService.getMany([movie.id])
                 return found?.imageUrls

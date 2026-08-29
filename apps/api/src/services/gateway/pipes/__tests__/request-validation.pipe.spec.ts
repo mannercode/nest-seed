@@ -1,12 +1,12 @@
 import { nullDate } from '@mannercode/testing'
-import type { RequestValidationPipeFixture } from './request-validation.pipe.fixture'
+import type { RequestValidationPipeFixture } from './request-validation.pipe.fixture.js'
 
 describe('RequestValidationPipe', () => {
     let fix: RequestValidationPipeFixture
 
     beforeEach(async () => {
         const { createRequestValidationPipeFixture } =
-            await import('./request-validation.pipe.fixture')
+            await import('./request-validation.pipe.fixture.js')
         fix = await createRequestValidationPipeFixture()
     })
     afterEach(() => fix.teardown())

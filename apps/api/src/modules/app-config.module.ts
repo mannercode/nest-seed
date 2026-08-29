@@ -1,9 +1,9 @@
 import { Global, Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
-import { AppConfigService, PROJECT_ID_TOKEN, readProjectId } from 'config'
-import { MongooseSetupModule } from './mongoose-setup.module'
-import { NatsSetupModule } from './nats-setup.module'
-import { RedisSetupModule } from './redis-setup.module'
+import { AppConfigService, PROJECT_ID_TOKEN, readProjectId } from '#config'
+import { MongooseSetupModule } from './mongoose-setup.module.js'
+import { NatsSetupModule } from './nats-setup.module.js'
+import { RedisSetupModule } from './redis-setup.module.js'
 
 @Global()
 @Module({

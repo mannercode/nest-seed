@@ -1,6 +1,6 @@
 import { InjectNatsPubSub, JsonUtil, NatsPubSubService } from '@mannercode/common'
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
-import { PurchaseEvents, TicketPurchasedEvent } from '../purchase.events'
+import { PurchaseEvents, TicketPurchasedEvent } from '../purchase.events.js'
 
 const QUEUE_GROUP = 'purchase-notification'
 

@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer'
 import { IsNotEmpty, IsString, ValidateNested } from 'class-validator'
-import { Seatmap, TheaterLocation } from '../models'
+import { Seatmap, TheaterLocation } from '../models/index.js'
 
 export class CreateTheaterDto {
     @IsNotEmpty()

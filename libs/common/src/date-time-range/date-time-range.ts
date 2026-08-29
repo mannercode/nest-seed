@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer'
 import { IsDate, IsOptional } from 'class-validator'
-import { DateUtil } from '../utils'
+import { DateUtil } from '../utils/index.js'
 
 type DateTimeRangeOptions = { days?: number; end?: Date; minutes?: number; start?: Date }
 

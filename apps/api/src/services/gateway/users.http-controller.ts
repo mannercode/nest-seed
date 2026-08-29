@@ -22,10 +22,10 @@ import {
     UpdateUserDto,
     UserCredentialsDto,
     UsersService
-} from 'core'
-import { AdminAuthGuard, AuthErrors, UserAuthGuard } from './guards'
-import { LoginRateLimiterService } from './login-rate-limiter.service'
-import { UserAuthRequest } from './types'
+} from '#core'
+import type { UserAuthRequest } from './types.js'
+import { AdminAuthGuard, AuthErrors, UserAuthGuard } from './guards/index.js'
+import { LoginRateLimiterService } from './login-rate-limiter.service.js'
 
 // 클래스와 메서드 가드는 누적 적용된다. 공개·user·admin 라우트가 섞여 있으므로 역할 가드는 메서드에만 둔다.
 @Controller('users')

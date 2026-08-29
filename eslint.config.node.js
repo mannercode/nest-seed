@@ -7,8 +7,8 @@ const unusedImportsPlugin = require('eslint-plugin-unused-imports')
 const baseGlobals = { ...globals.node }
 const barrelImportPatterns = [
     {
-        regex: '\\.\\./(?!\\.)[^/]+/[^/]+',
-        message: 'Import from the barrel (index.ts) instead of submodules.'
+        regex: '\\.\\./(?!\\.)[^/]+/(?!index\\.(?:c|m)?js$)[^/]+',
+        message: 'Import from the index barrel instead of submodules.'
     }
 ]
 const restrictedSyntaxBase = [

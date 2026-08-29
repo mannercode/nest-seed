@@ -1,5 +1,4 @@
-import type Redis from 'ioredis'
-import type { Cluster, ClusterNode, ClusterOptions, RedisOptions } from 'ioredis'
+import type { Cluster, ClusterNode, ClusterOptions, Redis, RedisOptions } from 'ioredis'
 
 export type RedisClusterOptions = {
     nodes: ClusterNode[]

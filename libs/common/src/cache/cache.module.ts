@@ -1,9 +1,9 @@
 import { DynamicModule, Inject, Module } from '@nestjs/common'
-import Redis from 'ioredis'
-import { getRedisConnectionToken } from '../redis'
-import { defaultTo } from '../utils'
-import { CacheService } from './cache.service'
-import { CacheModuleOptions } from './cache.types'
+import { Redis } from 'ioredis'
+import { getRedisConnectionToken } from '../redis/index.js'
+import { defaultTo } from '../utils/index.js'
+import { CacheService } from './cache.service.js'
+import { CacheModuleOptions } from './cache.types.js'
 
 export function InjectCache(name?: string): ParameterDecorator {
     return Inject(CacheService.getName(name))

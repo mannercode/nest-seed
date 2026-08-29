@@ -8,10 +8,10 @@ import {
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
 import { ClientSession, Model } from 'mongoose'
-import { CreateTheaterDto, SearchTheatersPageDto, UpdateTheaterDto } from './dtos'
-import { Theater } from './models'
+import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import { CreateTheaterDto, SearchTheatersPageDto, UpdateTheaterDto } from './dtos/index.js'
+import { Theater } from './models/index.js'
 
 @Injectable()
 export class TheatersRepository extends CrudRepository<Theater> {

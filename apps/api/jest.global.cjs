@@ -1,5 +1,5 @@
 const fs = require('fs')
-const { readApiJestRun } = require('./scripts/jest-run-context')
+const { readApiJestRun } = require('./scripts/jest-run-context.cjs')
 
 module.exports = async function globalSetup() {
     // config에서 만든 ID와 출력 경로를 worker·teardown·bundle 자식 프로세스가 함께 상속한다.

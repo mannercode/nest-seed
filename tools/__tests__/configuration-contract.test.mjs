@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { chmod, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { chmod, glob, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { createRequire } from 'node:module'
@@ -62,7 +62,7 @@ test('lint-staged delegates JavaScript paths without shell re-quoting', () => {
 
 test('API JavaScript uses the Node recommended rules in workspace lint', async () => {
     const packageJson = JSON.parse(await read('apps/api/package.json'))
-    assert.match(packageJson.scripts.lint, /eslint[^&]*'\*\.js'/)
+    assert.match(packageJson.scripts.lint, /eslint[^&]*'\*\.cjs'/)
 
     const printedConfig = JSON.parse(
         execFileSync(
@@ -74,7 +74,7 @@ test('API JavaScript uses the Node recommended rules in workspace lint', async (
                 'exec',
                 'eslint',
                 '--print-config',
-                'scripts/index.js'
+                'scripts/index.cjs'
             ],
             { cwd: root, encoding: 'utf8' }
         )
@@ -183,7 +183,83 @@ test('API image passes production mode to pnpm deploy without mutating the build
     assert.doesNotMatch(dockerfile, /--prod deploy/)
 })
 
-test('API build uses Rspack with the TypeScript compiler instead of an SWC transformer', async () => {
+test('backend workspaces use Node ESM while Jest stays in its temporary CJS boundary', async () => {
+    const rootTsconfig = require('typescript').parseConfigFileTextToJson(
+        'tsconfig.json',
+        await read('tsconfig.json')
+    ).config
+    const apiPackage = JSON.parse(await read('apps/api/package.json'))
+    const commonPackage = JSON.parse(await read('libs/common/package.json'))
+    const testingPackage = JSON.parse(await read('libs/testing/package.json'))
+
+    assert.equal(rootTsconfig.compilerOptions.module, 'nodenext')
+    assert.equal(rootTsconfig.compilerOptions.moduleResolution, 'nodenext')
+    assert.equal(rootTsconfig.compilerOptions.rewriteRelativeImportExtensions, true)
+    for (const packageJson of [apiPackage, commonPackage, testingPackage]) {
+        assert.equal(packageJson.type, 'module')
+    }
+    assert.deepEqual(commonPackage.files, ['_output/dist'])
+    assert.deepEqual(Object.keys(apiPackage.imports).sort(), [
+        '#application',
+        '#config',
+        '#core',
+        '#gateway',
+        '#infrastructure',
+        '#view'
+    ])
+
+    for (const path of [
+        'apps/api/tsconfig.jest.json',
+        'libs/common/tsconfig.jest.json',
+        'libs/testing/tsconfig.jest.json'
+    ]) {
+        const jestTsconfig = JSON.parse(await read(path))
+        assert.equal(jestTsconfig.compilerOptions.module, 'commonjs')
+        assert.equal(jestTsconfig.compilerOptions.moduleResolution, 'bundler')
+        assert.equal(jestTsconfig.compilerOptions.isolatedModules, false)
+    }
+})
+
+test('backend TypeScript relative specifiers include runtime extensions', async () => {
+    const typescript = require('typescript')
+    const files = await Array.fromAsync(
+        glob('{apps/api/src,libs/common/src,libs/testing/src}/**/*.ts', { cwd: root })
+    )
+
+    for (const file of files) {
+        const source = typescript.createSourceFile(
+            file,
+            await read(file),
+            typescript.ScriptTarget.Latest,
+            true
+        )
+        const visit = (node) => {
+            let specifier
+            if (
+                (typescript.isImportDeclaration(node) || typescript.isExportDeclaration(node)) &&
+                node.moduleSpecifier &&
+                typescript.isStringLiteral(node.moduleSpecifier)
+            ) {
+                specifier = node.moduleSpecifier.text
+            } else if (
+                typescript.isCallExpression(node) &&
+                node.expression.kind === typescript.SyntaxKind.ImportKeyword &&
+                node.arguments.length === 1 &&
+                typescript.isStringLiteral(node.arguments[0])
+            ) {
+                specifier = node.arguments[0].text
+            }
+
+            if (specifier?.startsWith('.')) {
+                assert.match(specifier, /\.(?:[cm]?js|json)$/, `${file}: ${specifier}`)
+            }
+            typescript.forEachChild(node, visit)
+        }
+        visit(source)
+    }
+})
+
+test('API build preserves Nest Rspack ESM defaults and replaces only the SWC loader', async () => {
     const packageJson = JSON.parse(await read('apps/api/package.json'))
     const nestCli = JSON.parse(await read('apps/api/nest-cli.json'))
     const dockerignore = await read('.dockerignore')
@@ -191,8 +267,9 @@ test('API build uses Rspack with the TypeScript compiler instead of an SWC trans
     class TypeCheckPlugin {}
     const defaults = {
         entry: join(root, 'apps/api/src/development.ts'),
-        module: { rules: [{ use: [{ loader: 'builtin:swc-loader' }] }] },
-        output: {},
+        experiments: { outputModule: true },
+        module: { rules: [{ type: 'javascript/esm', use: [{ loader: 'builtin:swc-loader' }] }] },
+        output: { chunkFormat: 'module', module: true },
         externals: [() => undefined],
         resolve: {},
         plugins: [new TypeCheckPlugin()]
@@ -211,16 +288,26 @@ test('API build uses Rspack with the TypeScript compiler instead of an SWC trans
     assert.equal(config.entry, join(root, 'apps/api/src/main.ts'))
     assert.equal(config.output.path, join(root, 'apps/api/_output/dist'))
     assert.equal(config.output.filename, 'index.js')
+    assert.equal(config.output.module, true)
+    assert.equal(config.output.chunkFormat, 'module')
+    assert.equal(config.experiments.outputModule, true)
+    assert.equal(config.module.rules[0].type, 'javascript/esm')
     assert.deepEqual(
         loaders.map((loader) => (typeof loader === 'string' ? loader : loader.loader)),
         [require.resolve(join(root, 'apps/api/node_modules/ts-loader'))]
     )
     assert.equal(loaders[0].options.configFile, join(root, 'apps/api/tsconfig.build.json'))
+    assert.deepEqual(loaders[0].options.compilerOptions, {
+        module: 'ESNext',
+        moduleResolution: 'Bundler'
+    })
     assert.equal(loaders[0].options.transpileOnly, true)
     assert.equal(config.context, join(root, 'apps/api'))
     assert.equal(config.resolve.tsConfig, join(root, 'apps/api/tsconfig.build.json'))
     assert.deepEqual(config.resolve.plugins, [])
     assert.deepEqual(config.plugins, defaults.plugins)
+    // ESM 번들 안에 CommonJS 패키지를 섞지 않고, common도 빌드 산출물째 배포한다.
+    assert.deepEqual(config.externals, defaults.externals)
     assert.doesNotMatch(JSON.stringify(config), /(?:builtin:)?swc-loader|@swc\//i)
 })
 

@@ -1,6 +1,6 @@
 import type { S3ClientConfig } from '@aws-sdk/client-s3'
 import type { PresignedPost } from '@aws-sdk/s3-presigned-post'
-import type { ChecksumAlgorithm } from '../utils'
+import type { ChecksumAlgorithm } from '../utils/index.js'
 
 export type S3DeleteObjectResult = { key: string; status: number }
 

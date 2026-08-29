@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common'
-import Redis from 'ioredis'
+import { Redis } from 'ioredis'
 import { randomUUID } from 'node:crypto'
 import { setTimeout as sleep } from 'node:timers/promises'
-import { defaultTo } from '../utils'
+import { defaultTo } from '../utils/index.js'
 
 @Injectable()
 export class CacheService {

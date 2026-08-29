@@ -2,6 +2,7 @@
     "name": "@mannercode/testing",
     "version": "0.0.1",
     "private": true,
+    "type": "module",
     "main": "_output/dist/index.js",
     "types": "_output/dist/index.d.ts",
     "scripts": {

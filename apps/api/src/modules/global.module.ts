@@ -2,7 +2,7 @@ import { AppLoggerService, createWinstonLogger } from '@mannercode/common'
 import { Global, Module } from '@nestjs/common'
 import { JwtModule } from '@nestjs/jwt'
 import { ScheduleModule } from '@nestjs/schedule'
-import { AppConfigService } from 'config'
+import { AppConfigService } from '#config'
 
 @Global()
 @Module({

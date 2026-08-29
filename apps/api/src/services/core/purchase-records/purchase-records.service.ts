@@ -1,9 +1,9 @@
 import type { ClientSession } from 'mongoose'
 import { ensure, mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { CreatePurchaseRecordDto, PurchaseRecordDto } from './dtos'
-import { PurchaseRecord, PurchaseRecordStatus } from './models'
-import { PurchaseRecordsRepository } from './purchase-records.repository'
+import { CreatePurchaseRecordDto, PurchaseRecordDto } from './dtos/index.js'
+import { PurchaseRecord, PurchaseRecordStatus } from './models/index.js'
+import { PurchaseRecordsRepository } from './purchase-records.repository.js'
 
 @Injectable()
 export class PurchaseRecordsService {

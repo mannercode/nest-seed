@@ -1,5 +1,5 @@
 import { withTestId } from '@mannercode/testing'
-import type { NatsPubSubServiceFixture } from './nats-pubsub.service.fixture'
+import type { NatsPubSubServiceFixture } from './nats-pubsub.service.fixture.js'
 
 /**
  * 픽스처가 연결을 flush해 두므로 측정 구간에는 순수 메시지 왕복만 들어온다.
@@ -21,7 +21,7 @@ describe('NatsPubSubService', () => {
     let subject: string
 
     beforeEach(async () => {
-        const { createNatsPubSubServiceFixture } = await import('./nats-pubsub.service.fixture')
+        const { createNatsPubSubServiceFixture } = await import('./nats-pubsub.service.fixture.js')
         fix = await createNatsPubSubServiceFixture()
         subject = withTestId('nats-pubsub')
     })
@@ -279,19 +279,19 @@ describe('NatsPubSubService', () => {
 
 describe('InjectNatsPubSub', () => {
     it('이름 없이 호출하면 파라미터 데코레이터를 반환한다', async () => {
-        const { InjectNatsPubSub } = await import('../nats-pubsub.service')
+        const { InjectNatsPubSub } = await import('../nats-pubsub.service.js')
         expect(typeof InjectNatsPubSub(undefined)).toBe('function')
     })
 
     it('이름과 함께 호출해도 파라미터 데코레이터를 반환한다', async () => {
-        const { InjectNatsPubSub } = await import('../nats-pubsub.service')
+        const { InjectNatsPubSub } = await import('../nats-pubsub.service.js')
         expect(typeof InjectNatsPubSub('my-bus')).toBe('function')
     })
 })
 
 describe('NatsPubSubModule.register', () => {
     it('기본 옵션으로 동적 모듈을 생성한다', async () => {
-        const { NatsPubSubModule } = await import('../nats-pubsub.service')
+        const { NatsPubSubModule } = await import('../nats-pubsub.service.js')
         const dynamicModule = NatsPubSubModule.register()
         expect(dynamicModule.module).toBe(NatsPubSubModule)
         expect(dynamicModule.providers?.length).toBe(1)

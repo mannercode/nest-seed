@@ -2,7 +2,7 @@ import type { MongoClient, MongoClientEvents } from 'mongodb'
 import type { Connection } from 'mongoose'
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { AppConfigService, createMongoDriverOptions, MONGO_CONNECTION_NAME } from 'config'
+import { AppConfigService, createMongoDriverOptions, MONGO_CONNECTION_NAME } from '#config'
 
 type ConnectionId = number | string
 type MongoClientEvent<EventName extends keyof MongoClientEvents> = Parameters<

@@ -1,7 +1,7 @@
 import { connect } from '@nats-io/transport-node'
 import { DynamicModule, Injectable, Module, OnModuleDestroy, Provider } from '@nestjs/common'
-import { getNatsConnectionToken } from './nats.tokens'
-import { NatsConnection, NatsModuleAsyncOptions, NatsModuleOptions } from './nats.types'
+import { getNatsConnectionToken } from './nats.tokens.js'
+import { NatsConnection, NatsModuleAsyncOptions, NatsModuleOptions } from './nats.types.js'
 
 // 모듈이 만든 연결은 모듈이 닫는다. drain은 전달 중인 메시지를 비운 뒤 닫는다.
 @Injectable()

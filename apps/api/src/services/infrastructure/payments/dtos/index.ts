@@ -1,2 +1,2 @@
-export * from './create-payment.dto'
-export * from './payment.dto'
+export * from './create-payment.dto.js'
+export * from './payment.dto.js'

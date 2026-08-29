@@ -1,7 +1,7 @@
 import { createCrudSchema, CrudSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MONGOOSE_SCHEMA_OPTIONS } from 'config'
-import { SeatPosition } from './seat-position'
+import { MONGOOSE_SCHEMA_OPTIONS } from '#config'
+import { SeatPosition } from './seat-position.js'
 
 export const TicketStatus = { Available: 'available', Sold: 'sold' } as const
 

@@ -2,7 +2,7 @@ import { createTestContext } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import Joi from 'joi'
-import { BaseConfigService } from '../base-config.service'
+import { BaseConfigService } from '../base-config.service.js'
 
 const configSchema = Joi.object({
     TEST_BOOLEAN_FALSE_KEY: Joi.boolean().required(),

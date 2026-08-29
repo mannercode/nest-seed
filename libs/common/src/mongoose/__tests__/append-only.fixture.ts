@@ -2,8 +2,8 @@ import { createTestContext } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
 import { getModelToken, InjectModel, MongooseModule, Prop, Schema } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { AppendOnlyRepository } from '../append-only.repository'
-import { AppendOnlySchema, createAppendOnlySchema } from '../append-only.schema'
+import { AppendOnlyRepository } from '../append-only.repository.js'
+import { AppendOnlySchema, createAppendOnlySchema } from '../append-only.schema.js'
 
 @Schema({ toJSON: { virtuals: true } })
 export class AppendOnlySample extends AppendOnlySchema {

@@ -1,14 +1,14 @@
 import { BadRequestException } from '@nestjs/common'
 import { plainToInstance } from 'class-transformer'
-import type { PaginationFixture } from './pagination.fixture'
-import { PaginationDto, PaginationErrors } from '..'
-import { CommonErrors } from '../../errors'
+import type { PaginationFixture } from './pagination.fixture.js'
+import { CommonErrors } from '../../errors.js'
+import { PaginationDto, PaginationErrors } from '../index.js'
 
 describe('PaginationDto', () => {
     let fix: PaginationFixture
 
     beforeEach(async () => {
-        const { createPaginationFixture } = await import('./pagination.fixture')
+        const { createPaginationFixture } = await import('./pagination.fixture.js')
         fix = await createPaginationFixture()
     })
     afterEach(() => fix.teardown())

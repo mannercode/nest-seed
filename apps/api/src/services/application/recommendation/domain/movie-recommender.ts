@@ -1,5 +1,5 @@
-import type { MovieDto } from 'core'
 import { countBy, defaultTo, orderBy, sumBy } from '@mannercode/common'
+import type { MovieDto } from '#core'
 
 export class MovieRecommender {
     static recommend(showingMovies: MovieDto[], watchedMovies: MovieDto[]) {

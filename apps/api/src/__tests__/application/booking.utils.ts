@@ -1,12 +1,12 @@
 import type { TestContext } from '@mannercode/testing'
-import { Seatmap, type TheaterLocation } from 'core'
+import { Seatmap, type TheaterLocation } from '#core'
 import {
     createAndLoginUser,
     createMovie,
     createShowtimes,
     createTheater,
     createTickets
-} from '../helpers'
+} from '../helpers/index.js'
 
 export async function createAllResources(
     ctx: TestContext,

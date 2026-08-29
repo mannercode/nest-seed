@@ -1,4 +1,4 @@
-import { ensure } from './validator'
+import { ensure } from './validator.js'
 
 export class TimeUtil {
     /**

@@ -1,7 +1,7 @@
 import { HttpTestClient, createHttpTestContext } from '@mannercode/testing'
 import { Controller, Get, Query, ValidationPipe } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
-import { PaginationDto } from '..'
+import { PaginationDto } from '../index.js'
 
 export type PaginationFixture = { httpClient: HttpTestClient; teardown: () => Promise<void> }
 

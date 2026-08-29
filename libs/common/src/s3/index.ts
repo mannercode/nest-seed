@@ -1,3 +1,3 @@
-export * from './s3-object.module'
-export * from './s3-object.service'
-export * from './s3-object.types'
+export * from './s3-object.module.js'
+export * from './s3-object.service.js'
+export * from './s3-object.types.js'

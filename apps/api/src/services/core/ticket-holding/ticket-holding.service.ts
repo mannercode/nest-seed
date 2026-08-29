@@ -1,7 +1,7 @@
 import { CacheService, InjectCache } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { AppConfigService } from 'config'
-import { HoldTicketsDto } from './dtos'
+import { AppConfigService } from '#config'
+import { HoldTicketsDto } from './dtos/index.js'
 
 type TicketReference = { id: string; showtimeId: string }
 type ClaimedTicketGroup = {

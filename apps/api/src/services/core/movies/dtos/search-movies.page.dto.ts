@@ -1,7 +1,7 @@
 import { PaginationDto } from '@mannercode/common'
 import { Type } from 'class-transformer'
 import { IsDate, IsEnum, IsOptional, IsString } from 'class-validator'
-import { MovieGenre, MovieRating } from '../models'
+import { MovieGenre, MovieRating } from '../models/index.js'
 
 export class SearchMoviesPageDto extends PaginationDto {
     @IsOptional()

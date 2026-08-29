@@ -1,6 +1,6 @@
 import type { NatsConnection } from '@mannercode/common'
-import type { PurchaseEvents } from 'application'
-import type { AppTestContext } from '../helpers'
+import type { PurchaseEvents } from '#application'
+import type { AppTestContext } from '../helpers/index.js'
 
 const NOTIFICATION_LOG = 'would send purchase confirmation'
 const PURCHASED_LOG = 'purchase observed'
@@ -16,8 +16,8 @@ describe('PurchaseEvents', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers')
-        const { PurchaseEvents } = await import('application')
+        const { createAppTestContext } = await import('../helpers/index.js')
+        const { PurchaseEvents } = await import('#application')
         fix = await createAppTestContext()
         teardown = fix.teardown
         events = fix.module.get(PurchaseEvents)
@@ -28,7 +28,7 @@ describe('PurchaseEvents', () => {
     afterEach(() => teardown?.())
 
     it('ticketPurchased 이벤트는 알림 구독자와 로그 구독자 모두에 전달한다', async () => {
-        const { waitFor } = await import('./purchase-events.utils')
+        const { waitFor } = await import('./purchase-events.utils.js')
         const userId = 'user-1'
         const ticketIds = ['t1', 't2']
 
@@ -53,9 +53,9 @@ describe('PurchaseEvents', () => {
     })
 
     it('알림 구독은 큐 그룹에 참여해 같은 그룹의 다른 멤버가 있어도 전체에서 한 번만 처리한다', async () => {
-        const { waitFor } = await import('./purchase-events.utils')
+        const { waitFor } = await import('./purchase-events.utils.js')
         const { NatsPubSubService, getNatsConnectionToken } = await import('@mannercode/common')
-        const { NATS_CONNECTION_NAME } = await import('config')
+        const { NATS_CONNECTION_NAME } = await import('#config')
 
         const connection = fix.module.get<NatsConnection>(
             getNatsConnectionToken(NATS_CONNECTION_NAME)

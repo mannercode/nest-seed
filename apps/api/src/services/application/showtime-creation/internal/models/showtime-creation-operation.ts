@@ -1,7 +1,7 @@
 import { createCrudSchema, CrudSchema, HardDelete } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MONGOOSE_SCHEMA_OPTIONS } from 'config'
-import type { ValidateAndCreateResult } from '../types'
+import { MONGOOSE_SCHEMA_OPTIONS } from '#config'
+import type { ValidateAndCreateResult } from '../types.js'
 
 @HardDelete()
 @Schema(MONGOOSE_SCHEMA_OPTIONS)

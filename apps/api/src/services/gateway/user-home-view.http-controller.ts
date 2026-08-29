@@ -1,8 +1,8 @@
 import { defaultTo } from '@mannercode/common'
 import { Controller, Get, Req, UseGuards } from '@nestjs/common'
-import { UserHomeViewService } from 'view'
-import { OptionalAuth, UserAuthGuard } from './guards'
-import { UserOptionalAuthRequest } from './types'
+import { UserHomeViewService } from '#view'
+import type { UserOptionalAuthRequest } from './types.js'
+import { OptionalAuth, UserAuthGuard } from './guards/index.js'
 
 @Controller('views/user-app')
 export class UserHomeViewHttpController {

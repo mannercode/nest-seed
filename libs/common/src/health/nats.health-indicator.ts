@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
-import type { NatsConnection } from '../nats'
-import { getByPath } from '../utils'
+import type { NatsConnection } from '../nats/index.js'
+import { getByPath } from '../utils/index.js'
 
 @Injectable()
 export class NatsHealthIndicator {

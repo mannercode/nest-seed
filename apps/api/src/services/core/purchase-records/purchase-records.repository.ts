@@ -1,10 +1,10 @@
 import { CrudRepository, ensure, leanArrayToPublic, leanOneToPublic } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
 import { ClientSession, Model } from 'mongoose'
-import { CreatePurchaseRecordDto } from './dtos'
-import { PurchaseEventStatus, PurchaseRecord, PurchaseRecordStatus } from './models'
+import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import { CreatePurchaseRecordDto } from './dtos/index.js'
+import { PurchaseEventStatus, PurchaseRecord, PurchaseRecordStatus } from './models/index.js'
 
 @Injectable()
 export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {

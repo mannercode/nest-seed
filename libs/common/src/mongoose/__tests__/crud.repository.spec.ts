@@ -1,9 +1,9 @@
 import { expectEqualUnsorted, nullObjectId } from '@mannercode/testing'
 import { Types } from 'mongoose'
-import { OrderDirection } from '../../pagination'
-import { pickIds } from '../../utils'
-import { leanToPublic } from '../crud.repository'
-import { MongooseErrors } from '../errors'
+import { OrderDirection } from '../../pagination/index.js'
+import { pickIds } from '../../utils/index.js'
+import { leanToPublic } from '../crud.repository.js'
+import { MongooseErrors } from '../errors.js'
 import {
     createSample,
     createSamples,
@@ -15,13 +15,13 @@ import {
     toDtos,
     type CrudRepositoryFixture,
     type SampleDto
-} from './crud.repository.fixture'
+} from './crud.repository.fixture.js'
 
 describe('CrudRepository', () => {
     let fix: CrudRepositoryFixture
 
     beforeEach(async () => {
-        const { createCrudRepositoryFixture } = await import('./crud.repository.fixture')
+        const { createCrudRepositoryFixture } = await import('./crud.repository.fixture.js')
         fix = await createCrudRepositoryFixture()
     })
     afterEach(() => fix.teardown())

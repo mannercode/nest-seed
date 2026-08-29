@@ -1,2 +1,2 @@
-export * from './seat-position'
-export * from './ticket'
+export * from './seat-position.js'
+export * from './ticket.js'

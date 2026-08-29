@@ -9,9 +9,9 @@ import {
     TicketsService,
     Seatmap,
     TicketStatus
-} from 'core'
-import { BulkCreateShowtimesDto } from '../dtos'
-import { ShowtimeCreationErrors } from '../errors'
+} from '#core'
+import { BulkCreateShowtimesDto } from '../dtos/index.js'
+import { ShowtimeCreationErrors } from '../errors.js'
 
 const MAX_TICKETS_PER_OPERATION = 10_000
 

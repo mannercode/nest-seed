@@ -1,4 +1,4 @@
-import type { MovieDto } from 'core'
+import type { MovieDto } from '#core'
 
 export class HomeShowtimeView {
     endTime: Date

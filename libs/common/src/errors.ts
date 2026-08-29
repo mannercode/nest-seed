@@ -1,8 +1,8 @@
-import { JwtAuthErrors } from './auth'
-import { IdempotencyErrors } from './idempotency'
-import { LatLongErrors } from './lat-long'
-import { MongooseErrors } from './mongoose'
-import { PaginationErrors } from './pagination'
+import { JwtAuthErrors } from './auth/index.js'
+import { IdempotencyErrors } from './idempotency/index.js'
+import { LatLongErrors } from './lat-long/index.js'
+import { MongooseErrors } from './mongoose/index.js'
+import { PaginationErrors } from './pagination/index.js'
 
 export const CommonErrors = {
     JwtAuth: JwtAuthErrors,

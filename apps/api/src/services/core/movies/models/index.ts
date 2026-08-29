@@ -1,3 +1,3 @@
-export * from './movie'
-export * from './movie-defaults'
-export * from './movie-pending-asset'
+export * from './movie-defaults.js'
+export * from './movie-pending-asset.js'
+export * from './movie.js'

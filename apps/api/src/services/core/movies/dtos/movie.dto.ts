@@ -1,4 +1,4 @@
-import type { MovieGenre, MovieRating } from '../models'
+import type { MovieGenre, MovieRating } from '../models/index.js'
 
 export class MovieDto {
     director: string

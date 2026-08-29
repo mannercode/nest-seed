@@ -2,7 +2,7 @@ import { BaseConfigService } from '@mannercode/common'
 import { Inject, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import Joi from 'joi'
-import { PROJECT_ID_TOKEN } from './project-id'
+import { PROJECT_ID_TOKEN } from './project-id.js'
 
 @Injectable()
 export class AppConfigService extends BaseConfigService {

@@ -1,5 +1,5 @@
 import { IsEnum, IsNotEmpty, IsString, ValidateNested } from 'class-validator'
-import { SeatPosition, TicketStatus } from '../models'
+import { SeatPosition, TicketStatus } from '../models/index.js'
 
 export class CreateTicketDto {
     @IsNotEmpty()

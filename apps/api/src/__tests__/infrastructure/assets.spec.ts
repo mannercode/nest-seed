@@ -1,8 +1,8 @@
 import type { SchedulerRegistry } from '@nestjs/schedule'
-import type { AssetDto, AssetPresignedUploadDto, AssetsService } from 'infrastructure'
 import { Checksum, ensure, pickIds, S3ObjectService, sleep } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
+import type { AssetDto, AssetPresignedUploadDto, AssetsService } from '#infrastructure'
 import {
     buildCreateAssetDto,
     buildFinalizeAssetDto,
@@ -14,7 +14,7 @@ import {
     uploadAsset,
     uploadFile,
     type AppTestContext
-} from '../helpers'
+} from '../helpers/index.js'
 
 describe('AssetsService', () => {
     let fix: AppTestContext
@@ -25,8 +25,8 @@ describe('AssetsService', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers')
-        const { AssetsService } = await import('infrastructure')
+        const { createAppTestContext } = await import('../helpers/index.js')
+        const { AssetsService } = await import('#infrastructure')
         const { SchedulerRegistry } = await import('@nestjs/schedule')
         fix = await createAppTestContext()
         teardown = fix.teardown
@@ -326,7 +326,7 @@ describe('AssetsService', () => {
         })
 
         it('업로드가 만료된 에셋은 제거한다', async () => {
-            const { AppConfigService } = await import('config')
+            const { AppConfigService } = await import('#config')
             const config = fix.module.get(AppConfigService)
             await sleep(config.asset.uploadExpiresInSec * 1000 + 500)
 

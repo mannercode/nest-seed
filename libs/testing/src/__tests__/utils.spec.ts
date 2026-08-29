@@ -1,4 +1,4 @@
-import { isDebuggingEnabled, oid, step, withTestId } from '../utils'
+import { isDebuggingEnabled, oid, step, withTestId } from '../utils.js'
 
 describe('step', () => {
     it('콜백을 실행한다', async () => {

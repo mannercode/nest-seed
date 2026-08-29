@@ -1,7 +1,7 @@
 import type mongoose from 'mongoose'
 import { getConnectionToken } from '@nestjs/mongoose'
-import { MONGO_CONNECTION_NAME } from 'config'
-import type { AppTestContext } from './helpers'
+import { MONGO_CONNECTION_NAME } from '#config'
+import type { AppTestContext } from './helpers/index.js'
 
 describe('Health', () => {
     let fix: AppTestContext
@@ -9,7 +9,7 @@ describe('Health', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('./helpers')
+        const { createAppTestContext } = await import('./helpers/index.js')
         fix = await createAppTestContext()
         teardown = fix.teardown
     })

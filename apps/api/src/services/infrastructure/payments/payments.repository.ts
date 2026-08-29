@@ -1,10 +1,10 @@
 import { CrudRepository, ensure, isDuplicateKeyError, leanOneToPublic } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
 import { ClientSession, Model } from 'mongoose'
-import { CreatePaymentDto } from './dtos'
-import { Payment, PaymentStatus } from './models'
+import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import { CreatePaymentDto } from './dtos/index.js'
+import { Payment, PaymentStatus } from './models/index.js'
 
 @Injectable()
 export class PaymentsRepository extends CrudRepository<Payment> {

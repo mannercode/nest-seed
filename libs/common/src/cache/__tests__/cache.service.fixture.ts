@@ -1,7 +1,7 @@
 import { createTestContext, withTestId } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
-import { CacheModule, CacheService, InjectCache } from '..'
-import { RedisModule } from '../../redis'
+import { RedisModule } from '../../redis/index.js'
+import { CacheModule, CacheService, InjectCache } from '../index.js'
 
 export type CacheServiceFixture = {
     cacheA: CacheService

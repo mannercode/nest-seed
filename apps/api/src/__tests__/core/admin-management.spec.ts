@@ -1,6 +1,6 @@
-import type { AdminDto } from 'core'
 import { nullObjectId } from '@mannercode/testing'
-import { createAdmin, Errors, loginAdmin, type AppTestContext } from '../helpers'
+import type { AdminDto } from '#core'
+import { createAdmin, Errors, loginAdmin, type AppTestContext } from '../helpers/index.js'
 
 describe('AdminManagement', () => {
     let fix: AppTestContext
@@ -16,7 +16,7 @@ describe('AdminManagement', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers')
+        const { createAppTestContext } = await import('../helpers/index.js')
         fix = await createAppTestContext()
         teardown = fix.teardown
     })
@@ -63,7 +63,7 @@ describe('AdminManagement', () => {
         })
 
         it('중복 키 외의 저장 오류는 ConflictException으로 바꾸지 않고 그대로 던진다', async () => {
-            const { AdminsService } = await import('core')
+            const { AdminsService } = await import('#core')
             const { ConflictException } = await import('@nestjs/common')
             const service = fix.module.get(AdminsService)
 
@@ -274,7 +274,7 @@ describe('AdminManagement', () => {
         it('중복 키 외의 저장 오류는 ConflictException으로 바꾸지 않고 그대로 던진다', async () => {
             const created = await createAdmin(fix, adminCredentials)
 
-            const { AdminsRepository, AdminsService } = await import('core')
+            const { AdminsRepository, AdminsService } = await import('#core')
             const service = fix.module.get(AdminsService)
             const repo = fix.module.get(AdminsRepository)
             jest.spyOn(repo, 'update').mockRejectedValueOnce(new Error('boom'))
@@ -283,7 +283,7 @@ describe('AdminManagement', () => {
         })
 
         it('존재하지 않는 admin을 수정하면 404를 던진다', async () => {
-            const { AdminsService } = await import('core')
+            const { AdminsService } = await import('#core')
             const service = fix.module.get(AdminsService)
 
             await expect(service.update(nullObjectId, { name: 'x' })).rejects.toThrow(

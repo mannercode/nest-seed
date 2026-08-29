@@ -1,7 +1,7 @@
 import { HttpTestClient, createHttpTestContext } from '@mannercode/testing'
 import { Controller, Get, Post, Provider } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
-import { HttpSuccessLoggerInterceptor } from '../success-logger.interceptor'
+import { HttpSuccessLoggerInterceptor } from '../success-logger.interceptor.js'
 
 export type SuccessLoggerInterceptorFixture = {
     httpClient: HttpTestClient

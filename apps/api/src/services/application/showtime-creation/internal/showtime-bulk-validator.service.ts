@@ -1,9 +1,9 @@
 import type { ClientSession } from 'mongoose'
 import { DateTimeRange, DateUtil, Require } from '@mannercode/common'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { MoviesService, ShowtimeDto, ShowtimesService } from 'core'
-import { BulkCreateShowtimesDto } from '../dtos'
-import { ShowtimeCreationErrors } from '../errors'
+import { MoviesService, ShowtimeDto, ShowtimesService } from '#core'
+import { BulkCreateShowtimesDto } from '../dtos/index.js'
+import { ShowtimeCreationErrors } from '../errors.js'
 
 // 끝 시각은 포함하지 않는다.
 // A가 12:00에 끝나면 12:00 시작하는 B와 곧바로 이어져도 충돌로 보지 않는다.

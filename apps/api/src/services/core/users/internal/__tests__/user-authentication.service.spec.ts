@@ -1,5 +1,5 @@
 import { ensure } from '@mannercode/common'
-import { UserAuthenticationService } from '..'
+import { UserAuthenticationService } from '../index.js'
 
 describe('UserAuthenticationService', () => {
     let service: UserAuthenticationService

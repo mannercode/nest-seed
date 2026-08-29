@@ -1,13 +1,9 @@
 {
     "compilerOptions": {
-        "module": "commonjs",
-        // "node10"과 각 프로젝트 tsconfig의 "baseUrl"은 TypeScript 7에서 제거될 예정이다.
-        // 지금은 ignoreDeprecations로 경고만 숨긴다.
-        // TypeScript 7로 올릴 때는 module과 moduleResolution의 호환 조합을 함께 정하고 baseUrl을 제거한다.
-        // 예를 들어 moduleResolution을 "node16"으로 바꾸면 module도 "node16"이어야 한다.
-        // 현재 TypeScript는 paths를 tsconfig 기준으로 해석한다.
-        "moduleResolution": "node10",
-        "ignoreDeprecations": "6.0",
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        // Nest CLI의 path transformer가 `#alias`를 소스 `.ts` 경로로 바꾸므로 ESM 산출물에서 `.js`로 다시 쓴다.
+        "rewriteRelativeImportExtensions": true,
         // "ESNext"는 TS 버전마다 의미가 바뀌어 emit/타입이 흔들린다.
         // Node 26에서 안전한 구체 에디션으로 고정한다.
         "target": "ES2024",
@@ -22,6 +18,8 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "noUncheckedIndexedAccess": true,
+        // Rspack의 transpileOnly처럼 파일별로 변환해도 안전한 import/type 경계를 타입 검사에서 보장한다.
+        "isolatedModules": true,
 
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,

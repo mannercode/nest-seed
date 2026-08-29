@@ -20,7 +20,8 @@ const domainLayers = ['application', 'core', 'infrastructure']
 // `config` 패턴이 `@nestjs/config`까지 잡는 오탐이 생기므로, alias 제한은 시작을 고정한 regex로 선언한다.
 const aliasRegex = (...aliases) => `^(?:${aliases.join('|')})(/.*)?$`
 
-const internalAliasPattern = aliasRegex(...layers, 'config')
+const esmAlias = (alias) => `#${alias}`
+const internalAliasPattern = aliasRegex(...layers.map(esmAlias), esmAlias('config'))
 const dependencyIgnorePatterns = [
     '^\\.',
     nodeBuiltinModulePattern,
@@ -41,13 +42,13 @@ const layerImportBlocks = layers.map((layer, index) => {
     const patterns = [
         ...barrelImportPatterns,
         {
-            regex: aliasRegex(layer),
+            regex: aliasRegex(esmAlias(layer)),
             message: `Use relative imports within ${layer} to avoid ancestor barrel cycles.`
         }
     ]
     if (upperLayers.length > 0) {
         patterns.push({
-            regex: aliasRegex(...upperLayers),
+            regex: aliasRegex(...upperLayers.map(esmAlias)),
             message: `Layering rule: ${layer} must not depend on ${upperLayers.join(', ')}.`
         })
     }
@@ -61,7 +62,7 @@ module.exports = [
     {
         // 런타임 도우미·Jest 연결·저장소 설정은 CommonJS Node 파일이다.
         // 생성 번들은 _output 아래에 있어 이 소스 glob에 포함되지 않는다.
-        files: ['*.{cjs,js}', 'scripts/**/*.js'],
+        files: ['*.{cjs,js}', 'scripts/**/*.{cjs,js}'],
         linterOptions: { reportUnusedDisableDirectives: true },
         languageOptions: { globals: { ...baseGlobals }, sourceType: 'commonjs' },
         rules: {
@@ -78,7 +79,10 @@ module.exports = [
             ]
         }
     },
-    { files: ['jest.setup.js'], languageOptions: { globals: { ...baseGlobals, ...globals.jest } } },
+    {
+        files: ['jest.setup.cjs'],
+        languageOptions: { globals: { ...baseGlobals, ...globals.jest } }
+    },
     ...createBaseConfigs({
         tsconfigRootDir: __dirname,
         srcGlob: '{src,scripts}/**',
@@ -113,12 +117,12 @@ module.exports = [
                     patterns: [
                         ...barrelImportPatterns,
                         {
-                            regex: aliasRegex('config'),
+                            regex: aliasRegex(esmAlias('config')),
                             message:
                                 'Use relative imports within config to avoid ancestor barrel cycles.'
                         },
                         {
-                            regex: aliasRegex(...layers),
+                            regex: aliasRegex(...layers.map(esmAlias)),
                             message: 'config must not depend on app layers.'
                         }
                     ]
@@ -135,7 +139,7 @@ module.exports = [
                     patterns: [
                         ...barrelImportPatterns,
                         {
-                            regex: aliasRegex(...layers),
+                            regex: aliasRegex(...layers.map(esmAlias)),
                             message: 'modules must not depend on app layers.'
                         }
                     ]

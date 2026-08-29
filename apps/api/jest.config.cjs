@@ -1,7 +1,7 @@
 const path = require('path')
 const { createDefaultPreset, pathsToModuleNameMapper } = require('ts-jest')
 const baseConfig = require('../../jest.config.base')
-const { initializeApiJestRun } = require('./scripts/jest-run-context')
+const { initializeApiJestRun } = require('./scripts/jest-run-context.cjs')
 
 const appDir = __dirname
 const jestRun = initializeApiJestRun(appDir)
@@ -12,12 +12,18 @@ const { compilerOptions } = tsconfig
 module.exports = {
     ...baseConfig,
     ...tsJestPreset,
-    globalSetup: path.resolve(__dirname, 'jest.global.js'),
-    globalTeardown: path.resolve(__dirname, 'jest.teardown.js'),
-    reporters: ['default', path.resolve(__dirname, 'scripts/jest-failure-diagnostics-reporter.js')],
-    setupFilesAfterEnv: [path.resolve(__dirname, 'jest.setup.js')],
+    globalSetup: path.resolve(__dirname, 'jest.global.cjs'),
+    globalTeardown: path.resolve(__dirname, 'jest.teardown.cjs'),
+    reporters: [
+        'default',
+        path.resolve(__dirname, 'scripts/jest-failure-diagnostics-reporter.cjs')
+    ],
+    setupFilesAfterEnv: [path.resolve(__dirname, 'jest.setup.cjs')],
     roots: ['<rootDir>/src'],
-    moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/' }),
+    moduleNameMapper: {
+        ...pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/' }),
+        '^(\\.{1,2}/.*)\\.js$': '$1'
+    },
     collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
     coveragePathIgnorePatterns: [
         '__tests__',

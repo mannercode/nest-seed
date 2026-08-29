@@ -1,4 +1,4 @@
-import type { PaymentStatus } from '../models'
+import type { PaymentStatus } from '../models/index.js'
 
 export class PaymentDto {
     amount: number

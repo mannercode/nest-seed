@@ -7,10 +7,10 @@ import {
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
 import { HydratedDocument, Model } from 'mongoose'
-import { SearchMoviesPageDto, UpsertMovieDto } from './dtos'
-import { Movie } from './models'
+import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import { SearchMoviesPageDto, UpsertMovieDto } from './dtos/index.js'
+import { Movie } from './models/index.js'
 
 @Injectable()
 export class MoviesRepository extends CrudRepository<Movie> {

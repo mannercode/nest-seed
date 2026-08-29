@@ -11,7 +11,7 @@ const { createJestResourceScope } = require('@mannercode/jest-helpers')
 
 const RUN_A = '0123456789abcdef0123456789abcdef'
 const RUN_B = 'fedcba9876543210fedcba9876543210'
-const teardownPath = path.resolve(__dirname, '../../jest.teardown.js')
+const teardownPath = path.resolve(__dirname, '../../jest.teardown.cjs')
 
 test('actual jest.teardown은 현재 run의 Mongo, S3, Redis sentinel만 선택한다', async () => {
     const first = createJestResourceScope(RUN_A)

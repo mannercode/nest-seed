@@ -1,7 +1,7 @@
 import { S3Client } from '@aws-sdk/client-s3'
 import { DynamicModule, Inject, Module } from '@nestjs/common'
-import { S3ObjectService } from './s3-object.service'
-import { S3ObjectModuleOptions } from './s3-object.types'
+import { S3ObjectService } from './s3-object.service.js'
+import { S3ObjectModuleOptions } from './s3-object.types.js'
 
 export function InjectS3Object(name?: string): ParameterDecorator {
     return Inject(S3ObjectService.getName(name))

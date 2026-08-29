@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
-import { MoviesModule, ShowtimesModule, WatchRecordsModule } from 'core'
-import { RecommendationService } from './recommendation.service'
+import { MoviesModule, ShowtimesModule, WatchRecordsModule } from '#core'
+import { RecommendationService } from './recommendation.service.js'
 
 @Module({
     exports: [RecommendationService],

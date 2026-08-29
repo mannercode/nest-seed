@@ -7,10 +7,10 @@ const apiDirectory = path.resolve(__dirname, '../..')
 const workspaceRoot = path.resolve(apiDirectory, '../..')
 
 test('병렬 invocation fixture는 실제 API setup과 teardown을 사용한다', () => {
-    const fixtureConfig = require('./fixtures/jest-invocation/jest.config')
+    const fixtureConfig = require('./fixtures/jest-invocation/jest.config.cjs')
 
-    assert.deepEqual(fixtureConfig.setupFilesAfterEnv, [path.join(apiDirectory, 'jest.setup.js')])
-    assert.equal(fixtureConfig.globalTeardown, path.join(apiDirectory, 'jest.teardown.js'))
+    assert.deepEqual(fixtureConfig.setupFilesAfterEnv, [path.join(apiDirectory, 'jest.setup.cjs')])
+    assert.equal(fixtureConfig.globalTeardown, path.join(apiDirectory, 'jest.teardown.cjs'))
 })
 
 test('API의 일반 test는 Jest만 실행하고 atoz가 isolation harness를 한 번 gate한다', () => {

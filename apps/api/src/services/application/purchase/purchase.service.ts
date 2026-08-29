@@ -9,7 +9,8 @@ import {
 import { ConflictException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { InjectConnection } from '@nestjs/mongoose'
 import { Interval } from '@nestjs/schedule'
-import { MONGO_CONNECTION_NAME } from 'config'
+import { createHash, randomUUID } from 'node:crypto'
+import { MONGO_CONNECTION_NAME } from '#config'
 import {
     PurchaseItemType,
     PurchaseRecordsService,
@@ -17,13 +18,12 @@ import {
     TicketsService,
     TicketStatus,
     type PurchaseRecordDto
-} from 'core'
-import { PaymentsService } from 'infrastructure'
-import { createHash, randomUUID } from 'node:crypto'
-import { CreatePurchaseDto } from './dtos'
-import { PurchaseErrors } from './errors'
-import { TicketPurchaseService } from './internal'
-import { PurchaseEvents } from './purchase.events'
+} from '#core'
+import { PaymentsService } from '#infrastructure'
+import { CreatePurchaseDto } from './dtos/index.js'
+import { PurchaseErrors } from './errors.js'
+import { TicketPurchaseService } from './internal/index.js'
+import { PurchaseEvents } from './purchase.events.js'
 
 const PURCHASE_LOCK_TTL_MS = 5 * 60 * 1000
 const PURCHASE_LOCK_WAIT_MS = 10 * 60 * 1000

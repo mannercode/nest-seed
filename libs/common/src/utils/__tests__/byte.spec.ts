@@ -1,4 +1,4 @@
-import { ByteUtil } from '../byte'
+import { ByteUtil } from '../byte.js'
 
 describe('ByteUtil', () => {
     describe('fromString', () => {

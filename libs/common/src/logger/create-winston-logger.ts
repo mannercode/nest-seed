@@ -4,8 +4,8 @@
 import { styleText } from 'node:util'
 import winston from 'winston'
 import DailyRotateFile from 'winston-daily-rotate-file'
-import type { HttpErrorLog, HttpSuccessLog } from './types'
-import { defaultTo } from '../utils'
+import type { HttpErrorLog, HttpSuccessLog } from './types.js'
+import { defaultTo } from '../utils/index.js'
 
 function colorizeHttpMethod(method: string | undefined) {
     const normalizedMethod = defaultTo(method, 'METHOD').toUpperCase()

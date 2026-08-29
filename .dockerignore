@@ -19,7 +19,6 @@
 !/apps/*/nest-cli.json
 !/apps/*/src/
 !/apps/*/scripts/
-!/apps/*/jest.*.js
 
 # `apps/api`가 `tools/` 패키지를 사용하므로 의존성을 설치할 때 이 폴더가 필요하다.
 # 없으면 local workspace dependency를 연결할 수 없다.

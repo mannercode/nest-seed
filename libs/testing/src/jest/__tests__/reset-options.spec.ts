@@ -1,4 +1,4 @@
-import { getCounter, incrementCounter } from './reset-options.fixture'
+import { getCounter, incrementCounter } from './reset-options.fixture.js'
 
 describe('resetModules / resetMocks / restoreMocks', () => {
     describe('resetModules가 활성화되었을 때', () => {
@@ -17,14 +17,14 @@ describe('resetModules / resetMocks / restoreMocks', () => {
         describe('동적으로 가져올 때', () => {
             it('카운터를 증가시킨다', async () => {
                 const { getCounter: getCounterDynamic, incrementCounter: incrementCounterDynamic } =
-                    await import('./reset-options.fixture')
+                    await import('./reset-options.fixture.js')
                 expect(getCounterDynamic()).toBe(0)
                 incrementCounterDynamic()
                 expect(getCounterDynamic()).toBe(1)
             })
 
             it('다음 테스트에서 새 카운터로 시작한다', async () => {
-                const { getCounter: getCounterDynamic } = await import('./reset-options.fixture')
+                const { getCounter: getCounterDynamic } = await import('./reset-options.fixture.js')
 
                 expect(getCounterDynamic()).toBe(0)
             })

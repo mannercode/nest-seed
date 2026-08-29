@@ -10,10 +10,10 @@ import {
     Req,
     UseGuards
 } from '@nestjs/common'
-import { BookingService, HoldTicketsBodyDto } from 'application'
-import { UserAuthGuard } from './guards'
-import { ParseShowdatePipe } from './pipes'
-import { UserAuthRequest } from './types'
+import { BookingService, HoldTicketsBodyDto } from '#application'
+import type { UserAuthRequest } from './types.js'
+import { UserAuthGuard } from './guards/index.js'
+import { ParseShowdatePipe } from './pipes/index.js'
 
 @Controller('booking')
 export class BookingHttpController {

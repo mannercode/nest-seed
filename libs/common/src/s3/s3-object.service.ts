@@ -10,7 +10,7 @@ import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { Injectable, OnModuleDestroy } from '@nestjs/common'
 import { randomUUID } from 'crypto'
-import { HttpUtil, defaultTo, getByPath } from '../utils'
+import { HttpUtil, defaultTo, getByPath } from '../utils/index.js'
 import {
     S3DeleteObjectResult,
     S3ListObjectsOptions,
@@ -21,7 +21,7 @@ import {
     S3PresignPostUploadOptions,
     S3PresignPostUploadResult,
     S3UploadCompleteOptions
-} from './s3-object.types'
+} from './s3-object.types.js'
 
 // S3가 content-length-range의 상한을 요구하므로 하한 전용 정책에는 1 TiB를 sentinel 상한으로 쓴다.
 const UNBOUNDED_CONTENT_LENGTH = 1024 * 1024 * 1024 * 1024 // 1 TiB

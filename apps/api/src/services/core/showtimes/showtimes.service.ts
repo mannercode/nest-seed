@@ -1,9 +1,14 @@
 import type { ClientSession } from 'mongoose'
 import { mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { CreateShowtimeDto, CreateShowtimesResult, SearchShowtimesDto, ShowtimeDto } from './dtos'
-import { Showtime } from './models'
-import { ShowtimesRepository } from './showtimes.repository'
+import {
+    CreateShowtimeDto,
+    CreateShowtimesResult,
+    SearchShowtimesDto,
+    ShowtimeDto
+} from './dtos/index.js'
+import { Showtime } from './models/index.js'
+import { ShowtimesRepository } from './showtimes.repository.js'
 
 @Injectable()
 export class ShowtimesService {

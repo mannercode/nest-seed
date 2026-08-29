@@ -1,7 +1,7 @@
 import { DynamicModule, Inject, Injectable, Logger, Module, OnModuleDestroy } from '@nestjs/common'
-import type { NatsConnection } from './nats.types'
-import { defaultTo } from '../utils'
-import { getNatsConnectionToken } from './nats.tokens'
+import type { NatsConnection } from './nats.types.js'
+import { defaultTo } from '../utils/index.js'
+import { getNatsConnectionToken } from './nats.tokens.js'
 
 type MessageHandler = (message: string) => void
 type Subscription = ReturnType<NatsConnection['subscribe']>

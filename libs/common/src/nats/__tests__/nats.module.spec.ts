@@ -1,8 +1,8 @@
 import { createTestContext } from '@mannercode/testing'
 import { Inject, Injectable, Module } from '@nestjs/common'
-import type { NatsConnection } from '../nats.types'
-import { NatsConnectionRegistry, NatsModule } from '../nats.module'
-import { DEFAULT_NATS_CONNECTION_NAME, getNatsConnectionToken } from '../nats.tokens'
+import type { NatsConnection } from '../nats.types.js'
+import { NatsConnectionRegistry, NatsModule } from '../nats.module.js'
+import { DEFAULT_NATS_CONNECTION_NAME, getNatsConnectionToken } from '../nats.tokens.js'
 
 @Injectable()
 class SiblingConsumer {

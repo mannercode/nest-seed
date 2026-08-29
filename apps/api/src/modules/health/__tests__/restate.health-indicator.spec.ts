@@ -1,5 +1,5 @@
-import type { AppConfigService } from 'config'
-import { RestateHealthIndicator } from '../restate.health-indicator'
+import type { AppConfigService } from '#config'
+import { RestateHealthIndicator } from '../restate.health-indicator.js'
 
 describe('RestateHealthIndicator', () => {
     const config = {

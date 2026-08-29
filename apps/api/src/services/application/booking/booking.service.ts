@@ -6,21 +6,21 @@ import {
     Logger,
     NotFoundException
 } from '@nestjs/common'
-import { AppConfigService } from 'config'
+import { AppConfigService } from '#config'
 import {
     HoldTicketsDto,
     ShowtimesService,
     TheatersService,
     TicketHoldingService,
     TicketsService
-} from 'core'
-import { generateShowtimesForBooking, sortTheatersByDistance } from './booking.utils'
+} from '#core'
+import { generateShowtimesForBooking, sortTheatersByDistance } from './booking.utils.js'
 import {
     BookingSearchShowdatesDto,
     BookingSearchShowtimesDto,
     BookingSearchTheatersDto
-} from './dtos'
-import { BookingErrors } from './errors'
+} from './dtos/index.js'
+import { BookingErrors } from './errors.js'
 
 @Injectable()
 export class BookingService {

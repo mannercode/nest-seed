@@ -1,10 +1,10 @@
-import type { HttpTestClientFixture } from './http.test-client.fixture'
+import type { HttpTestClientFixture } from './http.test-client.fixture.js'
 
 describe('HttpTestClient', () => {
     let fix: HttpTestClientFixture
 
     beforeEach(async () => {
-        const { createHttpTestClientFixture } = await import('./http.test-client.fixture')
+        const { createHttpTestClientFixture } = await import('./http.test-client.fixture.js')
         fix = await createHttpTestClientFixture()
     })
     afterEach(() => fix.teardown())

@@ -1,6 +1,6 @@
 import type { Model } from 'mongoose'
-import { AppendOnlyRepository } from '../append-only.repository'
-import { CrudRepository } from '../crud.repository'
+import { AppendOnlyRepository } from '../append-only.repository.js'
+import { CrudRepository } from '../crud.repository.js'
 
 type Sample = { name: string }
 

@@ -1,9 +1,9 @@
 import { CrudRepository, QueryBuilder } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
 import { Model } from 'mongoose'
-import { MoviePendingAsset } from './models'
+import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import { MoviePendingAsset } from './models/index.js'
 
 @Injectable()
 export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAsset> {

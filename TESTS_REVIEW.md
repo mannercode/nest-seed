@@ -3,7 +3,7 @@
 최초 검토일: 2026-08-28
 운영 명령 갱신: 2026-08-29
 
-2026-08-29부터 저장소의 package manager 기준은 `pnpm@11.24.0`이다. API production bundle은 이어서 Rspack + `ts-loader`로 전환했으며, 이 두 단계 모두 테스트 실행기·반복 횟수·coverage gate를 바꾸지 않았다. 아래 운영 명령은 pnpm 기준이며, 문서 끝의 2026-08-28 npm 실행 결과는 전환 전 기준선으로 보존한다.
+2026-08-29부터 저장소의 package manager 기준은 `pnpm@11.24.0`이다. API production bundle은 Rspack + `ts-loader`로, API·common·testing 런타임은 ESM으로 전환했다. 반복 횟수·coverage gate는 바꾸지 않았고, Jest는 다음 Vitest 커밋까지 CJS 변환 경계로 유지한다. 아래 운영 명령은 pnpm 기준이며, 문서 끝의 2026-08-28 npm 실행 결과는 전환 전 기준선으로 보존한다.
 
 ## 결론
 

@@ -4,11 +4,11 @@ import {
     PutObjectCommand,
     S3Client
 } from '@aws-sdk/client-s3'
-import Redis from 'ioredis'
+import { Redis } from 'ioredis'
 import fs from 'node:fs'
 import path from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
-import { getSharedTestMongooseConnection } from '../../scripts'
+import { getSharedTestMongooseConnection } from '../../scripts/index.cjs'
 
 const startupProjectId = process.env.PROJECT_ID
 

@@ -1,15 +1,15 @@
-import type { AppConfigService } from 'config'
 import { JsonUtil } from '@mannercode/common'
 import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { CancelledError, TerminalError, type WorkflowContext } from '@restatedev/restate-sdk'
-import type { ShowtimeCreationEvent, ValidateAndCreateResult } from '../../internal'
-import type { ShowtimeCreationWorkflowInput } from '../types'
+import type { AppConfigService } from '#config'
+import type { ShowtimeCreationEvent, ValidateAndCreateResult } from '../../internal/index.js'
+import type { ShowtimeCreationWorkflowInput } from '../types.js'
 import {
     createShowtimeCreationWorkflow,
     getShowtimeCreationWorkflowName,
     ShowtimeCreationWorkflow,
     type ShowtimeCreationWorkflowDefinition
-} from '../workflow'
+} from '../workflow.js'
 
 describe('Showtime creation Restate workflow', () => {
     const input = {

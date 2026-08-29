@@ -1,4 +1,4 @@
-import { AdminAuthenticationService } from '..'
+import { AdminAuthenticationService } from '../index.js'
 
 describe('AdminAuthenticationService', () => {
     describe('isAuthPayloadActive', () => {

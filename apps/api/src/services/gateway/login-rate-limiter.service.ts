@@ -1,8 +1,8 @@
 import { getRedisConnectionToken, TimeUtil, type RedisConnection } from '@mannercode/common'
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common'
-import { AppConfigService, REDIS_CONNECTION_NAME } from 'config'
 import { createHash } from 'node:crypto'
-import { AuthErrors } from './guards'
+import { AppConfigService, REDIS_CONNECTION_NAME } from '#config'
+import { AuthErrors } from './guards/index.js'
 
 const INCREMENT_WITH_TTL_SCRIPT = `
     local count = redis.call('INCR', KEYS[1])

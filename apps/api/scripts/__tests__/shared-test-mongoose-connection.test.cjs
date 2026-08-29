@@ -3,7 +3,7 @@ const Module = require('node:module')
 const path = require('node:path')
 const test = require('node:test')
 
-const connectionModulePath = path.resolve(__dirname, '../shared-test-mongoose-connection.js')
+const connectionModulePath = path.resolve(__dirname, '../shared-test-mongoose-connection.cjs')
 
 test('Nest context close는 파일 소유 connection과 이미 초기화된 모델을 유지한다', async () => {
     const originalLoad = Module._load

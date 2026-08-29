@@ -1,6 +1,6 @@
 import { JsonUtil } from '@mannercode/common'
 import { HttpTestClient } from '@mannercode/testing'
-import type { AppTestContext } from '../helpers'
+import type { AppTestContext } from '../helpers/index.js'
 
 export function waitForCompletion(ctx: AppTestContext, accessToken: string, status: string) {
     // 공유 httpClient는 다른 요청이 끼어들면 abort 대상이 SSE 스트림이 아니게 된다.

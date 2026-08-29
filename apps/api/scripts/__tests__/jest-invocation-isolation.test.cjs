@@ -6,7 +6,7 @@ const path = require('node:path')
 const test = require('node:test')
 
 const apiDir = path.resolve(__dirname, '../..')
-const fixtureConfig = path.join(__dirname, 'fixtures/jest-invocation/jest.config.js')
+const fixtureConfig = path.join(__dirname, 'fixtures/jest-invocation/jest.config.cjs')
 const jestBin = require.resolve('jest/bin/jest')
 
 test(

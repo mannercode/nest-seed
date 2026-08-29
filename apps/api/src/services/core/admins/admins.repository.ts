@@ -7,10 +7,10 @@ import {
 } from '@mannercode/common'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
 import { Model, UpdateQuery } from 'mongoose'
-import { CreateAdminDto } from './dtos'
-import { Admin } from './models'
+import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import { CreateAdminDto } from './dtos/index.js'
+import { Admin } from './models/index.js'
 
 @Injectable()
 export class AdminsRepository extends CrudRepository<Admin> {

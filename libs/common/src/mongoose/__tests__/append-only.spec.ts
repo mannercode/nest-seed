@@ -1,12 +1,12 @@
 import type { HydratedDocument } from 'mongoose'
-import type { AppendOnlyFixture, AppendOnlySample } from './append-only.fixture'
+import type { AppendOnlyFixture, AppendOnlySample } from './append-only.fixture.js'
 
 describe('AppendOnly', () => {
     let fix: AppendOnlyFixture
     let createdDoc: HydratedDocument<AppendOnlySample>
 
     beforeEach(async () => {
-        const { createAppendOnlyFixture } = await import('./append-only.fixture')
+        const { createAppendOnlyFixture } = await import('./append-only.fixture.js')
         fix = await createAppendOnlyFixture()
 
         createdDoc = fix.repository.newDocument()

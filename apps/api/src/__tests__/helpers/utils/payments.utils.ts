@@ -1,13 +1,13 @@
-import type { CreatePaymentDto } from 'infrastructure'
 import { newObjectIdString } from '@mannercode/common'
 import { oid, type TestContext } from '@mannercode/testing'
+import type { CreatePaymentDto } from '#infrastructure'
 
 export function buildCreatePaymentDto(overrides: Partial<CreatePaymentDto> = {}): CreatePaymentDto {
     return { amount: 1, purchaseRecordId: newObjectIdString(), userId: oid(0x0), ...overrides }
 }
 
 export async function createPayment(ctx: TestContext, override: Partial<CreatePaymentDto> = {}) {
-    const { PaymentsService } = await import('infrastructure')
+    const { PaymentsService } = await import('#infrastructure')
     const paymentsService = ctx.module.get(PaymentsService)
 
     const createDto = buildCreatePaymentDto(override)
@@ -17,7 +17,7 @@ export async function createPayment(ctx: TestContext, override: Partial<CreatePa
 }
 
 export async function getPayments(ctx: TestContext, paymentIds: string[]) {
-    const { PaymentsService } = await import('infrastructure')
+    const { PaymentsService } = await import('#infrastructure')
     const paymentsService = ctx.module.get(PaymentsService)
 
     return paymentsService.getMany(paymentIds)

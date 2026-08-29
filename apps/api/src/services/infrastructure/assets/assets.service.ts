@@ -11,11 +11,16 @@ import {
 } from '@mannercode/common'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { Cron, CronExpression } from '@nestjs/schedule'
-import { AppConfigService } from 'config'
-import { AssetsRepository } from './assets.repository'
-import { AssetPresignedUploadDto, CreateAssetDto, FinalizeAssetDto, AssetDto } from './dtos'
-import { AssetErrors } from './errors'
-import { Asset } from './models'
+import { AppConfigService } from '#config'
+import { AssetsRepository } from './assets.repository.js'
+import {
+    AssetPresignedUploadDto,
+    CreateAssetDto,
+    FinalizeAssetDto,
+    AssetDto
+} from './dtos/index.js'
+import { AssetErrors } from './errors.js'
+import { Asset } from './models/index.js'
 
 const CLEANUP_LOCK_KEY = 'cleanup-expired-uploads'
 // 정상 정리보다 길고, 소유 컨테이너가 죽었을 때 다음 cron이 재획득할 만큼 짧게 둔다.

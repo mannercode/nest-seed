@@ -2,8 +2,8 @@ import { JwtAuthService, InjectJwtAuth } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { compare, hash, hashSync } from 'bcrypt'
 import { validate } from 'class-validator'
-import { UserAuthPayload, UserCredentialsDto } from '../dtos'
-import { UsersRepository } from '../users.repository'
+import { UserAuthPayload, UserCredentialsDto } from '../dtos/index.js'
+import { UsersRepository } from '../users.repository.js'
 
 // OWASP가 legacy bcrypt에 제시하는 최소 work factor다. 운영 하드웨어에 맞춰 더 큰 값을 검토한다.
 const BCRYPT_SALT_ROUNDS = 10

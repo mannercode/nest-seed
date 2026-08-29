@@ -1,1 +1,1 @@
-export * from './watch-record'
+export * from './watch-record.js'

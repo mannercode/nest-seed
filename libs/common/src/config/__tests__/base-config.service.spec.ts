@@ -1,6 +1,6 @@
 import type { ConfigService } from '@nestjs/config'
-import type { BaseConfigServiceFixture } from './base-config.service.fixture'
-import { BaseConfigService } from '../base-config.service'
+import type { BaseConfigServiceFixture } from './base-config.service.fixture.js'
+import { BaseConfigService } from '../base-config.service.js'
 
 describe('BaseConfigService', () => {
     let fix: BaseConfigServiceFixture
@@ -12,7 +12,7 @@ describe('BaseConfigService', () => {
         process.env['TEST_BOOLEAN_KEY'] = 'true'
         process.env['TEST_BOOLEAN_FALSE_KEY'] = 'false'
 
-        const { createBaseConfigServiceFixture } = await import('./base-config.service.fixture')
+        const { createBaseConfigServiceFixture } = await import('./base-config.service.fixture.js')
         fix = await createBaseConfigServiceFixture()
     })
     afterEach(() => fix.teardown())

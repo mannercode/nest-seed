@@ -1,7 +1,7 @@
 import type { Type } from '@nestjs/common'
 import type { ClientSession, Query, Schema } from 'mongoose'
 import { SchemaFactory } from '@nestjs/mongoose'
-import { defaultTo } from '../utils'
+import { defaultTo } from '../utils/index.js'
 
 // 기본은 soft delete이며 완전 삭제 모델만 @HardDelete()를 붙인다.
 export abstract class CrudSchema {

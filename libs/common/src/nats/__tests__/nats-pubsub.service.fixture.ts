@@ -1,8 +1,8 @@
 import { createTestContext } from '@mannercode/testing'
-import type { NatsConnection } from '../nats.types'
-import { NatsPubSubModule, NatsPubSubService } from '../nats-pubsub.service'
-import { NatsModule } from '../nats.module'
-import { getNatsConnectionToken } from '../nats.tokens'
+import type { NatsConnection } from '../nats.types.js'
+import { NatsPubSubModule, NatsPubSubService } from '../nats-pubsub.service.js'
+import { NatsModule } from '../nats.module.js'
+import { getNatsConnectionToken } from '../nats.tokens.js'
 
 export type NatsPubSubServiceFixture = {
     pubSubA: NatsPubSubService

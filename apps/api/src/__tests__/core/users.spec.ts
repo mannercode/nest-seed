@@ -1,6 +1,6 @@
-import type { UserDto } from 'core'
 import { omit } from '@mannercode/common'
 import { HttpTestClient, nullObjectId } from '@mannercode/testing'
+import type { UserDto } from '#core'
 import {
     buildCreateUserDto,
     createAndLoginAdmin,
@@ -8,7 +8,7 @@ import {
     createUser,
     Errors,
     type AppTestContext
-} from '../helpers'
+} from '../helpers/index.js'
 
 describe('UsersService', () => {
     let fix: AppTestContext
@@ -17,7 +17,7 @@ describe('UsersService', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers')
+        const { createAppTestContext } = await import('../helpers/index.js')
         fix = await createAppTestContext()
         teardown = fix.teardown
         const { accessToken } = await createAndLoginAdmin(fix)
@@ -87,7 +87,7 @@ describe('UsersService', () => {
         })
 
         it('중복 키가 아닌 저장 오류는 ConflictException으로 바꾸지 않고 그대로 던진다', async () => {
-            const { UsersService } = await import('core')
+            const { UsersService } = await import('#core')
             const { ConflictException } = await import('@nestjs/common')
             const service = fix.module.get(UsersService)
 
@@ -236,7 +236,7 @@ describe('UsersService', () => {
         })
 
         it('존재하지 않는 고객의 세션 전체 회수는 404를 던진다', async () => {
-            const { UsersService } = await import('core')
+            const { UsersService } = await import('#core')
             const service = fix.module.get(UsersService)
 
             await expect(service.revokeAllForUser(nullObjectId)).rejects.toThrow(

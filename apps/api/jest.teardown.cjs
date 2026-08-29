@@ -1,7 +1,7 @@
 const { S3Client } = require('@aws-sdk/client-s3')
 const { MongoClient } = require('mongodb')
 const Redis = require('ioredis')
-const { createApiJestGlobalTeardown } = require('./scripts/jest-resource-wiring')
+const { createApiJestGlobalTeardown } = require('./scripts/jest-resource-wiring.cjs')
 
 module.exports = async function globalTeardown() {
     const teardown = createApiJestGlobalTeardown({

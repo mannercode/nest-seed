@@ -1,6 +1,6 @@
 import { Checksum, ensure, omit } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
-import { MovieDefaults, MovieGenre, MovieRating, type MovieDto } from 'core'
+import { MovieDefaults, MovieGenre, MovieRating, type MovieDto } from '#core'
 import {
     buildCreateMovieDto,
     createMovie,
@@ -11,7 +11,7 @@ import {
     uploadAndFinalizeAsset,
     uploadAndFinalizeMovieAsset,
     type AppTestContext
-} from '../helpers'
+} from '../helpers/index.js'
 
 describe('MoviesService', () => {
     let fix: AppTestContext
@@ -19,8 +19,8 @@ describe('MoviesService', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers')
-        const { AdminAuthGuard } = await import('gateway')
+        const { createAppTestContext } = await import('../helpers/index.js')
+        const { AdminAuthGuard } = await import('#gateway')
         fix = await createAppTestContext({ ignoreGuards: [AdminAuthGuard] })
         teardown = fix.teardown
     })
@@ -160,7 +160,7 @@ describe('MoviesService', () => {
             beforeEach(async () => {
                 const createdMovie = await createMovie(fix)
                 await uploadAndFinalizeMovieAsset(fix, createdMovie.id)
-                const { MoviesService } = await import('core')
+                const { MoviesService } = await import('#core')
                 const moviesService = fix.module.get(MoviesService)
                 movie = ensure((await moviesService.getMany([createdMovie.id]))[0])
             })

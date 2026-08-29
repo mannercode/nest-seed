@@ -1,7 +1,7 @@
-import type Redis from 'ioredis'
+import type { Redis } from 'ioredis'
 import { createTestContext } from '@mannercode/testing'
-import { getRedisConnectionToken, RedisModule } from '../../redis'
-import { RedisHealthIndicator } from '../redis.health-indicator'
+import { getRedisConnectionToken, RedisModule } from '../../redis/index.js'
+import { RedisHealthIndicator } from '../redis.health-indicator.js'
 
 export type RedisHealthIndicatorFixture = {
     redis: Redis

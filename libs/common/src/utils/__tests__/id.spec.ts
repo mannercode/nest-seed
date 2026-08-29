@@ -1,4 +1,4 @@
-import { generateShortId, pickIds } from '../id'
+import { generateShortId, pickIds } from '../id.js'
 
 describe('generateShortId', () => {
     it('기본 15자 길이의 알파벳/숫자 ID를 생성한다', () => {

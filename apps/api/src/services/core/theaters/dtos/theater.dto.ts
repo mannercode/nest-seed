@@ -1,4 +1,4 @@
-import type { Seatmap, TheaterLocation } from '../models'
+import type { Seatmap, TheaterLocation } from '../models/index.js'
 
 export class TheaterDto {
     id: string

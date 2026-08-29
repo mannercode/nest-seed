@@ -1,6 +1,6 @@
 import { newObjectIdString, uniq } from '@mannercode/common'
 import { oid, type TestContext } from '@mannercode/testing'
-import { TicketStatus, type CreateTicketDto } from 'core'
+import { TicketStatus, type CreateTicketDto } from '#core'
 
 export function buildCreateTicketDto(overrides: Partial<CreateTicketDto> = {}): CreateTicketDto {
     return {
@@ -15,7 +15,7 @@ export function buildCreateTicketDto(overrides: Partial<CreateTicketDto> = {}): 
 }
 
 export async function createTickets(ctx: TestContext, overrides: Partial<CreateTicketDto>[]) {
-    const { TicketsService } = await import('core')
+    const { TicketsService } = await import('#core')
     const ticketsService = ctx.module.get(TicketsService)
 
     const createDtos = overrides.map((override) => buildCreateTicketDto(override))
@@ -29,7 +29,7 @@ export async function createTickets(ctx: TestContext, overrides: Partial<CreateT
 }
 
 export async function getTickets(ctx: TestContext, ticketIds: string[]) {
-    const { TicketsService } = await import('core')
+    const { TicketsService } = await import('#core')
     const ticketsService = ctx.module.get(TicketsService)
 
     return ticketsService.getMany(ticketIds)

@@ -1,7 +1,7 @@
 const path = require('node:path')
 
 const apiDir = path.resolve(__dirname, '../../../..')
-const apiConfig = require(path.join(apiDir, 'jest.config.js'))
+const apiConfig = require(path.join(apiDir, 'jest.config.cjs'))
 
 process.env.JEST_ISOLATION_PROBE_COVERAGE_DIRECTORY = String(apiConfig.coverageDirectory)
 process.env.JEST_ISOLATION_PROBE_OUTPUT_DIRECTORY =

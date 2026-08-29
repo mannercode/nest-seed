@@ -8,9 +8,9 @@ import {
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
 import { randomUUID } from 'node:crypto'
-import { ShowtimeCreationSubmission } from './models'
+import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import { ShowtimeCreationSubmission } from './models/index.js'
 
 export type ShowtimeCreationSubmissionClaim =
     | { claimId: string; kind: 'acquired'; sagaId: string }

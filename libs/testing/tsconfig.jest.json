@@ -1,1 +1,10 @@
-{ "extends": "./tsconfig.json", "include": ["src/**/__tests__/**/*.ts"], "exclude": [] }
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "module": "commonjs",
+        "moduleResolution": "bundler",
+        "isolatedModules": false
+    },
+    "include": ["src/**/__tests__/**/*.ts"],
+    "exclude": []
+}

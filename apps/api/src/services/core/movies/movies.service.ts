@@ -6,12 +6,12 @@ import {
     NotFoundException,
     UnprocessableEntityException
 } from '@nestjs/common'
-import { AssetsService, CreateAssetDto } from 'infrastructure'
-import { SearchMoviesPageDto, UpsertMovieDto, MovieDto } from './dtos'
-import { MovieErrors } from './errors'
-import { Movie, MovieDefaults } from './models'
-import { MoviePendingAssetsRepository } from './movie-pending-assets.repository'
-import { MoviesRepository } from './movies.repository'
+import { AssetsService, CreateAssetDto } from '#infrastructure'
+import { SearchMoviesPageDto, UpsertMovieDto, MovieDto } from './dtos/index.js'
+import { MovieErrors } from './errors.js'
+import { Movie, MovieDefaults } from './models/index.js'
+import { MoviePendingAssetsRepository } from './movie-pending-assets.repository.js'
+import { MoviesRepository } from './movies.repository.js'
 
 @Injectable()
 export class MoviesService {

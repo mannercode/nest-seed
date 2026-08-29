@@ -1,13 +1,13 @@
 import { JsonUtil } from '@mannercode/common'
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import * as restate from '@restatedev/restate-sdk'
-import { AppConfigService } from 'config'
-import type { ShowtimeCreationEvent, ValidateAndCreateResult } from '../internal'
-import type { ShowtimeCreationWorkflowInput } from './types'
+import { AppConfigService } from '#config'
+import type { ShowtimeCreationEvent, ValidateAndCreateResult } from '../internal/index.js'
+import type { ShowtimeCreationWorkflowInput } from './types.js'
 // 이 직접 import는 internal barrel → orchestrator → worker로 되돌아오는 Nest DI 순환을 피한다.
 // eslint-disable-next-line no-restricted-imports
-import { ShowtimeCreationPersistenceService } from '../internal/showtime-creation-persistence.service'
-import { ShowtimeCreationEvents } from '../showtime-creation.events'
+import { ShowtimeCreationPersistenceService } from '../internal/showtime-creation-persistence.service.js'
+import { ShowtimeCreationEvents } from '../showtime-creation.events.js'
 
 const EVENT_RETRY = { initialRetryInterval: 1_000, maxRetryAttempts: 3, maxRetryDuration: 35_000 }
 const EVENT_ATTEMPT_TIMEOUT_MS = 10_000

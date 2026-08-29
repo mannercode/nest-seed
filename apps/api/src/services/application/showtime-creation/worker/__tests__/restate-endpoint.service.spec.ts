@@ -1,9 +1,9 @@
-import type { AppConfigService } from 'config'
 import { workflow } from '@restatedev/restate-sdk'
 import { once } from 'node:events'
 import { connect } from 'node:http2'
-import type { ShowtimeCreationWorkflow } from '../workflow'
-import { ShowtimeCreationRestateEndpoint } from '../restate-endpoint.service'
+import type { AppConfigService } from '#config'
+import type { ShowtimeCreationWorkflow } from '../workflow.js'
+import { ShowtimeCreationRestateEndpoint } from '../restate-endpoint.service.js'
 
 describe('ShowtimeCreationRestateEndpoint', () => {
     it('Jest에서는 임의 포트로 열고 HTTP/2 session까지 정상 종료한다', async () => {

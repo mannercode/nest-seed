@@ -1,2 +1,2 @@
-export * from './assets'
-export * from './payments'
+export * from './assets/index.js'
+export * from './payments/index.js'

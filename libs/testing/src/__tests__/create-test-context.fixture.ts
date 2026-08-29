@@ -1,6 +1,6 @@
 import { Controller, Get, Injectable, Param } from '@nestjs/common'
-import { HttpTestClient } from '../http.test-client'
-import { createHttpTestContext } from '../index'
+import { HttpTestClient } from '../http.test-client.js'
+import { createHttpTestContext } from '../index.js'
 
 export type TestContextFixture = {
     httpClient: HttpTestClient

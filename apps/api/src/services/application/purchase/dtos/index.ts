@@ -1,1 +1,1 @@
-export * from './create-purchase.dto'
+export * from './create-purchase.dto.js'

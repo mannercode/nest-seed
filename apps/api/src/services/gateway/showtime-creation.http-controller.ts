@@ -12,17 +12,17 @@ import {
     Sse,
     UseGuards
 } from '@nestjs/common'
+import { map, Observable } from 'rxjs'
 import {
     BulkCreateShowtimesDto,
     SearchShowtimesByTheatersBodyDto,
     ShowtimeCreationEvents,
     ShowtimeCreationService
-} from 'application'
-import { map, Observable } from 'rxjs'
-import type { AdminAuthRequest } from './types'
-import { AdminAuthGuard } from './guards'
-import { IdempotencyKey } from './idempotency-key.decorator'
-import { ParseIdempotencyKeyPipe } from './pipes'
+} from '#application'
+import type { AdminAuthRequest } from './types.js'
+import { AdminAuthGuard } from './guards/index.js'
+import { IdempotencyKey } from './idempotency-key.decorator.js'
+import { ParseIdempotencyKeyPipe } from './pipes/index.js'
 
 @Controller('showtime-creation')
 @UseGuards(AdminAuthGuard)

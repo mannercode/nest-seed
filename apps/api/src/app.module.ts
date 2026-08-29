@@ -6,7 +6,7 @@ import {
     PurchaseModule,
     RecommendationModule,
     ShowtimeCreationModule
-} from 'application'
+} from '#application'
 import {
     AdminsModule,
     MoviesModule,
@@ -17,7 +17,7 @@ import {
     TicketsModule,
     UsersModule,
     WatchRecordsModule
-} from 'core'
+} from '#core'
 import {
     AdminAuthGuard,
     AdminsHttpController,
@@ -32,10 +32,10 @@ import {
     UserAuthGuard,
     UserHomeViewHttpController,
     UsersHttpController
-} from 'gateway'
-import { AssetsModule, PaymentsModule } from 'infrastructure'
-import { UserHomeViewModule } from 'view'
-import { AppConfigModule, GlobalModule, HealthModule } from './modules'
+} from '#gateway'
+import { AssetsModule, PaymentsModule } from '#infrastructure'
+import { UserHomeViewModule } from '#view'
+import { AppConfigModule, GlobalModule, HealthModule } from './modules/index.js'
 
 @Module({
     imports: [

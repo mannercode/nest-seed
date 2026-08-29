@@ -1,8 +1,13 @@
-import type { ShowtimeDto, ShowtimesService } from 'core'
 import { DateUtil, ensure, pickIds } from '@mannercode/common'
 import { nullObjectId, oid } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
-import { buildCreateShowtimeDto, createShowtimes, Errors, type AppTestContext } from '../helpers'
+import type { ShowtimeDto, ShowtimesService } from '#core'
+import {
+    buildCreateShowtimeDto,
+    createShowtimes,
+    Errors,
+    type AppTestContext
+} from '../helpers/index.js'
 
 describe('ShowtimesService', () => {
     let fix: AppTestContext
@@ -11,8 +16,8 @@ describe('ShowtimesService', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers')
-        const { ShowtimesService } = await import('core')
+        const { createAppTestContext } = await import('../helpers/index.js')
+        const { ShowtimesService } = await import('#core')
         fix = await createAppTestContext()
         teardown = fix.teardown
         showtimesService = fix.module.get(ShowtimesService)

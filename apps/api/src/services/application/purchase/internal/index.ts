@@ -1,3 +1,3 @@
-export * from './purchase-event-logger.service'
-export * from './purchase-notification.service'
-export * from './ticket-purchase.service'
+export * from './purchase-event-logger.service.js'
+export * from './purchase-notification.service.js'
+export * from './ticket-purchase.service.js'

@@ -2,7 +2,7 @@ import { BadRequestException, Logger } from '@nestjs/common'
 import { Prop, Schema } from '@nestjs/mongoose'
 import { MongoWriteConcernError } from 'mongodb'
 import { model, Types } from 'mongoose'
-import { createCrudSchema, CrudSchema } from '../crud.schema'
+import { createCrudSchema, CrudSchema } from '../crud.schema.js'
 import {
     assignIfDefined,
     isDuplicateKeyError,
@@ -12,7 +12,7 @@ import {
     objectId,
     objectIds,
     QueryBuilder
-} from '../mongoose.util'
+} from '../mongoose.util.js'
 
 describe('newObjectIdString', () => {
     it('새 ObjectId를 24자리 16진 문자열로 반환한다', () => {

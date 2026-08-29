@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common'
-import { getGreeting, HelloClass } from './mocking.fixture'
+import { getGreeting, HelloClass } from './mocking.fixture.js'
 
 jest.mock('@nestjs/common', () => {
     class MockLogger {

@@ -13,10 +13,10 @@ import {
 } from '@mannercode/common'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
 import { Model, UpdateQuery } from 'mongoose'
-import { CreateUserDto, SearchUsersPageDto, UpdateUserDto } from './dtos'
-import { User } from './models'
+import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import { CreateUserDto, SearchUsersPageDto, UpdateUserDto } from './dtos/index.js'
+import { User } from './models/index.js'
 
 const CREATE_RECOVERY_POLL_MS = 100
 const CREATE_RECOVERY_READ_MAX_TIME_MS = 250

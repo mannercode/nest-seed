@@ -1,8 +1,8 @@
-import type { ShowtimeCreationPersistenceService } from 'application'
-import type { MovieDto, ShowtimesService, TheaterDto, TicketsService } from 'core'
 import { DateUtil, JsonUtil, newObjectIdString, sleep } from '@mannercode/common'
 import { HttpTestClient, nullObjectId, type Response } from '@mannercode/testing'
 import { randomUUID } from 'node:crypto'
+import type { ShowtimeCreationPersistenceService } from '#application'
+import type { MovieDto, ShowtimesService, TheaterDto, TicketsService } from '#core'
 import {
     createAndLoginAdmin,
     createMovie,
@@ -10,8 +10,8 @@ import {
     createTheater,
     Errors,
     type AppTestContext
-} from '../helpers'
-import { waitForCompletion } from './showtime-creation.utils'
+} from '../helpers/index.js'
+import { waitForCompletion } from './showtime-creation.utils.js'
 
 describe('ShowtimeCreationService', () => {
     let fix: AppTestContext
@@ -25,9 +25,9 @@ describe('ShowtimeCreationService', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers')
-        const { ShowtimesService, TicketsService } = await import('core')
-        const { ShowtimeCreationPersistenceService } = await import('application')
+        const { createAppTestContext } = await import('../helpers/index.js')
+        const { ShowtimesService, TicketsService } = await import('#core')
+        const { ShowtimeCreationPersistenceService } = await import('#application')
         fix = await createAppTestContext({ enableRestate: true })
         teardown = fix.teardown
         ;({ accessToken: adminAccessToken } = await createAndLoginAdmin(fix))
@@ -152,7 +152,7 @@ describe('ShowtimeCreationService', () => {
         })
 
         it('같은 키의 최초 요청을 처리 중이면 409를 반환한다', async () => {
-            const { ShowtimeCreationWorkflowClient } = await import('application')
+            const { ShowtimeCreationWorkflowClient } = await import('#application')
             const workflow = fix.module.get(ShowtimeCreationWorkflowClient)
             const submitWorkflow = workflow.submit.bind(workflow)
             let workflowStartEntered!: () => void
@@ -194,7 +194,7 @@ describe('ShowtimeCreationService', () => {
         })
 
         it('Restate 제출 실패 뒤 같은 키를 재시도하면 같은 submission을 이어서 시작한다', async () => {
-            const { ShowtimeCreationWorkflowClient } = await import('application')
+            const { ShowtimeCreationWorkflowClient } = await import('#application')
             const workflow = fix.module.get(ShowtimeCreationWorkflowClient)
             const submitWorkflow = jest
                 .spyOn(workflow, 'submit')
@@ -222,9 +222,9 @@ describe('ShowtimeCreationService', () => {
 
         it('Restate에는 제출됐지만 accepted 저장이 실패하면 같은 saga로 복구한다', async () => {
             const { ShowtimeCreationEvents, ShowtimeCreationWorkflowClient } =
-                await import('application')
+                await import('#application')
             const { ShowtimeCreationSubmissionRepository } =
-                await import('../../services/application/showtime-creation/internal')
+                await import('../../services/application/showtime-creation/internal/index.js')
             const events = fix.module.get(ShowtimeCreationEvents)
             const workflow = fix.module.get(ShowtimeCreationWorkflowClient)
             const submissions = fix.module.get(ShowtimeCreationSubmissionRepository)
@@ -265,7 +265,7 @@ describe('ShowtimeCreationService', () => {
 
         it('accepted 저장 전에 claim을 잃으면 같은 saga를 다시 claim해 복구한다', async () => {
             const { ShowtimeCreationSubmissionRepository } =
-                await import('../../services/application/showtime-creation/internal')
+                await import('../../services/application/showtime-creation/internal/index.js')
             const submissions = fix.module.get(ShowtimeCreationSubmissionRepository)
             const markAccepted = jest.spyOn(submissions, 'markAccepted').mockResolvedValueOnce(null)
             const idempotencyKey = randomUUID()
@@ -290,9 +290,9 @@ describe('ShowtimeCreationService', () => {
         })
 
         it('submission 저장 실패 시 workflow를 시작하지 않는다', async () => {
-            const { ShowtimeCreationWorkflowClient } = await import('application')
+            const { ShowtimeCreationWorkflowClient } = await import('#application')
             const { ShowtimeCreationSubmissionRepository } =
-                await import('../../services/application/showtime-creation/internal')
+                await import('../../services/application/showtime-creation/internal/index.js')
             const workflow = fix.module.get(ShowtimeCreationWorkflowClient)
             const submissions = fix.module.get(ShowtimeCreationSubmissionRepository)
             const submitWorkflow = jest.spyOn(workflow, 'submit')
@@ -312,7 +312,7 @@ describe('ShowtimeCreationService', () => {
 
         it('만료된 submission을 두 replica가 회수해도 하나만 claim을 얻는다', async () => {
             const { ShowtimeCreationSubmissionRepository } =
-                await import('../../services/application/showtime-creation/internal')
+                await import('../../services/application/showtime-creation/internal/index.js')
             const submissions = fix.module.get(ShowtimeCreationSubmissionRepository)
             const principalId = randomUUID()
             const idempotencyKey = randomUUID()
@@ -462,7 +462,7 @@ describe('ShowtimeCreationService', () => {
         })
 
         it('사가 상태를 waiting → processing → succeeded 순서로 발행한다', async () => {
-            const { ShowtimeCreationEvents } = await import('application')
+            const { ShowtimeCreationEvents } = await import('#application')
             const events = fix.module.get(ShowtimeCreationEvents)
 
             // 공유 httpClient는 뒤의 POST가 abort 대상을 바꾸므로 스트림 전용 클라이언트로 수신한다.

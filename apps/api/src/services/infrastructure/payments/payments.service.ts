@@ -1,9 +1,9 @@
 import type { ClientSession } from 'mongoose'
 import { ensure, mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { CreatePaymentDto, PaymentDto } from './dtos'
-import { Payment } from './models'
-import { PaymentsRepository } from './payments.repository'
+import { CreatePaymentDto, PaymentDto } from './dtos/index.js'
+import { Payment } from './models/index.js'
+import { PaymentsRepository } from './payments.repository.js'
 
 @Injectable()
 export class PaymentsService {

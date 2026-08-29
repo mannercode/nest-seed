@@ -1,5 +1,9 @@
 import type { HydratedDocument } from 'mongoose'
-import { HardDeleteSample, SoftDeleteSample, type CrudDeleteFixture } from './crud-delete.fixture'
+import {
+    HardDeleteSample,
+    SoftDeleteSample,
+    type CrudDeleteFixture
+} from './crud-delete.fixture.js'
 
 describe('createCrudSchema', () => {
     describe('@HardDelete()가 없을 때', () => {
@@ -7,7 +11,7 @@ describe('createCrudSchema', () => {
         let createdDoc: HydratedDocument<SoftDeleteSample>
 
         beforeEach(async () => {
-            const { createCrudDeleteFixture } = await import('./crud-delete.fixture')
+            const { createCrudDeleteFixture } = await import('./crud-delete.fixture.js')
             fix = await createCrudDeleteFixture(SoftDeleteSample)
 
             createdDoc = new fix.model()
@@ -342,7 +346,7 @@ describe('createCrudSchema', () => {
         let createdDoc: HydratedDocument<HardDeleteSample>
 
         beforeEach(async () => {
-            const { createCrudDeleteFixture } = await import('./crud-delete.fixture')
+            const { createCrudDeleteFixture } = await import('./crud-delete.fixture.js')
             fix = await createCrudDeleteFixture(HardDeleteSample)
 
             createdDoc = new fix.model()

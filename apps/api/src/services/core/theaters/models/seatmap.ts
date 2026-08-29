@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer'
 import { IsNotEmpty, IsString, ValidateNested } from 'class-validator'
-import { Seat } from './seat'
+import { Seat } from './seat.js'
 
 export class SeatRow {
     @IsNotEmpty()

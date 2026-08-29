@@ -3,7 +3,7 @@ const { S3Client } = require('@aws-sdk/client-s3')
 const { setupJestLifecycle } = require('@mannercode/jest-helpers')
 const { MongoClient } = require('mongodb')
 
-// `jest.global.js`가 컨테이너를 시작하면서 채워 두는 환경 변수이다.
+// `jest.global.cjs`가 컨테이너를 시작하면서 채워 두는 환경 변수이다.
 // 여기에 워커마다 다른 이름과 상수도 더 채운다.
 // 테스트가 실행되기 전에 이 목록을 미리 확인해, 빠진 값이 있으면 워커 전체를 실패시킨다.
 const REQUIRED_TESTLIB_ENV = [

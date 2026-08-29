@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
-import { ShowtimesModule, TheatersModule, TicketHoldingModule, TicketsModule } from 'core'
-import { BookingService } from './booking.service'
+import { ShowtimesModule, TheatersModule, TicketHoldingModule, TicketsModule } from '#core'
+import { BookingService } from './booking.service.js'
 
 @Module({
     exports: [BookingService],

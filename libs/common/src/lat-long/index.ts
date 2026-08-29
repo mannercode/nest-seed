@@ -1,1 +1,1 @@
-export * from './lat-long'
+export * from './lat-long.js'

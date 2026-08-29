@@ -1,4 +1,4 @@
-import { bootstrap } from './bootstrap'
+import { bootstrap } from './bootstrap.js'
 
 bootstrap().catch((err: unknown) => {
     console.error(err)

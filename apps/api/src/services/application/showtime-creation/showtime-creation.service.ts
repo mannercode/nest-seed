@@ -1,13 +1,13 @@
 import { IdempotencyErrors, PaginationDto, OrderDirection } from '@mannercode/common'
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common'
-import { MoviesService, ShowtimesService, TheatersService } from 'core'
-import { BulkCreateShowtimesDto, RequestShowtimeCreationResponse } from './dtos'
-import { ShowtimeCreationErrors } from './errors'
+import { MoviesService, ShowtimesService, TheatersService } from '#core'
+import { BulkCreateShowtimesDto, RequestShowtimeCreationResponse } from './dtos/index.js'
+import { ShowtimeCreationErrors } from './errors.js'
 import {
     ShowtimeCreationOrchestratorService,
     ShowtimeCreationSubmissionRepository
-} from './internal'
-import { fingerprintShowtimeCreation } from './internal/showtime-creation-fingerprint'
+} from './internal/index.js'
+import { fingerprintShowtimeCreation } from './internal/showtime-creation-fingerprint.js'
 
 const SUBMISSION_CLAIM_LEASE_MS = 5 * 60 * 1000
 

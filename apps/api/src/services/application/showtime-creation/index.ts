@@ -1,7 +1,10 @@
-export * from './dtos'
-export * from './errors'
-export { ShowtimeBulkValidatorService, ShowtimeCreationPersistenceService } from './internal'
-export * from './showtime-creation.events'
-export * from './showtime-creation.module'
-export * from './showtime-creation.service'
-export { ShowtimeCreationRestateEndpoint, ShowtimeCreationWorkflowClient } from './worker'
+export * from './dtos/index.js'
+export * from './errors.js'
+export {
+    ShowtimeBulkValidatorService,
+    ShowtimeCreationPersistenceService
+} from './internal/index.js'
+export * from './showtime-creation.events.js'
+export * from './showtime-creation.module.js'
+export * from './showtime-creation.service.js'
+export { ShowtimeCreationRestateEndpoint, ShowtimeCreationWorkflowClient } from './worker/index.js'

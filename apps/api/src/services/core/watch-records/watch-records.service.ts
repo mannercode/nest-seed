@@ -1,8 +1,8 @@
 import { ensure, mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { CreateWatchRecordDto, SearchWatchRecordsPageDto, WatchRecordDto } from './dtos'
-import { WatchRecord } from './models'
-import { WatchRecordsRepository } from './watch-records.repository'
+import { CreateWatchRecordDto, SearchWatchRecordsPageDto, WatchRecordDto } from './dtos/index.js'
+import { WatchRecord } from './models/index.js'
+import { WatchRecordsRepository } from './watch-records.repository.js'
 
 @Injectable()
 export class WatchRecordsService {

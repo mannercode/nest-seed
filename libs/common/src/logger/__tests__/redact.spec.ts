@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb'
-import { redactSensitive } from '../redact'
+import { redactSensitive } from '../redact.js'
 
 describe('redactSensitive', () => {
     it('민감 키의 값을 [REDACTED]로 치환한다', () => {

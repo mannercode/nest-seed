@@ -1,1 +1,1 @@
-export * from './home.view.dto'
+export * from './home.view.dto.js'

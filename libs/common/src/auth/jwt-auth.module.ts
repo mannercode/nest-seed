@@ -1,10 +1,10 @@
 import { DynamicModule, Inject, Module } from '@nestjs/common'
 import { JwtModule, JwtService } from '@nestjs/jwt'
-import Redis from 'ioredis'
-import { getRedisConnectionToken } from '../redis'
-import { defaultTo } from '../utils'
-import { JwtAuthService } from './jwt-auth.service'
-import { JwtAuthModuleOptions } from './jwt-auth.types'
+import { Redis } from 'ioredis'
+import { getRedisConnectionToken } from '../redis/index.js'
+import { defaultTo } from '../utils/index.js'
+import { JwtAuthService } from './jwt-auth.service.js'
+import { JwtAuthModuleOptions } from './jwt-auth.types.js'
 
 const DEFAULT_USER_ID_FIELD = 'sub'
 

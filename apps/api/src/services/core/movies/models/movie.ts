@@ -1,7 +1,7 @@
 import { createCrudSchema, CrudSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { MONGOOSE_SCHEMA_OPTIONS } from 'config'
-import { MovieDefaults } from './movie-defaults'
+import { MONGOOSE_SCHEMA_OPTIONS } from '#config'
+import { MovieDefaults } from './movie-defaults.js'
 
 export const MovieGenre = {
     Action: 'action',

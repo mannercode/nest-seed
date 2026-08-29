@@ -1,10 +1,10 @@
 import { QueryBuilderOptions, CrudRepository, QueryBuilder } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
 import { Model } from 'mongoose'
-import { CreateWatchRecordDto, SearchWatchRecordsPageDto } from './dtos'
-import { WatchRecord } from './models'
+import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import { CreateWatchRecordDto, SearchWatchRecordsPageDto } from './dtos/index.js'
+import { WatchRecord } from './models/index.js'
 
 @Injectable()
 export class WatchRecordsRepository extends CrudRepository<WatchRecord> {

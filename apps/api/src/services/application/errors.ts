@@ -1,6 +1,6 @@
-import { BookingErrors } from './booking'
-import { PurchaseErrors } from './purchase'
-import { ShowtimeCreationErrors } from './showtime-creation'
+import { BookingErrors } from './booking/index.js'
+import { PurchaseErrors } from './purchase/index.js'
+import { ShowtimeCreationErrors } from './showtime-creation/index.js'
 
 export const ApplicationErrors = {
     Booking: BookingErrors,

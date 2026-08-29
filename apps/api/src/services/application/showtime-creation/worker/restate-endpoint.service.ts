@@ -1,8 +1,8 @@
 import { Injectable, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common'
 import { createEndpointHandler } from '@restatedev/restate-sdk'
-import { AppConfigService } from 'config'
 import { createServer, type Http2Server, type ServerHttp2Session } from 'node:http2'
-import { ShowtimeCreationWorkflow } from './workflow'
+import { AppConfigService } from '#config'
+import { ShowtimeCreationWorkflow } from './workflow.js'
 
 @Injectable()
 export class ShowtimeCreationRestateEndpoint

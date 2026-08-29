@@ -6,11 +6,11 @@ import {
     SearchUsersPageDto,
     UpdateUserDto,
     UserDto
-} from './dtos'
-import { UserErrors } from './errors'
-import { UserAuthenticationService } from './internal'
-import { User } from './models'
-import { UsersRepository } from './users.repository'
+} from './dtos/index.js'
+import { UserErrors } from './errors.js'
+import { UserAuthenticationService } from './internal/index.js'
+import { User } from './models/index.js'
+import { UsersRepository } from './users.repository.js'
 
 @Injectable()
 export class UsersService {

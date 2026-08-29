@@ -1,7 +1,7 @@
 import fs from 'fs/promises'
 import { tmpdir } from 'os'
 import p from 'path'
-import { Checksum } from './checksum'
+import { Checksum } from './checksum.js'
 
 export class PathUtil {
     static basename(path: string): string {

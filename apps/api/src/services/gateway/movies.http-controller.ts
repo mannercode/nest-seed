@@ -18,9 +18,9 @@ import {
     SearchMoviesPageDto,
     ShowtimesService,
     UpsertMovieDto
-} from 'core'
-import { CreateAssetDto } from 'infrastructure'
-import { AdminAuthGuard } from './guards'
+} from '#core'
+import { CreateAssetDto } from '#infrastructure'
+import { AdminAuthGuard } from './guards/index.js'
 
 @Controller('movies')
 export class MoviesHttpController {

@@ -1,6 +1,11 @@
 import { nullObjectId } from '@mannercode/testing'
-import { MovieGenre, MovieRating, type MovieDto } from 'core'
-import { createMovie, createUnpublishedMovie, Errors, type AppTestContext } from '../helpers'
+import { MovieGenre, MovieRating, type MovieDto } from '#core'
+import {
+    createMovie,
+    createUnpublishedMovie,
+    Errors,
+    type AppTestContext
+} from '../helpers/index.js'
 
 describe('MoviesPublish', () => {
     let fix: AppTestContext
@@ -8,8 +13,8 @@ describe('MoviesPublish', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers')
-        const { AdminAuthGuard } = await import('gateway')
+        const { createAppTestContext } = await import('../helpers/index.js')
+        const { AdminAuthGuard } = await import('#gateway')
         fix = await createAppTestContext({ ignoreGuards: [AdminAuthGuard] })
         teardown = fix.teardown
     })
@@ -103,7 +108,7 @@ describe('MoviesPublish', () => {
     })
 
     it('공개된 영화를 빈 genres로 되돌리는 수정이면 검증 오류를 던진다', async () => {
-        const { MoviesService } = await import('core')
+        const { MoviesService } = await import('#core')
         const moviesService = fix.module.get(MoviesService)
         const movie = await createMovie(fix)
 

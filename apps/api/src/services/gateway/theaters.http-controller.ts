@@ -19,8 +19,8 @@ import {
     TheaterErrors,
     TheatersService,
     UpdateTheaterDto
-} from 'core'
-import { AdminAuthGuard } from './guards'
+} from '#core'
+import { AdminAuthGuard } from './guards/index.js'
 
 @Controller('theaters')
 export class TheatersHttpController {

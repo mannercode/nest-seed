@@ -7,12 +7,12 @@ import {
 } from '@mannercode/testing'
 import { getConnectionToken } from '@nestjs/mongoose'
 import { SchedulerRegistry } from '@nestjs/schedule'
-import { ShowtimeCreationRestateEndpoint, ShowtimeCreationWorkflowClient } from 'application'
 import compression from 'compression'
-import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
 import express from 'express'
-import { getSharedTestMongooseConnection } from '../../../scripts'
-import { AppModule } from '../../app.module'
+import { ShowtimeCreationRestateEndpoint, ShowtimeCreationWorkflowClient } from '#application'
+import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import { getSharedTestMongooseConnection } from '../../../scripts/index.cjs'
+import { AppModule } from '../../app.module.js'
 
 type AppTestOptions = ModuleMetadataEx & { enableRestate?: boolean }
 

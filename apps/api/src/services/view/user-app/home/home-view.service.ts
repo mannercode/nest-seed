@@ -1,8 +1,8 @@
 import { OrderDirection, Require, sortBy, uniq } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { RecommendationService } from 'application'
-import { MoviesService, ShowtimeDto, ShowtimesService, TheatersService } from 'core'
-import { HomeMovieCard, HomeShowtimeView, UserHomeView } from './dtos'
+import { RecommendationService } from '#application'
+import { MoviesService, ShowtimeDto, ShowtimesService, TheatersService } from '#core'
+import { HomeMovieCard, HomeShowtimeView, UserHomeView } from './dtos/index.js'
 
 const HOME_MOVIE_COUNT = 12
 const SHOWTIMES_PER_MOVIE = 3

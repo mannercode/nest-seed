@@ -1,5 +1,9 @@
-import { type ModuleMetadataEx, type TestContext, createTestContext } from './create-test-context'
-import { HttpTestClient } from './http.test-client'
+import {
+    type ModuleMetadataEx,
+    type TestContext,
+    createTestContext
+} from './create-test-context.js'
+import { HttpTestClient } from './http.test-client.js'
 
 export type HttpTestContext = TestContext & { httpClient: HttpTestClient }
 

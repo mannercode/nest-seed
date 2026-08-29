@@ -1,11 +1,11 @@
 import { AppLoggerService, JwtAuthModule, SecurityEvent, TimeUtil } from '@mannercode/common'
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME, REDIS_CONNECTION_NAME } from 'config'
-import { AdminsRepository } from './admins.repository'
-import { AdminsService } from './admins.service'
-import { ADMIN_JWT_AUTH_NAME, AdminAuthenticationService } from './internal'
-import { Admin, AdminSchema } from './models'
+import { AppConfigService, MONGO_CONNECTION_NAME, REDIS_CONNECTION_NAME } from '#config'
+import { AdminsRepository } from './admins.repository.js'
+import { AdminsService } from './admins.service.js'
+import { ADMIN_JWT_AUTH_NAME, AdminAuthenticationService } from './internal/index.js'
+import { Admin, AdminSchema } from './models/index.js'
 
 @Module({
     exports: [AdminsService],

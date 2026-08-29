@@ -1,6 +1,6 @@
 import { HttpTestClient, createHttpTestContext } from '@mannercode/testing'
 import { Controller, Get } from '@nestjs/common'
-import { LatLong, ParseLatLongQuery } from '../lat-long'
+import { LatLong, ParseLatLongQuery } from '../lat-long.js'
 
 export type LatLongFixture = { httpClient: HttpTestClient; teardown: () => Promise<void> }
 

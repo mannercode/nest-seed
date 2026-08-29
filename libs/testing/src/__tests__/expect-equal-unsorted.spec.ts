@@ -1,4 +1,4 @@
-import { expectEqualUnsorted } from '../expect-equal-unsorted'
+import { expectEqualUnsorted } from '../expect-equal-unsorted.js'
 
 describe('expectEqualUnsorted', () => {
     it('객체 배열을 순서와 무관하게 같다고 판정한다', () => {

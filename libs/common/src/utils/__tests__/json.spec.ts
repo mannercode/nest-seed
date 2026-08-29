@@ -1,5 +1,5 @@
 import { nullDate } from '@mannercode/testing'
-import { JsonUtil } from '../json'
+import { JsonUtil } from '../json.js'
 
 describe('JsonUtil', () => {
     describe('parse', () => {

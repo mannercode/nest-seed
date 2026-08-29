@@ -19,10 +19,10 @@ import {
     AdminsService,
     CreateAdminDto,
     UpdateAdminDto
-} from 'core'
-import { AdminAuthGuard, AuthErrors, RootAuthGuard } from './guards'
-import { LoginRateLimiterService } from './login-rate-limiter.service'
-import { AdminAuthRequest } from './types'
+} from '#core'
+import type { AdminAuthRequest } from './types.js'
+import { AdminAuthGuard, AuthErrors, RootAuthGuard } from './guards/index.js'
+import { LoginRateLimiterService } from './login-rate-limiter.service.js'
 
 @Controller('admins')
 export class AdminsHttpController {

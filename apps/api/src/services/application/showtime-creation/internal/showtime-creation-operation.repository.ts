@@ -2,9 +2,9 @@ import type { ClientSession, Model } from 'mongoose'
 import { CrudRepository } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { AppConfigService, MONGO_CONNECTION_NAME } from 'config'
-import type { ValidateAndCreateResult } from './types'
-import { ShowtimeCreationOperation } from './models'
+import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
+import type { ValidateAndCreateResult } from './types.js'
+import { ShowtimeCreationOperation } from './models/index.js'
 
 @Injectable()
 export class ShowtimeCreationOperationRepository extends CrudRepository<ShowtimeCreationOperation> {
