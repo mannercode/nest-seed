@@ -10,7 +10,7 @@ function spyConsoleTransport(winstonLogger: winston.Logger) {
     const consoleTransport = winstonLogger.transports.find((t) => t.constructor.name === 'Console')
     if (!consoleTransport) throw new Error('Console transport not found')
 
-    const spy = jest.spyOn(consoleTransport, 'log')
+    const spy = vi.spyOn(consoleTransport, 'log')
 
     return { getOutput: () => spy.mock.calls.map((c) => String(c[0][MESSAGE])).join('\n') }
 }

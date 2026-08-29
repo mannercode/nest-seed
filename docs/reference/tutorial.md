@@ -253,9 +253,9 @@ top-down에서는 이것이 자연스럽다. REST API부터 시작하므로:
 2. 스텁이 spec을 통과하게 만들고, 한 계층씩 아래로 내려가며 진짜 구현으로 바꾼다.
 3. 내려가는 동안 실행 방법은 한 번도 바뀌지 않는다 — 계약(API)이 그대로니까.
 
-테스트를 먼저 쓰고 통과시키며 구현한다 — 의식하지 않아도 TDD가 된다. 그리고 이렇게 모인 spec은 **그 자체가 실행 가능한 API 문서**다. 시드의 [apps/api/api-docs/\*.spec](../apps.md#실행-가능한-api-문서)이 정확히 이 결과물이다. spec에는 주로 성공 흐름을 담고, 실패 흐름과 조건 분기 검증은 Jest 통합 테스트가 맡는다.
+테스트를 먼저 쓰고 통과시키며 구현한다 — 의식하지 않아도 TDD가 된다. 그리고 이렇게 모인 spec은 **그 자체가 실행 가능한 API 문서**다. 시드의 [apps/api/api-docs/\*.spec](../apps.md#실행-가능한-api-문서)이 정확히 이 결과물이다. spec에는 주로 성공 흐름을 담고, 실패 흐름과 조건 분기 검증은 Vitest 통합 테스트가 맡는다.
 
-그 Jest 테스트가 실제로 어떻게 작성됐는지 보자 — 상영시간 생성의 통합 테스트([showtime-creation.spec.ts](../../apps/api/src/__tests__/application/showtime-creation.spec.ts))를 네 토막으로 발췌한다(import 줄은 생략).
+그 Vitest 테스트가 실제로 어떻게 작성됐는지 보자 — 상영시간 생성의 통합 테스트([showtime-creation.spec.ts](../../apps/api/src/__tests__/application/showtime-creation.spec.ts))를 네 토막으로 발췌한다(import 줄은 생략).
 
 **준비.** mock 서버가 아니라 실제 앱을 세운다.
 
@@ -392,7 +392,7 @@ describe('생성 도중 티켓 생성이 실패하면', () => {
     beforeEach(async () => {
         // 실제 transaction session으로 티켓을 insert한 뒤 예외를 던진다.
         // Restate durable step이 재시도해도 모든 시도가 같이 실패하게 한다.
-        jest.spyOn(ticketsService, 'createMany').mockImplementation(
+        vi.spyOn(ticketsService, 'createMany').mockImplementation(
             async (createDtos, session, signal) => {
                 await realCreateMany(createDtos, session, signal)
                 throw new Error('ticket creation failed after insert')
@@ -436,13 +436,13 @@ left to right direction
 usecase "상영시간 생성하기" as UC
 
 rectangle "실행 가능한 API 문서 = 성공 흐름 테스트\napps/api/api-docs/showtime-creation.spec" as spec
-rectangle "통합 테스트 — 조건·실패 흐름\napps/api/src/__tests__/\napplication/showtime-creation.spec.ts" as jest
+rectangle "통합 테스트 — 조건·실패 흐름\napps/api/src/__tests__/\napplication/showtime-creation.spec.ts" as integration
 rectangle "구현\napps/api/src/services/application/\nshowtime-creation/" as impl
 
 UC --> spec : 성공 흐름을 먼저 쓴다
-UC --> jest : 조건·실패 흐름을 쓴다
+UC --> integration : 조건·실패 흐름을 쓴다
 spec --> impl : 스텁부터 통과시키며\n아래로 내려간다
-jest --> impl
+integration --> impl
 @enduml
 ```
 
@@ -450,7 +450,7 @@ jest --> impl
 
 ```sh
 bash apps/api/api-docs/run.sh theaters.spec              # spec 실행 — 테스트이자 문서
-pnpm --filter './apps/api' test theaters.spec --coverage=false # 같은 도메인의 Jest 통합 테스트
+pnpm --filter './apps/api' test theaters.spec --coverage.enabled=false # 같은 도메인의 Vitest 통합 테스트
 ```
 
 ## 6. 직접 걸어보기 — 새 기능을 추가한다면
@@ -461,7 +461,7 @@ pnpm --filter './apps/api' test theaters.spec --coverage=false # 같은 도메�
 2. **API** — `POST /movies/:movieId/reviews`, `GET /movies/:movieId/reviews`. 리소스 하나로 끝나는 단순한 유스케이스라 자기 namespace는 필요 없다.
 3. **계층** — 리뷰는 단일 도메인인가? movies와 users를 조합해야 하나? 작성자 확인은 인증 토큰에 담긴 사용자 ID(토큰 주체)로 충분하고, movies 쪽 결합도 없다 — 경로의 movieId는 저장·조회 키로만 쓴다. 그러니 `core/reviews` 직행이면 되고 Application은 만들지 않는다. (영화 존재 검증까지 필요해지면 그때 3장 기준대로 조합 계층을 검토한다.)
 4. **비동기?** — 요청 안에서 끝나는 작업이다. 202도 사가도 필요 없다. (만약 "리뷰 등록 시 전체 평점 재계산"이 무거워지면 그때 비동기를 검토한다.)
-5. **spec부터** — `reviews.spec`을 먼저 쓰고, 스텁 컨트롤러로 통과시키고, Core로 내려간다. 조건 검증은 Jest로.
+5. **spec부터** — `reviews.spec`을 먼저 쓰고, 스텁 컨트롤러로 통과시키고, Core로 내려간다. 조건 검증은 Vitest로.
 
 새 도메인의 코드 골격은 가장 단순한 [core/theaters](../../apps/api/src/services/core/theaters/)를 본보기로 복제하면 된다.
 

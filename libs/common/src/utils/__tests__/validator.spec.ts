@@ -1,3 +1,4 @@
+import type { MockInstance } from 'vitest'
 import { Logger } from '@nestjs/common'
 import { Assume, ensure, Require } from '../validator.js'
 
@@ -53,10 +54,10 @@ describe('Require', () => {
 
 describe('Assume', () => {
     describe('equalLength', () => {
-        let warnSpy: jest.SpyInstance
+        let warnSpy: MockInstance
 
         beforeEach(() => {
-            warnSpy = jest.spyOn(Logger, 'warn').mockImplementation()
+            warnSpy = vi.spyOn(Logger, 'warn').mockImplementation(() => undefined)
         })
 
         it('두 배열의 길이가 다르면 Logger.warn을 호출한다', () => {

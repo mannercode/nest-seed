@@ -160,7 +160,7 @@ export function registerMongoClientDiagnostics(
                 contextId: `${appName}:${process.env.PROJECT_ID ?? 'no-project'}`,
                 dbName,
                 pid: process.pid,
-                workerId: process.env.JEST_WORKER_ID
+                workerId: process.env.VITEST_POOL_ID
             },
             event,
             kind,
@@ -380,7 +380,7 @@ export function registerMongoClientDiagnostics(
             useFactory: async (config: AppConfigService) => {
                 const { uri, dbName } = config.mongo
                 const testDiagnostics = process.env.NODE_ENV === 'test'
-                const appName = `nest-seed-test-w${process.env.JEST_WORKER_ID ?? '0'}-p${process.pid}-${process.env.TEST_ID ?? 'startup'}`
+                const appName = `nest-seed-test-w${process.env.VITEST_POOL_ID ?? '0'}-p${process.pid}-${process.env.TEST_ID ?? 'startup'}`
 
                 return {
                     ...createMongoDriverOptions({

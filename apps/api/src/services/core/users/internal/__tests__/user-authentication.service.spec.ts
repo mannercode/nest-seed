@@ -45,9 +45,9 @@ describe('UserAuthenticationService', () => {
 
     describe('findUserByCredentials', () => {
         it('가입된 이메일이 없으면 더미 해시로 validate를 호출하고 null을 반환한다', async () => {
-            const repo = { findByEmailWithPassword: jest.fn().mockResolvedValue(null) }
+            const repo = { findByEmailWithPassword: vi.fn().mockResolvedValue(null) }
             const svc = new UserAuthenticationService(repo as any, {} as any)
-            const validateSpy = jest.spyOn(svc, 'validate')
+            const validateSpy = vi.spyOn(svc, 'validate')
 
             const result = await svc.findUserByCredentials({
                 email: 'noone@x.com',
@@ -65,12 +65,12 @@ describe('UserAuthenticationService', () => {
         it('비밀번호가 일치하지 않으면 저장된 해시로 validate를 호출하고 null을 반환한다', async () => {
             const realHash = await service.hash('correct')
             const repo = {
-                findByEmailWithPassword: jest
+                findByEmailWithPassword: vi
                     .fn()
                     .mockResolvedValue({ id: 'u1', email: 'a@b.com', password: realHash })
             }
             const svc = new UserAuthenticationService(repo as any, {} as any)
-            const validateSpy = jest.spyOn(svc, 'validate')
+            const validateSpy = vi.spyOn(svc, 'validate')
 
             const result = await svc.findUserByCredentials({ email: 'a@b.com', password: 'wrong' })
 
@@ -82,7 +82,7 @@ describe('UserAuthenticationService', () => {
 
     describe('isAuthPayloadActive', () => {
         it('authVersion이 없는 기존 토큰을 version 0으로 검증한다', async () => {
-            const repository = { isAuthVersionCurrent: jest.fn().mockResolvedValue(true) }
+            const repository = { isAuthVersionCurrent: vi.fn().mockResolvedValue(true) }
             const legacyService = new UserAuthenticationService(repository as any, {} as any)
 
             await expect(
@@ -92,7 +92,7 @@ describe('UserAuthenticationService', () => {
         })
 
         it('필수 claim이 없는 토큰 payload는 거부한다', async () => {
-            const repository = { isAuthVersionCurrent: jest.fn() }
+            const repository = { isAuthVersionCurrent: vi.fn() }
             const malformedService = new UserAuthenticationService(repository as any, {} as any)
 
             await expect(malformedService.isAuthPayloadActive({})).resolves.toBe(false)

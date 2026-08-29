@@ -23,13 +23,13 @@ describe('user create write concern recovery', () => {
             http: { paginationDefaultSize: 10, paginationMaxSize: 100 }
         } as any)
         service = new UsersService(repository, {
-            hash: jest.fn().mockResolvedValue('hashed-password')
+            hash: vi.fn().mockResolvedValue('hashed-password')
         } as any)
     })
 
     afterEach(() => {
-        jest.useRealTimers()
-        jest.restoreAllMocks()
+        vi.useRealTimers()
+        vi.restoreAllMocks()
     })
 
     afterAll(() => {
@@ -39,15 +39,11 @@ describe('user create write concern recovery', () => {
     it('wtimeout 뒤 majority read에서 같은 시도 _id가 보이면 생성 성공으로 복구한다', async () => {
         const originalError = writeConcernTimeoutError()
         let attemptId: Types.ObjectId | undefined
-        jest.spyOn(userModel.prototype, 'save').mockImplementation(function (this: {
-            _id: Types.ObjectId
-        }) {
-            attemptId = this._id
-            return Promise.reject(originalError)
+        const save = vi.spyOn(userModel.prototype, 'save').mockRejectedValue(originalError)
+        const findOne = vi.spyOn(userModel.collection, 'findOne').mockImplementation(async () => {
+            attemptId = (save.mock.contexts[0] as { _id: Types.ObjectId })._id
+            return persistedUser(attemptId)
         })
-        const findOne = jest
-            .spyOn(userModel.collection, 'findOne')
-            .mockImplementation(async () => persistedUser(attemptId))
 
         const result = await service.create(createDto)
 
@@ -69,8 +65,8 @@ describe('user create write concern recovery', () => {
 
     it('wtimeout 뒤 같은 이메일의 다른 _id가 보이면 409 conflict로 확정한다', async () => {
         const originalError = writeConcernTimeoutError()
-        jest.spyOn(userModel.prototype, 'save').mockRejectedValue(originalError)
-        jest.spyOn(userModel.collection, 'findOne').mockResolvedValue(
+        vi.spyOn(userModel.prototype, 'save').mockRejectedValue(originalError)
+        vi.spyOn(userModel.collection, 'findOne').mockResolvedValue(
             persistedUser(new Types.ObjectId())
         )
 
@@ -78,24 +74,24 @@ describe('user create write concern recovery', () => {
     })
 
     it('bounded majority read로 결과를 확인하지 못하면 원래 wtimeout을 전파한다', async () => {
-        jest.useFakeTimers()
+        vi.useFakeTimers()
         const originalError = writeConcernTimeoutError()
-        jest.spyOn(userModel.prototype, 'save').mockRejectedValue(originalError)
-        const findOne = jest.spyOn(userModel.collection, 'findOne').mockResolvedValue(null)
+        vi.spyOn(userModel.prototype, 'save').mockRejectedValue(originalError)
+        const findOne = vi.spyOn(userModel.collection, 'findOne').mockResolvedValue(null)
 
         const result = service.create(createDto).catch((error: unknown) => error)
-        await jest.runAllTimersAsync()
+        await vi.runAllTimersAsync()
 
         await expect(result).resolves.toBe(originalError)
         expect(findOne).toHaveBeenCalledTimes(50)
     })
 
     it('majority read가 deadline을 소진하면 더 기다리지 않고 원래 wtimeout을 전파한다', async () => {
-        jest.useFakeTimers()
+        vi.useFakeTimers()
         const originalError = writeConcernTimeoutError()
-        jest.spyOn(userModel.prototype, 'save').mockRejectedValue(originalError)
-        const findOne = jest.spyOn(userModel.collection, 'findOne').mockImplementation(async () => {
-            jest.setSystemTime(Date.now() + 5_000)
+        vi.spyOn(userModel.prototype, 'save').mockRejectedValue(originalError)
+        const findOne = vi.spyOn(userModel.collection, 'findOne').mockImplementation(async () => {
+            vi.setSystemTime(Date.now() + 5_000)
             return null
         })
 

@@ -1,18 +1,19 @@
 import type { NatsConnection } from '@mannercode/common'
+import type { MockInstance } from 'vitest'
 import type { PurchaseEvents } from '#application'
 import type { AppTestContext } from '../helpers/index.js'
 
 const NOTIFICATION_LOG = 'would send purchase confirmation'
 const PURCHASED_LOG = 'purchase observed'
 
-const countLogCalls = (logSpy: jest.SpyInstance, message: string) =>
+const countLogCalls = (logSpy: MockInstance, message: string) =>
     logSpy.mock.calls.filter(([msg]) => msg === message).length
 
 describe('PurchaseEvents', () => {
     let fix: AppTestContext
     let teardown: AppTestContext['teardown'] | undefined
     let events: PurchaseEvents
-    let logSpy: jest.SpyInstance
+    let logSpy: MockInstance
 
     beforeEach(async () => {
         teardown = undefined
@@ -22,7 +23,7 @@ describe('PurchaseEvents', () => {
         teardown = fix.teardown
         events = fix.module.get(PurchaseEvents)
         const { Logger } = await import('@nestjs/common')
-        logSpy = jest.spyOn(Logger.prototype, 'log')
+        logSpy = vi.spyOn(Logger.prototype, 'log')
     })
 
     afterEach(() => teardown?.())

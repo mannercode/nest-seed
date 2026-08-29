@@ -104,7 +104,7 @@ describe('Showtime creation Restate workflow', () => {
     })
 
     it('상태 이벤트 발행 한 번이 10초를 넘으면 Restate 재시도로 넘긴다', async () => {
-        jest.useFakeTimers()
+        vi.useFakeTimers()
         try {
             const fix = createFixture({
                 emitStatusChanged: () => new Promise<void>(() => undefined),
@@ -112,14 +112,14 @@ describe('Showtime creation Restate workflow', () => {
             })
             const completion = run(fix).catch((error: unknown) => error)
 
-            await jest.advanceTimersByTimeAsync(10_000)
+            await vi.advanceTimersByTimeAsync(10_000)
 
-            await expect(completion).resolves.toThrow(
-                'Status event publish timed out after 10000ms.'
-            )
+            const failure = await completion
+            expect(failure).toBeInstanceOf(Error)
+            expect((failure as Error).message).toBe('Status event publish timed out after 10000ms.')
             expect(fix.runStep).toHaveBeenCalledTimes(1)
         } finally {
-            jest.useRealTimers()
+            vi.useRealTimers()
         }
     })
 
@@ -155,8 +155,8 @@ describe('Showtime creation Restate workflow', () => {
 
     it('Nest 제공자는 설정의 project ID로 definition을 만든다', () => {
         const workflow = new ShowtimeCreationWorkflow(
-            { emitStatusChanged: jest.fn() } as never,
-            { validateAndCreate: jest.fn() } as never,
+            { emitStatusChanged: vi.fn() } as never,
+            { validateAndCreate: vi.fn() } as never,
             { projectId: 'nest-project' } as AppConfigService
         )
 
@@ -172,13 +172,13 @@ describe('Showtime creation Restate workflow', () => {
 
     function createFixture({ emitStatusChanged, failure, result, runTimeoutMs }: FixtureOptions) {
         const events: ShowtimeCreationEvent[] = []
-        const persistence = jest.fn(async () => {
+        const persistence = vi.fn(async () => {
             // workflow가 외부 promise의 비표준 rejection도 안전하게 상태로 바꾸는지 검증한다.
             // eslint-disable-next-line @typescript-eslint/only-throw-error
             if (failure !== undefined) throw failure
             return result as ValidateAndCreateResult
         })
-        const runStep = jest.fn(async (_name: string, action: () => unknown, _options: unknown) =>
+        const runStep = vi.fn(async (_name: string, action: () => unknown, _options: unknown) =>
             action()
         )
         const context = {

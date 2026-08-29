@@ -26,22 +26,22 @@ jobs:
                       timeout: 180
                       run: |
                           pnpm run build
-                          bash .github/scripts/repeat.sh 75 pnpm --recursive --filter './libs/**' --workspace-concurrency=1 --fail-if-no-match run test --coverageThreshold='{}'
+                          bash .github/scripts/repeat.sh 75 pnpm --recursive --filter './libs/**' --workspace-concurrency=1 --fail-if-no-match run test --coverage.thresholds.100=false
                     - leg: unit-api-1
                       timeout: 240
                       run: |
                           pnpm run build
-                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 pnpm --filter './apps/api' --fail-if-no-match run test --coverage=false --coverageThreshold='{}'
+                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 pnpm --filter './apps/api' --fail-if-no-match run test --coverage.enabled=false
                     - leg: unit-api-2
                       timeout: 240
                       run: |
                           pnpm run build
-                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 pnpm --filter './apps/api' --fail-if-no-match run test --coverage=false --coverageThreshold='{}'
+                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 pnpm --filter './apps/api' --fail-if-no-match run test --coverage.enabled=false
                     - leg: unit-api-3
                       timeout: 240
                       run: |
                           pnpm run build
-                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 pnpm --filter './apps/api' --fail-if-no-match run test --coverage=false --coverageThreshold='{}'
+                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 pnpm --filter './apps/api' --fail-if-no-match run test --coverage.enabled=false
                     - leg: bootup
                       timeout: 120
                       run: |

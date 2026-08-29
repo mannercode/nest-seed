@@ -1,6 +1,8 @@
-jest.mock('ioredis', () => {
-    const actual = jest.requireActual('ioredis')
-    return { ...actual, Cluster: jest.fn() }
+import type { Mock } from 'vitest'
+
+vi.mock('ioredis', async (importOriginal) => {
+    const actual = await importOriginal<Record<string, unknown>>()
+    return { ...actual, Cluster: vi.fn() }
 })
 
 describe('RedisModule', () => {
@@ -12,10 +14,16 @@ describe('RedisModule', () => {
             const { Cluster } = await import('ioredis')
             // 모듈 destroy 시 RedisConnectionRegistry가 quit을 호출하므로 mock에도 포함한다.
             const mockCluster = {
-                ping: jest.fn().mockResolvedValue('PONG'),
-                quit: jest.fn().mockResolvedValue('OK')
+                ping: vi.fn().mockResolvedValue('PONG'),
+                quit: vi.fn().mockResolvedValue('OK')
             }
-            ;(Cluster as unknown as jest.Mock).mockReturnValue(mockCluster)
+            type ClusterConstructor = new (...args: unknown[]) => typeof mockCluster
+            ;(Cluster as unknown as Mock<ClusterConstructor>).mockImplementation(
+                class {
+                    readonly ping = mockCluster.ping
+                    readonly quit = mockCluster.quit
+                }
+            )
 
             const { createRedisModuleClusterFixture } = await import('./redis.module.fixture.js')
             const fix = await createRedisModuleClusterFixture()

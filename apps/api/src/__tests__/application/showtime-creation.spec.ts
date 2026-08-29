@@ -1,3 +1,4 @@
+import type { MockInstance } from 'vitest'
 import { DateUtil, JsonUtil, newObjectIdString, sleep } from '@mannercode/common'
 import { HttpTestClient, nullObjectId, type Response } from '@mannercode/testing'
 import { randomUUID } from 'node:crypto'
@@ -163,7 +164,7 @@ describe('ShowtimeCreationService', () => {
             const mayContinueWorkflowStart = new Promise<void>((resolve) => {
                 continueWorkflowStart = resolve
             })
-            jest.spyOn(workflow, 'submit').mockImplementationOnce(async (...args) => {
+            vi.spyOn(workflow, 'submit').mockImplementationOnce(async (...args) => {
                 workflowStartEntered()
                 await mayContinueWorkflowStart
                 return submitWorkflow(...args)
@@ -196,7 +197,7 @@ describe('ShowtimeCreationService', () => {
         it('Restate 제출 실패 뒤 같은 키를 재시도하면 같은 submission을 이어서 시작한다', async () => {
             const { ShowtimeCreationWorkflowClient } = await import('#application')
             const workflow = fix.module.get(ShowtimeCreationWorkflowClient)
-            const submitWorkflow = jest
+            const submitWorkflow = vi
                 .spyOn(workflow, 'submit')
                 .mockRejectedValueOnce(new Error('Restate unavailable before workflow submission'))
             const idempotencyKey = randomUUID()
@@ -228,9 +229,9 @@ describe('ShowtimeCreationService', () => {
             const events = fix.module.get(ShowtimeCreationEvents)
             const workflow = fix.module.get(ShowtimeCreationWorkflowClient)
             const submissions = fix.module.get(ShowtimeCreationSubmissionRepository)
-            const emitStatusChanged = jest.spyOn(events, 'emitStatusChanged')
-            const submitWorkflow = jest.spyOn(workflow, 'submit')
-            const markAccepted = jest
+            const emitStatusChanged = vi.spyOn(events, 'emitStatusChanged')
+            const submitWorkflow = vi.spyOn(workflow, 'submit')
+            const markAccepted = vi
                 .spyOn(submissions, 'markAccepted')
                 .mockRejectedValueOnce(new Error('accepted marker write failed'))
             const idempotencyKey = randomUUID()
@@ -267,7 +268,7 @@ describe('ShowtimeCreationService', () => {
             const { ShowtimeCreationSubmissionRepository } =
                 await import('../../services/application/showtime-creation/internal/index.js')
             const submissions = fix.module.get(ShowtimeCreationSubmissionRepository)
-            const markAccepted = jest.spyOn(submissions, 'markAccepted').mockResolvedValueOnce(null)
+            const markAccepted = vi.spyOn(submissions, 'markAccepted').mockResolvedValueOnce(null)
             const idempotencyKey = randomUUID()
             const createDto = buildCreateDto()
 
@@ -295,8 +296,8 @@ describe('ShowtimeCreationService', () => {
                 await import('../../services/application/showtime-creation/internal/index.js')
             const workflow = fix.module.get(ShowtimeCreationWorkflowClient)
             const submissions = fix.module.get(ShowtimeCreationSubmissionRepository)
-            const submitWorkflow = jest.spyOn(workflow, 'submit')
-            jest.spyOn(submissions.model.prototype, 'save').mockRejectedValueOnce(
+            const submitWorkflow = vi.spyOn(workflow, 'submit')
+            vi.spyOn(submissions.model.prototype, 'save').mockRejectedValueOnce(
                 new Error('submission storage unavailable')
             )
 
@@ -337,7 +338,7 @@ describe('ShowtimeCreationService', () => {
             const mayContinueClaims = new Promise<void>((resolve) => {
                 continueClaims = resolve
             })
-            jest.spyOn(submissions, 'findByKey').mockImplementation(async (...args) => {
+            vi.spyOn(submissions, 'findByKey').mockImplementation(async (...args) => {
                 const stale = await findByKey(...args)
                 staleReadCount += 1
                 if (staleReadCount === 2) bothRead()
@@ -599,16 +600,16 @@ describe('ShowtimeCreationService', () => {
 
         describe('트랜잭션 안에서 티켓을 저장한 뒤 실패하면', () => {
             let sagaId: string
-            let createShowtimesSpy: jest.SpyInstance
+            let createShowtimesSpy: MockInstance
             let attemptedTicketCount: number
 
             beforeEach(async () => {
                 attemptedTicketCount = 0
-                createShowtimesSpy = jest.spyOn(showtimesService, 'createMany')
+                createShowtimesSpy = vi.spyOn(showtimesService, 'createMany')
 
                 // 실제 insert까지 실행한 다음 throw한다. transaction이 없으면 showtimes와 tickets가 남는다.
                 const realCreateMany = ticketsService.createMany.bind(ticketsService)
-                jest.spyOn(ticketsService, 'createMany').mockImplementation(
+                vi.spyOn(ticketsService, 'createMany').mockImplementation(
                     async (createDtos, session, signal) => {
                         await realCreateMany(createDtos, session, signal)
                         attemptedTicketCount += createDtos.length
@@ -644,7 +645,7 @@ describe('ShowtimeCreationService', () => {
         })
 
         it('티켓 저장이 한 번 실패해도 durable step 재시도로 한 세트만 생성한다', async () => {
-            jest.spyOn(ticketsService, 'createMany').mockRejectedValueOnce(
+            vi.spyOn(ticketsService, 'createMany').mockRejectedValueOnce(
                 new Error('transient ticket write failure')
             )
 
@@ -665,14 +666,14 @@ describe('ShowtimeCreationService', () => {
 
         it('커밋 뒤 첫 완료 보고를 잃어도 재시도가 저장 결과를 읽어 중복 없이 성공한다', async () => {
             const realValidateAndCreate = persistence.validateAndCreate.bind(persistence)
-            const persistenceSpy = jest
+            const persistenceSpy = vi
                 .spyOn(persistence, 'validateAndCreate')
                 .mockImplementationOnce(async (...args) => {
                     await sleep(5_100)
                     await realValidateAndCreate(...args)
                     throw new Error('durable step completion response lost after commit')
                 })
-            const createShowtimesSpy = jest.spyOn(showtimesService, 'createMany')
+            const createShowtimesSpy = vi.spyOn(showtimesService, 'createMany')
 
             const completionPromise = waitForCompletion(fix, adminAccessToken, 'succeeded')
             const { body } = await fix.httpClient

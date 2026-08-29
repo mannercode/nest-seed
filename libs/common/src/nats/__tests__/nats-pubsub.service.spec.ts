@@ -1,3 +1,4 @@
+import type { MockInstance } from 'vitest'
 import { withTestId } from '@mannercode/testing'
 import type { NatsPubSubServiceFixture } from './nats-pubsub.service.fixture.js'
 
@@ -160,7 +161,7 @@ describe('NatsPubSubService', () => {
 
     it('핸들러가 예외를 던지면 소비 루프가 종료되고 이후 메시지는 전달되지 않는다', async () => {
         const { Logger: NestLogger } = await import('@nestjs/common')
-        const errorSpy = jest.spyOn(NestLogger.prototype, 'error').mockImplementation()
+        const errorSpy = vi.spyOn(NestLogger.prototype, 'error').mockImplementation(() => undefined)
 
         const received: string[] = []
 
@@ -181,24 +182,24 @@ describe('NatsPubSubService', () => {
     })
 
     describe('소비 루프의 이터레이터가 예외를 던지면', () => {
-        let errorSpy: jest.SpyInstance
+        let errorSpy: MockInstance
         let errorSubject: string
 
         // 이터레이터를 강제로 실패시킨다. 같은 실행 영역의 Logger를 감시한다.
         beforeEach(async () => {
             const { Logger: NestLogger } = await import('@nestjs/common')
-            errorSpy = jest.spyOn(NestLogger.prototype, 'error').mockImplementation()
+            errorSpy = vi.spyOn(NestLogger.prototype, 'error').mockImplementation(() => undefined)
 
             errorSubject = withTestId('erroring')
             const fakeSub: any = {
-                unsubscribe: jest.fn(),
+                unsubscribe: vi.fn(),
                 [Symbol.asyncIterator]: () => ({
                     next: () => Promise.reject(new Error('iterator boom')),
                     return: () => Promise.resolve({ done: true, value: undefined })
                 })
             }
 
-            jest.spyOn((fix.pubSubB as any).connection, 'subscribe').mockReturnValueOnce(fakeSub)
+            vi.spyOn((fix.pubSubB as any).connection, 'subscribe').mockReturnValueOnce(fakeSub)
 
             await fix.pubSubB.subscribe(errorSubject, () => {})
 

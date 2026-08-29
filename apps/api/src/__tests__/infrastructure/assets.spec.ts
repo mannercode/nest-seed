@@ -289,10 +289,10 @@ describe('AssetsService', () => {
         it('S3 객체 일부를 삭제하지 못하면 경고를 남기고 첫 오류를 던진다', async () => {
             const asset = await uploadAndFinalizeAsset(fix, file)
             const s3Service = fix.module.get<S3ObjectService>(S3ObjectService.getName())
-            jest.spyOn(s3Service, 'deleteObject').mockRejectedValueOnce(new Error('s3 down'))
+            vi.spyOn(s3Service, 'deleteObject').mockRejectedValueOnce(new Error('s3 down'))
 
             const { Logger } = await import('@nestjs/common')
-            const warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation()
+            const warnSpy = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
 
             await expect(assetsService.deleteMany([asset.id])).rejects.toThrow('s3 down')
 

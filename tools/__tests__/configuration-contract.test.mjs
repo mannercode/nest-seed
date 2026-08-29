@@ -4,7 +4,7 @@ import { chmod, glob, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { createRequire } from 'node:module'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { execFileSync, spawnSync } from 'node:child_process'
 import test from 'node:test'
 
@@ -183,11 +183,13 @@ test('API image passes production mode to pnpm deploy without mutating the build
     assert.doesNotMatch(dockerfile, /--prod deploy/)
 })
 
-test('backend workspaces use Node ESM while Jest stays in its temporary CJS boundary', async () => {
-    const rootTsconfig = require('typescript').parseConfigFileTextToJson(
+test('backend workspaces use Node ESM and Vitest keeps the TypeScript metadata transform', async () => {
+    const typescript = require('typescript')
+    const rootTsconfig = typescript.parseConfigFileTextToJson(
         'tsconfig.json',
         await read('tsconfig.json')
     ).config
+    const rootPackage = JSON.parse(await read('package.json'))
     const apiPackage = JSON.parse(await read('apps/api/package.json'))
     const commonPackage = JSON.parse(await read('libs/common/package.json'))
     const testingPackage = JSON.parse(await read('libs/testing/package.json'))
@@ -209,14 +211,69 @@ test('backend workspaces use Node ESM while Jest stays in its temporary CJS boun
     ])
 
     for (const path of [
-        'apps/api/tsconfig.jest.json',
-        'libs/common/tsconfig.jest.json',
-        'libs/testing/tsconfig.jest.json'
+        'apps/api/tsconfig.test.json',
+        'libs/common/tsconfig.test.json',
+        'libs/testing/tsconfig.test.json'
     ]) {
-        const jestTsconfig = JSON.parse(await read(path))
-        assert.equal(jestTsconfig.compilerOptions.module, 'commonjs')
-        assert.equal(jestTsconfig.compilerOptions.moduleResolution, 'bundler')
-        assert.equal(jestTsconfig.compilerOptions.isolatedModules, false)
+        const testTsconfig = typescript.getParsedCommandLineOfConfigFile(
+            join(root, path),
+            {},
+            {
+                ...typescript.sys,
+                onUnRecoverableConfigFileDiagnostic(diagnostic) {
+                    assert.fail(
+                        typescript.flattenDiagnosticMessageText(diagnostic.messageText, '\n')
+                    )
+                }
+            }
+        )
+        assert.ok(testTsconfig)
+        assert.equal(testTsconfig.options.module, typescript.ModuleKind.NodeNext)
+        assert.equal(
+            testTsconfig.options.moduleResolution,
+            typescript.ModuleResolutionKind.NodeNext
+        )
+        assert.equal(testTsconfig.options.isolatedModules, true)
+        assert.deepEqual([...testTsconfig.options.types].sort(), ['node', 'vitest/globals'])
+    }
+
+    for (const packageJson of [rootPackage, apiPackage, commonPackage, testingPackage]) {
+        const dependencyNames = Object.keys({
+            ...packageJson.dependencies,
+            ...packageJson.devDependencies
+        })
+        for (const removed of ['@types/jest', 'eslint-plugin-jest', 'jest', 'ts-jest']) {
+            assert.equal(dependencyNames.includes(removed), false)
+        }
+    }
+    assert.equal(rootPackage.devDependencies.vitest, '4.1.11')
+    assert.equal(rootPackage.devDependencies['@vitest/coverage-v8'], '4.1.11')
+    for (const packageJson of [apiPackage, commonPackage, testingPackage]) {
+        assert.match(packageJson.scripts.test, /^vitest run/)
+    }
+
+    const { createVitestBase } = await import(
+        pathToFileURL(join(root, 'vitest.config.base.mjs')).href
+    )
+    const vitestBase = createVitestBase({ tsconfigPath: join(root, 'apps/api/tsconfig.json') })
+    assert.equal(vitestBase.oxc, false)
+    assert.deepEqual(vitestBase.test.reporters, ['tree'])
+    assert.equal(vitestBase.test.pool, 'forks')
+    assert.equal(vitestBase.test.isolate, true)
+
+    const transformed = vitestBase.plugins[0].transform(
+        "import { Injectable } from '@nestjs/common'\nclass Dependency {}\n@Injectable()\nexport class Fixture { constructor(readonly dependency: Dependency) {} }\n",
+        join(root, 'apps/api/src/__tests__/metadata.fixture.ts')
+    )
+    assert.match(transformed.code, /from ['\"]@nestjs\/common['\"]/)
+    assert.match(transformed.code, /__metadata\(['\"]design:paramtypes['\"]/)
+    assert.doesNotMatch(transformed.code, /\brequire\s*\(/)
+
+    for (const path of ['apps/api/vitest.config.mjs', 'libs/common/vitest.config.mjs']) {
+        const config = await read(path)
+        assert.match(config, /provider:\s*'v8'/)
+        assert.match(config, /thresholds:\s*\{ 100: true \}/)
+        assert.match(config, /reporters?:\s*\[/)
     }
 })
 

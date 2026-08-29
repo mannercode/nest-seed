@@ -1,3 +1,4 @@
+import type { MockInstance } from 'vitest'
 import { expectEqualUnsorted, nullObjectId } from '@mannercode/testing'
 import { Types } from 'mongoose'
 import { OrderDirection } from '../../pagination/index.js'
@@ -76,7 +77,7 @@ describe('CrudRepository', () => {
             ]
 
             // bulkSave가 1건만 처리한 것처럼 보이도록 위조한다.
-            jest.spyOn(fix.model, 'bulkSave').mockResolvedValueOnce({
+            vi.spyOn(fix.model, 'bulkSave').mockResolvedValueOnce({
                 deletedCount: 0,
                 insertedCount: 1,
                 matchedCount: 0
@@ -208,8 +209,8 @@ describe('CrudRepository', () => {
         })
 
         it('필터가 비어 있으면 estimatedDocumentCount만 호출되고 countDocuments는 호출되지 않는다', async () => {
-            const estimatedSpy = jest.spyOn(fix.model, 'estimatedDocumentCount')
-            const countSpy = jest.spyOn(fix.model, 'countDocuments')
+            const estimatedSpy = vi.spyOn(fix.model, 'estimatedDocumentCount')
+            const countSpy = vi.spyOn(fix.model, 'countDocuments')
 
             await fix.repository.findWithPagination({ pagination: {} })
 
@@ -218,8 +219,8 @@ describe('CrudRepository', () => {
         })
 
         it('필터가 비어 있지 않으면 countDocuments가 필터와 함께 호출된다', async () => {
-            const estimatedSpy = jest.spyOn(fix.model, 'estimatedDocumentCount')
-            const countSpy = jest.spyOn(fix.model, 'countDocuments')
+            const estimatedSpy = vi.spyOn(fix.model, 'estimatedDocumentCount')
+            const countSpy = vi.spyOn(fix.model, 'countDocuments')
 
             await fix.repository.findWithPagination({
                 configureQuery: async (q) => {
@@ -366,7 +367,7 @@ describe('CrudRepository', () => {
 
         describe('중복된 id가 입력되었을 때', () => {
             let duplicatedId: string
-            let warnSpy: jest.SpyInstance
+            let warnSpy: MockInstance
 
             beforeEach(async () => {
                 const id = samples[0]?.id
@@ -374,7 +375,7 @@ describe('CrudRepository', () => {
                 duplicatedId = id
 
                 const { Logger } = await import('@nestjs/common')
-                warnSpy = jest.spyOn(Logger, 'warn').mockImplementation()
+                warnSpy = vi.spyOn(Logger, 'warn').mockImplementation(() => undefined)
             })
 
             it('중복을 제거하고 한 번만 반환한다', async () => {

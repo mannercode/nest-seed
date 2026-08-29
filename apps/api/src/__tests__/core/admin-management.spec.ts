@@ -277,7 +277,7 @@ describe('AdminManagement', () => {
             const { AdminsRepository, AdminsService } = await import('#core')
             const service = fix.module.get(AdminsService)
             const repo = fix.module.get(AdminsRepository)
-            jest.spyOn(repo, 'update').mockRejectedValueOnce(new Error('boom'))
+            vi.spyOn(repo, 'update').mockRejectedValueOnce(new Error('boom'))
 
             await expect(service.update(created.id, { name: 'x' })).rejects.toThrow('boom')
         })

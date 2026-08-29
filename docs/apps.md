@@ -489,7 +489,7 @@ async delete(@Param('userId') userId: string) {
 
 ## 테스트
 
-이 시드의 테스트는 mock 객체를 거의 사용하지 않는다. 인덱스, 트랜잭션, 레이스 컨디션처럼 mock으로는 놓치기 쉬운 문제를 실제 환경에 가깝게 확인하기 위해서다. `apps/api` 통합 테스트는 devcontainer가 띄운 MongoDB Replica Set, Redis Cluster, VersityGW, NATS와 Restate를 재사용하고, `libs/common` 테스트는 Testcontainers로 MongoDB·Redis·VersityGW·NATS를 직접 시작한다. 커버리지를 수집하는 `apps/api`·`libs/common`·`tools/jest-helpers`는 100%를 못 채우면 실패한다. 하네스·BFF·shell 계약 테스트처럼 커버리지를 수집하지 않는 예외는 목적과 실행 경로를 [설계 결정 §6](reference/decisions.md#6-테스트-커버리지-100-게이트)에 명시한다.
+이 시드의 테스트는 mock 객체를 거의 사용하지 않는다. 인덱스, 트랜잭션, 레이스 컨디션처럼 mock으로는 놓치기 쉬운 문제를 실제 환경에 가깝게 확인하기 위해서다. `apps/api` 통합 테스트는 devcontainer가 띄운 MongoDB Replica Set, Redis Cluster, VersityGW, NATS와 Restate를 재사용하고, `libs/common` 테스트는 Testcontainers로 MongoDB·Redis·VersityGW·NATS를 직접 시작한다. 커버리지를 수집하는 `apps/api`·`libs/common`·`tools/vitest-helpers`는 100%를 못 채우면 실패한다. 하네스·BFF·shell 계약 테스트처럼 커버리지를 수집하지 않는 예외는 목적과 실행 경로를 [설계 결정 §6](reference/decisions.md#6-테스트-커버리지-100-게이트)에 명시한다.
 
 이 구조는 테스트 주도 개발과 잘 맞고, 그 이점은 모듈 경계 설계에서 나온다. 테스트가 필요한 환경(인프라·해당 모듈)을 코드로 세우므로, 한 모듈을 작업할 때 다른 앱이나 서비스를 함께 띄울 필요가 없다 — 모듈을 독립 서비스로 떼어내도 그 모듈의 작업 루프는 그대로다. 반대로 `pnpm run dev`로 앱을 직접 띄우는 방식은 서비스가 늘수록 기동 대상이 늘어 부담이 커진다. 단, 이 이점은 단위·단일 모듈 통합 테스트의 inner-loop에 한한다 — 여러 서비스를 가로지르는 e2e·분산 레이스 테스트는 여전히 배포 스택 전체가 필요하다([tests 문서](tests.md)).
 
@@ -573,11 +573,11 @@ describe('PATCH /theaters/:id', () => {
 
 ### 테스트별 자원 격리
 
-각 테스트가 다른 테스트와 부딪히지 않도록, `jest.config`가 Jest 명령마다 고유한 실행 ID를 만든다. `jest.setup`은 app 모듈을 읽기 전에 먼저 실행 ID와 worker 번호가 들어간 startup `PROJECT_ID`를 설정하고, `beforeEach`에서 테스트별 `TEST_ID` suffix로 다시 갱신한다. Redis/cache prefix, NATS subject와 Restate workflow 서비스 이름이 이 값을 따라 갈라진다. MongoDB 데이터베이스와 S3 버킷도 실행 ID와 Jest worker 번호를 조합해 만든다. coverage·로그는 `_output/jest-runs/<실행 ID>/` 아래에서 실행별로 분리된다. 따라서 같은 devcontainer에서 API Jest 명령을 동시에 실행해도 같은 번호의 worker나 파일 산출물을 공유하지 않는다.
+각 테스트가 다른 테스트와 부딪히지 않도록, `apps/api/vitest.config.mjs`가 Vitest 명령마다 고유한 실행 ID를 만든다. `setupFiles`로 지정한 `src/__tests__/vitest.setup.ts`는 app 모듈을 읽기 전에 실행 ID와 `VITEST_POOL_ID`가 들어간 startup `PROJECT_ID`를 설정하고, `beforeEach`에서 테스트별 `TEST_ID` suffix로 다시 갱신한다. Redis/cache prefix, NATS subject와 Restate workflow 서비스 이름이 이 값을 따라 갈라진다. MongoDB 데이터베이스와 S3 버킷도 실행 ID와 `VITEST_POOL_ID`를 조합해 만든다. coverage·로그는 `_output/vitest-runs/r<실행 ID>/` 아래에서 실행별로 분리된다. 따라서 같은 devcontainer의 두 API Vitest 명령이 같은 pool ID를 받아도 자원이나 파일 산출물을 공유하지 않는다.
 
 Nest 모듈 파일은 프로세스에서 한 번만 평가된다. 따라서 데코레이터 인자에서 `process.env.PROJECT_ID`를 읽으면 첫 테스트의 값에 고정된다. cache와 JWT 모듈은 정적인 값을 캡처하지 않고, 제공자를 만들 때 `AppConfigService.projectId`를 주입받아 prefix를 계산한다. NATS subject와 Restate workflow definition 이름도 제공자를 생성할 때 같은 설정값으로 만든다.
 
-이 구조에서는 Jest 모듈 레지스트리를 테스트마다 초기화할 필요가 없다. 애플리케이션 코드와 Nest/Restate 의존성은 worker 안에서 한 번 로드되고, 테스트별 애플리케이션 컨텍스트만 새로 만든다. 픽스처는 정적으로 가져와도 자원 격리가 유지된다.
+이 구조에서는 모듈 캐시를 테스트마다 초기화할 필요가 없다. 애플리케이션 코드와 Nest/Restate 의존성은 pool worker 안에서 한 번 로드되고, 테스트별 애플리케이션 컨텍스트만 새로 만든다. 픽스처는 정적으로 가져와도 자원 격리가 유지된다.
 
 ```ts
 import { createAppTestContext, type AppTestContext } from '../helpers'
@@ -593,29 +593,36 @@ describe('Users', () => {
 
 ### 테스트 인프라
 
-Jest 기반 테스트 인프라는 네 단계로 동작한다.
+Vitest 설정과 lifecycle은 다음 순서로 동작한다.
 
 ```
-jest.config.cjs   apps/api 명령별 실행 ID 발급, coverage·로그 출력 경로 분리
-jest.global.cjs   workspace별 전역 준비
-                   - apps/api: config의 실행 ID 검증, 로그 디렉터리 생성
-                   - libs/common: Testcontainers로 MongoDB · Redis · VersityGW · NATS 기동
-jest.setup.cjs    app 모듈 로드 전에 startup PROJECT_ID 설정, 실행 ID + worker별 DB·버킷 준비
-                   beforeEach마다 TEST_ID 발급 (apps/api는 실행 ID + TEST_ID로 PROJECT_ID 갱신)
-                   afterEach에서 컬렉션과 버킷 내용 정리
-*.spec.ts         개별 테스트가 픽스처로 위 자원 사용
-jest.teardown.cjs 전체 워커 종료 후 한 번: 현재 실행의 DB·버킷·Redis key만 제거
+vitest.config.base.mjs                 TypeScript 변환, forks pool, tree reporter 공통 설정
+<workspace>/vitest.config.mjs          alias·coverage·globalSetup·setupFiles 지정
+                                         - apps/api: 실행 ID 발급, coverage·로그 출력 경로 분리
+<workspace>/vitest.global.cjs          workspace별 전역 준비
+                                         - apps/api: config의 실행 ID 검증, 로그 디렉터리 생성
+                                         - libs/common: Testcontainers로 MongoDB · Redis · VersityGW · NATS 기동
+<workspace>/src/__tests__/vitest.setup.ts
+                                       app 모듈 로드 전에 startup PROJECT_ID 설정
+                                       VITEST_POOL_ID별 DB·버킷 준비, beforeEach마다 TEST_ID 발급
+                                       afterEach에서 컬렉션과 버킷 내용 정리
+*.spec.ts                               개별 테스트가 픽스처로 위 자원 사용
+<workspace>/vitest.teardown.cjs         모든 pool worker 종료 후 한 번만 현재 실행 자원 정리
+tools/vitest-helpers/index.js            setup·teardown의 공통 자원 격리 로직
 ```
 
 `apps/api`의 통합 테스트는 devcontainer가 시작해 둔 공용 인프라(Mongo / Redis / VersityGW / NATS / Restate 컨테이너)를 재사용한다. 대부분의 앱 컨텍스트는 Restate endpoint와 client를 끄고, 전체 상영 생성 스위트만 `enableRestate: true`로 실제 endpoint를 임시 포트에 열어 고유한 `PROJECT_ID`의 서비스를 등록한다. 정상 teardown은 현재 컨텍스트가 제출한 workflow 완료를 먼저 기다리고, 등록 응답으로 받은 정확한 deployment ID만 Admin API에서 제거한 뒤 endpoint를 닫는다. Restate의 삭제 API가 force를 요구하므로 `?force=true`를 쓰되, 자기 invocation을 drain한 테스트 전용 deployment에만 한정한다. 등록·정리 도중 오류가 나도 앱 close는 `finally`에서 실행한다.
 
-Mongo·S3·Redis teardown은 실행 ID에 정확히 대응하는 자원만 제거하며, 실행 ID가 없거나 형식이 잘못되면 넓은 범위를 정리하지 않고 실패한다. Redis teardown도 scoped glob이 필수이고, 전체 flush는 실행 전용 Testcontainers Redis를 쓰는 `libs/common`만 명시적으로 허용한다. 강제 종료로 teardown을 건너뛰면 실행별 디렉터리와 외부 자원이 남을 수 있지만 다음 실행과 이름이 겹치지는 않는다. `pnpm run clean`은 남은 `_output`을 제거하고, `pnpm run preatoz`는 그 작업과 인프라 reset을 함께 수행한다. AtoZ의 격리 하네스는 실제 setup/teardown을 켠 Jest 두 개를 병렬로 띄운다. B 실행이 실제 Mongo·S3·Redis sentinel을 만든 뒤 기다리고, A teardown이 끝난 다음 B의 세 sentinel이 남고 A의 세 자원은 제거됐는지 확인한다. 성공한 두 child의 출력 디렉터리는 run 경로 형식을 검증한 뒤 하네스가 제거한다. 이 probe spec은 일반 API suite에서도 skip하지 않고 namespace assertion만 수행한다. stability의 apps/api 반복은 run별 coverage 디렉터리가 누적되지 않도록 coverage를 끈다. `libs/testing`은 인프라 없는 단위 테스트로 돈다.
+Mongo·S3·Redis teardown은 실행 ID에 정확히 대응하는 자원만 제거하며, 실행 ID가 없거나 형식이 잘못되면 넓은 범위를 정리하지 않고 실패한다. Redis teardown도 scoped glob이 필수이고, 전체 flush는 실행 전용 Testcontainers Redis를 쓰는 `libs/common`만 명시적으로 허용한다. 강제 종료로 teardown을 건너뛰면 실행별 디렉터리와 외부 자원이 남을 수 있지만 다음 실행과 이름이 겹치지는 않는다. `pnpm run clean`은 남은 `_output`을 제거하고, `pnpm run preatoz`는 그 작업과 인프라 reset을 함께 수행한다. AtoZ의 격리 하네스는 실제 API global setup·setupFiles·teardown을 지정한 전용 config로 Vitest 명령 두 개를 병렬 실행한다. B 실행이 실제 Mongo·S3·Redis sentinel을 만든 뒤 기다리고, A teardown이 끝난 다음 B의 세 sentinel이 남고 A의 세 자원은 제거됐는지 확인한다. 성공한 두 child의 `_output/vitest-runs/r<실행 ID>/` 디렉터리는 경로 형식을 검증한 뒤 하네스가 제거한다. 이 probe spec은 일반 API suite에서도 skip하지 않고 namespace assertion만 수행한다. stability의 apps/api 반복은 run별 coverage 디렉터리가 누적되지 않도록 `--coverage.enabled=false`로 수집을 끈다. `libs/testing`은 인프라 없는 Vitest 단위 테스트로 돈다.
 
-단일 spec만 실행하려면 Jest에 파일 패턴을 넘기고 커버리지 게이트를 끈다. VS Code에서는 devcontainer에 포함된 Jest Runner 확장으로 describe/it 단위 실행도 된다.
+단일 spec은 Vitest CLI에 파일 패턴을 넘기고 커버리지 게이트를 끈다. 한 `describe`나 `it`만 고르려면 `-t`에 이름 패턴을 더한다.
 
 ```bash
-pnpm --filter './apps/api' test users.spec --coverage=false
+pnpm --filter './apps/api' test users.spec --coverage.enabled=false
+pnpm --filter './apps/api' test users.spec -t '409 Conflict를 반환한다' --coverage.enabled=false
 ```
+
+devcontainer의 Jest Runner 확장은 아직 남아 있지만 현재 Vitest 실행 경로에는 사용하지 않는다. 확장 교체에는 devcontainer 리빌드가 필요하므로 다음 리빌드 시점으로 미뤘다.
 
 ## 실행 가능한 API 문서
 

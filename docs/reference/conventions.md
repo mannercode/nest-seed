@@ -54,7 +54,7 @@ const HOME_MOVIE_COUNT = 12 // 사용하는 코드 옆 상수 (view/user-app/hom
 | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | `dev`    | watch 모드 실행                                                                                                               |
 | `build`  | 빌드 산출물 생성                                                                                                              |
-| `test`   | 개발 루프용 빠른 회귀. devcontainer 인프라를 재사용하는 Jest                                                                  |
+| `test`   | 개발 루프용 빠른 회귀. API는 devcontainer 인프라를 재사용하고 common은 Testcontainers를 띄우는 Vitest                         |
 | `lint`   | 타입 체크 + ESLint + Prettier 검사. 루트 `lint:root`가 셸·문서 링크 검사를 더한다                                             |
 | `format` | ESLint `--fix` + Prettier 쓰기                                                                                                |
 | `e2e`    | console·user-app 브라우저 시나리오 (`tests/web/e2e`)                                                                          |

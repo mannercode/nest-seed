@@ -3,22 +3,33 @@
 최초 검토일: 2026-08-28
 운영 명령 갱신: 2026-08-29
 
-2026-08-29부터 저장소의 package manager 기준은 `pnpm@11.24.0`이다. API production bundle은 Rspack + `ts-loader`로, API·common·testing 런타임은 ESM으로 전환했다. 반복 횟수·coverage gate는 바꾸지 않았고, Jest는 다음 Vitest 커밋까지 CJS 변환 경계로 유지한다. 아래 운영 명령은 pnpm 기준이며, 문서 끝의 2026-08-28 npm 실행 결과는 전환 전 기준선으로 보존한다.
+2026-08-29부터 저장소의 package manager 기준은 `pnpm@11.24.0`이다. API production bundle은 Rspack + `ts-loader`로, API·common·testing 런타임은 ESM으로 전환했다. Nest TypeScript suite는 TypeScript compiler 기반 Vitest로 전환했고 JavaScript 하네스는 Node 26 내장 `node:test`를 사용한다. 반복 횟수와 검증 강도는 바꾸지 않았다. 아래 운영 명령은 현재 pnpm·Vitest 기준이며, 문서 끝의 2026-08-28 npm·Jest 실행 결과는 전환 전 역사 자료로 보존한다.
 
 ## 결론
 
 현재 가장 합리적인 구성은 다음과 같다.
 
 - JavaScript로 된 race·저장소 계약·도구 스크립트는 Node 26 내장 `node:test`를 사용한다.
-- Nest API와 공용 TypeScript 라이브러리의 단위·통합 테스트는 현재 Jest로 동작하지만, 승인된 스택 전환에서 Vitest로 교체한다.
+- Nest API와 공용 TypeScript 라이브러리의 단위·통합 테스트는 Vitest를 사용한다.
 - 브라우저 흐름은 Playwright, 성능 비교는 k6를 유지한다.
 - Vitest 외의 새 통합 리포트나 테스트 실행기는 추가하지 않는다.
-- Vitest 전환은 ESM·빌드 전환과 섞지 않고 독립 커밋으로 진행하며, SWC transformer를 사용하지 않는다.
-- 그 뒤의 최적화 대상은 컨테이너가 필요 없는 테스트를 빠른 실행 경로로 분리하는 일이다.
+- Vitest 변환은 SWC 없이 TypeScript compiler를 사용해 Nest decorator metadata를 보존한다.
+- 다음 최적화 대상은 컨테이너가 필요 없는 테스트를 빠른 실행 경로로 분리하는 일이다.
 
-`node:test`로 Nest 테스트까지 전면 교체하면 도구 하나를 지울 수는 있지만, TypeScript 변환·Nest decorator metadata·경로 별칭·coverage·테스트 생명주기를 별도로 다시 만들어야 한다. JavaScript 하네스에는 적합하지만 현재 Nest 시드의 Jest 대체재로는 Vitest가 더 작다.
+`node:test`로 Nest 테스트까지 전면 교체하면 도구 하나를 지울 수는 있지만, TypeScript 변환·Nest decorator metadata·경로 별칭·coverage·테스트 생명주기를 별도로 다시 만들어야 한다. JavaScript 하네스에는 적합하지만 현재 Nest 시드의 TypeScript 실행기로는 Vitest가 더 작다.
 
 이 저장소는 사람이 매일 직접 테스트를 고르는 방식보다 에이전트가 변경 범위에 가까운 테스트를 실행하고, 작업 경계에서 전체 검증을 수행하는 방식을 기준으로 운영한다. 사람이 드물게 확인할 때도 최종 요약과 기존 HTML 보고서만 보면 되도록 한다.
+
+현재 전체 실행에서 확인한 결과는 다음과 같다.
+
+- API: 36 suites, 414 tests
+- `libs/common`: 42 suites, 635 tests
+- `libs/testing`: 12 suites, 62 tests
+- JavaScript 실행·자원 격리 helper: 23 tests
+- API·common·testing과 JavaScript helper의 coverage 100% gate 통과
+- Vitest 병렬 worker별 자원·결과 경로 격리와 터미널 tree 출력 적용
+
+실행기만 교체했으며 분산 race 내부 반복, Stability 외부 반복, 3시간·6시간 주기와 각 테스트의 부하량은 줄이지 않았다.
 
 ## 이미 정리된 구조
 
@@ -53,7 +64,7 @@ tests/
 
 | 영역                      | `pnpm test` | `pnpm run atoz` | 전용 실행                               | 결과                           |
 | ------------------------- | ----------- | --------------- | --------------------------------------- | ------------------------------ |
-| Nest API·공용 라이브러리  | 실행        | 실행            | workspace별 Jest                        | 터미널, coverage               |
+| Nest API·공용 라이브러리  | 실행        | 실행            | workspace별 Vitest                      | tree 출력, coverage            |
 | `api-race/contracts`      | 실행        | 실행            | `pnpm --filter './tests/api-race' test` | `node:test` 결과               |
 | `api-race/probes`         | 미실행      | 실행            | 배포 검증 내부                          | `node:test` 결과               |
 | `web/contracts`           | 실행        | 실행            | `pnpm --filter './tests/web' test`      | Playwright list 결과           |
@@ -84,7 +95,7 @@ tests/
 pnpm test
 ```
 
-주로 에이전트가 기능 작업을 마무리할 때 실행한다. Jest workspace의 상세 성공·실패와 coverage가 먼저 나오고, 모든 workspace가 성공했을 때만 영역별 최종 요약이 나온다.
+주로 에이전트가 기능 작업을 마무리할 때 실행한다. Vitest workspace가 suite와 test를 tree 형태로 보여 주고 coverage를 출력하며, 모든 workspace가 성공했을 때만 영역별 최종 요약이 나온다.
 
 `pnpm test`에는 다음이 포함되지 않는다.
 
@@ -179,7 +190,7 @@ benchmark는 환경에 따라 수치가 달라지므로 임의 latency·RPS 합�
 
 ### `node:test`로 전환하지 않을 범위
 
-Nest API, `libs/common`, `libs/testing`의 TypeScript suite는 `node:test`로 옮기지 않는다. 현재는 Jest로 실행하고 승인된 후속 작업에서 Vitest로 교체한다. `@nestjs/testing` 자체가 Jest 전용이라서가 아니라 현재 저장소가 다음 기능을 테스트 실행 경로에 묶어 두었기 때문이다.
+Nest API, `libs/common`, `libs/testing`의 TypeScript suite는 `node:test`로 옮기지 않고 Vitest로 실행한다. `@nestjs/testing` 자체가 특정 실행기 전용이라서가 아니라 현재 저장소가 다음 기능을 테스트 실행 경로에 묶어 두었기 때문이다.
 
 #### 1. Decorator metadata
 
@@ -189,18 +200,18 @@ Nest DI는 TypeScript의 legacy decorator와 `emitDecoratorMetadata` 결과를 �
 
 #### 2. `tsconfig` 경로 별칭
 
-현재 Jest 설정은 `pathsToModuleNameMapper`로 TypeScript 경로 별칭을 테스트 실행 시 해석한다. Node의 타입 제거 기능은 `tsconfig`의 `paths`를 런타임 import 경로로 바꾸지 않는다.
+현재 Vitest 설정은 Vite의 ESM 해석과 workspace alias로 TypeScript 경로를 테스트 실행 시 해석한다. Node의 타입 제거 기능은 `tsconfig`의 `paths`를 런타임 import 경로로 바꾸지 않는다.
 
 안전하게 옮기려면 별도 테스트용 compile 출력과 Node가 이해할 수 있는 모듈 해석 규칙을 설계해야 한다. 별칭 변환 도구 하나를 추가하는 것만으로 끝내면 build·test 해석 규칙이 서로 달라질 수 있다.
 
 #### 3. Coverage 계약
 
-현재 API와 공용 라이브러리는 테스트에서 import되지 않은 소스까지 `collectCoverageFrom`에 포함하고 branches·functions·lines·statements 100%를 요구한다.
+현재 API와 공용 라이브러리는 테스트에서 import되지 않은 소스까지 Vitest coverage `include`에 포함하고 branches·functions·lines·statements 100%를 요구한다.
 
-Node 26의 native test coverage는 사용할 수 있지만 현재 Jest/Istanbul 계약과 완전히 같지 않다.
+Node 26의 native test coverage는 사용할 수 있지만 현재 Vitest V8 coverage 계약과 완전히 같지 않다.
 
 - include-all에 필요한 `--test-coverage-include`는 Node 26.7부터 제공된다. 저장소의 지원 범위는 `^26.0.0`이다.
-- Node native threshold에는 현재 Jest가 확인하는 statement 기준과 같은 항목이 없다.
+- Node native threshold에는 현재 Vitest가 확인하는 statement 기준과 같은 항목이 없다.
 - TypeScript를 미리 compile할 경우 source map과 제외 규칙이 지금과 같은 소스 파일을 가리키는지도 검증해야 한다.
 
 coverage 숫자가 비슷하게 보인다는 이유만으로 교체하면 실제로 수집되지 않은 파일을 놓칠 수 있다. `c8`을 추가하면 일부 차이를 메울 수 있지만, 도구 최소화 목표와 반대이고 다시 별도 설정을 유지해야 한다.
@@ -210,48 +221,47 @@ coverage 숫자가 비슷하게 보인다는 이유만으로 교체하면 실제
 현재 suite는 다음을 사용한다.
 
 - `globalSetup`·`globalTeardown`
-- `setupFilesAfterEnv`
+- `setupFiles`
 - 자동 mock reset·restore
-- Jest mock, spy, fake timer
+- Vitest mock, spy, fake timer
 - 실행별 격리된 coverage 경로
 - 실패 시 컨테이너 진단 reporter
 - Testcontainers와 workflow runtime 시작·종료
 
 Node에도 hook과 mock 기능이 있지만 API와 격리 방식이 같지 않다. 이를 한꺼번에 바꾸면 업무 assertion보다 테스트 기반 시설 재작성 비중이 커진다.
 
-### Vitest 전환의 완료 조건
+### Vitest 전환에서 보존한 계약
 
-Vitest라는 이름만 바꾸고 검증 강도를 낮추지 않는다. 다음 조건을 한 단계에서 모두 만족해야 Jest를 제거한다.
+실행기 이름만 바꾸고 검증 강도를 낮추지 않았다. 전환 결과는 다음 조건을 모두 만족한다.
 
 1. SWC 없이 TypeScript compiler 기반 변환으로 decorator metadata와 Nest DI를 보존한다.
 2. `tsconfig` 경로 별칭과 ESM 해석이 앱 build 경로와 어긋나지 않는다.
-3. global setup/teardown, 실제 인프라 정리, mock·spy·fake timer를 빠짐없이 옮긴다.
+3. global setup/teardown, 실제 인프라 정리, mock·spy·fake timer를 빠짐없이 옮겼다.
 4. import되지 않은 파일까지 포함한 기존 100% coverage gate를 유지한다.
-5. 실행별 coverage·로그 격리와 실패 시 컨테이너 진단을 유지한다.
-6. 전환 완료 커밋에서 Jest·ts-jest 설정과 의존성을 함께 제거해 장기 이중 실행기를 남기지 않는다.
+5. 병렬 worker별 자원과 실행별 coverage·로그 경로를 격리하고 실패 시 컨테이너 진단을 유지한다.
+6. Jest·ts-jest 설정과 의존성을 제거해 장기 이중 실행기를 남기지 않았다.
+7. 기본 tree reporter로 suite·test 계층과 실패 위치를 터미널에서 바로 확인할 수 있다.
 
-전환 중간 커밋에서는 기존 Jest가 계속 통과해야 하며, 완료 커밋에서만 기본 실행기를 바꾼다.
-
-| 대상                           | 실행기                  | 판단      |
-| ------------------------------ | ----------------------- | --------- |
-| JavaScript race·도구 계약      | `node:test`             | 유지      |
-| Nest·공용 TypeScript 단위/통합 | Jest + ts-jest → Vitest | 전환 예정 |
-| 브라우저·BFF 계약              | Playwright              | 유지      |
-| 성능 비교                      | k6                      | 유지      |
+| 대상                           | 실행기      | 판단      |
+| ------------------------------ | ----------- | --------- |
+| JavaScript race·도구 계약      | `node:test` | 적용 완료 |
+| Nest·공용 TypeScript 단위/통합 | Vitest      | 적용 완료 |
+| 브라우저·BFF 계약              | Playwright  | 유지      |
+| 성능 비교                      | k6          | 유지      |
 
 참고: [Node.js TypeScript 지원](https://nodejs.org/dist/latest/docs/api/typescript.html), [Node.js test runner](https://nodejs.org/dist/latest/docs/api/test.html)
 
 ## Vitest 다음에 줄일 실제 부담: container-free fast lane
 
-Jest를 제거하는 것보다 효과가 크고 위험이 낮은 후보는 `libs/common` 테스트를 인프라 의존 여부로 나누는 것이다.
+실행기 교체 다음으로 효과가 크고 위험이 낮은 후보는 `libs/common` 테스트를 인프라 의존 여부로 나누는 것이다.
 
-현재 `libs/common`의 전역 setup은 suite 전체를 위해 MongoDB replica set, Redis, S3와 NATS를 한꺼번에 준비한다. 검토 시점의 45개 spec 중 약 29개는 이 컨테이너들을 직접 사용하지 않는 순수 단위 테스트였고, 인프라를 실제로 쓰는 spec은 약 16개였다.
+현재 `libs/common`의 전역 setup은 suite 전체를 위해 MongoDB replica set, Redis, S3와 NATS를 한꺼번에 준비한다. 전환 전 파일 분류 당시 45개 spec 중 약 29개는 이 컨테이너들을 직접 사용하지 않는 순수 단위 테스트였고, 인프라를 실제로 쓰는 spec은 약 16개였다. 현재 실행 결과는 42 suites, 635 tests이며 실제 분리 전에 분류를 다시 확인한다.
 
 즉 빠른 유틸리티·값 객체·redaction 테스트도 통합 테스트 때문에 컨테이너 기동 비용을 같이 낸다. Saga runtime은 이 workspace에서 빠졌지만 “모든 spec이 네 인프라를 기다린다”는 구조적 문제는 그대로 남았다. Restate는 실제 Saga 경계가 필요한 `apps/api` 상영 생성 스위트에서만 켠다.
 
-Vitest 전환 전에 Jest 전용 fast config를 새로 만들면 곧 버릴 설정이 늘어난다. 실행기 교체가 끝난 뒤 다음 방향을 검토한다.
+실행기 교체가 끝났으므로 다음 방향을 Vitest 설정 안에서 검토한다.
 
-- 컨테이너 없는 `test:fast`와 인프라가 필요한 `test:integration`을 같은 Jest 안에서 분리한다.
+- 컨테이너 없는 `test:fast`와 인프라가 필요한 `test:integration`을 같은 Vitest 안에서 분리한다.
 - `pnpm test`는 두 경로를 모두 실행하고 기존 100% coverage 계약을 유지한다.
 - 에이전트는 순수 코드 수정 중 `test:fast`를 반복 실행하고, 작업 완료 전 전체 `pnpm test`를 실행한다.
 - 파일 이동보다 명시적인 패턴 또는 별도 config가 더 작다면 그것을 선택한다.
@@ -270,29 +280,25 @@ Vitest 전환 전에 Jest 전용 fast config를 새로 만들면 곧 버릴 설�
 
 이는 사람이 매번 선택해야 하는 UI를 추가하는 개선이 아니다. 에이전트가 더 짧은 피드백 경로를 쓰되 최종 검증 범위는 줄이지 않는 개선이다.
 
-`libs/testing/src/jest/__tests__`는 Jest 사용법과 reset·mock 계약을 검증하므로 Jest를 유지하는 동안은 제거하지 않는다. 전면 전환이 실제로 확정될 때 Jest 전용 테스트와 헬퍼를 함께 지우는 편이 안전하다.
+`libs/testing/src/vitest/__tests__`는 Vitest의 reset·mock·spy·fake timer와 TypeScript decorator metadata 계약을 검증한다. 현재 12 suites, 62 tests가 통과하며 JavaScript 실행·자원 격리 helper 23 tests도 함께 통과한다.
 
 ## 후속 개선 우선순위
 
-### 1. Jest → Vitest
-
-위 완료 조건을 지키며 독립 작업으로 전환한다. Node 26, NestJS 12, ESM과 맞추되 SWC transformer는 사용하지 않는다.
-
-### 2. container-free fast lane 검증
+### 1. container-free fast lane 검증
 
 가장 먼저 작은 변경으로 실험한다. 전체 coverage와 최종 `pnpm test` 동작은 유지하고, 에이전트의 반복 실행 시간만 줄이는 것이 목표다.
 
-### 3. race 결과의 작은 요약 파일
+### 2. race 결과의 작은 요약 파일
 
 필요해질 때만 시나리오명, 성공 여부, 소요 시간, 완료 반복 수를 JSON 또는 Markdown 하나로 남긴다. Stability의 Job Summary나 artifact에는 이 작은 파일만 올리고, 대량 컨테이너 로그는 실패 진단용 raw log로 유지한다.
 
 JUnit과 Allure는 실제 소비자가 생기기 전에는 만들지 않는다. 생성만 하고 읽지 않는 결과물은 유지 비용이다.
 
-### 4. 복잡한 브라우저 흐름의 단계 표시
+### 3. 복잡한 브라우저 흐름의 단계 표시
 
 긴 E2E에만 `test.step`을 사용해 준비, 비회원 결과, 로그인·데이터 생성, 개인화 검증을 HTML report에 구분한다. 모든 화면의 Page Object화나 Cucumber 도입은 하지 않는다.
 
-### 5. benchmark 응답 무결성
+### 4. benchmark 응답 무결성
 
 RPS·latency 절대 기준은 두지 않되, 의도한 API 대신 401·500 경로를 빠르게 측정하고도 성공으로 끝나지 않도록 예상 상태 코드는 확인한다. 결과 JSON과 dashboard는 성공 여부와 무관하게 보존한다.
 
@@ -300,7 +306,7 @@ RPS·latency 절대 기준은 두지 않되, 의도한 API 대신 401·500 경�
 
 현재 문제를 해결하기 위해 다음 도구를 추가하지 않는다.
 
-- Jest와 Vitest를 장기간 함께 유지하는 이중 실행 경로
+- Jest·ts-jest를 재도입하거나 Vitest와 장기간 함께 유지하는 이중 실행 경로
 - Vitest 외의 또 다른 범용 테스트 실행기
 - `tsx`·`ts-node`를 이용한 임시 Nest test 실행 경로
 - `c8`을 이용한 두 번째 coverage 설정
@@ -310,21 +316,21 @@ RPS·latency 절대 기준은 두지 않되, 의도한 API 대신 401·500 경�
 - k6 Studio, Playwright VS Code 확장 같은 사람 중심 도구의 저장소 의존성
 - race를 Testcontainers suite로 전면 재작성하는 작업
 
-테스트 전환에서 지킬 핵심은 다음 세 가지다.
+테스트 운영에서 지킬 핵심은 다음 세 가지다.
 
 1. 테스트 이름과 디렉터리에서 역할이 보이는 것
 2. 전체 실행 뒤 무엇을 확인했고 제외했는지 보이는 것
 3. 실행기 교체 뒤에도 기존 coverage·인프라 정리·실패 진단 강도를 낮추지 않는 것
 
-## 2026-08-28 npm 기준 검증 기준선
+## 2026-08-28 npm·Jest 검증 기준선(역사 자료)
 
-Restate 전환 직후, pnpm 전환 전에 다음 결과를 확인했다. 후속 package manager·실행기 전환은 최소한 이 기준선을 그대로 통과해야 한다.
+Restate 전환 직후, pnpm·Vitest 전환 전에 다음 결과를 확인했다. 현재 결과와 비교하기 위한 역사 자료이며, 현행 실행은 이 테스트 수와 100% coverage 강도를 유지하거나 보강했다.
 
 - 당시 `npm test`: 전체 workspace 성공
 - Nest API: 36 suites, 414 tests, statements·branches·functions·lines 100%
 - 공용 라이브러리: 42 suites, 635 tests, 네 coverage 항목 100%
 - `libs/testing`: 11 suites, 61 tests
-- Jest 실행 자원 격리 헬퍼: 23 tests, native coverage 100%
+- 당시 Jest 실행 자원 격리 헬퍼: 23 tests, native coverage 100%
 - API race contracts: 5 tests
 - Web contracts: 12 tests
 - 실제 배포: API 4 replicas, Restate endpoint 등록, API 문서 81/81 성공

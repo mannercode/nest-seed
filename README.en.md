@@ -69,14 +69,14 @@ Development is test-driven — a test brings up the environment it needs (infras
 ## Tests
 
 ```bash
-pnpm --filter './apps/api' test users.spec --coverage=false        # run a single spec (gate off)
+pnpm --filter './apps/api' test users.spec --coverage.enabled=false # run a single spec (gate off)
 pnpm run e2e                                                     # console and user-app browser e2e (Playwright)
 pnpm run e2e:report                                              # open the latest browser e2e HTML report
 pnpm run race <scenario>                                         # distributed races — brings up a multi-replica deployment stack
 pnpm run benchmark:api                                           # performance measurement — stack boot, seeding, measurement, teardown in one go
 ```
 
-The test system and writing rules are described in the [apps document](docs/apps.md#테스트); how to run and interpret the distributed race and performance tools, in the [tests document](docs/tests.md).
+Vitest prints the `describe`/`it` hierarchy in the terminal with its tree reporter. A full API run stores per-invocation coverage and logs under `apps/api/_output/vitest-runs/r<run ID>/`; common-library coverage goes to `libs/common/_output/coverage/`. The test system and writing rules are described in the [apps document](docs/apps.md#테스트); how to run and interpret the distributed race and performance tools, in the [tests document](docs/tests.md).
 
 ## Deployment
 
@@ -110,7 +110,7 @@ nest-seed/
 │
 ├── infra/                   ← development infrastructure Compose (MongoDB, Redis, VersityGW, NATS, Restate)
 ├── deploy/                  ← Docker Compose, NGINX (app deployment entry point)
-├── tools/                   ← dev/test helper tools (free-port, jest helpers, quick tunnel)
+├── tools/                   ← dev/test helper tools (free-port, Vitest helpers, quick tunnel)
 ├── docs/                    ← folder documents plus cross-cutting references (reference/)
 ├── .github/                 ← CI workflows (atoz, test-stability)
 │
@@ -135,7 +135,7 @@ If a tool is new to you, start from the code path or document in the "Where it's
 | @nestjs/jwt + bcrypt             | Per-role token signing/verification — `gateway/guards`; password hashing — `core/{users,admins}/internal`                                                       |
 | class-validator                  | DTO validation — each service's `dtos/`                                                                                                                         |
 | pnpm workspace                   | Monorepo layout. Shares libs as internal packages                                                                                                               |
-| Jest + Testcontainers            | Unit and integration tests. `libs/common` brings up its own infrastructure — [apps document](docs/apps.md#테스트)                                               |
+| Vitest + Testcontainers          | Unit and integration tests. `libs/common` brings up its own infrastructure — [apps document](docs/apps.md#테스트)                                               |
 | Playwright                       | Console/user-app browser e2e and shared BFF contracts — `tests/web`                                                                                             |
 | k6                               | Performance comparison harness — `tests/api-benchmark`                                                                                                          |
 | Docker Compose + NGINX           | Development infrastructure (`infra/`) and multi-container deployment (`deploy/`)                                                                                |

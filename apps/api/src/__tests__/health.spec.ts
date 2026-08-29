@@ -34,7 +34,7 @@ describe('Health', () => {
                 getConnectionToken(MONGO_CONNECTION_NAME)
             )
             const database = mongoConnection.db as NonNullable<mongoose.Connection['db']>
-            jest.spyOn(database, 'command').mockRejectedValueOnce(new Error('mongo down'))
+            vi.spyOn(database, 'command').mockRejectedValueOnce(new Error('mongo down'))
 
             const { body } = await fix.httpClient.get('/health').send(503)
             const info = {

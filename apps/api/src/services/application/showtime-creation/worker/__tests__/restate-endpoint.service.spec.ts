@@ -6,7 +6,7 @@ import type { ShowtimeCreationWorkflow } from '../workflow.js'
 import { ShowtimeCreationRestateEndpoint } from '../restate-endpoint.service.js'
 
 describe('ShowtimeCreationRestateEndpoint', () => {
-    it('Jest에서는 임의 포트로 열고 HTTP/2 session까지 정상 종료한다', async () => {
+    it('Vitest에서는 임의 포트로 열고 HTTP/2 session까지 정상 종료한다', async () => {
         const endpoint = createEndpoint()
         await endpoint.onApplicationBootstrap()
         expect(endpoint.port).toBeGreaterThan(0)
@@ -24,10 +24,10 @@ describe('ShowtimeCreationRestateEndpoint', () => {
         await expect(createEndpoint().onApplicationShutdown()).resolves.toBeUndefined()
     })
 
-    it('Jest 밖에서는 설정 포트를 사용한다', async () => {
-        const workerId = process.env.JEST_WORKER_ID
-        delete process.env.JEST_WORKER_ID
-        jest.spyOn(console, 'warn').mockImplementation()
+    it('Vitest 밖에서는 설정 포트를 사용한다', async () => {
+        const workerId = process.env.VITEST_POOL_ID
+        delete process.env.VITEST_POOL_ID
+        vi.spyOn(console, 'warn').mockImplementation(() => undefined)
         const endpoint = createEndpoint(0)
 
         try {
@@ -35,17 +35,17 @@ describe('ShowtimeCreationRestateEndpoint', () => {
             expect(endpoint.port).toBeGreaterThan(0)
         } finally {
             await endpoint.onApplicationShutdown()
-            process.env.JEST_WORKER_ID = workerId
+            process.env.VITEST_POOL_ID = workerId
         }
     })
 
     it('graceful close가 끝나지 않으면 5초 뒤 남은 session을 강제 종료한다', async () => {
-        jest.useFakeTimers()
+        vi.useFakeTimers()
         const endpoint = createEndpoint()
         let finishServerClose!: () => void
-        const session = { close: jest.fn(), destroy: jest.fn(() => finishServerClose()) }
+        const session = { close: vi.fn(), destroy: vi.fn(() => finishServerClose()) }
         const server = {
-            close: jest.fn((done: () => void) => {
+            close: vi.fn((done: () => void) => {
                 finishServerClose = done
             })
         }
@@ -59,11 +59,11 @@ describe('ShowtimeCreationRestateEndpoint', () => {
         try {
             const shutdown = endpoint.onApplicationShutdown()
             expect(session.close).toHaveBeenCalledTimes(1)
-            await jest.advanceTimersByTimeAsync(5_000)
+            await vi.advanceTimersByTimeAsync(5_000)
             await shutdown
             expect(session.destroy).toHaveBeenCalledTimes(1)
         } finally {
-            jest.useRealTimers()
+            vi.useRealTimers()
         }
     })
 

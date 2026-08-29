@@ -2,18 +2,18 @@ import { sleep } from '../async.js'
 
 describe('sleep', () => {
     afterEach(() => {
-        jest.useRealTimers()
+        vi.useRealTimers()
     })
 
     it('주어진 시간이 지난 뒤 완료된다', async () => {
-        jest.useFakeTimers()
-        const completed = jest.fn()
+        vi.useFakeTimers()
+        const completed = vi.fn()
         const sleeping = sleep(10).then(completed)
 
-        await jest.advanceTimersByTimeAsync(9)
+        await vi.advanceTimersByTimeAsync(9)
         expect(completed).not.toHaveBeenCalled()
 
-        await jest.advanceTimersByTimeAsync(1)
+        await vi.advanceTimersByTimeAsync(1)
         await sleeping
         expect(completed).toHaveBeenCalledTimes(1)
     })

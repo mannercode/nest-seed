@@ -1,0 +1,64 @@
+import 'reflect-metadata'
+import { S3Client } from '@aws-sdk/client-s3'
+import { setupVitestLifecycle } from '@mannercode/vitest-helpers'
+import { MongoClient } from 'mongodb'
+
+// `vitest.global.cjs`가 컨테이너를 시작하면서 채워 두는 환경 변수이다.
+// 여기에 워커마다 다른 이름과 상수도 더 채운다.
+// 테스트가 실행되기 전에 이 목록을 미리 확인해, 빠진 값이 있으면 워커 전체를 실패시킨다.
+const REQUIRED_TESTLIB_ENV = [
+    'TESTLIB_MONGO_URI',
+    'TESTLIB_REDIS_URL',
+    'TESTLIB_S3_ENDPOINT',
+    'TESTLIB_S3_ACCESS_KEY',
+    'TESTLIB_S3_SECRET_KEY',
+    'TESTLIB_NATS_OPTIONS'
+]
+
+beforeAll(() => {
+    const missing = REQUIRED_TESTLIB_ENV.filter((key) => !process.env[key])
+    if (missing.length > 0) {
+        throw new Error(`Missing required test env: ${missing.join(', ')}`)
+    }
+})
+
+setupVitestLifecycle({
+    connectMongo: async (workerId) => {
+        const dbName = `mongo-w${workerId}`
+        process.env.TESTLIB_MONGO_DATABASE = dbName
+
+        const client = new MongoClient(requiredEnvironment('TESTLIB_MONGO_URI'))
+        await client.connect()
+        return { client, dbName }
+    },
+    afterMongoConnect: async (client) => {
+        // TTL 인덱스를 다루는 테스트가 빨리 완료되도록 TTL 감시 주기를 1초로 줄인다.
+        // 기본값은 60초라 테스트 안에서 만료를 기다리기 어렵다.
+        await client.db('admin').command({ setParameter: 1, ttlMonitorSleepSecs: 1 })
+    },
+    createS3Client: () => {
+        process.env.TESTLIB_S3_REGION = 'us-east-1'
+        process.env.TESTLIB_S3_FORCE_PATH_STYLE = 'true'
+        return new S3Client({
+            endpoint: requiredEnvironment('TESTLIB_S3_ENDPOINT'),
+            region: requiredEnvironment('TESTLIB_S3_REGION'),
+            credentials: {
+                accessKeyId: requiredEnvironment('TESTLIB_S3_ACCESS_KEY'),
+                secretAccessKey: requiredEnvironment('TESTLIB_S3_SECRET_KEY')
+            },
+            forcePathStyle:
+                requiredEnvironment('TESTLIB_S3_FORCE_PATH_STYLE').toLowerCase() === 'true'
+        })
+    },
+    bucketName: (workerId) => {
+        const bucket = `s3bucket-w${workerId}`
+        process.env.TESTLIB_S3_BUCKET = bucket
+        return bucket
+    }
+})
+
+function requiredEnvironment(name: string): string {
+    const value = process.env[name]
+    if (!value) throw new Error(`Missing required environment variable: ${name}`)
+    return value
+}

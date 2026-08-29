@@ -141,7 +141,7 @@ describe('PathUtil', () => {
 
         describe('isWritable', () => {
             it('쓰기 가능한 경로에 대해 true를 반환한다', async () => {
-                jest.spyOn(fs, 'access').mockResolvedValueOnce(undefined)
+                vi.spyOn(fs, 'access').mockResolvedValueOnce(undefined)
 
                 const result = await PathUtil.isWritable('/test/path')
 
@@ -150,7 +150,7 @@ describe('PathUtil', () => {
             })
 
             it('쓰기 불가능한 경로에 대해 false를 반환한다', async () => {
-                jest.spyOn(fs, 'access').mockRejectedValueOnce(new Error('Not writable'))
+                vi.spyOn(fs, 'access').mockRejectedValueOnce(new Error('Not writable'))
 
                 const result = await PathUtil.isWritable('/test/path')
 
@@ -179,9 +179,9 @@ describe('PathUtil', () => {
                 const exdevError = new Error('cross-device link') as NodeJS.ErrnoException
                 exdevError.code = 'EXDEV'
 
-                const renameSpy = jest.spyOn(fs, 'rename').mockRejectedValueOnce(exdevError)
-                const copySpy = jest.spyOn(PathUtil, 'copy').mockResolvedValueOnce()
-                const deleteSpy = jest.spyOn(PathUtil, 'delete').mockResolvedValueOnce()
+                const renameSpy = vi.spyOn(fs, 'rename').mockRejectedValueOnce(exdevError)
+                const copySpy = vi.spyOn(PathUtil, 'copy').mockResolvedValueOnce()
+                const deleteSpy = vi.spyOn(PathUtil, 'delete').mockResolvedValueOnce()
 
                 await PathUtil.move(src, dest)
 
@@ -194,7 +194,7 @@ describe('PathUtil', () => {
                 const error = new Error('permission denied') as NodeJS.ErrnoException
                 error.code = 'EACCES'
 
-                jest.spyOn(fs, 'rename').mockRejectedValueOnce(error)
+                vi.spyOn(fs, 'rename').mockRejectedValueOnce(error)
 
                 await expect(PathUtil.move('/tmp/src.txt', '/tmp/dest.txt')).rejects.toThrow(
                     'permission denied'

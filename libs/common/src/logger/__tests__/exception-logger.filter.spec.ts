@@ -74,7 +74,9 @@ describe('HttpExceptionLoggerFilter', () => {
             await fix.httpClient.get('/slow-exception').notFound()
 
             expect(fix.spyWarn).toHaveBeenCalledTimes(1)
-            const [, log] = fix.spyWarn.mock.calls[0]
+            const firstCall = fix.spyWarn.mock.calls[0]
+            if (!firstCall) throw new Error('Logger.warn must be called')
+            const [, log] = firstCall
             // 핸들러가 50ms 지연 후 던지므로 마크가 빠지면 0ms로 퇴행한다. 부하는 값을
             // 키우는 방향으로만 작용하므로 타이머 오차 여유를 둔 하한만 단언한다.
             expect(parseInt(log.duration)).toBeGreaterThanOrEqual(40)

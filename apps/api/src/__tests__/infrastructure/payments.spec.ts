@@ -86,7 +86,7 @@ describe('PaymentsService', () => {
             const { PaymentsRepository } =
                 await import('../../services/infrastructure/payments/payments.repository.js')
             const repository = fix.module.get(PaymentsRepository)
-            jest.spyOn(repository.model, 'updateOne').mockReturnValueOnce({
+            vi.spyOn(repository.model, 'updateOne').mockReturnValueOnce({
                 exec: () =>
                     Promise.reject(Object.assign(new Error('duplicate key'), { code: 11000 }))
             } as any)
@@ -103,7 +103,7 @@ describe('PaymentsService', () => {
             const { PaymentsRepository } =
                 await import('../../services/infrastructure/payments/payments.repository.js')
             const repository = fix.module.get(PaymentsRepository)
-            jest.spyOn(repository.model, 'updateOne').mockReturnValueOnce({
+            vi.spyOn(repository.model, 'updateOne').mockReturnValueOnce({
                 exec: () => Promise.reject(new Error('database unavailable'))
             } as any)
 

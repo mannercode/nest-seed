@@ -23,7 +23,7 @@ export class ShowtimeCreationRestateEndpoint
 
     async onApplicationBootstrap() {
         const handler = createEndpointHandler({
-            logger: process.env.JEST_WORKER_ID ? () => undefined : undefined,
+            logger: process.env.VITEST_POOL_ID ? () => undefined : undefined,
             services: [this.workflow.definition]
         })
         const server = createServer(handler)
@@ -65,6 +65,6 @@ export class ShowtimeCreationRestateEndpoint
     }
 
     private testPortOrConfiguredPort() {
-        return process.env.JEST_WORKER_ID ? 0 : this.config.restate.servicePort
+        return process.env.VITEST_POOL_ID ? 0 : this.config.restate.servicePort
     }
 }

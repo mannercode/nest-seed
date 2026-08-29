@@ -12,4 +12,4 @@ HttpTestClient와 픽스처 헬퍼처럼 테스트에서만 쓰는 코드다. co
 
 `pnpm-workspace.yaml`이 workspace 경로를 정의하고, pnpm은 패키지 의존 그래프에 따라 의존되는 패키지를 먼저 빌드한다.
 
-테스트 지원 코드는 두 곳에 나뉜다 — 같은 기준("어디서 실행되는가")의 결과다. 테스트 코드가 import하는 헬퍼는 `libs/testing`(TS, 빌드 필요)이고, jest 설정(jest.setup/teardown)이 빌드 없이 곧장 require해야 하는 코드는 `tools/jest-helpers`(순수 CJS)다.
+테스트 지원 코드는 두 곳에 나뉜다 — 같은 기준("어디서 실행되는가")의 결과다. spec이 import하는 `HttpTestClient`·픽스처 헬퍼는 `libs/testing`(TS, 빌드 필요)에 둔다. Vitest config·global setup·setupFiles·global teardown이 빌드 전에 불러야 하는 실행 ID, `VITEST_POOL_ID`별 Mongo/S3 준비와 제한된 최종 정리 로직은 `tools/vitest-helpers`(순수 CJS + 타입 선언)에 둔다. 이 도구 자체는 변환기가 필요 없는 CJS이므로 `node:test`와 내장 coverage로 직접 검증한다.

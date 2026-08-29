@@ -256,7 +256,7 @@ describe('CacheService', () => {
 
         it('이미 취소된 대기는 락을 실행하지 않고 즉시 중단한다', async () => {
             const controller = new AbortController()
-            const runner = jest.fn(async () => 1)
+            const runner = vi.fn(async () => 1)
             controller.abort(new Error('activity cancelled'))
 
             await expect(

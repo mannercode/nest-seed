@@ -3,7 +3,7 @@ import { AdminAuthenticationService } from '../index.js'
 describe('AdminAuthenticationService', () => {
     describe('isAuthPayloadActive', () => {
         it('authVersion이 없는 기존 토큰을 version 0으로 검증한다', async () => {
-            const repository = { isAuthVersionCurrent: jest.fn().mockResolvedValue(true) }
+            const repository = { isAuthVersionCurrent: vi.fn().mockResolvedValue(true) }
             const service = new AdminAuthenticationService(repository as any, {} as any)
 
             await expect(
@@ -13,7 +13,7 @@ describe('AdminAuthenticationService', () => {
         })
 
         it('필수 claim이 없는 토큰 payload는 거부한다', async () => {
-            const repository = { isAuthVersionCurrent: jest.fn() }
+            const repository = { isAuthVersionCurrent: vi.fn() }
             const service = new AdminAuthenticationService(repository as any, {} as any)
 
             await expect(service.isAuthPayloadActive({})).resolves.toBe(false)

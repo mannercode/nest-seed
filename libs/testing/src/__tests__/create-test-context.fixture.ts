@@ -29,7 +29,7 @@ export async function createTestContextFixture(): Promise<TestContextFixture> {
         overrideProviders: [
             {
                 original: SampleService,
-                replacement: { getMessage: jest.fn().mockReturnValue({ message: 'This is Mock' }) }
+                replacement: { getMessage: vi.fn().mockReturnValue({ message: 'This is Mock' }) }
             }
         ],
         providers: [SampleService]

@@ -92,7 +92,7 @@ CI 워크플로는 둘이다. [test-atoz.yaml](../.github/workflows/test-atoz.ya
 
 [test-stability.yaml](../.github/workflows/test-stability.yaml)은 행렬의 각 레그를 독립된 잡으로 실행한다. 각 분산 시나리오는 50회, libs 단위/통합 테스트는 75회, 부팅 검증은 50회를 반복한다. apps/api는 한 러너에 장시간 부하가 누적되지 않고 240분 제한 안에 끝나도록 20회씩 세 레그로 나누어 총 60회를 유지한다.
 
-apps/api 반복은 실행별 coverage 디렉터리를 누적하지 않도록 coverage를 끄고 반복 흔들림만 본다. 이것은 커버리지 게이트를 우회하는 경로가 아니다. `test-atoz`의 전체 `pnpm run test`가 별도로 커버리지 100% 게이트를 통과해야 하고, apps/api AtoZ는 실제 setup/teardown을 켠 Jest 명령 두 개를 동시에 돌리는 격리 하네스도 검증한다.
+apps/api 반복은 실행별 coverage 디렉터리를 누적하지 않도록 `--coverage.enabled=false`로 수집을 끄고 반복 흔들림만 본다. 이것은 커버리지 게이트를 우회하는 경로가 아니다. `test-atoz`의 전체 `pnpm run test`가 별도로 커버리지 100% 게이트를 통과해야 하고, apps/api AtoZ는 실제 API global setup·setupFiles·teardown을 지정한 전용 config로 Vitest 명령 두 개를 동시에 돌리는 격리 하네스도 검증한다. API 실행의 로그와, 활성화한 경우 coverage는 `apps/api/_output/vitest-runs/r<실행 ID>/` 범위로 분리된다.
 
 분산 레이스 레그는 반복을 시작하기 전 `deploy/prebuild-images.sh`로 deps·API·NGINX 이미지를 한 번만 준비한다. 각 회차는 `DEPLOY_IMAGES_PREBUILT=true`로 `docker compose up --no-build`를 써서 같은 이미지를 재사용한다. 이렇게 해야 반복 횟수가 이미지 레지스트리 메타데이터 장애와 빌드 시간을 반복 추출하지 않고, 같은 바이너리의 안정성을 측정한다.
 

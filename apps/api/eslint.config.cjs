@@ -3,7 +3,7 @@ const js = require('@eslint/js')
 const globals = require('globals')
 const allowedDependenciesPlugin = require('eslint-plugin-allowed-dependencies').default
 const boundariesPlugin = require('eslint-plugin-boundaries')
-const jestPlugin = require('eslint-plugin-jest')
+const vitestPlugin = require('@vitest/eslint-plugin')
 const {
     baseGlobals,
     barrelImportPatterns,
@@ -60,7 +60,7 @@ const layerImportBlocks = layers.map((layer, index) => {
 
 module.exports = [
     {
-        // 런타임 도우미·Jest 연결·저장소 설정은 CommonJS Node 파일이다.
+        // 런타임 도우미·Vitest 연결·저장소 설정은 CommonJS Node 파일이다.
         // 생성 번들은 _output 아래에 있어 이 소스 glob에 포함되지 않는다.
         files: ['*.{cjs,js}', 'scripts/**/*.{cjs,js}'],
         linterOptions: { reportUnusedDisableDirectives: true },
@@ -80,13 +80,13 @@ module.exports = [
         }
     },
     {
-        files: ['jest.setup.cjs'],
-        languageOptions: { globals: { ...baseGlobals, ...globals.jest } }
+        files: ['src/__tests__/vitest.setup.ts'],
+        languageOptions: { globals: { ...baseGlobals, ...globals.vitest } }
     },
     ...createBaseConfigs({
         tsconfigRootDir: __dirname,
         srcGlob: '{src,scripts}/**',
-        parserOptions: { project: ['./tsconfig.json', './tsconfig.jest.json'] }
+        parserOptions: { project: ['./tsconfig.json', './tsconfig.test.json'] }
     }),
     {
         files: ['src/**/*.ts', 'scripts/**/*.ts'],
@@ -97,14 +97,14 @@ module.exports = [
     { files: ['scripts/**/*.ts'], rules: { 'no-restricted-imports': 'off' } },
     {
         files: ['src/**/__tests__/**/*.ts'],
-        languageOptions: { globals: { ...baseGlobals, ...globals.jest } },
-        plugins: { jest: jestPlugin },
+        languageOptions: { globals: { ...baseGlobals, ...globals.vitest } },
+        plugins: { vitest: vitestPlugin },
         rules: {
             'allowed/dependencies': ['warn', testDependencyOptions],
-            'jest/no-focused-tests': 'warn',
-            'jest/no-disabled-tests': 'warn',
-            'jest/valid-expect': 'warn',
-            'jest/no-identical-title': 'warn'
+            'vitest/no-focused-tests': 'warn',
+            'vitest/no-disabled-tests': 'warn',
+            'vitest/valid-expect': 'warn',
+            'vitest/no-identical-title': 'warn'
         }
     },
     ...layerImportBlocks,

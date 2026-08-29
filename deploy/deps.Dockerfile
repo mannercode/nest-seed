@@ -18,7 +18,7 @@ COPY tests/api-race/package.json tests/api-race/
 # `tools/*`는 devDependency지만 워크스페이스 의존성이다.
 # manifest를 복사하지 않으면 local workspace dependency를 연결할 수 없다.
 COPY tools/dev-tools/package.json tools/dev-tools/free-port.js tools/dev-tools/tunnel.sh tools/dev-tools/
-COPY tools/jest-helpers/package.json tools/jest-helpers/
+COPY tools/vitest-helpers/package.json tools/vitest-helpers/
 # npm registry 연결이 일시로 끊기면(ECONNRESET) 빌드가 통째로 실패한다.
 # 멱등한 설치라 백오프를 두고 최대 5번 시도한다. 실제 오류(lockfile 불일치 등)는 매 시도 같은 실패라 마지막에 그대로 드러난다.
 RUN for attempt in 1 2 3 4 5; do \

@@ -17,9 +17,9 @@ describe('repository initialization', () => {
         ['CrudRepository', (model: Model<Sample>) => new SampleCrudRepository(model)],
         ['AppendOnlyRepository', (model: Model<Sample>) => new SampleAppendOnlyRepository(model)]
     ])('%s는 Mongoose가 시작한 모델 초기화만 기다린다', async (_name, createRepository) => {
-        const init = jest.fn(async () => undefined)
-        const createCollection = jest.fn()
-        const createIndexes = jest.fn()
+        const init = vi.fn(async () => undefined)
+        const createCollection = vi.fn()
+        const createIndexes = vi.fn()
         const model = { createCollection, createIndexes, init } as unknown as Model<Sample>
         const repository = createRepository(model)
 

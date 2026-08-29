@@ -148,7 +148,7 @@ Restate로 옮기면 실행 기록과 애플리케이션 코드를 가깝게 두
 
 ### 결정
 
-커버리지를 수집하는 구현 워크스페이스는 100%를 요구한다. 현재 대상은 `apps/api`, `libs/common`, `tools/jest-helpers`다. 이 세 곳은 안정성 반복에서 속도·산출물 절약을 위해 커버리지를 끄더라도 정기 AtoZ의 `pnpm run test`에서 반드시 100% 게이트를 별도로 통과한다.
+커버리지를 수집하는 구현 워크스페이스는 100%를 요구한다. 현재 대상은 `apps/api`, `libs/common`, `tools/vitest-helpers`다. 앞의 두 곳은 Vitest V8 coverage를, 변환이 필요 없는 CJS 도구는 `node:test` 내장 coverage를 쓴다. 안정성 반복에서 속도·산출물 절약을 위해 coverage를 끄더라도 정기 AtoZ의 `pnpm run test`에서 반드시 100% 게이트를 별도로 통과한다.
 
 ### 근거
 
@@ -156,7 +156,7 @@ Restate로 옮기면 실행 기록과 애플리케이션 코드를 가깝게 두
 
 커버리지를 수집하지 않는 테스트도 조용히 예외로 두지 않고 역할을 명시한다.
 
-- `libs/testing`은 테스트 지원 라이브러리다. 헬퍼 대부분이 `libs/common`·`apps/api` 소비자 스펙에서 간접 검증되고, 자체 Jest는 남은 순수 동작을 검증하지만 coverage를 수집하지 않는다.
+- `libs/testing`은 테스트 지원 라이브러리다. 헬퍼 대부분이 `libs/common`·`apps/api` 소비자 스펙에서 간접 검증되고, 자체 Vitest는 남은 순수 동작을 검증하지만 coverage를 수집하지 않는다.
 - `tests/api-race`는 외부 HTTP/SSE 하네스다. Node 계약 테스트와 4-replica 시나리오, Stability 50회 반복으로 검증하며 앱 코드 커버리지로 포장하지 않는다.
 - `tests/web`은 Playwright 브라우저 시나리오와 두 BFF의 브라우저 없는 계약을 검증한다. 브라우저·proxy 행동을 게이트하며 선 커버리지 임계치는 두지 않는다.
 - `tools/dev-tools`의 tunnel 정책은 Bash 계약 테스트와 shellcheck로, root `tools/__tests__`의 clean·구성 계약은 AtoZ `test:config`로 검증한다. 여기에는 언어 커버리지 임계치를 붙이지 않는다.

@@ -57,7 +57,7 @@ describe('PurchaseService', () => {
 
             it('같은 키와 같은 요청은 결제를 다시 만들지 않고 최초 구매 응답을 반환한다', async () => {
                 const { PaymentsService } = await import('#infrastructure')
-                const createPayment = jest.spyOn(fix.module.get(PaymentsService), 'create')
+                const createPayment = vi.spyOn(fix.module.get(PaymentsService), 'create')
                 const createDto = buildCreatePurchaseDto(heldTickets)
                 const idempotencyKey = randomUUID()
 
@@ -89,7 +89,7 @@ describe('PurchaseService', () => {
                 const { PaymentsService } = await import('#infrastructure')
                 const ticketPurchaseService = fix.module.get(TicketPurchaseService)
                 const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-                const createPayment = jest.spyOn(fix.module.get(PaymentsService), 'create')
+                const createPayment = vi.spyOn(fix.module.get(PaymentsService), 'create')
                 const validatePurchase =
                     ticketPurchaseService.validatePurchase.bind(ticketPurchaseService)
                 let firstValidationEntered!: () => void
@@ -100,7 +100,7 @@ describe('PurchaseService', () => {
                 const mayContinueFirstValidation = new Promise<void>((resolve) => {
                     continueFirstValidation = resolve
                 })
-                jest.spyOn(ticketPurchaseService, 'validatePurchase').mockImplementationOnce(
+                vi.spyOn(ticketPurchaseService, 'validatePurchase').mockImplementationOnce(
                     async (...args) => {
                         firstValidationEntered()
                         await mayContinueFirstValidation
@@ -115,7 +115,7 @@ describe('PurchaseService', () => {
                 const didCompleteSecondOuterLookup = new Promise<void>((resolve) => {
                     secondOuterLookupCompleted = resolve
                 })
-                jest.spyOn(purchaseRecordsService, 'findIdempotencyOperation').mockImplementation(
+                vi.spyOn(purchaseRecordsService, 'findIdempotencyOperation').mockImplementation(
                     async (...args) => {
                         const operation = await findOperation(...args)
                         lookupCount += 1
@@ -168,7 +168,7 @@ describe('PurchaseService', () => {
                 const didSaveFirstCreate = new Promise<void>((resolve) => {
                     firstCreateSaved = resolve
                 })
-                jest.spyOn(purchaseRecordsService, 'create').mockImplementation(async (...args) => {
+                vi.spyOn(purchaseRecordsService, 'create').mockImplementation(async (...args) => {
                     createCallCount += 1
                     if (createCallCount === 1) {
                         firstCreateEntered()
@@ -243,7 +243,7 @@ describe('PurchaseService', () => {
                 const mayContinuePayment = new Promise<void>((resolve) => {
                     continuePayment = resolve
                 })
-                jest.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
+                vi.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
                     paymentStarted()
                     await mayContinuePayment
                     return createPayment(dto)
@@ -354,7 +354,7 @@ describe('PurchaseService', () => {
             it('판매 뒤 Redis claim 정리가 실패해도 완료 구매를 되돌리지 않는다', async () => {
                 const { TicketHoldingService } = await import('#core')
                 const ticketHoldingService = fix.module.get(TicketHoldingService)
-                jest.spyOn(ticketHoldingService, 'releasePurchaseClaims').mockRejectedValueOnce(
+                vi.spyOn(ticketHoldingService, 'releasePurchaseClaims').mockRejectedValueOnce(
                     new Error('redis cleanup failed')
                 )
 
@@ -429,7 +429,7 @@ describe('PurchaseService', () => {
                 // 특정 메서드 호출을 직접 가로채지 않고 관측 가능한 로그를 기준으로 삼아, 테스트가 구현 세부에 지나치게 묶이지 않게 한다.
                 beforeEach(async () => {
                     const { Logger } = await import('@nestjs/common')
-                    jest.spyOn(Logger.prototype, 'log').mockImplementation((message: unknown) => {
+                    vi.spyOn(Logger.prototype, 'log').mockImplementation((message: unknown) => {
                         if (message === 'completePurchase') {
                             throw new Error('purchase error')
                         }
@@ -459,7 +459,7 @@ describe('PurchaseService', () => {
                     // 보상으로 결제가 취소될 뿐 행은 남으므로, 생성된 결제 id를 가로채 상태를 확인한다.
                     let paymentId: string | undefined
                     const createPayment = paymentsService.create.bind(paymentsService)
-                    jest.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
+                    vi.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
                         const payment = await createPayment(dto)
                         paymentId = payment.id
                         return payment
@@ -517,7 +517,7 @@ describe('PurchaseService', () => {
                 beforeEach(async () => {
                     const { PurchaseRecordsService } = await import('#core')
                     const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-                    jest.spyOn(purchaseRecordsService, 'markCompleted').mockRejectedValueOnce(
+                    vi.spyOn(purchaseRecordsService, 'markCompleted').mockRejectedValueOnce(
                         new Error('commit failed')
                     )
                 })
@@ -546,7 +546,7 @@ describe('PurchaseService', () => {
                     const events = fix.module.get(PurchaseEvents)
                     const purchaseService = fix.module.get(PurchaseService)
                     const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-                    const emit = jest
+                    const emit = vi
                         .spyOn(events, 'emitTicketPurchased')
                         .mockRejectedValueOnce(new Error('publish failed'))
 
@@ -586,10 +586,10 @@ describe('PurchaseService', () => {
                     const { PurchaseRecordsService } = await import('#core')
                     const events = fix.module.get(PurchaseEvents)
                     const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-                    jest.spyOn(purchaseRecordsService, 'markCompleted').mockRejectedValueOnce(
+                    vi.spyOn(purchaseRecordsService, 'markCompleted').mockRejectedValueOnce(
                         new Error('commit failed')
                     )
-                    const emit = jest.spyOn(events, 'emitTicketPurchased')
+                    const emit = vi.spyOn(events, 'emitTicketPurchased')
 
                     const createDto = buildCreatePurchaseDto(heldTickets)
                     await fix.httpClient
@@ -614,10 +614,10 @@ describe('PurchaseService', () => {
                 beforeEach(async () => {
                     const { PurchaseRecordsService } = await import('#core')
                     const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-                    jest.spyOn(purchaseRecordsService, 'markCompleted').mockRejectedValueOnce(
+                    vi.spyOn(purchaseRecordsService, 'markCompleted').mockRejectedValueOnce(
                         new Error('commit failed')
                     )
-                    jest.spyOn(purchaseRecordsService, 'markCancelled').mockRejectedValueOnce(
+                    vi.spyOn(purchaseRecordsService, 'markCancelled').mockRejectedValueOnce(
                         new Error('state transition failed')
                     )
                 })
@@ -629,7 +629,7 @@ describe('PurchaseService', () => {
                     // 보상으로 결제가 취소될 뿐 행은 남으므로, 생성된 결제 id를 가로채 상태를 확인한다.
                     let paymentId: string | undefined
                     const createPayment = paymentsService.create.bind(paymentsService)
-                    jest.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
+                    vi.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
                         const payment = await createPayment(dto)
                         paymentId = payment.id
                         return payment
@@ -657,7 +657,7 @@ describe('PurchaseService', () => {
 
                     let purchaseRecordId: string | undefined
                     const createRecord = purchaseRecordsService.create.bind(purchaseRecordsService)
-                    jest.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(
+                    vi.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(
                         async (...args) => {
                             const record = await createRecord(...args)
                             purchaseRecordId = record.id
@@ -712,11 +712,11 @@ describe('PurchaseService', () => {
                 await purchaseRecordsService.setPaymentId(purchaseRecord.id, payment.id)
                 await ticketsService.sellForPurchase(pickIds(heldTickets), purchaseRecord.id)
 
-                jest.spyOn(
+                vi.spyOn(
                     ticketsService,
                     'releaseOwnedPurchaseForCompensation'
                 ).mockRejectedValueOnce(new Error('ticket compensation failed'))
-                jest.spyOn(paymentsService, 'cancel').mockRejectedValueOnce(
+                vi.spyOn(paymentsService, 'cancel').mockRejectedValueOnce(
                     new Error('payment compensation failed')
                 )
 
@@ -756,7 +756,7 @@ describe('PurchaseService', () => {
 
                 let purchaseRecordId: string | undefined
                 const createRecord = purchaseRecordsService.create.bind(purchaseRecordsService)
-                jest.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(
+                vi.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(
                     async (...args) => {
                         const record = await createRecord(...args)
                         purchaseRecordId = record.id
@@ -774,7 +774,7 @@ describe('PurchaseService', () => {
                     continuePayment = resolve
                 })
                 const createPayment = paymentsService.create.bind(paymentsService)
-                jest.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
+                vi.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
                     const payment = await createPayment(dto)
                     paymentId = payment.id
                     paymentCreated()
@@ -784,7 +784,7 @@ describe('PurchaseService', () => {
 
                 const releaseClaims =
                     ticketHoldingService.releasePurchaseClaims.bind(ticketHoldingService)
-                jest.spyOn(ticketHoldingService, 'releasePurchaseClaims').mockImplementationOnce(
+                vi.spyOn(ticketHoldingService, 'releasePurchaseClaims').mockImplementationOnce(
                     async () => {
                         // 보상 완료 후에도 live 경로가 Redis confirm을 통과하도록 첫 claim
                         // 해제만 의도적으로 no-op 처리한다. 상태 fence가 없다면 그 뒤 Sold와
@@ -842,7 +842,7 @@ describe('PurchaseService', () => {
 
                 let purchaseRecordId: string | undefined
                 const createRecord = purchaseRecordsService.create.bind(purchaseRecordsService)
-                jest.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(
+                vi.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(
                     async (...args) => {
                         const record = await createRecord(...args)
                         purchaseRecordId = record.id
@@ -852,7 +852,7 @@ describe('PurchaseService', () => {
 
                 let paymentId: string | undefined
                 const createPayment = paymentsService.create.bind(paymentsService)
-                jest.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
+                vi.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
                     const payment = await createPayment(dto)
                     paymentId = payment.id
                     return payment
@@ -867,7 +867,7 @@ describe('PurchaseService', () => {
                     continueSale = resolve
                 })
                 const sellForPurchase = ticketsService.sellForPurchase.bind(ticketsService)
-                jest.spyOn(ticketsService, 'sellForPurchase').mockImplementationOnce(
+                vi.spyOn(ticketsService, 'sellForPurchase').mockImplementationOnce(
                     async (...args) => {
                         // Redis owner 확인과 Completing CAS는 이미 끝난 시점이다.
                         // Mongo 판매만 멈춰 lease 회수 후의 late effect를 결정적으로 만든다.
@@ -935,10 +935,10 @@ describe('PurchaseService', () => {
                 const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
                 const paymentsService = fix.module.get(PaymentsService)
 
-                jest.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(() => {
+                vi.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(() => {
                     throw new Error('record creation failed')
                 })
-                const createPayment = jest.spyOn(paymentsService, 'create')
+                const createPayment = vi.spyOn(paymentsService, 'create')
 
                 const createDto = buildCreatePurchaseDto(heldTickets)
 
@@ -992,7 +992,7 @@ describe('PurchaseService', () => {
                 const { TicketPurchaseService } =
                     await import('../../services/application/purchase/internal/index.js')
                 const ticketPurchaseService = fix.module.get(TicketPurchaseService)
-                jest.spyOn(ticketPurchaseService, 'claimPurchase').mockRejectedValueOnce(
+                vi.spyOn(ticketPurchaseService, 'claimPurchase').mockRejectedValueOnce(
                     new HttpException('purchase dependency rejected the request', 418)
                 )
                 const createDto = buildCreatePurchaseDto(heldTickets)
@@ -1075,7 +1075,7 @@ describe('PurchaseService', () => {
             const mayContinue = new Promise<void>((resolve) => {
                 continuePurchase = resolve
             })
-            jest.spyOn(ticketPurchaseService, 'validatePurchase').mockImplementationOnce(
+            vi.spyOn(ticketPurchaseService, 'validatePurchase').mockImplementationOnce(
                 async (...args) => {
                     await validatePurchase(...args)
                     validationFinished()
@@ -1084,7 +1084,7 @@ describe('PurchaseService', () => {
             )
 
             const paymentsService = fix.module.get(PaymentsService)
-            const createPayment = jest.spyOn(paymentsService, 'create')
+            const createPayment = vi.spyOn(paymentsService, 'create')
 
             const purchasePromise = fix.httpClient
                 .post('/purchases')
@@ -1146,7 +1146,7 @@ describe('PurchaseService', () => {
                 continuePayment = resolve
             })
             let paymentId: string | undefined
-            jest.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
+            vi.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
                 paymentStarted()
                 await mayContinuePayment
                 const payment = await createPayment(dto)
@@ -1220,13 +1220,13 @@ describe('PurchaseService', () => {
     it('주기 reconciliation은 stale 구매·결제 보상과 durable event 발행을 함께 실행한다', async () => {
         const { PurchaseService } = await import('#application')
         const purchaseService = fix.module.get(PurchaseService)
-        const reconcile = jest
+        const reconcile = vi
             .spyOn(purchaseService, 'reconcilePendingPurchases')
             .mockResolvedValueOnce()
-        const resolvePayments = jest
+        const resolvePayments = vi
             .spyOn(purchaseService, 'reconcileUnresolvedPayments')
             .mockResolvedValueOnce()
-        const publish = jest
+        const publish = vi
             .spyOn(purchaseService, 'publishPendingPurchaseEvents')
             .mockResolvedValueOnce()
 
@@ -1278,8 +1278,8 @@ describe('PurchaseService', () => {
             totalPrice: 1,
             userId: user.id
         })
-        jest.spyOn(purchaseRecordsService, 'findPendingBefore').mockResolvedValueOnce([completed])
-        const compensate = jest.spyOn(ticketPurchaseService, 'compensatePurchase')
+        vi.spyOn(purchaseRecordsService, 'findPendingBefore').mockResolvedValueOnce([completed])
+        const compensate = vi.spyOn(ticketPurchaseService, 'compensatePurchase')
 
         await purchaseService.reconcilePendingPurchases()
 
@@ -1298,7 +1298,7 @@ describe('PurchaseService', () => {
 
         let purchaseRecordId: string | undefined
         const createRecord = purchaseRecordsService.create.bind(purchaseRecordsService)
-        jest.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(async (...args) => {
+        vi.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(async (...args) => {
             const record = await createRecord(...args)
             purchaseRecordId = record.id
             return record
@@ -1314,7 +1314,7 @@ describe('PurchaseService', () => {
         })
         let paymentId: string | undefined
         const createPayment = paymentsService.create.bind(paymentsService)
-        jest.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
+        vi.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
             paymentCreationStarted()
             await mayCreatePayment
             const payment = await createPayment(dto)
@@ -1324,7 +1324,7 @@ describe('PurchaseService', () => {
 
         const cancelPayment = paymentsService.cancel.bind(paymentsService)
         let failLateCancellation = false
-        jest.spyOn(paymentsService, 'cancel').mockImplementation(async (activePaymentId) => {
+        vi.spyOn(paymentsService, 'cancel').mockImplementation(async (activePaymentId) => {
             if (failLateCancellation) {
                 failLateCancellation = false
                 throw new Error('late cancellation failed')
@@ -1341,7 +1341,7 @@ describe('PurchaseService', () => {
         await didStartPaymentCreation
         Require.defined(purchaseRecordId)
 
-        const markCancelled = jest.spyOn(purchaseRecordsService, 'markCancelled')
+        const markCancelled = vi.spyOn(purchaseRecordsService, 'markCancelled')
         await purchaseService.reconcilePendingPurchases(new Date(Date.now() + 1000))
         expect(markCancelled).toHaveBeenCalledWith(purchaseRecordId, expect.any(String))
 
@@ -1355,7 +1355,7 @@ describe('PurchaseService', () => {
         )
 
         const now = Date.now()
-        jest.spyOn(Date, 'now').mockReturnValue(now + 11 * 60 * 1000)
+        vi.spyOn(Date, 'now').mockReturnValue(now + 11 * 60 * 1000)
         failLateCancellation = true
         await purchaseService.reconcileStalePurchases()
         expect(ensure((await getPayments(fix, [paymentId]))[0]).status).toBe(
@@ -1387,7 +1387,7 @@ describe('PurchaseService', () => {
             purchaseRecordId: purchaseRecord.id,
             userId: user.id
         })
-        const cancel = jest.spyOn(paymentsService, 'cancelByPurchaseRecordId')
+        const cancel = vi.spyOn(paymentsService, 'cancelByPurchaseRecordId')
         const future = new Date(Date.now() + 1000)
 
         expect(await paymentsService.findUnresolvedBefore(future)).toEqual([
@@ -1424,7 +1424,7 @@ describe('PurchaseService', () => {
             purchaseRecordId: purchaseRecord.id,
             userId: user.id
         })
-        const cancel = jest.spyOn(paymentsService, 'cancelByPurchaseRecordId')
+        const cancel = vi.spyOn(paymentsService, 'cancelByPurchaseRecordId')
         const future = new Date(Date.now() + 1000)
 
         await purchaseService.reconcileUnresolvedPayments(future)
@@ -1586,7 +1586,7 @@ describe('PurchaseService', () => {
         })
         await purchaseRecordsService.setPaymentId(oldPurchase.id, oldPayment.id)
         await ticketsService.sellForPurchase(pickIds(heldTickets), oldPurchase.id)
-        jest.spyOn(paymentsService, 'cancel').mockRejectedValueOnce(
+        vi.spyOn(paymentsService, 'cancel').mockRejectedValueOnce(
             new Error('payment compensation failed after ticket release')
         )
 
@@ -1651,14 +1651,14 @@ describe('PurchaseService', () => {
         const mayFinishFirstEmit = new Promise<void>((resolve) => {
             finishFirstEmit = resolve
         })
-        const emit = jest.spyOn(events, 'emitTicketPurchased').mockImplementationOnce(async () => {
+        const emit = vi.spyOn(events, 'emitTicketPurchased').mockImplementationOnce(async () => {
             firstEmitStarted()
             await mayFinishFirstEmit
         })
         // 두 replica가 lease 획득 전 같은 stale outbox 목록을 읽은 상황을 고정한다.
         // 목록 조회만으로 중복을 막는 것이 아니라 저장소의 publication CAS가 loser를
         // 실제로 거절해야 한다.
-        jest.spyOn(purchaseRecordsService, 'findUnpublishedBefore').mockResolvedValue([pending])
+        vi.spyOn(purchaseRecordsService, 'findUnpublishedBefore').mockResolvedValue([pending])
 
         const firstPublisher = purchaseService.publishPendingPurchaseEvents(before)
         await didStartFirstEmit
@@ -1697,8 +1697,8 @@ describe('PurchaseService', () => {
             new Date(Date.now() + 60_000)
         )
         await purchaseRecordsService.markCompleted(pending.id, completionId)
-        const emit = jest.spyOn(events, 'emitTicketPurchased').mockResolvedValue()
-        jest.spyOn(purchaseRecordsService, 'markEventPublished').mockResolvedValueOnce(false)
+        const emit = vi.spyOn(events, 'emitTicketPurchased').mockResolvedValue()
+        vi.spyOn(purchaseRecordsService, 'markEventPublished').mockResolvedValueOnce(false)
         const before = new Date(Date.now() + 1000)
 
         await purchaseService.publishPendingPurchaseEvents(before)
@@ -1734,10 +1734,10 @@ describe('PurchaseService', () => {
             new Date(Date.now() + 60_000)
         )
         await purchaseRecordsService.markCompleted(pending.id, completionId)
-        jest.spyOn(events, 'emitTicketPurchased').mockRejectedValueOnce(
+        vi.spyOn(events, 'emitTicketPurchased').mockRejectedValueOnce(
             new Error('broker unavailable')
         )
-        const release = jest
+        const release = vi
             .spyOn(purchaseRecordsService, 'releaseEventPublicationClaim')
             .mockRejectedValueOnce(new Error('claim release unavailable'))
 
@@ -1768,10 +1768,10 @@ describe('PurchaseService', () => {
             },
             { pending: true }
         )
-        jest.spyOn(ticketPurchaseService, 'compensatePurchase').mockRejectedValueOnce(
+        vi.spyOn(ticketPurchaseService, 'compensatePurchase').mockRejectedValueOnce(
             new Error('ticket compensation failed')
         )
-        const release = jest
+        const release = vi
             .spyOn(purchaseRecordsService, 'releaseReconciliationClaim')
             .mockRejectedValueOnce(new Error('lease release failed'))
 

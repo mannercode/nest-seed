@@ -81,7 +81,7 @@ export async function createAppTestContext({
         throw setupError
     }
 
-    // 앱별 자원과 모델은 close에서 정리하고, 파일이 공유하는 MongoClient는 Jest afterAll에서 닫는다.
+    // 앱별 자원과 모델은 close에서 정리하고, 파일이 공유하는 MongoClient는 Vitest afterAll에서 닫는다.
     const teardown = async () => {
         try {
             if (enableRestate) {

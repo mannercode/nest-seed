@@ -17,7 +17,7 @@ describe('NatsHealthIndicator', () => {
         })
 
         it('flush가 실패하면 메시지와 함께 down 상태를 반환한다', async () => {
-            jest.spyOn(fix.connection, 'flush').mockRejectedValueOnce(new Error('error'))
+            vi.spyOn(fix.connection, 'flush').mockRejectedValueOnce(new Error('error'))
 
             const healthStatus = await fix.natsIndicator.isHealthy('key', fix.connection)
             expect(healthStatus).toEqual({ key: { reason: 'error', status: 'down' } })

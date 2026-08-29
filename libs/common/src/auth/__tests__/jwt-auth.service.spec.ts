@@ -26,7 +26,7 @@ function pauseNextRefreshTokenStore(fix: JwtAuthServiceFixture) {
     const storeReached = new Promise<void>((resolve) => (announceStoreReached = resolve))
     const storeReleased = new Promise<void>((resolve) => (releaseStore = resolve))
 
-    jest.spyOn(internals, 'storeToken').mockImplementationOnce(async (...args) => {
+    vi.spyOn(internals, 'storeToken').mockImplementationOnce(async (...args) => {
         announceStoreReached()
         await storeReleased
         return storeToken(...args)
@@ -56,7 +56,7 @@ describe('JwtAuthService', () => {
         })
 
         it('현재 계정 검증을 통과하면 토큰을 발급한다', async () => {
-            const validatePayload = jest.fn().mockResolvedValue(true)
+            const validatePayload = vi.fn().mockResolvedValue(true)
             const payload = { email: 'email', sub: 'u1' }
 
             await expect(
@@ -171,7 +171,7 @@ describe('JwtAuthService', () => {
         })
 
         it('현재 계정 검증을 회전 전후 모두 통과하면 새 토큰을 반환한다', async () => {
-            const validatePayload = jest.fn().mockResolvedValue(true)
+            const validatePayload = vi.fn().mockResolvedValue(true)
 
             await expect(
                 fix.jwtService.refreshAuthTokens(refreshToken, undefined, validatePayload)
@@ -183,7 +183,7 @@ describe('JwtAuthService', () => {
         })
 
         it('회전 전에 계정이 철회됐으면 token family를 폐기하고 401을 반환한다', async () => {
-            const validatePayload = jest.fn().mockResolvedValue(false)
+            const validatePayload = vi.fn().mockResolvedValue(false)
 
             await expect(
                 fix.jwtService.refreshAuthTokens(refreshToken, undefined, validatePayload)
@@ -195,8 +195,8 @@ describe('JwtAuthService', () => {
         })
 
         it('토큰 소비와 재발급 사이 계정이 철회되면 새 token family를 폐기한다', async () => {
-            const validatePayload = jest
-                .fn<Promise<boolean>, []>()
+            const validatePayload = vi
+                .fn<() => Promise<boolean>>()
                 .mockResolvedValueOnce(true)
                 .mockResolvedValueOnce(false)
 
@@ -411,21 +411,21 @@ describe('JwtAuthService', () => {
                 await bothRead
                 return stored
             }
-            jest.spyOn(internals, 'getStoredToken')
+            vi.spyOn(internals, 'getStoredToken')
                 .mockImplementationOnce(synchronizedRead)
                 .mockImplementationOnce(synchronizedRead)
 
             const issueTokens = internals.issueTokensInFamily.bind(internals)
             let announceIssued!: () => void
             const issued = new Promise<void>((resolve) => (announceIssued = resolve))
-            jest.spyOn(internals, 'issueTokensInFamily').mockImplementationOnce(async (...args) => {
+            vi.spyOn(internals, 'issueTokensInFamily').mockImplementationOnce(async (...args) => {
                 const result = await issueTokens(...args)
                 announceIssued()
                 return result
             })
 
             const revokeFamily = internals.revokeFamily.bind(internals)
-            jest.spyOn(internals, 'revokeFamily').mockImplementationOnce(async (...args) => {
+            vi.spyOn(internals, 'revokeFamily').mockImplementationOnce(async (...args) => {
                 await issued
                 return revokeFamily(...args)
             })
@@ -507,7 +507,7 @@ describe('JwtAuthService', () => {
 
         describe('Redis 원자 소비 결과가 손상될 때', () => {
             beforeEach(() => {
-                jest.spyOn(fix.redis, 'eval').mockResolvedValueOnce(null)
+                vi.spyOn(fix.redis, 'eval').mockResolvedValueOnce(null)
             })
 
             it('토큰 묶음은 폐기하지 않고 예외를 그대로 던진다', async () => {
@@ -710,7 +710,7 @@ describe('JwtAuthService', () => {
         })
 
         it('context가 이벤트에 그대로 전달된다', async () => {
-            const ctx = { ip: '1.2.3.4', userAgent: 'jest', source: 'login' }
+            const ctx = { ip: '1.2.3.4', userAgent: 'vi', source: 'login' }
             await fix.jwtService.generateAuthTokens({ sub: 'u1' }, ctx)
 
             const issued = fix.events.find((e) => e.type === 'token.issued')
@@ -718,7 +718,7 @@ describe('JwtAuthService', () => {
         })
 
         it('이벤트 훅이 예외를 던지면 generateAuthTokens도 실패한다', async () => {
-            jest.spyOn(fix.events, 'push').mockImplementationOnce(() => {
+            vi.spyOn(fix.events, 'push').mockImplementationOnce(() => {
                 throw new Error('hook failure')
             })
 

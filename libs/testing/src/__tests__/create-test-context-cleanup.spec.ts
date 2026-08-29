@@ -3,7 +3,7 @@ import type { INestApplication } from '@nestjs/common'
 describe('test context setup cleanup', () => {
     it('앱 초기화가 실패하면 모듈을 정리하고 원래 오류를 다시 던진다', async () => {
         const setupError = new Error('app init failed')
-        const onModuleDestroy = jest.fn()
+        const onModuleDestroy = vi.fn()
 
         class InitFailureProvider {
             onModuleInit() {
@@ -24,7 +24,7 @@ describe('test context setup cleanup', () => {
 
     it('HTTP URL 조회가 실패하면 열린 서버와 모듈을 정리하고 원래 오류를 다시 던진다', async () => {
         const setupError = new Error('getUrl failed')
-        const onModuleDestroy = jest.fn()
+        const onModuleDestroy = vi.fn()
         let app: INestApplication | undefined
 
         class LifecycleProvider {
@@ -37,7 +37,7 @@ describe('test context setup cleanup', () => {
         const result = createHttpTestContext({
             configureApp: async (createdApp) => {
                 app = createdApp
-                jest.spyOn(createdApp, 'getUrl').mockRejectedValue(setupError)
+                vi.spyOn(createdApp, 'getUrl').mockRejectedValue(setupError)
             },
             providers: [LifecycleProvider]
         })

@@ -119,7 +119,7 @@ describe('QueryBuilder', () => {
         })
 
         it('ids에 중복이 있으면 중복을 제거한다', () => {
-            jest.spyOn(Logger, 'warn').mockImplementation(() => {})
+            vi.spyOn(Logger, 'warn').mockImplementation(() => {})
             builder.addIn('entityId', ['123', '123'])
             expect(builder.build({})).toEqual({ entityId: { $in: ['123'] } })
         })

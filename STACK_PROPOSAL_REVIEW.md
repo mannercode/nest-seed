@@ -3,16 +3,16 @@
 최초 검토일: 2026-08-28
 상태 갱신: 2026-08-29
 
-2026-08-29 후속 결정으로 `pnpm@11.24.0`, Rspack + `ts-loader`, 백엔드 ESM을 각각 독립 전환했다. 이 문서의 2026-08-28 최초 보류 판단은 당시 기록으로 남기되, 현재 후속 순서는 Vitest → Zod/Standard Schema → MongoDB 공식 driver이다.
+2026-08-29 후속 결정으로 `pnpm@11.24.0`, Rspack + `ts-loader`, 백엔드 ESM, Vitest를 각각 독립 전환했다. 이 문서의 2026-08-28 최초 보류 판단은 당시 기록으로 남기되, 현재 후속 순서는 Zod/Standard Schema → MongoDB 공식 driver이다.
 
 ## 한 줄 결론
 
-제안안의 방향은 채택하되 현재 저장소에 한 번에 덮어쓰지 않는다. Node 26·Nest 12·Restate·NATS v3·pnpm·Rspack·ESM은 순차 적용했고, Vitest·Zod·MongoDB 공식 driver도 같은 원칙으로 독립 전환한다. Oxlint·observability는 아직 별도 선택으로 남긴다.
+제안안의 방향은 채택하되 현재 저장소에 한 번에 덮어쓰지 않는다. Node 26·Nest 12·Restate·NATS v3·pnpm·Rspack·ESM·Vitest는 순차 적용했고, 남은 Zod와 MongoDB 공식 driver도 같은 원칙으로 독립 전환한다. Oxlint·observability는 아직 별도 선택으로 남긴다.
 
 내 최종안은 다음 두 줄로 구분된다.
 
 - Greenfield 분산 시드: **Node 26(LTS 전환 뒤 운영 기준) + Nest 12 ESM + TypeScript strict + pnpm + Vitest + Zod + MongoDB driver + Restate + Core NATS + Docker + OpenTelemetry 또는 Nest Observe 중 하나**
-- 현재 저장소: **Node 26(Current) + Nest 12 ESM + TypeScript 6 strict + pnpm 11 + Rspack/`ts-loader` + Jest CJS bridge/`node:test` + Joi/class-validator + Mongoose + Restate + Core NATS + Docker**
+- 현재 저장소: **Node 26(Current) + Nest 12 ESM + TypeScript 6 strict + pnpm 11 + Rspack/`ts-loader` + Vitest 4/`node:test` + Joi/class-validator + Mongoose + Restate + Core NATS + Docker**
 
 두 번째 줄은 낡은 구성을 고집하자는 뜻이 아니다. 이 저장소가 이미 검증하는 경쟁 조건, 재시작, 4개 복제본, 100% coverage와 배포 산출물이 자산이므로, 새 도구가 그 계약을 실제로 더 작고 명확하게 대체할 때만 옮기자는 뜻이다. 더 넓은 과잉 검토는 [STACK_REVIEW.md](./STACK_REVIEW.md), 테스트 구조와 결과 확인 방식은 [TESTS_REVIEW.md](./TESTS_REVIEW.md)를 함께 참고한다.
 
@@ -57,21 +57,21 @@
 | Node.js 26                             | 동의·적용됨           | 미래 기준선으로 유지하되 2026-08-28 현재 Current임을 명시한다.                                         |
 | NestJS 12                              | 동의·적용됨           | 12.x 정렬은 유지한다. 앱 ESM 전환과는 별개다.                                                          |
 | TypeScript strict                      | 동의·적용됨           | `strict`와 추가 안전 옵션은 유지한다. 외부에서 채워지는 DTO·ODM 필드를 위한 예외까지 없앨 필요는 없다. |
-| Restate로 durable execution            | 동의·진행 중          | Temporal을 대체하고 command/workflow/retry/timer/Saga/compensation을 맡긴다.                           |
+| Restate로 durable execution            | 동의·적용됨           | Temporal을 대체해 command/workflow/retry/timer/Saga/compensation을 맡는다.                             |
 | NATS v3와 Core NATS fan-out            | 동의·적용됨           | domain notification, pub/sub와 queue group에 사용한다.                                                 |
 | JetStream opt-in                       | 동의                  | 저장·ack·replay 요구가 생긴 subject에만 도입한다. 현재 미사용 설정은 제거한다.                         |
 | Docker                                 | 동의·적용됨           | 로컬 인프라와 실제 4-replica 경계를 같은 방식으로 검증한다.                                            |
 | `type: module` ESM                     | 동의·적용됨           | API·common·testing을 NodeNext ESM으로 옮기고 bundle·TSC dev·Docker parity를 검증한다.                  |
 | pnpm workspace                         | 당시 조건부 → 적용됨  | 2026-08-28에는 보류했지만, 후속 승인으로 package manager만 `pnpm@11.24.0`으로 별도 전환했다.           |
-| Vitest                                 | 후속 전환             | SWC 없이 lifecycle·mock·100% coverage·결과 출력을 보존하고 Jest·ts-jest를 제거한다.                    |
-| Zod + Standard Schema                  | 후속 전환             | Vitest 다음 독립 단계로 request·env 검증을 옮기고 기존 검증 의존성을 남기지 않는다.                    |
+| Vitest                                 | 동의·적용됨           | SWC·Oxc 없이 lifecycle·mock·100% coverage·결과 출력을 보존하고 Jest·ts-jest를 제거했다.                |
+| Zod + Standard Schema                  | 후속 전환             | 현재 다음 독립 단계로 request·env 검증을 옮기고 기존 검증 의존성을 남기지 않는다.                      |
 | MongoDB 공식 driver 우선               | 후속 전환             | 큰 변화를 수용하되 repository·schema·transaction 계약을 동일 강도로 재구현한다.                        |
 | Oxlint                                 | 조건부                | 현재 architecture 규칙을 모두 대체할 수 있을 때만 ESLint와 교체한다.                                   |
 | OpenTelemetry                          | 조건부                | 수집 backend와 Nest 12 호환 경로가 정해진 뒤 도입한다.                                                 |
 | Nest Observe                           | 조건부                | OTel의 Nest wrapper로 보지 말고 별도 APM 제품 선택으로 판단한다.                                       |
-| Jest/ts-jest 전면 제거                 | Vitest 커밋에서 진행  | lifecycle·coverage·진단 동등성을 통과한 뒤 임시 CJS bridge와 함께 제거한다.                            |
-| class-validator/class-transformer 제거 | 현재 반대             | Zod 전환이 확정되지 않은 상태에서 제거하면 현재 request/response 계약만 잃는다.                        |
-| Mongoose 전면 제거                     | 현재 반대             | repository 구현, schema와 transaction을 다시 쓰는 독립 프로젝트가 된다.                                |
+| Jest/ts-jest 전면 제거                 | 적용됨                | Vitest lifecycle·coverage·진단 동등성을 통과한 뒤 임시 CJS bridge와 함께 제거했다.                     |
+| class-validator/class-transformer 제거 | Zod 단계에서 진행     | request/response 계약을 Zod로 옮기고 사용처가 사라진 뒤 제거한다.                                      |
+| Mongoose 전면 제거                     | driver 단계에서 진행  | repository 구현, schema와 transaction을 다시 쓰는 독립 작업으로 진행한다.                              |
 | outbox 기본 제거                       | 조건 없는 안에는 반대 | “NATS event는 유실 가능”이라고 정의할 때만 제거 가능하다. 보장 이벤트에는 다른 원자성 전략이 필요하다. |
 | OTel + Observe 동시 기본 설치          | 반대                  | 같은 기술이 아니며 수집·비용·데이터 반출 경로도 둘이 된다. 하나를 선택해야 한다.                       |
 | 위 변경의 일괄 적용                    | 반대                  | module, package graph, test, validation, persistence와 telemetry 실패를 한 번에 섞는다.                |
@@ -126,7 +126,7 @@ Nest 12 core package가 ESM-only인 것은 맞지만 애플리케이션 자체�
 
 ### ESM
 
-적용했다. API·common·testing에 `type: module`과 TypeScript `nodenext`를 두고, 상대 import는 `.js`, API 계층 alias는 `#` package import로 명시했다. Rspack은 `ts-loader`의 번들러 전용 ESM emit과 Nest의 ESM output/externals를 유지하고, TSC 개발 emit·Jest CJS bridge·Docker 실행을 각각 검증한다.
+적용했다. API·common·testing에 `type: module`과 TypeScript `nodenext`를 두고, 상대 import는 `.js`, API 계층 alias는 `#` package import로 명시했다. Rspack은 `ts-loader`의 번들러 전용 ESM emit과 Nest의 ESM output/externals를 유지하고, TSC 개발 emit·Vitest ESM 실행·Docker 실행을 각각 검증한다.
 
 ### pnpm
 
@@ -138,25 +138,25 @@ pnpm은 선언하지 않은 dependency 접근을 막고 `workspace:`가 외부 p
 
 ### Vitest
 
-Greenfield ESM Nest 12에는 좋은 기본값이다. `@nestjs/testing`은 runner 중립이므로 Jest가 framework 의무도 아니다. 그러나 공식 가이드 역시 기존 runner를 즉시 옮길 필요가 없다고 한다. [Nest 12 testing stack](https://docs.nestjs.com/migration-guide#testing-stack)
+Greenfield ESM Nest 12에는 좋은 기본값이다. `@nestjs/testing`은 runner 중립이므로 특정 runner가 framework 의무는 아니다. 이행 전에는 공식 가이드가 기존 runner의 즉시 교체를 요구하지 않는다는 점을 근거로 동등성 검증을 선행했다. [Nest 12 testing stack](https://docs.nestjs.com/migration-guide#testing-stack)
 
-현재는 한 Nest workspace pilot에서 다음을 비교한다.
+전환 검증에서 다음 계약을 비교했고 API·common·testing 전체 적용으로 검증을 마쳤다.
 
 1. global setup/teardown과 Testcontainers 종료
 2. mock·fake timer·격리
 3. import되지 않은 source까지 포함한 branches/functions/lines/statements 100%
 4. source map과 실패 시 container 진단
-5. 사람이 읽기 쉬운 terminal summary와 HTML 결과
+5. 사람이 읽기 쉬운 tree reporter와 LCOV 결과
 
-Vitest 4는 기본적으로 실행 중 load된 파일만 coverage에 넣으므로 현재 Jest의 `collectCoverageFrom`과 맞추려면 `coverage.include`를 명시해야 한다. “Vitest도 coverage가 된다”는 사실만으로 동등하다고 보면 안 된다. [Vitest 4 migration](https://vitest.dev/guide/migration), [Vitest coverage](https://vitest.dev/guide/coverage.html)
+Vitest 4는 기본적으로 실행 중 load된 파일만 coverage에 넣으므로, 이행 전 `collectCoverageFrom` 계약을 유지하도록 `coverage.include`를 명시했다. TypeScript 6 `transpileModule` 변환으로 Nest decorator metadata와 source map을 보존하고, Vite의 Oxc와 SWC는 사용하지 않는다. [Vitest 4 migration](https://vitest.dev/guide/migration), [Vitest coverage](https://vitest.dev/guide/coverage.html)
 
-순수 JavaScript 계약·race·도구는 이미 잘 맞는 `node:test`를 유지한다. pilot이 통과하면 Jest와 ts-jest를 함께 제거하고, 실패하면 현재 혼합 구성이 더 작은 구성이다.
+global lifecycle, 실제 병렬 invocation 격리, mock·fake timer, 실패 진단과 100% coverage를 모두 통과해 Jest·ts-jest의 직접 의존성과 설정을 제거했다. 순수 JavaScript 계약·race·도구는 잘 맞는 `node:test`를 유지한다. devcontainer의 `firsttris.vscode-jest-runner` 확장은 runtime 의존성이 아니며, 제거에 리빌드가 필요해 사용자 승인 시점까지 보류한다.
 
 ### Zod와 Standard Schema
 
 Nest 12는 route schema와 `StandardSchemaValidationPipe`를 추가했지만 기존 `ValidationPipe`와 class-validator 경로도 계속 지원한다. [Nest route schemas](https://docs.nestjs.com/migration-guide#route-decorator-schemas), [Nest validation](https://docs.nestjs.com/techniques/validation)
 
-Vitest 전환 뒤 Zod + Standard Schema를 독립 단계로 적용한다. request DTO와 Joi 환경 검증을 경계별로 옮기되 최종 상태에서 검증 체계 세 개를 남기지 않는다. coercion·default·error response·serialization 계약을 테스트로 옮긴 다음 class-validator·class-transformer·Joi의 미사용 부분을 제거한다.
+Vitest 전환을 마친 다음 단계로 Zod + Standard Schema를 독립 적용한다. request DTO와 Joi 환경 검증을 경계별로 옮기되 최종 상태에서 검증 체계 세 개를 남기지 않는다. coercion·default·error response·serialization 계약을 테스트로 옮긴 다음 class-validator·class-transformer·Joi의 미사용 부분을 제거한다.
 
 ### Oxlint
 
@@ -177,8 +177,8 @@ Nest 12의 native instrumentation hook과 Observe 지원은 “OTel native”라
 
 현재 저장소에서는 각 단계를 별도 커밋으로 진행한다.
 
-1. ✅ Restate, Node 26, Nest 12, pnpm, Rspack + `ts-loader`, 백엔드 ESM을 순차 적용한다.
-2. **Vitest로 전환한다.** SWC 없이 Nest decorator metadata, lifecycle, mock, 미실행 파일 포함 100% coverage, 진단·결과 출력을 유지하고 Jest·ts-jest를 함께 제거한다.
+1. ✅ Restate, Node 26, Nest 12, pnpm, Rspack + `ts-loader`, 백엔드 ESM을 순차 적용했다.
+2. ✅ **Vitest로 전환했다.** SWC·Oxc 없이 Nest decorator metadata, lifecycle, mock, 미실행 파일 포함 100% coverage, 진단·결과 출력을 유지하고 Jest·ts-jest를 함께 제거했다. devcontainer 확장 제거만 리빌드 승인 때까지 보류한다.
 3. **Zod + Standard Schema로 전환한다.** request·env 검증 동작을 옮긴 다음 class-validator·class-transformer·Joi 중 더 이상 사용하지 않는 의존성을 제거한다.
 4. **MongoDB 공식 driver로 전환한다.** Mongoose가 담던 schema·index·hook·CAS·transaction 계약을 repository 구현과 테스트로 재구현하고 Mongoose 계층을 제거한다.
 5. **나머지는 명확한 trigger가 있을 때만 하나씩 검토한다.** architecture rule parity가 되면 Oxlint, backend와 데이터 정책이 정해지면 OTel 또는 Observe를 선택한다.

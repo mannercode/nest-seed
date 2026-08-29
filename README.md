@@ -67,14 +67,14 @@
 ## 테스트
 
 ```bash
-pnpm --filter './apps/api' test users.spec --coverage=false        # 단일 spec만 실행 (게이트 끔)
+pnpm --filter './apps/api' test users.spec --coverage.enabled=false # 단일 spec만 실행 (게이트 끔)
 pnpm run e2e                                                     # console·user-app 브라우저 e2e (Playwright)
 pnpm run e2e:report                                              # 마지막 브라우저 e2e HTML 결과 열기
 pnpm run race <scenario>                                         # 분산 레이스 — 다중 복제본 배포 스택을 직접 띄운다
 pnpm run benchmark:api                                           # 성능 측정 — 스택 기동·시드·측정·정리까지 한 번에
 ```
 
-테스트 체계와 작성 규칙은 [apps 문서](docs/apps.md#테스트)가, 분산 레이스·성능 측정의 실행과 해석은 [tests 문서](docs/tests.md)가 설명한다.
+Vitest는 `describe`·`it` 구조를 tree reporter로 터미널에 보여 준다. 전체 API 테스트의 실행별 coverage와 로그는 `apps/api/_output/vitest-runs/r<실행 ID>/`에, common coverage는 `libs/common/_output/coverage/`에 남는다. 테스트 체계와 작성 규칙은 [apps 문서](docs/apps.md#테스트)가, 분산 레이스·성능 측정의 실행과 해석은 [tests 문서](docs/tests.md)가 설명한다.
 
 ## 배포
 
@@ -108,7 +108,7 @@ nest-seed/
 │
 ├── infra/                   ← 개발 인프라 Compose (MongoDB·Redis·VersityGW·NATS·Restate)
 ├── deploy/                  ← Docker Compose, NGINX (앱 배포 진입점)
-├── tools/                   ← 개발·테스트 보조 도구 (free-port, jest 헬퍼, quick tunnel)
+├── tools/                   ← 개발·테스트 보조 도구 (free-port, Vitest 헬퍼, quick tunnel)
 ├── docs/                    ← 폴더 문서와 횡단 주제 참고 문서(reference/)
 ├── .github/                 ← CI 워크플로 (atoz, test-stability)
 │
@@ -133,7 +133,7 @@ nest-seed/
 | @nestjs/jwt + bcrypt             | 역할별 토큰 서명·검증 — `gateway/guards`; 비밀번호 해시 — `core/{users,admins}/internal`                                           |
 | class-validator                  | DTO 검증 — 각 서비스의 `dtos/`                                                                                                     |
 | pnpm workspace                   | 모노레포 구성. libs를 내부 패키지로 공유                                                                                           |
-| Jest + Testcontainers            | 단위·통합 테스트. `libs/common`은 인프라를 직접 띄운다 — [apps 문서](docs/apps.md#테스트)                                          |
+| Vitest + Testcontainers          | 단위·통합 테스트. `libs/common`은 인프라를 직접 띄운다 — [apps 문서](docs/apps.md#테스트)                                          |
 | Playwright                       | console·user-app 브라우저 e2e와 공통 BFF 계약 — `tests/web`                                                                        |
 | k6                               | 성능 비교 하네스 — `tests/api-benchmark`                                                                                           |
 | Docker Compose + NGINX           | 개발 인프라(`infra/`)와 다중 컨테이너 배포(`deploy/`)                                                                              |

@@ -107,7 +107,7 @@ function createBaseConfigs({ tsconfigRootDir, srcGlob = 'src/**', parserOptions 
         },
         {
             files: [`${srcGlob}/__tests__/**/*.ts`],
-            languageOptions: { globals: { ...baseGlobals, ...globals.jest } }
+            languageOptions: { globals: { ...baseGlobals, ...globals.vitest } }
         },
         {
             files: [`${srcGlob}/*.spec.ts`, `${srcGlob}/*.test.ts`],

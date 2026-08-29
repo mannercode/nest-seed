@@ -1,3 +1,4 @@
+import type { MockInstance } from 'vitest'
 import { HttpTestClient, createHttpTestContext } from '@mannercode/testing'
 import { Controller, Get, Post, Provider } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
@@ -5,7 +6,7 @@ import { HttpSuccessLoggerInterceptor } from '../success-logger.interceptor.js'
 
 export type SuccessLoggerInterceptorFixture = {
     httpClient: HttpTestClient
-    spyVerbose: jest.SpyInstance
+    spyVerbose: MockInstance
     teardown: () => Promise<void>
 }
 
@@ -42,7 +43,7 @@ export async function createSuccessLoggerInterceptorFixture(providers: Provider[
     })
 
     const { Logger } = await import('@nestjs/common')
-    const spyVerbose = jest.spyOn(Logger, 'verbose')
+    const spyVerbose = vi.spyOn(Logger, 'verbose')
 
     const teardown = async () => {
         await ctx.close()

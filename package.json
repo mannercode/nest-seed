@@ -52,8 +52,9 @@
         "@testcontainers/mongodb": "12.1.0",
         "@testcontainers/nats": "12.1.0",
         "@types/express": "5.0.6",
-        "@types/jest": "30.0.0",
         "@types/node": "26.4.0",
+        "@vitest/coverage-v8": "4.1.11",
+        "@vitest/eslint-plugin": "1.6.27",
         "class-transformer": "0.5.1",
         "class-validator": "0.15.1",
         "concurrently": "10.0.5",
@@ -64,7 +65,6 @@
         "globals": "17.11.0",
         "husky": "9.1.7",
         "ioredis": "6.0.0",
-        "jest": "30.4.2",
         "joi": "18.2.5",
         "lint-staged": "17.3.0",
         "mongodb": "7.5.0",
@@ -73,8 +73,8 @@
         "reflect-metadata": "0.2.2",
         "rxjs": "7.8.2",
         "testcontainers": "12.1.0",
-        "ts-jest": "29.4.12",
         "typescript": "6.0.3",
-        "typescript-eslint": "8.67.0"
+        "typescript-eslint": "8.67.0",
+        "vitest": "4.1.11"
     }
 }

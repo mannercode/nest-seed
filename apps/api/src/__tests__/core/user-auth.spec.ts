@@ -41,7 +41,7 @@ function pauseNextTokenIssue(jwtAuthService: object) {
     const started = new Promise<void>((resolve) => (announceStarted = resolve))
     const held = new Promise<void>((resolve) => (release = resolve))
 
-    jest.spyOn(internals, 'issueTokensInFamily').mockImplementationOnce(
+    vi.spyOn(internals, 'issueTokensInFamily').mockImplementationOnce(
         async (payload, familyId, userId) => {
             announceStarted()
             await held

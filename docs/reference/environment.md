@@ -41,7 +41,8 @@ API는 Nest `ConfigModule`에서 `.env` 파일을 직접 읽지 않는다. `igno
 ```
 apps/api 통합 테스트 (pnpm --filter './apps/api' test)
   -> .env.api + .env.infra 값이 Dev Container 환경에 이미 주입되어 있음
-  -> jest는 추가 .env 로드 없이 그 process.env로 동작
+  -> Vitest는 추가 .env 로드 없이 그 process.env로 동작
+  -> vitest.config.mjs가 실행 ID를 만들고 setupFiles가 VITEST_POOL_ID별 자원 이름을 파생
 
 pnpm run dev
   -> dev:api가 일반 HTTP(:3000)와 Restate HTTP/2 endpoint(:9080)를 시작
@@ -92,7 +93,7 @@ env 파일은 자기 보간이 안 되고 compose 서비스 정의와 스크립�
 | API 런타임               | `.env.api`의 `PROJECT_ID`, `AUTH_ISSUER`, `AUTH_AUDIENCE`, `ROOT_PASSWORD`                                                                                                          |
 | 인프라 런타임            | `.env.infra`의 `MONGO_DATABASE`, `S3_BUCKET`; Restate workflow 서비스 이름은 `.env.api`의 `PROJECT_ID`를 따른다.                                                                    |
 | 배포 이미지              | `deploy/compose.yml`의 `nest-seed-api`와 deps 이미지 이름. replica 수는 배포 검증 정책이므로 줄이면 api-race·test-stability의 분산 전제가 깨진다([deploy 문서](../deploy.md) 참고). |
-| 앱 세션·테스트 격리 이름 | 두 BFF의 cookie 접두사, Jest Mongo `appName`, API 문서 fixture 이메일처럼 프로젝트끼리 충돌하면 안 되는 내부 값                                                                     |
+| 앱 세션·테스트 격리 이름 | 두 BFF의 cookie 접두사, Vitest Mongo `appName`, API 문서 fixture 이메일처럼 프로젝트끼리 충돌하면 안 되는 내부 값                                                                   |
 | 프런트엔드 환경          | `apps/console/.env`·`apps/user-app/.env`의 `API_BASE_URL`; 신뢰 edge 뒤에서만 `BFF_TRUST_PROXY_HEADERS=true`                                                                        |
 | 저장소 링크·연락처       | README badge, 저자 블로그·귀속 표시는 새 소유권과 유지할 원 저작자 정보를 구분해 의도적으로 검토한다. URL이나 `mannercode.com`·이메일을 기계적으로 치환하지 않는다.                 |
 | GitHub Settings          | ruleset, Actions/Dependabot 권한, `DOCKERHUB_*` secrets, 필요한 fork에만 `ENABLE_SCHEDULED_CI=true` — [GitHub 운영 설정](../github-setup.md)                                        |

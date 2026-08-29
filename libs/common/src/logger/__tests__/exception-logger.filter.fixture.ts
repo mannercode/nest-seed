@@ -1,3 +1,4 @@
+import type { MockInstance } from 'vitest'
 import { HttpTestClient, createHttpTestContext } from '@mannercode/testing'
 import {
     Body,
@@ -17,8 +18,8 @@ import { HttpSuccessLoggerInterceptor } from '../success-logger.interceptor.js'
 
 export type ExceptionLoggerFilterFixture = {
     httpClient: HttpTestClient
-    spyError: jest.SpyInstance
-    spyWarn: jest.SpyInstance
+    spyError: MockInstance
+    spyWarn: MockInstance
     teardown: () => Promise<void>
 }
 
@@ -85,8 +86,8 @@ export async function createExceptionLoggerFilterFixture(
     })
 
     const { Logger } = await import('@nestjs/common')
-    const spyWarn = jest.spyOn(Logger, 'warn')
-    const spyError = jest.spyOn(Logger, 'error')
+    const spyWarn = vi.spyOn(Logger, 'warn')
+    const spyError = vi.spyOn(Logger, 'error')
 
     const teardown = async () => {
         await ctx.close()

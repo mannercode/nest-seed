@@ -15,7 +15,7 @@ const baseSuites = [
         name: 'Nest API',
         reason: '도메인·서비스·저장소·Restate 흐름의 단위/통합 동작과 coverage 계약'
     },
-    { name: '개발 도구', reason: '터널 접근 정책과 Jest 실행 자원 격리 헬퍼 계약' },
+    { name: '개발 도구', reason: '터널 접근 정책과 Vitest 실행 자원 격리 헬퍼 계약' },
     {
         name: 'API race contracts',
         reason: '분산 시나리오가 사용하는 HTTP/SSE deadline과 workflow 목록 계약'

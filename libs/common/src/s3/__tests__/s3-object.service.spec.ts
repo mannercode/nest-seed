@@ -380,7 +380,7 @@ describe('S3ObjectService', () => {
         })
 
         it('contentType을 기대했는데 응답에 없으면 false를 반환한다', async () => {
-            jest.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({ ContentLength: 1 })
+            vi.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({ ContentLength: 1 })
 
             const isCompleted = await fix.s3Service.isUploadComplete({
                 contentType: 'text/plain',
@@ -392,7 +392,7 @@ describe('S3ObjectService', () => {
 
         describe('content-type 정규화', () => {
             it('charset이 붙은 content-type은 base 타입만 비교한다', async () => {
-                jest.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
+                vi.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
                     ContentLength: 1,
                     ContentType: 'application/json; charset=utf-8'
                 })
@@ -406,7 +406,7 @@ describe('S3ObjectService', () => {
             })
 
             it('대소문자나 공백이 섞인 content-type도 정규화 후 비교한다', async () => {
-                jest.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
+                vi.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
                     ContentLength: 1,
                     ContentType: '  Application/JSON  '
                 })
@@ -421,9 +421,7 @@ describe('S3ObjectService', () => {
         })
 
         it('S3 요청이 예기치 않게 실패하면 예외를 던진다', async () => {
-            jest.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(
-                new Error('unexpected')
-            )
+            vi.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(new Error('unexpected'))
 
             const promise = fix.s3Service.isUploadComplete({ key: 'key' })
 
@@ -434,7 +432,7 @@ describe('S3ObjectService', () => {
             const error403 = Object.assign(new Error('forbidden'), {
                 $metadata: { httpStatusCode: 403 }
             })
-            jest.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(error403)
+            vi.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(error403)
 
             await expect(fix.s3Service.isUploadComplete({ key: 'k' })).rejects.toThrow('forbidden')
         })
@@ -446,9 +444,7 @@ describe('S3ObjectService', () => {
                 filename: 'file.txt'
             })
 
-            jest.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(
-                new Error('transient')
-            )
+            vi.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(new Error('transient'))
 
             await expect(fix.s3Service.isUploadComplete({ key: 'k' })).rejects.toThrow('transient')
 
@@ -501,7 +497,7 @@ describe('S3ObjectService', () => {
         })
 
         it('키가 없는 객체는 제외한다', async () => {
-            const sendSpy = jest.spyOn(toAny(fix.s3Service).s3, 'send')
+            const sendSpy = vi.spyOn(toAny(fix.s3Service).s3, 'send')
             sendSpy.mockResolvedValueOnce({
                 Contents: [
                     { Key: 'a.txt', LastModified: new Date('2024-01-01T00:00:00.000Z') },
@@ -578,7 +574,7 @@ describe('S3ObjectService', () => {
         })
 
         it('S3가 따옴표가 붙은 ETag를 반환해도 따옴표를 제거한 값으로 반환한다', async () => {
-            jest.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
+            vi.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
                 Contents: [
                     {
                         ETag: '"abc123"',
@@ -615,7 +611,7 @@ describe('S3ObjectService', () => {
 
     describe('onModuleDestroy', () => {
         it('모듈 종료 시 S3 클라이언트를 destroy한다', async () => {
-            const destroySpy = jest.spyOn(toAny(fix.s3Service).s3, 'destroy')
+            const destroySpy = vi.spyOn(toAny(fix.s3Service).s3, 'destroy')
 
             fix.s3Service.onModuleDestroy()
 
