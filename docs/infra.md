@@ -27,7 +27,9 @@ bash infra/logging/compose.sh up -d --wait
 bash infra/logging/compose.sh ps
 ```
 
-`deploy/compose.yml`에서 명시적으로 opt-in한 API와 NGINX 컨테이너만 Filebeat가 읽는다. 흐름은 `production 한 줄 JSON stdout → Docker json-file(10MB × 3) → Filebeat 디스크 큐(512MB) → Elasticsearch → Kibana`다. API는 ECS 필드를 출력하고, NGINX access log도 JSON으로 출력한다. `/health` 접근 로그는 수집량만 늘리므로 두 계층에서 제외한다. `pnpm run dev` 프로세스는 이 수집 대상이 아니며 개발·테스트 로그는 기존처럼 터미널에서 본다.
+`deploy/compose.yml`에서 명시적으로 opt-in한 API와 NGINX 컨테이너만 Filebeat가 읽는다. 흐름은 `production 한 줄 JSON stdout → Docker json-file(10MB × 3) → Filebeat 디스크 큐(512MB) → Elasticsearch → Kibana`다. API는 ECS 필드를 출력하고, NGINX access log도 JSON으로 출력한다. `/health` 접근 로그는 수집량만 늘리므로 두 계층에서 제외한다. `pnpm run dev` 프로세스는 이 수집 대상이 아니며, 활성화된 개발·테스트 콘솔 로그도 별도 파일로 복제하지 않는다.
+
+Filebeat는 Docker 컨테이너 탐색과 메타데이터 조회를 위해 root로 실행하며 Docker socket을 read-only mount한다. socket의 `:ro`는 Docker API 호출 권한을 제한하는 보안 경계가 아니므로 이 컨테이너와 설정은 Docker daemon을 다룰 수 있는 신뢰된 호스트 구성요소로 취급하고, 신뢰하지 않는 사용자나 설정에 노출하지 않는다.
 
 호스트 브라우저에서는 `http://localhost:5601`, Dev Container 안에서는 `http://log-kibana:5601`로 Kibana에 접근한다. Discover에서 `filebeat-*` data view를 만들고 시간 필드를 `@timestamp`로 고르면 API·NGINX 로그를 함께 검색할 수 있다. Elasticsearch API는 각각 `http://localhost:9200`과 `http://log-elasticsearch:9200`이다.
 
