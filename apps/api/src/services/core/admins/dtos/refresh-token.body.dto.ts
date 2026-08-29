@@ -1,7 +1,8 @@
-import { IsNotEmpty, IsString } from 'class-validator'
+import { z } from 'zod'
+import { nonEmptyStringFromRequest } from './request-value.schema.js'
 
-export class AdminRefreshTokenBodyDto {
-    @IsNotEmpty()
-    @IsString()
-    refreshToken: string
-}
+export const AdminRefreshTokenBodySchema = z.strictObject({
+    refreshToken: nonEmptyStringFromRequest
+})
+
+export type AdminRefreshTokenBodyDto = z.infer<typeof AdminRefreshTokenBodySchema>

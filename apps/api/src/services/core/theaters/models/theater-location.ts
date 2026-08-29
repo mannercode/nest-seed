@@ -1,13 +1,14 @@
-import { IsNumber, Max, Min } from 'class-validator'
+import { z } from 'zod'
+
+const coordinate = z.union([z.number(), z.string(), z.boolean()]).transform(Number)
+
+export const TheaterLocationSchema = z.strictObject({
+    latitude: coordinate.pipe(z.number().min(-90).max(90)),
+    longitude: coordinate.pipe(z.number().min(-180).max(180))
+})
 
 export class TheaterLocation {
-    @IsNumber()
-    @Max(90)
-    @Min(-90)
     latitude: number
 
-    @IsNumber()
-    @Max(180)
-    @Min(-180)
     longitude: number
 }

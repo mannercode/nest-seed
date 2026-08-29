@@ -1,14 +1,10 @@
-import { IsEmail, IsInt, IsOptional, IsString } from 'class-validator'
+import { z } from 'zod'
 
-export class AdminAuthPayload {
+export const AdminAuthPayloadSchema = z.object({
     // 구 복제본이 발급한 claim 없는 토큰은 version 0으로만 호환한다.
-    @IsInt()
-    @IsOptional()
-    authVersion?: number
+    authVersion: z.number().int().nullish(),
+    sub: z.string(),
+    email: z.email()
+})
 
-    @IsString()
-    sub: string
-
-    @IsEmail()
-    email: string
-}
+export type AdminAuthPayload = z.infer<typeof AdminAuthPayloadSchema>

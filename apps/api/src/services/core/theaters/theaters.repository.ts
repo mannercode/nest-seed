@@ -60,7 +60,11 @@ export class TheatersRepository extends CrudRepository<Theater> {
 
                 queryHelper.setQuery(query)
             },
-            pagination: { orderby, page, size }
+            pagination: {
+                orderby: orderby ?? undefined,
+                page: page ?? undefined,
+                size: size ?? undefined
+            }
         })
 
         return pagination
@@ -80,7 +84,7 @@ export class TheatersRepository extends CrudRepository<Theater> {
         const { name } = searchDto
 
         const builder = new QueryBuilder<Theater>()
-        builder.addRegex('name', name)
+        builder.addRegex('name', name ?? undefined)
 
         const query = builder.build(options)
         return query

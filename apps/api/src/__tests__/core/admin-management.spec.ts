@@ -68,7 +68,7 @@ describe('AdminManagement', () => {
             const service = fix.module.get(AdminsService)
 
             // required 필드를 null로 보내 Mongoose ValidatorError를 유도한다.
-            // class-validator는 컨트롤러에만 붙어 있으므로 service를 직접 호출한다.
+            // 요청 스키마 검증은 컨트롤러에만 적용되므로 service를 직접 호출한다.
             const invalidDto = { email: 'x@y.com', name: null as unknown as string, password: 'p' }
 
             // "그대로 던진다"의 핵심은 409로 변환되지 않는 것이므로 예외 타입까지 확인한다.

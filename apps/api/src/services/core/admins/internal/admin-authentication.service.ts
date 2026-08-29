@@ -1,9 +1,12 @@
 import { InjectJwtAuth, JwtAuthService } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { compare, hash, hashSync } from 'bcrypt'
-import { validate } from 'class-validator'
 import { AdminsRepository } from '../admins.repository.js'
-import { AdminAuthPayload, AdminCredentialsDto } from '../dtos/index.js'
+import {
+    type AdminAuthPayload,
+    AdminAuthPayloadSchema,
+    type AdminCredentialsDto
+} from '../dtos/index.js'
 
 // JwtAuthModule.register와 @InjectJwtAuth가 이 이름을 공유해야 같은 JwtAuthService 인스턴스로 묶인다.
 export const ADMIN_JWT_AUTH_NAME = 'admins'
@@ -56,10 +59,10 @@ export class AdminAuthenticationService {
     }
 
     async isAuthPayloadActive(payload: unknown): Promise<boolean> {
-        const candidate = Object.assign(new AdminAuthPayload(), payload)
-        const errors = await validate(candidate)
-        if (errors.length > 0) return false
+        const result = AdminAuthPayloadSchema.safeParse(payload)
+        if (!result.success) return false
 
+        const candidate = result.data
         return this.repository.isAuthVersionCurrent(candidate.sub, candidate.authVersion ?? 0)
     }
 }

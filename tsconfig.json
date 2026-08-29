@@ -11,7 +11,7 @@
         "types": ["node"],
 
         "strict": true,
-        // DTO와 저장 모델은 class-transformer·ODM이 생성 뒤 필드를 채우므로 생성자 초기화를 두지 않는다.
+        // 응답 DTO 매핑과 ODM은 객체 생성 뒤 필드를 채우므로 생성자 초기화를 두지 않는다.
         "strictPropertyInitialization": false,
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,

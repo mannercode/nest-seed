@@ -316,6 +316,49 @@ test('backend TypeScript relative specifiers include runtime extensions', async 
     }
 })
 
+test('API request bodies and queries declare a Standard Schema', async () => {
+    const typescript = require('typescript')
+    const files = await Array.fromAsync(
+        glob('apps/api/src/services/gateway/**/*.http-controller.ts', { cwd: root })
+    )
+    let requestDecoratorCount = 0
+
+    for (const file of files) {
+        const source = typescript.createSourceFile(
+            file,
+            await read(file),
+            typescript.ScriptTarget.Latest,
+            true
+        )
+        const visit = (node) => {
+            if (typescript.isDecorator(node) && typescript.isCallExpression(node.expression)) {
+                const call = node.expression
+                const name = typescript.isIdentifier(call.expression)
+                    ? call.expression.text
+                    : undefined
+                if (name === 'Body' || name === 'Query') {
+                    requestDecoratorCount += 1
+                    const hasSchema = call.arguments.some(
+                        (argument) =>
+                            typescript.isObjectLiteralExpression(argument) &&
+                            argument.properties.some(
+                                (property) =>
+                                    typescript.isPropertyAssignment(property) &&
+                                    typescript.isIdentifier(property.name) &&
+                                    property.name.text === 'schema'
+                            )
+                    )
+                    assert.equal(hasSchema, true, `${file}: @${name} must declare { schema }`)
+                }
+            }
+            typescript.forEachChild(node, visit)
+        }
+        visit(source)
+    }
+
+    assert.ok(requestDecoratorCount > 0, 'no API request decorators were inspected')
+})
+
 test('API build preserves Nest Rspack ESM defaults and replaces only the SWC loader', async () => {
     const packageJson = JSON.parse(await read('apps/api/package.json'))
     const nestCli = JSON.parse(await read('apps/api/nest-cli.json'))

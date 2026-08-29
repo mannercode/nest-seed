@@ -5,7 +5,7 @@
 
 ## 2026-08-29 상태 갱신
 
-후속 승인에 따라 `pnpm@11.24.0`, API production Rspack 2, Nest 백엔드 ESM, Vitest를 순서대로 독립 전환했다. production build는 Rspack + `ts-loader`, 개발 watch는 TSC, API·common·testing의 Nest 테스트는 Vitest 4를 사용한다. Vitest의 Vite 경로에서는 Oxc를 명시적으로 끄고 SWC도 사용하지 않으며, TypeScript 6 `transpileModule` 변환으로 decorator metadata를 보존한다. Jest·ts-jest의 직접 의존성과 설정은 제거했다.
+후속 승인에 따라 `pnpm@11.24.0`, API production Rspack 2, Nest 백엔드 ESM, Vitest, Zod + Standard Schema를 순서대로 독립 전환했다. production build는 Rspack + `ts-loader`, 개발 watch는 TSC, API·common·testing의 Nest 테스트는 Vitest 4를 사용한다. Vitest의 Vite 경로에서는 Oxc를 명시적으로 끄고 SWC도 사용하지 않으며, TypeScript 6 `transpileModule` 변환으로 decorator metadata를 보존한다. Jest·ts-jest와 class-validator·class-transformer의 직접 의존성과 설정은 제거했다.
 
 pnpm은 `pnpm-workspace.yaml`과 `pnpm-lock.yaml`을 단일 기준으로 삼고 내부 package를 `workspace:*`로 연결한다. 아래의 npm 수치·명령과 최초 보류 판단은 2026-08-28 감사 기록으로 읽고, 현재 운영 기준은 이 상태 갱신을 우선한다.
 
@@ -26,7 +26,7 @@ Dependabot의 `package-ecosystem` 값은 pnpm을 다룰 때도 `npm`을 유지�
 | 적용 완료                  | Rspack 2 + `ts-loader`            | Nest 기본 SWC 규칙만 TypeScript compiler 경로로 교체하고 기존 bundle·external·source map 계약 유지             |
 | TS 7.1 도구 지원 뒤 재검토 | TypeScript 7 compiler 전환        | TypeScript 7 API와 Nest·`ts-loader`·typescript-eslint 호환성이 확인된 뒤 TypeScript만 별도로 전환              |
 | 후속 승인·적용             | pnpm 11.24.0                      | package manager만 별도 전환하고 기존 실행·검증 계약은 유지                                                     |
-| 진행 중인 독립 전환        | Zod + Standard Schema             | env 검증을 먼저 옮겼고 request 검증 계약을 이어서 순차 이행                                                    |
+| 적용 완료                  | Zod + Standard Schema             | env와 HTTP request 검증을 옮기고 기존 validation 의존성을 제거                                                 |
 | 후속 독립 전환             | MongoDB 공식 driver               | Mongoose가 소유하던 persistence 계약을 repository 구현과 테스트로 재구현                                       |
 | 보류                       | Oxlint, Argon2id, Winston 제거    | 새 기본값이라는 이유만으로 바꾸기에는 검증 계약 또는 호환성 비용이 더 큼                                       |
 | 유지                       | 나머지 핵심 스택                  | 현재 사용처와 역할이 분명하며 서로 대체 관계가 아님                                                            |
@@ -66,7 +66,7 @@ Dependabot의 `package-ecosystem` 값은 pnpm을 다룰 때도 `npm`을 유지�
 | 애플리케이션 ESM        | 적용 완료                  | API·common·testing에 `type: module`과 `NodeNext`를 적용했다. 상대 specifier는 `.js`, 아키텍처 alias는 `#` package import로 명시하고, Rspack ESM bundle·TSC dev emit·Vitest ESM 실행을 각각 검증한다. [이행 가이드](https://docs.nestjs.com/migration-guide#switching-your-project-to-esm)                                                                                                                                                          |
 | TypeScript strict       | 실질 적용·예외 유지        | `strict`, `noUncheckedIndexedAccess`, `noImplicitReturns` 등이 이미 켜져 있다. `strictPropertyInitialization`을 켜면 DTO·ODM이 외부에서 채우는 필드 약 262개가 걸리며, `!`를 일괄 추가하는 것은 안전성 없이 표기만 늘린다. [TS 필드 초기화 규칙](https://www.typescriptlang.org/docs/handbook/2/classes.html#--strictpropertyinitialization)                                                                                                       |
 | pnpm                    | 당시 보류 → 후속 적용      | pnpm의 엄격한 dependency 접근과 `workspace:` 보장은 장점이다. 2026-08-28에는 npm 명령이 Docker·CI·문서·계약 테스트 29개 파일에 걸쳐 있어 보류했지만, 후속 승인으로 해당 범위만 독립 전환했다. [pnpm workspace](https://pnpm.io/workspaces), [npm workspace](https://docs.npmjs.com/cli/using-npm/workspaces/)                                                                                                                                      |
-| Zod + Standard Schema   | 독립 전환 진행 중          | env 검증은 Zod로 옮겼다. request는 기존 오류 형식·coercion·strict unknown 동작을 고정한 뒤 Nest 12 `StandardSchemaValidationPipe`로 옮긴다. [Nest validation](https://docs.nestjs.com/techniques/validation)                                                                                                                                                                                                                                       |
+| Zod + Standard Schema   | 적용 완료                  | env와 HTTP request 검증을 Zod로 옮겼다. 기존 오류 외형·coercion·strict unknown 동작을 고정하고 Nest 12 `StandardSchemaValidationPipe`를 사용한다. [Nest validation](https://docs.nestjs.com/techniques/validation)                                                                                                                                                                                                                                 |
 | MongoDB 공식 driver     | 후속 독립 전환             | 전환 면적이 크지만 후속 지시에 따라 진행한다. schema·index·hook·CAS·transaction 계약을 repository 구현과 테스트로 대체하며 Zod 전환과 같은 커밋에 섞지 않는다. [MongoDB driver](https://www.mongodb.com/docs/drivers/node/current/)                                                                                                                                                                                                                |
 | Restate                 | 적용 완료                  | durable step, 재시도와 Saga를 맡기고 Temporal 전용 worker·sandbox·DB를 제거한 승인된 교체다. 검증 조건과 제거 범위는 아래 1.1을 따른다. [Restate durable steps](https://docs.restate.dev/develop/ts/durable-steps)                                                                                                                                                                                                                                 |
 | NATS v3                 | 적용 완료·유지             | `@nats-io/transport-node@3.4.0`을 사용해 Nest 12의 NATS v3 전환 요구를 이미 만족한다. [Nest NATS v3](https://docs.nestjs.com/migration-guide#nats-v3)                                                                                                                                                                                                                                                                                              |
@@ -284,7 +284,7 @@ Node 26이 LTS가 된 뒤 `bcrypt verify → 성공 시 Argon2id 재해시` 이�
 
 ### 3.5 새 기본값을 따라가는 연쇄 교체
 
-pnpm, Rspack, ESM과 Vitest는 각각 독립 단계로 적용했다. Vitest는 Oxc와 SWC를 끈 TypeScript 변환으로 동등성을 통과했다. 후속인 Zod·MongoDB 공식 driver, 보류한 Oxlint와 Express → Fastify 같은 교체는 각자 독립된 이익과 현재 계약의 parity가 확인될 때만 검토한다. TypeScript 7은 7.1 API와 관련 도구 지원 뒤 별도로 검토한다. Nest 12 신규 프로젝트의 기본값은 기존 저장소의 사용자 정의 계층 규칙, coverage와 build 계약을 폐기할 근거가 아니다. 여러 축을 한 커밋에서 바꾸지 않는다.
+pnpm, Rspack, ESM, Vitest와 Zod는 각각 독립 단계로 적용했다. Vitest는 Oxc와 SWC를 끈 TypeScript 변환으로 동등성을 통과했다. 후속인 MongoDB 공식 driver, 보류한 Oxlint와 Express → Fastify 같은 교체는 각자 독립된 이익과 현재 계약의 parity가 확인될 때만 검토한다. TypeScript 7은 7.1 API와 관련 도구 지원 뒤 별도로 검토한다. Nest 12 신규 프로젝트의 기본값은 기존 저장소의 사용자 정의 계층 규칙, coverage와 build 계약을 폐기할 근거가 아니다. 여러 축을 한 커밋에서 바꾸지 않는다.
 
 ## 4. 유지
 
@@ -308,7 +308,7 @@ pnpm, Rspack, ESM과 Vitest는 각각 독립 단계로 적용했다. Vitest는 O
 | Core NATS                      | 복제본 간 broadcast와 queue group을 한 연결 계층으로 제공함                      |
 | Restate                        | saga runtime. workflow key·durable step을 쓰고 별도 worker DB·bundle은 두지 않음 |
 | VersityGW + AWS SDK            | S3 presigned upload/download와 checksum 흐름의 실제 호환 경계                    |
-| Zod + class-validator          | Zod는 process env, class-validator는 전환 중인 request DTO를 검증함              |
+| Zod + Standard Schema          | process env와 HTTP request를 한 schema 체계로 검증함                             |
 | `@nestjs/jwt` + 현재 bcrypt    | 토큰과 password hash는 역할이 다름. bcrypt는 안전한 이행안 전까지 유지           |
 | RxJS                           | Nest SSE/Observable 경계에서 실제 사용                                           |
 
@@ -360,8 +360,8 @@ pnpm, Rspack, ESM과 Vitest는 각각 독립 단계로 적용했다. Vitest는 O
     - 동등성 통과 후 Jest·ts-jest 설정과 직접 의존성을 같은 커밋에서 제거
 6. ✅ `refactor(config): replace Joi with Zod`
     - 환경 변수 coercion·default·필수값 계약을 보존하고 Joi를 제거
-7. `refactor(validation): migrate requests to Zod Standard Schema`
-    - request DTO를 옮기고 class-validator·class-transformer는 사용처가 0이 된 다음 제거
+7. ✅ `refactor(validation): migrate requests to Zod Standard Schema`
+    - request DTO를 옮기고 class-validator·class-transformer를 제거
 8. `refactor(persistence): migrate Mongoose repositories to MongoDB driver`
     - schema·index·hook·CAS·transaction·test fixture 계약을 재구현하므로 다른 stack 전환과 섞지 않음
 9. `chore(nats): disable unused jetstream storage`
@@ -371,7 +371,7 @@ pnpm, Rspack, ESM과 Vitest는 각각 독립 단계로 적용했다. Vitest는 O
 11. TypeScript 7.1 API와 Nest·`ts-loader`·typescript-eslint 지원 확인 뒤 TypeScript 7 전환 재검토
     - TypeScript 7.0 CLI와 TypeScript 6 API를 함께 설치하지 않음
 
-Nest 백엔드 production bundle은 Rspack을 사용하되 TypeScript 변환은 `ts-loader`가 담당한다. Nest 테스트는 Oxc·SWC 없이 Vitest와 TypeScript 변환을 사용한다. Next.js 프런트엔드의 `@next/swc-*`는 별도 검토한다. Quick Tunnel과 PlantUML은 유지한다. pnpm·Rspack·ESM·Vitest와 Zod 환경 검증은 독립 단계로 적용했고, 다음은 request Standard Schema, MongoDB driver 순서로 각각 별도 커밋에서 검증한다. Oxlint, Argon2id와 Winston 제거는 현재 후속 승인 범위에 포함하지 않는다.
+Nest 백엔드 production bundle은 Rspack을 사용하되 TypeScript 변환은 `ts-loader`가 담당한다. Nest 테스트는 Oxc·SWC 없이 Vitest와 TypeScript 변환을 사용한다. Next.js 프런트엔드의 `@next/swc-*`는 별도 검토한다. Quick Tunnel과 PlantUML은 유지한다. pnpm·Rspack·ESM·Vitest·Zod Standard Schema는 독립 단계로 적용했고, 다음은 MongoDB driver를 별도 커밋에서 검증한다. Oxlint, Argon2id와 Winston 제거는 현재 후속 승인 범위에 포함하지 않는다.
 
 ## 재검토에 사용한 명령
 

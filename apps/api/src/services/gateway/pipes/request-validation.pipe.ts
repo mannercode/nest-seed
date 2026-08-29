@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, ValidationPipe } from '@nestjs/common'
+import { BadRequestException, Injectable, StandardSchemaValidationPipe } from '@nestjs/common'
 
 export const RequestValidationPipeErrors = {
     Failed: (
@@ -7,26 +7,29 @@ export const RequestValidationPipeErrors = {
 }
 
 @Injectable()
-export class RequestValidationPipe extends ValidationPipe {
+export class RequestValidationPipe extends StandardSchemaValidationPipe {
     constructor() {
         super({
-            disableErrorMessages: false,
-            enableDebugMessages: false,
             exceptionFactory: (errors) =>
                 new BadRequestException(
                     RequestValidationPipeErrors.Failed(
-                        errors.map((error) => ({
-                            constraints: error.constraints,
-                            field: error.property
-                        }))
+                        errors.flatMap((error) => {
+                            const path = (error.path ?? []).map(String)
+                            const keys =
+                                'keys' in error && Array.isArray(error.keys) ? error.keys : []
+                            const fields =
+                                keys.length > 0
+                                    ? keys.map((key) => [...path, String(key)].join('.'))
+                                    : [path.join('.')]
+
+                            return fields.map((field) => ({
+                                constraints: { validation: error.message },
+                                field
+                            }))
+                        })
                     )
                 ),
-            forbidNonWhitelisted: true,
-            forbidUnknownValues: true,
-            skipMissingProperties: false,
-            transform: true,
-            transformOptions: { enableImplicitConversion: true },
-            whitelist: true
+            transform: true
         })
     }
 }

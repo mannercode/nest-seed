@@ -1,37 +1,6 @@
-import { plainToInstance } from 'class-transformer'
-import { validateSync } from 'class-validator'
-import { DateTimeRange, PartialDateTimeRange } from '../date-time-range.js'
+import { DateTimeRange } from '../date-time-range.js'
 
 describe('DateTimeRange', () => {
-    describe('검증', () => {
-        it('유효한 날짜 문자열을 Date 객체로 변환하고 검증을 통과한다', () => {
-            const plainData = { end: '2023-01-02T00:00:00Z', start: '2023-01-01T00:00:00Z' }
-
-            const instance = plainToInstance(DateTimeRange, plainData)
-
-            expect(instance.start).toBeInstanceOf(Date)
-            expect(instance.end).toBeInstanceOf(Date)
-
-            const errors = validateSync(instance)
-            expect(errors).toHaveLength(0)
-        })
-
-        it('유효하지 않은 날짜 문자열은 검증에 실패한다', () => {
-            const plainData = { end: '2023-01-02T00:00:00Z', start: 'invalid-date-string' }
-
-            const instance = plainToInstance(DateTimeRange, plainData)
-
-            expect(instance.start).toBeInstanceOf(Date)
-            expect(isNaN(instance.start.getTime())).toBe(true)
-
-            const errors = validateSync(instance)
-            expect(errors.length).toBeGreaterThan(0)
-            const [firstError] = errors
-            expect(firstError?.property).toBe('start')
-            expect(firstError?.constraints?.isDate).toBeDefined()
-        })
-    })
-
     describe('create', () => {
         it('start와 end가 주어지면 그대로 DateTimeRange를 생성한다', () => {
             const result = DateTimeRange.create({
@@ -94,30 +63,5 @@ describe('DateTimeRange', () => {
             const throwException = () => DateTimeRange.create({ end: new Date() })
             expect(throwException).toThrow('Invalid options provided.')
         })
-    })
-})
-
-describe('PartialDateTimeRange', () => {
-    it('start와 end가 모두 선택적이며 빈 객체로도 검증을 통과한다', () => {
-        const instance = plainToInstance(PartialDateTimeRange, {})
-
-        expect(instance.start).toBeUndefined()
-        expect(instance.end).toBeUndefined()
-
-        const errors = validateSync(instance)
-        expect(errors).toHaveLength(0)
-    })
-
-    it('start와 end 문자열을 Date 객체로 변환한다', () => {
-        const instance = plainToInstance(PartialDateTimeRange, {
-            end: '2023-01-02T00:00:00Z',
-            start: '2023-01-01T00:00:00Z'
-        })
-
-        expect(instance.start).toBeInstanceOf(Date)
-        expect(instance.end).toBeInstanceOf(Date)
-
-        const errors = validateSync(instance)
-        expect(errors).toHaveLength(0)
     })
 })

@@ -1,20 +1,15 @@
-import { Type } from 'class-transformer'
-import { IsDate, IsEmail, IsNotEmpty, IsString } from 'class-validator'
+import { z } from 'zod'
+import {
+    dateFromRequest,
+    nonEmptyStringFromRequest,
+    stringFromRequest
+} from './request-value.schema.js'
 
-export class CreateUserDto {
-    @IsDate()
-    @Type(() => Date)
-    birthDate: Date
+export const CreateUserSchema = z.strictObject({
+    birthDate: dateFromRequest,
+    email: stringFromRequest.pipe(z.email()),
+    name: nonEmptyStringFromRequest,
+    password: nonEmptyStringFromRequest
+})
 
-    @IsEmail()
-    @IsNotEmpty()
-    email: string
-
-    @IsNotEmpty()
-    @IsString()
-    name: string
-
-    @IsNotEmpty()
-    @IsString()
-    password: string
-}
+export type CreateUserDto = z.infer<typeof CreateUserSchema>

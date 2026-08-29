@@ -1,12 +1,10 @@
-import { PaginationDto } from '@mannercode/common'
-import { IsOptional, IsString } from 'class-validator'
+import type { z } from 'zod'
+import { PaginationSchema } from '@mannercode/common'
+import { stringFromRequest } from './request-value.schema.js'
 
-export class SearchUsersPageDto extends PaginationDto {
-    @IsOptional()
-    @IsString()
-    email?: string
+export const SearchUsersPageSchema = PaginationSchema.extend({
+    email: stringFromRequest.nullish(),
+    name: stringFromRequest.nullish()
+})
 
-    @IsOptional()
-    @IsString()
-    name?: string
-}
+export type SearchUsersPageDto = z.infer<typeof SearchUsersPageSchema>

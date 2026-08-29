@@ -130,7 +130,36 @@ describe('LatLong', () => {
             await fix.httpClient
                 .get('/latLong')
                 .query({ location: '91,181' })
-                .badRequest(LatLongErrors.OutOfRange(expect.any(Array)))
+                .badRequest(
+                    LatLongErrors.OutOfRange([
+                        {
+                            constraints: { max: 'latitude must not be greater than 90' },
+                            field: 'latitude'
+                        },
+                        {
+                            constraints: { max: 'longitude must not be greater than 180' },
+                            field: 'longitude'
+                        }
+                    ])
+                )
+        })
+
+        it('음수 범위를 벗어난 좌표는 min 제약으로 400을 반환한다', async () => {
+            await fix.httpClient
+                .get('/latLong')
+                .query({ location: '-91,-181' })
+                .badRequest(
+                    LatLongErrors.OutOfRange([
+                        {
+                            constraints: { min: 'latitude must not be less than -90' },
+                            field: 'latitude'
+                        },
+                        {
+                            constraints: { min: 'longitude must not be less than -180' },
+                            field: 'longitude'
+                        }
+                    ])
+                )
         })
     })
 })

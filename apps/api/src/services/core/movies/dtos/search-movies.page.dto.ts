@@ -1,31 +1,16 @@
-import { PaginationDto } from '@mannercode/common'
-import { Type } from 'class-transformer'
-import { IsDate, IsEnum, IsOptional, IsString } from 'class-validator'
+import { PaginationSchema } from '@mannercode/common'
+import { z } from 'zod'
 import { MovieGenre, MovieRating } from '../models/index.js'
 
-export class SearchMoviesPageDto extends PaginationDto {
-    @IsOptional()
-    @IsString()
-    director?: string
+const dateFromInput = z.union([z.date(), z.string(), z.number(), z.boolean()]).pipe(z.coerce.date())
 
-    @IsEnum(MovieGenre)
-    @IsOptional()
-    genre?: MovieGenre
+export const SearchMoviesPageSchema = PaginationSchema.extend({
+    director: z.string().nullish(),
+    genre: z.enum(MovieGenre).nullish(),
+    plot: z.string().nullish(),
+    rating: z.enum(MovieRating).nullish(),
+    releaseDate: dateFromInput.nullish(),
+    title: z.string().nullish()
+})
 
-    @IsOptional()
-    @IsString()
-    plot?: string
-
-    @IsEnum(MovieRating)
-    @IsOptional()
-    rating?: MovieRating
-
-    @IsDate()
-    @IsOptional()
-    @Type(() => Date)
-    releaseDate?: Date
-
-    @IsOptional()
-    @IsString()
-    title?: string
-}
+export type SearchMoviesPageDto = z.infer<typeof SearchMoviesPageSchema>

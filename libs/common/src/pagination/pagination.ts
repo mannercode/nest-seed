@@ -1,6 +1,5 @@
 import { BadRequestException } from '@nestjs/common'
-import { Transform } from 'class-transformer'
-import { IsEnum, IsInt, IsOptional, IsPositive, IsString } from 'class-validator'
+import { z } from 'zod'
 
 export const PaginationErrors = {
     DirectionInvalid: () => ({
@@ -18,84 +17,71 @@ export const OrderDirection = { Asc: 'asc', Desc: 'desc' } as const
 export type OrderDirection = (typeof OrderDirection)[keyof typeof OrderDirection]
 
 export class OrderBy {
-    @IsEnum(OrderDirection)
     direction: OrderDirection
 
-    @IsString()
     name: string
 }
 
-export class PaginationDto {
-    /**
-     * `orderby`가 들어오는 형태는 두 가지이다.
-     * HTTP 컨트롤러는 `"name:asc"` 같은 문자열로 받고, RPC 컨트롤러는 `{ name, direction }` 객체로 받는다.
-     * 두 입력을 모두 받아 같은 형태로 변환한다.
-     */
-    @IsOptional()
-    @Transform(({ value }) => {
-        if (value === undefined || value === null) {
-            return value
-        }
+function parseOrderBy(value: unknown): null | OrderBy | undefined {
+    if (value === undefined || value === null) {
+        return value
+    }
 
-        if (typeof value === 'object') {
-            // RPC 경로가 넘기는 {name, direction} 객체만 허용한다.
-            // HTTP 쿼리의 `orderby[a]=b` 같은 임의 객체·배열이 그대로 통과하면 정렬 단계에서 500이 된다.
-            const { direction, name } = value as Partial<OrderBy>
-            if (
-                Array.isArray(value) ||
-                typeof name !== 'string' ||
-                !Object.values(OrderDirection).includes(direction as OrderDirection)
-            ) {
-                throw new BadRequestException(PaginationErrors.FormatInvalid())
-            }
-            return { direction, name }
-        }
-
-        if (typeof value !== 'string') {
+    if (typeof value === 'object') {
+        // RPC 경로가 넘기는 {name, direction} 객체만 허용한다.
+        // HTTP 쿼리의 `orderby[a]=b` 같은 임의 객체·배열이 그대로 통과하면 정렬 단계에서 500이 된다.
+        const { direction, name } = value as Partial<OrderBy>
+        if (
+            Array.isArray(value) ||
+            typeof name !== 'string' ||
+            !Object.values(OrderDirection).includes(direction as OrderDirection)
+        ) {
             throw new BadRequestException(PaginationErrors.FormatInvalid())
         }
+        return { direction: direction as OrderDirection, name }
+    }
 
-        const parts = value.split(':').map((part) => part.trim())
+    if (typeof value !== 'string') {
+        throw new BadRequestException(PaginationErrors.FormatInvalid())
+    }
 
-        if (parts.length !== 2) {
-            throw new BadRequestException(PaginationErrors.FormatInvalid())
-        }
+    const parts = value.split(':').map((part) => part.trim())
 
-        const [name, direction] = parts
+    if (parts.length !== 2) {
+        throw new BadRequestException(PaginationErrors.FormatInvalid())
+    }
 
-        if (!name || !direction) {
-            throw new BadRequestException(PaginationErrors.FormatInvalid())
-        }
+    const [name, direction] = parts
 
-        const parsedDirection = direction as OrderDirection
-        if (!Object.values(OrderDirection).includes(parsedDirection)) {
-            throw new BadRequestException(PaginationErrors.DirectionInvalid())
-        }
+    if (!name || !direction) {
+        throw new BadRequestException(PaginationErrors.FormatInvalid())
+    }
 
-        return { direction: parsedDirection, name }
-    })
-    orderby?: OrderBy
+    const parsedDirection = direction as OrderDirection
+    if (!Object.values(OrderDirection).includes(parsedDirection)) {
+        throw new BadRequestException(PaginationErrors.DirectionInvalid())
+    }
 
-    @IsInt()
-    @IsOptional()
-    @IsPositive()
-    page?: number
-
-    @IsInt()
-    @IsOptional()
-    @IsPositive()
-    size?: number
+    return { direction: parsedDirection, name }
 }
+
+const OrderBySchema = z.object({ direction: z.enum(OrderDirection), name: z.string() })
+const PositiveIntegerSchema = z.coerce.number().int().positive().nullable().optional()
+
+export const PaginationSchema = z.strictObject({
+    orderby: z.preprocess(parseOrderBy, OrderBySchema.nullable().optional()),
+    page: PositiveIntegerSchema,
+    size: PositiveIntegerSchema
+})
+
+export type PaginationDto = z.infer<typeof PaginationSchema>
 
 export class PaginationResult<E> {
     items: E[]
 
-    @IsInt()
     page: number
 
-    @IsInt()
     size: number
 
-    @IsInt()
     total: number
 }

@@ -1,41 +1,22 @@
-import { Type } from 'class-transformer'
-import { IsArray, IsDate, IsEnum, IsInt, IsOptional, IsString, MaxLength } from 'class-validator'
+import { z } from 'zod'
 import { MovieGenre, MovieRating } from '../models/index.js'
 
-export class UpsertMovieDto {
-    @IsArray()
-    @IsOptional()
-    @IsString({ each: true })
-    assetIds?: string[]
+const dateFromInput = z.union([z.date(), z.string(), z.number(), z.boolean()]).pipe(z.coerce.date())
+const integerFromInput = z
+    .union([z.number(), z.string(), z.boolean()])
+    .transform(Number)
+    .pipe(z.number().int())
+const stringFromInput = z.union([z.string(), z.number(), z.boolean()]).transform(String)
 
-    @IsOptional()
-    @IsString()
-    director?: string
+export const UpsertMovieSchema = z.strictObject({
+    assetIds: z.array(z.string()).nullish(),
+    director: stringFromInput.nullish(),
+    durationInSeconds: integerFromInput.nullish(),
+    genres: z.array(z.enum(MovieGenre)).nullish(),
+    plot: stringFromInput.pipe(z.string().max(5000)).nullish(),
+    rating: z.enum(MovieRating).nullish(),
+    releaseDate: dateFromInput.nullish(),
+    title: stringFromInput.nullish()
+})
 
-    @IsInt()
-    @IsOptional()
-    durationInSeconds?: number
-
-    @IsArray()
-    @IsEnum(MovieGenre, { each: true })
-    @IsOptional()
-    genres?: MovieGenre[]
-
-    @IsOptional()
-    @IsString()
-    @MaxLength(5000)
-    plot?: string
-
-    @IsEnum(MovieRating)
-    @IsOptional()
-    rating?: MovieRating
-
-    @IsDate()
-    @IsOptional()
-    @Type(() => Date)
-    releaseDate?: Date
-
-    @IsOptional()
-    @IsString()
-    title?: string
-}
+export type UpsertMovieDto = z.infer<typeof UpsertMovieSchema>

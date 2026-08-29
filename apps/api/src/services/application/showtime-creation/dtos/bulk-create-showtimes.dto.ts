@@ -1,35 +1,24 @@
-import { Type } from 'class-transformer'
-import {
-    ArrayNotEmpty,
-    ArrayMaxSize,
-    ArrayUnique,
-    IsArray,
-    IsDate,
-    IsNotEmpty,
-    IsPositive,
-    IsString
-} from 'class-validator'
+import { z } from 'zod'
 
-export class BulkCreateShowtimesDto {
-    @IsNotEmpty()
-    @IsPositive()
-    durationInMinutes: number
+const dateFromInput = z.union([z.date(), z.string(), z.number(), z.boolean()]).pipe(z.coerce.date())
+const positiveNumber = z
+    .union([z.number(), z.string(), z.boolean()])
+    .transform(Number)
+    .pipe(z.number().positive())
+const requiredString = z
+    .union([z.string(), z.number(), z.boolean()])
+    .transform(String)
+    .pipe(z.string().min(1))
 
-    @IsNotEmpty()
-    @IsString()
-    movieId: string
+export const BulkCreateShowtimesSchema = z.strictObject({
+    durationInMinutes: positiveNumber,
+    movieId: requiredString,
+    startTimes: z.array(dateFromInput).min(1).max(20),
+    theaterIds: z
+        .array(z.string())
+        .min(1)
+        .max(20)
+        .refine((ids) => new Set(ids).size === ids.length, 'Duplicate theater IDs are not allowed')
+})
 
-    @ArrayNotEmpty()
-    @ArrayMaxSize(20)
-    @IsArray()
-    @IsDate({ each: true })
-    @Type(() => Date)
-    startTimes: Date[]
-
-    @ArrayNotEmpty()
-    @ArrayMaxSize(20)
-    @ArrayUnique()
-    @IsArray()
-    @IsString({ each: true })
-    theaterIds: string[]
-}
+export type BulkCreateShowtimesDto = z.infer<typeof BulkCreateShowtimesSchema>

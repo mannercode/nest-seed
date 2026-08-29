@@ -1,8 +1,5 @@
-import { ArrayNotEmpty, IsArray, IsString } from 'class-validator'
+import { z } from 'zod'
 
-export class HoldTicketsBodyDto {
-    @ArrayNotEmpty()
-    @IsArray()
-    @IsString({ each: true })
-    ticketIds: string[]
-}
+export const HoldTicketsBodySchema = z.strictObject({ ticketIds: z.array(z.string()).min(1) })
+
+export type HoldTicketsBodyDto = z.infer<typeof HoldTicketsBodySchema>

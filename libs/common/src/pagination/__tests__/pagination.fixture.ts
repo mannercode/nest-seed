@@ -1,14 +1,14 @@
 import { HttpTestClient, createHttpTestContext } from '@mannercode/testing'
-import { Controller, Get, Query, ValidationPipe } from '@nestjs/common'
+import { Controller, Get, Query, StandardSchemaValidationPipe } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
-import { PaginationDto } from '../index.js'
+import { PaginationSchema, type PaginationDto } from '../index.js'
 
 export type PaginationFixture = { httpClient: HttpTestClient; teardown: () => Promise<void> }
 
 @Controller()
 class SamplesController {
     @Get('pagination')
-    async getPagination(@Query() query: PaginationDto) {
+    async getPagination(@Query({ schema: PaginationSchema }) query: PaginationDto) {
         return { response: query }
     }
 }
@@ -16,17 +16,7 @@ class SamplesController {
 export async function createPaginationFixture() {
     const { httpClient, ...ctx } = await createHttpTestContext({
         controllers: [SamplesController],
-        providers: [
-            {
-                provide: APP_PIPE,
-                useFactory() {
-                    return new ValidationPipe({
-                        transform: true,
-                        transformOptions: { enableImplicitConversion: true }
-                    })
-                }
-            }
-        ]
+        providers: [{ provide: APP_PIPE, useClass: StandardSchemaValidationPipe }]
     })
 
     const teardown = async () => {

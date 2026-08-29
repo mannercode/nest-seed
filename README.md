@@ -131,7 +131,7 @@ nest-seed/
 | NestJS                           | API 서버. 가드·파이프를 Passport 없이 직접 구현 — `gateway/`                                                                       |
 | Next.js                          | console·user-app 최소 데모                                                                                                         |
 | @nestjs/jwt + bcrypt             | 역할별 토큰 서명·검증 — `gateway/guards`; 비밀번호 해시 — `core/{users,admins}/internal`                                           |
-| Zod + class-validator            | 환경 설정 검증(Zod), DTO 검증(class-validator) — Zod request 전환 진행 중                                                          |
+| Zod + Standard Schema            | 환경 설정과 HTTP request 검증 — `config/`, `gateway/`                                                                              |
 | pnpm workspace                   | 모노레포 구성. libs를 내부 패키지로 공유                                                                                           |
 | Vitest + Testcontainers          | 단위·통합 테스트. `libs/common`은 인프라를 직접 띄운다 — [apps 문서](docs/apps.md#테스트)                                          |
 | Playwright                       | console·user-app 브라우저 e2e와 공통 BFF 계약 — `tests/web`                                                                        |

@@ -1,5 +1,6 @@
 import { nullDate } from '@mannercode/testing'
 import type { RequestValidationPipeFixture } from './request-validation.pipe.fixture.js'
+import { RequestValidationPipe } from '../request-validation.pipe.js'
 
 describe('RequestValidationPipe', () => {
     let fix: RequestValidationPipeFixture
@@ -11,6 +12,26 @@ describe('RequestValidationPipe', () => {
     })
     afterEach(() => fix.teardown())
 
+    it('경로가 없는 Standard Schema 오류도 안전하게 변환한다', async () => {
+        const schema = {
+            '~standard': {
+                validate: () => ({ issues: [{ message: 'root validation failed' }] }),
+                vendor: 'test',
+                version: 1 as const
+            }
+        }
+
+        await expect(
+            new RequestValidationPipe().transform({}, { schema, type: 'body' })
+        ).rejects.toMatchObject({
+            response: {
+                code: 'ERR_REQUEST_VALIDATION_FAILED',
+                details: [{ constraints: { validation: 'root validation failed' }, field: '' }],
+                message: 'Validation failed'
+            }
+        })
+    })
+
     describe('POST /', () => {
         it('유효한 페이로드는 검증을 통과한다', async () => {
             await fix.httpClient.post('/').body({ date: nullDate, sampleId: 'id' }).created()
@@ -20,7 +41,13 @@ describe('RequestValidationPipe', () => {
             await fix.httpClient
                 .post('/')
                 .body({ date: nullDate, sampleId: 'id', unknown: 'x' })
-                .badRequest()
+                .badRequest({
+                    code: 'ERR_REQUEST_VALIDATION_FAILED',
+                    details: [
+                        { constraints: { validation: expect.any(String) }, field: 'unknown' }
+                    ],
+                    message: 'Validation failed'
+                })
         })
 
         it('필수 필드가 누락되면 400을 반환한다', async () => {
@@ -35,13 +62,7 @@ describe('RequestValidationPipe', () => {
                 .badRequest({
                     code: 'ERR_REQUEST_VALIDATION_FAILED',
                     details: [
-                        {
-                            constraints: {
-                                isNotEmpty: expect.any(String),
-                                isString: expect.any(String)
-                            },
-                            field: 'sampleId'
-                        }
+                        { constraints: { validation: expect.any(String) }, field: 'sampleId' }
                     ],
                     message: 'Validation failed'
                 })

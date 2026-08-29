@@ -1,38 +1,36 @@
-import { HttpTestContext, createHttpTestContext } from '@mannercode/testing'
-import { Body, Controller, ParseArrayPipe, Post } from '@nestjs/common'
+import { createHttpTestContext, type HttpTestContext } from '@mannercode/testing'
+import { Body, Controller, Post } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
-import { Type } from 'class-transformer'
-import { IsDate, IsNotEmpty, IsString } from 'class-validator'
+import { z } from 'zod'
 import { RequestValidationPipe } from '../request-validation.pipe.js'
 
 export type RequestValidationPipeFixture = HttpTestContext & { teardown: () => Promise<void> }
 
-class SampleDto {
-    @IsDate()
-    @Type(() => Date)
-    date: Date
-
-    @IsNotEmpty()
-    @IsString()
-    sampleId: string
-}
+const SampleSchema = z.strictObject({
+    date: z.union([z.date(), z.string(), z.number(), z.boolean()]).pipe(z.coerce.date()),
+    sampleId: z
+        .union([z.string(), z.number(), z.boolean()])
+        .transform(String)
+        .pipe(z.string().min(1))
+})
+type SampleDto = z.infer<typeof SampleSchema>
 
 @Controller()
 class SamplesController {
     @Post('array')
-    async handleArray(@Body(new ParseArrayPipe({ items: SampleDto })) body: SampleDto[]) {
+    async handleArray(@Body({ schema: z.array(SampleSchema) }) body: SampleDto[]) {
         return body
     }
 
     @Post('nested')
     async handleNestedArray(
-        @Body('samples', new ParseArrayPipe({ items: SampleDto })) samples: SampleDto[]
+        @Body('samples', { schema: z.array(SampleSchema) }) samples: SampleDto[]
     ) {
         return samples
     }
 
     @Post()
-    async handleQuery(@Body() body: SampleDto) {
+    async handleQuery(@Body({ schema: SampleSchema }) body: SampleDto) {
         return body
     }
 }

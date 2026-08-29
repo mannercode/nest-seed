@@ -1,12 +1,7 @@
-import { LatLong } from '@mannercode/common'
-import { IsNotEmpty, IsString, ValidateNested } from 'class-validator'
+import type { LatLong } from '@mannercode/common'
 
 export class BookingSearchTheatersDto {
-    @IsNotEmpty()
-    @ValidateNested()
     latLong: LatLong
 
-    @IsNotEmpty()
-    @IsString()
     movieId: string
 }

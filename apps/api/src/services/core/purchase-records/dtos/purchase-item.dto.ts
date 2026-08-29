@@ -1,11 +1,14 @@
-import { IsEnum, IsNotEmpty, IsString } from 'class-validator'
+import { z } from 'zod'
 import { PurchaseItemType } from '../models/index.js'
 
-export class PurchaseItemDto {
-    @IsNotEmpty()
-    @IsString()
-    itemId: string
+const requiredString = z
+    .union([z.string(), z.number(), z.boolean()])
+    .transform(String)
+    .pipe(z.string().min(1))
 
-    @IsEnum(PurchaseItemType)
-    type: PurchaseItemType
-}
+export const PurchaseItemSchema = z.strictObject({
+    itemId: requiredString,
+    type: z.enum(PurchaseItemType)
+})
+
+export type PurchaseItemDto = z.infer<typeof PurchaseItemSchema>

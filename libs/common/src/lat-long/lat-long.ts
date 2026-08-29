@@ -1,6 +1,5 @@
-import { BadRequestException, ExecutionContext, createParamDecorator } from '@nestjs/common'
-import { plainToInstance } from 'class-transformer'
-import { IsNumber, Max, Min, validate } from 'class-validator'
+import { BadRequestException, createParamDecorator, type ExecutionContext } from '@nestjs/common'
+import { z } from 'zod'
 
 const EARTH_RADIUS_METERS = 6_371_000
 const MAX_COORDINATE_LENGTH = 20
@@ -23,15 +22,20 @@ export const LatLongErrors = {
     })
 }
 
+const LatLongSchema = z.strictObject({
+    latitude: z
+        .number()
+        .min(-90, 'latitude must not be less than -90')
+        .max(90, 'latitude must not be greater than 90'),
+    longitude: z
+        .number()
+        .min(-180, 'longitude must not be less than -180')
+        .max(180, 'longitude must not be greater than 180')
+})
+
 export class LatLong {
-    @IsNumber()
-    @Max(90)
-    @Min(-90)
     latitude: number
 
-    @IsNumber()
-    @Max(180)
-    @Min(-180)
     longitude: number
 
     static distanceInMeters(from: LatLong, to: LatLong): number {
@@ -72,7 +76,7 @@ function parseCoordinatePair(value: unknown): null | { latitude: number; longitu
 }
 
 export const ParseLatLongQuery = createParamDecorator(
-    async (paramName: string, ctx: ExecutionContext) => {
+    (paramName: string, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest()
         const raw = request.query[paramName]
 
@@ -86,17 +90,22 @@ export const ParseLatLongQuery = createParamDecorator(
             throw new BadRequestException(LatLongErrors.InvalidFormat())
         }
 
-        const latLong = plainToInstance(LatLong, parsed)
-        const errors = await validate(latLong)
+        const result = LatLongSchema.safeParse(parsed)
 
-        if (errors.length > 0) {
+        if (!result.success) {
             throw new BadRequestException(
                 LatLongErrors.OutOfRange(
-                    errors.map((e) => ({ constraints: e.constraints, field: e.property }))
+                    result.error.issues.map((issue) => {
+                        const constraint = issue.code === 'too_big' ? 'max' : 'min'
+                        return {
+                            constraints: { [constraint]: issue.message },
+                            field: String(issue.path[0])
+                        }
+                    })
                 )
             )
         }
 
-        return latLong
+        return Object.assign(new LatLong(), result.data)
     }
 )

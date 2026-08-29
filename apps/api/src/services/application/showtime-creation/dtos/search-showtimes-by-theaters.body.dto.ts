@@ -1,8 +1,7 @@
-import { ArrayNotEmpty, IsArray, IsString } from 'class-validator'
+import { z } from 'zod'
 
-export class SearchShowtimesByTheatersBodyDto {
-    @ArrayNotEmpty()
-    @IsArray()
-    @IsString({ each: true })
-    theaterIds: string[]
-}
+export const SearchShowtimesByTheatersBodySchema = z.strictObject({
+    theaterIds: z.array(z.string()).min(1)
+})
+
+export type SearchShowtimesByTheatersBodyDto = z.infer<typeof SearchShowtimesByTheatersBodySchema>

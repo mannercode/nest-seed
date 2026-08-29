@@ -112,7 +112,11 @@ export class UsersRepository extends CrudRepository<User> {
 
                 queryHelper.setQuery(query)
             },
-            pagination: { orderby, page, size }
+            pagination: {
+                orderby: orderby ?? undefined,
+                page: page ?? undefined,
+                size: size ?? undefined
+            }
         })
 
         return pagination
@@ -182,8 +186,8 @@ export class UsersRepository extends CrudRepository<User> {
         const { email, name } = searchDto
 
         const builder = new QueryBuilder<User>()
-        builder.addRegex('name', name)
-        builder.addRegex('email', email)
+        builder.addRegex('name', name ?? undefined)
+        builder.addRegex('email', email ?? undefined)
 
         const query = builder.build(options)
         return query

@@ -9,7 +9,7 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model, UpdateQuery } from 'mongoose'
 import { AppConfigService, MONGO_CONNECTION_NAME } from '#config'
-import { CreateAdminDto } from './dtos/index.js'
+import type { CreateAdminDto, UpdateAdminDto } from './dtos/index.js'
 import { Admin } from './models/index.js'
 
 @Injectable()
@@ -70,7 +70,7 @@ export class AdminsRepository extends CrudRepository<Admin> {
         if (!admin) throw new NotFoundException(MongooseErrors.DocumentNotFound(adminId))
     }
 
-    async update(id: string, patch: Partial<Pick<Admin, 'email' | 'name' | 'password'>>) {
+    async update(id: string, patch: UpdateAdminDto) {
         const fields: Partial<Pick<Admin, 'email' | 'name' | 'password'>> = {}
         assignIfDefined(fields, patch, 'email')
         assignIfDefined(fields, patch, 'name')

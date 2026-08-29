@@ -1207,7 +1207,7 @@ describe('PurchaseService', () => {
                     Errors.RequestValidation.Failed([
                         {
                             constraints: {
-                                isTicketPurchaseItems:
+                                validation:
                                     'Food purchases are not supported; only tickets can be purchased.'
                             },
                             field: 'purchaseItems'

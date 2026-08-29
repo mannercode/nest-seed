@@ -1,8 +1,7 @@
 import { BadRequestException } from '@nestjs/common'
-import { plainToInstance } from 'class-transformer'
 import type { PaginationFixture } from './pagination.fixture.js'
 import { CommonErrors } from '../../errors.js'
-import { PaginationDto, PaginationErrors } from '../index.js'
+import { PaginationErrors, PaginationSchema } from '../index.js'
 
 describe('PaginationDto', () => {
     let fix: PaginationFixture
@@ -64,36 +63,40 @@ describe('PaginationDto', () => {
             // 저장소는 size만 가드하므로 비양수 page는 DTO 검증이 유일한 방어선이다.
             await fix.httpClient.get('/pagination').query({ page: 0, size: 10 }).badRequest()
         })
+
+        it('알 수 없는 쿼리 파라미터가 있으면 400을 반환한다', async () => {
+            await fix.httpClient.get('/pagination').query({ unknown: 'value' }).badRequest()
+        })
     })
 
     it('orderby가 이미 객체이면 그대로 유지한다', () => {
         const orderby = { direction: 'asc', name: 'name' }
-        const dto = plainToInstance(PaginationDto, { orderby })
+        const dto = PaginationSchema.parse({ orderby })
 
-        expect((dto as any).orderby).toEqual(orderby)
+        expect(dto.orderby).toEqual(orderby)
     })
 
     it('orderby가 {name, direction} 모양이 아닌 객체이면 BadRequestException을 던진다', () => {
-        expect(() => plainToInstance(PaginationDto, { orderby: { evil: 'x' } as any })).toThrow(
+        expect(() => PaginationSchema.parse({ orderby: { evil: 'x' } })).toThrow(
             BadRequestException
         )
     })
 
     it('orderby가 배열이면 BadRequestException을 던진다', () => {
-        expect(() =>
-            plainToInstance(PaginationDto, { orderby: ['name:asc', 'name:desc'] as any })
-        ).toThrow(BadRequestException)
+        expect(() => PaginationSchema.parse({ orderby: ['name:asc', 'name:desc'] })).toThrow(
+            BadRequestException
+        )
     })
 
     it('orderby가 null이면 그대로 유지한다', () => {
-        const dto = plainToInstance(PaginationDto, { orderby: null })
+        const dto = PaginationSchema.parse({ orderby: null })
 
-        expect((dto as any).orderby).toBeNull()
+        expect(dto.orderby).toBeNull()
     })
 
     it('orderby가 문자열이 아니면 BadRequestException을 던진다', () => {
         try {
-            plainToInstance(PaginationDto, { orderby: 123 as any })
+            PaginationSchema.parse({ orderby: 123 })
             throw new Error('Expected BadRequestException to be thrown')
         } catch (error) {
             expect(error).toBeInstanceOf(BadRequestException)
@@ -105,7 +108,7 @@ describe('PaginationDto', () => {
 
     it('orderby의 name 또는 direction이 비어 있으면 BadRequestException을 던진다', () => {
         try {
-            plainToInstance(PaginationDto, { orderby: 'name:' })
+            PaginationSchema.parse({ orderby: 'name:' })
             throw new Error('Expected BadRequestException to be thrown')
         } catch (error) {
             expect(error).toBeInstanceOf(BadRequestException)
@@ -117,7 +120,7 @@ describe('PaginationDto', () => {
 
     it('orderby가 ":"만 들어오면 BadRequestException을 던진다', () => {
         try {
-            plainToInstance(PaginationDto, { orderby: ':' })
+            PaginationSchema.parse({ orderby: ':' })
             throw new Error('Expected BadRequestException to be thrown')
         } catch (error) {
             expect(error).toBeInstanceOf(BadRequestException)

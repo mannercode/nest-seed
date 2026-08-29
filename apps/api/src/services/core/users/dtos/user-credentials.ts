@@ -1,9 +1,9 @@
-import { IsEmail, IsString } from 'class-validator'
+import { z } from 'zod'
+import { stringFromRequest } from './request-value.schema.js'
 
-export class UserCredentialsDto {
-    @IsEmail()
-    email: string
+export const UserCredentialsSchema = z.strictObject({
+    email: stringFromRequest.pipe(z.email()),
+    password: stringFromRequest
+})
 
-    @IsString()
-    password: string
-}
+export type UserCredentialsDto = z.infer<typeof UserCredentialsSchema>

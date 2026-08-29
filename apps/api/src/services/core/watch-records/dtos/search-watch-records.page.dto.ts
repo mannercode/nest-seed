@@ -1,8 +1,3 @@
-import { PaginationDto } from '@mannercode/common'
-import { IsOptional, IsString } from 'class-validator'
+import type { PaginationDto } from '@mannercode/common'
 
-export class SearchWatchRecordsPageDto extends PaginationDto {
-    @IsOptional()
-    @IsString()
-    userId?: string
-}
+export type SearchWatchRecordsPageDto = PaginationDto & { userId?: string }

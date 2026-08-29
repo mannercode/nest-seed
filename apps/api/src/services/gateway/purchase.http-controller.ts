@@ -1,5 +1,5 @@
 import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common'
-import { CreatePurchaseDto, PurchaseService } from '#application'
+import { CreatePurchaseSchema, PurchaseService, type CreatePurchaseDto } from '#application'
 import type { UserAuthRequest } from './types.js'
 import { UserAuthGuard } from './guards/index.js'
 import { IdempotencyKey } from './idempotency-key.decorator.js'
@@ -12,7 +12,7 @@ export class PurchaseHttpController {
     @Post()
     @UseGuards(UserAuthGuard)
     async processPurchase(
-        @Body() createDto: CreatePurchaseDto,
+        @Body({ schema: CreatePurchaseSchema }) createDto: CreatePurchaseDto,
         @IdempotencyKey(ParseIdempotencyKeyPipe) idempotencyKey: string,
         @Req() req: UserAuthRequest
     ) {

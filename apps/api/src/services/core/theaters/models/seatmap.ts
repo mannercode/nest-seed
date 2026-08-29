@@ -1,30 +1,33 @@
-import { Type } from 'class-transformer'
-import { IsNotEmpty, IsString, ValidateNested } from 'class-validator'
-import { Seat } from './seat.js'
+import { z } from 'zod'
+import type { Seat } from './seat.js'
+
+const requiredString = z
+    .union([z.string(), z.number(), z.boolean()])
+    .transform(String)
+    .pipe(z.string().min(1))
+
+export const SeatRowSchema = z.strictObject({ layout: requiredString, name: requiredString })
 
 export class SeatRow {
-    @IsNotEmpty()
-    @IsString()
     name: string
 
-    @IsNotEmpty()
-    @IsString()
     layout: string
 }
 
+export const SeatBlockSchema = z.strictObject({
+    name: requiredString,
+    rows: z.array(SeatRowSchema)
+})
+
 export class SeatBlock {
-    @IsNotEmpty()
-    @IsString()
     name: string
 
-    @Type(() => SeatRow)
-    @ValidateNested({ each: true })
     rows: SeatRow[]
 }
 
+export const SeatmapSchema = z.strictObject({ blocks: z.array(SeatBlockSchema) })
+
 export class Seatmap {
-    @Type(() => SeatBlock)
-    @ValidateNested({ each: true })
     blocks: SeatBlock[]
 
     static getAllSeats(seatmap: Seatmap) {

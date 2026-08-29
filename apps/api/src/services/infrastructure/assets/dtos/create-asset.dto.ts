@@ -1,22 +1,20 @@
-import { Checksum } from '@mannercode/common'
-import { Type } from 'class-transformer'
-import { IsInt, IsNotEmpty, IsString, Min, ValidateNested } from 'class-validator'
+import { ChecksumSchema } from '@mannercode/common'
+import { z } from 'zod'
 
-export class CreateAssetDto {
-    @IsNotEmpty()
-    @Type(() => Checksum)
-    @ValidateNested()
-    checksum: Checksum
+const integerFromInput = z
+    .union([z.number(), z.string(), z.boolean()])
+    .transform(Number)
+    .pipe(z.number().int())
+const requiredString = z
+    .union([z.string(), z.number(), z.boolean()])
+    .transform(String)
+    .pipe(z.string().min(1))
 
-    @IsNotEmpty()
-    @IsString()
-    mimeType: string
+export const CreateAssetSchema = z.strictObject({
+    checksum: ChecksumSchema,
+    mimeType: requiredString,
+    originalName: requiredString,
+    size: integerFromInput.pipe(z.number().min(1))
+})
 
-    @IsNotEmpty()
-    @IsString()
-    originalName: string
-
-    @IsInt()
-    @Min(1)
-    size: number
-}
+export type CreateAssetDto = z.infer<typeof CreateAssetSchema>

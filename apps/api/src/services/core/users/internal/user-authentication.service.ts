@@ -1,8 +1,11 @@
 import { JwtAuthService, InjectJwtAuth } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { compare, hash, hashSync } from 'bcrypt'
-import { validate } from 'class-validator'
-import { UserAuthPayload, UserCredentialsDto } from '../dtos/index.js'
+import {
+    type UserAuthPayload,
+    UserAuthPayloadSchema,
+    type UserCredentialsDto
+} from '../dtos/index.js'
 import { UsersRepository } from '../users.repository.js'
 
 // OWASP가 legacy bcrypt에 제시하는 최소 work factor다. 운영 하드웨어에 맞춰 더 큰 값을 검토한다.
@@ -56,10 +59,10 @@ export class UserAuthenticationService {
     }
 
     async isAuthPayloadActive(payload: unknown): Promise<boolean> {
-        const candidate = Object.assign(new UserAuthPayload(), payload)
-        const errors = await validate(candidate)
-        if (errors.length > 0) return false
+        const result = UserAuthPayloadSchema.safeParse(payload)
+        if (!result.success) return false
 
+        const candidate = result.data
         return this.repository.isAuthVersionCurrent(candidate.sub, candidate.authVersion ?? 0)
     }
 }

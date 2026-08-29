@@ -1,4 +1,4 @@
-import { PaginationDto } from '@mannercode/common'
+import { PaginationSchema, type PaginationDto } from '@mannercode/common'
 import {
     MessageEvent,
     Body,
@@ -14,10 +14,12 @@ import {
 } from '@nestjs/common'
 import { map, Observable } from 'rxjs'
 import {
-    BulkCreateShowtimesDto,
-    SearchShowtimesByTheatersBodyDto,
+    BulkCreateShowtimesSchema,
+    SearchShowtimesByTheatersBodySchema,
     ShowtimeCreationEvents,
-    ShowtimeCreationService
+    ShowtimeCreationService,
+    type BulkCreateShowtimesDto,
+    type SearchShowtimesByTheatersBodyDto
 } from '#application'
 import type { AdminAuthRequest } from './types.js'
 import { AdminAuthGuard } from './guards/index.js'
@@ -40,7 +42,7 @@ export class ShowtimeCreationHttpController {
     @HttpCode(HttpStatus.ACCEPTED)
     @Post('showtimes')
     async requestShowtimeCreation(
-        @Body() createDto: BulkCreateShowtimesDto,
+        @Body({ schema: BulkCreateShowtimesSchema }) createDto: BulkCreateShowtimesDto,
         @IdempotencyKey(ParseIdempotencyKeyPipe) idempotencyKey: string,
         @Req() req: AdminAuthRequest
     ) {
@@ -52,18 +54,21 @@ export class ShowtimeCreationHttpController {
     }
 
     @Get('movies')
-    async searchMoviesPage(@Query() searchDto: PaginationDto) {
+    async searchMoviesPage(@Query({ schema: PaginationSchema }) searchDto: PaginationDto) {
         return this.showtimeCreationService.searchMoviesPage(searchDto)
     }
 
     @HttpCode(HttpStatus.OK)
     @Post('showtimes/search')
-    async searchShowtimesByTheaterIds(@Body() body: SearchShowtimesByTheatersBodyDto) {
+    async searchShowtimesByTheaterIds(
+        @Body({ schema: SearchShowtimesByTheatersBodySchema })
+        body: SearchShowtimesByTheatersBodyDto
+    ) {
         return this.showtimeCreationService.searchShowtimes(body.theaterIds)
     }
 
     @Get('theaters')
-    async searchTheatersPage(@Query() searchDto: PaginationDto) {
+    async searchTheatersPage(@Query({ schema: PaginationSchema }) searchDto: PaginationDto) {
         return this.showtimeCreationService.searchTheatersPage(searchDto)
     }
 }

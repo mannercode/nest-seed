@@ -15,11 +15,13 @@ import {
 import {
     MovieErrors,
     MoviesService,
-    SearchMoviesPageDto,
+    SearchMoviesPageSchema,
     ShowtimesService,
-    UpsertMovieDto
+    type SearchMoviesPageDto,
+    type UpsertMovieDto,
+    UpsertMovieSchema
 } from '#core'
-import { CreateAssetDto } from '#infrastructure'
+import { CreateAssetSchema, type CreateAssetDto } from '#infrastructure'
 import { AdminAuthGuard } from './guards/index.js'
 
 @Controller('movies')
@@ -31,13 +33,16 @@ export class MoviesHttpController {
 
     @Post()
     @UseGuards(AdminAuthGuard)
-    async create(@Body() upsertDto: UpsertMovieDto) {
+    async create(@Body({ schema: UpsertMovieSchema }) upsertDto: UpsertMovieDto) {
         return this.moviesService.create(upsertDto)
     }
 
     @Post(':movieId/assets')
     @UseGuards(AdminAuthGuard)
-    createAsset(@Param('movieId') movieId: string, @Body() createDto: CreateAssetDto) {
+    createAsset(
+        @Param('movieId') movieId: string,
+        @Body({ schema: CreateAssetSchema }) createDto: CreateAssetDto
+    ) {
         return this.moviesService.createAsset(movieId, createDto)
     }
 
@@ -81,13 +86,16 @@ export class MoviesHttpController {
     }
 
     @Get()
-    async searchPage(@Query() searchDto: SearchMoviesPageDto) {
+    async searchPage(@Query({ schema: SearchMoviesPageSchema }) searchDto: SearchMoviesPageDto) {
         return this.moviesService.searchPage(searchDto)
     }
 
     @Patch(':movieId')
     @UseGuards(AdminAuthGuard)
-    async update(@Param('movieId') movieId: string, @Body() upsertDto: UpsertMovieDto) {
+    async update(
+        @Param('movieId') movieId: string,
+        @Body({ schema: UpsertMovieSchema }) upsertDto: UpsertMovieDto
+    ) {
         return this.moviesService.update(movieId, upsertDto)
     }
 }

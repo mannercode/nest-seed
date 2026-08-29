@@ -1,15 +1,10 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator'
+import { z } from 'zod'
+import { nonEmptyStringFromRequest, stringFromRequest } from './request-value.schema.js'
 
-export class CreateAdminDto {
-    @IsEmail()
-    @IsNotEmpty()
-    email: string
+export const CreateAdminSchema = z.strictObject({
+    email: stringFromRequest.pipe(z.email()),
+    name: nonEmptyStringFromRequest,
+    password: nonEmptyStringFromRequest
+})
 
-    @IsNotEmpty()
-    @IsString()
-    name: string
-
-    @IsNotEmpty()
-    @IsString()
-    password: string
-}
+export type CreateAdminDto = z.infer<typeof CreateAdminSchema>

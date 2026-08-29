@@ -86,7 +86,7 @@ export class UsersService {
 
     async update(userId: string, updateDto: UpdateUserDto) {
         const patch = { ...updateDto }
-        if (patch.password !== undefined) {
+        if (typeof patch.password === 'string') {
             patch.password = await this.authenticationService.hash(patch.password)
         }
 

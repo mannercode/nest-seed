@@ -1,8 +1,6 @@
-import { PaginationDto } from '@mannercode/common'
-import { IsOptional, IsString } from 'class-validator'
+import { PaginationSchema } from '@mannercode/common'
+import { z } from 'zod'
 
-export class SearchTheatersPageDto extends PaginationDto {
-    @IsOptional()
-    @IsString()
-    name?: string
-}
+export const SearchTheatersPageSchema = PaginationSchema.extend({ name: z.string().nullish() })
+
+export type SearchTheatersPageDto = z.infer<typeof SearchTheatersPageSchema>

@@ -92,7 +92,7 @@ describe('UsersService', () => {
             const service = fix.module.get(UsersService)
 
             // `birthDate`에 잘못된 형식을 넣어 Mongoose의 CastError를 일으킨다.
-            // 컨트롤러의 class-validator가 먼저 검출하지 않도록 서비스를 직접 호출한다.
+            // 컨트롤러의 요청 스키마가 먼저 검출하지 않도록 서비스를 직접 호출한다.
             const invalidDto = buildCreateUserDto({ birthDate: 'not-a-date' as unknown as Date })
 
             // "그대로 던진다"의 핵심은 409로 변환되지 않는 것이므로 예외 타입까지 확인한다.

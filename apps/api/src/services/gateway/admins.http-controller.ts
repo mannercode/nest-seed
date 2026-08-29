@@ -14,11 +14,15 @@ import {
     UseGuards
 } from '@nestjs/common'
 import {
-    AdminCredentialsDto,
-    AdminRefreshTokenBodyDto,
+    AdminCredentialsSchema,
+    AdminRefreshTokenBodySchema,
     AdminsService,
-    CreateAdminDto,
-    UpdateAdminDto
+    CreateAdminSchema,
+    type AdminCredentialsDto,
+    type AdminRefreshTokenBodyDto,
+    type CreateAdminDto,
+    type UpdateAdminDto,
+    UpdateAdminSchema
 } from '#core'
 import type { AdminAuthRequest } from './types.js'
 import { AdminAuthGuard, AuthErrors, RootAuthGuard } from './guards/index.js'
@@ -33,7 +37,10 @@ export class AdminsHttpController {
 
     @HttpCode(HttpStatus.OK)
     @Post('login')
-    async login(@Body() body: AdminCredentialsDto, @Ip() ip: string) {
+    async login(
+        @Body({ schema: AdminCredentialsSchema }) body: AdminCredentialsDto,
+        @Ip() ip: string
+    ) {
         await this.loginRateLimiter.assertAllowed('admin', body.email, ip)
 
         const result = await this.adminsService.login(body)
@@ -48,13 +55,15 @@ export class AdminsHttpController {
 
     @HttpCode(HttpStatus.OK)
     @Post('refresh')
-    async refreshToken(@Body() body: AdminRefreshTokenBodyDto) {
+    async refreshToken(
+        @Body({ schema: AdminRefreshTokenBodySchema }) body: AdminRefreshTokenBodyDto
+    ) {
         return this.adminsService.refreshAuthTokens(body.refreshToken)
     }
 
     @HttpCode(HttpStatus.NO_CONTENT)
     @Post('logout')
-    async logout(@Body() body: AdminRefreshTokenBodyDto) {
+    async logout(@Body({ schema: AdminRefreshTokenBodySchema }) body: AdminRefreshTokenBodyDto) {
         await this.adminsService.revokeRefreshToken(body.refreshToken)
     }
 
@@ -67,13 +76,16 @@ export class AdminsHttpController {
 
     @Patch('me')
     @UseGuards(AdminAuthGuard)
-    async updateMe(@Req() req: AdminAuthRequest, @Body() body: UpdateAdminDto) {
+    async updateMe(
+        @Req() req: AdminAuthRequest,
+        @Body({ schema: UpdateAdminSchema }) body: UpdateAdminDto
+    ) {
         return this.adminsService.update(req.user.sub, body)
     }
 
     @Post()
     @UseGuards(RootAuthGuard)
-    async create(@Body() body: CreateAdminDto) {
+    async create(@Body({ schema: CreateAdminSchema }) body: CreateAdminDto) {
         return this.adminsService.create(body)
     }
 

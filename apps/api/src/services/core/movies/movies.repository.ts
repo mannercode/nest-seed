@@ -60,7 +60,11 @@ export class MoviesRepository extends CrudRepository<Movie> {
 
                 queryHelper.setQuery(query)
             },
-            pagination: { orderby, page, size }
+            pagination: {
+                orderby: orderby ?? undefined,
+                page: page ?? undefined,
+                size: size ?? undefined
+            }
         })
 
         return pagination
@@ -92,11 +96,11 @@ export class MoviesRepository extends CrudRepository<Movie> {
 
         const builder = new QueryBuilder<Movie>()
         builder.addEquals('isPublished', true)
-        builder.addRegex('title', title)
+        builder.addRegex('title', title ?? undefined)
         builder.addEquals('genres', genre)
         builder.addEquals('releaseDate', releaseDate)
-        builder.addRegex('plot', plot)
-        builder.addRegex('director', director)
+        builder.addRegex('plot', plot ?? undefined)
+        builder.addRegex('director', director ?? undefined)
         builder.addEquals('rating', rating)
 
         const query = builder.build(options)

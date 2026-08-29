@@ -1,19 +1,15 @@
-import { Type } from 'class-transformer'
-import { IsNotEmpty, IsString, ValidateNested } from 'class-validator'
-import { Seatmap, TheaterLocation } from '../models/index.js'
+import { z } from 'zod'
+import { SeatmapSchema, TheaterLocationSchema } from '../models/index.js'
 
-export class CreateTheaterDto {
-    @IsNotEmpty()
-    @Type(() => TheaterLocation)
-    @ValidateNested()
-    location: TheaterLocation
+const requiredString = z
+    .union([z.string(), z.number(), z.boolean()])
+    .transform(String)
+    .pipe(z.string().min(1))
 
-    @IsNotEmpty()
-    @IsString()
-    name: string
+export const CreateTheaterSchema = z.strictObject({
+    location: TheaterLocationSchema,
+    name: requiredString,
+    seatmap: SeatmapSchema
+})
 
-    @IsNotEmpty()
-    @Type(() => Seatmap)
-    @ValidateNested()
-    seatmap: Seatmap
-}
+export type CreateTheaterDto = z.infer<typeof CreateTheaterSchema>

@@ -1,6 +1,5 @@
 import { createCrudSchema, CrudSchema } from '@mannercode/common'
 import { Prop, Schema } from '@nestjs/mongoose'
-import { IsEnum, IsNotEmpty, IsString } from 'class-validator'
 import { MONGOOSE_SCHEMA_OPTIONS } from '#config'
 
 export const PurchaseItemType = { Foods: 'foods', Tickets: 'tickets' } as const
@@ -22,11 +21,8 @@ export const PurchaseEventStatus = { Pending: 'pending', Published: 'published' 
 export type PurchaseEventStatus = (typeof PurchaseEventStatus)[keyof typeof PurchaseEventStatus]
 
 export class PurchaseItem {
-    @IsNotEmpty()
-    @IsString()
     itemId: string
 
-    @IsEnum(PurchaseItemType)
     type: PurchaseItemType
 }
 

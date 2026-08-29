@@ -15,12 +15,17 @@ import {
     UseGuards
 } from '@nestjs/common'
 import {
-    CreateUserDto,
+    CreateUserSchema,
     PurchaseRecordsService,
-    RefreshTokenBodyDto,
-    SearchUsersPageDto,
-    UpdateUserDto,
-    UserCredentialsDto,
+    RefreshTokenBodySchema,
+    SearchUsersPageSchema,
+    type CreateUserDto,
+    type RefreshTokenBodyDto,
+    type SearchUsersPageDto,
+    type UpdateUserDto,
+    type UserCredentialsDto,
+    UpdateUserSchema,
+    UserCredentialsSchema,
     UsersService
 } from '#core'
 import type { UserAuthRequest } from './types.js'
@@ -37,7 +42,7 @@ export class UsersHttpController {
     ) {}
 
     @Post()
-    async create(@Body() createDto: CreateUserDto) {
+    async create(@Body({ schema: CreateUserSchema }) createDto: CreateUserDto) {
         return this.usersService.create(createDto)
     }
 
@@ -58,7 +63,10 @@ export class UsersHttpController {
 
     @HttpCode(HttpStatus.OK)
     @Post('login')
-    async login(@Body() body: UserCredentialsDto, @Ip() ip: string) {
+    async login(
+        @Body({ schema: UserCredentialsSchema }) body: UserCredentialsDto,
+        @Ip() ip: string
+    ) {
         await this.loginRateLimiter.assertAllowed('user', body.email, ip)
 
         const result = await this.usersService.login(body)
@@ -73,13 +81,13 @@ export class UsersHttpController {
 
     @HttpCode(HttpStatus.OK)
     @Post('refresh')
-    async refreshToken(@Body() body: RefreshTokenBodyDto) {
+    async refreshToken(@Body({ schema: RefreshTokenBodySchema }) body: RefreshTokenBodyDto) {
         return this.usersService.refreshAuthTokens(body.refreshToken)
     }
 
     @HttpCode(HttpStatus.NO_CONTENT)
     @Post('logout')
-    async logout(@Body() body: RefreshTokenBodyDto) {
+    async logout(@Body({ schema: RefreshTokenBodySchema }) body: RefreshTokenBodyDto) {
         await this.usersService.revokeRefreshToken(body.refreshToken)
     }
 
@@ -99,7 +107,10 @@ export class UsersHttpController {
 
     @Patch('me')
     @UseGuards(UserAuthGuard)
-    async updateMe(@Req() req: UserAuthRequest, @Body() updateDto: UpdateUserDto) {
+    async updateMe(
+        @Req() req: UserAuthRequest,
+        @Body({ schema: UpdateUserSchema }) updateDto: UpdateUserDto
+    ) {
         return this.usersService.update(req.user.sub, updateDto)
     }
 
@@ -111,7 +122,7 @@ export class UsersHttpController {
 
     @Get()
     @UseGuards(AdminAuthGuard)
-    async searchPage(@Query() searchDto: SearchUsersPageDto) {
+    async searchPage(@Query({ schema: SearchUsersPageSchema }) searchDto: SearchUsersPageDto) {
         return this.usersService.searchPage(searchDto)
     }
 
@@ -124,7 +135,10 @@ export class UsersHttpController {
 
     @Patch(':userId')
     @UseGuards(AdminAuthGuard)
-    async update(@Param('userId') userId: string, @Body() updateDto: UpdateUserDto) {
+    async update(
+        @Param('userId') userId: string,
+        @Body({ schema: UpdateUserSchema }) updateDto: UpdateUserDto
+    ) {
         return this.usersService.update(userId, updateDto)
     }
 }

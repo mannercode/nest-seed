@@ -10,7 +10,7 @@ import {
     Req,
     UseGuards
 } from '@nestjs/common'
-import { BookingService, HoldTicketsBodyDto } from '#application'
+import { BookingService, HoldTicketsBodySchema, type HoldTicketsBodyDto } from '#application'
 import type { UserAuthRequest } from './types.js'
 import { UserAuthGuard } from './guards/index.js'
 import { ParseShowdatePipe } from './pipes/index.js'
@@ -29,7 +29,7 @@ export class BookingHttpController {
     @UseGuards(UserAuthGuard)
     async holdTickets(
         @Param('showtimeId') showtimeId: string,
-        @Body() body: HoldTicketsBodyDto,
+        @Body({ schema: HoldTicketsBodySchema }) body: HoldTicketsBodyDto,
         @Req() req: UserAuthRequest
     ) {
         const userId = req.user.sub

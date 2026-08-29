@@ -13,12 +13,15 @@ import {
     UseGuards
 } from '@nestjs/common'
 import {
-    CreateTheaterDto,
-    SearchTheatersPageDto,
+    CreateTheaterSchema,
+    SearchTheatersPageSchema,
     ShowtimesService,
     TheaterErrors,
     TheatersService,
-    UpdateTheaterDto
+    type CreateTheaterDto,
+    type SearchTheatersPageDto,
+    type UpdateTheaterDto,
+    UpdateTheaterSchema
 } from '#core'
 import { AdminAuthGuard } from './guards/index.js'
 
@@ -31,7 +34,7 @@ export class TheatersHttpController {
 
     @Post()
     @UseGuards(AdminAuthGuard)
-    async create(@Body() createDto: CreateTheaterDto) {
+    async create(@Body({ schema: CreateTheaterSchema }) createDto: CreateTheaterDto) {
         return this.theatersService.create(createDto)
     }
 
@@ -54,13 +57,18 @@ export class TheatersHttpController {
     }
 
     @Get()
-    async searchPage(@Query() searchDto: SearchTheatersPageDto) {
+    async searchPage(
+        @Query({ schema: SearchTheatersPageSchema }) searchDto: SearchTheatersPageDto
+    ) {
         return this.theatersService.searchPage(searchDto)
     }
 
     @Patch(':theaterId')
     @UseGuards(AdminAuthGuard)
-    async update(@Param('theaterId') theaterId: string, @Body() updateDto: UpdateTheaterDto) {
+    async update(
+        @Param('theaterId') theaterId: string,
+        @Body({ schema: UpdateTheaterSchema }) updateDto: UpdateTheaterDto
+    ) {
         return this.theatersService.update(theaterId, updateDto)
     }
 }

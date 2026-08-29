@@ -1,8 +1,24 @@
 import fs from 'fs/promises'
-import { Checksum } from '../checksum.js'
+import { Checksum, ChecksumSchema } from '../checksum.js'
 import { PathUtil } from '../path.js'
 
 describe('Checksum', () => {
+    describe('schema', () => {
+        it('지원하는 알고리즘과 비어 있지 않은 문자열을 허용한다', () => {
+            expect(
+                ChecksumSchema.parse({ algorithm: 'sha256', base64: 'encoded-checksum' })
+            ).toEqual({ algorithm: 'sha256', base64: 'encoded-checksum' })
+        })
+
+        it('지원하지 않는 알고리즘, 빈 값과 알 수 없는 필드를 거부한다', () => {
+            expect(() => ChecksumSchema.parse({ algorithm: 'md5', base64: 'value' })).toThrow()
+            expect(() => ChecksumSchema.parse({ algorithm: 'sha256', base64: '' })).toThrow()
+            expect(() =>
+                ChecksumSchema.parse({ algorithm: 'sha256', base64: 'value', unknown: true })
+            ).toThrow()
+        })
+    })
+
     describe('fromFile', () => {
         let tempDir: string
         let filePath: string

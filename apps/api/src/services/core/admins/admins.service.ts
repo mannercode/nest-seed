@@ -28,8 +28,8 @@ export class AdminsService {
     }
 
     async update(id: string, updateDto: UpdateAdminDto) {
-        const patch: Partial<Pick<Admin, 'email' | 'name' | 'password'>> = { ...updateDto }
-        if (patch.password !== undefined) {
+        const patch = { ...updateDto }
+        if (typeof patch.password === 'string') {
             patch.password = await this.authenticationService.hash(patch.password)
         }
 
