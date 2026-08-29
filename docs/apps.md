@@ -680,7 +680,7 @@ bash deploy/verify.sh
 bash apps/api/api-docs/run.sh
 ```
 
-API 배포 번들은 `nest build -b webpack`으로 만든다. Restate 워크플로는 NestJS 제공자와 같은 API 번들 안에서 실행되므로 별도 workflow bundle이나 sandbox 패키지가 없다. 현재 Webpack을 유지하는 이유는 [webpack.config.js](../apps/api/webpack.config.js)의 머리 주석과 [스택 검토](../STACK_REVIEW.md)에 있다.
+API 배포 번들은 `nest build -b rspack --rspackPath rspack.config.cjs`로 만든다. Nest 기본 SWC 변환 규칙은 [rspack.config.cjs](../apps/api/rspack.config.cjs)에서 `ts-loader`로 교체한다. Restate 워크플로는 NestJS 제공자와 같은 API 번들 안에서 실행되므로 별도 workflow bundle이나 sandbox 패키지가 없다. 개발 watch는 별도 `development.ts` 진입점을 보존하기 위해 TSC를 유지한다.
 
 ## console·user-app — 최소 데모
 

@@ -183,6 +183,47 @@ test('API image passes production mode to pnpm deploy without mutating the build
     assert.doesNotMatch(dockerfile, /--prod deploy/)
 })
 
+test('API build uses Rspack with the TypeScript compiler instead of an SWC transformer', async () => {
+    const packageJson = JSON.parse(await read('apps/api/package.json'))
+    const nestCli = JSON.parse(await read('apps/api/nest-cli.json'))
+    const dockerignore = await read('.dockerignore')
+    const createConfig = require(join(root, 'apps/api/rspack.config.cjs'))
+    class TypeCheckPlugin {}
+    const defaults = {
+        entry: join(root, 'apps/api/src/development.ts'),
+        module: { rules: [{ use: [{ loader: 'builtin:swc-loader' }] }] },
+        output: {},
+        externals: [() => undefined],
+        resolve: {},
+        plugins: [new TypeCheckPlugin()]
+    }
+    const config = createConfig(defaults)
+    const loaders = config.module.rules.flatMap((rule) =>
+        (Array.isArray(rule.use) ? rule.use : [rule.use]).filter(Boolean)
+    )
+
+    assert.equal(packageJson.scripts.build, 'nest build -b rspack --rspackPath rspack.config.cjs')
+    assert.equal(packageJson.scripts.dev, 'nest start --watch')
+    assert.equal(nestCli.compilerOptions.builder, 'tsc')
+    assert.equal(packageJson.devDependencies['@rspack/core'], '2.2.1')
+    assert.match(dockerignore, /^!\/apps\/\*\/rspack\.config\.cjs$/m)
+    assert.doesNotMatch(dockerignore, /webpack\.config/)
+    assert.equal(config.entry, join(root, 'apps/api/src/main.ts'))
+    assert.equal(config.output.path, join(root, 'apps/api/_output/dist'))
+    assert.equal(config.output.filename, 'index.js')
+    assert.deepEqual(
+        loaders.map((loader) => (typeof loader === 'string' ? loader : loader.loader)),
+        [require.resolve(join(root, 'apps/api/node_modules/ts-loader'))]
+    )
+    assert.equal(loaders[0].options.configFile, join(root, 'apps/api/tsconfig.build.json'))
+    assert.equal(loaders[0].options.transpileOnly, true)
+    assert.equal(config.context, join(root, 'apps/api'))
+    assert.equal(config.resolve.tsConfig, join(root, 'apps/api/tsconfig.build.json'))
+    assert.deepEqual(config.resolve.plugins, [])
+    assert.deepEqual(config.plugins, defaults.plugins)
+    assert.doesNotMatch(JSON.stringify(config), /(?:builtin:)?swc-loader|@swc\//i)
+})
+
 test('dependency image hashing failure stops before Docker', async (t) => {
     const mockBin = await mkdtemp(join(tmpdir(), 'nest-seed-hash-failure-'))
     const dockerLog = join(mockBin, 'docker.log')

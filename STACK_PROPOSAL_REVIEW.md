@@ -127,7 +127,7 @@ Nest 12 core package가 ESM-only인 것은 맞지만 애플리케이션 자체�
 
 ### ESM
 
-Greenfield에는 채택한다. 현재 저장소에서는 `type: module` 한 줄로 끝나지 않는다. TypeScript를 `nodenext` 조합으로 맞추고, 상대 import 확장자, Jest/Node 스크립트, custom Webpack output, Docker entrypoint와 source map을 함께 검증해야 한다. Nest 12 upgrade와 앱 ESM migration을 같은 일로 취급하지 않는다.
+Greenfield에는 채택한다. 현재 저장소에서는 `type: module` 한 줄로 끝나지 않는다. TypeScript를 `nodenext` 조합으로 맞추고, 상대 import 확장자, Jest/Node 스크립트, custom Rspack output, Docker entrypoint와 source map을 함께 검증해야 한다. Nest 12 upgrade와 앱 ESM migration을 같은 일로 취급하지 않는다.
 
 ### pnpm
 

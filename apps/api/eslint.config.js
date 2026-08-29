@@ -61,7 +61,7 @@ module.exports = [
     {
         // 런타임 도우미·Jest 연결·저장소 설정은 CommonJS Node 파일이다.
         // 생성 번들은 _output 아래에 있어 이 소스 glob에 포함되지 않는다.
-        files: ['*.js', 'scripts/**/*.js'],
+        files: ['*.{cjs,js}', 'scripts/**/*.js'],
         linterOptions: { reportUnusedDisableDirectives: true },
         languageOptions: { globals: { ...baseGlobals }, sourceType: 'commonjs' },
         rules: {
