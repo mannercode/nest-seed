@@ -133,7 +133,7 @@ If a tool is new to you, start from the code path or document in the "Where it's
 | NestJS                           | API server. Guards and pipes implemented directly, without Passport — `gateway/`                                                                                |
 | Next.js                          | console and user-app minimal demos                                                                                                                              |
 | @nestjs/jwt + bcrypt             | Per-role token signing/verification — `gateway/guards`; password hashing — `core/{users,admins}/internal`                                                       |
-| class-validator                  | DTO validation — each service's `dtos/`                                                                                                                         |
+| Zod + class-validator            | Environment validation (Zod), DTO validation (class-validator) — Zod request migration in progress                                                              |
 | pnpm workspace                   | Monorepo layout. Shares libs as internal packages                                                                                                               |
 | Vitest + Testcontainers          | Unit and integration tests. `libs/common` brings up its own infrastructure — [apps document](docs/apps.md#테스트)                                               |
 | Playwright                       | Console/user-app browser e2e and shared BFF contracts — `tests/web`                                                                                             |

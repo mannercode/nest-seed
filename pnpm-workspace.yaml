@@ -20,3 +20,4 @@ allowBuilds:
 minimumReleaseAgeExclude:
     - '@nestjs/cli@12.0.0'
     - webpack@5.110.1
+    - zod@4.5.2

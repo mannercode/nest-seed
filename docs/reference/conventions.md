@@ -19,7 +19,7 @@
 문제를 덮는 폴백 대신, 잘못된 상태를 그 자리에서 명시적으로 실패시킨다. 폴백은 오류를 뒤로 미루고, 미뤄진 오류는 원인에서 먼 곳에서 엉뚱한 모습으로 나타난다.
 
 - 셸 스크립트의 필수 변수는 `${VAR:?}`로 선언한다. 비어 있으면 그 줄에서 죽는다.
-- 앱은 부팅할 때 Joi 스키마로 `process.env`를 검증한다. 값이 빠지면 서버가 뜨지 않는다.
+- 앱은 부팅할 때 Zod 스키마로 `process.env`를 검증한다. 값이 빠지면 서버가 뜨지 않는다.
 - 코드에서 "반드시 있어야 하는" 값은 `Require.defined`·`ensure`로 단언한다. 임의의 기본값을 만들어 계속 진행하지 않는다.
 
     ```ts
@@ -40,7 +40,7 @@
 두 배치 형식은 이렇게 갈린다 — 설정 스키마의 기본값은 "env로 덮을 수는 있지만 보통 안 덮는" 값이고, 코드 옆 상수는 코드 수정으로만 바뀌는 값이다.
 
 ```ts
-TICKET_PRICE: Joi.number().default(10_000) // 설정 스키마의 기본값 (config/app-config.service.ts)
+TICKET_PRICE: numberFromEnvironment.default(10_000) // 설정 스키마의 기본값 (config/app-config.service.ts)
 const HOME_MOVIE_COUNT = 12 // 사용하는 코드 옆 상수 (view/user-app/home)
 ```
 

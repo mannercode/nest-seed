@@ -1,69 +1,87 @@
 import { BaseConfigService } from '@mannercode/common'
 import { Inject, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import Joi from 'joi'
+import { z } from 'zod'
 import { PROJECT_ID_TOKEN } from './project-id.js'
+
+const booleanFromEnvironment = z.union([
+    z.boolean(),
+    z
+        .string()
+        .trim()
+        .pipe(z.stringbool({ falsy: ['false'], truthy: ['true'] }))
+])
+const decimalNumber = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i
+const numberFromEnvironment = z.union([
+    z.number().finite(),
+    z.string().trim().regex(decimalNumber).transform(Number).pipe(z.number().finite())
+])
+const requiredString = z.string().min(1)
 
 @Injectable()
 export class AppConfigService extends BaseConfigService {
-    static schema = Joi.object({
-        AUTH_ACCESS_SECRET: Joi.string().min(20).required(),
+    static schema = z.object({
+        AUTH_ACCESS_SECRET: z.string().min(20),
 
-        AUTH_ACCESS_TOKEN_EXPIRATION: Joi.string().required(),
-        AUTH_ADMIN_ACCESS_SECRET: Joi.string().min(20).required(),
-        AUTH_ADMIN_ACCESS_TOKEN_EXPIRATION: Joi.string().required(),
-        AUTH_ADMIN_REFRESH_SECRET: Joi.string().min(20).required(),
-        AUTH_ADMIN_REFRESH_TOKEN_EXPIRATION: Joi.string().required(),
-        AUTH_AUDIENCE: Joi.string().required(),
-        AUTH_ISSUER: Joi.string().required(),
-        AUTH_LOGIN_ACCOUNT_FAILURE_LIMIT: Joi.number().integer().min(1).default(5),
-        AUTH_LOGIN_FAILURE_WINDOW: Joi.string().default('15m'),
-        AUTH_LOGIN_IP_FAILURE_LIMIT: Joi.number().integer().min(1).default(50),
-        AUTH_REFRESH_SECRET: Joi.string().min(20).required(),
-        AUTH_REFRESH_TOKEN_EXPIRATION: Joi.string().required(),
-        ROOT_PASSWORD: Joi.string().min(8).required(),
-        API_PORT: Joi.number().required(),
-        HTTP_PAGINATION_DEFAULT_SIZE: Joi.number().required(),
+        AUTH_ACCESS_TOKEN_EXPIRATION: requiredString,
+        AUTH_ADMIN_ACCESS_SECRET: z.string().min(20),
+        AUTH_ADMIN_ACCESS_TOKEN_EXPIRATION: requiredString,
+        AUTH_ADMIN_REFRESH_SECRET: z.string().min(20),
+        AUTH_ADMIN_REFRESH_TOKEN_EXPIRATION: requiredString,
+        AUTH_AUDIENCE: requiredString,
+        AUTH_ISSUER: requiredString,
+        AUTH_LOGIN_ACCOUNT_FAILURE_LIMIT: numberFromEnvironment
+            .pipe(z.number().int().min(1))
+            .default(5),
+        AUTH_LOGIN_FAILURE_WINDOW: requiredString.default('15m'),
+        AUTH_LOGIN_IP_FAILURE_LIMIT: numberFromEnvironment
+            .pipe(z.number().int().min(1))
+            .default(50),
+        AUTH_REFRESH_SECRET: z.string().min(20),
+        AUTH_REFRESH_TOKEN_EXPIRATION: requiredString,
+        ROOT_PASSWORD: z.string().min(8),
+        API_PORT: numberFromEnvironment,
+        HTTP_PAGINATION_DEFAULT_SIZE: numberFromEnvironment,
         // 페이지 상한. 기본값(HTTP_PAGINATION_DEFAULT_SIZE)과 분리해, 기본값을 조정해도 상한이 따라 움직이지 않게 한다.
-        HTTP_PAGINATION_MAX_SIZE: Joi.number().default(100),
+        HTTP_PAGINATION_MAX_SIZE: numberFromEnvironment.default(100),
 
-        HTTP_REQUEST_PAYLOAD_LIMIT: Joi.string().required(),
-        LOG_CONSOLE_LEVEL: Joi.string().required(),
-        LOG_DAYS_TO_KEEP: Joi.string().required(),
-        LOG_DIRECTORY: Joi.string().required(),
-        LOG_FILE_LEVEL: Joi.string().required(),
-        MONGO_URI: Joi.string().required(),
-        MONGO_DATABASE: Joi.string().required(),
-        NODE_ENV: Joi.string().valid('development', 'production', 'test').required(),
-        REDIS_HOST1: Joi.string().required(),
-        REDIS_HOST2: Joi.string().required(),
-        REDIS_HOST3: Joi.string().required(),
+        HTTP_REQUEST_PAYLOAD_LIMIT: requiredString,
+        LOG_CONSOLE_LEVEL: requiredString,
+        LOG_DAYS_TO_KEEP: requiredString,
+        LOG_DIRECTORY: requiredString,
+        LOG_FILE_LEVEL: requiredString,
+        MONGO_URI: requiredString,
+        MONGO_DATABASE: requiredString,
+        NODE_ENV: z.enum(['development', 'production', 'test']),
+        REDIS_HOST1: requiredString,
+        REDIS_HOST2: requiredString,
+        REDIS_HOST3: requiredString,
 
-        REDIS_PORT1: Joi.number().required(),
-        REDIS_PORT2: Joi.number().required(),
-        REDIS_PORT3: Joi.number().required(),
+        REDIS_PORT1: numberFromEnvironment,
+        REDIS_PORT2: numberFromEnvironment,
+        REDIS_PORT3: numberFromEnvironment,
 
-        NATS_HOST: Joi.string().required(),
-        NATS_PORT: Joi.number().required(),
+        NATS_HOST: requiredString,
+        NATS_PORT: numberFromEnvironment,
 
-        RESTATE_INGRESS_URL: Joi.string().uri().required(),
-        RESTATE_SERVICE_PORT: Joi.number().port().required(),
+        RESTATE_INGRESS_URL: z.url(),
+        RESTATE_SERVICE_PORT: numberFromEnvironment.pipe(z.number().int().min(0).max(65_535)),
 
-        S3_ACCESS_KEY: Joi.string().required(),
-        S3_BUCKET: Joi.string().required(),
-        S3_ENDPOINT: Joi.string().required(),
-        S3_FORCE_PATH_STYLE: Joi.boolean().required(),
-        S3_REGION: Joi.string().required(),
-        S3_SECRET_KEY: Joi.string().required(),
+        S3_ACCESS_KEY: requiredString,
+        S3_BUCKET: requiredString,
+        S3_ENDPOINT: requiredString,
+        S3_FORCE_PATH_STYLE: booleanFromEnvironment,
+        S3_REGION: requiredString,
+        S3_SECRET_KEY: requiredString,
 
-        PROJECT_ID: Joi.string().required(),
+        PROJECT_ID: requiredString,
 
-        ASSET_UPLOAD_EXPIRES_SEC: Joi.number().default(60 * 60),
-        ASSET_DOWNLOAD_EXPIRES_SEC: Joi.number().default(60 * 60),
-        TICKET_HOLD_DURATION_MS: Joi.number().default(10 * 60 * 1000),
-        TICKET_MAX_PER_PURCHASE: Joi.number().default(10),
-        TICKET_PRICE: Joi.number().default(10_000),
-        TICKET_PURCHASE_CUTOFF_MINUTES: Joi.number().default(30)
+        ASSET_UPLOAD_EXPIRES_SEC: numberFromEnvironment.default(60 * 60),
+        ASSET_DOWNLOAD_EXPIRES_SEC: numberFromEnvironment.default(60 * 60),
+        TICKET_HOLD_DURATION_MS: numberFromEnvironment.default(10 * 60 * 1000),
+        TICKET_MAX_PER_PURCHASE: numberFromEnvironment.default(10),
+        TICKET_PRICE: numberFromEnvironment.default(10_000),
+        TICKET_PURCHASE_CUTOFF_MINUTES: numberFromEnvironment.default(30)
     })
 
     get auth() {

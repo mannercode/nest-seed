@@ -45,11 +45,11 @@
         "compression": "1.8.1",
         "express": "5.2.1",
         "ioredis": "6.0.0",
-        "joi": "18.2.5",
         "mongodb": "7.5.0",
         "mongoose": "9.9.3",
         "reflect-metadata": "0.2.2",
-        "rxjs": "7.8.2"
+        "rxjs": "7.8.2",
+        "zod": "4.5.2"
     },
     "devDependencies": {
         "@eslint/js": "9.39.5",

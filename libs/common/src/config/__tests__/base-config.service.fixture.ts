@@ -1,15 +1,21 @@
 import { createTestContext } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
-import Joi from 'joi'
+import { z } from 'zod'
 import { BaseConfigService } from '../base-config.service.js'
 
-const configSchema = Joi.object({
-    TEST_BOOLEAN_FALSE_KEY: Joi.boolean().required(),
-    TEST_BOOLEAN_KEY: Joi.boolean().required(),
-    TEST_NUMBER_KEY: Joi.number().required(),
-    TEST_NUMBER_ZERO_KEY: Joi.number().required(),
-    TEST_STRING_KEY: Joi.string().required()
+const configSchema = z.object({
+    TEST_BOOLEAN_FALSE_KEY: z
+        .string()
+        .trim()
+        .pipe(z.stringbool({ falsy: ['false'], truthy: ['true'] })),
+    TEST_BOOLEAN_KEY: z
+        .string()
+        .trim()
+        .pipe(z.stringbool({ falsy: ['false'], truthy: ['true'] })),
+    TEST_NUMBER_KEY: z.coerce.number(),
+    TEST_NUMBER_ZERO_KEY: z.coerce.number(),
+    TEST_STRING_KEY: z.string().min(1)
 })
 
 @Injectable()

@@ -11,7 +11,6 @@ import { RedisSetupModule } from './redis-setup.module.js'
         ConfigModule.forRoot({
             cache: true,
             ignoreEnvFile: true,
-            validationOptions: { libraryOptions: { abortEarly: false } },
             validationSchema: AppConfigService.schema
         }),
         MongooseSetupModule,
