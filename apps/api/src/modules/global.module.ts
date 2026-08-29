@@ -2,6 +2,7 @@ import { AppLoggerService, createWinstonLogger } from '@mannercode/common'
 import { Global, Module } from '@nestjs/common'
 import { JwtModule } from '@nestjs/jwt'
 import { ScheduleModule } from '@nestjs/schedule'
+import { hostname } from 'node:os'
 import { AppConfigService } from '#config'
 
 @Global()
@@ -14,7 +15,7 @@ import { AppConfigService } from '#config'
             inject: [AppConfigService],
             provide: AppLoggerService,
             useFactory: async ({ log }: AppConfigService) => {
-                const logger = createWinstonLogger(log)
+                const logger = createWinstonLogger({ ...log, serviceNodeName: hostname() })
                 return new AppLoggerService(logger)
             }
         }

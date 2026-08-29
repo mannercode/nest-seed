@@ -133,7 +133,9 @@ export class AppConfigService extends BaseConfigService {
             consoleLogLevel: this.getString('LOG_CONSOLE_LEVEL'),
             daysToKeepLogs: this.getString('LOG_DAYS_TO_KEEP'),
             directory: this.getString('LOG_DIRECTORY'),
-            fileLogLevel: this.getString('LOG_FILE_LEVEL')
+            environment: this.getString('NODE_ENV'),
+            fileLogLevel: this.getString('LOG_FILE_LEVEL'),
+            serviceName: this.getString('PROJECT_ID')
         }
     }
 

@@ -1,3 +1,4 @@
+import { ecsFormat } from '@elastic/ecs-winston-format'
 // 터미널 색상과 transport 조합처럼 환경에 따라 달라지는 분기가 있어 파일 전체를 coverage 계산에서 제외한다.
 // 로거 생성 동작은 create-winston-logger.spec.ts에서 별도로 검증한다.
 /* istanbul ignore file */
@@ -92,7 +93,10 @@ export type LoggerConfig = {
     customFormatters?: Record<string, LogFormatter>
     daysToKeepLogs: string
     directory: string
+    environment: string
     fileLogLevel: string
+    serviceName: string
+    serviceNodeName: string
 }
 
 function createConsoleLogFormat(customFormatters?: Record<string, LogFormatter>) {
@@ -139,7 +143,16 @@ function createConsoleLogFormat(customFormatters?: Record<string, LogFormatter>)
 }
 
 export function createWinstonLogger(config: LoggerConfig) {
-    const { consoleLogLevel, customFormatters, daysToKeepLogs, directory, fileLogLevel } = config
+    const {
+        consoleLogLevel,
+        customFormatters,
+        daysToKeepLogs,
+        directory,
+        environment,
+        fileLogLevel,
+        serviceName,
+        serviceNodeName
+    } = config
 
     const transports: winston.transport[] = []
 
@@ -164,9 +177,19 @@ export function createWinstonLogger(config: LoggerConfig) {
     )
 
     if (consoleLogLevel && consoleLogLevel !== 'silent') {
+        const consoleFormat =
+            environment === 'production'
+                ? ecsFormat({
+                      apmIntegration: false,
+                      serviceEnvironment: environment,
+                      serviceName,
+                      serviceNodeName
+                  })
+                : createConsoleLogFormat(customFormatters)
+
         transports.push(
             new winston.transports.Console({
-                format: createConsoleLogFormat(customFormatters),
+                format: consoleFormat,
                 handleExceptions: true,
                 handleRejections: true,
                 level: consoleLogLevel

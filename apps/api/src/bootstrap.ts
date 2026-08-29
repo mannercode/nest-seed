@@ -8,8 +8,11 @@ import { AppConfigService } from '#config'
 import { AppModule } from './app.module.js'
 
 export async function bootstrap() {
-    const app = await NestFactory.create(AppModule)
+    // Nest 초기화 로그도 production의 구조화 stdout 계약을 따르도록 로거 준비 전까지 버퍼링한다.
+    const app = await NestFactory.create(AppModule, { bufferLogs: true })
     const { http, log } = app.get(AppConfigService)
+    const logger = app.get(AppLoggerService)
+    app.useLogger(logger)
 
     // 외부가 보낸 X-Forwarded-For는 NGINX가 실제 원격 주소를 뒤에 붙인다.
     // 사설 프록시 홉만 신뢰하면 Express가 오른쪽부터 첫 외부 주소를 클라이언트 IP로 고른다.
@@ -32,9 +35,6 @@ export async function bootstrap() {
     app.use(compression())
     app.use(express.json({ limit: http.requestPayloadLimit }))
 
-    const logger = app.get(AppLoggerService)
-    app.useLogger(logger)
-
     app.enableShutdownHooks()
 
     const server = await app.listen(http.port)
@@ -42,5 +42,5 @@ export async function bootstrap() {
     server.keepAliveTimeout = 65_000
     server.headersTimeout = 66_000
 
-    console.log(`Application is running on: ${await app.getUrl()}`)
+    logger.log('Application is running', { url: await app.getUrl() })
 }

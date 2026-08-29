@@ -353,6 +353,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.0.0
         version: 3.1116.0
+      '@elastic/ecs-winston-format':
+        specifier: 1.5.3
+        version: 1.5.3
       '@nats-io/transport-node':
         specifier: ^3.4.0
         version: 3.4.0
@@ -749,6 +752,14 @@ packages:
 
   '@dabh/diagnostics@2.0.8':
     resolution: {integrity: sha512-R4MSXTVnuMzGD7bzHdW2ZhhdPC/igELENcq5IjEverBvq5hn1SXCWcsi6eSsdWP0/Ur+SItRRjAktmdoX/8R/Q==}
+
+  '@elastic/ecs-helpers@2.1.1':
+    resolution: {integrity: sha512-ItoNazMnYdlUCmkBYTXc3SG6PF7UlVTbvMdHPvXkfTMPdwGv2G1Xtp5CjDHaGHGOZSwaDrW4RSCXvA/lMSU+rg==}
+    engines: {node: '>=10'}
+
+  '@elastic/ecs-winston-format@1.5.3':
+    resolution: {integrity: sha512-JfHLK+KpxnRRtwWmsQxcYy/zimS/06xz9oQG+OTsFX6fvofpxVWEiep3BXLMrSIrdYkgqQBJHMOQdZm9voVHbg==}
+    engines: {node: '>=10'}
 
   '@emnapi/core@1.10.0':
     resolution: {integrity: sha512-yq6OkJ4p82CAfPl0u9mQebQHKPJkY7WrIuk205cTYnYe+k2Z8YBh11FrbRG/H6ihirqcacOgl2BIO8oyMQLeXw==}
@@ -5750,6 +5761,14 @@ snapshots:
       '@so-ric/colorspace': 1.1.6
       enabled: 2.0.0
       kuler: 2.0.0
+
+  '@elastic/ecs-helpers@2.1.1': {}
+
+  '@elastic/ecs-winston-format@1.5.3':
+    dependencies:
+      '@elastic/ecs-helpers': 2.1.1
+      safe-stable-stringify: 2.5.0
+      triple-beam: 1.4.1
 
   '@emnapi/core@1.10.0':
     dependencies:

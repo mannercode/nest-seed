@@ -41,7 +41,10 @@ describe('createWinstonLogger', () => {
             consoleLogLevel: isDebuggingEnabled() ? 'verbose' : 'silent',
             daysToKeepLogs: '1d',
             directory: tempDir,
-            fileLogLevel: 'verbose'
+            environment: 'test',
+            fileLogLevel: 'verbose',
+            serviceName: 'test-api',
+            serviceNodeName: 'test-node'
         })
     })
 
@@ -95,7 +98,10 @@ describe('createWinstonLogger', () => {
             consoleLogLevel: 'silent',
             daysToKeepLogs: '1d',
             directory: tempDir,
-            fileLogLevel: 'silent'
+            environment: 'test',
+            fileLogLevel: 'silent',
+            serviceName: 'test-api',
+            serviceNodeName: 'test-node'
         })
 
         try {
@@ -117,7 +123,10 @@ describe('createWinstonLogger', () => {
                 consoleLogLevel: 'info',
                 daysToKeepLogs: '1d',
                 directory: tempDir,
-                fileLogLevel: 'silent'
+                environment: 'test',
+                fileLogLevel: 'silent',
+                serviceName: 'test-api',
+                serviceNodeName: 'test-node'
             })
 
             consoleSpy = spyConsoleTransport(consoleLogger)
@@ -165,5 +174,43 @@ describe('createWinstonLogger', () => {
             expect(output).toContain('plain message')
             expect(output).toContain('other')
         })
+    })
+
+    it('production 콘솔은 수집 가능한 ECS JSON 한 줄로 출력한다', async () => {
+        const productionLogger = createWinstonLogger({
+            consoleLogLevel: 'info',
+            daysToKeepLogs: '1d',
+            directory: tempDir,
+            environment: 'production',
+            fileLogLevel: 'silent',
+            serviceName: 'test-api',
+            serviceNodeName: 'replica-1'
+        })
+        const consoleSpy = spyConsoleTransport(productionLogger)
+
+        try {
+            productionLogger.info('structured message', {
+                contextType: 'service',
+                nested: { value: 1 }
+            })
+            await sleep(200)
+
+            const output = consoleSpy.getOutput()
+            expect(output.split('\n')).toHaveLength(1)
+            expect(JSON.parse(output)).toEqual({
+                '@timestamp': expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+                'ecs.version': expect.any(String),
+                'event.dataset': 'test-api',
+                'log.level': 'info',
+                'service.environment': 'production',
+                'service.name': 'test-api',
+                'service.node.name': 'replica-1',
+                contextType: 'service',
+                message: 'structured message',
+                nested: { value: 1 }
+            })
+        } finally {
+            await closeLogger(productionLogger)
+        }
     })
 })
