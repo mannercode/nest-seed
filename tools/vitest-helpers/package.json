@@ -6,7 +6,7 @@
     "types": "./index.d.ts",
     "scripts": {
         "test": "node --experimental-test-coverage --test-coverage-lines=100 --test-coverage-functions=100 --test-coverage-branches=100 --test __tests__/*.test.js",
-        "lint": "for file in index.js __tests__/*.test.js; do node --check \"$file\"; done && prettier --check index.js index.d.ts '__tests__/*.test.js' package.json",
+        "lint": "for file in index.js __tests__/*.test.js; do node --check \"$file\"; done && oxlint -c ../../oxlint.json index.js __tests__/ && prettier --check index.js index.d.ts '__tests__/*.test.js' package.json",
         "format": "prettier --write index.js index.d.ts '__tests__/*.test.js' package.json",
         "atoz": "pnpm run lint && pnpm test"
     },

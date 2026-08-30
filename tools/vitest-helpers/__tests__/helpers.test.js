@@ -2,7 +2,6 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const {
     CreateBucketCommand,
-    DeleteBucketCommand,
     DeleteObjectsCommand,
     ListBucketsCommand,
     ListObjectsV2Command
