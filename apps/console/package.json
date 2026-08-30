@@ -9,8 +9,8 @@
         "build": "next build",
         "prestart": "free-port ${CONSOLE_PORT:?}",
         "start": "next start -p ${CONSOLE_PORT:?}",
-        "format": "eslint src/ --fix && prettier --write src/",
-        "lint": "tsc --noEmit && eslint src/ --max-warnings=0 && prettier --check src/",
+        "format": "prettier --write src/",
+        "lint": "tsc --noEmit && oxlint -c ../../oxlint.json src/ && prettier --check src/",
         "atoz": "pnpm run lint && pnpm run build"
     },
     "dependencies": {
@@ -24,7 +24,6 @@
         "@types/node": "26.4.0",
         "@types/react": "19.2.18",
         "@types/react-dom": "19.2.5",
-        "eslint-config-next": "16.3.3",
         "postcss": "8.5.26",
         "tailwindcss": "4.3.3",
         "typescript": "6.0.3"

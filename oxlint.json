@@ -1,0 +1,19 @@
+{
+    "$schema": "./node_modules/oxlint/configuration_schema.json",
+    "plugins": ["typescript", "unicorn", "oxc"],
+    "rules": { "typescript/no-explicit-any": "off", "typescript/no-floating-promises": "warn" },
+    "env": { "node": true },
+    "ignorePatterns": ["**/_output/**", "**/.next/**", "**/coverage/**"],
+    "overrides": [
+        {
+            "files": ["apps/{console,user-app}/src/**/*.{ts,tsx}"],
+            "plugins": ["jsx-a11y", "nextjs", "react"],
+            "rules": {
+                "react/rules-of-hooks": "error",
+                "jsx-a11y/alt-text": "warn",
+                "nextjs/no-img-element": "warn"
+            },
+            "env": { "browser": true, "node": true }
+        }
+    ]
+}

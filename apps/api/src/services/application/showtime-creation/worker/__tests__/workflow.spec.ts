@@ -196,7 +196,6 @@ describe('Showtime creation Restate workflow', () => {
         let defaultSerde: typeof TemporalJsonSerde | undefined
         const persistence = vi.fn(async () => {
             // workflow가 외부 promise의 비표준 rejection도 안전하게 상태로 바꾸는지 검증한다.
-            // eslint-disable-next-line @typescript-eslint/only-throw-error
             if (failure !== undefined) throw failure
             if (result === undefined) throw new Error('Fixture result is required.')
             return result

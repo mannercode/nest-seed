@@ -23,7 +23,7 @@ updates:
               patterns: ['@aws-sdk/*']
               update-types: ['minor', 'patch']
           next-minor-patch:
-              patterns: ['next', 'eslint-config-next']
+              patterns: ['next']
               update-types: ['minor', 'patch']
           nestjs-minor-patch:
               patterns: ['@nestjs/*']
@@ -33,10 +33,6 @@ updates:
               update-types: ['minor', 'patch']
           react-minor-patch:
               patterns: ['react', 'react-dom', '@types/react', '@types/react-dom']
-              update-types: ['minor', 'patch']
-          eslint-minor-patch:
-              patterns:
-                  ['eslint', 'eslint-*', '@eslint/*', 'typescript-eslint', '@typescript-eslint/*']
               update-types: ['minor', 'patch']
           commitlint-minor-patch:
               patterns: ['@commitlint/*']

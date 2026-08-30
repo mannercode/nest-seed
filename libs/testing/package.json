@@ -8,8 +8,8 @@
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
         "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
-        "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json && eslint src/ --max-warnings=0 && prettier --check src/ vitest.config.mjs",
-        "format": "eslint src/ --fix && prettier --write src/",
+        "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json && oxlint -c ../../oxlint.json src/ vitest.config.mjs && prettier --check src/ vitest.config.mjs",
+        "format": "prettier --write src/ vitest.config.mjs",
         "test": "vitest run",
         "atoz": "pnpm run build && pnpm run lint && pnpm test"
     },

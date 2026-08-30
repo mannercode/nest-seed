@@ -9,8 +9,8 @@
         "e2e:list": "playwright test --list --reporter=list",
         "e2e:report": "playwright show-report _output/report",
         "e2e:ui": "playwright test --ui",
-        "format": "eslint e2e/ contracts/ playwright.config.ts playwright.contract.config.ts --fix && prettier --write e2e/ contracts/ playwright.config.ts playwright.contract.config.ts",
-        "lint": "tsc --noEmit && eslint e2e/ contracts/ playwright.config.ts playwright.contract.config.ts --max-warnings=0 && prettier --check e2e/ contracts/ playwright.config.ts playwright.contract.config.ts",
+        "format": "prettier --write e2e/ contracts/ playwright.config.ts playwright.contract.config.ts",
+        "lint": "tsc --noEmit && oxlint -c ../../oxlint.json e2e/ contracts/ playwright.config.ts playwright.contract.config.ts && prettier --check e2e/ contracts/ playwright.config.ts playwright.contract.config.ts",
         "atoz": "pnpm run lint && pnpm test && CI=1 playwright test"
     },
     "devDependencies": {

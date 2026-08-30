@@ -4,7 +4,6 @@ import { AppConfigService } from '#config'
 import type { ShowtimeCreationEvent, ValidateAndCreateResult } from '../internal/index.js'
 import type { ShowtimeCreationWorkflowInput } from './types.js'
 // 이 직접 import는 internal barrel → orchestrator → worker로 되돌아오는 Nest DI 순환을 피한다.
-// eslint-disable-next-line no-restricted-imports
 import { ShowtimeCreationPersistenceService } from '../internal/showtime-creation-persistence.service.js'
 import { ShowtimeCreationEvents } from '../showtime-creation.events.js'
 import { TemporalJsonSerde } from './temporal-json.serde.js'
