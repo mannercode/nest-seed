@@ -2,7 +2,7 @@
 
 단위·통합 테스트는 보통 각 워크스페이스 안(`apps/api/src/__tests__`, `libs/*/src/**/__tests__`)에 살고 `pnpm run test`로 돈다([apps 문서의 테스트 절](apps.md#테스트) 참고). `tests/`에 모인 것은 주로 **배포된 스택을 밖에서 검증하는** 무거운 테스트라 폴더가 따로 있다. 다만 하네스 자체의 계약은 같은 워크스페이스 안에 둔다. `tests/api-race/contracts`는 공통 HTTP/SSE client·repository 계약을 `pnpm --filter './tests/api-race' test`로, `tests/web/contracts`는 두 Next.js BFF의 공통 보안·프런트 린트 계약을 `pnpm --filter './tests/web' test`로 실행한다. 둘 다 배포 스택이나 브라우저를 시작하지 않고 기본 `pnpm run test`에 포함된다.
 
-한 화면의 실행 명령과 결과 위치는 [`tests/README.md`](../tests/README.md)에 있다. 루트 `pnpm run test`와 `pnpm run atoz`가 성공하면 마지막에 통과한 영역, 각 영역을 검증하는 이유와 포함되지 않은 장시간 검증을 함께 요약한다.
+한 화면의 실행 명령과 결과 위치는 [`tests/README.md`](../tests/README.md)에 있다. 루트 테스트 명령은 마지막에 통과·실패한 영역, 검증 이유, 실제 경과 시간과 실행되지 않은 검증을 요약하고 같은 내용을 `_output/test-reports/`의 Markdown 보고서에 남긴다.
 
 ## api-race — 분산 레이스 시나리오
 
@@ -28,7 +28,7 @@ pnpm run race <scenario>                               # 인자 없이 실행하
 pnpm --filter './tests/api-race' test                  # 배포 없이 HTTP/SSE 공통 클라이언트만 검증한다
 ```
 
-러너가 배포 스택을 띄우고 내리는 것까지 맡는다. 각 시나리오는 Node 내장 `node:test`의 상위 테스트 하나로 실행되어 검증할 불변식의 이름, 성공·실패, 소요 시간과 stack을 표준 형식으로 출력한다. 내부 반복은 subtest로 늘리지 않고 기존 진행 로그로 남긴다. 각 시나리오의 실패 조건은 스크립트 머리 주석에 있다.
+러너가 배포 스택을 띄우고 내리는 것까지 맡는다. 각 시나리오는 Node 내장 `node:test`의 상위 테스트 하나로 실행되어 검증할 불변식의 이름, 성공·실패, 소요 시간과 stack을 표준 형식으로 출력한다. 루트 명령은 스택 준비와 정리까지 포함한 전체 시간도 `_output/test-reports/race.md`에 남긴다. 내부 반복은 subtest로 늘리지 않고 기존 진행 로그로 남긴다. 각 시나리오의 실패 조건은 스크립트 머리 주석에 있다.
 공통 HTTP 요청은 시작부터 응답 body 종료까지 30초, SSE는 응답 헤더 handshake까지 30초를 기본 기한으로 둔다. 느린 환경에서는 양의 정수 밀리초 값인 `HTTP_REQUEST_TIMEOUT_MS`와 `SSE_HANDSHAKE_TIMEOUT_MS`로 각각 덮어쓴다.
 
 api-race와 api-benchmark 러너는 compose stack이 healthy가 된 뒤 NGINX의 Restate endpoint `http://nginx:9080`도 등록한다. 등록은 `force: false`라 같은 URI 뒤의 service manifest를 덮어쓰지 않는다. AtoZ·Stability는 시작 시 fresh Restate를 만들고 같은 prebuilt 이미지를 반복하므로 그대로 재사용한다. 수동으로 API/workflow 코드를 바꾼 뒤 다시 측정할 때는 먼저 `bash infra/reset.sh`를 실행한다. 이 명령은 개발용 Restate journal도 지운다.
@@ -49,7 +49,7 @@ pnpm run benchmark:api                                                   # 스�
 SERVER_URL=http://localhost:3000 bash tests/api-benchmark/mixed-runner.sh # 떠 있는 스택 반복 측정 — 쓰기 레그는 ADMIN_ACCESS_TOKEN 필요(발급은 runner.sh의 seed_admin_and_login)
 ```
 
-결과는 콘솔 한 줄 요약과 `tests/api-benchmark/_output/<scenario>-<ts>-<label>.json`으로 남고, mixed-runner는 런 내부의 시간축 추이를 담은 HTML 대시보드(`tests/api-benchmark/_output/dashboard-*.html`)도 함께 남긴다.
+결과는 콘솔 한 줄 요약과 `tests/api-benchmark/_output/<scenario>-<ts>-<label>.json`으로 남고, mixed-runner는 런 내부의 시간축 추이를 담은 HTML 대시보드(`tests/api-benchmark/_output/dashboard-*.html`)도 함께 남긴다. 루트 명령의 전체 경과 시간과 측정 목적은 `_output/test-reports/benchmark-api.md`에서 본다.
 
 수치에 절대 합격선은 없다 — 같은 머신의 이전 결과(JSON의 `label`·`serverUrl`로 짝지음)와 비교하는 회귀-비교용이다. 결과 JSON은 이런 모양이다(일부 필드 생략).
 

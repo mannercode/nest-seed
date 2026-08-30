@@ -4,26 +4,38 @@
 
 ## 무엇을 실행하는가
 
-| 영역                 | 검증 이유                                                            | 기본 명령                               | 결과                                |
-| -------------------- | -------------------------------------------------------------------- | --------------------------------------- | ----------------------------------- |
-| `api-race/contracts` | 실제 race가 쓰는 HTTP/SSE deadline과 workflow 목록이 유지되는지 확인 | `pnpm --filter './tests/api-race' test` | 터미널 `node:test` 결과             |
-| `api-race/probes`    | Restate 재시작 뒤 journal replay와 중단 step 재실행을 확인           | `pnpm run atoz`                         | 터미널 `node:test` 결과             |
-| `web/contracts`      | 두 BFF의 proxy·refresh 보안 경계와 프런트 린트 계약 확인             | `pnpm --filter './tests/web' test`      | 터미널 Playwright 결과              |
-| `web/e2e`            | 관리자·사용자의 실제 브라우저 흐름과 세션 보안 확인                  | `pnpm run e2e`                          | 터미널, HTML, 실패 trace·screenshot |
-| `api-race` 시나리오  | 4개 API replica 사이의 경합·fanout·장애 복구 불변식 확인             | `pnpm run race <scenario>`              | 터미널 `node:test` 결과와 실패 진단 |
-| `api-benchmark`      | 같은 머신의 이전 실행과 RPS·latency 비교                             | `pnpm run benchmark:api`                | JSON과 HTML dashboard               |
+| 영역                 | 검증 이유                                                            | 기본 명령                               | 결과                                  |
+| -------------------- | -------------------------------------------------------------------- | --------------------------------------- | ------------------------------------- |
+| `api-race/contracts` | 실제 race가 쓰는 HTTP/SSE deadline과 workflow 목록이 유지되는지 확인 | `pnpm --filter './tests/api-race' test` | 터미널 `node:test` 결과               |
+| `api-race/probes`    | Restate 재시작 뒤 journal replay와 중단 step 재실행을 확인           | `pnpm run atoz`                         | AtoZ 보고서와 터미널 `node:test` 결과 |
+| `web/contracts`      | 두 BFF의 proxy·refresh 보안 경계와 프런트 린트 계약 확인             | `pnpm --filter './tests/web' test`      | 터미널 Playwright 결과                |
+| `web/e2e`            | 관리자·사용자의 실제 브라우저 흐름과 세션 보안 확인                  | `pnpm run e2e`                          | 실행 보고서, HTML, trace·screenshot   |
+| `api-race` 시나리오  | 4개 API replica 사이의 경합·fanout·장애 복구 불변식 확인             | `pnpm run race <scenario>`              | 실행 보고서와 실패 시 컨테이너 진단   |
+| `api-benchmark`      | 같은 머신의 이전 실행과 RPS·latency 비교                             | `pnpm run benchmark:api`                | 실행 보고서, JSON과 HTML dashboard    |
 
 ## 전체 명령의 범위
 
 ### `pnpm run test`
 
-앱·라이브러리 단위/통합 테스트와 `api-race/contracts`, `web/contracts`를 실행한다. 브라우저 E2E, 실제 API race, benchmark는 실행하지 않는다. 성공하면 마지막에 영역별 검증 이유와 제외된 영역을 요약한다.
+앱·라이브러리 단위/통합 테스트와 `api-race/contracts`, `web/contracts`를 실행한다. 브라우저 E2E, 실제 API race, benchmark는 실행하지 않는다. 마지막에 영역별 검증 이유와 실제 경과 시간을 요약한다.
 
 ### `pnpm run atoz`
 
-`pnpm run test` 범위에 정적 검사, 앱 build, 브라우저 E2E와 배포 검증을 더한다. 배포 검증은 Restate를 실제 `SIGKILL` 후 같은 volume으로 재시작해 완료된 durable step은 replay되고 중단된 step만 재실행되는지도 확인한다. 실제 API race는 Stability workflow가 담당하고 benchmark는 수동 비교용이라 포함하지 않는다. 성공하면 마지막에 전체 결과 요약과 브라우저 보고서 경로를 출력한다.
+`pnpm run test` 범위에 정적 검사, 앱 build, 브라우저 E2E와 배포 검증을 더한다. 배포 검증은 Restate를 실제 `SIGKILL` 후 같은 volume으로 재시작해 완료된 durable step은 replay되고 중단된 step만 재실행되는지도 확인한다. 실제 API race는 Stability workflow가 담당하고 benchmark는 수동 비교용이라 포함하지 않는다.
 
 ## 결과 보기
+
+루트 명령은 성공·실패와 관계없이 `_output/test-reports/`에 마지막 Markdown 보고서를 덮어쓴다.
+
+| 명령                       | 보고서                                  |
+| -------------------------- | --------------------------------------- |
+| `pnpm run test`            | `_output/test-reports/test.md`          |
+| `pnpm run atoz`            | `_output/test-reports/atoz.md`          |
+| `pnpm run e2e`             | `_output/test-reports/e2e.md`           |
+| `pnpm run race <scenario>` | `_output/test-reports/race.md`          |
+| `pnpm run benchmark:api`   | `_output/test-reports/benchmark-api.md` |
+
+각 보고서에는 실행한 영역, 검증 이유, 정확한 명령, 준비·build·정리를 포함한 실제 경과 시간과 실행되지 않은 영역이 적힌다. AtoZ가 시작할 때 이전 `_output`을 지우므로 보고서는 계속 쌓이지 않는다. CI에서는 같은 내용을 Job Summary에 표시하고 보고서 파일도 artifact로 보관한다.
 
 ### 브라우저 E2E
 

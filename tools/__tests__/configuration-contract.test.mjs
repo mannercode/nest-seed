@@ -16,7 +16,15 @@ test('workspace keeps explicit package and install safety policy', async () => {
 
     assert.match(packageJson.packageManager, /^pnpm@\d+\.\d+\.\d+$/)
     assert.equal(packageJson.workspaces, undefined)
-    assert.match(packageJson.scripts.atoz, /pnpm run test:config/)
+    for (const [script, mode] of [
+        ['test', 'test'],
+        ['atoz', 'atoz'],
+        ['e2e', 'e2e'],
+        ['race', 'race'],
+        ['benchmark:api', 'benchmark']
+    ]) {
+        assert.equal(packageJson.scripts[script], `node tests/run-and-report.mjs ${mode}`)
+    }
     assert.match(workspace, /^saveExact: true$/m)
     assert.match(workspace, /^strictDepBuilds: true$/m)
 })
@@ -375,6 +383,7 @@ test('GitHub workflows pin actions, protect scheduled forks, and retain diagnost
         assert.match(contents, /git diff --exit-code -- pnpm-lock\.yaml pnpm-workspace\.yaml/)
     }
     const atoz = await read('.github/workflows/test-atoz.yaml')
+    assert.match(atoz, /_output\/test-reports\//)
     assert.match(atoz, /_output\/deploy-diagnostics/)
     assert.match(atoz, /_output\/ci-diagnostics/)
 })

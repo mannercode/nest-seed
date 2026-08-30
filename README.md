@@ -74,7 +74,7 @@ pnpm run race <scenario>                                         # 분산 레이
 pnpm run benchmark:api                                           # 성능 측정 — 스택 기동·시드·측정·정리까지 한 번에
 ```
 
-Vitest는 `describe`·`it` 구조를 tree reporter로 터미널에 보여 준다. 전체 API 테스트의 실행별 coverage는 `apps/api/_output/vitest-runs/r<실행 ID>/coverage/`에, common coverage는 `libs/common/_output/coverage/`에 남는다. 활성화된 테스트 콘솔 로그는 별도 파일로 복제하지 않는다. 테스트 체계와 작성 규칙은 [apps 문서](docs/apps.md#테스트)가, 분산 레이스·성능 측정의 실행과 해석은 [tests 문서](docs/tests.md)가 설명한다.
+Vitest는 `describe`·`it` 구조를 tree reporter로 터미널에 보여 준다. 루트 테스트 명령의 영역별 목적·결과·실제 경과 시간은 `_output/test-reports/`의 마지막 실행 보고서에 남는다. 전체 API 테스트의 실행별 coverage는 `apps/api/_output/vitest-runs/r<실행 ID>/coverage/`에, common coverage는 `libs/common/_output/coverage/`에 남는다. 활성화된 테스트 콘솔 로그는 별도 파일로 복제하지 않는다. 테스트 체계와 작성 규칙은 [apps 문서](docs/apps.md#테스트)가, 분산 레이스·성능 측정의 실행과 해석은 [tests 문서](docs/tests.md)가 설명한다.
 
 ## 배포
 
