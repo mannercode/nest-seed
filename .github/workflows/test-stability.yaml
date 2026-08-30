@@ -45,7 +45,6 @@ jobs:
                     - leg: bootup
                       timeout: 120
                       run: |
-                          pnpm run build
                           bash .github/scripts/repeat.sh 50 bash infra/reset.sh
                     # 분산 레이스 50회는 의도된 누적 검증량이다.
                     # 240분은 가장 느린 시나리오(user-signup-race 50회 ~200분)에 여유를 둔 값.

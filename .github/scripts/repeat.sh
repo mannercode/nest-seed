@@ -6,6 +6,8 @@ shift
 
 on_failure () {
     local exit_code=$?
+    local compose_project="${COMPOSE_PROJECT_NAME:-}"
+    local container_ids=()
 
     # 진단 자체가 실패해도 최초 테스트 실패 코드와 로그 수집을 덮지 않는다.
     trap - ERR
@@ -14,9 +16,24 @@ on_failure () {
     timeout --kill-after=5s 110s \
         bash "${WORKSPACE_ROOT}/.github/scripts/dump-mongo-diagnostics.sh" || \
         echo "MongoDB diagnostics timed out or failed"
-    timeout 10s docker ps -a || echo "docker ps timed out or failed"
-    timeout 15s docker stats -a --no-stream || echo "docker stats timed out or failed"
-    for id in $(timeout 10s docker ps -aq); do
+
+    if [ -z "${compose_project}" ]; then
+        echo "COMPOSE_PROJECT_NAME is unset; container diagnostics skipped"
+        exit "${exit_code}"
+    fi
+
+    mapfile -t container_ids < <(
+        timeout 10s docker ps -aq \
+            --filter "label=com.docker.compose.project=${compose_project}"
+    )
+    timeout 10s docker ps -a \
+        --filter "label=com.docker.compose.project=${compose_project}" || \
+        echo "docker ps timed out or failed"
+    if [ "${#container_ids[@]}" -gt 0 ]; then
+        timeout 15s docker stats --no-stream "${container_ids[@]}" || \
+            echo "docker stats timed out or failed"
+    fi
+    for id in "${container_ids[@]}"; do
         name=$(timeout 5s docker inspect --format '{{.Name}} ({{.State.Status}})' "${id}" || echo "${id} (inspect unavailable)")
         echo "========================= ${name} ========================="
         timeout 15s docker logs --tail 200 "${id}" || \
