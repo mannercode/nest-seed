@@ -1,69 +1,9 @@
 import type { MongoClient, MongoClientEvents } from 'mongodb'
 
-type ConnectionId = number | string
 type MongoClientEvent<EventName extends keyof MongoClientEvents> = Parameters<
     MongoClientEvents[EventName]
 >[0]
-type PoolOptions = {
-    maxConnecting: number
-    maxIdleTimeMS: number
-    maxPoolSize: number
-    minPoolSize: number
-    waitQueueTimeoutMS: number
-}
-type PoolState = {
-    available: Set<ConnectionId>
-    checkedOut: Set<ConnectionId>
-    checkoutFailed: number
-    checkoutFailuresByReason: Record<string, number>
-    checkoutStarted: number
-    checkoutSucceeded: number
-    closedByReason: Record<string, number>
-    connecting: Set<ConnectionId>
-    connectionReadyDurationMaxMS: number
-    connectionsCreated: number
-    connectionsInvalidatedByClear: number
-    connectionsReady: number
-    diagnosticSuppressed: number
-    heartbeatFailed: number
-    heartbeatSucceeded: number
-    lastHeartbeatDurationMS: number
-    lastServerDescription?: Record<string, unknown>
-    maxCheckedOut: number
-    maxCheckoutDurationMS: number
-    maxHeartbeatDurationMS: number
-    poolClears: number
-    poolClosed: boolean
-    poolOptions?: PoolOptions
-    poolReady: boolean
-    startedAt: number
-}
-
-const newPoolState = (): PoolState => ({
-    available: new Set(),
-    checkedOut: new Set(),
-    checkoutFailed: 0,
-    checkoutFailuresByReason: {},
-    checkoutStarted: 0,
-    checkoutSucceeded: 0,
-    closedByReason: {},
-    connecting: new Set(),
-    connectionReadyDurationMaxMS: 0,
-    connectionsCreated: 0,
-    connectionsInvalidatedByClear: 0,
-    connectionsReady: 0,
-    diagnosticSuppressed: 0,
-    heartbeatFailed: 0,
-    heartbeatSucceeded: 0,
-    lastHeartbeatDurationMS: 0,
-    maxCheckedOut: 0,
-    maxCheckoutDurationMS: 0,
-    maxHeartbeatDurationMS: 0,
-    poolClears: 0,
-    poolClosed: false,
-    poolReady: false,
-    startedAt: Date.now()
-})
+type PoolState = { checkedOut: number; checkoutPending: number }
 
 export function registerMongoClientDiagnostics(
     client: MongoClient,
@@ -81,7 +21,10 @@ export function registerMongoClientDiagnostics(
 
     const pools = new Map<string, PoolState>()
     const lastDiagnosticAt = new Map<string, number>()
+    const knownServers = new Set<string>()
+    const suppressedDiagnostics = new Map<string, number>()
     let topology: Record<string, unknown> | undefined
+    let topologyHasBeenHealthy = false
 
     const on = <EventName extends keyof MongoClientEvents>(
         eventName: EventName,
@@ -91,7 +34,7 @@ export function registerMongoClientDiagnostics(
             try {
                 listener(event)
             } catch {
-                // 진단 코드의 오류가 이벤트를 발생시킨 MongoDB 작업에 영향을 주지 않게 한다.
+                // 진단 오류가 MongoDB 작업 결과를 바꾸지 않게 한다.
             }
         }) as MongoClientEvents[EventName]
         client.on(eventName, safeListener)
@@ -100,7 +43,7 @@ export function registerMongoClientDiagnostics(
     const getPool = (address: string) => {
         let state = pools.get(address)
         if (!state) {
-            state = newPoolState()
+            state = { checkedOut: 0, checkoutPending: 0 }
             pools.set(address, state)
         }
         return state
@@ -133,22 +76,18 @@ export function registerMongoClientDiagnostics(
         }
     }
 
-    const logDiagnostic = (
-        kind: string,
-        address: string,
-        event: Record<string, unknown>,
-        state = getPool(address)
-    ) => {
+    const logDiagnostic = (kind: string, address: string, event: Record<string, unknown>) => {
         const now = Date.now()
         const reason = typeof event.reason === 'string' ? event.reason : ''
         const key = `${kind}:${address}:${reason}`
         const previous = lastDiagnosticAt.get(key) ?? 0
         if (now - previous < 1000) {
-            state.diagnosticSuppressed += 1
+            suppressedDiagnostics.set(key, (suppressedDiagnostics.get(key) ?? 0) + 1)
             return
         }
         lastDiagnosticAt.set(key, now)
 
+        const pool = pools.get(address)
         const payload = {
             address,
             context: {
@@ -160,115 +99,44 @@ export function registerMongoClientDiagnostics(
             },
             event,
             kind,
-            pool: {
-                availableConnections: state.available.size,
-                checkedOutConnectionIds: [...state.checkedOut].slice(0, 20),
-                checkedOutConnections: state.checkedOut.size,
-                checkoutFailed: state.checkoutFailed,
-                checkoutFailuresByReason: state.checkoutFailuresByReason,
-                checkoutStarted: state.checkoutStarted,
-                checkoutSucceeded: state.checkoutSucceeded,
-                closedByReason: state.closedByReason,
-                connectingConnections: state.connecting.size,
-                connectionReadyDurationMaxMS: state.connectionReadyDurationMaxMS,
-                connectionsCreated: state.connectionsCreated,
-                connectionsInvalidatedByClear: state.connectionsInvalidatedByClear,
-                connectionsReady: state.connectionsReady,
-                diagnosticSuppressedSincePrevious: state.diagnosticSuppressed,
-                heartbeatFailed: state.heartbeatFailed,
-                heartbeatSucceeded: state.heartbeatSucceeded,
-                lastHeartbeatDurationMS: state.lastHeartbeatDurationMS,
-                lastServerDescription: state.lastServerDescription,
-                maxCheckedOutConnections: state.maxCheckedOut,
-                maxCheckoutDurationMS: state.maxCheckoutDurationMS,
-                maxHeartbeatDurationMS: state.maxHeartbeatDurationMS,
-                poolClears: state.poolClears,
-                poolClosed: state.poolClosed,
-                poolOptions: state.poolOptions,
-                poolReady: state.poolReady,
-                uptimeMS: now - state.startedAt,
-                waitersApprox: Math.max(
-                    0,
-                    state.checkoutStarted - state.checkoutSucceeded - state.checkoutFailed
-                )
-            },
+            ...(pool
+                ? {
+                      pool: {
+                          checkedOutConnections: pool.checkedOut,
+                          checkoutPending: pool.checkoutPending
+                      }
+                  }
+                : {}),
+            suppressedSincePrevious: suppressedDiagnostics.get(key) ?? 0,
             time: new Date(now).toISOString(),
             topology
         }
-        state.diagnosticSuppressed = 0
+        suppressedDiagnostics.delete(key)
         process.stderr.write(`[mongo-client-diagnostics] ${JSON.stringify(payload)}\n`)
     }
 
-    on('connectionPoolCreated', (event: { address: string; options: PoolOptions }) => {
-        getPool(event.address).poolOptions = event.options
-    })
-    on('connectionPoolReady', (event: { address: string }) => {
-        getPool(event.address).poolReady = true
-    })
-    on('connectionCreated', (event: { address: string; connectionId: ConnectionId }) => {
-        const state = getPool(event.address)
-        state.connectionsCreated += 1
-        state.connecting.add(event.connectionId)
-    })
-    on(
-        'connectionReady',
-        (event: { address: string; connectionId: ConnectionId; durationMS: number }) => {
-            const state = getPool(event.address)
-            state.connectionsReady += 1
-            state.connecting.delete(event.connectionId)
-            state.available.add(event.connectionId)
-            state.connectionReadyDurationMaxMS = Math.max(
-                state.connectionReadyDurationMaxMS,
-                event.durationMS
-            )
-        }
-    )
     on('connectionCheckOutStarted', (event: { address: string }) => {
-        getPool(event.address).checkoutStarted += 1
+        getPool(event.address).checkoutPending += 1
     })
-    on(
-        'connectionCheckedOut',
-        (event: { address: string; connectionId: ConnectionId; durationMS: number }) => {
-            const state = getPool(event.address)
-            state.checkoutSucceeded += 1
-            state.available.delete(event.connectionId)
-            state.checkedOut.add(event.connectionId)
-            state.maxCheckedOut = Math.max(state.maxCheckedOut, state.checkedOut.size)
-            state.maxCheckoutDurationMS = Math.max(state.maxCheckoutDurationMS, event.durationMS)
-        }
-    )
-    on('connectionCheckedIn', (event: { address: string; connectionId: ConnectionId }) => {
+    on('connectionCheckedOut', (event: { address: string }) => {
         const state = getPool(event.address)
-        state.checkedOut.delete(event.connectionId)
-        state.available.add(event.connectionId)
+        state.checkoutPending = Math.max(0, state.checkoutPending - 1)
+        state.checkedOut += 1
+    })
+    on('connectionCheckedIn', (event: { address: string }) => {
+        const state = getPool(event.address)
+        state.checkedOut = Math.max(0, state.checkedOut - 1)
     })
     on(
         'connectionCheckOutFailed',
         (event: { address: string; durationMS: number; error?: unknown; reason: string }) => {
             const state = getPool(event.address)
-            state.checkoutFailed += 1
-            state.checkoutFailuresByReason[event.reason] =
-                (state.checkoutFailuresByReason[event.reason] ?? 0) + 1
-            logDiagnostic(
-                'connectionCheckOutFailed',
-                event.address,
-                {
-                    durationMS: event.durationMS,
-                    error: errorDetails(event.error),
-                    reason: event.reason
-                },
-                state
-            )
-        }
-    )
-    on(
-        'connectionClosed',
-        (event: { address: string; connectionId: ConnectionId; reason: string }) => {
-            const state = getPool(event.address)
-            state.connecting.delete(event.connectionId)
-            state.available.delete(event.connectionId)
-            state.checkedOut.delete(event.connectionId)
-            state.closedByReason[event.reason] = (state.closedByReason[event.reason] ?? 0) + 1
+            state.checkoutPending = Math.max(0, state.checkoutPending - 1)
+            logDiagnostic('connectionCheckOutFailed', event.address, {
+                durationMS: event.durationMS,
+                error: errorDetails(event.error),
+                reason: event.reason
+            })
         }
     )
     on(
@@ -278,57 +146,26 @@ export function registerMongoClientDiagnostics(
             interruptInUseConnections?: boolean
             serviceId?: { toString(): string }
         }) => {
-            const state = getPool(event.address)
-            state.poolClears += 1
-            state.poolReady = false
-            state.connectionsInvalidatedByClear +=
-                state.available.size + state.checkedOut.size + state.connecting.size
-            state.available.clear()
-            state.connecting.clear()
-            logDiagnostic(
-                'connectionPoolCleared',
-                event.address,
-                {
-                    interruptInUseConnections: event.interruptInUseConnections,
-                    serviceId: event.serviceId?.toString()
-                },
-                state
-            )
+            logDiagnostic('connectionPoolCleared', event.address, {
+                interruptInUseConnections: event.interruptInUseConnections,
+                serviceId: event.serviceId?.toString()
+            })
         }
     )
     on('connectionPoolClosed', (event: { address: string }) => {
-        const state = getPool(event.address)
-        state.poolClosed = true
-        state.poolReady = false
-        state.available.clear()
-        state.connecting.clear()
-        if (
-            state.checkedOut.size > 0 ||
-            state.checkoutStarted > state.checkoutSucceeded + state.checkoutFailed
-        ) {
-            logDiagnostic('connectionPoolClosedWithOutstandingWork', event.address, {}, state)
+        const state = pools.get(event.address)
+        if (state && (state.checkedOut > 0 || state.checkoutPending > 0)) {
+            logDiagnostic('connectionPoolClosedWithOutstandingWork', event.address, {})
         }
         pools.delete(event.address)
-    })
-    on('serverHeartbeatSucceeded', (event: { connectionId: string; duration: number }) => {
-        const state = getPool(event.connectionId)
-        state.heartbeatSucceeded += 1
-        state.lastHeartbeatDurationMS = event.duration
-        state.maxHeartbeatDurationMS = Math.max(state.maxHeartbeatDurationMS, event.duration)
     })
     on(
         'serverHeartbeatFailed',
         (event: { connectionId: string; duration: number; failure: unknown }) => {
-            const state = getPool(event.connectionId)
-            state.heartbeatFailed += 1
-            state.lastHeartbeatDurationMS = event.duration
-            state.maxHeartbeatDurationMS = Math.max(state.maxHeartbeatDurationMS, event.duration)
-            logDiagnostic(
-                'serverHeartbeatFailed',
-                event.connectionId,
-                { durationMS: event.duration, error: errorDetails(event.failure) },
-                state
-            )
+            logDiagnostic('serverHeartbeatFailed', event.connectionId, {
+                durationMS: event.duration,
+                error: errorDetails(event.failure)
+            })
         }
     )
     on(
@@ -338,12 +175,16 @@ export function registerMongoClientDiagnostics(
             newDescription: { error?: unknown; roundTripTime?: number; type: string }
             previousDescription: { type: string }
         }) => {
-            getPool(event.address).lastServerDescription = {
+            if (event.newDescription.type === event.previousDescription.type) return
+            const wasKnown = knownServers.has(event.address)
+            if (event.newDescription.type !== 'Unknown') knownServers.add(event.address)
+            if (!wasKnown) return
+            logDiagnostic('serverDescriptionChanged', event.address, {
                 error: errorDetails(event.newDescription.error),
                 newType: event.newDescription.type,
                 previousType: event.previousDescription.type,
                 roundTripTimeMS: event.newDescription.roundTripTime
-            }
+            })
         }
     )
     on(
@@ -354,6 +195,7 @@ export function registerMongoClientDiagnostics(
                 setName?: string | null
                 type: string
             }
+            previousDescription: { type: string }
         }) => {
             topology = {
                 servers: [...event.newDescription.servers].map(([address, description]) => ({
@@ -363,6 +205,16 @@ export function registerMongoClientDiagnostics(
                 })),
                 setName: event.newDescription.setName,
                 type: event.newDescription.type
+            }
+            const wasHealthy = topologyHasBeenHealthy
+            if (event.newDescription.type === 'ReplicaSetWithPrimary') {
+                topologyHasBeenHealthy = true
+            }
+            if (wasHealthy && event.newDescription.type !== event.previousDescription.type) {
+                logDiagnostic('topologyDescriptionChanged', 'topology', {
+                    newType: event.newDescription.type,
+                    previousType: event.previousDescription.type
+                })
             }
         }
     )
