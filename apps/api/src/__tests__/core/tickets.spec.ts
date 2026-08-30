@@ -182,55 +182,6 @@ describe('TicketsService', () => {
         })
     })
 
-    describe('purchase ownership', () => {
-        it('판매 소유 purchase만 티켓을 해제할 수 있고 재시도는 멱등이다', async () => {
-            const purchaseRecordId = oid(0xd0)
-            const createdTickets = await createTickets(fix, [
-                { status: TicketStatus.Available },
-                { status: TicketStatus.Available }
-            ])
-            const ticketIds = pickIds(createdTickets)
-
-            const sold = await ticketsService.sellForPurchase(ticketIds, purchaseRecordId)
-            expect(sold.every((ticket) => ticket.status === TicketStatus.Sold)).toBe(true)
-
-            const released = await ticketsService.releasePurchase(ticketIds, purchaseRecordId)
-            expect(released.every((ticket) => ticket.status === TicketStatus.Available)).toBe(true)
-
-            const retried = await ticketsService.releasePurchase(ticketIds, purchaseRecordId)
-            expect(retried.every((ticket) => ticket.status === TicketStatus.Available)).toBe(true)
-        })
-
-        it('다른 purchase가 판매한 티켓은 해제하지 않는다', async () => {
-            const createdTickets = await createTickets(fix, [{ status: TicketStatus.Available }])
-            const ticketIds = pickIds(createdTickets)
-            await ticketsService.sellForPurchase(ticketIds, oid(0xd0))
-
-            await expect(
-                ticketsService.releasePurchase(ticketIds, oid(0xd1))
-            ).rejects.toMatchObject({
-                response: { code: 'ERR_TICKET_STATUS_TRANSITION_FAILED', ticketIds },
-                status: HttpStatus.CONFLICT
-            })
-
-            expect(ensure((await ticketsService.getMany(ticketIds))[0]).status).toBe(
-                TicketStatus.Sold
-            )
-        })
-
-        it('해제 대상에 존재하지 않는 티켓이 있으면 404를 던진다', async () => {
-            const createdTickets = await createTickets(fix, [{ status: TicketStatus.Available }])
-            const ticket = ensure(createdTickets[0])
-
-            await expect(
-                ticketsService.releasePurchase([ticket.id, nullObjectId], oid(0xd0))
-            ).rejects.toMatchObject({
-                response: Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]),
-                status: HttpStatus.NOT_FOUND
-            })
-        })
-    })
-
     describe('aggregateSales', () => {
         it('상영 시간 ID 목록에 대한 판매 통계를 반환한다', async () => {
             const showtimeId = oid(0x10)

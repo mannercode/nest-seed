@@ -138,41 +138,6 @@ export class TicketsRepository extends CrudRepository<Ticket> {
         await this.withTransaction(transition)
     }
 
-    async getPurchaseReleaseIds(ticketIds: string[], purchaseRecordId: string) {
-        const ids = objectIds(ticketIds)
-        const tickets = await this.collection
-            .find(this.activeFilter({ _id: { $in: ids } }), {
-                projection: { _id: 1, purchaseRecordId: 1, status: 1 }
-            })
-            .toArray()
-
-        const foundIds = new Set(tickets.map((ticket) => String(ticket._id)))
-        const missingIds = ticketIds.filter((ticketId) => !foundIds.has(ticketId))
-        if (missingIds.length > 0) {
-            await this.getByIds(ticketIds)
-        }
-
-        const conflictingIds = tickets
-            .filter(
-                (ticket) =>
-                    ticket.status !== TicketStatus.Available &&
-                    ticket.purchaseRecordId !== purchaseRecordId
-            )
-            .map((ticket) => String(ticket._id))
-
-        if (conflictingIds.length > 0) {
-            throw new ConflictException(TicketErrors.StatusTransitionFailed(conflictingIds))
-        }
-
-        return tickets
-            .filter(
-                (ticket) =>
-                    ticket.status === TicketStatus.Sold &&
-                    ticket.purchaseRecordId === purchaseRecordId
-            )
-            .map((ticket) => String(ticket._id))
-    }
-
     async releaseOwnedPurchaseForCompensation(ticketIds: string[], purchaseRecordId: string) {
         // 보상 재시도 시점에는 이전 owner가 이미 풀어 준 티켓이 새 구매에
         // 팔렸을 수 있다. 오직 이 구매가 아직 소유한 Sold만 풀고 나머지는 no-op한다.
