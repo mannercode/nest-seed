@@ -29,8 +29,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-. "${WORKSPACE_ROOT}/deploy/ensure-deps-image.sh"
-
 docker compose up -d --build --wait
 docker compose run --rm --no-deps restate-register
 node --test --test-reporter=spec "${WORKSPACE_ROOT}/tests/api-race/probes/restate-journal-recovery.js"

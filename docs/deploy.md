@@ -48,21 +48,20 @@ dev ..> nginx : http://nginx\n(verify.sh · api-race/api-benchmark 러너)
 
 ## 구성
 
-| 파일                   | 설명                                                                                                   |
-| ---------------------- | ------------------------------------------------------------------------------------------------------ |
-| `compose.yml`          | API 컨테이너 N개 + NGINX 로드밸런서 + Restate endpoint 등록용 one-shot 서비스                          |
-| `nginx.conf`           | HTTP API(:80)와 Restate HTTP/2 endpoint(:9080)를 API 복제본에 `least_conn`으로 분배                    |
-| `deps.Dockerfile`      | lockfile 기준 node_modules를 담은 베이스 이미지 (API 이미지 빌드가 참조)                               |
-| `ensure-deps-image.sh` | 의존성 입력의 합본 해시로 `DEPS_TAG`를 계산하고, 해당 태그 이미지가 없으면 빌드                        |
-| `prebuild-images.sh`   | Stability 반복 전 deps·API·NGINX 이미지를 한 번만 준비. 실패하면 짧은 backoff로 최대 3회 시도          |
-| `verify.sh`            | deps 이미지 보장 → compose up → Restate endpoint 등록 → [API 문서](../apps/api/api-docs/run.sh) → down |
+| 파일                 | 설명                                                                                      |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| `compose.yml`        | API 컨테이너 N개 + NGINX 로드밸런서 + Restate endpoint 등록용 one-shot 서비스             |
+| `nginx.conf`         | HTTP API(:80)와 Restate HTTP/2 endpoint(:9080)를 API 복제본에 `least_conn`으로 분배       |
+| `prebuild-images.sh` | Stability 반복 전 API·NGINX 이미지를 한 번만 준비. 실패하면 짧은 backoff로 최대 3회 시도  |
+| `verify.sh`          | compose build/up → Restate endpoint 등록 → [API 문서](../apps/api/api-docs/run.sh) → down |
 
 ## 주요 설정
 
-| 변수                   | 기본값                                                  | 설명                                                                                                                                                                                                                                                |
-| ---------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `COMPOSE_PROJECT_NAME` | 필수 (devcontainer: 사용자명과 workspace basename 조합) | API와 개발 인프라가 공유할 Docker 네트워크 이름                                                                                                                                                                                                     |
-| `DEPS_TAG`             | 자동 계산                                               | deps 이미지 태그. `ensure-deps-image.sh`를 source하면 pnpm lockfile·설치 정책·Dockerfile·workspace manifest·내부 도구 bin 대상의 합본 해시로 태그를 계산해 export하고, 이미지가 없으면 그 자리에서 빌드한다. `verify.sh`가 이 스크립트를 source한다 |
+| 변수                   | 기본값                                                  | 설명                                            |
+| ---------------------- | ------------------------------------------------------- | ----------------------------------------------- |
+| `COMPOSE_PROJECT_NAME` | 필수 (devcontainer: 사용자명과 workspace basename 조합) | API와 개발 인프라가 공유할 Docker 네트워크 이름 |
+
+API Dockerfile은 BuildKit cache mount로 pnpm store를 재사용한다. 별도 deps 이미지를 만들지 않으므로 manifest가 바뀔 때마다 영구 태그가 쌓이지 않는다. 설치는 API와 그 workspace 의존성 closure로 제한되어 console·user-app·Playwright·`tests/*`를 API 빌드에 포함하지 않는다.
 
 베이스·NGINX·인프라 이미지 참조는 사람이 읽을 버전 태그와 실제 바이트를 고정하는 multi-architecture digest를 같이 둔다. 버전을 올릴 때는 태그와 digest를 함께 확인·갱신한다.
 
@@ -71,7 +70,7 @@ dev ..> nginx : http://nginx\n(verify.sh · api-race/api-benchmark 러너)
 고정 등록 URI를 `force: false`로 쓰므로, Restate가 이미 `http://nginx:9080`을 알고 있는 상태에서 API 코드·workflow manifest를 바꿨다면 먼저 `bash infra/reset.sh`로 개발 Restate를 초기화한다. 이 reset은 journal volume도 지우므로 운영 절차가 아니라 보존할 execution이 없는 개발·검증 환경에서만 실행한다.
 
 ```bash
-cd deploy && export COMPOSE_IGNORE_ORPHANS=True && source ensure-deps-image.sh && docker compose up -d --build --wait
+cd deploy && export COMPOSE_IGNORE_ORPHANS=True && docker compose up -d --build --wait
 docker compose run --rm --no-deps restate-register
 # 끝나면: docker compose down -v
 ```
@@ -95,7 +94,7 @@ API 컨테이너는 `${COMPOSE_PROJECT_NAME}` Docker 네트워크에 붙은 뒤,
 
 ## 로그 출력과 로컬 회전
 
-활성화된 API 콘솔 로그는 모든 환경에서 ECS JSON 한 줄을 stdout/stderr로 내보내고 NGINX access log도 JSON 한 줄을 쓴다. 컨테이너 안에 별도 회전 파일을 만들지 않는다. Compose의 `json-file` driver는 컨테이너별 10MB 파일 3개까지만 로컬 버퍼로 남겨 호스트 디스크가 무한히 차는 것을 막는다.
+활성화된 API 콘솔 로그는 모든 환경에서 ECS JSON 한 줄을 stdout/stderr로 내보내고 NGINX access log도 JSON 한 줄을 쓴다. HTTP 로그에는 method·route·status·duration과 오류 식별 정보만 남기며 요청·응답 본문과 query는 기록하지 않는다. 컨테이너 안에 별도 회전 파일을 만들지 않는다. Compose의 `json-file` driver는 컨테이너별 10MB 파일 3개까지만 로컬 버퍼로 남겨 호스트 디스크가 무한히 차는 것을 막는다.
 
 로그 저장·검색 backend는 배포 환경마다 다르므로 시드에 포함하지 않는다. 실제 프로젝트는 stdout을 해당 환경의 수집기로 전달한다. 기본 `LOG_CONSOLE_LEVEL=info`에서는 NGINX가 요청별 access log를, API가 애플리케이션 info 이상을 남겨 같은 성공 요청을 두 번 상세 기록하지 않는다.
 

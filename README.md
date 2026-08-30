@@ -82,7 +82,7 @@ Vitest는 `describe`·`it` 구조를 tree reporter로 터미널에 보여 준다
 bash deploy/verify.sh   # API 4-replica + NGINX 스택을 새로 띄워 검증하고 내린다
 ```
 
-`verify.sh`는 의존성 설치 레이어를 담은 deps 이미지 준비부터 실행 가능한 API 문서 검증까지 다중 복제본 검증 흐름을 한 번에 돈다. `deploy/`는 TLS·시크릿 관리·백업·프런트엔드 배포를 갖춘 운영 배포본이 아니라 **검증용 참고 스택**이다. 구성 파일과 복제본 정책, 반복 CI용 이미지 미리 빌드, `x-replica-id` 응답 헤더는 [deploy 문서](docs/deploy.md)에 있다.
+`verify.sh`는 BuildKit cache를 사용하는 API 이미지 빌드부터 실행 가능한 API 문서 검증까지 다중 복제본 검증 흐름을 한 번에 돈다. `deploy/`는 TLS·시크릿 관리·백업·프런트엔드 배포를 갖춘 운영 배포본이 아니라 **검증용 참고 스택**이다. 구성 파일과 복제본 정책, 반복 CI용 이미지 미리 빌드, `x-replica-id` 응답 헤더는 [deploy 문서](docs/deploy.md)에 있다.
 
 ## API 레퍼런스
 

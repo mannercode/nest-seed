@@ -7,27 +7,25 @@
 !/pnpm-workspace.yaml
 !/tsconfig.json
 
-!/libs/*/package.json
-!/libs/*/tsconfig.json
-!/libs/*/tsconfig.build.json
-!/libs/*/src/
+!/libs/common/package.json
+!/libs/common/tsconfig.json
+!/libs/common/tsconfig.build.json
+!/libs/common/src/
+# API의 개발 의존성인 workspace link를 해석하는 데 manifest만 필요하다.
+!/libs/testing/package.json
 
-!/apps/*/package.json
-!/apps/*/rspack.config.cjs
-!/apps/*/tsconfig.json
-!/apps/*/tsconfig.build.json
-!/apps/*/nest-cli.json
-!/apps/*/src/
-!/apps/*/scripts/
+!/apps/api/package.json
+!/apps/api/rspack.config.cjs
+!/apps/api/tsconfig.json
+!/apps/api/tsconfig.build.json
+!/apps/api/nest-cli.json
+!/apps/api/src/
+!/apps/api/scripts/
 
-# `apps/api`가 `tools/` 패키지를 사용하므로 의존성을 설치할 때 이 폴더가 필요하다.
-# 없으면 local workspace dependency를 연결할 수 없다.
-!/tools/
-!/tools/*/
-
-# `tests/*`도 pnpm workspace에 포함된다.
-# 실제 앱 이미지에는 넣지 않더라도, 의존성을 설치할 때는 각 `package.json`이 있어야 한다.
-!/tests/*/package.json
+!/tools/dev-tools/package.json
+!/tools/dev-tools/free-port.js
+!/tools/dev-tools/tunnel.sh
+!/tools/vitest-helpers/package.json
 
 **/node_modules
 **/_output

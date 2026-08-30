@@ -10,7 +10,6 @@ COMPOSE_DIR="${WORKSPACE_ROOT}/deploy"
 MAX_ATTEMPTS=3
 
 prebuild_images_once() {
-    . "${COMPOSE_DIR}/ensure-deps-image.sh" || return 1
     docker compose --project-directory "${COMPOSE_DIR}" -f "${COMPOSE_DIR}/compose.yml" build api || return 1
     docker compose --project-directory "${COMPOSE_DIR}" -f "${COMPOSE_DIR}/compose.yml" pull nginx || return 1
 }

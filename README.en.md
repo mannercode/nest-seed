@@ -84,7 +84,7 @@ Vitest prints the `describe`/`it` hierarchy in the terminal with its tree report
 bash deploy/verify.sh   # brings up a fresh API 4-replica + NGINX stack, verifies it, and tears it down
 ```
 
-`verify.sh` walks the multi-replica verification flow in one run, from preparing the deps image (the dependency-install layer) to verifying the executable API docs. `deploy/` is a **verification/reference stack**, not a production deployment with TLS, secret management, backups, and frontend deployment. The configuration, replica policy, repeated-CI image prebuild, and `x-replica-id` response header are in the [deploy document](docs/deploy.md).
+`verify.sh` walks the multi-replica verification flow in one run, from building the API image with a BuildKit dependency cache to verifying the executable API docs. `deploy/` is a **verification/reference stack**, not a production deployment with TLS, secret management, backups, and frontend deployment. The configuration, replica policy, repeated-CI image prebuild, and `x-replica-id` response header are in the [deploy document](docs/deploy.md).
 
 ## API reference
 

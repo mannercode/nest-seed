@@ -65,8 +65,6 @@ dump_diagnostics() {
 }
 
 bring_up_stack() {
-    . "${WORKSPACE_ROOT}/deploy/ensure-deps-image.sh"
-
     local build_option="--build"
     if [ "${DEPLOY_IMAGES_PREBUILT:-false}" = "true" ]; then
         echo "Deploying prebuilt 4-replica api stack..."

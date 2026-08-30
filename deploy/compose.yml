@@ -22,8 +22,6 @@ services:
         build:
             context: ..
             dockerfile: apps/api/Dockerfile
-            args:
-                DEPS_TAG: ${DEPS_TAG:?DEPS_TAG must be set}
         image: nest-seed-api
         # restart 정책은 일부러 두지 않는다.
         # 이 스택은 검증용이라, 복제본이 죽으면 자동 복구로 가려지지 않고 그대로 드러나야 한다.

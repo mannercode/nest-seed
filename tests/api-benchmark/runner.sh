@@ -49,8 +49,6 @@ dump_diagnostics() {
 }
 
 echo "Building and deploying 4-replica api stack..."
-. "${WORKSPACE_ROOT}/deploy/ensure-deps-image.sh"
-
 # EXIT trap이 곧 컨테이너를 지우므로, 기동 실패의 원인은 여기서 남기지 않으면 영구 소실된다.
 if ! docker compose up -d --build --wait; then
     echo "[FAIL] compose up failed"

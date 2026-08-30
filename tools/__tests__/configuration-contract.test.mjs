@@ -58,10 +58,18 @@ test('devcontainer installs the frozen lock and pins resolved features', async (
     }
 })
 
-test('API image passes production mode to pnpm deploy without mutating the build workspace', async () => {
+test('API image uses BuildKit cache and deploys only its production workspace', async () => {
     const dockerfile = await read('apps/api/Dockerfile')
+    const compose = await read('deploy/compose.yml')
+
+    assert.match(dockerfile, /^# syntax=docker\/dockerfile:1$/m)
+    assert.match(dockerfile, /--mount=type=cache[^\n]+target=\/pnpm\/store/)
+    assert.match(
+        dockerfile,
+        /pnpm install[^\n]+--filter '\.\/apps\/api\.\.\.'[^\n]+--filter '\.\/libs\/common'/
+    )
     assert.match(dockerfile, /--fail-if-no-match deploy --prod --legacy/)
-    assert.doesNotMatch(dockerfile, /--prod deploy/)
+    assert.doesNotMatch(dockerfile + compose, /nest-seed-deps|DEPS_TAG/)
 })
 
 test('backend workspaces use Node ESM and Vitest keeps the TypeScript metadata transform', async () => {
@@ -290,26 +298,21 @@ test('container base and infrastructure image references are digest-pinned', asy
     )
 
     const nodeBaseImages = []
-    for (const dockerfile of [
-        '.devcontainer/Dockerfile',
-        'apps/api/Dockerfile',
-        'deploy/deps.Dockerfile'
-    ]) {
+    for (const dockerfile of ['.devcontainer/Dockerfile', 'apps/api/Dockerfile']) {
         const contents = await read(dockerfile)
         const stages = new Set()
         for (const [, image, alias] of contents.matchAll(/^FROM\s+(\S+)(?:\s+AS\s+(\S+))?/gim)) {
             if (stages.has(image)) continue
-            if (image.startsWith('nest-seed-deps:')) continue
             assert.match(image, /@sha256:[a-f0-9]{64}$/, `${dockerfile} base image must be pinned`)
             if (image.startsWith('node:')) nodeBaseImages.push(image)
             if (alias) stages.add(alias)
         }
     }
-    assert.equal(nodeBaseImages.length, 3)
+    assert.equal(nodeBaseImages.length, 2)
     assert.equal(
         new Set(nodeBaseImages).size,
         1,
-        'devcontainer, dependency builder, and API runtime must use one Node tag and digest'
+        'devcontainer and API build must use one Node tag and digest'
     )
 
     for (const compose of ['deploy/compose.yml', 'infra/compose.s3.yml', 'infra/compose.yml']) {
