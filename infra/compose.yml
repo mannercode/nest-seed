@@ -3,7 +3,7 @@ include:
     - ./compose.s3.yml
     - ./compose.redis.yml
     - ./compose.nats.yml
-    - ./restate/compose.restate.yml
+    - ./compose.restate.yml
 
 services:
     # 모든 setup 서비스가 성공한 뒤 종료되는 기준 컨테이너다.

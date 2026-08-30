@@ -344,7 +344,7 @@ test('Restate keeps durable execution data on its named volume', async () => {
     const infraEnv = await read('.env.infra')
     assert.match(infraEnv, /^RESTATE_IMAGE=.+@sha256:[a-f0-9]{64}$/m)
 
-    const restateCompose = await read('infra/restate/compose.restate.yml')
+    const restateCompose = await read('infra/compose.restate.yml')
     assert.match(restateCompose, /RESTATE_NODE_NAME: restate-1/)
     assert.match(restateCompose, /restate_data:\/restate-data/)
     assert.match(restateCompose, /http:\/\/localhost:9070\/health/)

@@ -1,6 +1,6 @@
 services:
     restate:
-        extends: { file: ../compose.common.yml, service: common-options }
+        extends: { file: ./compose.common.yml, service: common-options }
         image: $RESTATE_IMAGE
         environment:
             RESTATE_NODE_NAME: restate-1

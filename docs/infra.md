@@ -8,7 +8,7 @@ devcontainer가 부팅할 때 `postStartCommand`로 `bash infra/reset.sh`를 실
 - `compose.redis.yml` — Redis Cluster. 스탠드얼론에서는 통과하지만 Cluster에서만 실패하는 코드가 개발 단계에서 드러나게 한다.
 - `compose.s3.yml` — VersityGW POSIX backend 기반 S3 호환 스토리지. 애플리케이션은 구현체 전용 API 없이 AWS SDK v3의 S3 API만 사용한다.
 - `compose.nats.yml` — Core pub/sub와 구매 이벤트용 JetStream. JetStream 파일 저장소는 `nats_data` volume을 사용한다.
-- `restate/compose.restate.yml` — 단일 Restate 서버와 영속 volume. ingress(8080)와 Admin API(9070)의 health가 모두 준비되어야 healthy다.
+- `compose.restate.yml` — 단일 Restate 서버와 영속 volume. ingress(8080)와 Admin API(9070)의 health가 모두 준비되어야 healthy다.
 
 이 인프라는 세 소비자가 공유한다. dev 서버(`pnpm run dev`)와 `apps/api` 통합 테스트가 직접 붙고, 검증용 4-replica 배포 스택(`deploy/`)도 같은 Docker 네트워크(`COMPOSE_PROJECT_NAME`)에 붙어 서비스 이름(`mongo1`, `redis1`, `restate` 등)으로 접근한다. 접속 값의 정의처는 `.env.infra`다.
 
