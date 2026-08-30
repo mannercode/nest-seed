@@ -195,7 +195,7 @@ describe('BookingService', () => {
                 .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
                 .headers({ Authorization: `Bearer ${resources.accessToken}` })
                 .body({ ticketIds })
-                .notFound(Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]))
+                .notFound(Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]))
         })
 
         it('다른 상영의 티켓이 섞여 있으면 400을 반환한다', async () => {

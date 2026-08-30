@@ -50,7 +50,7 @@ describe('PaymentsService', () => {
 
         it('결제 ID가 없으면 404를 던진다', async () => {
             await expect(paymentsService.cancel(nullObjectId)).rejects.toMatchObject({
-                response: Errors.Mongoose.DocumentNotFound(nullObjectId),
+                response: Errors.Mongo.DocumentNotFound(nullObjectId),
                 status: HttpStatus.NOT_FOUND
             })
         })
@@ -159,7 +159,7 @@ describe('PaymentsService', () => {
             const promise = paymentsService.getMany([nullObjectId])
 
             await expect(promise).rejects.toMatchObject({
-                message: Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]).message,
+                message: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]).message,
                 status: HttpStatus.NOT_FOUND
             })
         })

@@ -78,7 +78,7 @@ describe('MoviesService', () => {
         it('ID에 해당하는 영화가 없으면 404를 반환한다', async () => {
             await fix.httpClient
                 .get(`/movies/${nullObjectId}`)
-                .notFound(Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]))
+                .notFound(Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]))
         })
 
         it('미공개(draft) 영화면 404를 반환한다', async () => {
@@ -125,7 +125,7 @@ describe('MoviesService', () => {
             await fix.httpClient
                 .patch(`/movies/${nullObjectId}`)
                 .body({})
-                .notFound(Errors.Mongoose.DocumentNotFound(nullObjectId))
+                .notFound(Errors.Mongo.DocumentNotFound(nullObjectId))
         })
     })
 
@@ -143,7 +143,7 @@ describe('MoviesService', () => {
 
             await fix.httpClient
                 .get(`/movies/${movie.id}`)
-                .notFound(Errors.Mongoose.MultipleDocumentsNotFound([movie.id]))
+                .notFound(Errors.Mongo.MultipleDocumentsNotFound([movie.id]))
         })
 
         it('상영이 참조하는 영화는 삭제할 수 없다', async () => {

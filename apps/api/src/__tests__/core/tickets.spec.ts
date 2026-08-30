@@ -114,7 +114,7 @@ describe('TicketsService', () => {
             const promise = ticketsService.search({})
 
             await expect(promise).rejects.toMatchObject({
-                message: Errors.Mongoose.FiltersRequired().message,
+                message: Errors.Mongo.FiltersRequired().message,
                 status: HttpStatus.BAD_REQUEST
             })
         })
@@ -161,7 +161,7 @@ describe('TicketsService', () => {
 
             // '없는 티켓'은 상태 충돌(409)이 아니라 누락 id 목록을 담은 404로 분류되어야 한다.
             await expect(promise).rejects.toMatchObject({
-                response: Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]),
+                response: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]),
                 status: HttpStatus.NOT_FOUND
             })
 

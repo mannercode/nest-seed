@@ -103,7 +103,7 @@ describe('MoviesPublish', () => {
         it('영화가 없으면 404를 반환한다', async () => {
             await fix.httpClient
                 .post(`/movies/${nullObjectId}/publish`)
-                .notFound(Errors.Mongoose.DocumentNotFound(nullObjectId))
+                .notFound(Errors.Mongo.DocumentNotFound(nullObjectId))
         })
     })
 

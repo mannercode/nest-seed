@@ -49,7 +49,7 @@ describe('TheatersService', () => {
         it('ID에 해당하는 극장이 없으면 404를 반환한다', async () => {
             await fix.httpClient
                 .get(`/theaters/${nullObjectId}`)
-                .notFound(Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]))
+                .notFound(Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]))
         })
     })
 
@@ -83,7 +83,7 @@ describe('TheatersService', () => {
             await fix.httpClient
                 .patch(`/theaters/${nullObjectId}`)
                 .body({})
-                .notFound(Errors.Mongoose.DocumentNotFound(nullObjectId))
+                .notFound(Errors.Mongo.DocumentNotFound(nullObjectId))
         })
 
         it('필수 필드를 null로 바꾸는 직접 호출은 저장 전에 거부한다', async () => {
@@ -109,7 +109,7 @@ describe('TheatersService', () => {
 
             await fix.httpClient
                 .get(`/theaters/${theater.id}`)
-                .notFound(Errors.Mongoose.MultipleDocumentsNotFound([theater.id]))
+                .notFound(Errors.Mongo.MultipleDocumentsNotFound([theater.id]))
         })
 
         it('상영이 참조하는 극장은 삭제할 수 없다', async () => {

@@ -112,7 +112,7 @@ describe('UsersService', () => {
             await fix.httpClient
                 .get(`/users/${nullObjectId}`)
                 .headers(adminAuth)
-                .notFound(Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]))
+                .notFound(Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]))
         })
     })
 
@@ -148,7 +148,7 @@ describe('UsersService', () => {
                 .patch(`/users/${nullObjectId}`)
                 .headers(adminAuth)
                 .body({})
-                .notFound(Errors.Mongoose.DocumentNotFound(nullObjectId))
+                .notFound(Errors.Mongo.DocumentNotFound(nullObjectId))
         })
 
         it('password를 바꾸면 새 password로 로그인할 수 있다', async () => {
@@ -207,7 +207,7 @@ describe('UsersService', () => {
             await fix.httpClient
                 .get(`/users/${user.id}`)
                 .headers(adminAuth)
-                .notFound(Errors.Mongoose.MultipleDocumentsNotFound([user.id]))
+                .notFound(Errors.Mongo.MultipleDocumentsNotFound([user.id]))
         })
 
         it('고객이 없어도 204를 반환한다', async () => {
@@ -239,7 +239,7 @@ describe('UsersService', () => {
             const service = fix.module.get(UsersService)
 
             await expect(service.revokeAllForUser(nullObjectId)).rejects.toThrow(
-                Errors.Mongoose.DocumentNotFound(nullObjectId).message
+                Errors.Mongo.DocumentNotFound(nullObjectId).message
             )
         })
     })

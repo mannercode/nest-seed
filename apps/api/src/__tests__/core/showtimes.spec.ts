@@ -81,7 +81,7 @@ describe('ShowtimesService', () => {
             const promise = showtimesService.getMany([ensure(existingShowtime).id, nullObjectId])
 
             await expect(promise).rejects.toMatchObject({
-                message: Errors.Mongoose.MultipleDocumentsNotFound([nullObjectId]).message,
+                message: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]).message,
                 status: HttpStatus.NOT_FOUND
             })
         })
@@ -173,7 +173,7 @@ describe('ShowtimesService', () => {
             const promise = showtimesService.search({})
 
             await expect(promise).rejects.toMatchObject({
-                message: Errors.Mongoose.FiltersRequired().message,
+                message: Errors.Mongo.FiltersRequired().message,
                 status: HttpStatus.BAD_REQUEST
             })
         })

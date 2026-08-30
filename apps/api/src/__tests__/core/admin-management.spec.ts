@@ -101,7 +101,7 @@ describe('AdminManagement', () => {
             await fix.httpClient
                 .delete(`/admins/${nullObjectId}`)
                 .headers({ Authorization: rootBasic })
-                .notFound(Errors.Mongoose.DocumentNotFound(nullObjectId))
+                .notFound(Errors.Mongo.DocumentNotFound(nullObjectId))
         })
 
         it('제거된 admin의 이메일로 다시 admin을 만들 수 있다', async () => {
@@ -287,7 +287,7 @@ describe('AdminManagement', () => {
             const service = fix.module.get(AdminsService)
 
             await expect(service.update(nullObjectId, { name: 'x' })).rejects.toThrow(
-                Errors.Mongoose.DocumentNotFound(nullObjectId).message
+                Errors.Mongo.DocumentNotFound(nullObjectId).message
             )
         })
     })
