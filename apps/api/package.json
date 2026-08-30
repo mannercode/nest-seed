@@ -24,9 +24,9 @@
         "atoz": "pnpm run lint && pnpm run test:api-docs-redaction && pnpm run test:vitest-isolation && pnpm test"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "3.1116.0",
-        "@aws-sdk/s3-presigned-post": "3.1116.0",
-        "@aws-sdk/s3-request-presigner": "3.1116.0",
+        "@aws-sdk/client-s3": "3.1118.0",
+        "@aws-sdk/s3-presigned-post": "3.1118.0",
+        "@aws-sdk/s3-request-presigner": "3.1118.0",
         "@mannercode/common": "workspace:*",
         "@nats-io/jetstream": "3.4.0",
         "@nats-io/transport-node": "3.4.0",
