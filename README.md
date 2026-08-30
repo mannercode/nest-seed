@@ -56,7 +56,7 @@
 | 명령                   | 용도                                                                            |
 | ---------------------- | ------------------------------------------------------------------------------- |
 | `pnpm run test`        | 워크스페이스 단위·통합·계약 테스트. 커버리지 수집 대상 구현은 100% 게이트       |
-| `pnpm run lint`        | 정적 검사 전부 — 타입 체크·ESLint·Prettier·shellcheck·문서 링크                 |
+| `pnpm run lint`        | 정적 검사 전부 — 타입 체크·Oxlint·Prettier·shellcheck·문서 링크                 |
 | `pnpm run dev`         | 실제 앱을 띄워 볼 때 — api(3000)·console(3100)·user-app(3200) + libs watch      |
 | `pnpm run dev:api`     | API만 띄울 때                                                                   |
 | `pnpm run dev:restate` | `dev:api`를 따로 띄운 경우 개발 Restate endpoint 등록. 전체 `dev`에는 포함      |
@@ -121,25 +121,25 @@ nest-seed/
 
 처음 보는 도구가 있다면 "어디에 쓰나" 열의 코드 경로나 문서부터 따라가면 된다.
 
-| 도구                                | 어디에 쓰나                                                                                                                        |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| MongoDB (Replica Set) + 공식 driver | 주 데이터베이스. 트랜잭션, soft delete — `libs/common/mongodb`                                                                     |
-| Redis (Cluster) + ioredis           | 캐시와 분산 락 — `libs/common/redis`, `libs/common/cache`                                                                          |
-| NATS                                | 컨테이너 사이 pub/sub — `libs/common/nats`                                                                                         |
-| Restate                             | durable 사가 워크플로 — `application/showtime-creation/worker`                                                                     |
-| VersityGW (S3 API)                  | presigned 파일 업로드·다운로드 — `libs/common/s3`, `infrastructure/assets`                                                         |
-| NestJS                              | API 서버. 가드·파이프를 Passport 없이 직접 구현 — `gateway/`                                                                       |
-| Next.js                             | console·user-app 최소 데모                                                                                                         |
-| @nestjs/jwt + bcrypt                | 역할별 토큰 서명·검증 — `gateway/guards`; 비밀번호 해시 — `core/{users,admins}/internal`                                           |
-| Zod + Standard Schema               | 환경 설정과 HTTP request 검증 — `config/`, `gateway/`                                                                              |
-| pnpm workspace                      | 모노레포 구성. libs를 내부 패키지로 공유                                                                                           |
-| Vitest + Testcontainers             | 단위·통합 테스트. `libs/common`은 인프라를 직접 띄운다 — [apps 문서](docs/apps.md#테스트)                                          |
-| Playwright                          | console·user-app 브라우저 e2e와 공통 BFF 계약 — `tests/web`                                                                        |
-| k6                                  | 성능 비교 하네스 — `tests/api-benchmark`                                                                                           |
-| Docker Compose + NGINX              | 개발 인프라(`infra/`)와 다중 컨테이너 배포(`deploy/`)                                                                              |
-| GitHub Actions                      | atoz 회귀와 반복 안정성 검증 — `.github/workflows`                                                                                 |
-| cloudflared (`pnpm exec tunnel`)    | direct API는 항상 거부. 두 앱+BFF가 일부 auth를 제외한 대부분 API를 proxy하므로 두 opt-in 플래그를 준 폐기성 환경에서만 공개       |
-| ESLint·Prettier·husky·commitlint    | 계층 의존 강제(eslint-plugin-boundaries) — [apps 문서](docs/apps.md#sola-5계층), 커밋 훅 — [컨벤션](docs/reference/conventions.md) |
+| 도구                                | 어디에 쓰나                                                                                                                  |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| MongoDB (Replica Set) + 공식 driver | 주 데이터베이스. 트랜잭션, soft delete — `libs/common/mongodb`                                                               |
+| Redis (Cluster) + ioredis           | 캐시와 분산 락 — `libs/common/redis`, `libs/common/cache`                                                                    |
+| NATS                                | 컨테이너 사이 pub/sub — `libs/common/nats`                                                                                   |
+| Restate                             | durable 사가 워크플로 — `application/showtime-creation/worker`                                                               |
+| VersityGW (S3 API)                  | presigned 파일 업로드·다운로드 — `libs/common/s3`, `infrastructure/assets`                                                   |
+| NestJS                              | API 서버. 가드·파이프를 Passport 없이 직접 구현 — `gateway/`                                                                 |
+| Next.js                             | console·user-app 최소 데모                                                                                                   |
+| @nestjs/jwt + bcrypt                | 역할별 토큰 서명·검증 — `gateway/guards`; 비밀번호 해시 — `core/{users,admins}/internal`                                     |
+| Zod + Standard Schema               | 환경 설정과 HTTP request 검증 — `config/`, `gateway/`                                                                        |
+| pnpm workspace                      | 모노레포 구성. libs를 내부 패키지로 공유                                                                                     |
+| Vitest + Testcontainers             | 단위·통합 테스트. `libs/common`은 인프라를 직접 띄운다 — [apps 문서](docs/apps.md#테스트)                                    |
+| Playwright                          | console·user-app 브라우저 e2e와 공통 BFF 계약 — `tests/web`                                                                  |
+| k6                                  | 성능 비교 하네스 — `tests/api-benchmark`                                                                                     |
+| Docker Compose + NGINX              | 개발 인프라(`infra/`)와 다중 컨테이너 배포(`deploy/`)                                                                        |
+| GitHub Actions                      | atoz 회귀와 반복 안정성 검증 — `.github/workflows`                                                                           |
+| cloudflared (`pnpm exec tunnel`)    | direct API는 항상 거부. 두 앱+BFF가 일부 auth를 제외한 대부분 API를 proxy하므로 두 opt-in 플래그를 준 폐기성 환경에서만 공개 |
+| Oxlint·Prettier·husky·commitlint    | 기본 코드 오류·프런트 규칙 검사와 커밋 훅 — [컨벤션](docs/reference/conventions.md)                                          |
 
 ## 도메인 둘러보기
 

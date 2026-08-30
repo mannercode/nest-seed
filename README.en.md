@@ -58,7 +58,7 @@ Development is test-driven — a test brings up the environment it needs (infras
 | Command                | Purpose                                                                                                            |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `pnpm run test`        | Workspace unit, integration, and contract tests; 100% gate for implementation workspaces that collect coverage     |
-| `pnpm run lint`        | All static checks — type check, ESLint, Prettier, shellcheck, doc links                                            |
+| `pnpm run lint`        | All static checks — type check, Oxlint, Prettier, shellcheck, doc links                                            |
 | `pnpm run dev`         | To run the real apps — api (3000), console (3100), user-app (3200) + libs watch                                    |
 | `pnpm run dev:api`     | API only                                                                                                           |
 | `pnpm run dev:restate` | Register the development Restate endpoint when `dev:api` runs separately; included in full `dev`                   |
@@ -123,25 +123,25 @@ What each folder is and why it is split this way is covered by the folder docume
 
 If a tool is new to you, start from the code path or document in the "Where it's used" column.
 
-| Tool                                    | Where it's used                                                                                                                                                 |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| MongoDB (Replica Set) + official driver | Primary database. Transactions, soft delete — `libs/common/mongodb`                                                                                             |
-| Redis (Cluster) + ioredis               | Cache and distributed locks — `libs/common/redis`, `libs/common/cache`                                                                                          |
-| NATS                                    | Pub/sub across containers — `libs/common/nats`                                                                                                                  |
-| Restate                                 | Durable saga workflows — `application/showtime-creation/worker`                                                                                                 |
-| VersityGW (S3 API)                      | Presigned file upload/download — `libs/common/s3`, `infrastructure/assets`                                                                                      |
-| NestJS                                  | API server. Guards and pipes implemented directly, without Passport — `gateway/`                                                                                |
-| Next.js                                 | console and user-app minimal demos                                                                                                                              |
-| @nestjs/jwt + bcrypt                    | Per-role token signing/verification — `gateway/guards`; password hashing — `core/{users,admins}/internal`                                                       |
-| Zod + Standard Schema                   | Environment and HTTP request validation — `config/`, `gateway/`                                                                                                 |
-| pnpm workspace                          | Monorepo layout. Shares libs as internal packages                                                                                                               |
-| Vitest + Testcontainers                 | Unit and integration tests. `libs/common` brings up its own infrastructure — [apps document](docs/apps.md#테스트)                                               |
-| Playwright                              | Console/user-app browser e2e and shared BFF contracts — `tests/web`                                                                                             |
-| k6                                      | Performance comparison harness — `tests/api-benchmark`                                                                                                          |
-| Docker Compose + NGINX                  | Development infrastructure (`infra/`) and multi-container deployment (`deploy/`)                                                                                |
-| GitHub Actions                          | atoz regression and repeated stability verification — `.github/workflows`                                                                                       |
-| cloudflared (`pnpm exec tunnel`)        | Always refuses direct API; app BFFs proxy most API routes except selected auth endpoints, so exposure requires both opt-in flags in a disposable environment    |
-| ESLint·Prettier·husky·commitlint        | Layer-dependency enforcement (eslint-plugin-boundaries) — [apps document](docs/apps.md#sola-5계층); commit hooks — [Conventions](docs/reference/conventions.md) |
+| Tool                                    | Where it's used                                                                                                                                              |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| MongoDB (Replica Set) + official driver | Primary database. Transactions, soft delete — `libs/common/mongodb`                                                                                          |
+| Redis (Cluster) + ioredis               | Cache and distributed locks — `libs/common/redis`, `libs/common/cache`                                                                                       |
+| NATS                                    | Pub/sub across containers — `libs/common/nats`                                                                                                               |
+| Restate                                 | Durable saga workflows — `application/showtime-creation/worker`                                                                                              |
+| VersityGW (S3 API)                      | Presigned file upload/download — `libs/common/s3`, `infrastructure/assets`                                                                                   |
+| NestJS                                  | API server. Guards and pipes implemented directly, without Passport — `gateway/`                                                                             |
+| Next.js                                 | console and user-app minimal demos                                                                                                                           |
+| @nestjs/jwt + bcrypt                    | Per-role token signing/verification — `gateway/guards`; password hashing — `core/{users,admins}/internal`                                                    |
+| Zod + Standard Schema                   | Environment and HTTP request validation — `config/`, `gateway/`                                                                                              |
+| pnpm workspace                          | Monorepo layout. Shares libs as internal packages                                                                                                            |
+| Vitest + Testcontainers                 | Unit and integration tests. `libs/common` brings up its own infrastructure — [apps document](docs/apps.md#테스트)                                            |
+| Playwright                              | Console/user-app browser e2e and shared BFF contracts — `tests/web`                                                                                          |
+| k6                                      | Performance comparison harness — `tests/api-benchmark`                                                                                                       |
+| Docker Compose + NGINX                  | Development infrastructure (`infra/`) and multi-container deployment (`deploy/`)                                                                             |
+| GitHub Actions                          | atoz regression and repeated stability verification — `.github/workflows`                                                                                    |
+| cloudflared (`pnpm exec tunnel`)        | Always refuses direct API; app BFFs proxy most API routes except selected auth endpoints, so exposure requires both opt-in flags in a disposable environment |
+| Oxlint·Prettier·husky·commitlint        | Baseline code-error and frontend-rule checks plus commit hooks — [Conventions](docs/reference/conventions.md)                                                |
 
 ## Domain tour
 

@@ -1,6 +1,6 @@
 # tests/ — 배포 스택 대상 테스트
 
-단위·통합 테스트는 보통 각 워크스페이스 안(`apps/api/src/__tests__`, `libs/*/src/**/__tests__`)에 살고 `pnpm run test`로 돈다([apps 문서의 테스트 절](apps.md#테스트) 참고). `tests/`에 모인 것은 주로 **배포된 스택을 밖에서 검증하는** 무거운 테스트라 폴더가 따로 있다. 다만 하네스 자체의 계약은 같은 워크스페이스 안에 둔다. `tests/api-race/contracts`는 공통 HTTP/SSE client·repository 계약을 `pnpm --filter './tests/api-race' test`로, `tests/web/contracts`는 두 Next.js BFF의 공통 보안·ESLint 계약을 `pnpm --filter './tests/web' test`로 실행한다. 둘 다 배포 스택이나 브라우저를 시작하지 않고 기본 `pnpm run test`에 포함된다.
+단위·통합 테스트는 보통 각 워크스페이스 안(`apps/api/src/__tests__`, `libs/*/src/**/__tests__`)에 살고 `pnpm run test`로 돈다([apps 문서의 테스트 절](apps.md#테스트) 참고). `tests/`에 모인 것은 주로 **배포된 스택을 밖에서 검증하는** 무거운 테스트라 폴더가 따로 있다. 다만 하네스 자체의 계약은 같은 워크스페이스 안에 둔다. `tests/api-race/contracts`는 공통 HTTP/SSE client·repository 계약을 `pnpm --filter './tests/api-race' test`로, `tests/web/contracts`는 두 Next.js BFF의 공통 보안·프런트 린트 계약을 `pnpm --filter './tests/web' test`로 실행한다. 둘 다 배포 스택이나 브라우저를 시작하지 않고 기본 `pnpm run test`에 포함된다.
 
 한 화면의 실행 명령과 결과 위치는 [`tests/README.md`](../tests/README.md)에 있다. 루트 `pnpm run test`와 `pnpm run atoz`가 성공하면 마지막에 통과한 영역, 각 영역을 검증하는 이유와 포함되지 않은 장시간 검증을 함께 요약한다.
 
@@ -79,7 +79,7 @@ Playwright가 `apps/api`·`apps/console`·`apps/user-app`을 빌드해 띄운 �
 같은 워크스페이스의 `contracts/bff-proxy.spec.ts`는 BFF의 proxy IP 경계와 refresh 재시도 쿠키 보존을 두 앱에 동일하게 적용하는 계약 테스트다. 별도 Playwright 설정을 써서 webServer와 브라우저를 시작하지 않는다.
 
 ```bash
-pnpm --filter './tests/web' test # 브라우저 없는 BFF·ESLint 계약
+pnpm --filter './tests/web' test # 브라우저 없는 BFF·프런트 린트 계약
 pnpm run e2e                    # AtoZ에도 포함되는 browser e2e
 pnpm run e2e:list               # 서버를 띄우지 않고 테스트 이름 확인
 pnpm run e2e:ui                 # 인터랙티브 실행·트레이스 뷰

@@ -22,7 +22,7 @@ const baseSuites = [
     },
     {
         name: 'Web contracts',
-        reason: 'Console·User app BFF의 proxy/refresh 보안 경계와 ESLint 계약'
+        reason: 'Console·User app BFF의 proxy/refresh 보안 경계와 프런트 린트 계약'
     }
 ]
 

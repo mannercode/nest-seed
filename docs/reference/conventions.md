@@ -6,7 +6,7 @@
 
 ## 1. 커밋 메시지
 
-[`@commitlint/config-conventional`](https://github.com/conventional-changelog/commitlint) 규칙을 따른다. `commit-msg` 훅이 강제하므로 규칙을 어기면 commit이 거절된다. `pre-commit` 훅은 staged 파일에 ESLint `--fix`와 Prettier를 자동 적용한다(lint-staged).
+[`@commitlint/config-conventional`](https://github.com/conventional-changelog/commitlint) 규칙을 따른다. `commit-msg` 훅이 강제하므로 규칙을 어기면 commit이 거절된다. `pre-commit` 훅은 staged 파일에 Oxlint `--fix`와 Prettier를 자동 적용한다(lint-staged).
 
 형식은 `type(scope): subject`이다. 사용할 수 있는 type은 `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`, `style`이다.
 
@@ -55,8 +55,8 @@ const HOME_MOVIE_COUNT = 12 // 사용하는 코드 옆 상수 (view/user-app/hom
 | `dev`    | watch 모드 실행                                                                                                               |
 | `build`  | 빌드 산출물 생성                                                                                                              |
 | `test`   | 개발 루프용 빠른 회귀. API는 devcontainer 인프라를 재사용하고 common은 Testcontainers를 띄우는 Vitest                         |
-| `lint`   | 타입 체크 + ESLint + Prettier 검사. 루트 `lint:root`가 셸·문서 링크 검사를 더한다                                             |
-| `format` | ESLint `--fix` + Prettier 쓰기                                                                                                |
+| `lint`   | 타입 체크 + Oxlint + Prettier 검사. 루트 `lint:root`가 셸·문서 링크 검사를 더한다                                             |
+| `format` | Prettier 쓰기                                                                                                                 |
 | `e2e`    | console·user-app 브라우저 시나리오 (`tests/web/e2e`)                                                                          |
 | `atoz`   | 클린룸 전체 회귀 — clean·인프라 리셋·`pnpm install --frozen-lockfile` 후 lint·build·test·e2e·배포 검증까지. `test`를 포함한다 |
 | `clean`  | (루트 전용) allowlist에 적은 `node_modules`·`_output`·coverage·build 산출물만 정리                                            |

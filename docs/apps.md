@@ -72,7 +72,7 @@ Application, Core, Infrastructure는 단일 서비스를 제공하는 협력 관
 3. Gateway와 View는 서비스 소비자이므로 아래 계층의 공개 API를 자유롭게 호출한다. 단 View는 읽기 응답에 집중하고, 상태를 바꾸는 유스케이스는 두지 않는다.
 4. 서비스 제공 쪽(Application/Core/Infrastructure)은 Gateway와 View를 참조하지 않는다.
 
-이 규칙은 ESLint로 강제한다. 계층 간 의존 방향은 `eslint-plugin-boundaries`가 막고, 계층별 세부 금지 항목은 `no-restricted-imports`가 막는다. 설정은 [apps/api/eslint.config.cjs](../apps/api/eslint.config.cjs)에 있다.
+이 규칙은 시드가 제시하는 구조적 관례다. 기본 정적 검사는 [루트 Oxlint 설정](../oxlint.json)이 맡지만 SoLA 계층 전용 플러그인은 두지 않는다. 새 도메인을 추가할 때는 아래 의존 방향을 코드 리뷰에서 함께 확인한다.
 
 어느 서비스부터 읽을지는 [README 도메인 둘러보기](../README.md#도메인-둘러보기)의 순서를 따른다.
 

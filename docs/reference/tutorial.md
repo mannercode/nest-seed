@@ -176,7 +176,7 @@ creator --> tickets
 
 Core 서비스들 사이에는 화살표가 하나도 없다는 점을 보라 — 조합은 전부 위 계층의 몫이다. 그리고 `internal/` 상자가 이 그림의 또 다른 요점이다. 조율·검증·생성으로 분해된 내부 서비스들은 [showtime-creation/internal/](../../apps/api/src/services/application/showtime-creation/internal/)에 살고 모듈의 공개 barrel(index.ts 재수출 목록)로 내보내지 않는다. 경계 밖에 공개되는 것은 `ShowtimeCreationService`와 SSE 이벤트 통로인 `ShowtimeCreationEvents`뿐이다. 경계 밖에서는 내부 사정을 몰라도 되게 하는 것 — 이것도 같은 원칙이다.
 
-SoLA는 원래 마이크로서비스 — 서비스가 서로 다른 프로세스로 실행되는 환경 — 를 염두에 둔 원칙이지만, 시드는 같은 경계를 **모놀리스 안에** 적용했다. 경계가 코드에 있으면 배포 형태는 나중에 바꿀 수 있기 때문이다. 계층 규칙의 전체 정의(Gateway·View를 포함한 5계층)와 강제 수단(eslint-plugin-boundaries)은 [apps 문서의 SoLA 5계층](../apps.md#sola-5계층)에 있다.
+SoLA는 원래 마이크로서비스 — 서비스가 서로 다른 프로세스로 실행되는 환경 — 를 염두에 둔 원칙이지만, 시드는 같은 경계를 **모놀리스 안에** 적용했다. 경계가 코드에 있으면 배포 형태는 나중에 바꿀 수 있기 때문이다. Gateway·View를 포함한 5계층 규칙과 적용 예시는 [apps 문서의 SoLA 5계층](../apps.md#sola-5계층)에 있다.
 
 ## 4. 규모가 설계를 바꾼다 — 202, 워크플로, 동시성
 
