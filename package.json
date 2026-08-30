@@ -67,7 +67,7 @@
         "rxjs": "7.8.2",
         "testcontainers": "12.1.0",
         "typescript": "6.0.3",
-        "typescript-eslint": "8.67.0",
+        "typescript-eslint": "8.68.0",
         "vitest": "4.1.11"
     }
 }
