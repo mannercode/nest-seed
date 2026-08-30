@@ -101,7 +101,7 @@ function request(method, path, opts = {}) {
                         ...(payload === undefined
                             ? {}
                             : { 'content-length': Buffer.byteLength(payload) }),
-                        ...(headers || {})
+                        ...headers
                     }
                 },
                 (incoming) => {

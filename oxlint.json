@@ -14,6 +14,14 @@
                 "nextjs/no-img-element": "warn"
             },
             "env": { "browser": true, "node": true }
+        },
+        {
+            "files": ["libs/common/src/utils/__tests__/byte.spec.ts"],
+            "rules": { "oxc/number-arg-out-of-range": "off" }
+        },
+        {
+            "files": ["apps/api/src/__tests__/application/purchase-events.spec.ts"],
+            "rules": { "require-yield": "off" }
         }
     ]
 }
