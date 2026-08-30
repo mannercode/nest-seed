@@ -125,14 +125,6 @@ API `/health`의 Restate 항목은 ingress의 `/restate/health`만 확인한다.
 
 이 폴더는 같은 URI 뒤의 컨테이너 이미지를 바꿔 가는 **검증 스택**이다. 실제 운영의 무중단 버전 전환 계약은 아니다. 운영에서는 새 revision마다 구별되는 endpoint URI를 등록하고, 기존 deployment에 묶인 invocation이 끝날 때까지 이전 revision을 유지한 뒤 제거한다. `force: true`로 같은 URI의 정의를 덮어쓰면 실행 중인 invocation의 호환성을 깨뜨릴 수 있다. 개발 스크립트의 강제 등록을 운영 절차로 복사하지 않는다.
 
-Temporal에서 Restate로는 workflow history를 옮길 수 없으므로 이 저장소는 두 런타임을 함께 싣지 않는 **direct cutover**를 택했다. 시드 자체에는 보존할 운영 execution이 없다는 전제다. 이미 Temporal을 운영 중인 포크는 다음 순서 없이 바로 교체하면 안 된다.
-
-1. 신규 Temporal 상영 생성 제출을 중지한다.
-2. **구 API 바이너리와 worker가 살아 있는 동안** Temporal의 open workflow와 실행 중 Activity를 조회해 모두 완료시키거나 명시적으로 취소한다. 필요한 history와 업무 상태를 별도로 보존한다.
-3. open execution이 0임을 확인한 뒤에만 Temporal worker가 빠진 새 API revision과 Restate 서버를 배포하고, version-specific endpoint를 등록한다.
-4. 같은 `Idempotency-Key` 재요청, `waiting → processing → succeeded/failed/error`, MongoDB의 상영·티켓·operation 일치를 smoke test한다.
-5. 그 뒤에만 남은 Temporal 서버·DB와 구 worker 배포 자원을 제거한다. Temporal history가 Restate journal로 자동 변환된다고 가정하지 않는다.
-
 Restate의 deployment/version 동작은 [공식 versioning 문서](https://docs.restate.dev/services/versioning)를 기준으로 운영 환경에 맞게 설계한다.
 
 ## 인증·구매 상태 스키마 교체

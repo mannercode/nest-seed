@@ -100,13 +100,12 @@ Restate로 옮기면 실행 기록과 애플리케이션 코드를 가깝게 두
 - Journal은 완료된 step 결과를 재사용하지만 외부 효과 성공과 journal 기록 사이의 장애까지 원자적으로 묶지는 않는다. `ctx.run` 함수는 다시 호출될 수 있으므로 MongoDB operation unique key나 외부 provider idempotency key가 여전히 필요하다.
 - 상태 이벤트 step도 재시도되므로 같은 이벤트가 중복될 수 있다. Core NATS는 저장·redelivery를 제공하지 않아 SSE 연결 전 이벤트를 복구하지 않는다. MongoDB가 업무 결과의 기준이고 SSE는 진행 알림이다.
 - 모든 API 복제본이 HTTP/2 endpoint(:9080)를 열고 Admin API에 배포 URI를 등록해야 한다. 운영에서는 revision별 endpoint와 이전 invocation drain을 설계해야 하며 검증 스택의 고정 NGINX URI만으로 무중단 versioning이 완성되지 않는다.
-- Temporal history를 Restate journal로 이관할 수 없다. 운영 execution이 있는 전환은 신규 제출 중지와 drain/cancel을 먼저 해야 한다([deploy 문서](../deploy.md#restate-endpoint-등록과-운영-전환)).
 
 ### 검토했던 대안
 
 - **BullMQ에 수동 compensate를 사용** — 사가 단계가 늘수록 보상 처리, 재시도, 상태 관리를 직접 챙겨야 한다.
 - **NATS JetStream 컨슈머** — 메시지 저장과 재시도는 가능하다. 하지만 사가의 보상과 상태 머신은 직접 만들어야 한다. 워크플로라는 추상이 없다.
-- **Temporal 유지** — durable workflow 기능은 충족하지만 별도 worker bundle·sandbox와 서버용 PostgreSQL·setup 경로가 필요했다. 이 시드의 한 workflow에는 Restate의 서비스 endpoint 방식이 더 작다. 단, 기존 Temporal 운영 history가 있다면 단순 패키지 교체가 아니라 위 direct-cutover 절차가 필요하다.
+- **Temporal 유지** — durable workflow 기능은 충족하지만 별도 worker bundle·sandbox와 서버용 PostgreSQL·setup 경로가 필요했다. 이 시드의 한 workflow에는 Restate의 서비스 endpoint 방식이 더 작다.
 
 ---
 
