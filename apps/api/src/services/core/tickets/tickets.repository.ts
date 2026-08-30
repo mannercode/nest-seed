@@ -88,35 +88,24 @@ export class TicketsRepository extends CrudRepository<Ticket> {
         return mongoArrayToPublic<Ticket>(tickets)
     }
 
-    async transitStatusMany(
+    async sellAvailableForPurchase(
         ticketIds: string[],
-        from: TicketStatus,
-        to: TicketStatus,
-        purchaseRecordId?: string,
+        purchaseRecordId: string,
         session?: ClientSession
     ) {
         // 검사와 쓰기 사이에 다른 결제가 끼어드는 경쟁을 트랜잭션 + 상태 조건으로 차단한다.
-        // 하나라도 `from` 상태가 아니면 전체를 중단해, 겹치는 티켓 묶음의 동시 결제에서도 같은 티켓이 두 번 팔리지 않는다.
+        // 하나라도 판매 가능하지 않으면 전체를 중단해, 겹치는 티켓 묶음의 동시 결제에서도 같은 티켓이 두 번 팔리지 않는다.
         const ids = objectIds(ticketIds)
 
         const transition = async (activeSession: ClientSession) => {
-            const ownershipFilter = purchaseRecordId
-                ? from === TicketStatus.Available
-                    ? { purchaseRecordId: null }
-                    : { purchaseRecordId }
-                : {}
-            const filter = { _id: { $in: ids }, status: from, ...ownershipFilter }
-            const update =
-                to === TicketStatus.Sold && purchaseRecordId
-                    ? { $set: { purchaseRecordId, status: to } }
-                    : to === TicketStatus.Available
-                      ? { $set: { status: to }, $unset: { purchaseRecordId: 1 } }
-                      : { $set: { status: to } }
-
-            const activeFilter = this.activeFilter(filter)
+            const activeFilter = this.activeFilter({
+                _id: { $in: ids },
+                purchaseRecordId: null,
+                status: TicketStatus.Available
+            })
             const result = await this.collection.updateMany(
                 activeFilter,
-                this.timestamped(update),
+                this.timestamped({ $set: { purchaseRecordId, status: TicketStatus.Sold } }),
                 { session: activeSession }
             )
 

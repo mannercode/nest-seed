@@ -8,7 +8,7 @@ import {
     SearchTicketsDto,
     TicketDto
 } from './dtos/index.js'
-import { Ticket, TicketStatus } from './models/index.js'
+import { Ticket } from './models/index.js'
 import { TicketsRepository } from './tickets.repository.js'
 
 @Injectable()
@@ -42,24 +42,6 @@ export class TicketsService {
         return this.toDtos(tickets)
     }
 
-    async transitStatusMany(
-        ticketIds: string[],
-        from: TicketStatus,
-        to: TicketStatus,
-        purchaseRecordId?: string,
-        session?: ClientSession
-    ) {
-        // 누락된 ticketId는 `getByIds`가 404로 분리한다.
-        // 상태 충돌(409)과 전이는 리포지토리가 한 트랜잭션에서 원자적으로 판정한다.
-        await this.repository.getByIds(ticketIds, session)
-
-        await this.repository.transitStatusMany(ticketIds, from, to, purchaseRecordId, session)
-
-        const tickets = await this.repository.getByIds(ticketIds, session)
-
-        return this.toDtos(tickets)
-    }
-
     async releaseOwnedPurchaseForCompensation(ticketIds: string[], purchaseRecordId: string) {
         await this.repository.releaseOwnedPurchaseForCompensation(ticketIds, purchaseRecordId)
     }
@@ -69,13 +51,15 @@ export class TicketsService {
         purchaseRecordId: string,
         session: ClientSession | undefined = undefined
     ) {
-        return this.transitStatusMany(
-            ticketIds,
-            TicketStatus.Available,
-            TicketStatus.Sold,
-            purchaseRecordId,
-            session
-        )
+        // 누락된 ticketId는 `getByIds`가 404로 분리한다.
+        // 판매 충돌(409)은 리포지토리가 한 트랜잭션에서 원자적으로 판정한다.
+        await this.repository.getByIds(ticketIds, session)
+
+        await this.repository.sellAvailableForPurchase(ticketIds, purchaseRecordId, session)
+
+        const tickets = await this.repository.getByIds(ticketIds, session)
+
+        return this.toDtos(tickets)
     }
 
     private toDtos(tickets: Ticket[]) {

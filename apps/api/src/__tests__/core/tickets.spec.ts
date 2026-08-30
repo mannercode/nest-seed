@@ -120,24 +120,20 @@ describe('TicketsService', () => {
         })
     })
 
-    describe('transitStatusMany', () => {
-        it('from 상태인 티켓들을 to 상태로 전이한 결과를 반환한다', async () => {
+    describe('sellForPurchase', () => {
+        it('판매 가능한 티켓들을 구매에 귀속하고 판매 완료 상태로 반환한다', async () => {
             const tickets = await createTickets(fix, [
                 { status: TicketStatus.Available },
                 { status: TicketStatus.Available },
                 { status: TicketStatus.Available }
             ])
 
-            const updatedTickets = await ticketsService.transitStatusMany(
-                pickIds(tickets),
-                TicketStatus.Available,
-                TicketStatus.Sold
-            )
+            const updatedTickets = await ticketsService.sellForPurchase(pickIds(tickets), oid(0x10))
 
             expect(updatedTickets.every((t) => t.status === TicketStatus.Sold)).toBe(true)
         })
 
-        it('일부 티켓이 from 상태가 아니면 409로 거절하고 아무것도 바꾸지 않는다', async () => {
+        it('일부 티켓이 판매 가능하지 않으면 409로 거절하고 아무것도 바꾸지 않는다', async () => {
             const createdTickets = await createTickets(fix, [
                 { status: TicketStatus.Available },
                 { status: TicketStatus.Sold }
@@ -145,11 +141,7 @@ describe('TicketsService', () => {
             const first = ensure(createdTickets[0])
             const second = ensure(createdTickets[1])
 
-            const promise = ticketsService.transitStatusMany(
-                [first.id, second.id],
-                TicketStatus.Available,
-                TicketStatus.Sold
-            )
+            const promise = ticketsService.sellForPurchase([first.id, second.id], oid(0x10))
 
             await expect(promise).rejects.toMatchObject({
                 response: { code: 'ERR_TICKET_STATUS_TRANSITION_FAILED', ticketIds: [second.id] },
@@ -165,11 +157,7 @@ describe('TicketsService', () => {
             const createdTickets = await createTickets(fix, [{ status: TicketStatus.Available }])
             const ticket = ensure(createdTickets[0])
 
-            const promise = ticketsService.transitStatusMany(
-                [ticket.id, nullObjectId],
-                TicketStatus.Available,
-                TicketStatus.Sold
-            )
+            const promise = ticketsService.sellForPurchase([ticket.id, nullObjectId], oid(0x10))
 
             // '없는 티켓'은 상태 충돌(409)이 아니라 누락 id 목록을 담은 404로 분류되어야 한다.
             await expect(promise).rejects.toMatchObject({
@@ -192,11 +180,7 @@ describe('TicketsService', () => {
             const createdTickets = await createTickets(fix, createDtos)
 
             const soldTickets = createdTickets.slice(0, soldCount)
-            await ticketsService.transitStatusMany(
-                pickIds(soldTickets),
-                TicketStatus.Available,
-                TicketStatus.Sold
-            )
+            await ticketsService.sellForPurchase(pickIds(soldTickets), oid(0x20))
 
             const ticketSales = await ticketsService.aggregateSales({ showtimeIds: [showtimeId] })
 

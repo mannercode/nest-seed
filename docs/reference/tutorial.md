@@ -202,7 +202,7 @@ SoLA는 원래 마이크로서비스 — 서비스가 서로 다른 프로세스
 흔한 오해가 있다. "워크플로에 넣으면 동시성도 해결된다"는 것이다. 같은 workflow key를 공유할 때만 맞는 말이다. 시드처럼 컨테이너를 여러 개 띄우면(기본 4개) 서로 다른 `sagaId`의 충돌 작업이 서로 다른 endpoint 복제본에서 동시에 예전 DB snapshot을 보고 검증을 통과할 수 있다. 그래서 읽기 검증만 믿지 않고, 충돌하는 쓰기가 하나만 성공하는 DB 원어를 둘 수 있는 조건을 만든다.
 
 - 상영시간 **검증+삽입**은 트랜잭션에서 대상 극장의 스케줄 guard를 먼저 CAS 갱신한다. 같은 극장을 다루는 동시 쓰기는 WriteConflict로 재시도된 뒤 최신 상태를 다시 검증한다([showtime-creation-persistence.service.ts](../../apps/api/src/services/application/showtime-creation/internal/showtime-creation-persistence.service.ts)).
-- 티켓 **이중 판매**는 락이 아니라 원자 조건부 전이로 막는다 — "Available인 것만 Sold로" 조건을 갱신 쿼리 자체에 넣는다 ([tickets.repository.ts](../../apps/api/src/services/core/tickets/tickets.repository.ts)의 `transitStatusMany`)
+- 티켓 **이중 판매**는 락이 아니라 원자 조건부 전이로 막는다 — "Available인 것만 Sold로" 조건을 갱신 쿼리 자체에 넣는다 ([tickets.repository.ts](../../apps/api/src/services/core/tickets/tickets.repository.ts)의 `sellAvailableForPurchase`).
 
 ### 엔티티에서 배울 것 두 가지
 
