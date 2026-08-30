@@ -35,7 +35,7 @@
 | `pnpm run race <scenario>` | `_output/test-reports/race.md`          |
 | `pnpm run benchmark:api`   | `_output/test-reports/benchmark-api.md` |
 
-각 보고서에는 실행한 영역, 검증 이유, 정확한 명령, 준비·build·정리를 포함한 실제 경과 시간과 실행되지 않은 영역이 적힌다. AtoZ가 시작할 때 이전 `_output`을 지우므로 보고서는 계속 쌓이지 않는다. CI에서는 같은 내용을 Job Summary에 표시하고 보고서 파일도 artifact로 보관한다.
+각 보고서에는 실행한 영역, 검증 이유, 정확한 명령, 준비·build·정리를 포함한 실제 경과 시간과 실행되지 않은 영역이 적힌다. `clean`은 다른 생성물만 지우고 이 폴더는 보존하며, 명령별 고정 파일을 덮어쓰므로 보고서가 계속 쌓이지 않는다. CI에서는 같은 내용을 Job Summary에 표시하고 보고서 파일도 artifact로 보관한다.
 
 ### 브라우저 E2E
 

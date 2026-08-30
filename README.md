@@ -62,7 +62,7 @@
 | `pnpm run dev:restate` | `dev:api`를 따로 띄운 경우 개발 Restate endpoint 등록. 전체 `dev`에는 포함      |
 | `pnpm run atoz`        | 포크 직후/배포 전 전체 검증 — 깨끗한 상태에서 lint·테스트·API 문서·e2e·배포까지 |
 
-> `pnpm run atoz`가 내부 호출하는 `pnpm run clean`은 `tools/clean-workspace.mjs`의 allowlist에 적은 `node_modules`·`_output`·coverage·build 산출물만 지운다. 개인 env·설정 파일은 `.gitignore`에 있다는 이유로 지우지 않는다. 나머지 스크립트는 [package.json](package.json)을 본다.
+> `pnpm run atoz`가 내부 호출하는 `pnpm run clean`은 `tools/clean-workspace.mjs`의 allowlist에 적은 `node_modules`·coverage·build 산출물과 `_output`의 진단 파일만 지운다. 명령별 마지막 실행 보고서인 `_output/test-reports/`와 개인 env·설정 파일은 보존한다. 나머지 스크립트는 [package.json](package.json)을 본다.
 
 ## 테스트
 
