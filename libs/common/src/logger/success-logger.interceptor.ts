@@ -52,9 +52,8 @@ export class HttpSuccessLoggerInterceptor implements NestInterceptor {
         const httpResponse = httpContext.getResponse<Response>()
         const request = httpContext.getRequest<Request>()
         const { method } = request
-        const routePath =
-            typeof request.route?.path === 'string' ? request.route.path : request.path
-        const route = request.baseUrl + routePath
+        // 성공 응답은 항상 Nest/Express의 매칭된 route를 거쳐 이 인터셉터에 도달한다.
+        const route = request.baseUrl + request.route.path
 
         if (this.shouldLogHttp(route)) {
             const elapsedMs = elapsedSinceRequestStart(request)

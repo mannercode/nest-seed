@@ -29,6 +29,15 @@ describe('HttpExceptionLoggerFilter', () => {
             })
         })
 
+        it('매칭되지 않은 경로는 실제 요청 경로로 기록한다', async () => {
+            await fix.httpClient.get('/missing-route').notFound()
+
+            expect(fix.spyWarn).toHaveBeenCalledWith(
+                'fail',
+                expect.objectContaining({ request: { method: 'GET', route: '/missing-route' } })
+            )
+        })
+
         it('401 HttpException도 Logger.warn으로 로그를 남긴다', async () => {
             await fix.httpClient.get('/unauthorized').unauthorized()
 
