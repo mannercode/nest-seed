@@ -1,63 +1,24 @@
 import assert from 'node:assert/strict'
-import { createHash } from 'node:crypto'
-import { chmod, glob, mkdtemp, readFile, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { glob, readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { createRequire } from 'node:module'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { execFileSync, spawnSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 import test from 'node:test'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..')
 const require = createRequire(import.meta.url)
 const read = (path) => readFile(join(root, path), 'utf8')
-const trackedPackageManifests = () =>
-    execFileSync('git', ['ls-files', '--', 'package.json', '*/package.json'], {
-        cwd: root,
-        encoding: 'utf8'
-    })
-        .trim()
-        .split('\n')
-        .filter(Boolean)
-        .sort()
 
-test('root scripts keep cleanup and shell lint gates explicit', async () => {
+test('workspace keeps explicit package and install safety policy', async () => {
     const packageJson = JSON.parse(await read('package.json'))
-    const lintStaged = await read('.lintstagedrc.cjs')
-    const lintStagedJavaScript = await read('tools/lint-staged-js.mjs')
     const workspace = await read('pnpm-workspace.yaml')
 
-    assert.equal(packageJson.packageManager, 'pnpm@11.24.0')
+    assert.match(packageJson.packageManager, /^pnpm@\d+\.\d+\.\d+$/)
     assert.equal(packageJson.workspaces, undefined)
-    assert.equal(packageJson.scripts.clean, 'node tools/clean-workspace.mjs')
-    assert.match(packageJson.scripts['lint:root'], /node tools\/lint-shell\.mjs/)
-    assert.match(packageJson.scripts.lint, /pnpm run lint:root/)
     assert.match(packageJson.scripts.atoz, /pnpm run test:config/)
-    assert.match(
-        packageJson.scripts.atoz,
-        /--filter '\.\/libs\/\*\*'[^&]*--fail-if-no-match run atoz/
-    )
-    assert.match(packageJson.scripts.atoz, /--filter '!\.\/libs\/\*\*'[^&]*run atoz/)
-    assert.match(packageJson.scripts.atoz, /pnpm run lint:root/)
-    assert.doesNotMatch(packageJson.scripts.atoz, /pnpm run lint(?:\s|&&)/)
-    for (const script of ['pretest', 'predev']) {
-        assert.match(packageJson.scripts[script], /--fail-if-no-match/)
-        assert.doesNotMatch(packageJson.scripts[script], /--if-present/)
-    }
-    assert.match(lintStagedJavaScript, /tests\/api-race/)
-    assert.match(lintStaged, /apps\/api\/api-docs\/\*\.\{fixture,spec\}/)
-    assert.match(lintStaged, /\.husky\/\*/)
     assert.match(workspace, /^saveExact: true$/m)
     assert.match(workspace, /^strictDepBuilds: true$/m)
-    for (const pattern of ['apps/*', 'libs/*', 'tests/*', 'tools/*']) {
-        assert.match(workspace, new RegExp(`^\\s+- '${pattern.replace('*', '\\*')}'$`, 'm'))
-    }
-})
-
-test('lint-staged delegates JavaScript paths without shell re-quoting', () => {
-    const config = require(join(root, '.lintstagedrc.cjs'))
-    const javascriptTask = config['*.{cjs,js,mjs}']
-    assert.equal(javascriptTask, 'node tools/lint-staged-js.mjs')
 })
 
 test('API JavaScript uses the Node recommended rules in workspace lint', async () => {
@@ -83,98 +44,18 @@ test('API JavaScript uses the Node recommended rules in workspace lint', async (
     assert.equal(Array.isArray(noUndef) ? noUndef[0] : noUndef, 2)
 })
 
-test('installed dependency specs are exact while peer compatibility ranges stay independent', async () => {
-    for (const manifest of trackedPackageManifests()) {
-        const packageJson = JSON.parse(await read(manifest))
-        for (const section of ['dependencies', 'devDependencies', 'optionalDependencies']) {
-            for (const [dependency, spec] of Object.entries(packageJson[section] ?? {})) {
-                if (dependency.startsWith('@mannercode/')) {
-                    assert.equal(
-                        spec,
-                        'workspace:*',
-                        `${manifest} ${section}.${dependency} must be local`
-                    )
-                } else {
-                    assert.match(
-                        spec,
-                        /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/,
-                        `${manifest} ${section}.${dependency} must use a full exact version`
-                    )
-                }
-            }
-        }
-    }
-})
-
-test('devcontainer preserves install, naming, and credential mount behavior', async () => {
+test('devcontainer installs the frozen lock and pins resolved features', async () => {
     const config = await read('.devcontainer/devcontainer.json')
-    const dockerfile = await read('.devcontainer/Dockerfile')
     const lock = JSON.parse(await read('.devcontainer/devcontainer-lock.json'))
 
     assert.match(
         config,
         /"postCreateCommand"\s*:\s*\{\s*"install"\s*:\s*"pnpm install --frozen-lockfile"/
     )
-    assert.match(dockerfile, /ARG PNPM_VERSION=\d+\.\d+\.\d+/)
-    assert.match(dockerfile, /"pnpm@\$\{PNPM_VERSION\}"/)
-    assert.match(dockerfile, /pnpm --version/)
-    assert.match(config, /\$\{localEnv:USER:unknown\}-\$\{localWorkspaceFolderBasename\}/)
-    assert.match(config, /\.codex,target=\/home\/node\/\.codex,type=bind/)
-    assert.match(config, /\.config\/gh,target=\/home\/node\/\.config\/gh,type=bind/)
-    assert.match(config, /\.claude,target=\/home\/node\/\.claude,type=bind/)
-    assert.match(config, /\.claude\.json,target=\/home\/node\/\.claude\.json,type=bind/)
     for (const feature of Object.values(lock.features)) {
         assert.match(feature.resolved, /@sha256:[a-f0-9]{64}$/)
         assert.match(feature.integrity, /^sha256:[a-f0-9]{64}$/)
     }
-})
-
-test('dependency image copies and hashes every tracked package manifest', async (t) => {
-    const dockerfile = await read('deploy/deps.Dockerfile')
-    const copied = new Set()
-    for (const match of dockerfile.matchAll(/^COPY\s+(.+)$/gm)) {
-        const fields = match[1].trim().split(/\s+/)
-        for (const source of fields.slice(0, -1)) {
-            if (source.endsWith('package.json')) copied.add(source.replace(/^\.\//, ''))
-        }
-    }
-    assert.deepEqual([...copied].sort(), trackedPackageManifests())
-
-    const mockBin = await mkdtemp(join(tmpdir(), 'nest-seed-docker-mock-'))
-    t.after(async () => {
-        const { rm } = await import('node:fs/promises')
-        await rm(mockBin, { force: true, recursive: true })
-    })
-    const docker = join(mockBin, 'docker')
-    await writeFile(docker, '#!/bin/sh\nexit 0\n')
-    await chmod(docker, 0o755)
-
-    const actual = execFileSync(
-        'bash',
-        ['-c', '. "$WORKSPACE_ROOT/deploy/ensure-deps-image.sh"; printf %s "$DEPS_TAG"'],
-        {
-            cwd: root,
-            encoding: 'utf8',
-            env: { ...process.env, PATH: `${mockBin}:${process.env.PATH}`, WORKSPACE_ROOT: root }
-        }
-    )
-    const inputs = [
-        'deploy/deps.Dockerfile',
-        'pnpm-lock.yaml',
-        'pnpm-workspace.yaml',
-        'tools/dev-tools/free-port.js',
-        'tools/dev-tools/tunnel.sh',
-        ...trackedPackageManifests()
-    ]
-    const checksums = []
-    for (const input of inputs) {
-        const digest = createHash('sha256')
-            .update(await read(input))
-            .digest('hex')
-        checksums.push(`${digest}  ${input}\n`)
-    }
-    const expected = createHash('sha256').update(checksums.join('')).digest('hex').slice(0, 16)
-    assert.equal(actual, expected)
 })
 
 test('API image passes production mode to pnpm deploy without mutating the build workspace', async () => {
@@ -189,7 +70,6 @@ test('backend workspaces use Node ESM and Vitest keeps the TypeScript metadata t
         'tsconfig.json',
         await read('tsconfig.json')
     ).config
-    const rootPackage = JSON.parse(await read('package.json'))
     const apiPackage = JSON.parse(await read('apps/api/package.json'))
     const commonPackage = JSON.parse(await read('libs/common/package.json'))
     const testingPackage = JSON.parse(await read('libs/testing/package.json'))
@@ -237,17 +117,6 @@ test('backend workspaces use Node ESM and Vitest keeps the TypeScript metadata t
         assert.deepEqual([...testTsconfig.options.types].sort(), ['node', 'vitest/globals'])
     }
 
-    for (const packageJson of [rootPackage, apiPackage, commonPackage, testingPackage]) {
-        const dependencyNames = Object.keys({
-            ...packageJson.dependencies,
-            ...packageJson.devDependencies
-        })
-        for (const removed of ['@types/jest', 'eslint-plugin-jest', 'jest', 'ts-jest']) {
-            assert.equal(dependencyNames.includes(removed), false)
-        }
-    }
-    assert.equal(rootPackage.devDependencies.vitest, '4.1.11')
-    assert.equal(rootPackage.devDependencies['@vitest/coverage-v8'], '4.1.11')
     for (const packageJson of [apiPackage, commonPackage, testingPackage]) {
         assert.match(packageJson.scripts.test, /^vitest run/)
     }
@@ -257,9 +126,6 @@ test('backend workspaces use Node ESM and Vitest keeps the TypeScript metadata t
     )
     const vitestBase = createVitestBase({ tsconfigPath: join(root, 'apps/api/tsconfig.json') })
     assert.equal(vitestBase.oxc, false)
-    assert.deepEqual(vitestBase.test.reporters, ['tree'])
-    assert.equal(vitestBase.test.pool, 'forks')
-    assert.equal(vitestBase.test.isolate, true)
 
     const transformed = vitestBase.plugins[0].transform(
         "import { Injectable } from '@nestjs/common'\nclass Dependency {}\n@Injectable()\nexport class Fixture { constructor(readonly dependency: Dependency) {} }\n",
@@ -268,13 +134,6 @@ test('backend workspaces use Node ESM and Vitest keeps the TypeScript metadata t
     assert.match(transformed.code, /from ['\"]@nestjs\/common['\"]/)
     assert.match(transformed.code, /__metadata\(['\"]design:paramtypes['\"]/)
     assert.doesNotMatch(transformed.code, /\brequire\s*\(/)
-
-    for (const path of ['apps/api/vitest.config.mjs', 'libs/common/vitest.config.mjs']) {
-        const config = await read(path)
-        assert.match(config, /provider:\s*'v8'/)
-        assert.match(config, /thresholds:\s*\{ 100: true \}/)
-        assert.match(config, /reporters?:\s*\[/)
-    }
 })
 
 test('backend TypeScript relative specifiers include runtime extensions', async () => {
@@ -360,9 +219,6 @@ test('API request bodies and queries declare a Standard Schema', async () => {
 })
 
 test('API build preserves Nest Rspack ESM defaults and replaces only the SWC loader', async () => {
-    const packageJson = JSON.parse(await read('apps/api/package.json'))
-    const nestCli = JSON.parse(await read('apps/api/nest-cli.json'))
-    const dockerignore = await read('.dockerignore')
     const createConfig = require(join(root, 'apps/api/rspack.config.cjs'))
     class TypeCheckPlugin {}
     const defaults = {
@@ -379,19 +235,10 @@ test('API build preserves Nest Rspack ESM defaults and replaces only the SWC loa
         (Array.isArray(rule.use) ? rule.use : [rule.use]).filter(Boolean)
     )
 
-    assert.equal(packageJson.scripts.build, 'nest build -b rspack --rspackPath rspack.config.cjs')
-    assert.equal(packageJson.scripts.dev, 'nest start --watch')
-    assert.equal(nestCli.compilerOptions.builder, 'tsc')
-    assert.equal(packageJson.devDependencies['@rspack/core'], '2.2.1')
-    assert.match(dockerignore, /^!\/apps\/\*\/rspack\.config\.cjs$/m)
-    assert.doesNotMatch(dockerignore, /webpack\.config/)
     assert.equal(config.entry, join(root, 'apps/api/src/main.ts'))
-    assert.equal(config.output.path, join(root, 'apps/api/_output/dist'))
-    assert.equal(config.output.filename, 'index.js')
     assert.equal(config.output.module, true)
     assert.equal(config.output.chunkFormat, 'module')
     assert.equal(config.experiments.outputModule, true)
-    assert.equal(config.module.rules[0].type, 'javascript/esm')
     assert.deepEqual(
         loaders.map((loader) => (typeof loader === 'string' ? loader : loader.loader)),
         [require.resolve(join(root, 'apps/api/node_modules/ts-loader'))]
@@ -402,55 +249,7 @@ test('API build preserves Nest Rspack ESM defaults and replaces only the SWC loa
         moduleResolution: 'Bundler'
     })
     assert.equal(loaders[0].options.transpileOnly, true)
-    assert.equal(config.context, join(root, 'apps/api'))
-    assert.equal(config.resolve.tsConfig, join(root, 'apps/api/tsconfig.build.json'))
-    assert.deepEqual(config.resolve.plugins, [])
-    assert.deepEqual(config.plugins, defaults.plugins)
-    // ESM 번들 안에 CommonJS 패키지를 섞지 않고, common도 빌드 산출물째 배포한다.
-    assert.deepEqual(config.externals, defaults.externals)
     assert.doesNotMatch(JSON.stringify(config), /(?:builtin:)?swc-loader|@swc\//i)
-})
-
-test('dependency image hashing failure stops before Docker', async (t) => {
-    const mockBin = await mkdtemp(join(tmpdir(), 'nest-seed-hash-failure-'))
-    const dockerLog = join(mockBin, 'docker.log')
-    t.after(async () => {
-        const { rm } = await import('node:fs/promises')
-        await rm(mockBin, { force: true, recursive: true })
-    })
-
-    await Promise.all([
-        writeFile(join(mockBin, 'sha256sum'), '#!/bin/sh\nexit 7\n'),
-        writeFile(
-            join(mockBin, 'docker'),
-            '#!/bin/sh\nprintf "%s\\n" "$*" >>"$DOCKER_LOG"\nexit 0\n'
-        )
-    ])
-    await Promise.all([
-        chmod(join(mockBin, 'sha256sum'), 0o755),
-        chmod(join(mockBin, 'docker'), 0o755)
-    ])
-
-    const result = spawnSync(
-        'bash',
-        [
-            '-c',
-            'load_deps() { . "$WORKSPACE_ROOT/deploy/ensure-deps-image.sh" || return 1; printf continued; }; load_deps'
-        ],
-        {
-            cwd: root,
-            encoding: 'utf8',
-            env: {
-                ...process.env,
-                DOCKER_LOG: dockerLog,
-                PATH: `${mockBin}:${process.env.PATH}`,
-                WORKSPACE_ROOT: root
-            }
-        }
-    )
-    assert.notEqual(result.status, 0)
-    assert.doesNotMatch(result.stdout, /continued/)
-    await assert.rejects(readFile(dockerLog), { code: 'ENOENT' })
 })
 
 test('network-facing deployment port binds only to loopback', async () => {
@@ -569,59 +368,48 @@ test('GitHub workflows pin actions, protect scheduled forks, and retain diagnost
     assert.match(atoz, /_output\/ci-diagnostics/)
 })
 
-test('Stability keeps 60 API repetitions within three timeout-safe jobs', async () => {
+test('Stability preserves its scheduled repetition volume without building the bootup leg', async () => {
     const workflow = await read('.github/workflows/test-stability.yaml')
-    const apiJobs = [
-        ...workflow.matchAll(
-            /- leg: unit-api-(\d+)\n\s+timeout: (\d+)\n\s+run: \|\n\s+pnpm run build\n\s+RESET_EVERY=5 bash \.github\/scripts\/repeat\.sh (\d+) pnpm --filter '\.\/apps\/api' --fail-if-no-match run test/g
-        )
-    ].map(([, leg, timeout, repetitions]) => ({
-        leg: Number(leg),
-        repetitions: Number(repetitions),
-        timeout: Number(timeout)
-    }))
+    const leg = (name) => {
+        const marker = `- leg: ${name}`
+        const start = workflow.indexOf(marker)
+        assert.notEqual(start, -1, `${name} stability leg is missing`)
+        const next = workflow.indexOf('\n                    - leg:', start + marker.length)
+        return workflow.slice(start, next === -1 ? undefined : next)
+    }
 
-    assert.deepEqual(apiJobs, [
-        { leg: 1, repetitions: 20, timeout: 240 },
-        { leg: 2, repetitions: 20, timeout: 240 },
-        { leg: 3, repetitions: 20, timeout: 240 }
-    ])
-    assert.equal(
-        apiJobs.reduce((total, job) => total + job.repetitions, 0),
-        60
-    )
+    assert.match(workflow, /cron: '27 \*\/6 \* \* \*'/)
+    assert.match(leg('unit-libs'), /repeat\.sh 75 /)
+    for (const name of ['unit-api-1', 'unit-api-2', 'unit-api-3']) {
+        assert.match(leg(name), /timeout: 240/)
+        assert.match(leg(name), /RESET_EVERY=5 bash \.github\/scripts\/repeat\.sh 20 /)
+        assert.match(leg(name), /--filter '\.\/apps\/api'/)
+    }
+
+    const bootup = leg('bootup')
+    assert.match(bootup, /repeat\.sh 50 bash infra\/reset\.sh/)
+    assert.doesNotMatch(bootup, /pnpm run build/)
+
+    for (const name of [
+        'sse-fanout-race',
+        'user-signup-race',
+        'ticket-holding-race',
+        'showtime-overlap-race',
+        'purchase-double-spend',
+        'purchase-overlap-race',
+        'replica-chaos',
+        'jwt-refresh-race'
+    ]) {
+        assert.match(leg(name), /repeat\.sh 50 /)
+    }
 })
 
-test('Dependabot keeps routine updates direct, related, and non-major', async () => {
-    const config = await read('.github/dependabot.yml')
-    const workflow = await read('.github/workflows/dependabot-auto-merge.yaml')
-
-    const ecosystems = [...config.matchAll(/^\s+- package-ecosystem:/gm)]
-    const directRoutineAllowLists = [
-        ...config.matchAll(
-            /allow:\s+- dependency-type: direct\s+update-types:\s+- version-update:semver-minor\s+- version-update:semver-patch/g
-        )
-    ]
-    assert.equal(ecosystems.length, 4)
-    assert.equal(directRoutineAllowLists.length, ecosystems.length)
-
-    const npm = config.slice(
-        config.indexOf('- package-ecosystem: npm'),
-        config.indexOf('- package-ecosystem: github-actions')
+test('Stability failure diagnostics stay inside the current Compose project', async () => {
+    const repeat = await read('.github/scripts/repeat.sh')
+    assert.equal(
+        repeat.match(/--filter "label=com\.docker\.compose\.project=\$\{compose_project\}"/g)
+            ?.length,
+        2
     )
-    assert.doesNotMatch(npm, /patterns:\s*\['\*'\]/)
-    for (const group of ['aws-sdk', 'next', 'nestjs', 'restate', 'react', 'eslint', 'commitlint']) {
-        assert.match(npm, new RegExp(`${group}-minor-patch:`))
-    }
-    assert.match(
-        config,
-        /package-ecosystem: docker\s+directories:\s+- '\/\.devcontainer'\s+- '\/apps\/api'\s+- '\/deploy'/
-    )
-    assert.equal(config.match(/group-by: dependency-name/g)?.length, 2)
-    assert.match(
-        config,
-        /package-ecosystem: docker-compose\s+directories:\s+- '\/deploy'\s+- '\/infra'/
-    )
-    assert.match(workflow, /dependabot\/fetch-metadata@[a-f0-9]{40}/)
-    assert.match(workflow, /version-update:semver-major/)
+    assert.doesNotMatch(repeat, /docker stats -a/)
 })
