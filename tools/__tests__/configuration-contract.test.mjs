@@ -44,6 +44,7 @@ test('workspaces share the Nest Oxlint baseline', async () => {
     assert.equal(rootPackage.devDependencies.oxlint, '1.80.0')
     assert.equal(rootPackage.devDependencies.eslint, undefined)
     assert.equal(oxlint.env.node, true)
+    assert.equal(oxlint.options.denyWarnings, true)
     assert.equal(oxlint.rules['typescript/no-explicit-any'], 'allow')
     assert.equal(oxlint.rules['typescript/no-floating-promises'], 'warn')
     for (const packageJson of workspacePackages) {

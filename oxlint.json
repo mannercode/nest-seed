@@ -3,7 +3,7 @@
 
     // ESLint 전환 뒤 아직 복구하지 않은 검사다. 새 규칙을 켤 때 이 목록도 함께 줄인다.
     // 현재 Oxlint만으로 가능:
-    // - 경고 발생 시 실패, 사용되지 않는 disable 지시문, JS 권장 안전 규칙
+    // - 사용되지 않는 disable 지시문, JS 권장 안전 규칙
     // - Vitest의 focused/disabled/expect/중복 제목 검사
     // - 프런트엔드에서도 TypeScript·Unicorn·Oxc 기본 검사 유지와 중요 Next 규칙 승격
     // TypeScript 7 + oxlint-tsgolint 이후 가능:
@@ -14,6 +14,7 @@
     // - consistent-return, 범용 no-restricted-syntax, Perfectionist식 import/export 정렬
     // allowed-dependencies는 안정 릴리스지만 Oxlint의 JS plugin 실행 계층이 alpha라 기본에서 보류한다.
     "plugins": ["typescript", "unicorn", "oxc"],
+    "options": { "denyWarnings": true },
 
     // no-floating-promises는 type-aware 실행 전까지 동작하지 않으며 TS7 전환 표식으로 남긴다.
     "rules": { "typescript/no-explicit-any": "off", "typescript/no-floating-promises": "warn" },
