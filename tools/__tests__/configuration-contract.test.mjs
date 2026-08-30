@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
 import { glob, readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { createRequire } from 'node:module'
@@ -22,7 +23,12 @@ test('workspace keeps explicit package and install safety policy', async () => {
 
 test('workspaces share the Nest Oxlint baseline', async () => {
     const rootPackage = JSON.parse(await read('package.json'))
-    const oxlint = JSON.parse(await read('oxlint.json'))
+    const oxlint = JSON.parse(
+        execFileSync('pnpm', ['exec', 'oxlint', '--print-config', '-c', 'oxlint.json'], {
+            cwd: root,
+            encoding: 'utf8'
+        })
+    )
     const workspacePackages = await Promise.all(
         [
             'apps/api/package.json',
@@ -38,7 +44,7 @@ test('workspaces share the Nest Oxlint baseline', async () => {
     assert.equal(rootPackage.devDependencies.oxlint, '1.80.0')
     assert.equal(rootPackage.devDependencies.eslint, undefined)
     assert.equal(oxlint.env.node, true)
-    assert.equal(oxlint.rules['typescript/no-explicit-any'], 'off')
+    assert.equal(oxlint.rules['typescript/no-explicit-any'], 'allow')
     assert.equal(oxlint.rules['typescript/no-floating-promises'], 'warn')
     for (const packageJson of workspacePackages) {
         assert.match(packageJson.scripts.lint, /oxlint -c \.\.\/\.\.\/oxlint\.json/)
