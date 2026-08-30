@@ -34,7 +34,7 @@ describe('PaymentsService', () => {
             expect(cancelled).toEqual({
                 ...payment,
                 status: 'cancelled',
-                updatedAt: expect.any(Date)
+                updatedAt: expect.any(Temporal.Instant)
             })
         })
 
@@ -64,10 +64,10 @@ describe('PaymentsService', () => {
 
             expect(payment).toEqual({
                 ...createDto,
-                createdAt: expect.any(Date),
+                createdAt: expect.any(Temporal.Instant),
                 id: expect.any(String),
                 status: 'completed',
-                updatedAt: expect.any(Date)
+                updatedAt: expect.any(Temporal.Instant)
             })
         })
 
@@ -81,10 +81,9 @@ describe('PaymentsService', () => {
             expect(new Set([first?.id, ...retried.map((payment) => payment.id)])).toEqual(
                 new Set([first?.id])
             )
+            expect(first).toBeDefined()
             expect(
-                retried.every(
-                    (payment) => payment.updatedAt.getTime() === first?.updatedAt.getTime()
-                )
+                retried.every((payment) => payment.updatedAt.equals(ensure(first).updatedAt))
             ).toBe(true)
         })
 

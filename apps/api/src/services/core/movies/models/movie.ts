@@ -40,7 +40,7 @@ export class Movie extends CrudDocument {
 
     rating: MovieRating
 
-    releaseDate: Date
+    releaseDate: Temporal.PlainDate
 
     title: string
 }

@@ -1,4 +1,5 @@
 import { DateUtil, ensure } from '@mannercode/common'
+import { plainDate } from '@mannercode/testing'
 import { MovieGenre, type MovieDto } from '#core'
 import {
     createMovie,
@@ -29,11 +30,11 @@ describe('RecommendationService', () => {
 
         beforeEach(async () => {
             const showingMovies = await createShowingMovies(fix, [
-                { genres: [MovieGenre.Fantasy], releaseDate: new Date('2900-01-01') },
-                { genres: [MovieGenre.Comedy], releaseDate: new Date('2900-02-01') },
-                { genres: [MovieGenre.Comedy], releaseDate: new Date('2900-03-01') },
-                { genres: [MovieGenre.Action], releaseDate: new Date('2900-04-01') },
-                { genres: [MovieGenre.Drama], releaseDate: new Date('2900-05-01') }
+                { genres: [MovieGenre.Fantasy], releaseDate: plainDate('2900-01-01') },
+                { genres: [MovieGenre.Comedy], releaseDate: plainDate('2900-02-01') },
+                { genres: [MovieGenre.Comedy], releaseDate: plainDate('2900-03-01') },
+                { genres: [MovieGenre.Action], releaseDate: plainDate('2900-04-01') },
+                { genres: [MovieGenre.Drama], releaseDate: plainDate('2900-05-01') }
             ])
 
             fantasyMovie = ensure(showingMovies[0])
@@ -91,7 +92,7 @@ describe('RecommendationService', () => {
                 const config = fix.module.get(AppConfigService)
 
                 // releaseDate를 가장 최신으로 둬, 필터 회귀 시 목록 맨 앞에 나타나 바로 드러난다.
-                const nearMovie = await createMovie(fix, { releaseDate: new Date('2900-06-01') })
+                const nearMovie = await createMovie(fix, { releaseDate: plainDate('2900-06-01') })
                 const theater = await createTheater(fix)
                 // 마감 창의 절반 지점이라 테스트 소요 시간과 무관하게 항상 마감 안쪽이다.
                 const startTime = DateUtil.add({ minutes: config.ticket.purchaseCutoffMinutes / 2 })

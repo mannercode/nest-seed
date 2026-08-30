@@ -1,9 +1,10 @@
-import { JsonUtil } from '@mannercode/common'
+import { instant } from '@mannercode/testing'
 import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { CancelledError, TerminalError, type WorkflowContext } from '@restatedev/restate-sdk'
 import type { AppConfigService } from '#config'
 import type { ShowtimeCreationEvent, ValidateAndCreateResult } from '../../internal/index.js'
 import type { ShowtimeCreationWorkflowInput } from '../types.js'
+import { TemporalJsonSerde } from '../temporal-json.serde.js'
 import {
     createShowtimeCreationWorkflow,
     getShowtimeCreationWorkflowName,
@@ -16,7 +17,7 @@ describe('Showtime creation Restate workflow', () => {
         createDto: {
             durationInMinutes: 90,
             movieId: 'movie-id',
-            startTimes: [new Date('2100-01-01T09:00:00.000Z')],
+            startTimes: [instant('2100-01-01T09:00:00.000Z')],
             theaterIds: ['theater-id']
         },
         sagaId: 'saga-id'
@@ -47,7 +48,7 @@ describe('Showtime creation Restate workflow', () => {
             }
         ])
         expect(fix.persistence).toHaveBeenCalledWith(
-            expect.objectContaining({ startTimes: [expect.any(Date)] }),
+            expect.objectContaining({ startTimes: [expect.any(Temporal.Instant)] }),
             input.sagaId,
             expect.any(AbortSignal)
         )
@@ -70,9 +71,18 @@ describe('Showtime creation Restate workflow', () => {
     })
 
     it('업무 충돌은 failed 상태로 끝낸다', async () => {
-        const conflictingShowtimes = [{ id: 'conflict' }]
+        const conflictingShowtimes = [
+            {
+                endTime: Temporal.Instant.from('2100-01-01T11:00:00Z'),
+                id: 'conflict',
+                movieId: 'movie-id',
+                startTime: Temporal.Instant.from('2100-01-01T09:00:00Z'),
+                theaterId: 'theater-id'
+            }
+        ]
         const fix = createFixture({
-            result: { conflictingShowtimes, kind: 'failed' } as ValidateAndCreateResult
+            result: { conflictingShowtimes, kind: 'failed' },
+            roundTripRunResult: true
         })
 
         await run(fix)
@@ -82,6 +92,9 @@ describe('Showtime creation Restate workflow', () => {
             sagaId: input.sagaId,
             status: 'failed'
         })
+        const failed = fix.events.at(-1)
+        if (failed?.status !== 'failed') throw new Error('Expected a failed workflow event.')
+        expect(failed.conflictingShowtimes[0]?.startTime).toBeInstanceOf(Temporal.Instant)
     })
 
     it.each([
@@ -148,6 +161,7 @@ describe('Showtime creation Restate workflow', () => {
         expect(defaults.definition.options).toMatchObject({
             abortTimeout: 5_000,
             inactivityTimeout: 65_000,
+            serde: TemporalJsonSerde,
             workflowRetention: 3_600_000
         })
         expect(shortened.definition.options).toMatchObject({ inactivityTimeout: 5_123 })
@@ -167,20 +181,32 @@ describe('Showtime creation Restate workflow', () => {
         emitStatusChanged?: (event: ShowtimeCreationEvent) => Promise<void>
         failure?: unknown
         result?: ValidateAndCreateResult
+        roundTripRunResult?: boolean
         runTimeoutMs?: number
     }
 
-    function createFixture({ emitStatusChanged, failure, result, runTimeoutMs }: FixtureOptions) {
+    function createFixture({
+        emitStatusChanged,
+        failure,
+        result,
+        roundTripRunResult = false,
+        runTimeoutMs
+    }: FixtureOptions) {
         const events: ShowtimeCreationEvent[] = []
+        let defaultSerde: typeof TemporalJsonSerde | undefined
         const persistence = vi.fn(async () => {
             // workflow가 외부 promise의 비표준 rejection도 안전하게 상태로 바꾸는지 검증한다.
             // eslint-disable-next-line @typescript-eslint/only-throw-error
             if (failure !== undefined) throw failure
-            return result as ValidateAndCreateResult
+            if (result === undefined) throw new Error('Fixture result is required.')
+            return result
         })
-        const runStep = vi.fn(async (_name: string, action: () => unknown, _options: unknown) =>
-            action()
-        )
+        const runStep = vi.fn(async (name: string, action: () => unknown, _options: unknown) => {
+            const value = await action()
+            if (!roundTripRunResult || name !== 'validate and create') return value
+            if (!defaultSerde) throw new Error('Workflow default serde is required.')
+            return defaultSerde.deserialize(defaultSerde.serialize(value))
+        })
         const context = {
             request: () => ({ attemptCompletedSignal: new AbortController().signal }),
             run: runStep
@@ -197,19 +223,14 @@ describe('Showtime creation Restate workflow', () => {
             projectId: 'unit-test',
             runTimeoutMs
         })
+        const runtimeDefinition = definition as unknown as RuntimeWorkflowDefinition
+        defaultSerde = runtimeDefinition.options?.serde
 
-        return {
-            context,
-            definition: definition as unknown as RuntimeWorkflowDefinition,
-            events,
-            persistence,
-            runStep
-        }
+        return { context, definition: runtimeDefinition, events, persistence, runStep }
     }
 
     function run(fix: ReturnType<typeof createFixture>) {
-        const serializedInput = JsonUtil.parse(JSON.stringify(input))
-        return fix.definition.workflow.run(fix.context, serializedInput)
+        return fix.definition.workflow.run(fix.context, input)
     }
 
     type RuntimeWorkflowDefinition = ShowtimeCreationWorkflowDefinition & {
@@ -217,6 +238,7 @@ describe('Showtime creation Restate workflow', () => {
             abortTimeout?: number
             asTerminalError?: (error: unknown) => TerminalError | undefined
             inactivityTimeout?: number
+            serde?: typeof TemporalJsonSerde
             workflowRetention?: number
         }
         workflow: {

@@ -1,12 +1,13 @@
+import { instant } from '@mannercode/testing'
 import type { ShowtimeDto, TicketSalesForShowtimeDto } from '#core'
 import { generateShowtimesForBooking } from '../booking.utils.js'
 
 describe('generateShowtimesForBooking', () => {
     const showtime: ShowtimeDto = {
-        endTime: new Date('2099-01-01T12:00'),
+        endTime: instant('2099-01-01T12:00Z'),
         id: 'sh1',
         movieId: 'mv1',
-        startTime: new Date('2099-01-01T10:00'),
+        startTime: instant('2099-01-01T10:00Z'),
         theaterId: 'th1'
     }
 

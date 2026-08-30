@@ -1,11 +1,11 @@
 import type { PurchaseItemDto } from './purchase-item.dto.js'
 
 export class PurchaseRecordDto {
-    createdAt: Date
+    createdAt: Temporal.Instant
     userId: string
     id: string
     paymentId: null | string
     purchaseItems: PurchaseItemDto[]
     totalPrice: number
-    updatedAt: Date
+    updatedAt: Temporal.Instant
 }

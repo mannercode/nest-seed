@@ -7,6 +7,7 @@ import {
 } from '@restatedev/restate-sdk-clients'
 import { AppConfigService } from '#config'
 import type { ShowtimeCreationWorkflowInput } from './types.js'
+import { TemporalJsonSerde } from './temporal-json.serde.js'
 import { ShowtimeCreationWorkflow } from './workflow.js'
 
 const SUBMIT_ATTEMPT_TIMEOUT_MS = 10_000
@@ -26,6 +27,7 @@ export class ShowtimeCreationWorkflowClient {
                 maxDuration: 60_000,
                 maxInterval: 3_000
             },
+            serde: TemporalJsonSerde,
             url: config.restate.ingressUrl
         })
     }

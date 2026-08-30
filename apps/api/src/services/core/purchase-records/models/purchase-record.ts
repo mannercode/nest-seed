@@ -41,15 +41,15 @@ export class PurchaseRecord extends CrudDocument {
 
     completionId: null | string
 
-    completionLeaseUntil: Date | null
+    completionLeaseUntil: Temporal.Instant | null
 
     reconciliationId: null | string
 
-    reconciliationLeaseUntil: Date | null
+    reconciliationLeaseUntil: Temporal.Instant | null
 
     purchaseEventPublicationId: null | string
 
-    purchaseEventPublicationLeaseUntil: Date | null
+    purchaseEventPublicationLeaseUntil: Temporal.Instant | null
 
     purchaseEventStatus: PurchaseEventStatus
 

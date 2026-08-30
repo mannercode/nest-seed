@@ -97,7 +97,7 @@ export class ShowtimesRepository extends CrudRepository<Showtime> {
             ])
             .toArray()
 
-        return showdates.map((item) => new Date(item._id))
+        return showdates.map((item) => Temporal.PlainDate.from(item._id))
     }
 
     async searchTheaterIds(searchDto: SearchShowtimesDto) {

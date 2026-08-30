@@ -18,7 +18,7 @@ export class AssetsRepository extends CrudRepository<Asset> {
     async assignOwner(
         assetId: string,
         owner: { entityId: string; service: string },
-        createdAfter: Date
+        createdAfter: Temporal.Instant
     ) {
         // 만료 정리 cron과의 경쟁을 조건부 원자 갱신으로 닫는다 — 아직 만료 전(createdAt > createdAfter)인 행만 소유를 얻는다.
         // cron은 "만료됐고 무소유"인 행만 지우므로, 이 갱신이 성공한 자산을 cron이 지우는 일은 없다.
@@ -45,7 +45,7 @@ export class AssetsRepository extends CrudRepository<Asset> {
         return this.insertOne(asset)
     }
 
-    async findExpiredIncomplete(expiresBefore: Date): Promise<Asset[]> {
+    async findExpiredIncomplete(expiresBefore: Temporal.Instant): Promise<Asset[]> {
         const docs = await this.collection
             .find(
                 this.activeFilter({

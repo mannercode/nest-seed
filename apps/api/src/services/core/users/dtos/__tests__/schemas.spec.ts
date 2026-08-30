@@ -17,7 +17,7 @@ describe('user request schemas', () => {
                 password: 1234
             })
         ).toEqual({
-            birthDate: new Date('2000-01-02'),
+            birthDate: Temporal.PlainDate.from('2000-01-02'),
             email: 'user@mail.com',
             name: 'false',
             password: '1234'

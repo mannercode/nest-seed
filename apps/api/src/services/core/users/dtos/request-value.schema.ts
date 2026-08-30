@@ -1,3 +1,4 @@
+import { PlainDateFromInputSchema } from '@mannercode/common'
 import { z } from 'zod'
 
 export const stringFromRequest = z
@@ -6,6 +7,4 @@ export const stringFromRequest = z
 
 export const nonEmptyStringFromRequest = stringFromRequest.pipe(z.string().min(1))
 
-export const dateFromRequest = z
-    .union([z.date(), z.string(), z.number(), z.boolean()])
-    .pipe(z.coerce.date())
+export const dateFromRequest = PlainDateFromInputSchema

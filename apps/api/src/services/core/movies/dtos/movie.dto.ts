@@ -8,6 +8,6 @@ export class MovieDto {
     imageUrls: string[]
     plot: string
     rating: MovieRating
-    releaseDate: Date
+    releaseDate: Temporal.PlainDate
     title: string
 }

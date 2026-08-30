@@ -9,7 +9,7 @@ import { ShowtimeCreationErrors } from '../errors.js'
 // A가 12:00에 끝나면 12:00 시작하는 B와 곧바로 이어져도 충돌로 보지 않는다.
 // 청소 시간 같은 간격이 필요하면 호출자가 입력 단계에서 그 간격을 설정해야 한다.
 const overlaps = (a: DateTimeRange, b: ShowtimeDto) =>
-    a.start.getTime() < b.endTime.getTime() && b.startTime.getTime() < a.end.getTime()
+    DateUtil.isBefore(a.start, b.endTime) && DateUtil.isBefore(b.startTime, a.end)
 
 @Injectable()
 export class ShowtimeBulkValidatorService {

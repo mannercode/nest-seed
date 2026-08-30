@@ -2,6 +2,7 @@ import type { Document } from 'mongodb'
 import {
     assignIfDefined,
     CrudRepository,
+    DateUtil,
     mongoToPublic,
     MongoErrors,
     objectId
@@ -67,7 +68,7 @@ export class AdminsRepository extends CrudRepository<Admin> {
     async deleteByIdWithAuthVersion(adminId: string): Promise<void> {
         const admin = await this.collection.findOneAndUpdate(
             this.activeFilter({ _id: objectId(adminId) }),
-            this.timestamped({ $inc: { authVersion: 1 }, $set: { deletedAt: new Date() } }),
+            this.timestamped({ $inc: { authVersion: 1 }, $set: { deletedAt: DateUtil.now() } }),
             { returnDocument: 'before' }
         )
 

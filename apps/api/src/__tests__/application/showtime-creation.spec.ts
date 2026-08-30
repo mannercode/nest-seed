@@ -1,6 +1,6 @@
 import type { MockInstance } from 'vitest'
 import { DateUtil, JsonUtil, newObjectIdString, sleep } from '@mannercode/common'
-import { HttpTestClient, nullObjectId, type Response } from '@mannercode/testing'
+import { HttpTestClient, instant, nullObjectId, type Response } from '@mannercode/testing'
 import { randomUUID } from 'node:crypto'
 import type { ShowtimeCreationPersistenceService } from '#application'
 import type { MovieDto, ShowtimesService, TheaterDto, TicketsService } from '#core'
@@ -44,7 +44,7 @@ describe('ShowtimeCreationService', () => {
     const buildCreateDto = () => ({
         durationInMinutes: 1,
         movieId: movie.id,
-        startTimes: [new Date('2100-01-01T09:00')],
+        startTimes: [instant('2100-01-01T09:00Z')],
         theaterIds: [theater.id]
     })
 
@@ -81,17 +81,79 @@ describe('ShowtimeCreationService', () => {
             const showtimes = await createShowtimes(
                 fix,
                 [
-                    new Date('2100-01-01T09:00'),
-                    new Date('2100-01-01T11:00'),
-                    new Date('2100-01-01T13:00')
+                    instant('2100-01-01T09:00Z'),
+                    instant('2100-01-01T11:00Z'),
+                    instant('2100-01-01T13:00Z')
                 ].map((startTime) => ({ startTime, theaterId: theater.id }))
             )
 
-            await fix.httpClient
+            const response = await fix.httpClient
                 .post('/showtime-creation/showtimes/search')
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
                 .body({ theaterIds: [theater.id] })
                 .ok(expect.arrayContaining(showtimes))
+
+            expect(response.text).toContain('"startTime":"2100-01-01T09:00:00.000Z"')
+        })
+    })
+
+    describe('GET /showtime-creation/event-stream', () => {
+        it('SSE도 Instant를 밀리초 3자리 UTC JSON으로 전송한다', async () => {
+            const { ShowtimeCreationEvents } = await import('#application')
+            const events = fix.module.get(ShowtimeCreationEvents)
+            const sseClient = new HttpTestClient(fix.httpClient.serverUrl)
+            const sagaId = newObjectIdString()
+            let received: string | undefined
+            let streamError: unknown
+
+            sseClient
+                .get('/showtime-creation/event-stream')
+                .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                .sse(
+                    (data) => {
+                        if (data.includes(sagaId)) received = data
+                    },
+                    (error) => {
+                        streamError = error
+                    }
+                )
+
+            const event: Parameters<typeof events.emitStatusChanged>[0] = {
+                conflictingShowtimes: [
+                    {
+                        endTime: instant('2100-01-01T11:00:00Z'),
+                        id: newObjectIdString(),
+                        movieId: movie.id,
+                        startTime: instant('2100-01-01T09:00:00Z'),
+                        theaterId: theater.id
+                    }
+                ],
+                sagaId,
+                status: 'failed'
+            }
+
+            try {
+                const deadline = performance.now() + 2_000
+                while (!received && performance.now() < deadline) {
+                    if (streamError) {
+                        throw streamError instanceof Error
+                            ? streamError
+                            : new Error(
+                                  typeof streamError === 'string'
+                                      ? streamError
+                                      : 'SSE stream failed.'
+                              )
+                    }
+                    await events.emitStatusChanged(event)
+                    await sleep(50)
+                }
+                if (!received) throw new Error('SSE event was not received within 2000ms.')
+            } finally {
+                sseClient.abort()
+            }
+
+            expect(received).toContain('"startTime":"2100-01-01T09:00:00.000Z"')
+            expect(received).toContain('"endTime":"2100-01-01T11:00:00.000Z"')
         })
     })
 
@@ -322,8 +384,8 @@ describe('ShowtimeCreationService', () => {
                 principalId,
                 idempotencyKey,
                 inputHash,
-                new Date(),
-                new Date(Date.now() + 60_000)
+                DateUtil.now(),
+                DateUtil.add({ minutes: 1 })
             )
             if (initial.kind !== 'acquired') throw new Error('initial claim was not acquired')
             await submissions.release(principalId, idempotencyKey, initial.claimId)
@@ -346,8 +408,8 @@ describe('ShowtimeCreationService', () => {
                 return stale
             })
 
-            const now = new Date()
-            const claimUntil = new Date(now.getTime() + 60_000)
+            const now = DateUtil.now()
+            const claimUntil = DateUtil.add({ base: now, minutes: 1 })
             const claims = Promise.all([
                 submissions.acquire(principalId, idempotencyKey, inputHash, now, claimUntil),
                 submissions.acquire(principalId, idempotencyKey, inputHash, now, claimUntil)
@@ -372,7 +434,7 @@ describe('ShowtimeCreationService', () => {
                 .body({
                     ...createDto,
                     durationInMinutes: 90,
-                    startTimes: [new Date('2100-01-01T09:00'), new Date('2100-01-01T10:00')]
+                    startTimes: [instant('2100-01-01T09:00Z'), instant('2100-01-01T10:00Z')]
                 })
                 .badRequest(Errors.ShowtimeCreation.OverlappingStartTimes(expect.any(Array)))
 
@@ -395,7 +457,7 @@ describe('ShowtimeCreationService', () => {
                     .body({
                         durationInMinutes: 1,
                         movieId: movie.id,
-                        startTimes: [new Date('2100-01-01T09:00')],
+                        startTimes: [instant('2100-01-01T09:00Z')],
                         theaterIds: [theater.id]
                     })
                     .accepted()
@@ -504,7 +566,7 @@ describe('ShowtimeCreationService', () => {
                 .body({
                     durationInMinutes: 1,
                     movieId: movie.id,
-                    startTimes: [new Date('2100-01-01T09:00')],
+                    startTimes: [instant('2100-01-01T09:00Z')],
                     theaterIds: [theater.id]
                 })
                 .accepted()
@@ -534,7 +596,7 @@ describe('ShowtimeCreationService', () => {
                 .body({
                     durationInMinutes: 1,
                     movieId: nullObjectId,
-                    startTimes: [new Date(0)],
+                    startTimes: [instant()],
                     theaterIds: [theater.id]
                 })
                 .accepted()
@@ -556,7 +618,7 @@ describe('ShowtimeCreationService', () => {
                 .body({
                     durationInMinutes: 1,
                     movieId: movie.id,
-                    startTimes: [new Date(0)],
+                    startTimes: [instant()],
                     theaterIds: [nullObjectId]
                 })
                 .accepted()
@@ -576,14 +638,14 @@ describe('ShowtimeCreationService', () => {
                 .body({
                     durationInMinutes: 90,
                     movieId: movie.id,
-                    startTimes: [new Date('2100-01-01T09:00'), new Date('2100-01-01T10:00')],
+                    startTimes: [instant('2100-01-01T09:00Z'), instant('2100-01-01T10:00Z')],
                     theaterIds: [theater.id]
                 })
                 .badRequest(Errors.ShowtimeCreation.OverlappingStartTimes(expect.any(Array)))
         })
 
         it('같은 시작 시각이 중복되어도 400을 반환한다', async () => {
-            const start = new Date('2100-01-01T09:00')
+            const start = instant('2100-01-01T09:00Z')
 
             await fix.httpClient
                 .post('/showtime-creation/showtimes')
@@ -624,7 +686,7 @@ describe('ShowtimeCreationService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .body({
                         ...buildCreateDto(),
-                        startTimes: [new Date('2100-01-01T09:00'), new Date('2100-01-01T11:00')]
+                        startTimes: [instant('2100-01-01T09:00Z'), instant('2100-01-01T11:00Z')]
                     })
                     .accepted()
                 sagaId = body.sagaId
@@ -716,7 +778,7 @@ describe('ShowtimeCreationService', () => {
 
             await expect(
                 persistence.validateAndCreate(
-                    { ...createDto, startTimes: [new Date('2100-01-01T11:00')] },
+                    { ...createDto, startTimes: [instant('2100-01-01T11:00Z')] },
                     sagaId
                 )
             ).rejects.toThrow(`Saga ID was reused with different input (sagaId=${sagaId})`)
@@ -725,9 +787,8 @@ describe('ShowtimeCreationService', () => {
         it('한 operation의 상영 시간 수가 안전 상한을 넘으면 transaction 전에 거부한다', async () => {
             const createDto = {
                 ...buildCreateDto(),
-                startTimes: Array.from(
-                    { length: 15 },
-                    (_, index) => new Date(Date.UTC(2100, 0, 1, index))
+                startTimes: Array.from({ length: 15 }, (_, index) =>
+                    instant(Date.UTC(2100, 0, 1, index))
                 ),
                 theaterIds: Array.from({ length: 15 }, () => newObjectIdString())
             }
@@ -793,10 +854,10 @@ describe('ShowtimeCreationService', () => {
             const initialShowtimes = await createShowtimes(
                 fix,
                 [
-                    new Date('2013-01-31T12:00'),
-                    new Date('2013-01-31T14:00'),
-                    new Date('2013-01-31T16:30'),
-                    new Date('2013-01-31T18:30')
+                    instant('2013-01-31T12:00Z'),
+                    instant('2013-01-31T14:00Z'),
+                    instant('2013-01-31T16:30Z'),
+                    instant('2013-01-31T18:30Z')
                 ].map((startTime) => ({
                     endTime: DateUtil.add({ base: startTime, minutes: 90 }),
                     startTime,
@@ -814,9 +875,9 @@ describe('ShowtimeCreationService', () => {
                     durationInMinutes: 30,
                     movieId: movie.id,
                     startTimes: [
-                        new Date('2013-01-31T12:00'),
-                        new Date('2013-01-31T16:00'),
-                        new Date('2013-01-31T20:00')
+                        instant('2013-01-31T12:00Z'),
+                        instant('2013-01-31T16:00Z'),
+                        instant('2013-01-31T20:00Z')
                     ],
                     theaterIds: [theater.id]
                 })
@@ -839,24 +900,25 @@ describe('ShowtimeCreationService', () => {
             const theaterB = await createTheater(fix)
             const [conflictingShowtime] = await createShowtimes(fix, [
                 {
-                    endTime: new Date('2013-01-31T13:30'),
-                    startTime: new Date('2013-01-31T12:00'),
+                    endTime: instant('2013-01-31T13:30Z'),
+                    startTime: instant('2013-01-31T12:00Z'),
                     theaterId: theater.id
                 }
             ])
 
             const completionPromise = waitForCompletion(fix, adminAccessToken, 'failed')
 
+            const createDto = {
+                durationInMinutes: 90,
+                movieId: movie.id,
+                startTimes: [instant('2013-01-31T12:00Z')],
+                theaterIds: [theater.id, theaterB.id]
+            }
             const { body } = await fix.httpClient
                 .post('/showtime-creation/showtimes')
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
                 .headers({ 'Idempotency-Key': randomUUID() })
-                .body({
-                    durationInMinutes: 90,
-                    movieId: movie.id,
-                    startTimes: [new Date('2013-01-31T12:00')],
-                    theaterIds: [theater.id, theaterB.id]
-                })
+                .body(createDto)
                 .accepted()
 
             await expect(completionPromise).resolves.toEqual({
@@ -871,6 +933,11 @@ describe('ShowtimeCreationService', () => {
 
             const tickets = await ticketsService.search({ sagaIds: [body.sagaId] })
             expect(tickets).toEqual([])
+
+            const replay = await persistence.validateAndCreate(createDto, body.sagaId)
+            if (replay.kind !== 'failed') throw new Error('failed operation was not restored')
+            expect(replay.conflictingShowtimes[0]?.startTime).toBeInstanceOf(Temporal.Instant)
+            expect(replay.conflictingShowtimes[0]?.endTime).toBeInstanceOf(Temporal.Instant)
         })
 
         it('한 기존 상영 시간이 여러 새 시작 시각과 겹쳐도 결과에는 한 번만 들어간다', async () => {
@@ -878,8 +945,8 @@ describe('ShowtimeCreationService', () => {
             // 중복 제거가 빠지면 같은 상영이 세 번 결과에 들어간다.
             const [initialShowtime] = await createShowtimes(fix, [
                 {
-                    endTime: new Date('2013-01-31T13:30'),
-                    startTime: new Date('2013-01-31T12:00'),
+                    endTime: instant('2013-01-31T13:30Z'),
+                    startTime: instant('2013-01-31T12:00Z'),
                     theaterId: theater.id
                 }
             ])
@@ -894,9 +961,9 @@ describe('ShowtimeCreationService', () => {
                     durationInMinutes: 10,
                     movieId: movie.id,
                     startTimes: [
-                        new Date('2013-01-31T12:00'),
-                        new Date('2013-01-31T12:30'),
-                        new Date('2013-01-31T13:00')
+                        instant('2013-01-31T12:00Z'),
+                        instant('2013-01-31T12:30Z'),
+                        instant('2013-01-31T13:00Z')
                     ],
                     theaterIds: [theater.id]
                 })
@@ -914,8 +981,8 @@ describe('ShowtimeCreationService', () => {
             // 슬롯 격자로 비교하면 시작 분이 다를 때 키 교집합이 비어 충돌을 놓친다.
             const [initialShowtime] = await createShowtimes(fix, [
                 {
-                    endTime: new Date('2013-01-31T12:00'),
-                    startTime: new Date('2013-01-31T10:00'),
+                    endTime: instant('2013-01-31T12:00Z'),
+                    startTime: instant('2013-01-31T10:00Z'),
                     theaterId: theater.id
                 }
             ])
@@ -929,7 +996,7 @@ describe('ShowtimeCreationService', () => {
                 .body({
                     durationInMinutes: 60,
                     movieId: movie.id,
-                    startTimes: [new Date('2013-01-31T10:05')],
+                    startTimes: [instant('2013-01-31T10:05Z')],
                     theaterIds: [theater.id]
                 })
                 .accepted()
@@ -946,8 +1013,8 @@ describe('ShowtimeCreationService', () => {
             // 시작 시각만 보면 새 범위 바깥이지만, 끝 시각이 새 범위와 겹치므로 충돌로 봐야 한다.
             const [initialShowtime] = await createShowtimes(fix, [
                 {
-                    endTime: new Date('2013-01-31T11:00'),
-                    startTime: new Date('2013-01-31T09:00'),
+                    endTime: instant('2013-01-31T11:00Z'),
+                    startTime: instant('2013-01-31T09:00Z'),
                     theaterId: theater.id
                 }
             ])
@@ -961,7 +1028,7 @@ describe('ShowtimeCreationService', () => {
                 .body({
                     durationInMinutes: 120,
                     movieId: movie.id,
-                    startTimes: [new Date('2013-01-31T10:00')],
+                    startTimes: [instant('2013-01-31T10:00Z')],
                     theaterIds: [theater.id]
                 })
                 .accepted()

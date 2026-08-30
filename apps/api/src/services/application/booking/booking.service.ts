@@ -1,4 +1,4 @@
-import { pickIds } from '@mannercode/common'
+import { DateUtil, pickIds } from '@mannercode/common'
 import {
     BadRequestException,
     ConflictException,
@@ -76,22 +76,20 @@ export class BookingService {
         // 추천과 상영 생성 화면도 같은 방식으로 미래 상영만 조회한다.
         // 결제 마감 시간은 결제 시점에서 따로 확인한다.
         return this.showtimesService.searchShowdates({
-            endTimeRange: { start: new Date() },
+            endTimeRange: { start: DateUtil.now() },
             movieIds: [movieId],
             theaterIds: [theaterId]
         })
     }
 
     async searchShowtimes({ movieId, showdate, theaterId }: BookingSearchShowtimesDto) {
-        // 호출 측(`ParseShowdatePipe`)이 이미 UTC 자정 Date를 넘긴다.
-        // 짝이 되는 `searchShowdates`도 Mongo `$dateToString`의 UTC 결과를 그대로 반환하므로 호스트 시간대와 무관하게 일치한다.
-        const endOfDay = new Date(showdate)
-        endOfDay.setUTCHours(23, 59, 59, 999)
+        const startOfDay = DateUtil.startOfUtcDay(showdate)
+        const endOfDay = DateUtil.endOfUtcDay(showdate)
 
         const showtimes = await this.showtimesService.search({
-            endTimeRange: { start: new Date() },
+            endTimeRange: { start: DateUtil.now() },
             movieIds: [movieId],
-            startTimeRange: { end: endOfDay, start: showdate },
+            startTimeRange: { end: endOfDay, start: startOfDay },
             theaterIds: [theaterId]
         })
 
@@ -105,7 +103,7 @@ export class BookingService {
 
     async searchTheaters({ latLong, movieId }: BookingSearchTheatersDto) {
         const theaterIds = await this.showtimesService.searchTheaterIds({
-            endTimeRange: { start: new Date() },
+            endTimeRange: { start: DateUtil.now() },
             movieIds: [movieId]
         })
         const theaters = await this.theatersService.getMany(theaterIds)

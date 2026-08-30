@@ -1,4 +1,4 @@
-import { IdempotencyErrors, PaginationDto, OrderDirection } from '@mannercode/common'
+import { DateUtil, IdempotencyErrors, PaginationDto, OrderDirection } from '@mannercode/common'
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common'
 import { MoviesService, ShowtimesService, TheatersService } from '#core'
 import { BulkCreateShowtimesDto, RequestShowtimeCreationResponse } from './dtos/index.js'
@@ -28,13 +28,13 @@ export class ShowtimeCreationService {
     ): Promise<RequestShowtimeCreationResponse> {
         this.assertStartTimesDoNotOverlap(createDto)
 
-        const now = new Date()
+        const now = DateUtil.now()
         const claim = await this.submissions.acquire(
             principalId,
             idempotencyKey,
             fingerprintShowtimeCreation(createDto),
             now,
-            new Date(now.getTime() + SUBMISSION_CLAIM_LEASE_MS)
+            DateUtil.add({ base: now, milliseconds: SUBMISSION_CLAIM_LEASE_MS })
         )
 
         if (claim.kind === 'key-reused') {
@@ -51,7 +51,7 @@ export class ShowtimeCreationService {
                 principalId,
                 idempotencyKey,
                 claim.claimId,
-                new Date()
+                DateUtil.now()
             )
             if (!accepted) {
                 throw new Error('Showtime creation submission claim was lost before acceptance.')
@@ -71,13 +71,17 @@ export class ShowtimeCreationService {
         durationInMinutes,
         startTimes
     }: BulkCreateShowtimesDto) {
-        const sorted = [...startTimes].sort((a, b) => a.getTime() - b.getTime())
+        const sorted = [...startTimes].sort(DateUtil.compare)
         const durationMs = durationInMinutes * 60 * 1000
 
-        const overlapping: Date[] = []
-        let prev: Date | undefined
+        const overlapping: Temporal.Instant[] = []
+        let prev: Temporal.Instant | undefined
         for (const start of sorted) {
-            if (prev && start.getTime() - prev.getTime() < durationMs) {
+            if (
+                prev &&
+                DateUtil.toEpochMilliseconds(start) - DateUtil.toEpochMilliseconds(prev) <
+                    durationMs
+            ) {
                 overlapping.push(start)
             }
             prev = start
@@ -95,7 +99,7 @@ export class ShowtimeCreationService {
     }
 
     async searchShowtimes(theaterIds: string[]) {
-        return this.showtimesService.search({ endTimeRange: { start: new Date() }, theaterIds })
+        return this.showtimesService.search({ endTimeRange: { start: DateUtil.now() }, theaterIds })
     }
 
     async searchTheatersPage(searchDto: PaginationDto) {

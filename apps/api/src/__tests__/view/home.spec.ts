@@ -58,7 +58,7 @@ describe('UserHomeView', () => {
                 theaterA = await createTheater(fix, { name: 'Home Theater A' })
                 theaterB = await createTheater(fix, { name: 'Home Theater B' })
 
-                const now = new Date()
+                const now = DateUtil.now()
                 const past = DateUtil.add({ base: now, days: -1 })
                 const t1 = DateUtil.add({ base: now, days: 1 })
                 const t2 = DateUtil.add({ base: now, days: 2 })

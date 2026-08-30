@@ -1,4 +1,4 @@
-import { PaginationSchema, type PaginationDto } from '@mannercode/common'
+import { JsonUtil, PaginationSchema, type PaginationDto } from '@mannercode/common'
 import {
     MessageEvent,
     Body,
@@ -36,7 +36,9 @@ export class ShowtimeCreationHttpController {
 
     @Sse('event-stream')
     getEventStream(): Observable<MessageEvent> {
-        return this.events.observeStatusChanged().pipe(map((data) => ({ data })))
+        return this.events
+            .observeStatusChanged()
+            .pipe(map((data) => ({ data: JsonUtil.stringify(data) })))
     }
 
     @HttpCode(HttpStatus.ACCEPTED)

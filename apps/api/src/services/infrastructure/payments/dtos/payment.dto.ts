@@ -2,10 +2,10 @@ import type { PaymentStatus } from '../models/index.js'
 
 export class PaymentDto {
     amount: number
-    createdAt: Date
+    createdAt: Temporal.Instant
     id: string
     purchaseRecordId: null | string
     status: PaymentStatus
-    updatedAt: Date
+    updatedAt: Temporal.Instant
     userId: string
 }

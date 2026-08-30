@@ -5,6 +5,7 @@ import express from 'express'
 import { hostname } from 'os'
 import { AppConfigService } from '#config'
 import { AppModule } from './app.module.js'
+import { configureTemporalJson } from './configure-temporal-json.js'
 
 export async function bootstrap() {
     // Nest 초기화 로그도 ECS stdout 계약을 따르도록 로거 준비 전까지 버퍼링한다.
@@ -15,7 +16,9 @@ export async function bootstrap() {
 
     // 외부가 보낸 X-Forwarded-For는 NGINX가 실제 원격 주소를 뒤에 붙인다.
     // 사설 프록시 홉만 신뢰하면 Express가 오른쪽부터 첫 외부 주소를 클라이언트 IP로 고른다.
-    app.getHttpAdapter().getInstance().set('trust proxy', ['loopback', 'linklocal', 'uniquelocal'])
+    const expressApp = app.getHttpAdapter().getInstance()
+    expressApp.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal'])
+    configureTemporalJson(app)
 
     // Docker hostname을 노출해 분산 테스트에서 응답한 복제본을 식별한다.
     const replicaId = hostname()

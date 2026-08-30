@@ -11,7 +11,7 @@ import {
 export async function createAllResources(
     ctx: TestContext,
     locations: TheaterLocation[],
-    startTimes: Date[]
+    startTimes: Temporal.Instant[]
 ) {
     const { accessToken, user, refreshToken } = await createAndLoginUser(ctx)
 

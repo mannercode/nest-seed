@@ -1,5 +1,5 @@
 import { DateUtil, ensure, pickIds } from '@mannercode/common'
-import { nullObjectId, oid } from '@mannercode/testing'
+import { instant, nullObjectId, oid, plainDate } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
 import type { ShowtimeDto, ShowtimesService } from '#core'
 import {
@@ -39,8 +39,8 @@ describe('ShowtimesService', () => {
                     sagaId: oid(0x1),
                     movieId: oid(0x2),
                     theaterId: oid(0x3),
-                    startTime: new Date('2020-01-01T12:00'),
-                    endTime: new Date('2020-01-01T14:00')
+                    startTime: instant('2020-01-01T12:00Z'),
+                    endTime: instant('2020-01-01T14:00Z')
                 })
             ]
 
@@ -54,8 +54,8 @@ describe('ShowtimesService', () => {
                     id: expect.any(String),
                     movieId: oid(0x2),
                     theaterId: oid(0x3),
-                    startTime: new Date('2020-01-01T12:00'),
-                    endTime: new Date('2020-01-01T14:00')
+                    startTime: instant('2020-01-01T12:00Z'),
+                    endTime: instant('2020-01-01T14:00Z')
                 }
             ])
         })
@@ -64,8 +64,8 @@ describe('ShowtimesService', () => {
     describe('getMany', () => {
         it('주어진 상영 시간 ID 목록에 해당하는 상영 시간을 반환한다', async () => {
             const showtimes = await createShowtimes(fix, [
-                { startTime: new Date('2000-01-01T12:00') },
-                { startTime: new Date('2000-01-01T14:00') }
+                { startTime: instant('2000-01-01T12:00Z') },
+                { startTime: instant('2000-01-01T14:00Z') }
             ])
 
             const fetchedShowtimes = await showtimesService.getMany(pickIds(showtimes))
@@ -75,7 +75,7 @@ describe('ShowtimesService', () => {
 
         it('상영 시간 ID 목록 중 하나라도 없으면 404를 던진다', async () => {
             const [existingShowtime] = await createShowtimes(fix, [
-                { startTime: new Date('2000-01-01T12:00') }
+                { startTime: instant('2000-01-01T12:00Z') }
             ])
 
             const promise = showtimesService.getMany([ensure(existingShowtime).id, nullObjectId])
@@ -101,13 +101,13 @@ describe('ShowtimesService', () => {
             beforeEach(async () => {
                 // search는 startTime 오름차순으로 반환하므로 위치 매핑이 흔들리지 않게 서로 다른 startTime을 준다
                 const createdShowtimes = await createShowtimes(fix, [
-                    { sagaId, startTime: new Date('2000-01-01T12:00') },
-                    { movieId, startTime: new Date('2000-01-02T12:00') },
-                    { theaterId, startTime: new Date('2000-01-03T12:00') },
-                    { startTime: new Date('2020-01-01T12:00') },
-                    { startTime: new Date('2020-01-01T14:00') },
-                    { startTime: new Date('2020-01-02T14:00') },
-                    { startTime: new Date('2020-01-03T12:00') }
+                    { sagaId, startTime: instant('2000-01-01T12:00Z') },
+                    { movieId, startTime: instant('2000-01-02T12:00Z') },
+                    { theaterId, startTime: instant('2000-01-03T12:00Z') },
+                    { startTime: instant('2020-01-01T12:00Z') },
+                    { startTime: instant('2020-01-01T14:00Z') },
+                    { startTime: instant('2020-01-02T14:00Z') },
+                    { startTime: instant('2020-01-03T12:00Z') }
                 ])
 
                 showtimeForSaga = ensure(createdShowtimes[0])
@@ -138,8 +138,8 @@ describe('ShowtimesService', () => {
             it('상영 시작 범위로 필터링한다', async () => {
                 const showtimes = await showtimesService.search({
                     startTimeRange: {
-                        end: new Date('2020-01-02T12:00'),
-                        start: new Date('2020-01-01T00:00')
+                        end: instant('2020-01-02T12:00Z'),
+                        start: instant('2020-01-01T00:00Z')
                     }
                 })
 
@@ -155,17 +155,17 @@ describe('ShowtimesService', () => {
 
             // 삽입 순서를 일부러 뒤섞어 정렬 결과가 Mongo 자연 순서와 구분되게 한다
             await showtimesService.createMany([
-                buildCreateShowtimeDto({ sagaId, startTime: new Date('2000-01-01T14:00') }),
-                buildCreateShowtimeDto({ sagaId, startTime: new Date('2000-01-01T12:00') }),
-                buildCreateShowtimeDto({ sagaId, startTime: new Date('2000-01-01T13:00') })
+                buildCreateShowtimeDto({ sagaId, startTime: instant('2000-01-01T14:00Z') }),
+                buildCreateShowtimeDto({ sagaId, startTime: instant('2000-01-01T12:00Z') }),
+                buildCreateShowtimeDto({ sagaId, startTime: instant('2000-01-01T13:00Z') })
             ])
 
             const showtimes = await showtimesService.search({ sagaIds: [sagaId] })
 
             expect(showtimes.map((showtime) => showtime.startTime)).toEqual([
-                new Date('2000-01-01T12:00'),
-                new Date('2000-01-01T13:00'),
-                new Date('2000-01-01T14:00')
+                instant('2000-01-01T12:00Z'),
+                instant('2000-01-01T13:00Z'),
+                instant('2000-01-01T14:00Z')
             ])
         })
 
@@ -191,7 +191,7 @@ describe('ShowtimesService', () => {
 
         it('상영 시작 범위로 필터링한 영화 ID 목록을 반환한다', async () => {
             const movieIds = await showtimesService.searchMovieIds({
-                startTimeRange: { start: new Date() }
+                startTimeRange: { start: DateUtil.now() }
             })
 
             expect(movieIds).toHaveLength(2)
@@ -219,9 +219,21 @@ describe('ShowtimesService', () => {
     describe('searchShowdates', () => {
         beforeEach(async () => {
             await createShowtimes(fix, [
-                { movieId: oid(0xa1), startTime: new Date('2000-01-01'), theaterId: oid(0xb1) },
-                { movieId: oid(0xa1), startTime: new Date('2000-01-02'), theaterId: oid(0xb1) },
-                { movieId: oid(0xa1), startTime: new Date('2000-01-03'), theaterId: oid(0x00) }
+                {
+                    movieId: oid(0xa1),
+                    startTime: instant('2000-01-01T00:00Z'),
+                    theaterId: oid(0xb1)
+                },
+                {
+                    movieId: oid(0xa1),
+                    startTime: instant('2000-01-02T00:00Z'),
+                    theaterId: oid(0xb1)
+                },
+                {
+                    movieId: oid(0xa1),
+                    startTime: instant('2000-01-03T00:00Z'),
+                    theaterId: oid(0x00)
+                }
             ])
         })
 
@@ -231,10 +243,7 @@ describe('ShowtimesService', () => {
                 theaterIds: [oid(0xb1)]
             })
 
-            expect(showdates.map((d) => d.getTime())).toEqual([
-                new Date('2000-01-01').getTime(),
-                new Date('2000-01-02').getTime()
-            ])
+            expect(showdates).toEqual([plainDate('2000-01-01'), plainDate('2000-01-02')])
         })
     })
 })

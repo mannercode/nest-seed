@@ -4,6 +4,6 @@ export const MovieDefaults = {
     durationInSeconds: -1,
     plot: '',
     rating: 'Unrated',
-    releaseDate: new Date('0000-01-01'),
+    releaseDate: Temporal.PlainDate.from('0000-01-01'),
     title: ''
 } as const

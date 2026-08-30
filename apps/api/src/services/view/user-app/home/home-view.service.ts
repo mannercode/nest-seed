@@ -1,4 +1,4 @@
-import { OrderDirection, Require, sortBy, uniq } from '@mannercode/common'
+import { DateUtil, OrderDirection, Require, sortBy, uniq } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { RecommendationService } from '#application'
 import { MoviesService, ShowtimeDto, ShowtimesService, TheatersService } from '#core'
@@ -37,7 +37,7 @@ export class UserHomeViewService {
         if (page.items.length === 0) return []
 
         const upcomingShowtimes = await this.showtimes.search({
-            endTimeRange: { start: new Date() },
+            endTimeRange: { start: DateUtil.now() },
             movieIds: page.items.map((movie) => movie.id)
         })
 
@@ -89,7 +89,7 @@ function groupShowtimesByMovie(
     for (const [movieId, list] of map) {
         map.set(
             movieId,
-            sortBy(list, (item) => item.startTime.getTime())
+            sortBy(list, (item) => DateUtil.toEpochMilliseconds(item.startTime))
         )
     }
 

@@ -6,7 +6,7 @@ describe('showtime creation request schemas', () => {
             BulkCreateShowtimesSchema.safeParse({
                 durationInMinutes: 90,
                 movieId: 'movie-id',
-                startTimes: [new Date('2100-01-01T09:00:00.000Z')],
+                startTimes: ['2100-01-01T09:00:00.000Z'],
                 theaterIds: ['theater-id', 'theater-id']
             }).success
         ).toBe(false)

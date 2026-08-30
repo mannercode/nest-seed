@@ -1,5 +1,5 @@
 import { Checksum, ensure, omit } from '@mannercode/common'
-import { nullObjectId } from '@mannercode/testing'
+import { nullObjectId, plainDate } from '@mannercode/testing'
 import { MovieDefaults, MovieGenre, MovieRating, type MovieDto } from '#core'
 import {
     buildCreateMovieDto,
@@ -30,7 +30,7 @@ describe('MoviesService', () => {
         it('생성된 영화를 반환한다', async () => {
             const createDto = buildCreateMovieDto()
 
-            await fix.httpClient
+            const response = await fix.httpClient
                 .post('/movies')
                 .body(createDto)
                 .created({
@@ -38,6 +38,7 @@ describe('MoviesService', () => {
                     id: expect.any(String),
                     imageUrls: []
                 })
+            expect(response.text).toContain('"releaseDate":"1970-01-01"')
         })
 
         it('필드를 비워 보내면 기본값이 적용된 영화를 반환한다', async () => {
@@ -104,7 +105,7 @@ describe('MoviesService', () => {
                 genres: ['romance', 'thriller'],
                 plot: 'new plot',
                 rating: 'R',
-                releaseDate: new Date('2000-01-01')
+                releaseDate: plainDate('2000-01-01')
             }
 
             await fix.httpClient
@@ -198,7 +199,7 @@ describe('MoviesService', () => {
                     genres: [MovieGenre.Action, MovieGenre.Comedy],
                     plot: 'plot-a1',
                     rating: MovieRating.NC17,
-                    releaseDate: new Date('2000-01-01'),
+                    releaseDate: plainDate('2000-01-01'),
                     title: 'title-a1'
                 }),
                 createMovie(fix, {
@@ -206,7 +207,7 @@ describe('MoviesService', () => {
                     genres: [MovieGenre.Romance, MovieGenre.Drama],
                     plot: 'plot-a2',
                     rating: MovieRating.NC17,
-                    releaseDate: new Date('2000-01-02'),
+                    releaseDate: plainDate('2000-01-02'),
                     title: 'title-a2'
                 }),
                 createMovie(fix, {
@@ -214,7 +215,7 @@ describe('MoviesService', () => {
                     genres: [MovieGenre.Drama, MovieGenre.Comedy],
                     plot: 'plot-b1',
                     rating: MovieRating.PG,
-                    releaseDate: new Date('2000-01-02'),
+                    releaseDate: plainDate('2000-01-02'),
                     title: 'title-b1'
                 }),
                 createMovie(fix, {
@@ -222,7 +223,7 @@ describe('MoviesService', () => {
                     genres: [MovieGenre.Thriller, MovieGenre.Western],
                     plot: 'plot-b2',
                     rating: MovieRating.R,
-                    releaseDate: new Date('2000-01-03'),
+                    releaseDate: plainDate('2000-01-03'),
                     title: 'title-b2'
                 })
             ])
@@ -269,7 +270,7 @@ describe('MoviesService', () => {
         it('개봉일로 필터링한다', async () => {
             await fix.httpClient
                 .get('/movies')
-                .query({ releaseDate: new Date('2000-01-02') })
+                .query({ releaseDate: plainDate('2000-01-02').toString() })
                 .ok(buildExpectedPage([movieA2, movieB1]))
         })
 

@@ -1,4 +1,3 @@
-import { JsonUtil } from '@mannercode/common'
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import * as restate from '@restatedev/restate-sdk'
 import { AppConfigService } from '#config'
@@ -8,6 +7,7 @@ import type { ShowtimeCreationWorkflowInput } from './types.js'
 // eslint-disable-next-line no-restricted-imports
 import { ShowtimeCreationPersistenceService } from '../internal/showtime-creation-persistence.service.js'
 import { ShowtimeCreationEvents } from '../showtime-creation.events.js'
+import { TemporalJsonSerde } from './temporal-json.serde.js'
 
 const EVENT_RETRY = { initialRetryInterval: 1_000, maxRetryAttempts: 3, maxRetryDuration: 35_000 }
 const EVENT_ATTEMPT_TIMEOUT_MS = 10_000
@@ -52,7 +52,7 @@ export function createShowtimeCreationWorkflow({
                     result = await ctx.run(
                         'validate and create',
                         () => {
-                            const { createDto, sagaId } = JsonUtil.reviveDates(input)
+                            const { createDto, sagaId } = input
                             const signal = AbortSignal.any([
                                 ctx.request().attemptCompletedSignal,
                                 AbortSignal.timeout(runTimeoutMs)
@@ -101,6 +101,7 @@ export function createShowtimeCreationWorkflow({
                 return undefined
             },
             inactivityTimeout: runTimeoutMs + 5_000,
+            serde: TemporalJsonSerde,
             workflowRetention: 60 * 60 * 1_000
         }
     })

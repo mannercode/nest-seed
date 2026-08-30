@@ -1,6 +1,7 @@
 import type { ClientSession, Document, FindOneAndUpdateOptions, UpdateFilter } from 'mongodb'
 import {
     CrudRepository,
+    DateUtil,
     ensure,
     mongoArrayToPublic,
     mongoToPublic,
@@ -95,7 +96,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         return mongoToPublic<PurchaseRecord>(record)
     }
 
-    async findPendingBefore(before: Date, now: Date) {
+    async findPendingBefore(before: Temporal.Instant, now: Temporal.Instant) {
         const purchaseRecords = await this.collection
             .find(
                 this.activeFilter({
@@ -139,9 +140,9 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
             completionId,
             idempotencyError
         }: {
-            before: Date
-            leaseUntil: Date
-            now: Date
+            before: Temporal.Instant
+            leaseUntil: Temporal.Instant
+            now: Temporal.Instant
             reconciliationId: string
             completionId?: string
             idempotencyError?: { response: Record<string, unknown>; status: number }
@@ -181,7 +182,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         return mongoToPublic<PurchaseRecord>(purchaseRecord)
     }
 
-    async findUnpublishedBefore(before: Date, now: Date) {
+    async findUnpublishedBefore(before: Temporal.Instant, now: Temporal.Instant) {
         const purchaseRecords = await this.collection
             .find(
                 this.activeFilter({
@@ -208,7 +209,12 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
             leaseUntil,
             now,
             publicationId
-        }: { before: Date; leaseUntil: Date; now: Date; publicationId: string }
+        }: {
+            before: Temporal.Instant
+            leaseUntil: Temporal.Instant
+            now: Temporal.Instant
+            publicationId: string
+        }
     ) {
         const purchaseRecord = await this.updateById(
             purchaseRecordId,
@@ -235,7 +241,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     async claimForCompletion(
         purchaseRecordId: string,
         completionId: string,
-        completionLeaseUntil: Date
+        completionLeaseUntil: Temporal.Instant
     ) {
         const purchaseRecord = await this.updateById(
             purchaseRecordId,
@@ -322,7 +328,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
                 reconciliationId,
                 status: PurchaseRecordStatus.Compensating
             }),
-            this.timestamped({ $set: { reconciliationLeaseUntil: new Date(0) } })
+            this.timestamped({ $set: { reconciliationLeaseUntil: DateUtil.epoch() } })
         )
     }
 

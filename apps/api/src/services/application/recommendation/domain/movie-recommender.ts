@@ -22,7 +22,7 @@ export class MovieRecommender {
             .map((movie) => ({
                 genreScore: sumBy(movie.genres, (genre) => genreScoreByGenre.get(genre) ?? 0),
                 movie,
-                releaseDate: movie.releaseDate.getTime()
+                releaseDate: movie.releaseDate.toString()
             }))
 
         // 관람 이력이 없으면 장르 점수가 모두 0이라서 정렬에 쓸 만한 신호가 없다.

@@ -1,5 +1,6 @@
 import {
     CrudRepository,
+    DateUtil,
     ensure,
     isDuplicateKeyError,
     mongoToPublic,
@@ -43,8 +44,8 @@ export class ShowtimeCreationSubmissionRepository extends CrudRepository<Showtim
         principalId: string,
         idempotencyKey: string,
         inputHash: string,
-        now: Date,
-        claimUntil: Date
+        now: Temporal.Instant,
+        claimUntil: Temporal.Instant
     ): Promise<ShowtimeCreationSubmissionClaim> {
         const claimId = randomUUID()
         const sagaId = newObjectIdString()
@@ -72,18 +73,20 @@ export class ShowtimeCreationSubmissionRepository extends CrudRepository<Showtim
         )
         if (existing.inputHash !== inputHash) return { kind: 'key-reused' }
         if (existing.acceptedAt) return { kind: 'accepted', sagaId: existing.sagaId }
-        if (existing.claimUntil && now < existing.claimUntil) return { kind: 'in-progress' }
+        if (existing.claimUntil && DateUtil.isBefore(now, existing.claimUntil)) {
+            return { kind: 'in-progress' }
+        }
 
         // 이전 서버가 Restate 제출 결과를 기록하기 전에 종료됐다면 같은 saga ID로 이어받는다.
         // 같은 workflow key의 재제출은 기존 invocation을 가리키므로 실행은 하나만 유지된다.
         const claimed = await this.collection.findOneAndUpdate(
-            {
+            this.activeFilter({
                 _id: objectId(existing.id),
                 acceptedAt: null,
                 claimUntil: { $lte: now },
                 inputHash,
                 principalId
-            },
+            }),
             this.timestamped({ $set: { claimId, claimUntil } }),
             { returnDocument: 'after' }
         )
@@ -97,10 +100,10 @@ export class ShowtimeCreationSubmissionRepository extends CrudRepository<Showtim
         principalId: string,
         idempotencyKey: string,
         claimId: string,
-        acceptedAt: Date
+        acceptedAt: Temporal.Instant
     ) {
         const submission = await this.collection.findOneAndUpdate(
-            { acceptedAt: null, claimId, idempotencyKey, principalId },
+            this.activeFilter({ acceptedAt: null, claimId, idempotencyKey, principalId }),
             this.timestamped({ $set: { acceptedAt, claimId: null, claimUntil: null } }),
             { returnDocument: 'after' }
         )
@@ -110,8 +113,8 @@ export class ShowtimeCreationSubmissionRepository extends CrudRepository<Showtim
 
     async release(principalId: string, idempotencyKey: string, claimId: string) {
         await this.collection.updateOne(
-            { acceptedAt: null, claimId, idempotencyKey, principalId },
-            this.timestamped({ $set: { claimId: null, claimUntil: new Date(0) } })
+            this.activeFilter({ acceptedAt: null, claimId, idempotencyKey, principalId }),
+            this.timestamped({ $set: { claimId: null, claimUntil: DateUtil.epoch() } })
         )
     }
 

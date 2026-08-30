@@ -1,7 +1,7 @@
+import { PlainDateFromInputSchema } from '@mannercode/common'
 import { z } from 'zod'
 import { MovieGenre, MovieRating } from '../models/index.js'
 
-const dateFromInput = z.union([z.date(), z.string(), z.number(), z.boolean()]).pipe(z.coerce.date())
 const integerFromInput = z
     .union([z.number(), z.string(), z.boolean()])
     .transform(Number)
@@ -15,7 +15,7 @@ export const UpsertMovieSchema = z.strictObject({
     genres: z.array(z.enum(MovieGenre)).nullish(),
     plot: stringFromInput.pipe(z.string().max(5000)).nullish(),
     rating: z.enum(MovieRating).nullish(),
-    releaseDate: dateFromInput.nullish(),
+    releaseDate: PlainDateFromInputSchema.nullish(),
     title: stringFromInput.nullish()
 })
 

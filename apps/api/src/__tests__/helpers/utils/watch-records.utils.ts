@@ -1,4 +1,4 @@
-import { nullDate, oid, type TestContext } from '@mannercode/testing'
+import { nullInstant, oid, type TestContext } from '@mannercode/testing'
 import type { CreateWatchRecordDto } from '#core'
 
 export function buildCreateWatchRecordDto(
@@ -8,7 +8,7 @@ export function buildCreateWatchRecordDto(
         userId: oid(0x0),
         movieId: oid(0x0),
         purchaseRecordId: oid(0x0),
-        watchDate: nullDate,
+        watchDate: nullInstant,
         ...overrides
     }
 }

@@ -4,7 +4,7 @@ export const ShowtimeCreationErrors = {
         message: 'The requested movie could not be found.',
         movieId
     }),
-    OverlappingStartTimes: (startTimes: Date[]) => ({
+    OverlappingStartTimes: (startTimes: Temporal.Instant[]) => ({
         code: 'ERR_SHOWTIME_CREATION_START_TIMES_OVERLAP',
         message: 'Some start times in the request overlap each other.',
         startTimes

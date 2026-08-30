@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { ShowtimeDto } from '#core'
 
 export const ShowtimeCreationStatus = {
@@ -11,21 +12,36 @@ export const ShowtimeCreationStatus = {
 export type ShowtimeCreationStatus =
     (typeof ShowtimeCreationStatus)[keyof typeof ShowtimeCreationStatus]
 
-export type ShowtimeCreationEvent =
-    | { sagaId: string; status: typeof ShowtimeCreationStatus.Error; message: string }
-    | {
-          sagaId: string
-          status: typeof ShowtimeCreationStatus.Failed
-          conflictingShowtimes: ShowtimeDto[]
-      }
-    | { sagaId: string; status: typeof ShowtimeCreationStatus.Processing }
-    | {
-          sagaId: string
-          status: typeof ShowtimeCreationStatus.Succeeded
-          createdShowtimeCount: number
-          createdTicketCount: number
-      }
-    | { sagaId: string; status: typeof ShowtimeCreationStatus.Waiting }
+const ShowtimeEventDtoSchema = z.strictObject({
+    endTime: z.instanceof(Temporal.Instant),
+    id: z.string(),
+    movieId: z.string(),
+    startTime: z.instanceof(Temporal.Instant),
+    theaterId: z.string()
+})
+
+export const ShowtimeCreationEventSchema = z.discriminatedUnion('status', [
+    z.strictObject({
+        message: z.string(),
+        sagaId: z.string(),
+        status: z.literal(ShowtimeCreationStatus.Error)
+    }),
+    z.strictObject({
+        conflictingShowtimes: z.array(ShowtimeEventDtoSchema),
+        sagaId: z.string(),
+        status: z.literal(ShowtimeCreationStatus.Failed)
+    }),
+    z.strictObject({ sagaId: z.string(), status: z.literal(ShowtimeCreationStatus.Processing) }),
+    z.strictObject({
+        createdShowtimeCount: z.number(),
+        createdTicketCount: z.number(),
+        sagaId: z.string(),
+        status: z.literal(ShowtimeCreationStatus.Succeeded)
+    }),
+    z.strictObject({ sagaId: z.string(), status: z.literal(ShowtimeCreationStatus.Waiting) })
+])
+
+export type ShowtimeCreationEvent = z.infer<typeof ShowtimeCreationEventSchema>
 
 export type ValidateAndCreateResult =
     | { kind: 'failed'; conflictingShowtimes: ShowtimeDto[] }

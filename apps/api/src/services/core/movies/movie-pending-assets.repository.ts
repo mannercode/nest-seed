@@ -1,4 +1,4 @@
-import { CrudRepository, QueryBuilder } from '@mannercode/common'
+import { CrudRepository, DateUtil, QueryBuilder } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { AppConfigService, MongoConnection } from '#config'
 import { MoviePendingAsset } from './models/index.js'
@@ -46,7 +46,7 @@ export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAss
 
         await this.collection.updateMany(
             this.activeFilter(query),
-            this.timestamped({ $set: { deletedAt: new Date() } })
+            this.timestamped({ $set: { deletedAt: DateUtil.now() } })
         )
     }
 
@@ -58,7 +58,7 @@ export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAss
 
         await this.collection.updateOne(
             this.activeFilter(query),
-            this.timestamped({ $set: { deletedAt: new Date() } })
+            this.timestamped({ $set: { deletedAt: DateUtil.now() } })
         )
     }
 }

@@ -1,5 +1,5 @@
 export const AssetErrors = {
-    UploadExpired: (assetId: string, expiresAt: Date) => ({
+    UploadExpired: (assetId: string, expiresAt: Temporal.Instant) => ({
         code: 'ERR_ASSET_UPLOAD_EXPIRED',
         message: 'The upload request for this asset has expired.',
         assetId,

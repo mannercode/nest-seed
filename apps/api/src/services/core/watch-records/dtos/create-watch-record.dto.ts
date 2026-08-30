@@ -5,5 +5,5 @@ export class CreateWatchRecordDto {
 
     purchaseRecordId: string
 
-    watchDate: Date
+    watchDate: Temporal.Instant
 }

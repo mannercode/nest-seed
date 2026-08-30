@@ -1,4 +1,4 @@
-import { nullObjectId } from '@mannercode/testing'
+import { nullObjectId, nullPlainDate } from '@mannercode/testing'
 import { MovieDefaults, MovieGenre, MovieRating, type MovieDto } from '#core'
 import {
     createMovie,
@@ -29,7 +29,7 @@ describe('MoviesPublish', () => {
                 genres: [MovieGenre.Action],
                 plot: `MoviePlot`,
                 rating: MovieRating.PG,
-                releaseDate: new Date(0),
+                releaseDate: nullPlainDate,
                 title: `MovieTitle`
             }
 
@@ -90,7 +90,7 @@ describe('MoviesPublish', () => {
                     genres: [MovieGenre.Action],
                     plot: `MoviePlot`,
                     rating: MovieRating.PG,
-                    releaseDate: new Date(0),
+                    releaseDate: nullPlainDate,
                     title: `MovieTitle`
                 })
                 .ok()
@@ -129,7 +129,7 @@ describe('MoviesPublish', () => {
             ],
             [{ rating: MovieRating.Unrated }, 'Published movies cannot be unrated'],
             [
-                { releaseDate: new Date(MovieDefaults.releaseDate.getTime()) },
+                { releaseDate: MovieDefaults.releaseDate },
                 'Published movies must have a release date'
             ],
             [{ director: '' }, 'Published movies must have director'],

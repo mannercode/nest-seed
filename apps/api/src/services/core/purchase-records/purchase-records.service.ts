@@ -1,5 +1,5 @@
 import type { ClientSession } from 'mongodb'
-import { ensure, mapDocToDto } from '@mannercode/common'
+import { DateUtil, ensure, mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { CreatePurchaseRecordDto, PurchaseRecordDto } from './dtos/index.js'
 import { PurchaseRecord, PurchaseRecordStatus } from './models/index.js'
@@ -64,17 +64,17 @@ export class PurchaseRecordsService {
         return { purchaseRecordId: record.id, status: this.getLegacyCompatibleStatus(record) }
     }
 
-    async findPendingBefore(before: Date) {
-        const records = await this.repository.findPendingBefore(before, new Date())
+    async findPendingBefore(before: Temporal.Instant) {
+        const records = await this.repository.findPendingBefore(before, DateUtil.now())
         return this.toDtos(records)
     }
 
     async claimForReconciliation(
         purchaseRecordId: string,
         options: {
-            before: Date
-            leaseUntil: Date
-            now: Date
+            before: Temporal.Instant
+            leaseUntil: Temporal.Instant
+            now: Temporal.Instant
             reconciliationId: string
             completionId?: string
             idempotencyError?: { response: Record<string, unknown>; status: number }
@@ -84,14 +84,19 @@ export class PurchaseRecordsService {
         return record ? this.toDto(record) : undefined
     }
 
-    async findUnpublishedBefore(before: Date) {
-        const records = await this.repository.findUnpublishedBefore(before, new Date())
+    async findUnpublishedBefore(before: Temporal.Instant) {
+        const records = await this.repository.findUnpublishedBefore(before, DateUtil.now())
         return this.toDtos(records)
     }
 
     async claimEventPublication(
         purchaseRecordId: string,
-        options: { before: Date; leaseUntil: Date; now: Date; publicationId: string }
+        options: {
+            before: Temporal.Instant
+            leaseUntil: Temporal.Instant
+            now: Temporal.Instant
+            publicationId: string
+        }
     ) {
         const record = await this.repository.claimEventPublication(purchaseRecordId, options)
         return record ? this.toDto(record) : undefined
@@ -100,7 +105,7 @@ export class PurchaseRecordsService {
     async claimForCompletion(
         purchaseRecordId: string,
         completionId: string,
-        completionLeaseUntil: Date
+        completionLeaseUntil: Temporal.Instant
     ) {
         const purchaseRecord = await this.repository.claimForCompletion(
             purchaseRecordId,

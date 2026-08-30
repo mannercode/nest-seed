@@ -1,5 +1,6 @@
 import {
     CrudRepository,
+    DateUtil,
     ensure,
     isDuplicateKeyError,
     mongoArrayToPublic,
@@ -50,7 +51,7 @@ export class PaymentsRepository extends CrudRepository<Payment> {
     async create(createDto: CreatePaymentDto) {
         // purchaseRecordId가 결제의 idempotency key다. 재시도나 커밋 결과 불명확 상황에서도
         // 같은 구매에 두 결제 행을 만들지 않는다.
-        const now = new Date()
+        const now = DateUtil.toDate(DateUtil.now())
         try {
             await this.collection.updateOne(
                 this.activeFilter({ purchaseRecordId: createDto.purchaseRecordId }),
@@ -83,7 +84,7 @@ export class PaymentsRepository extends CrudRepository<Payment> {
         return ensure(mongoToPublic<Payment>(payment))
     }
 
-    async findUnresolvedBefore(before: Date) {
+    async findUnresolvedBefore(before: Temporal.Instant) {
         const payments = await this.collection
             .find(
                 this.activeFilter({

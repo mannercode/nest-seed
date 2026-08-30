@@ -1,6 +1,6 @@
+import { InstantFromInputSchema } from '@mannercode/common'
 import { z } from 'zod'
 
-const dateFromInput = z.union([z.date(), z.string(), z.number(), z.boolean()]).pipe(z.coerce.date())
 const positiveNumber = z
     .union([z.number(), z.string(), z.boolean()])
     .transform(Number)
@@ -13,7 +13,7 @@ const requiredString = z
 export const BulkCreateShowtimesSchema = z.strictObject({
     durationInMinutes: positiveNumber,
     movieId: requiredString,
-    startTimes: z.array(dateFromInput).min(1).max(20),
+    startTimes: z.array(InstantFromInputSchema).min(1).max(20),
     theaterIds: z
         .array(z.string())
         .min(1)

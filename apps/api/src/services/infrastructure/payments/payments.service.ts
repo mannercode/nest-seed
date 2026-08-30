@@ -26,7 +26,7 @@ export class PaymentsService {
         return this.toDto(payment)
     }
 
-    async findUnresolvedBefore(before: Date) {
+    async findUnresolvedBefore(before: Temporal.Instant) {
         const payments = await this.repository.findUnresolvedBefore(before)
         return this.toDtos(payments)
     }

@@ -3,9 +3,9 @@
  * NATS 전달은 비동기라서, `emit` 직후에 즉시 단언할 수 없다.
  */
 export async function waitFor(predicate: () => boolean | Promise<boolean>, timeoutMs = 2000) {
-    const start = Date.now()
+    const start = performance.now()
     while (!(await predicate())) {
-        if (Date.now() - start > timeoutMs) {
+        if (performance.now() - start > timeoutMs) {
             throw new Error(`waitFor timed out after ${timeoutMs}ms`)
         }
         await new Promise((r) => setTimeout(r, 10))

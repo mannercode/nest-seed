@@ -1,9 +1,9 @@
-import type { TestContext } from '@mannercode/testing'
+import { nullPlainDate, type TestContext } from '@mannercode/testing'
 import type { CreateUserDto, UserCredentialsDto } from '#core'
 
 export function buildCreateUserDto(overrides: Partial<CreateUserDto> = {}): CreateUserDto {
     return {
-        birthDate: new Date(0),
+        birthDate: nullPlainDate,
         email: 'name@mail.com',
         name: 'name',
         password: 'password',

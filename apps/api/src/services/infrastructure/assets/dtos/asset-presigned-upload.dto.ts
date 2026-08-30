@@ -1,6 +1,6 @@
 export class AssetPresignedUploadDto {
     assetId: string
-    expiresAt: Date
+    expiresAt: Temporal.Instant
     fields: Record<string, string>
     method: 'POST'
     url: string

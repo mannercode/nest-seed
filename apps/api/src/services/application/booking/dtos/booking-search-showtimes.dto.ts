@@ -1,7 +1,7 @@
 export class BookingSearchShowtimesDto {
     movieId: string
 
-    showdate: Date
+    showdate: Temporal.PlainDate
 
     theaterId: string
 }

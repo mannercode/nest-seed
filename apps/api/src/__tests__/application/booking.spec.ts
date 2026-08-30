@@ -1,5 +1,5 @@
 import { DateUtil, ensure, pickIds } from '@mannercode/common'
-import { nullObjectId, oid, step } from '@mannercode/testing'
+import { instant, nullObjectId, oid, plainDate, step } from '@mannercode/testing'
 import {
     TicketStatus,
     type MovieDto,
@@ -37,10 +37,10 @@ describe('BookingService', () => {
         ]
 
         const startTimes = [
-            new Date('2999-01-01T12:00'),
-            new Date('2999-01-01T14:00'),
-            new Date('2999-01-03T12:00'),
-            new Date('2999-01-02T14:00')
+            instant('2999-01-01T12:00Z'),
+            instant('2999-01-01T14:00Z'),
+            instant('2999-01-03T12:00Z'),
+            instant('2999-01-02T14:00Z')
         ]
 
         beforeEach(async () => {
@@ -52,7 +52,7 @@ describe('BookingService', () => {
 
         it('극장, 상영일, 상영 시간, 티켓을 차례로 조회해 티켓을 보유한다', async () => {
             let theater: TheaterDto
-            let showdate: Date
+            let showdate: Temporal.PlainDate
             let showtime: ShowtimeDto
             let tickets: TicketDto[]
 
@@ -76,7 +76,7 @@ describe('BookingService', () => {
             await step('2. 극장의 상영일 목록을 조회한다', async () => {
                 const { body: showdates } = await fix.httpClient
                     .get(`/booking/movies/${movie.id}/theaters/${theater.id}/showdates`)
-                    .ok([new Date('2999-01-01'), new Date('2999-01-02'), new Date('2999-01-03')])
+                    .ok([plainDate('2999-01-01'), plainDate('2999-01-02'), plainDate('2999-01-03')])
 
                 showdate = showdates[0]
             })
@@ -129,7 +129,7 @@ describe('BookingService', () => {
 
     describe('POST /booking/showtimes/:showtimeId/tickets/hold', () => {
         const locations = [{ latitude: 30.0, longitude: 130.0 }]
-        const startTimes = [new Date('2999-01-01T12:00')]
+        const startTimes = [instant('2999-01-01T12:00Z')]
 
         describe('가용 티켓을 선택했을 때', () => {
             let accessToken: string
@@ -200,8 +200,8 @@ describe('BookingService', () => {
 
         it('다른 상영의 티켓이 섞여 있으면 400을 반환한다', async () => {
             const resources = await createAllResources(fix, locations, [
-                new Date('2999-01-01T12:00'),
-                new Date('2999-01-01T15:00')
+                instant('2999-01-01T12:00Z'),
+                instant('2999-01-01T15:00Z')
             ])
             const showtimeId = ensure(resources.showtimes[0]).id
             const ownTicket = ensure(resources.tickets.find((t) => t.showtimeId === showtimeId))
@@ -254,7 +254,7 @@ describe('BookingService', () => {
         })
 
         it('형식은 맞지만 실제 달력에 없는 날짜이면 400을 반환한다', async () => {
-            // `Date.UTC`는 이 값을 조용히 다음 달로 넘기므로, 파이프가 만든 Date를 다시 분해해 원본과 비교할 때 잘못된 값임을 확인한다.
+            // Temporal은 잘못된 달력 날짜를 조용히 보정하지 않아야 한다.
             await fix.httpClient
                 .get(
                     `/booking/movies/${movieId}/theaters/${theaterId}/showdates/20240230/showtimes`

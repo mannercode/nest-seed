@@ -3,9 +3,10 @@ import {
     QueryBuilderOptions,
     assignIfDefined,
     CrudRepository,
+    DateUtil,
     isWriteConcernTimeoutError,
     MongoErrors,
-    mongoToPublic,
+    plainDateFromMongo,
     objectId,
     objectIds,
     QueryBuilder,
@@ -18,7 +19,7 @@ import { CreateUserDto, SearchUsersPageDto, UpdateUserDto } from './dtos/index.j
 import { User } from './models/index.js'
 
 const UserWriteSchema = z.strictObject({
-    birthDate: z.date(),
+    birthDate: z.instanceof(Temporal.PlainDate),
     email: z.string().min(1),
     name: z.string().min(1),
     password: z.string().min(1)
@@ -78,7 +79,7 @@ export class UsersRepository extends CrudRepository<User> {
         // 인증 계층이 그대로 쓸 수 있게 ObjectId를 문자열로 변환한다.
         const user = await this.collection.findOne(this.activeFilter({ email: { $eq: email } }))
 
-        return mongoToPublic<User>(user)
+        return user ? this.toDomainDocument(user) : null
     }
 
     async findAuthVersionById(userId: string): Promise<number | null> {
@@ -107,7 +108,7 @@ export class UsersRepository extends CrudRepository<User> {
     async deleteByIdsWithAuthVersion(userIds: string[]): Promise<void> {
         await this.collection.updateMany(
             this.activeFilter({ _id: { $in: objectIds(userIds) } }),
-            this.timestamped({ $inc: { authVersion: 1 }, $set: { deletedAt: new Date() } })
+            this.timestamped({ $inc: { authVersion: 1 }, $set: { deletedAt: DateUtil.now() } })
         )
     }
 
@@ -145,20 +146,20 @@ export class UsersRepository extends CrudRepository<User> {
 
         if (!user) throw new NotFoundException(MongoErrors.DocumentNotFound(userId))
 
-        return mongoToPublic<User>(user)
+        return this.toDomainDocument(user)
     }
 
     private async recoverAmbiguousCreate(
         email: string,
         attemptId: string
     ): Promise<CreateUserResult | undefined> {
-        const deadline = Date.now() + CREATE_RECOVERY_TIMEOUT_MS
+        const deadline = performance.now() + CREATE_RECOVERY_TIMEOUT_MS
 
-        while (Date.now() < deadline) {
+        while (performance.now() < deadline) {
             try {
                 const readTimeoutMs = Math.min(
                     CREATE_RECOVERY_READ_MAX_TIME_MS,
-                    Math.max(1, deadline - Date.now())
+                    Math.max(1, Math.floor(deadline - performance.now()))
                 )
                 const persisted = await this.collection.findOne<PersistedUser>(
                     { deletedAt: null, email },
@@ -172,13 +173,13 @@ export class UsersRepository extends CrudRepository<User> {
                 if (persisted) {
                     if (persisted._id.toString() !== attemptId) return { status: 'conflict' }
 
-                    return { status: 'created', user: mongoToPublic<User>(persisted) }
+                    return { status: 'created', user: this.toDomainDocument(persisted) }
                 }
             } catch {
                 // majority commit point가 아직 따라오지 않았거나 읽기가 일시 실패하면 제한 안에서 재확인한다.
             }
 
-            const remainingMs = deadline - Date.now()
+            const remainingMs = deadline - performance.now()
             if (remainingMs <= 0) break
             await sleep(Math.min(CREATE_RECOVERY_POLL_MS, remainingMs))
         }
@@ -195,5 +196,11 @@ export class UsersRepository extends CrudRepository<User> {
 
         const query = builder.build(options)
         return query
+    }
+
+    protected override toDomainDocument(doc: Document & { _id: ObjectId }): User {
+        const user = super.toDomainDocument(doc)
+        user.birthDate = plainDateFromMongo(user.birthDate)
+        return user
     }
 }

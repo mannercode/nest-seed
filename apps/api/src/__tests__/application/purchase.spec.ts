@@ -1,4 +1,4 @@
-import { CacheService, ensure, objectId, pickIds, Require } from '@mannercode/common'
+import { CacheService, DateUtil, ensure, objectId, pickIds, Require } from '@mannercode/common'
 import { HttpTestClient, oid } from '@mannercode/testing'
 import { createHash, randomUUID } from 'node:crypto'
 import { PurchaseItemType, TicketStatus, type TicketDto, type UserDto } from '#core'
@@ -316,10 +316,10 @@ describe('PurchaseService', () => {
                     .created({
                         ...createDto,
                         userId: user.id,
-                        createdAt: expect.any(Date),
+                        createdAt: expect.any(Temporal.Instant),
                         id: expect.any(String),
                         paymentId: expect.any(String),
-                        updatedAt: expect.any(Date)
+                        updatedAt: expect.any(Temporal.Instant)
                     })
             })
 
@@ -405,8 +405,8 @@ describe('PurchaseService', () => {
                     .badRequest(
                         Errors.Purchase.WindowClosed(
                             expect.any(Number),
-                            expect.any(String),
-                            expect.any(String)
+                            expect.any(Temporal.Instant),
+                            expect.any(Temporal.Instant)
                         )
                     )
             })
@@ -569,16 +569,16 @@ describe('PurchaseService', () => {
                     expect(await purchaseRecordsService.findByUserId(user.id)).toEqual([
                         expect.objectContaining({ id: purchaseRecord.id })
                     ])
-                    expect(await purchaseRecordsService.findUnpublishedBefore(new Date())).toEqual([
-                        expect.objectContaining({ id: purchaseRecord.id })
-                    ])
+                    expect(
+                        await purchaseRecordsService.findUnpublishedBefore(DateUtil.now())
+                    ).toEqual([expect.objectContaining({ id: purchaseRecord.id })])
 
                     await purchaseService.publishPendingPurchaseEvents()
 
                     expect(emit).toHaveBeenCalledTimes(2)
-                    expect(await purchaseRecordsService.findUnpublishedBefore(new Date())).toEqual(
-                        []
-                    )
+                    expect(
+                        await purchaseRecordsService.findUnpublishedBefore(DateUtil.now())
+                    ).toEqual([])
                 })
 
                 it('완료 커밋이 실패하면 이벤트를 발행하지 않고 구매를 보상한다', async () => {
@@ -676,14 +676,18 @@ describe('PurchaseService', () => {
                     Require.defined(purchaseRecordId)
                     expect(await purchaseRecordsService.findByUserId(user.id)).toEqual([])
 
-                    const pendingBefore = await purchaseRecordsService.findPendingBefore(new Date())
+                    const pendingBefore = await purchaseRecordsService.findPendingBefore(
+                        DateUtil.now()
+                    )
                     expect(pendingBefore).toEqual([
                         expect.objectContaining({ id: purchaseRecordId })
                     ])
 
                     await purchaseService.reconcilePendingPurchases()
 
-                    const pendingAfter = await purchaseRecordsService.findPendingBefore(new Date())
+                    const pendingAfter = await purchaseRecordsService.findPendingBefore(
+                        DateUtil.now()
+                    )
                     expect(pendingAfter).toEqual([])
                 })
             })
@@ -720,7 +724,7 @@ describe('PurchaseService', () => {
                     new Error('payment compensation failed')
                 )
 
-                const pendingBefore = await purchaseRecordsService.findPendingBefore(new Date())
+                const pendingBefore = await purchaseRecordsService.findPendingBefore(DateUtil.now())
                 expect(pendingBefore).toEqual([expect.objectContaining({ id: purchaseRecord.id })])
                 expect(
                     (await getTickets(fix, pickIds(heldTickets))).every(
@@ -742,7 +746,7 @@ describe('PurchaseService', () => {
                 expect(ensure((await getPayments(fix, [payment.id]))[0]).status).toBe(
                     PaymentStatus.Cancelled
                 )
-                expect(await purchaseRecordsService.findPendingBefore(new Date())).toEqual([])
+                expect(await purchaseRecordsService.findPendingBefore(DateUtil.now())).toEqual([])
             })
 
             it('active 완료와 reconciliation이 경쟁해도 한쪽 상태만 원자적으로 확정한다', async () => {
@@ -801,7 +805,9 @@ describe('PurchaseService', () => {
                 await didCreatePayment
                 Require.defined(purchaseRecordId)
 
-                await purchaseService.reconcilePendingPurchases(new Date(Date.now() + 1000))
+                await purchaseService.reconcilePendingPurchases(
+                    DateUtil.add({ milliseconds: 1000 })
+                )
 
                 continuePayment()
                 const purchaseError = await purchasePromise.then(
@@ -890,7 +896,9 @@ describe('PurchaseService', () => {
                     { _id: objectId(purchaseRecordId), deletedAt: null },
                     { $set: { completionLeaseUntil: new Date(0), updatedAt: new Date() } }
                 )
-                await purchaseService.reconcilePendingPurchases(new Date(Date.now() + 1000))
+                await purchaseService.reconcilePendingPurchases(
+                    DateUtil.add({ milliseconds: 1000 })
+                )
 
                 continueSale()
                 await purchasePromise
@@ -973,7 +981,9 @@ describe('PurchaseService', () => {
                     { ...createDto, paymentId: null, userId: user.id },
                     { idempotency: { fingerprint, key: idempotencyKey }, pending: true }
                 )
-                await purchaseService.reconcilePendingPurchases(new Date(Date.now() + 1_000))
+                await purchaseService.reconcilePendingPurchases(
+                    DateUtil.add({ milliseconds: 1000 })
+                )
 
                 await fix.httpClient
                     .post('/purchases')
@@ -1228,12 +1238,12 @@ describe('PurchaseService', () => {
             .spyOn(purchaseService, 'publishPendingPurchaseEvents')
             .mockResolvedValueOnce()
 
-        const startedAt = Date.now()
+        const startedAt = DateUtil.toEpochMilliseconds(DateUtil.now())
         await purchaseService.reconcileStalePurchases()
-        const finishedAt = Date.now()
+        const finishedAt = DateUtil.toEpochMilliseconds(DateUtil.now())
 
-        expect(reconcile).toHaveBeenCalledWith(expect.any(Date))
-        const staleBefore = (reconcile.mock.calls[0]?.[0] as Date).getTime()
+        expect(reconcile).toHaveBeenCalledWith(expect.any(Temporal.Instant))
+        const staleBefore = ensure(reconcile.mock.calls[0]?.[0]).epochMilliseconds
         expect(staleBefore).toBeGreaterThanOrEqual(startedAt - 10 * 60 * 1000)
         expect(staleBefore).toBeLessThanOrEqual(finishedAt - 10 * 60 * 1000)
         expect(resolvePayments).toHaveBeenCalledWith(reconcile.mock.calls[0]?.[0])
@@ -1255,11 +1265,11 @@ describe('PurchaseService', () => {
             { pending: true }
         )
 
-        await purchaseService.reconcilePendingPurchases(new Date(Date.now() + 1000))
+        await purchaseService.reconcilePendingPurchases(DateUtil.add({ milliseconds: 1000 }))
 
-        expect(await purchaseRecordsService.findPendingBefore(new Date(Date.now() + 1000))).toEqual(
-            [expect.objectContaining({ id: pending.id })]
-        )
+        expect(
+            await purchaseRecordsService.findPendingBefore(DateUtil.add({ milliseconds: 1000 }))
+        ).toEqual([expect.objectContaining({ id: pending.id })])
     })
 
     it('pending 조회 직후 완료된 구매는 보상하지 않는다', async () => {
@@ -1340,7 +1350,7 @@ describe('PurchaseService', () => {
         Require.defined(purchaseRecordId)
 
         const markCancelled = vi.spyOn(purchaseRecordsService, 'markCancelled')
-        await purchaseService.reconcilePendingPurchases(new Date(Date.now() + 1000))
+        await purchaseService.reconcilePendingPurchases(DateUtil.add({ milliseconds: 1000 }))
         expect(markCancelled).toHaveBeenCalledWith(purchaseRecordId, expect.any(String))
 
         failLateCancellation = true
@@ -1352,8 +1362,7 @@ describe('PurchaseService', () => {
             PaymentStatus.Completed
         )
 
-        const now = Date.now()
-        vi.spyOn(Date, 'now').mockReturnValue(now + 11 * 60 * 1000)
+        vi.spyOn(Temporal.Now, 'instant').mockReturnValue(DateUtil.add({ minutes: 11 }))
         failLateCancellation = true
         await purchaseService.reconcileStalePurchases()
         expect(ensure((await getPayments(fix, [paymentId]))[0]).status).toBe(
@@ -1386,7 +1395,7 @@ describe('PurchaseService', () => {
             userId: user.id
         })
         const cancel = vi.spyOn(paymentsService, 'cancelByPurchaseRecordId')
-        const future = new Date(Date.now() + 1000)
+        const future = DateUtil.add({ milliseconds: 1000 })
 
         expect(await paymentsService.findUnresolvedBefore(future)).toEqual([
             expect.objectContaining({ id: payment.id })
@@ -1423,7 +1432,7 @@ describe('PurchaseService', () => {
             userId: user.id
         })
         const cancel = vi.spyOn(paymentsService, 'cancelByPurchaseRecordId')
-        const future = new Date(Date.now() + 1000)
+        const future = DateUtil.add({ milliseconds: 1000 })
 
         await purchaseService.reconcileUnresolvedPayments(future)
 
@@ -1443,7 +1452,7 @@ describe('PurchaseService', () => {
             purchaseRecordId: oid(0xf9),
             userId: user.id
         })
-        const future = new Date(Date.now() + 1000)
+        const future = DateUtil.add({ milliseconds: 1000 })
 
         await purchaseService.reconcileUnresolvedPayments(future)
 
@@ -1528,7 +1537,7 @@ describe('PurchaseService', () => {
             PurchaseRecordStatus.Completed
         )
 
-        await purchaseService.reconcileUnresolvedPayments(new Date())
+        await purchaseService.reconcileUnresolvedPayments(DateUtil.now())
 
         const [successful, cancelled, orphan, pending] = await Promise.all(
             [successfulPayment, cancelledPayment, orphanPayment, pendingPayment].map(
@@ -1596,7 +1605,7 @@ describe('PurchaseService', () => {
             new Error('payment compensation failed after ticket release')
         )
 
-        await purchaseService.reconcilePendingPurchases(new Date(Date.now() + 1000))
+        await purchaseService.reconcilePendingPurchases(DateUtil.add({ milliseconds: 1000 }))
         expect(
             (await getTickets(fix, pickIds(heldTickets))).every(
                 (ticket) => ticket.status === TicketStatus.Available
@@ -1610,7 +1619,7 @@ describe('PurchaseService', () => {
         })
         await ticketsService.sellForPurchase(pickIds(heldTickets), newPurchase.id)
 
-        await purchaseService.reconcilePendingPurchases(new Date(Date.now() + 1000))
+        await purchaseService.reconcilePendingPurchases(DateUtil.add({ milliseconds: 1000 }))
 
         const oldRecord = await purchaseRecordsRepository.collection.findOne({
             _id: objectId(oldPurchase.id),
@@ -1648,10 +1657,10 @@ describe('PurchaseService', () => {
         await purchaseRecordsService.claimForCompletion(
             pending.id,
             completionId,
-            new Date(Date.now() + 60_000)
+            DateUtil.add({ minutes: 1 })
         )
         await purchaseRecordsService.markCompleted(pending.id, completionId)
-        const before = new Date(Date.now() + 1000)
+        const before = DateUtil.add({ milliseconds: 1000 })
         let firstEmitStarted!: () => void
         const didStartFirstEmit = new Promise<void>((resolve) => {
             firstEmitStarted = resolve
@@ -1703,12 +1712,12 @@ describe('PurchaseService', () => {
         await purchaseRecordsService.claimForCompletion(
             pending.id,
             completionId,
-            new Date(Date.now() + 60_000)
+            DateUtil.add({ minutes: 1 })
         )
         await purchaseRecordsService.markCompleted(pending.id, completionId)
         const emit = vi.spyOn(events, 'emitTicketPurchased').mockResolvedValue()
         vi.spyOn(purchaseRecordsService, 'markEventPublished').mockResolvedValueOnce(false)
-        const before = new Date(Date.now() + 1000)
+        const before = DateUtil.add({ milliseconds: 1000 })
 
         await purchaseService.publishPendingPurchaseEvents(before)
         await purchaseService.publishPendingPurchaseEvents(before)
@@ -1740,7 +1749,7 @@ describe('PurchaseService', () => {
         await purchaseRecordsService.claimForCompletion(
             pending.id,
             completionId,
-            new Date(Date.now() + 60_000)
+            DateUtil.add({ minutes: 1 })
         )
         await purchaseRecordsService.markCompleted(pending.id, completionId)
         vi.spyOn(events, 'emitTicketPurchased').mockRejectedValueOnce(
@@ -1751,7 +1760,7 @@ describe('PurchaseService', () => {
             .mockRejectedValueOnce(new Error('claim release unavailable'))
 
         await expect(
-            purchaseService.publishPendingPurchaseEvents(new Date(Date.now() + 1000))
+            purchaseService.publishPendingPurchaseEvents(DateUtil.add({ milliseconds: 1000 }))
         ).resolves.toBeUndefined()
 
         expect(release).toHaveBeenCalledTimes(1)
@@ -1785,7 +1794,7 @@ describe('PurchaseService', () => {
             .mockRejectedValueOnce(new Error('lease release failed'))
 
         await expect(
-            purchaseService.reconcilePendingPurchases(new Date(Date.now() + 1000))
+            purchaseService.reconcilePendingPurchases(DateUtil.add({ milliseconds: 1000 }))
         ).resolves.toBeUndefined()
         expect(release).toHaveBeenCalledTimes(1)
     })

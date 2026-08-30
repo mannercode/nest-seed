@@ -1,11 +1,11 @@
 import { CrudDocument } from '@mannercode/common'
 
 export class ShowtimeCreationSubmission extends CrudDocument {
-    acceptedAt: Date | null
+    acceptedAt: Temporal.Instant | null
 
     claimId: null | string
 
-    claimUntil: Date | null
+    claimUntil: Temporal.Instant | null
 
     idempotencyKey: string
 

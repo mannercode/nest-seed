@@ -47,7 +47,7 @@ describe('MoviesAssets', () => {
             expect(body).toEqual(
                 expect.objectContaining({
                     assetId: expect.any(String),
-                    expiresAt: expect.any(Date),
+                    expiresAt: expect.any(Temporal.Instant),
                     fields: expect.objectContaining({ 'Content-Type': createDto.mimeType }),
                     method: 'POST',
                     url: expect.any(String)

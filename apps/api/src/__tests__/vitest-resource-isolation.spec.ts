@@ -141,8 +141,8 @@ function createRedisCluster() {
 }
 
 async function readJsonAtBarrier(filePath: string): Promise<Record<string, unknown>> {
-    const deadline = Date.now() + 30_000
-    while (Date.now() < deadline) {
+    const deadline = performance.now() + 30_000
+    while (performance.now() < deadline) {
         try {
             return JSON.parse(fs.readFileSync(filePath, 'utf8')) as Record<string, unknown>
         } catch (error) {

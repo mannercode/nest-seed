@@ -32,6 +32,7 @@ export class ShowtimeCreationOperationRepository extends CrudRepository<Showtime
     }
 
     async findBySagaId(sagaId: string, session: ClientSession, signal: AbortSignal | undefined) {
-        return this.collection.findOne({ sagaId }, { session, signal })
+        const operation = await this.collection.findOne({ sagaId }, { session, signal })
+        return operation ? this.toDomainDocument(operation) : null
     }
 }

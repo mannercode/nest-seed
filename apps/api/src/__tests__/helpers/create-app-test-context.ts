@@ -12,6 +12,7 @@ import { ShowtimeCreationRestateEndpoint, ShowtimeCreationWorkflowClient } from 
 import { AppConfigService, MongoConnection } from '#config'
 import { getSharedTestMongoConnection } from '../../../scripts/index.cjs'
 import { AppModule } from '../../app.module.js'
+import { configureTemporalJson } from '../../configure-temporal-json.js'
 
 type AppTestOptions = ModuleMetadataEx & { enableRestate?: boolean }
 
@@ -51,6 +52,7 @@ export async function createAppTestContext({
         configureApp: async (app) => {
             const { http } = app.get(AppConfigService)
 
+            configureTemporalJson(app)
             app.use(compression())
             app.use(express.json({ limit: http.requestPayloadLimit }))
 

@@ -42,7 +42,7 @@ describe('AssetsService', () => {
 
             expect(uploadRequest).toEqual({
                 assetId: expect.any(String),
-                expiresAt: expect.any(Date),
+                expiresAt: expect.any(Temporal.Instant),
                 fields: expect.any(Object),
                 method: 'POST',
                 url: expect.any(String)
@@ -131,7 +131,10 @@ describe('AssetsService', () => {
                 expect(asset).toEqual(
                     expect.objectContaining({
                         ...finalizeDto,
-                        download: { expiresAt: expect.any(Date), url: expect.any(String) }
+                        download: {
+                            expiresAt: expect.any(Temporal.Instant),
+                            url: expect.any(String)
+                        }
                     })
                 )
             })
@@ -212,7 +215,10 @@ describe('AssetsService', () => {
                     expect.arrayContaining(
                         assets.map((asset) => ({
                             ...asset,
-                            download: { expiresAt: expect.any(Date), url: expect.any(String) }
+                            download: {
+                                expiresAt: expect.any(Temporal.Instant),
+                                url: expect.any(String)
+                            }
                         }))
                     )
                 )

@@ -179,8 +179,7 @@ export class MoviesService {
 
         const missingFields: string[] = []
         if (title === defaults.title) missingFields.push('title')
-        if (releaseDate.getTime() === defaults.releaseDate.getTime())
-            missingFields.push('releaseDate')
+        if (releaseDate.equals(defaults.releaseDate)) missingFields.push('releaseDate')
         if (plot === defaults.plot) missingFields.push('plot')
         if (durationInSeconds === defaults.durationInSeconds)
             missingFields.push('durationInSeconds')

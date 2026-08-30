@@ -1,5 +1,5 @@
 import { omit } from '@mannercode/common'
-import { HttpTestClient, nullObjectId } from '@mannercode/testing'
+import { HttpTestClient, nullObjectId, plainDate } from '@mannercode/testing'
 import type { UserDto } from '#core'
 import {
     buildCreateUserDto,
@@ -87,17 +87,16 @@ describe('UsersService', () => {
         })
 
         it('중복 키가 아닌 저장 오류는 ConflictException으로 바꾸지 않고 그대로 던진다', async () => {
-            const { UsersService } = await import('#core')
+            const { UsersRepository, UsersService } = await import('#core')
             const { ConflictException } = await import('@nestjs/common')
             const service = fix.module.get(UsersService)
-
-            // `birthDate`에 잘못된 형식을 넣어 저장 경계 검증 오류를 일으킨다.
-            // 컨트롤러의 요청 스키마가 먼저 검출하지 않도록 서비스를 직접 호출한다.
-            const invalidDto = buildCreateUserDto({ birthDate: 'not-a-date' as unknown as Date })
+            const repository = fix.module.get(UsersRepository)
+            const failure = new Error('storage unavailable')
+            vi.spyOn(repository, 'create').mockRejectedValueOnce(failure)
 
             // "그대로 던진다"의 핵심은 409로 변환되지 않는 것이므로 예외 타입까지 확인한다.
-            const promise = service.create(invalidDto)
-            await expect(promise).rejects.toThrow()
+            const promise = service.create(buildCreateUserDto())
+            await expect(promise).rejects.toBe(failure)
             await expect(promise).rejects.not.toBeInstanceOf(ConflictException)
         })
     })
@@ -125,7 +124,7 @@ describe('UsersService', () => {
         })
 
         it('수정된 고객을 반환한다', async () => {
-            const updateDto = { birthDate: new Date('1900-12-31'), email: 'new@mail.com' }
+            const updateDto = { birthDate: plainDate('1900-12-31'), email: 'new@mail.com' }
 
             await fix.httpClient
                 .patch(`/users/${user.id}`)

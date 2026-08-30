@@ -7,5 +7,5 @@ export class WatchRecord extends CrudDocument {
 
     purchaseRecordId: string
 
-    watchDate: Date
+    watchDate: Temporal.Instant
 }

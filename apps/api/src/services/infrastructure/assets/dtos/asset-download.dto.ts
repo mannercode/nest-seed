@@ -1,4 +1,4 @@
 export class AssetDownloadDto {
-    expiresAt: Date
+    expiresAt: Temporal.Instant
     url: string
 }

@@ -48,7 +48,7 @@ export class BookingHttpController {
     async searchShowtimes(
         @Param('movieId') movieId: string,
         @Param('theaterId') theaterId: string,
-        @Param('showdate', ParseShowdatePipe) showdate: Date
+        @Param('showdate', ParseShowdatePipe) showdate: Temporal.PlainDate
     ) {
         return this.bookingService.searchShowtimes({ movieId, showdate, theaterId })
     }

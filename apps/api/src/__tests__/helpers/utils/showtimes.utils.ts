@@ -1,13 +1,13 @@
 import { DateUtil, newObjectIdString, uniq } from '@mannercode/common'
-import { oid, type TestContext } from '@mannercode/testing'
+import { instant, oid, type TestContext } from '@mannercode/testing'
 import type { CreateShowtimeDto } from '#core'
 
 export function buildCreateShowtimeDto(overrides: Partial<CreateShowtimeDto> = {}) {
     const createDto = {
-        endTime: new Date(0),
+        endTime: instant(),
         movieId: oid(0x0),
         sagaId: newObjectIdString(),
-        startTime: new Date(0),
+        startTime: instant(),
         theaterId: oid(0x0),
         ...overrides
     }

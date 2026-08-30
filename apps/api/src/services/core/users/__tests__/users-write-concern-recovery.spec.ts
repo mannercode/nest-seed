@@ -1,3 +1,4 @@
+import { plainDate } from '@mannercode/testing'
 import { ConflictException } from '@nestjs/common'
 import { ObjectId, type Collection, type Document } from 'mongodb'
 import { UsersRepository } from '../users.repository.js'
@@ -5,7 +6,7 @@ import { UsersService } from '../users.service.js'
 
 describe('user create write concern recovery', () => {
     const createDto = {
-        birthDate: new Date('1990-01-01'),
+        birthDate: plainDate('1990-01-01'),
         email: 'ambiguous@example.com',
         name: 'ambiguous',
         password: 'password'
@@ -86,10 +87,11 @@ describe('user create write concern recovery', () => {
         vi.useFakeTimers()
         const originalError = writeConcernTimeoutError()
         vi.spyOn(collection, 'insertOne').mockRejectedValue(originalError)
-        const findOne = vi.spyOn(collection, 'findOne').mockImplementation(async () => {
-            vi.setSystemTime(Date.now() + 5_000)
-            return null
-        })
+        vi.spyOn(performance, 'now')
+            .mockReturnValueOnce(0)
+            .mockReturnValueOnce(0)
+            .mockReturnValue(5_000)
+        const findOne = vi.spyOn(collection, 'findOne').mockImplementation(async () => null)
 
         const result = service.create(createDto).catch((error: unknown) => error)
 

@@ -1,16 +1,26 @@
 import type { WorkflowSubmission } from '@restatedev/restate-sdk-clients'
+import type * as RestateClients from '@restatedev/restate-sdk-clients'
 import type { Mock } from 'vitest'
+import { instant } from '@mannercode/testing'
 import { workflow } from '@restatedev/restate-sdk'
 import type { AppConfigService } from '#config'
 import type { ShowtimeCreationWorkflow } from '../workflow.js'
 import { ShowtimeCreationWorkflowClient } from '../restate-workflow-client.service.js'
+import { TemporalJsonSerde } from '../temporal-json.serde.js'
+
+const restateMocks = vi.hoisted(() => ({ connect: vi.fn() }))
+
+vi.mock('@restatedev/restate-sdk-clients', async (importOriginal) => {
+    const original = await importOriginal<typeof RestateClients>()
+    return { ...original, connect: restateMocks.connect }
+})
 
 describe('ShowtimeCreationWorkflowClient', () => {
     const input = {
         createDto: {
             durationInMinutes: 90,
             movieId: 'movie-id',
-            startTimes: [new Date('2100-01-01T09:00:00.000Z')],
+            startTimes: [instant('2100-01-01T09:00:00.000Z')],
             theaterIds: ['theater-id']
         },
         sagaId: 'saga-id'
@@ -30,6 +40,16 @@ describe('ShowtimeCreationWorkflowClient', () => {
         expect(fix.workflowSubmit.mock.calls[0]?.[0]).toEqual(input)
         expect(fix.workflowSubmit.mock.calls[0]?.[1].opts).toEqual({ timeout: 10_000 })
         expect(fix.result).not.toHaveBeenCalled()
+        expect(restateMocks.connect).toHaveBeenCalledWith({
+            retry: {
+                initialInterval: 250,
+                maxAttempts: 6,
+                maxDuration: 60_000,
+                maxInterval: 3_000
+            },
+            serde: TemporalJsonSerde,
+            url: 'http://restate.test:8080'
+        })
     })
 
     it('호출자가 요청할 때만 workflow 완료를 기다린다', async () => {
@@ -70,12 +90,13 @@ describe('ShowtimeCreationWorkflowClient', () => {
             handlers: { run: async () => undefined },
             name: 'WorkflowClientTest'
         })
+        const workflowClient = vi.fn(() => ({ workflowSubmit }))
+        const ingress = { result, workflowClient }
+        restateMocks.connect.mockReset()
+        restateMocks.connect.mockReturnValue(ingress)
         const workflowProvider = { definition } as ShowtimeCreationWorkflow
         const config = { restate: { ingressUrl: 'http://restate.test:8080' } } as AppConfigService
         const client = new ShowtimeCreationWorkflowClient(workflowProvider, config)
-        const workflowClient = vi.fn(() => ({ workflowSubmit }))
-        const ingress = { result, workflowClient }
-        ;(client as unknown as { ingress: typeof ingress }).ingress = ingress
 
         return { client, definition, result, workflowClient, workflowSubmit }
     }

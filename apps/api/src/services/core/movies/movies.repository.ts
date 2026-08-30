@@ -1,9 +1,9 @@
-import type { Document } from 'mongodb'
+import type { Document, ObjectId } from 'mongodb'
 import {
     QueryBuilderOptions,
     assignIfDefined,
     CrudRepository,
-    mongoToPublic,
+    plainDateFromMongo,
     MongoErrors,
     objectId,
     QueryBuilder
@@ -23,7 +23,7 @@ const StoredMovieSchema = z.object({
     isPublished: z.boolean(),
     plot: z.string(),
     rating: z.enum(MovieRating),
-    releaseDate: z.date(),
+    releaseDate: z.instanceof(Temporal.PlainDate),
     title: z.string()
 })
 
@@ -65,7 +65,7 @@ export class MoviesRepository extends CrudRepository<Movie> {
         movie.isPublished = false
         movie.plot = MovieDefaults.plot
         movie.rating = MovieDefaults.rating
-        movie.releaseDate = new Date(MovieDefaults.releaseDate.getTime())
+        movie.releaseDate = MovieDefaults.releaseDate
         movie.title = MovieDefaults.title
 
         this.applyUpsertDto(movie, upsertDto)
@@ -116,7 +116,7 @@ export class MoviesRepository extends CrudRepository<Movie> {
             const stored = await this.collection.findOne(this.activeFilter({ _id }))
             if (!stored) throw new NotFoundException(MongoErrors.DocumentNotFound(movieId))
 
-            const current = mongoToPublic<Movie>(stored)
+            const current = this.toDomainDocument(stored)
             const next = { ...current, ...fields }
             this.validate(next)
 
@@ -125,7 +125,7 @@ export class MoviesRepository extends CrudRepository<Movie> {
                 this.timestamped({ $set: fields as Document }),
                 { returnDocument: 'after' }
             )
-            if (updated) return mongoToPublic<Movie>(updated)
+            if (updated) return this.toDomainDocument(updated)
         }
 
         throw new Error(`Movie update did not converge after ${MOVIE_CAS_ATTEMPTS} attempts`)
@@ -143,7 +143,7 @@ export class MoviesRepository extends CrudRepository<Movie> {
         if (movie.rating === MovieDefaults.rating) {
             throw new Error('Published movies cannot be unrated')
         }
-        if (movie.releaseDate.getTime() === MovieDefaults.releaseDate.getTime()) {
+        if (movie.releaseDate.equals(MovieDefaults.releaseDate)) {
             throw new Error('Published movies must have a release date')
         }
         for (const [field, value] of [
@@ -169,5 +169,11 @@ export class MoviesRepository extends CrudRepository<Movie> {
 
         const query = builder.build(options)
         return query
+    }
+
+    protected override toDomainDocument(doc: Document & { _id: ObjectId }): Movie {
+        const movie = super.toDomainDocument(doc)
+        movie.releaseDate = plainDateFromMongo(movie.releaseDate)
+        return movie
     }
 }

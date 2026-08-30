@@ -173,7 +173,7 @@ export class AssetsService {
         })
     }
 
-    private getUploadExpiresAt(createdAt: Date) {
+    private getUploadExpiresAt(createdAt: Temporal.Instant) {
         return DateUtil.add({ base: createdAt, seconds: this.config.asset.uploadExpiresInSec })
     }
 

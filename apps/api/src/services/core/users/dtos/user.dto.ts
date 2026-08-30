@@ -1,5 +1,5 @@
 export class UserDto {
-    birthDate: Date
+    birthDate: Temporal.PlainDate
     email: string
     id: string
     name: string

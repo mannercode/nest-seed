@@ -146,7 +146,7 @@ export class TicketPurchaseService {
                 minutes: -cutoffMinutes
             })
 
-            if (purchaseWindowCloseTime.getTime() < DateUtil.now().getTime()) {
+            if (DateUtil.isBefore(purchaseWindowCloseTime, DateUtil.now())) {
                 throw new BadRequestException(
                     PurchaseErrors.WindowClosed(
                         cutoffMinutes,

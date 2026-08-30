@@ -1,4 +1,4 @@
-import type { TestContext } from '@mannercode/testing'
+import { nullPlainDate, type TestContext } from '@mannercode/testing'
 import { MovieGenre, MovieRating, type MovieDto, type UpsertMovieDto } from '#core'
 import { testAssets, type TestAsset } from '../assets/index.js'
 import { buildCreateAssetDto, uploadAsset } from './assets.utils.js'
@@ -11,7 +11,7 @@ export function buildCreateMovieDto(overrides: Partial<UpsertMovieDto> = {}): Up
         genres: [MovieGenre.Action],
         plot: `MoviePlot`,
         rating: MovieRating.PG,
-        releaseDate: new Date(0),
+        releaseDate: nullPlainDate,
         title: `MovieTitle`,
         ...overrides
     }

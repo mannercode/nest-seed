@@ -1,9 +1,9 @@
 import type { MovieDto } from '#core'
 
 export class HomeShowtimeView {
-    endTime: Date
+    endTime: Temporal.Instant
     id: string
-    startTime: Date
+    startTime: Temporal.Instant
     theater: { id: string; name: string }
 }
 

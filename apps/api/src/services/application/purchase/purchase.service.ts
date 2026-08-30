@@ -1,5 +1,6 @@
 import {
     CacheService,
+    DateUtil,
     ensure,
     IdempotencyErrors,
     InjectCache,
@@ -160,7 +161,7 @@ export class PurchaseService {
             await this.purchaseRecordsService.claimForCompletion(
                 purchaseRecord.id,
                 activeCompletionId,
-                new Date(Date.now() + PURCHASE_COMPLETION_LEASE_MS)
+                DateUtil.add({ milliseconds: PURCHASE_COMPLETION_LEASE_MS })
             )
             completed = await this.ticketPurchaseService.completePurchase(
                 createDto,
@@ -177,7 +178,7 @@ export class PurchaseService {
             try {
                 await this.reconcilePurchase(
                     purchaseRecord.id,
-                    new Date(),
+                    DateUtil.now(),
                     completionId,
                     replayable
                 )
@@ -256,7 +257,7 @@ export class PurchaseService {
         }
     }
 
-    async reconcilePendingPurchases(before: Date = new Date()) {
+    async reconcilePendingPurchases(before: Temporal.Instant = DateUtil.now()) {
         const pending = await this.purchaseRecordsService.findPendingBefore(before)
         for (const purchaseRecord of pending) {
             try {
@@ -270,14 +271,14 @@ export class PurchaseService {
         }
     }
 
-    async publishPendingPurchaseEvents(before: Date = new Date()) {
+    async publishPendingPurchaseEvents(before: Temporal.Instant = DateUtil.now()) {
         const unpublished = await this.purchaseRecordsService.findUnpublishedBefore(before)
         for (const purchaseRecord of unpublished) {
             await this.publishPurchaseEvent(purchaseRecord, before)
         }
     }
 
-    async reconcileUnresolvedPayments(before: Date) {
+    async reconcileUnresolvedPayments(before: Temporal.Instant) {
         const unresolved = await this.paymentsService.findUnresolvedBefore(before)
         for (const payment of unresolved) {
             try {
@@ -356,7 +357,7 @@ export class PurchaseService {
 
     @Interval('purchase-reconciliation', PURCHASE_RECONCILIATION_INTERVAL_MS)
     async reconcileStalePurchases() {
-        const before = new Date(Date.now() - PURCHASE_RECONCILIATION_STALE_MS)
+        const before = DateUtil.add({ milliseconds: -PURCHASE_RECONCILIATION_STALE_MS })
         await this.reconcilePendingPurchases(before)
         await this.reconcileUnresolvedPayments(before)
         await this.publishPendingPurchaseEvents()
@@ -364,11 +365,11 @@ export class PurchaseService {
 
     private async reconcilePurchase(
         purchaseRecordId: string,
-        before: Date,
+        before: Temporal.Instant,
         completionId?: string,
         idempotencyError?: { response: Record<string, unknown>; status: number }
     ) {
-        const now = new Date()
+        const now = DateUtil.now()
         const reconciliationId = randomUUID()
         // stale 조회 결과를 그대로 믿지 않고 Pending→Compensating CAS를 획득한 replica만
         // 보상한다. 실패/프로세스 종료 시 lease가 만료돼 다른 replica가 이어받는다.
@@ -376,7 +377,10 @@ export class PurchaseService {
             purchaseRecordId,
             {
                 before,
-                leaseUntil: new Date(now.getTime() + PURCHASE_RECONCILIATION_LEASE_MS),
+                leaseUntil: DateUtil.add({
+                    base: now,
+                    milliseconds: PURCHASE_RECONCILIATION_LEASE_MS
+                }),
                 now,
                 reconciliationId,
                 completionId,
@@ -439,7 +443,7 @@ export class PurchaseService {
 
     private async publishPurchaseEvent(
         purchaseRecord: PurchaseRecordDto,
-        before: Date = new Date()
+        before: Temporal.Instant = DateUtil.now()
     ) {
         const ticketIds = purchaseRecord.purchaseItems
             .filter((item) => item.type === PurchaseItemType.Tickets)
@@ -447,12 +451,15 @@ export class PurchaseService {
         const publicationId = randomUUID()
 
         try {
-            const now = new Date()
+            const now = DateUtil.now()
             const claimed = await this.purchaseRecordsService.claimEventPublication(
                 purchaseRecord.id,
                 {
                     before,
-                    leaseUntil: new Date(now.getTime() + PURCHASE_EVENT_PUBLICATION_LEASE_MS),
+                    leaseUntil: DateUtil.add({
+                        base: now,
+                        milliseconds: PURCHASE_EVENT_PUBLICATION_LEASE_MS
+                    }),
                     now,
                     publicationId
                 }

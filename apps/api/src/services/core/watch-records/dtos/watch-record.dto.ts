@@ -3,5 +3,5 @@ export class WatchRecordDto {
     id: string
     movieId: string
     purchaseRecordId: string
-    watchDate: Date
+    watchDate: Temporal.Instant
 }
