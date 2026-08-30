@@ -4,6 +4,8 @@ import {
     PutObjectCommand,
     S3Client
 } from '@aws-sdk/client-s3'
+import { JetStreamApiCodes, jetstreamManager, StorageType } from '@nats-io/jetstream'
+import { connect as connectNats } from '@nats-io/transport-node'
 import { Redis } from 'ioredis'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -11,6 +13,7 @@ import { setTimeout as delay } from 'node:timers/promises'
 import { getSharedTestMongoConnection } from '../../scripts/index.cjs'
 
 const startupProjectId = process.env.PROJECT_ID
+let previousTestStreamSubject: string | undefined
 
 describe('VitestResourceIsolation', () => {
     it('실행별 namespace를 반영하고 병렬 teardown에서 다른 실행 자원을 보존한다', async () => {
@@ -30,6 +33,41 @@ describe('VitestResourceIsolation', () => {
         expect(['A', 'B']).toContain(role)
         await runInfrastructureProbe(role as 'A' | 'B')
     }, 60_000)
+
+    it('테스트 전용 JetStream을 현재 PROJECT_ID namespace에 만든다', async () => {
+        const role = process.env.VITEST_ISOLATION_ROLE
+        if (role === undefined) return
+
+        const runId = requiredEnvironment('API_VITEST_RUN_ID')
+        previousTestStreamSubject = `${requiredEnvironment('PROJECT_ID')}.purchase.ticketPurchased`
+        const connection = await createNatsConnection()
+
+        try {
+            const manager = await jetstreamManager(connection)
+            await manager.streams.add({
+                max_bytes: 1024 * 1024,
+                name: `VITEST_CLEANUP_${role}_${runId}`,
+                storage: StorageType.File,
+                subjects: [previousTestStreamSubject]
+            })
+        } finally {
+            await connection.drain()
+        }
+    })
+
+    it('직전 테스트의 JetStream을 다음 테스트 전에 제거한다', async () => {
+        if (previousTestStreamSubject === undefined) return
+
+        const connection = await createNatsConnection()
+        try {
+            const manager = await jetstreamManager(connection)
+            await expect(manager.streams.find(previousTestStreamSubject)).rejects.toMatchObject({
+                code: JetStreamApiCodes.StreamNotFound
+            })
+        } finally {
+            await connection.drain()
+        }
+    })
 })
 
 async function runInfrastructureProbe(role: 'A' | 'B'): Promise<void> {
@@ -138,6 +176,12 @@ function createRedisCluster() {
             port: Number(requiredEnvironment('REDIS_PORT3'))
         }
     ])
+}
+
+function createNatsConnection() {
+    return connectNats({
+        servers: [`${requiredEnvironment('NATS_HOST')}:${requiredEnvironment('NATS_PORT')}`]
+    })
 }
 
 async function readJsonAtBarrier(filePath: string): Promise<Record<string, unknown>> {

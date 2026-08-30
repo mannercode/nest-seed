@@ -1,6 +1,13 @@
 import 'reflect-metadata'
 import { S3Client } from '@aws-sdk/client-s3'
 import { setupVitestLifecycle } from '@mannercode/vitest-helpers'
+import {
+    JetStreamApiCodes,
+    JetStreamApiError,
+    jetstreamManager,
+    type JetStreamManager
+} from '@nats-io/jetstream'
+import { connect as connectNats, type NatsConnection } from '@nats-io/transport-node'
 import { MongoClient } from 'mongodb'
 import { createRequire } from 'node:module'
 
@@ -21,6 +28,26 @@ const { registerMongoClientDiagnostics } = await import('./support/mongo-client-
 
 const sharedMongoAppName = () =>
     `nest-seed-test-w${process.env.VITEST_POOL_ID ?? '0'}-p${process.pid}-shared`
+let jetStreamCleanupConnection: NatsConnection | undefined
+let jetStreamCleanupManager: JetStreamManager | undefined
+
+async function deleteCurrentTestStream(testId: string): Promise<void> {
+    jetStreamCleanupConnection ??= await connectNats({
+        servers: [`${requiredEnvironment('NATS_HOST')}:${requiredEnvironment('NATS_PORT')}`]
+    })
+    jetStreamCleanupManager ??= await jetstreamManager(jetStreamCleanupConnection)
+    const subject = `${resourceScope.projectId(testId)}.purchase.ticketPurchased`
+
+    try {
+        const streamName = await jetStreamCleanupManager.streams.find(subject)
+        await jetStreamCleanupManager.streams.delete(streamName)
+    } catch (error) {
+        if (error instanceof JetStreamApiError && error.code === JetStreamApiCodes.StreamNotFound) {
+            return
+        }
+        throw error
+    }
+}
 
 setupVitestLifecycle({
     connectMongo: async (workerId) => {
@@ -53,13 +80,15 @@ setupVitestLifecycle({
         process.env.S3_BUCKET = bucket
         return bucket
     },
+    onAfterEach: deleteCurrentTestStream,
     onBeforeEach: (testId) => {
         process.env.PROJECT_ID = resourceScope.projectId(testId)
     }
 })
 
-afterAll(() => {
+afterAll(async () => {
     clearSharedTestMongoConnection()
+    await jetStreamCleanupConnection?.drain()
 })
 
 function requiredEnvironment(name: string): string {

@@ -8,6 +8,7 @@ export type VitestLifecycleOptions = {
     bucketName: (workerId: string) => string
     connectMongo: (workerId: string) => Promise<WorkerMongoConnection>
     createS3Client: () => S3Client
+    onAfterEach?: (testId: string) => Promise<void> | void
     onBeforeEach?: (testId: string) => Promise<void> | void
 }
 

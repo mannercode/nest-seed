@@ -222,6 +222,7 @@ test('Vitest lifecycle은 worker 자원 준비, 테스트별 정리, 종료를 �
         }
     }
     let beforeEachTestId
+    let afterEachTestId
     const previousWorkerId = process.env.VITEST_POOL_ID
     process.env.VITEST_POOL_ID = '7'
     const hooks = captureLifecycle(() =>
@@ -237,6 +238,10 @@ test('Vitest lifecycle은 worker 자원 준비, 테스트별 정리, 종료를 �
                 dbName: `mongo-worker-${workerId}`
             }),
             createS3Client: () => s3,
+            onAfterEach: async (testId) => {
+                afterEachTestId = testId
+                events.push('test.clean')
+            },
             onBeforeEach: async (testId) => {
                 beforeEachTestId = testId
             }
@@ -253,10 +258,12 @@ test('Vitest lifecycle은 worker 자원 준비, 테스트별 정리, 종료를 �
     }
 
     assert.match(beforeEachTestId, /^[A-Za-z0-9]{10}$/)
+    assert.equal(afterEachTestId, beforeEachTestId)
     assert.equal(process.env.TEST_ID, beforeEachTestId)
     assert.deepEqual(events.slice(0, 2), ['mongo.connected', 's3.create'])
     assert.equal(events.filter((event) => event === 'mongo.clean').length, 2)
     assert.equal(events.filter((event) => event === 's3.list').length, 2)
+    assert.equal(events.filter((event) => event === 'test.clean').length, 1)
     assert.deepEqual(events.slice(-2), ['mongo.close', 's3.destroy'])
 })
 

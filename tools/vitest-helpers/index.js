@@ -115,18 +115,21 @@ async function dropMatchingBuckets(s3Client, pattern) {
  * @param {(workerId: string) => string} options.bucketName
  * @param {(client: MongoClient, dbName: string) => void | Promise<void>} [options.afterMongoConnect]
  * @param {(testId: string) => void | Promise<void>} [options.onBeforeEach]
+ * @param {(testId: string) => void | Promise<void>} [options.onAfterEach]
  */
 function setupVitestLifecycle({
     connectMongo,
     createS3Client,
     bucketName,
     afterMongoConnect,
-    onBeforeEach
+    onBeforeEach,
+    onAfterEach
 }) {
     let mongoClient
     let s3Client
     let dbName
     let bucket
+    let currentTestId
 
     beforeAll(async () => {
         const workerId = process.env.VITEST_POOL_ID ?? '1'
@@ -150,13 +153,15 @@ function setupVitestLifecycle({
     })
 
     beforeEach(async () => {
-        const testId = generateTestId()
-        process.env.TEST_ID = testId
-        if (onBeforeEach) await onBeforeEach(testId)
+        currentTestId = generateTestId()
+        process.env.TEST_ID = currentTestId
+        if (onBeforeEach) await onBeforeEach(currentTestId)
     })
 
     afterEach(async () => {
-        await Promise.all([cleanCollections(mongoClient, dbName), emptyBucket(s3Client, bucket)])
+        const tasks = [cleanCollections(mongoClient, dbName), emptyBucket(s3Client, bucket)]
+        if (onAfterEach) tasks.push(onAfterEach(currentTestId))
+        await Promise.all(tasks)
     })
 }
 
