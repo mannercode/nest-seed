@@ -1,3 +1,17 @@
+import { isDeepStrictEqual } from 'node:util'
+
+interface TemporalValue {
+    equals?(other: unknown): boolean
+    toString(): string
+}
+
+function getTemporalTag(value: unknown): string | undefined {
+    if (typeof value !== 'object' || value === null) return undefined
+
+    const tag = Object.prototype.toString.call(value)
+    return tag.startsWith('[object Temporal.') ? tag : undefined
+}
+
 export function defaultTo<T>(value: T | null | undefined, defaultValue: T): T {
     return value == null || value !== value ? defaultValue : value
 }
@@ -80,24 +94,20 @@ export function orderBy<T>(
     })
 }
 
-export function isEqual(a: any, b: any): boolean {
-    if (a === b) return true
-    if (a == null || b == null) return a === b
-    if (typeof a !== typeof b) return false
+export function isEqual(a: unknown, b: unknown): boolean {
+    const aTemporalTag = getTemporalTag(a)
+    const bTemporalTag = getTemporalTag(b)
 
-    if (Array.isArray(a)) {
-        if (!Array.isArray(b) || a.length !== b.length) return false
-        return a.every((v, i) => isEqual(v, b[i]))
+    if (aTemporalTag !== undefined || bTemporalTag !== undefined) {
+        if (aTemporalTag !== bTemporalTag) return false
+
+        const temporalA = a as TemporalValue
+        return typeof temporalA.equals === 'function'
+            ? temporalA.equals(b)
+            : temporalA.toString() === (b as TemporalValue).toString()
     }
 
-    if (typeof a === 'object') {
-        const keysA = Object.keys(a)
-        const keysB = Object.keys(b)
-        if (keysA.length !== keysB.length) return false
-        return keysA.every((k) => isEqual(a[k], b[k]))
-    }
-
-    return false
+    return isDeepStrictEqual(a, b)
 }
 
 export function differenceWith<T, U = T>(

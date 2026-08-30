@@ -218,28 +218,52 @@ describe('isEqual', () => {
         expect(isEqual([], {})).toBe(false)
     })
 
-    it('빈 객체와 빈 배열을 비교하면 true를 반환한다 (얕은 비교 한계)', () => {
-        // 배열 가드가 첫 인자만 검사해 a가 객체면 키 비교로 넘어가고, 양쪽 키가 모두 비어 true가 된다.
-        expect(isEqual({}, [])).toBe(true)
+    it('빈 객체와 빈 배열을 비교하면 false를 반환한다', () => {
+        expect(isEqual({}, [])).toBe(false)
     })
 
-    it('순환 참조 객체끼리 비교하면 RangeError를 던진다', () => {
+    it('같은 구조의 순환 참조 객체를 비교한다', () => {
         const a: any = { x: 1 }
         a.self = a
         const b: any = { x: 1 }
         b.self = b
 
-        expect(() => isEqual(a, b)).toThrow(RangeError)
+        expect(isEqual(a, b)).toBe(true)
     })
 
-    it('두 Date는 시각이 달라도 같다고 판정한다 (얕은 비교 한계)', () => {
-        // Date는 own enumerable 키가 없어 양쪽 Object.keys가 모두 []이다.
-        expect(isEqual(new Date(0), new Date(1))).toBe(true)
+    it('두 Date의 시각을 비교한다', () => {
+        expect(isEqual(new Date(0), new Date(1))).toBe(false)
     })
 
-    it('두 Map은 내용이 달라도 같다고 판정한다 (얕은 비교 한계)', () => {
-        // Map도 own enumerable 키가 없다.
-        expect(isEqual(new Map([['a', 1]]), new Map([['b', 2]]))).toBe(true)
+    it('두 Map의 내용을 비교한다', () => {
+        expect(isEqual(new Map([['a', 1]]), new Map([['b', 2]]))).toBe(false)
+    })
+
+    it('두 Temporal.Instant의 시각을 비교한다', () => {
+        const temporal = (
+            globalThis as typeof globalThis & {
+                Temporal: { Instant: { from(value: string): unknown } }
+            }
+        ).Temporal
+
+        expect(
+            isEqual(
+                temporal.Instant.from('2026-08-30T00:00:00Z'),
+                temporal.Instant.from('2026-08-31T00:00:00Z')
+            )
+        ).toBe(false)
+    })
+
+    it('두 Temporal.PlainDate의 날짜를 비교한다', () => {
+        const temporal = (
+            globalThis as typeof globalThis & {
+                Temporal: { PlainDate: { from(value: string): unknown } }
+            }
+        ).Temporal
+
+        expect(
+            isEqual(temporal.PlainDate.from('2026-08-30'), temporal.PlainDate.from('2026-08-31'))
+        ).toBe(false)
     })
 })
 
