@@ -42,7 +42,7 @@
         "@testcontainers/mongodb": "12.1.0",
         "@testcontainers/nats": "12.1.0",
         "ioredis": "6.0.0",
-        "mongodb": "7.5.0",
+        "mongodb": "7.6.0",
         "testcontainers": "12.1.0",
         "vitest": "4.1.11",
         "zod": "4.5.2"
