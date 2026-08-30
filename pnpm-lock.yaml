@@ -191,7 +191,7 @@ importers:
         version: link:../../tools/vitest-helpers
       '@nestjs/cli':
         specifier: 12.0.0
-        version: 12.0.0(@rspack/core@2.2.1(@swc/helpers@0.5.23))(@types/node@26.4.0)(fork-ts-checker-webpack-plugin@9.1.0(typescript@6.0.3)(webpack@5.110.1(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3)))(prettier@3.9.6)(ts-loader@9.6.2(typescript@6.0.3)(webpack@5.110.1(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3)))(tsconfig-paths-webpack-plugin@4.2.0)(webpack-node-externals@3.0.0)(webpack@5.110.1(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3))
+        version: 12.0.0(@rspack/core@2.2.1(@swc/helpers@0.5.23))(@types/node@26.4.0)(fork-ts-checker-webpack-plugin@9.1.0(typescript@6.0.3)(webpack@5.110.1(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3)))(prettier@3.9.6)(ts-loader@9.6.2(typescript@6.0.3)(webpack@5.110.1(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3)))(tsconfig-paths-webpack-plugin@4.2.0)(webpack-node-externals@3.0.0)(webpack@5.110.1(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3))
       '@nestjs/schematics':
         specifier: 12.0.0
         version: 12.0.0(chokidar@5.0.0)(prettier@3.9.6)(typescript@6.0.3)
@@ -236,7 +236,7 @@ importers:
         version: 4.4.1(@typescript-eslint/eslint-plugin@8.67.0(@typescript-eslint/parser@8.67.0(eslint@9.39.5(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(eslint@9.39.5(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(eslint@9.39.5(jiti@2.7.0)(supports-color@10.2.2))
       fork-ts-checker-webpack-plugin:
         specifier: 9.1.0
-        version: 9.1.0(typescript@6.0.3)(webpack@5.110.1(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3))
+        version: 9.1.0(typescript@6.0.3)(webpack@5.110.1(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3))
       globals:
         specifier: 17.11.0
         version: 17.11.0
@@ -245,7 +245,7 @@ importers:
         version: 3.9.6
       ts-loader:
         specifier: 9.6.2
-        version: 9.6.2(typescript@6.0.3)(webpack@5.110.1(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3))
+        version: 9.6.2(typescript@6.0.3)(webpack@5.110.1(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3))
       tsconfig-paths-webpack-plugin:
         specifier: 4.2.0
         version: 4.2.0
@@ -260,7 +260,7 @@ importers:
         version: 4.1.11(@types/node@26.4.0)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@26.4.0)(jiti@2.7.0)(terser@5.51.1)(yaml@2.9.0))
       webpack:
         specifier: 5.110.1
-        version: 5.110.1(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3)
+        version: 5.110.1(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3)
       webpack-node-externals:
         specifier: 3.0.0
         version: 3.0.0
@@ -349,10 +349,10 @@ importers:
     dependencies:
       '@aws-sdk/s3-presigned-post':
         specifier: ^3.0.0
-        version: 3.1116.0
+        version: 3.1118.0
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.0.0
-        version: 3.1116.0
+        version: 3.1118.0
       '@elastic/ecs-winston-format':
         specifier: 1.5.3
         version: 1.5.3
@@ -497,10 +497,6 @@ packages:
     resolution: {integrity: sha512-Dtu0gr4dnATZAPwEYbpCsG+MpLM7OAliy2gTepEFQwl1vZ6DL3QMH2FveMa3HLvPsOdhJsPRB3KtxVhph9T75A==}
     engines: {node: '>=20.0.0'}
 
-  '@aws-sdk/client-s3@3.1116.0':
-    resolution: {integrity: sha512-UKRl9qSVW0rZpvSOauQNpYAy8+ONBAVYnpfKVtCyOF+FZVT1tl6MunYuHvuarCrroD2/YJs+tHTALYNgAlec3Q==}
-    engines: {node: '>=20.0.0'}
-
   '@aws-sdk/client-s3@3.1118.0':
     resolution: {integrity: sha512-nh46pLKeRNFvTOZAJMfYR7kZ/KzhSqzhXVIJSwl4jJ/b2D+KOXL2jeOCryOvGgwpUQo9YNWFUg63cm2qr5MX9g==}
     engines: {node: '>=20.0.0'}
@@ -549,16 +545,8 @@ packages:
     resolution: {integrity: sha512-NhEgryjlBF9w38ZXqGymQV28IhkYa1mKhlbYnqIis57AYwWGVYfUPgg/qC2rLRqOUfblxx++irvju10kVTa8Vw==}
     engines: {node: '>=20.0.0'}
 
-  '@aws-sdk/s3-presigned-post@3.1116.0':
-    resolution: {integrity: sha512-DfB7rnfUR9d/rMnf41moHNjnH9Xopo0Efp+XPcYybz1EaASGGXZPXwVfsyBx5NphLqONNxfXku4/q81rPoMErA==}
-    engines: {node: '>=20.0.0'}
-
   '@aws-sdk/s3-presigned-post@3.1118.0':
     resolution: {integrity: sha512-Kg0roIi3kjkEkHF1ww+lqj2Ize04YOXn4sKArjvGWo5aXjdzUgh1nWhdce7on8y7UKaLcyOIrm83CV2mc+1pGA==}
-    engines: {node: '>=20.0.0'}
-
-  '@aws-sdk/s3-request-presigner@3.1116.0':
-    resolution: {integrity: sha512-WwaaVpvrZyML5L8SNY7sUGsYlMeCHzQ/8A/ms7dz/7sfYRvPn+qf0OasUWk+zuT8qGwjsYhILD0WVtlqUU08pQ==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/s3-request-presigner@3.1118.0':
@@ -5313,20 +5301,6 @@ snapshots:
       '@smithy/types': 4.17.2
       tslib: 2.8.1
 
-  '@aws-sdk/client-s3@3.1116.0':
-    dependencies:
-      '@aws-sdk/checksums': 3.1000.29
-      '@aws-sdk/core': 3.977.9
-      '@aws-sdk/credential-provider-node': 3.972.81
-      '@aws-sdk/middleware-sdk-s3': 3.972.75
-      '@aws-sdk/signature-v4-multi-region': 3.996.46
-      '@aws-sdk/types': 3.974.5
-      '@smithy/core': 3.33.3
-      '@smithy/fetch-http-handler': 5.7.2
-      '@smithy/node-http-handler': 4.11.3
-      '@smithy/types': 4.17.2
-      tslib: 2.8.1
-
   '@aws-sdk/client-s3@3.1118.0':
     dependencies:
       '@aws-sdk/checksums': 3.1000.29
@@ -5456,16 +5430,6 @@ snapshots:
       '@smithy/types': 4.17.2
       tslib: 2.8.1
 
-  '@aws-sdk/s3-presigned-post@3.1116.0':
-    dependencies:
-      '@aws-sdk/client-s3': 3.1116.0
-      '@aws-sdk/core': 3.977.9
-      '@aws-sdk/types': 3.974.5
-      '@smithy/core': 3.33.3
-      '@smithy/signature-v4': 5.7.3
-      '@smithy/types': 4.17.2
-      tslib: 2.8.1
-
   '@aws-sdk/s3-presigned-post@3.1118.0':
     dependencies:
       '@aws-sdk/client-s3': 3.1118.0
@@ -5473,15 +5437,6 @@ snapshots:
       '@aws-sdk/types': 3.974.5
       '@smithy/core': 3.33.3
       '@smithy/signature-v4': 5.7.3
-      '@smithy/types': 4.17.2
-      tslib: 2.8.1
-
-  '@aws-sdk/s3-request-presigner@3.1116.0':
-    dependencies:
-      '@aws-sdk/core': 3.977.9
-      '@aws-sdk/signature-v4-multi-region': 3.996.46
-      '@aws-sdk/types': 3.974.5
-      '@smithy/core': 3.33.3
       '@smithy/types': 4.17.2
       tslib: 2.8.1
 
@@ -6218,7 +6173,7 @@ snapshots:
       '@nats-io/nkeys': 2.0.3
       '@nats-io/nuid': 3.0.0
 
-  '@nestjs/cli@12.0.0(@rspack/core@2.2.1(@swc/helpers@0.5.23))(@types/node@26.4.0)(fork-ts-checker-webpack-plugin@9.1.0(typescript@6.0.3)(webpack@5.110.1(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3)))(prettier@3.9.6)(ts-loader@9.6.2(typescript@6.0.3)(webpack@5.110.1(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3)))(tsconfig-paths-webpack-plugin@4.2.0)(webpack-node-externals@3.0.0)(webpack@5.110.1(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3))':
+  '@nestjs/cli@12.0.0(@rspack/core@2.2.1(@swc/helpers@0.5.23))(@types/node@26.4.0)(fork-ts-checker-webpack-plugin@9.1.0(typescript@6.0.3)(webpack@5.110.1(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3)))(prettier@3.9.6)(ts-loader@9.6.2(typescript@6.0.3)(webpack@5.110.1(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3)))(tsconfig-paths-webpack-plugin@4.2.0)(webpack-node-externals@3.0.0)(webpack@5.110.1(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3))':
     dependencies:
       '@angular-devkit/core': 22.1.5(chokidar@5.0.0)
       '@angular-devkit/schematics': 22.1.5(chokidar@5.0.0)
@@ -6236,10 +6191,10 @@ snapshots:
       typescript: 6.0.3
     optionalDependencies:
       '@rspack/core': 2.2.1(@swc/helpers@0.5.23)
-      fork-ts-checker-webpack-plugin: 9.1.0(typescript@6.0.3)(webpack@5.110.1(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3))
-      ts-loader: 9.6.2(typescript@6.0.3)(webpack@5.110.1(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3))
+      fork-ts-checker-webpack-plugin: 9.1.0(typescript@6.0.3)(webpack@5.110.1(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3))
+      ts-loader: 9.6.2(typescript@6.0.3)(webpack@5.110.1(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3))
       tsconfig-paths-webpack-plugin: 4.2.0
-      webpack: 5.110.1(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3)
+      webpack: 5.110.1(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3)
       webpack-node-externals: 3.0.0
     transitivePeerDependencies:
       - '@types/node'
@@ -8397,7 +8352,7 @@ snapshots:
       cross-spawn: 7.0.6
       signal-exit: 4.1.0
 
-  fork-ts-checker-webpack-plugin@9.1.0(typescript@6.0.3)(webpack@5.110.1(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3)):
+  fork-ts-checker-webpack-plugin@9.1.0(typescript@6.0.3)(webpack@5.110.1(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3)):
     dependencies:
       '@babel/code-frame': 7.29.7
       chalk: 4.1.2
@@ -8412,7 +8367,7 @@ snapshots:
       semver: 7.8.5
       tapable: 2.3.3
       typescript: 6.0.3
-      webpack: 5.110.1(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3)
+      webpack: 5.110.1(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3)
 
   form-data@4.0.6:
     dependencies:
@@ -9132,15 +9087,15 @@ snapshots:
 
   minimist@1.2.8: {}
 
-  minimizer-webpack-plugin@5.7.0(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3)(webpack@5.110.1(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3)):
+  minimizer-webpack-plugin@5.7.0(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3)(webpack@5.110.1(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3)):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
       schema-utils: 4.3.3
       terser: 5.51.1
-      webpack: 5.110.1(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3)
+      webpack: 5.110.1(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3)
     optionalDependencies:
-      lightningcss: 1.32.0
+      lightningcss: 1.33.0
       postcss: 8.5.26
       uglify-js: 3.19.3
 
@@ -10104,13 +10059,13 @@ snapshots:
     dependencies:
       typescript: 6.0.3
 
-  ts-loader@9.6.2(typescript@6.0.3)(webpack@5.110.1(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3)):
+  ts-loader@9.6.2(typescript@6.0.3)(webpack@5.110.1(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3)):
     dependencies:
       chalk: 4.1.2
       picomatch: 4.0.5
       source-map: 0.7.6
       typescript: 6.0.3
-      webpack: 5.110.1(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3)
+      webpack: 5.110.1(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3)
 
   tsconfig-paths-webpack-plugin@4.2.0:
     dependencies:
@@ -10322,7 +10277,7 @@ snapshots:
 
   webpack-sources@3.5.1: {}
 
-  webpack@5.110.1(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3):
+  webpack@5.110.1(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3):
     dependencies:
       '@types/estree': 1.0.9
       '@types/json-schema': 7.0.15
@@ -10337,7 +10292,7 @@ snapshots:
       events: 3.3.0
       graceful-fs: 4.2.11
       mime-db: 1.54.0
-      minimizer-webpack-plugin: 5.7.0(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3)(webpack@5.110.1(lightningcss@1.32.0)(postcss@8.5.26)(uglify-js@3.19.3))
+      minimizer-webpack-plugin: 5.7.0(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3)(webpack@5.110.1(lightningcss@1.33.0)(postcss@8.5.26)(uglify-js@3.19.3))
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.3
