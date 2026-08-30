@@ -16,6 +16,16 @@ import {
     uniq
 } from '../lodash.js'
 
+const temporal = (
+    globalThis as typeof globalThis & {
+        Temporal: {
+            Duration: { from(value: string): unknown }
+            Instant: { from(value: string): unknown }
+            PlainDate: { from(value: string): unknown }
+        }
+    }
+).Temporal
+
 describe('defaultTo', () => {
     it('null이면 기본값을 반환한다', () => {
         expect(defaultTo(null, '기본값')).toBe('기본값')
@@ -240,12 +250,6 @@ describe('isEqual', () => {
     })
 
     it('두 Temporal.Instant의 시각을 비교한다', () => {
-        const temporal = (
-            globalThis as typeof globalThis & {
-                Temporal: { Instant: { from(value: string): unknown } }
-            }
-        ).Temporal
-
         expect(
             isEqual(
                 temporal.Instant.from('2026-08-30T00:00:00Z'),
@@ -255,15 +259,30 @@ describe('isEqual', () => {
     })
 
     it('두 Temporal.PlainDate의 날짜를 비교한다', () => {
-        const temporal = (
-            globalThis as typeof globalThis & {
-                Temporal: { PlainDate: { from(value: string): unknown } }
-            }
-        ).Temporal
-
         expect(
             isEqual(temporal.PlainDate.from('2026-08-30'), temporal.PlainDate.from('2026-08-31'))
         ).toBe(false)
+    })
+
+    it('서로 다른 Temporal 타입을 비교하면 false를 반환한다', () => {
+        expect(
+            isEqual(
+                temporal.Instant.from('2026-08-30T00:00:00Z'),
+                temporal.PlainDate.from('2026-08-30')
+            )
+        ).toBe(false)
+    })
+
+    it('Temporal 값과 일반 객체를 양방향으로 비교하면 false를 반환한다', () => {
+        const date = temporal.PlainDate.from('2026-08-30')
+
+        expect(isEqual(date, {})).toBe(false)
+        expect(isEqual({}, date)).toBe(false)
+    })
+
+    it('인스턴스 equals가 없는 Temporal.Duration은 정규화된 문자열로 비교한다', () => {
+        expect(isEqual(temporal.Duration.from('P1D'), temporal.Duration.from('P1D'))).toBe(true)
+        expect(isEqual(temporal.Duration.from('P1D'), temporal.Duration.from('P2D'))).toBe(false)
     })
 })
 
