@@ -53,7 +53,6 @@
         "@types/express": "5.0.6",
         "@types/node": "26.4.0",
         "@vitest/coverage-v8": "4.1.11",
-        "@vitest/eslint-plugin": "1.6.27",
         "concurrently": "10.0.5",
         "eslint": "9.39.5",
         "eslint-plugin-perfectionist": "5.10.1",
