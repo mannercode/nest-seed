@@ -1,162 +1,27 @@
 import { ecsFormat } from '@elastic/ecs-winston-format'
-// 터미널 색상과 transport 조합처럼 환경에 따라 달라지는 분기가 있어 파일 전체를 coverage 계산에서 제외한다.
-// 로거 생성 동작은 create-winston-logger.spec.ts에서 별도로 검증한다.
-/* istanbul ignore file */
-import { styleText } from 'node:util'
 import winston from 'winston'
-import type { HttpErrorLog, HttpSuccessLog } from './types.js'
-import { defaultTo } from '../utils/index.js'
-
-function colorizeHttpMethod(method: string | undefined) {
-    const normalizedMethod = defaultTo(method, 'METHOD').toUpperCase()
-
-    switch (normalizedMethod) {
-        case 'DELETE':
-            return styleText('red', normalizedMethod)
-        case 'GET':
-            return styleText('cyan', normalizedMethod)
-        case 'PATCH':
-            return styleText('blueBright', normalizedMethod)
-        case 'POST':
-            return styleText('yellow', normalizedMethod)
-        case 'PUT':
-            return styleText('blue', normalizedMethod)
-        default:
-            return styleText('magenta', normalizedMethod)
-    }
-}
-
-function colorizeLogLevel(level: string | undefined) {
-    const normalizedLevel = defaultTo(level, 'LEVEL').toUpperCase()
-
-    switch (normalizedLevel) {
-        case 'ERROR':
-            return styleText('red', normalizedLevel)
-        case 'INFO':
-            return styleText('cyan', normalizedLevel)
-        case 'WARN':
-            return styleText('yellow', normalizedLevel)
-        default:
-            return styleText('gray', normalizedLevel)
-    }
-}
-
-function formatServiceLogMessage(
-    message: string,
-    level: string,
-    timestamp: string,
-    logDetails: Record<string, unknown>
-) {
-    const { contextType: _, ...data } = logDetails
-    const coloredData = styleText('blueBright', JSON.stringify(data, null, 2))
-
-    return `${timestamp} ${level} SERVICE ${message} ${coloredData}`
-}
-
-function formatGenericLogMessage(
-    message: string,
-    level: string,
-    timestamp: string,
-    logDetails: unknown
-) {
-    const coloredEtc = styleText('blueBright', JSON.stringify(logDetails, null, 2))
-
-    return `${timestamp} ${level} ${message} ${coloredEtc}`
-}
-
-function formatHttpLogMessage(
-    message: string,
-    level: string,
-    timestamp: string,
-    logDetails: HttpErrorLog | HttpSuccessLog
-) {
-    const statusCode = styleText('magenta', `${logDetails.statusCode}`)
-    const { request } = logDetails
-    const method = colorizeHttpMethod(request.method)
-    const url = styleText('green', request.url)
-    const nativeBody = defaultTo(request.body, {})
-    const body = styleText('blueBright', JSON.stringify(nativeBody, null, 2))
-
-    return `${timestamp} ${level} HTTP ${message} ${statusCode} ${method} ${url} ${body} `
-}
-
-export type LogFormatter = (
-    message: string,
-    level: string,
-    timestamp: string,
-    logDetails: any
-) => string
 
 export type LoggerConfig = {
     consoleLogLevel: string
-    customFormatters?: Record<string, LogFormatter>
     environment: string
     serviceName: string
     serviceNodeName: string
 }
 
-function createConsoleLogFormat(customFormatters?: Record<string, LogFormatter>) {
-    return winston.format.combine(
-        winston.format.timestamp({ format: 'HH:mm:ss' }),
-        winston.format.printf((info) => {
-            const { level, message, timestamp, ...rest } = info
-
-            const coloredMessage = styleText('white', String(message))
-            const coloredLevel = colorizeLogLevel(level)
-            const coloredTimestamp = styleText('gray', String(timestamp))
-            const logDetails = rest as any
-            const contextType = logDetails?.contextType
-
-            const customFormatter = customFormatters?.[contextType]
-            if (customFormatter) {
-                return customFormatter(coloredMessage, coloredLevel, coloredTimestamp, logDetails)
-            }
-
-            if (contextType === 'http') {
-                return formatHttpLogMessage(
-                    coloredMessage,
-                    coloredLevel,
-                    coloredTimestamp,
-                    logDetails
-                )
-            } else if (contextType === 'service') {
-                return formatServiceLogMessage(
-                    coloredMessage,
-                    coloredLevel,
-                    coloredTimestamp,
-                    logDetails
-                )
-            } else {
-                return formatGenericLogMessage(
-                    coloredMessage,
-                    coloredLevel,
-                    coloredTimestamp,
-                    logDetails
-                )
-            }
-        })
-    )
-}
-
 export function createWinstonLogger(config: LoggerConfig) {
-    const { consoleLogLevel, customFormatters, environment, serviceName, serviceNodeName } = config
+    const { consoleLogLevel, environment, serviceName, serviceNodeName } = config
 
     const transports: winston.transport[] = []
 
-    if (consoleLogLevel && consoleLogLevel !== 'silent') {
-        const consoleFormat =
-            environment === 'production'
-                ? ecsFormat({
-                      apmIntegration: false,
-                      serviceEnvironment: environment,
-                      serviceName,
-                      serviceNodeName
-                  })
-                : createConsoleLogFormat(customFormatters)
-
+    if (consoleLogLevel !== 'silent') {
         transports.push(
             new winston.transports.Console({
-                format: consoleFormat,
+                format: ecsFormat({
+                    apmIntegration: false,
+                    serviceEnvironment: environment,
+                    serviceName,
+                    serviceNodeName
+                }),
                 handleExceptions: true,
                 handleRejections: true,
                 level: consoleLogLevel
@@ -164,6 +29,5 @@ export function createWinstonLogger(config: LoggerConfig) {
         )
     }
 
-    const logger = winston.createLogger({ format: winston.format.json(), transports })
-    return logger
+    return winston.createLogger({ silent: consoleLogLevel === 'silent', transports })
 }

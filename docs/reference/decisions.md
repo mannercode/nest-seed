@@ -212,7 +212,7 @@ Restate로 옮기면 실행 기록과 애플리케이션 코드를 가깝게 두
 
 ### 결정
 
-개발·테스트는 사람이 읽는 콘솔 포맷을 유지하고 production API는 ECS JSON 한 줄을 stdout/stderr로 내보낸다. NGINX access log도 JSON 한 줄이다. 애플리케이션 컨테이너 안에는 별도 로그 파일을 만들지 않는다.
+활성화된 API 콘솔 로그는 환경별 포맷 분기 없이 ECS JSON 한 줄을 stdout/stderr로 내보낸다. Vitest는 콘솔 로그를 끄고 tree 결과만 보여 준다. NGINX access log도 JSON 한 줄이다. 애플리케이션 컨테이너 안에는 별도 로그 파일을 만들지 않는다.
 
 검증용 Compose의 Docker `json-file`은 컨테이너별 10MB × 3으로 회전한다. 장기 저장·검색 backend와 수집기는 배포 환경마다 다르므로 시드에 포함하지 않는다.
 

@@ -7,7 +7,7 @@ import { AppConfigService } from '#config'
 import { AppModule } from './app.module.js'
 
 export async function bootstrap() {
-    // Nest 초기화 로그도 production의 구조화 stdout 계약을 따르도록 로거 준비 전까지 버퍼링한다.
+    // Nest 초기화 로그도 ECS stdout 계약을 따르도록 로거 준비 전까지 버퍼링한다.
     const app = await NestFactory.create(AppModule, { bufferLogs: true })
     const { http } = app.get(AppConfigService)
     const logger = app.get(AppLoggerService)

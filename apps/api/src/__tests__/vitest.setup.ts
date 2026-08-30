@@ -4,6 +4,8 @@ import { setupVitestLifecycle } from '@mannercode/vitest-helpers'
 import { MongoClient } from 'mongodb'
 import { createRequire } from 'node:module'
 
+process.env.LOG_CONSOLE_LEVEL = 'silent'
+
 const require = createRequire(import.meta.url)
 const {
     attachSharedTestMongoConnection,
