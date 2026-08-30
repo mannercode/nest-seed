@@ -181,7 +181,7 @@ SoLA는 원래 마이크로서비스를 염두에 둔 원칙이다. 마이크로
 현재 두 경로가 이 서비스를 탄다.
 
 - **showtime-creation 사가의 상태 브로드캐스트** — 사가가 상태를 NATS에 발행하면 모든 컨테이너의 구독 핸들러가 그 이벤트를 받는다. 각 핸들러는 이벤트를 로컬 RxJS Subject로 넘기고, SSE 컨트롤러는 자기 컨테이너에 붙은 클라이언트에게 흘려보낸다. 서버는 saga별로 스트림을 나누지 않으므로 클라이언트가 payload의 `sagaId`로 자기 작업을 골라야 한다.
-- **purchase 이벤트** — 완료된 구매 기록의 `purchaseEventStatus=pending`이 durable outbox이다. 복제본 중 publication lease를 CAS로 획득한 하나가 JetStream에 `purchaseRecordId`를 message ID로 발행하고, 서버의 저장 확인(PubAck)을 받은 뒤 MongoDB 기록을 `published`로 바꾼다. [PurchaseNotificationService](../apps/api/src/services/application/purchase/internal/purchase-notification.service.ts)는 네 복제본이 같은 durable pull consumer를 공유하고, 처리 성공 뒤 명시적으로 ack한다. 같은 subject의 [PurchaseEventLoggerService](../apps/api/src/services/application/purchase/internal/purchase-event-logger.service.ts)는 Core NATS 구독을 유지해 현재 연결된 모든 복제본에 관측 로그를 남긴다.
+- **purchase 이벤트** — 완료된 구매 기록의 `purchaseEventStatus=pending`이 durable outbox이다. 복제본 중 publication lease를 CAS로 획득한 하나가 JetStream에 `purchaseRecordId`를 message ID로 발행하고, 서버의 저장 확인(PubAck)을 받은 뒤 MongoDB 기록을 `published`로 바꾼다. [PurchaseNotificationService](../apps/api/src/services/application/purchase/internal/purchase-notification.service.ts)는 네 복제본이 같은 durable pull consumer를 공유하고, 처리 성공 뒤 명시적으로 ack한다.
 
 JetStream PubAck와 MongoDB의 `published` 갱신은 한 트랜잭션으로 묶을 수 없다. 저장은 성공했지만 DB 갱신을 잃으면 lease 만료 뒤 같은 이벤트가 다시 발행될 수 있고, 부수 효과 실행 뒤 consumer ack를 잃어도 재전달될 수 있으므로 전체 계약은 **at-least-once**다. `purchaseRecordId` message ID는 10분 duplicate window 안의 재발행을 줄일 뿐 exactly-once를 만들지 않는다. 실제 알림·메일·외부 제공자 호출을 추가할 때는 이 ID를 durable inbox unique key나 provider idempotency key로 사용해야 한다. 현재 알림 소비자는 실제 발송 대신 `dedupeKey`가 포함된 로그만 남긴다.
 

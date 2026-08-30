@@ -5,7 +5,6 @@ import type { PurchaseEvents } from '#application'
 import type { AppTestContext } from '../helpers/index.js'
 
 const NOTIFICATION_LOG = 'would send purchase confirmation'
-const PURCHASED_LOG = 'purchase observed'
 
 const countLogCalls = (logSpy: MockInstance, message: string) =>
     logSpy.mock.calls.filter(([msg]) => msg === message).length
@@ -30,7 +29,7 @@ describe('PurchaseEvents', () => {
 
     afterEach(async () => Promise.all(teardowns.map((teardown) => teardown())))
 
-    it('4개 복제본이 알림은 전체 한 번, 관측 로그는 복제본마다 한 번 처리한다', async () => {
+    it('4개 복제본이 알림을 전체 한 번만 처리한다', async () => {
         const { createAppTestContext } = await import('../helpers/index.js')
         const replicas = await Promise.all(Array.from({ length: 3 }, createAppTestContext))
         teardowns.push(...replicas.map((replica) => replica.teardown))
@@ -42,11 +41,7 @@ describe('PurchaseEvents', () => {
             userId: 'user-1'
         })
 
-        await waitFor(
-            () =>
-                countLogCalls(logSpy, NOTIFICATION_LOG) === 1 &&
-                countLogCalls(logSpy, PURCHASED_LOG) === 4
-        )
+        await waitFor(() => countLogCalls(logSpy, NOTIFICATION_LOG) === 1)
 
         expect(logSpy).toHaveBeenCalledWith(
             NOTIFICATION_LOG,
@@ -60,7 +55,6 @@ describe('PurchaseEvents', () => {
     it('알림 소비자가 중단된 동안 발행한 이벤트를 재시작 뒤 처리한다', async () => {
         const { PurchaseNotificationService } =
             await import('../../services/application/purchase/internal/purchase-notification.service.js')
-        const { waitFor } = await import('./purchase-events.utils.js')
         const notification = fix.module.get(PurchaseNotificationService)
 
         await notification.onModuleDestroy()
@@ -69,10 +63,10 @@ describe('PurchaseEvents', () => {
             ticketIds: ['t1'],
             userId: 'user-1'
         })
-        await waitFor(() => countLogCalls(logSpy, PURCHASED_LOG) === 1)
         expect(countLogCalls(logSpy, NOTIFICATION_LOG)).toBe(0)
 
         await notification.onModuleInit()
+        const { waitFor } = await import('./purchase-events.utils.js')
         await waitFor(() => countLogCalls(logSpy, NOTIFICATION_LOG) === 1)
     })
 

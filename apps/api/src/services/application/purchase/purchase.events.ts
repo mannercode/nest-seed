@@ -30,8 +30,7 @@ export const ticketPurchasedEventSchema = z.object({
 
 export type TicketPurchasedEvent = z.infer<typeof ticketPurchasedEventSchema>
 
-// PROJECT_ID로 stream과 subject를 격리한다. 구매 알림만 durable consumer가 담당하고,
-// 같은 subject의 Core NATS 구독자는 실시간 관측 로그를 계속 fan-out한다.
+// PROJECT_ID로 stream과 subject를 격리하고 구매 알림은 durable consumer가 담당한다.
 @Injectable()
 export class PurchaseEvents implements OnModuleInit {
     private readonly client: JetStreamClient
