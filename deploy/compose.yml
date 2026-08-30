@@ -8,11 +8,6 @@ x-api-base: &api-base
         # 기본 4개로는 요청이 몰릴 때 부족하므로 16개로 늘린다.
         - NODE_ENV=production
         - UV_THREADPOOL_SIZE=16
-    labels:
-        co.elastic.logs/enabled: 'true'
-        co.elastic.logs/json.add_error_key: 'true'
-        co.elastic.logs/json.expand_keys: 'true'
-        co.elastic.logs/json.overwrite_keys: 'true'
     logging: { driver: json-file, options: { max-size: '10m', max-file: '3' } }
     healthcheck:
         retries: 5
@@ -42,11 +37,6 @@ services:
         volumes: ['./nginx.conf:/etc/nginx/nginx.conf:ro']
         depends_on:
             api: { condition: service_healthy }
-        labels:
-            co.elastic.logs/enabled: 'true'
-            co.elastic.logs/json.add_error_key: 'true'
-            co.elastic.logs/json.expand_keys: 'true'
-            co.elastic.logs/json.overwrite_keys: 'true'
         logging: { driver: json-file, options: { max-size: '10m', max-file: '3' } }
         healthcheck:
             # Alpine은 localhost를 ::1로 먼저 해석하지만 이 검증용 NGINX는 IPv4만 listen한다.

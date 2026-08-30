@@ -79,7 +79,6 @@ updates:
       directories:
           - '/deploy'
           - '/infra'
-          - '/infra/logging'
       schedule:
           interval: weekly
       allow:
@@ -88,10 +87,6 @@ updates:
                 - version-update:semver-minor
                 - version-update:semver-patch
       groups:
-          # Elastic Stack은 세 구성요소의 버전을 함께 유지한다.
-          elastic-stack-minor-patch:
-              patterns: ['*elasticsearch*', '*kibana*', '*filebeat*']
-              update-types: ['minor', 'patch']
           compose-minor-patch:
               group-by: dependency-name
               patterns: ['*']

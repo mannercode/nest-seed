@@ -513,12 +513,7 @@ test('container base and infrastructure image references are digest-pinned', asy
         'devcontainer, dependency builder, and API runtime must use one Node tag and digest'
     )
 
-    for (const compose of [
-        'deploy/compose.yml',
-        'infra/compose.s3.yml',
-        'infra/compose.yml',
-        'infra/logging/compose.yml'
-    ]) {
+    for (const compose of ['deploy/compose.yml', 'infra/compose.s3.yml', 'infra/compose.yml']) {
         const contents = await read(compose)
         for (const [, image] of contents.matchAll(/^\s*image:\s+([^$\s][^\s]*)/gm)) {
             if (image === 'nest-seed-api') continue
@@ -527,48 +522,20 @@ test('container base and infrastructure image references are digest-pinned', asy
     }
 })
 
-test('optional logging stack keeps collection bounded and explicitly enabled', async () => {
-    const script = await read('infra/logging/compose.sh')
-    const loggingCompose = await read('infra/logging/compose.yml')
-    const filebeat = await read('infra/logging/filebeat.yml')
-    const ilmPolicy = JSON.parse(await read('infra/logging/ilm-policy.json'))
+test('deployment logs stay on structured stdout with bounded Docker files', async () => {
     const deployCompose = await read('deploy/compose.yml')
+    const nginx = await read('deploy/nginx.conf')
 
-    assert.match(script, /--project-name "\$\{logging_network_name\}-logging"/)
-    assert.match(loggingCompose, /name: \$\{LOGGING_NETWORK_NAME:\?[^}]+\}/)
-    assert.match(loggingCompose, /^\s+external: true$/m)
-    const elasticVersions = [
-        ...loggingCompose.matchAll(
-            /^\s+image: docker\.elastic\.co\/[^:\s]+:(\d+\.\d+\.\d+)@sha256:/gm
-        )
-    ].map(([, version]) => version)
-    assert.equal(elasticVersions.length, 3)
-    assert.equal(new Set(elasticVersions).size, 1, 'Elastic Stack images must use one version')
-
-    for (const mount of [
-        '/var/lib/docker/containers:/var/lib/docker/containers:ro',
-        '/var/run/docker.sock:/var/run/docker.sock:ro',
-        'filebeat_data:/usr/share/filebeat/data'
-    ]) {
-        assert.match(loggingCompose, new RegExp(mount.replaceAll('/', '\\/')))
-    }
-    assert.match(filebeat, /hints\.default_config:\s+enabled: false/)
-    assert.match(filebeat, /queue\.disk:\s+max_size: 512MB/)
-    assert.match(filebeat, /policy_file: \/usr\/share\/filebeat\/ilm-policy\.json/)
-    assert.deepEqual(ilmPolicy.policy.phases.hot.actions.rollover, {
-        max_age: '1d',
-        max_primary_shard_size: '10gb'
-    })
-    assert.equal(ilmPolicy.policy.phases.delete.min_age, '7d')
-
-    assert.equal(deployCompose.match(/co\.elastic\.logs\/enabled: 'true'/g)?.length, 2)
-    assert.equal(deployCompose.match(/co\.elastic\.logs\/json\.expand_keys: 'true'/g)?.length, 2)
     assert.equal(
         deployCompose.match(
             /logging: \{ driver: json-file, options: \{ max-size: '10m', max-file: '3' \} \}/g
         )?.length,
         2
     )
+    assert.doesNotMatch(deployCompose, /co\.elastic\.logs/)
+    assert.match(nginx, /access_log \/dev\/stdout ecs_json/)
+    assert.match(nginx, /error_log\s+\/dev\/stderr warn/)
+    assert.match(nginx, /\/health 0/)
 })
 
 test('Restate keeps durable execution data on its named volume', async () => {
@@ -653,11 +620,7 @@ test('Dependabot keeps routine updates direct, related, and non-major', async ()
     assert.equal(config.match(/group-by: dependency-name/g)?.length, 2)
     assert.match(
         config,
-        /package-ecosystem: docker-compose\s+directories:\s+- '\/deploy'\s+- '\/infra'\s+- '\/infra\/logging'/
-    )
-    assert.match(
-        config,
-        /elastic-stack-minor-patch:\s+patterns: \['\*elasticsearch\*', '\*kibana\*', '\*filebeat\*'\]\s+update-types: \['minor', 'patch'\]/
+        /package-ecosystem: docker-compose\s+directories:\s+- '\/deploy'\s+- '\/infra'/
     )
     assert.match(workflow, /dependabot\/fetch-metadata@[a-f0-9]{40}/)
     assert.match(workflow, /version-update:semver-major/)

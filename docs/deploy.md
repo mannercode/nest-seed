@@ -93,11 +93,11 @@ API 컨테이너는 `${COMPOSE_PROJECT_NAME}` Docker 네트워크에 붙은 뒤,
 
 `verify.sh`는 Dev Container 환경 변수인 `WORKSPACE_ROOT`를 사용한다. 배포 검증도 Dev Container 안에서 실행하는 것을 기준으로 한다.
 
-## 로그 출력과 선택형 중앙 저장
+## 로그 출력과 로컬 회전
 
 API는 production에서 ECS JSON 한 줄을 stdout/stderr로 내보내고 NGINX access log도 JSON 한 줄을 쓴다. 컨테이너 안에 별도 회전 파일을 만들지 않는다. Compose의 `json-file` driver는 컨테이너별 10MB 파일 3개까지만 로컬 버퍼로 남겨 호스트 디스크가 무한히 차는 것을 막는다.
 
-장기간 검색이 필요하면 [개발 인프라 문서의 선택형 중앙 로그 저장](infra.md#선택형-중앙-로그-저장)을 먼저 띄운다. 배포 컨테이너의 `co.elastic.logs/*` label을 본 Filebeat가 Docker 로그를 Elasticsearch로 보내며, Elasticsearch가 중단된 동안 이미 읽은 이벤트는 512MB 디스크 큐에 보존한다. 기본 `LOG_CONSOLE_LEVEL=info`에서는 NGINX가 요청별 access log를, API가 애플리케이션 info 이상을 남겨 같은 성공 요청을 두 번 상세 기록하지 않는다.
+로그 저장·검색 backend는 배포 환경마다 다르므로 시드에 포함하지 않는다. 실제 프로젝트는 stdout을 해당 환경의 수집기로 전달한다. 기본 `LOG_CONSOLE_LEVEL=info`에서는 NGINX가 요청별 access log를, API가 애플리케이션 info 이상을 남겨 같은 성공 요청을 두 번 상세 기록하지 않는다.
 
 ## 프런트엔드 BFF와 클라이언트 IP 경계
 
