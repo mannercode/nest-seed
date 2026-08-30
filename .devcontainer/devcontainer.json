@@ -46,7 +46,6 @@
     "customizations": {
         "vscode": {
             "extensions": [
-                "dbaeumer.vscode-eslint",
                 "firsttris.vscode-jest-runner",
                 "ms-vscode.live-server",
                 "jebbs.plantuml",
