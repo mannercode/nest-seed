@@ -1,14 +1,25 @@
 import { HttpStatus } from '@nestjs/common'
 import superagent, { type Response } from 'superagent'
 
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
+const ISO_YEAR = '(?:[+-]\\d{6}|\\d{4})'
+const ISO_DATE = new RegExp(`^${ISO_YEAR}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,9})?Z$`)
+const ISO_PLAIN_DATE = new RegExp(`^${ISO_YEAR}-\\d{2}-\\d{2}$`)
 
 // libs/testing이 @mannercode/common을 런타임 의존성으로 갖지 않도록 인라인으로 둔다.
 // @mannercode/common의 JsonUtil.parse와 같은 역할을 한다.
 function parseJsonResponse(text: string): unknown {
     return JSON.parse(quoteUnsafeIntegers(text), (_key, value) => {
-        if (typeof value === 'string' && ISO_DATE.test(value)) {
-            return new Date(value)
+        if (typeof value === 'string') {
+            try {
+                if (ISO_DATE.test(value)) {
+                    return Temporal.Instant.fromEpochMilliseconds(
+                        Temporal.Instant.from(value).epochMilliseconds
+                    )
+                }
+                if (ISO_PLAIN_DATE.test(value)) return Temporal.PlainDate.from(value)
+            } catch {
+                return value
+            }
         }
         return value
     })

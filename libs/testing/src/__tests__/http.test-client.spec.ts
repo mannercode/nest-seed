@@ -22,11 +22,31 @@ describe('HttpTestClient', () => {
             expect(body.note).toBe('id: 9223372036854775807')
         })
 
-        it('ISO 8601 형식의 타임스탬프를 Date 객체로 되살린다', async () => {
+        it('ISO 8601 형식의 타임스탬프를 Instant로 되살린다', async () => {
             const { body } = await fix.httpClient.get('/timestamp').ok()
 
-            expect(body.at).toBeInstanceOf(Date)
-            expect(body.at.toISOString()).toBe('2023-06-18T12:12:34.567Z')
+            expect(body.at).toBeInstanceOf(Temporal.Instant)
+            expect(body.at.toString()).toBe('2023-06-18T12:12:34.567Z')
+        })
+
+        it('날짜 전용 응답을 PlainDate로 되살린다', async () => {
+            const { body } = await fix.httpClient.get('/plain-date').ok()
+
+            expect(body.date).toBeInstanceOf(Temporal.PlainDate)
+            expect(body.date.toString()).toBe('2023-06-18')
+        })
+
+        it('확장 연도 응답도 Temporal로 되살린다', async () => {
+            const { body } = await fix.httpClient.get('/expanded-temporal').ok()
+
+            expect(body.at).toEqual(Temporal.Instant.from('+010000-01-02T03:04:05Z'))
+            expect(body.date).toEqual(Temporal.PlainDate.from('-000001-12-31'))
+        })
+
+        it('ISO 모양이지만 잘못된 날짜 응답은 문자열로 보존한다', async () => {
+            const { body } = await fix.httpClient.get('/invalid-temporal').ok()
+
+            expect(body).toEqual({ at: '2025-13-01T00:00:00Z', date: '2025-02-30' })
         })
     })
 

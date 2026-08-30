@@ -1,4 +1,18 @@
-import { isDebuggingEnabled, oid, step, withTestId } from '../utils.js'
+import { instant, isDebuggingEnabled, oid, plainDate, step, withTestId } from '../utils.js'
+
+describe('Temporal fixtures', () => {
+    it('시각 문자열과 epoch 값을 밀리초 Instant로 만든다', () => {
+        expect(instant('2025-01-02T03:04Z').toString()).toBe('2025-01-02T03:04:00Z')
+        expect(instant(1).epochMilliseconds).toBe(1)
+        expect(instant(Temporal.Instant.fromEpochMilliseconds(2)).epochMilliseconds).toBe(2)
+    })
+
+    it('날짜 전용 문자열과 PlainDate만 PlainDate로 만든다', () => {
+        expect(plainDate('2025-01-02').toString()).toBe('2025-01-02')
+        expect(plainDate(Temporal.PlainDate.from('2025-01-02')).toString()).toBe('2025-01-02')
+        expect(() => plainDate('2025-01-02T23:59Z')).toThrow('Expected an ISO calendar date')
+    })
+})
 
 describe('step', () => {
     it('콜백을 실행한다', async () => {

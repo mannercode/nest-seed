@@ -32,6 +32,23 @@ class HttpTestClientController {
         return { at: new Date('2023-06-18T12:12:34.567Z') }
     }
 
+    @Get('plain-date')
+    getPlainDate() {
+        return { date: Temporal.PlainDate.from('2023-06-18') }
+    }
+
+    @Get('expanded-temporal')
+    @Header('Content-Type', 'application/json')
+    getExpandedTemporal(@Res() res: Response) {
+        res.send('{"at":"+010000-01-02T03:04:05Z","date":"-000001-12-31"}')
+    }
+
+    @Get('invalid-temporal')
+    @Header('Content-Type', 'application/json')
+    getInvalidTemporal(@Res() res: Response) {
+        res.send('{"at":"2025-13-01T00:00:00Z","date":"2025-02-30"}')
+    }
+
     @Get('always-200')
     getAlways200() {
         return { ok: true }
