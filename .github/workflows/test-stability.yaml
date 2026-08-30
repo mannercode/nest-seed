@@ -98,14 +98,12 @@ jobs:
               env:
                   DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
                   DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-                  MONGO_DIAGNOSTICS_ON_TEST_FAILURE: 'true'
               with:
                   configFile: .devcontainer/devcontainer.json
                   push: never
                   env: |
                       DOCKERHUB_USERNAME
                       DOCKERHUB_TOKEN
-                      MONGO_DIAGNOSTICS_ON_TEST_FAILURE
                   runCmd: |
                       set -Eeuo pipefail
                       git diff --exit-code -- pnpm-lock.yaml pnpm-workspace.yaml

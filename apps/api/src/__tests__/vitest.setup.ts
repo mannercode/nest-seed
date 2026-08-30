@@ -17,7 +17,7 @@ const { initializeApiVitestWorkerEnvironment } = require('../../scripts/vitest-r
 const resourceScope = initializeApiVitestWorkerEnvironment()
 
 const { createMongoDriverOptions } = await import('../config/mongo-driver-options.js')
-const { registerMongoClientDiagnostics } = await import('../modules/mongo-setup.module.js')
+const { registerMongoClientDiagnostics } = await import('./support/mongo-client-diagnostics.js')
 
 const sharedMongoAppName = () =>
     `nest-seed-test-w${process.env.VITEST_POOL_ID ?? '0'}-p${process.pid}-shared`

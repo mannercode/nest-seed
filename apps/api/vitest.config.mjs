@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
 
 import { createVitestBase } from '../../vitest.config.base.mjs'
-import VitestFailureDiagnosticsReporter from './scripts/vitest-failure-diagnostics-reporter.cjs'
 import { initializeApiVitestRun } from './scripts/vitest-run-context.cjs'
 
 const appDirectory = path.dirname(fileURLToPath(import.meta.url))
@@ -37,7 +36,6 @@ export default defineConfig({
             thresholds: { 100: true }
         },
         globalSetup: [path.join(appDirectory, 'vitest.global.cjs')],
-        reporters: ['tree', new VitestFailureDiagnosticsReporter()],
         setupFiles: [path.join(appDirectory, 'src/__tests__/vitest.setup.ts')]
     }
 })
