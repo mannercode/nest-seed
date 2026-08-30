@@ -1,4 +1,5 @@
 import type { MongoClient, MongoClientEvents } from 'mongodb'
+import { DateUtil } from '@mannercode/common'
 
 type MongoClientEvent<EventName extends keyof MongoClientEvents> = Parameters<
     MongoClientEvents[EventName]
@@ -77,7 +78,7 @@ export function registerMongoClientDiagnostics(
     }
 
     const logDiagnostic = (kind: string, address: string, event: Record<string, unknown>) => {
-        const now = Date.now()
+        const now = performance.now()
         const reason = typeof event.reason === 'string' ? event.reason : ''
         const key = `${kind}:${address}:${reason}`
         const previous = lastDiagnosticAt.get(key) ?? 0
@@ -108,7 +109,7 @@ export function registerMongoClientDiagnostics(
                   }
                 : {}),
             suppressedSincePrevious: suppressedDiagnostics.get(key) ?? 0,
-            time: new Date(now).toISOString(),
+            time: DateUtil.toISOString(DateUtil.now()),
             topology
         }
         suppressedDiagnostics.delete(key)
