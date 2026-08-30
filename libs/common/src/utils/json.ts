@@ -1,59 +1,46 @@
-function isDateString(value: unknown): value is string {
-    const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
-    return typeof value === 'string' && ISO_DATE.test(value)
+import { DateUtil } from './date.js'
+
+const ISO_YEAR = '(?:[+-]\\d{6}|\\d{4})'
+const ISO_INSTANT = new RegExp(`^${ISO_YEAR}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,9})?Z$`)
+const ISO_PLAIN_DATE = new RegExp(`^${ISO_YEAR}-\\d{2}-\\d{2}$`)
+
+function reviveTemporalValue(value: unknown): unknown {
+    if (typeof value !== 'string') return value
+    try {
+        if (ISO_INSTANT.test(value)) return DateUtil.fromISOString(value)
+        if (ISO_PLAIN_DATE.test(value)) return Temporal.PlainDate.from(value)
+    } catch {
+        // JSON 문법과 DTO 날짜 유효성은 별개다. 잘못된 날짜 문자열은 입력 스키마가 판단한다.
+    }
+    return value
 }
 
 export class JsonUtil {
     /**
      * JSON 문자열을 파싱한다. JavaScript 안전 정수 범위를 벗어난 부호 있는 64비트 정수는
-     * 문자열로 보존하고, `Date.toISOString()` 형태의 값은 Date 객체로 변환한다.
+     * 문자열로 보존하고, 엄격한 UTC instant와 날짜 전용 문자열은 Temporal 값으로 변환한다.
      */
     static parse(text: string): any {
-        return JSON.parse(JsonUtil.quoteIntegers(text), JsonUtil.dateReviver)
+        return JSON.parse(JsonUtil.quoteIntegers(text), JsonUtil.temporalReviver)
     }
 
-    /**
-     * JSON 형태의 객체를 재귀적으로 순회하며 `Date.toISOString()` 형태의 문자열을
-     * Date 객체로 변환한다.
-     */
-    static reviveDates(input: any): any {
-        if (isDateString(input)) {
-            return new Date(input)
+    /** Instant를 기존 Date JSON 계약과 같은 밀리초 3자리 UTC 문자열로 고정한다. */
+    static stringify(value: unknown): string {
+        const serialized: unknown = JSON.stringify(value, JsonUtil.temporalReplacer)
+        if (typeof serialized !== 'string') {
+            throw new TypeError('Value cannot be represented as JSON.')
         }
-
-        if (input === null || typeof input !== 'object') {
-            return input
-        }
-
-        if (input instanceof Date) {
-            return input
-        }
-
-        if (Array.isArray(input)) {
-            return input.map((item) => JsonUtil.reviveDates(item))
-        }
-
-        const convertedObject: Record<string, unknown> = {}
-        const source = input as Record<string, unknown>
-
-        for (const [key, nestedValue] of Object.entries(source)) {
-            if (typeof nestedValue === 'object') {
-                convertedObject[key] = JsonUtil.reviveDates(nestedValue)
-            } else if (isDateString(nestedValue)) {
-                convertedObject[key] = new Date(nestedValue)
-            } else {
-                convertedObject[key] = nestedValue
-            }
-        }
-
-        return convertedObject
+        return serialized
     }
 
-    private static dateReviver(_key: string, value: unknown): unknown {
-        if (isDateString(value)) {
-            return new Date(value)
-        }
-        return value
+    /** Express의 `json replacer`에도 그대로 등록할 수 있다. */
+    static temporalReplacer(this: Record<string, unknown>, key: string, value: unknown): unknown {
+        const original = this[key]
+        return original instanceof Temporal.Instant ? DateUtil.toISOString(original) : value
+    }
+
+    private static temporalReviver(_key: string, value: unknown): unknown {
+        return reviveTemporalValue(value)
     }
 
     /**

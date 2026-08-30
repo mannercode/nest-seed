@@ -102,13 +102,18 @@ describe('CrudRepository', () => {
 
             expect(created).toMatchObject({
                 __v: 0,
-                createdAt: expect.any(Date),
+                createdAt: expect.any(Temporal.Instant),
                 deletedAt: null,
                 id: expect.any(String),
                 name: 'sample',
+                updatedAt: expect.any(Temporal.Instant)
+            })
+            expect(stored).toMatchObject({
+                _id: objectId(created.id),
+                createdAt: expect.any(Date),
+                name: 'sample',
                 updatedAt: expect.any(Date)
             })
-            expect(stored).toMatchObject({ _id: objectId(created.id), name: 'sample' })
             expect(stored).not.toHaveProperty('id')
             expect(insertOne).toHaveBeenCalledWith(
                 expect.any(Object),
@@ -358,7 +363,7 @@ describe('CrudRepository', () => {
             const filter = { name: 'sample' }
 
             expect(fix.soft.toActiveFilter(filter)).toEqual({ $and: [filter, { deletedAt: null }] })
-            expect(fix.hard.toActiveFilter(filter)).toBe(filter)
+            expect(fix.hard.toActiveFilter(filter)).toEqual(filter)
         })
 
         it('갱신에 timestamp와 version 증가를 합친다', () => {

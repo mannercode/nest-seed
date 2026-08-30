@@ -1,7 +1,8 @@
 import { BadRequestException, Logger } from '@nestjs/common'
-import { MongoWriteConcernError, ObjectId } from 'mongodb'
+import { Decimal128, MongoWriteConcernError, ObjectId } from 'mongodb'
 import {
     assignIfDefined,
+    encodeMongoValues,
     isDuplicateKeyError,
     isWriteConcernTimeoutError,
     mapDocToDto,
@@ -10,6 +11,7 @@ import {
     newObjectIdString,
     objectId,
     objectIds,
+    plainDateFromMongo,
     QueryBuilder,
     withoutPublicId
 } from '../mongo.util.js'
@@ -65,10 +67,74 @@ describe('Mongo document mapping', () => {
         expect(withoutPublicId(input)).toEqual({ name: 'sample' })
         expect(input).toEqual({ id: 'public', name: 'sample' })
     })
+
+    it('Instant와 PlainDate를 의미에 맞는 BSON Date로 저장한다', () => {
+        const at = Temporal.Instant.from('2025-01-01T12:34:56.789Z')
+        const date = Temporal.PlainDate.from('2025-01-01')
+
+        expect(encodeMongoValues({ at, date })).toEqual({
+            at: new Date('2025-01-01T12:34:56.789Z'),
+            date: new Date('2025-01-01T00:00:00.000Z')
+        })
+    })
+
+    it('DTO class 내부의 Temporal은 변환하고 BSON 원자값은 보존한다', () => {
+        class NestedDto {
+            at = Temporal.Instant.from('2025-01-01T12:34:56.789Z')
+        }
+
+        const id = new ObjectId()
+        const decimal = Decimal128.fromString('12.34')
+        const customBson = { toBSON: () => ({ value: 'serialized by the driver' }) }
+        const encoded = encodeMongoValues({ customBson, decimal, id, nested: new NestedDto() })
+
+        expect(encoded).toEqual({
+            customBson,
+            decimal,
+            id,
+            nested: { at: new Date('2025-01-01T12:34:56.789Z') }
+        })
+        expect(encodeMongoValues(id)).toBe(id)
+        expect(encodeMongoValues(decimal)).toBe(decimal)
+        expect(encodeMongoValues(customBson)).toBe(customBson)
+    })
+
+    it('BSON Date timestamp를 Instant로 복원한다', () => {
+        const _id = new ObjectId()
+        const mapped = mongoToPublic<{
+            at: Temporal.Instant
+            history: Array<{ at: Temporal.Instant }>
+            id: string
+        }>({
+            _id,
+            at: new Date('2025-01-01T12:34:56.789Z'),
+            history: [{ at: new Date('2025-01-01T12:34:56.789Z') }]
+        })
+
+        expect(mapped.at).toBeInstanceOf(Temporal.Instant)
+        expect(mapped.at.toString()).toBe('2025-01-01T12:34:56.789Z')
+        expect(mapped.history[0]?.at).toBeInstanceOf(Temporal.Instant)
+    })
+
+    it('BSON Date와 이미 정규화된 값을 PlainDate로 변환한다', () => {
+        const current = Temporal.PlainDate.from('2025-01-01')
+        const instant = Temporal.Instant.from('2025-01-01T00:00:00.000Z')
+
+        expect(plainDateFromMongo(current)).toBe(current)
+        expect(plainDateFromMongo(instant).toString()).toBe('2025-01-01')
+        expect(plainDateFromMongo(new Date('2025-01-01T00:00:00.000Z')).toString()).toBe(
+            '2025-01-01'
+        )
+    })
 })
 
 describe('QueryBuilder', () => {
-    type TestDocument = { _id: ObjectId; createdAt: Date; entityId: string; name: string }
+    type TestDocument = {
+        _id: ObjectId
+        createdAt: Temporal.Instant
+        entityId: string
+        name: string
+    }
 
     let builder: QueryBuilder<TestDocument>
 
@@ -103,16 +169,20 @@ describe('QueryBuilder', () => {
     })
 
     it('날짜 범위의 양끝 또는 한쪽 끝만 추가한다', () => {
-        const start = new Date('2025-01-01')
-        const end = new Date('2025-01-02')
+        const start = Temporal.Instant.from('2025-01-01T00:00:00Z')
+        const end = Temporal.Instant.from('2025-01-02T00:00:00Z')
+        const storedStart = new Date('2025-01-01T00:00:00Z')
+        const storedEnd = new Date('2025-01-02T00:00:00Z')
 
         expect(builder.addRange('createdAt', { end, start }).build()).toEqual({
-            createdAt: { $gte: start, $lte: end }
+            createdAt: { $gte: storedStart, $lte: storedEnd }
         })
         expect(new QueryBuilder().addRange('at', { start }).build()).toEqual({
-            at: { $gte: start }
+            at: { $gte: storedStart }
         })
-        expect(new QueryBuilder().addRange('at', { end }).build()).toEqual({ at: { $lte: end } })
+        expect(new QueryBuilder().addRange('at', { end }).build()).toEqual({
+            at: { $lte: storedEnd }
+        })
         expect(
             new QueryBuilder()
                 .addRange('a', undefined)

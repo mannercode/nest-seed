@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { Redis } from 'ioredis'
 import { randomUUID } from 'node:crypto'
 import { setTimeout as sleep } from 'node:timers/promises'
-import { defaultTo } from '../utils/index.js'
+import { DateUtil, defaultTo } from '../utils/index.js'
 
 @Injectable()
 export class CacheService {
@@ -63,7 +63,7 @@ export class CacheService {
     ): Promise<{ ran: false } | { ran: true; result: T }> {
         if (ttlMs <= 0) throw new Error('Lock TTL must be a positive integer (ms)')
 
-        const token = `${process.pid}:${Date.now()}:${randomUUID()}`
+        const token = `${process.pid}:${DateUtil.toEpochMilliseconds(DateUtil.now())}:${randomUUID()}`
         const lockKey = this.getKey(`lock:${key}`)
         const acquired = await this.redis.set(lockKey, token, 'PX', ttlMs, 'NX')
 
@@ -99,7 +99,7 @@ export class CacheService {
             waitMs = 2 * 60 * 1000
         }: { pollMs?: number; signal?: AbortSignal; waitMs?: number } = {}
     ): Promise<T> {
-        const deadline = Date.now() + waitMs
+        const deadline = performance.now() + waitMs
         for (;;) {
             signal?.throwIfAborted()
             // Redis SET을 기다리는 동안 취소됐을 수 있으므로 실제 callback 진입 직전에도 확인한다.
@@ -108,7 +108,7 @@ export class CacheService {
                 return fn()
             })
             if (attempt.ran) return attempt.result
-            if (Date.now() >= deadline) {
+            if (performance.now() >= deadline) {
                 throw new Error(`withLockBlocking: could not acquire '${key}' within ${waitMs}ms`)
             }
             await sleep(pollMs, undefined, { signal })

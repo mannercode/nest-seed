@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common'
 import { ObjectId, type Document, type Filter } from 'mongodb'
-import { Assume, escapeRegExp, uniq } from '../utils/index.js'
+import { Assume, DateUtil, escapeRegExp, uniq } from '../utils/index.js'
 import { MongoErrors } from './errors.js'
 
 export const newObjectIdString = () => new ObjectId().toHexString()
@@ -19,6 +19,7 @@ export function mongoToPublic<T>(doc: Document & { _id: ObjectId }): T
 export function mongoToPublic<T>(doc: null | (Document & { _id: ObjectId })): null | T
 export function mongoToPublic<T>(doc: null | (Document & { _id: ObjectId })): null | T {
     if (!doc) return null
+    decodeMongoDates(doc)
     return Object.assign(doc, { id: doc._id.toHexString() }) as T
 }
 
@@ -26,10 +27,69 @@ export function mongoArrayToPublic<T>(docs: Array<Document & { _id: ObjectId }>)
     return docs.map((doc) => mongoToPublic<T>(doc))
 }
 
-export function withoutPublicId<T>(doc: T & { id?: string }): Omit<T, 'id'> {
+export function withoutPublicId<T extends object>(doc: T & { id?: string }): Document {
     const stored = { ...doc }
     delete stored.id
-    return stored
+    return encodeMongoDocument(stored)
+}
+
+/** MongoDB driver 경계에서 Temporal 값을 BSON이 이해하는 값으로 변환한다. */
+export function encodeMongoValues(value: unknown): unknown {
+    if (value instanceof Temporal.Instant) return DateUtil.toDate(value)
+    if (value instanceof Temporal.PlainDate) return DateUtil.plainDateToDate(value)
+    if (Array.isArray(value)) return value.map(encodeMongoValues)
+    if (!isEncodableRecord(value)) return value
+
+    return Object.fromEntries(
+        Object.entries(value).map(([key, nested]) => [key, encodeMongoValues(nested)])
+    )
+}
+
+/** Mongo driver가 받는 document 형태라는 단언을 Temporal 변환 경계 한 곳에 모은다. */
+export function encodeMongoDocument(value: object): Document {
+    return encodeMongoValues(value) as Document
+}
+
+function isEncodableRecord(value: unknown): value is Record<string, unknown> {
+    if (
+        value === null ||
+        typeof value !== 'object' ||
+        Object.prototype.toString.call(value) !== '[object Object]'
+    ) {
+        return false
+    }
+
+    return !('_bsontype' in value) && !('toBSON' in value && typeof value.toBSON === 'function')
+}
+
+/** BSON Date로 저장된 날짜 전용 필드를 PlainDate로 정규화한다. */
+export function plainDateFromMongo(
+    value: Date | Temporal.Instant | Temporal.PlainDate
+): Temporal.PlainDate {
+    if (value instanceof Temporal.PlainDate) return value
+    if (value instanceof Temporal.Instant) return DateUtil.toPlainDate(DateUtil.toDate(value))
+    return DateUtil.toPlainDate(value)
+}
+
+function decodeMongoDates(value: unknown): unknown {
+    if (value instanceof Date) return DateUtil.fromDate(value)
+    if (Array.isArray(value)) {
+        for (let index = 0; index < value.length; index++)
+            value[index] = decodeMongoDates(value[index])
+        return value
+    }
+    if (!isPlainObject(value)) return value
+
+    for (const [key, nested] of Object.entries(value)) {
+        value[key] = decodeMongoDates(nested)
+    }
+    return value
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+    if (value === null || typeof value !== 'object') return false
+    const prototype = Object.getPrototypeOf(value)
+    return prototype === Object.prototype || prototype === null
 }
 
 export function isDuplicateKeyError(error: unknown): boolean {
@@ -116,7 +176,7 @@ export class QueryBuilder<_T> {
         return this
     }
 
-    addRange(field: string, range?: { end?: Date; start?: Date }): this {
+    addRange(field: string, range?: { end?: Temporal.Instant; start?: Temporal.Instant }): this {
         if (range) {
             const { end, start } = range
             if (start && end) this.query[field] = { $gte: start, $lte: end }
@@ -144,7 +204,7 @@ export class QueryBuilder<_T> {
         if (!allowEmpty && Object.keys(this.query).length === 0) {
             throw new BadRequestException(MongoErrors.FiltersRequired())
         }
-        return this.query as Filter<Document>
+        return encodeMongoDocument(this.query)
     }
 }
 

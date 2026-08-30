@@ -10,7 +10,7 @@ import type {
     SecurityEvent,
     ValidateAuthPayload
 } from './jwt-auth.types.js'
-import { defaultTo, generateShortId, getByPath, omit } from '../utils/index.js'
+import { DateUtil, defaultTo, generateShortId, getByPath, omit } from '../utils/index.js'
 
 export const JwtAuthErrors = {
     RefreshTokenConcurrent: () => ({
@@ -93,7 +93,7 @@ export class JwtAuthService {
             userId,
             familyId,
             tokenId: result.refreshTokenId,
-            at: new Date(),
+            at: DateUtil.now(),
             context
         })
         return result.tokens
@@ -112,7 +112,7 @@ export class JwtAuthService {
             await this.emit({
                 type: 'verify.failed',
                 reason: 'invalid_payload',
-                at: new Date(),
+                at: DateUtil.now(),
                 context
             })
             throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
@@ -132,7 +132,7 @@ export class JwtAuthService {
             await this.emit({
                 type: 'verify.failed',
                 reason: 'hash_mismatch',
-                at: new Date(),
+                at: DateUtil.now(),
                 context
             })
             throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
@@ -161,7 +161,7 @@ export class JwtAuthService {
             familyId,
             oldTokenId: tokenId,
             newTokenId: result.refreshTokenId,
-            at: new Date(),
+            at: DateUtil.now(),
             context
         })
         return result.tokens
@@ -179,7 +179,7 @@ export class JwtAuthService {
             userId,
             familyId,
             reason: 'logout',
-            at: new Date(),
+            at: DateUtil.now(),
             context
         })
     }
@@ -194,7 +194,7 @@ export class JwtAuthService {
                 userId,
                 familyId,
                 reason: 'logout_all',
-                at: new Date(),
+                at: DateUtil.now(),
                 context
             })
         }
@@ -211,7 +211,7 @@ export class JwtAuthService {
         await this.emit({
             type: 'verify.failed',
             reason: 'account_revoked',
-            at: new Date(),
+            at: DateUtil.now(),
             context
         })
         throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
@@ -237,7 +237,7 @@ export class JwtAuthService {
                 userId,
                 familyId,
                 presentedTokenId: tokenId,
-                at: new Date(),
+                at: DateUtil.now(),
                 context
             })
             await this.emit({
@@ -245,7 +245,7 @@ export class JwtAuthService {
                 userId,
                 familyId,
                 reason: 'reuse',
-                at: new Date(),
+                at: DateUtil.now(),
                 context
             })
             throw new UnauthorizedException(JwtAuthErrors.RefreshTokenReuseDetected())
@@ -254,7 +254,7 @@ export class JwtAuthService {
         await this.emit({
             type: 'verify.failed',
             reason: 'token_not_found',
-            at: new Date(),
+            at: DateUtil.now(),
             context
         })
         throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
@@ -300,12 +300,12 @@ export class JwtAuthService {
         // 만료만 별도 401로 구분하고 나머지 검증 오류는 invalid token으로 통일한다.
         const peek = this.jwtService.decode<Record<string, unknown> | null>(token)
         const exp = peek?.exp
-        if (typeof exp === 'number' && exp < Date.now() / 1000) {
+        if (typeof exp === 'number' && exp < DateUtil.toEpochMilliseconds(DateUtil.now()) / 1000) {
             if (emitOnFailure) {
                 await this.emit({
                     type: 'verify.failed',
                     reason: 'token expired',
-                    at: new Date(),
+                    at: DateUtil.now(),
                     context
                 })
             }
@@ -323,7 +323,12 @@ export class JwtAuthService {
         } catch (error) {
             if (emitOnFailure) {
                 const { message } = error as Error
-                await this.emit({ type: 'verify.failed', reason: message, at: new Date(), context })
+                await this.emit({
+                    type: 'verify.failed',
+                    reason: message,
+                    at: DateUtil.now(),
+                    context
+                })
             }
             throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
         }
@@ -444,7 +449,7 @@ export class JwtAuthService {
         await this.emit({
             type: 'verify.failed',
             reason: 'concurrent_refresh',
-            at: new Date(),
+            at: DateUtil.now(),
             context
         })
         throw new ConflictException(JwtAuthErrors.RefreshTokenConcurrent())

@@ -29,7 +29,12 @@ export type S3ObjectModuleOptions = {
     useFactory: (...args: any[]) => Promise<S3ServiceConfig> | S3ServiceConfig
 }
 
-export type S3ObjectSummary = { eTag?: string; key: string; lastModified?: Date; size?: number }
+export type S3ObjectSummary = {
+    eTag?: string
+    key: string
+    lastModified?: Temporal.Instant
+    size?: number
+}
 
 export type S3PresignDownloadOptions = {
     /** 다운로드할 때 강제로 쓸 파일 이름. */

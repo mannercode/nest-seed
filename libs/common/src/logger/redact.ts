@@ -30,7 +30,7 @@ function walk(value: unknown, seen: WeakSet<object>): unknown {
         return value.map((v) => walk(v, seen))
     }
     if (value !== null && typeof value === 'object') {
-        // Date·Error 같은 원자 값과 BSON 식별자는 직렬화 의미를 보존한다. 그 밖의 일반 객체는
+        // Temporal·Date·Error 같은 원자 값과 BSON 식별자는 직렬화 의미를 보존한다. 그 밖의 일반 객체는
         // 클래스 인스턴스여도 DTO일 수 있으므로 own enumerable 필드를 안전한 plain object로 복사한다.
         const bsonCandidate = value as { _bsontype?: unknown; toHexString?: unknown }
         if (

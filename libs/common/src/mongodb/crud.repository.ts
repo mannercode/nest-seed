@@ -6,16 +6,15 @@ import {
     type Document,
     type Filter,
     type IndexDescription,
-    type MongoClient,
-    type UpdateFilter
+    type MongoClient
 } from 'mongodb'
 import type { PaginationDto, PaginationResult } from '../pagination/index.js'
 import type { CrudDocument, StoredDocument } from './mongo.document.js'
-import { Assume, defaultTo, differenceWith, Require, uniq } from '../utils/index.js'
+import { Assume, DateUtil, defaultTo, differenceWith, Require, uniq } from '../utils/index.js'
 import { MongoErrors } from './errors.js'
 import {
-    mongoArrayToPublic,
     mongoToPublic,
+    encodeMongoDocument,
     objectId,
     objectIds,
     withoutPublicId
@@ -81,7 +80,7 @@ export abstract class CrudRepository<Doc extends CrudDocument> implements OnModu
             ? await this.collection.findOneAndDelete(filter, { session })
             : await this.collection.findOneAndUpdate(
                   filter,
-                  { $inc: { __v: 1 }, $set: { deletedAt: new Date(), updatedAt: new Date() } },
+                  this.timestamped({ $set: { deletedAt: DateUtil.now() } }),
                   { returnDocument: 'before', session }
               )
 
@@ -97,7 +96,7 @@ export abstract class CrudRepository<Doc extends CrudDocument> implements OnModu
 
         const { modifiedCount } = await this.collection.updateMany(
             filter,
-            { $inc: { __v: 1 }, $set: { deletedAt: new Date(), updatedAt: new Date() } },
+            this.timestamped({ $set: { deletedAt: DateUtil.now() } }),
             { session }
         )
         return { deletedCount: modifiedCount }
@@ -122,7 +121,7 @@ export abstract class CrudRepository<Doc extends CrudDocument> implements OnModu
             projection: this.projection,
             session
         })
-        return mongoToPublic<Doc>(doc)
+        return doc ? this.toDomainDocument(doc) : null
     }
 
     async findByIds(
@@ -137,7 +136,7 @@ export abstract class CrudRepository<Doc extends CrudDocument> implements OnModu
                 signal
             })
             .toArray()
-        return mongoArrayToPublic<Doc>(docs)
+        return docs.map((doc) => this.toDomainDocument(doc))
     }
 
     async findWithPagination(args: {
@@ -173,7 +172,7 @@ export abstract class CrudRepository<Doc extends CrudDocument> implements OnModu
         ])
 
         return {
-            items: mongoArrayToPublic<Doc>(rawItems),
+            items: rawItems.map((doc) => this.toDomainDocument(doc)),
             page,
             size,
             total
@@ -214,7 +213,7 @@ export abstract class CrudRepository<Doc extends CrudDocument> implements OnModu
     }
 
     protected newDocument(): Doc & StoredDocument<Doc> {
-        const now = new Date()
+        const now = DateUtil.now()
         const _id = new ObjectId()
         return {
             __v: 0,
@@ -248,7 +247,7 @@ export abstract class CrudRepository<Doc extends CrudDocument> implements OnModu
         signal?.throwIfAborted()
         const options = { session, signal }
         const result = await this.collection.insertMany(
-            docs.map((doc) => withoutPublicId(doc) as Document),
+            docs.map((doc) => withoutPublicId(doc)),
             options
         )
         Require.equals(
@@ -259,15 +258,20 @@ export abstract class CrudRepository<Doc extends CrudDocument> implements OnModu
     }
 
     protected activeFilter(filter: Filter<Document>): Filter<Document> {
-        if (this.hardDelete) return filter
-        return { $and: [filter, { deletedAt: null }] }
+        const encoded = encodeMongoDocument(filter)
+        if (this.hardDelete) return encoded
+        return { $and: [encoded, { deletedAt: null }] }
     }
 
     protected timestamped(update: Document) {
-        return {
+        return encodeMongoDocument({
             ...update,
             $inc: { ...update.$inc, __v: 1 },
-            $set: { ...update.$set, updatedAt: new Date() }
-        } as UpdateFilter<Document>
+            $set: { ...update.$set, updatedAt: DateUtil.now() }
+        })
+    }
+
+    protected toDomainDocument(doc: Document & { _id: ObjectId }): Doc {
+        return mongoToPublic<Doc>(doc)
     }
 }

@@ -501,6 +501,7 @@ describe('S3ObjectService', () => {
             sendSpy.mockResolvedValueOnce({
                 Contents: [
                     { Key: 'a.txt', LastModified: new Date('2024-01-01T00:00:00.000Z') },
+                    { Key: 'b.txt' },
                     { LastModified: new Date('2024-01-01T00:00:00.000Z') }
                 ]
             })
@@ -511,9 +512,10 @@ describe('S3ObjectService', () => {
                 {
                     eTag: undefined,
                     key: 'a.txt',
-                    lastModified: new Date('2024-01-01T00:00:00.000Z'),
+                    lastModified: Temporal.Instant.from('2024-01-01T00:00:00.000Z'),
                     size: undefined
-                }
+                },
+                { eTag: undefined, key: 'b.txt', lastModified: undefined, size: undefined }
             ])
         })
 

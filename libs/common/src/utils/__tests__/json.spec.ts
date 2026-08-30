@@ -1,13 +1,40 @@
-import { nullDate } from '@mannercode/testing'
 import { JsonUtil } from '../json.js'
 
 describe('JsonUtil', () => {
     describe('parse', () => {
-        it('밀리초 포함 ISO 8601 날짜 문자열을 Date 객체로 변환한다', () => {
+        it('밀리초 포함 UTC 문자열을 Instant로 변환한다', () => {
             const parsed = JsonUtil.parse('{"date":"2023-06-18T12:12:34.567Z"}')
 
-            expect(parsed.date).toBeInstanceOf(Date)
-            expect(parsed.date.toISOString()).toEqual('2023-06-18T12:12:34.567Z')
+            expect(parsed.date).toBeInstanceOf(Temporal.Instant)
+            expect(parsed.date.toString()).toEqual('2023-06-18T12:12:34.567Z')
+        })
+
+        it('날짜 전용 문자열을 PlainDate로 변환한다', () => {
+            const parsed = JsonUtil.parse('{"date":"2023-06-18"}')
+
+            expect(parsed.date).toBeInstanceOf(Temporal.PlainDate)
+            expect(parsed.date.toString()).toBe('2023-06-18')
+        })
+
+        it('확장 연도 instant와 날짜 전용 문자열도 Temporal로 변환한다', () => {
+            const parsed = JsonUtil.parse('{"at":"+010000-01-02T03:04:05Z","date":"-000001-12-31"}')
+
+            expect(parsed.at).toEqual(Temporal.Instant.from('+010000-01-02T03:04:05Z'))
+            expect(parsed.date).toEqual(Temporal.PlainDate.from('-000001-12-31'))
+        })
+
+        it('ISO 모양이지만 달력에 없는 날짜 문자열은 그대로 둔다', () => {
+            const parsed = JsonUtil.parse('{"at":"2025-13-01T00:00:00Z","date":"2025-02-30"}')
+
+            expect(parsed).toEqual({ at: '2025-13-01T00:00:00Z', date: '2025-02-30' })
+        })
+
+        it('Temporal 자체 JSON의 정각·나노초 instant도 밀리초로 복원한다', () => {
+            const onSecond = JsonUtil.parse('{"at":"2023-06-18T12:12:34Z"}').at
+            const nanos = JsonUtil.parse('{"at":"2023-06-18T12:12:34.123456789Z"}').at
+
+            expect(onSecond.toString()).toBe('2023-06-18T12:12:34Z')
+            expect(nanos.toString()).toBe('2023-06-18T12:12:34.123Z')
         })
 
         it('64비트 정수는 문자열로 변환한다 (배열 안 객체 포함)', () => {
@@ -35,8 +62,7 @@ describe('JsonUtil', () => {
             expect(under).toEqual(Number('-9223372036854775809'))
         })
 
-        it('ISO 8601 형식이 아닌 문자열은 Date 객체로 변환하지 않는다', () => {
-            expect(JsonUtil.parse('{"v":"2023-06-18"}').v).toBe('2023-06-18')
+        it('Temporal JSON 형식이 아닌 문자열은 변환하지 않는다', () => {
             expect(JsonUtil.parse('{"v":"000000000000000000000000"}').v).toBe(
                 '000000000000000000000000'
             )
@@ -67,61 +93,33 @@ describe('JsonUtil', () => {
         })
     })
 
-    describe('reviveDates', () => {
-        it('밀리초 포함 ISO 8601 문자열을 Date 객체로 변환한다', () => {
-            const converted = JsonUtil.reviveDates({ date: '2023-06-18T12:12:34.567Z' })
+    describe('stringify', () => {
+        it('Instant를 Date.toISOString과 같은 밀리초 3자리 JSON 계약으로 직렬화한다', () => {
+            const at = Temporal.Instant.from('2023-06-18T12:12:34Z')
 
-            expect(converted.date).toBeInstanceOf(Date)
-            expect(converted.date.toISOString()).toEqual('2023-06-18T12:12:34.567Z')
+            expect(JsonUtil.stringify({ at })).toBe('{"at":"2023-06-18T12:12:34.000Z"}')
         })
 
-        it('중첩 객체와 배열 안의 날짜 문자열도 재귀적으로 변환한다', () => {
-            const converted = JsonUtil.reviveDates({
-                level1: {
-                    date: '2023-06-18T12:12:34.567Z',
-                    level2: { date: ['2023-06-19T12:12:34.567Z'], date2: nullDate, null: null }
-                }
-            })
-            expect(converted.level1.date).toBeInstanceOf(Date)
-            expect(converted.level1.date.toISOString()).toEqual('2023-06-18T12:12:34.567Z')
-            expect(converted.level1.level2.date).toEqual([new Date('2023-06-19T12:12:34.567Z')])
-            expect(converted.level1.level2.date2).toBe(nullDate)
-            expect(converted.level1.level2.null).toBeNull()
+        it('PlainDate는 YYYY-MM-DD 계약을 그대로 유지한다', () => {
+            const date = Temporal.PlainDate.from('2023-06-18')
+
+            expect(JsonUtil.stringify({ date })).toBe('{"date":"2023-06-18"}')
         })
 
-        it('Date.toISOString 형식과 다른 날짜 문자열은 변환하지 않는다', () => {
-            expect(JsonUtil.reviveDates({ v: '2023-06-18' }).v).toBe('2023-06-18')
-            expect(JsonUtil.reviveDates({ v: '2023-06-18T12:12:34' }).v).toBe('2023-06-18T12:12:34')
-            expect(JsonUtil.reviveDates({ v: '2023-06-18T12:12:34.567' }).v).toBe(
-                '2023-06-18T12:12:34.567'
-            )
+        it('Temporal 값을 JSON 문자열로 왕복한다', () => {
+            const input = {
+                at: Temporal.Instant.from('2023-06-18T12:12:34.123456789Z'),
+                date: Temporal.PlainDate.from('2023-06-18')
+            }
+
+            const output = JsonUtil.parse(JsonUtil.stringify(input))
+
+            expect(output.at.toString()).toBe('2023-06-18T12:12:34.123Z')
+            expect(output.date.equals(input.date)).toBe(true)
         })
 
-        it('형식이 깨진 숫자 문자열은 변환하지 않는다', () => {
-            expect(JsonUtil.reviveDates({ v: '20230618T121234Z' }).v).toBe('20230618T121234Z')
-            expect(JsonUtil.reviveDates({ v: '19990101' }).v).toBe('19990101')
-            expect(JsonUtil.reviveDates({ v: '000000000000000000000000' }).v).toBe(
-                '000000000000000000000000'
-            )
-        })
-
-        it('일반 문자열은 변환하지 않는다', () => {
-            expect(JsonUtil.reviveDates({ v: 'Hello, world!' }).v).toBe('Hello, world!')
-        })
-
-        it('숫자나 불리언도 변환하지 않는다', () => {
-            expect(JsonUtil.reviveDates({ v: 123 }).v).toBe(123)
-            expect(JsonUtil.reviveDates({ v: true }).v).toBe(true)
-        })
-
-        it('밀리초가 없는 ISO 8601(예: "2023-01-01T00:00:00Z")은 Date 객체로 되살리지 않는다', () => {
-            const result = JsonUtil.reviveDates({ v: '2023-01-01T00:00:00Z' })
-            expect(result.v).toBe('2023-01-01T00:00:00Z')
-        })
-
-        it('Z 대신 +09:00 같은 타임존 오프셋이 붙은 ISO 8601은 Date 객체로 되살리지 않는다', () => {
-            const result = JsonUtil.reviveDates({ v: '2023-01-01T00:00:00.000+09:00' })
-            expect(result.v).toBe('2023-01-01T00:00:00.000+09:00')
+        it('JSON 문자열로 표현할 수 없는 root 값은 명시적으로 거부한다', () => {
+            expect(() => JsonUtil.stringify(undefined)).toThrow(TypeError)
         })
     })
 })

@@ -20,7 +20,7 @@ export type SecurityEvent =
           userId?: string
           familyId: string
           tokenId: string
-          at: Date
+          at: Temporal.Instant
           context?: EventContext
       }
     | {
@@ -29,7 +29,7 @@ export type SecurityEvent =
           familyId: string
           oldTokenId: string
           newTokenId: string
-          at: Date
+          at: Temporal.Instant
           context?: EventContext
       }
     | {
@@ -37,7 +37,7 @@ export type SecurityEvent =
           userId?: string
           familyId: string
           presentedTokenId: string
-          at: Date
+          at: Temporal.Instant
           context?: EventContext
       }
     | {
@@ -45,10 +45,10 @@ export type SecurityEvent =
           userId?: string
           familyId: string
           reason: 'logout' | 'reuse' | 'logout_all'
-          at: Date
+          at: Temporal.Instant
           context?: EventContext
       }
-    | { type: 'verify.failed'; reason: string; at: Date; context?: EventContext }
+    | { type: 'verify.failed'; reason: string; at: Temporal.Instant; context?: EventContext }
 
 export type OnSecurityEvent = (event: SecurityEvent) => void | Promise<void>
 

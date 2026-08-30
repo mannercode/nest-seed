@@ -1,83 +1,173 @@
-import { maxBy, minBy } from './lodash.js'
-
 export type DateAddOptions = {
-    base?: Date
+    base?: Temporal.Instant
     days?: number
     hours?: number
+    milliseconds?: number
     minutes?: number
     seconds?: number
 }
+
+const ISO_UTC_INSTANT = /^(?:[+-]\d{6}|\d{4})-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/
+const ISO_PLAIN_DATE = /^(?:[+-]\d{6}|\d{4})-\d{2}-\d{2}$/
 
 export class DateUtil {
     static add({
         base = this.now(),
         days = 0,
         hours = 0,
+        milliseconds = 0,
         minutes = 0,
         seconds = 0
-    }: DateAddOptions): Date {
+    }: DateAddOptions): Temporal.Instant {
         const totalMilliseconds =
             days * 24 * 60 * 60 * 1000 +
             hours * 60 * 60 * 1000 +
             minutes * 60 * 1000 +
-            seconds * 1000
-        return new Date(base.getTime() + totalMilliseconds)
+            seconds * 1000 +
+            milliseconds
+        return Temporal.Instant.fromEpochMilliseconds(base.epochMilliseconds + totalMilliseconds)
     }
 
-    /**
-     * 배열에서 가장 이른 날짜의 복사본을 반환한다.
-     * 빈 배열이면 `Invalid Date`를 반환해 호출자가 별도로 값 없음 여부를 판단할 수 있게 한다.
-     */
-    static earliest(dates: Date[]): Date {
-        const minDate = minBy(dates, (date) => date.getTime())
-        return minDate ? new Date(minDate.getTime()) : new Date(NaN)
+    static compare(left: Temporal.Instant, right: Temporal.Instant): number {
+        return Temporal.Instant.compare(left, right)
     }
 
-    /**
-     * `YYYYMMDD` 또는 `YYYYMMDDHHmm` 형식의 문자열을 로컬 시간대 Date로 변환한다.
-     * 시간이 없으면 00:00으로 채운다.
-     * 형식 길이가 다르면 예외를 던지지만, 달력에 없는 날짜 보정 여부는 JavaScript Date 동작을 그대로 따른다.
-     * 숫자 여부는 검사하지 않으므로 숫자가 아닌 입력은 parseInt 결과에 따라 예상 밖 날짜나 Invalid Date가 된다.
-     */
-    static fromYMD(dateString: string): Date {
-        if (!(dateString.length === 8 || dateString.length === 12)) {
-            throw new Error('Invalid date string format. Expected YYYYMMDD or YYYYMMDDHHmm.')
+    static earliest(instants: readonly Temporal.Instant[]): Temporal.Instant {
+        if (instants.length === 0) throw new RangeError('At least one instant is required.')
+        return instants.reduce((earliest, instant) =>
+            this.isBefore(instant, earliest) ? instant : earliest
+        )
+    }
+
+    static epoch(): Temporal.Instant {
+        return Temporal.Instant.fromEpochMilliseconds(0)
+    }
+
+    static fromDate(date: Date): Temporal.Instant {
+        return Temporal.Instant.fromEpochMilliseconds(date.getTime())
+    }
+
+    static fromISOString(value: string): Temporal.Instant {
+        if (!ISO_UTC_INSTANT.test(value)) {
+            throw new RangeError('Expected an ISO 8601 UTC instant.')
+        }
+        return this.toMillisecondPrecision(Temporal.Instant.from(value))
+    }
+
+    static instantFromInput(value: Date | string | Temporal.Instant): Temporal.Instant {
+        if (value instanceof Temporal.Instant) return this.toMillisecondPrecision(value)
+        if (value instanceof Date) return this.fromDate(value)
+        return this.fromISOString(value)
+    }
+
+    static fromYMD(dateString: string): Temporal.PlainDate {
+        if (!/^\d{8}$/.test(dateString)) {
+            throw new Error('Invalid date string format. Expected YYYYMMDD.')
         }
 
-        const year = parseInt(dateString.substring(0, 4), 10)
-        const month = parseInt(dateString.substring(4, 6), 10) - 1 // JS Date의 월은 0부터 시작한다.
-        const day = parseInt(dateString.substring(6, 8), 10)
-        let hours = 0
-        let minutes = 0
+        const year = Number(dateString.slice(0, 4))
+        const month = Number(dateString.slice(4, 6))
+        const day = Number(dateString.slice(6, 8))
+        return Temporal.PlainDate.from({ day, month, year }, { overflow: 'reject' })
+    }
 
-        if (dateString.length === 12) {
-            hours = parseInt(dateString.substring(8, 10), 10)
-            minutes = parseInt(dateString.substring(10, 12), 10)
+    static fromYMDHM(dateString: string): Temporal.PlainDateTime {
+        if (!/^\d{12}$/.test(dateString)) {
+            throw new Error('Invalid date string format. Expected YYYYMMDDHHmm.')
         }
 
-        return new Date(year, month, day, hours, minutes)
+        const year = Number(dateString.slice(0, 4))
+        const month = Number(dateString.slice(4, 6))
+        const day = Number(dateString.slice(6, 8))
+        return Temporal.PlainDateTime.from(
+            {
+                day,
+                hour: Number(dateString.slice(8, 10)),
+                minute: Number(dateString.slice(10, 12)),
+                month,
+                year
+            },
+            { overflow: 'reject' }
+        )
     }
 
-    /**
-     * 배열에서 가장 늦은 날짜의 복사본을 반환한다.
-     * 빈 배열이면 `Invalid Date`를 반환한다.
-     */
-    static latest(dates: Date[]): Date {
-        const maxDate = maxBy(dates, (date) => date.getTime())
-        return maxDate ? new Date(maxDate.getTime()) : new Date(NaN)
+    static isAfter(left: Temporal.Instant, right: Temporal.Instant): boolean {
+        return this.compare(left, right) > 0
     }
 
-    static now(): Date {
-        return new Date()
+    static isBefore(left: Temporal.Instant, right: Temporal.Instant): boolean {
+        return this.compare(left, right) < 0
     }
 
-    /**
-     * Date 객체의 로컬 날짜 부분을 `YYYYMMDD` 문자열로 변환한다.
-     */
-    static toYMD(date: Date): string {
-        const year = date.getFullYear()
-        const month = (date.getMonth() + 1).toString().padStart(2, '0') // JS Date의 월은 0부터 시작한다.
-        const day = date.getDate().toString().padStart(2, '0')
-        return `${year}${month}${day}`
+    static latest(instants: readonly Temporal.Instant[]): Temporal.Instant {
+        if (instants.length === 0) throw new RangeError('At least one instant is required.')
+        return instants.reduce((latest, instant) =>
+            this.isAfter(instant, latest) ? instant : latest
+        )
+    }
+
+    /** 저장·전송 정밀도와 일치하도록 현재 시각을 밀리초 단위로 반환한다. */
+    static now(): Temporal.Instant {
+        return Temporal.Instant.fromEpochMilliseconds(Temporal.Now.instant().epochMilliseconds)
+    }
+
+    /** MongoDB BSON Date, JWT, AWS SDK 같은 외부 Date 경계에서만 사용한다. */
+    static toDate(instant: Temporal.Instant): Date {
+        return new Date(instant.epochMilliseconds)
+    }
+
+    static toEpochMilliseconds(instant: Temporal.Instant): number {
+        return instant.epochMilliseconds
+    }
+
+    static toISOString(instant: Temporal.Instant): string {
+        return this.toMillisecondPrecision(instant).toString({ fractionalSecondDigits: 3 })
+    }
+
+    static toMillisecondPrecision(instant: Temporal.Instant): Temporal.Instant {
+        return Temporal.Instant.fromEpochMilliseconds(instant.epochMilliseconds)
+    }
+
+    /** BSON Date로 저장한 날짜 전용 값을 UTC 달력 날짜로 복원한다. */
+    static toPlainDate(date: Date): Temporal.PlainDate {
+        return Temporal.PlainDate.from({
+            day: date.getUTCDate(),
+            month: date.getUTCMonth() + 1,
+            year: date.getUTCFullYear()
+        })
+    }
+
+    /** 날짜 전용 값을 BSON Date로 저장하기 위한 UTC 자정 경계 변환이다. */
+    static plainDateToDate(date: Temporal.PlainDate): Date {
+        const boundary = new Date(0)
+        boundary.setUTCFullYear(date.year, date.month - 1, date.day)
+        boundary.setUTCHours(0, 0, 0, 0)
+        return boundary
+    }
+
+    static startOfUtcDay(date: Temporal.PlainDate): Temporal.Instant {
+        return this.fromISOString(`${date.toString()}T00:00:00.000Z`)
+    }
+
+    static endOfUtcDay(date: Temporal.PlainDate): Temporal.Instant {
+        return this.add({ base: this.startOfUtcDay(date), days: 1, milliseconds: -1 })
+    }
+
+    static plainDateFromInput(value: Date | string | Temporal.PlainDate): Temporal.PlainDate {
+        if (value instanceof Temporal.PlainDate) return value
+        if (value instanceof Date) return this.toPlainDate(value)
+        if (!ISO_PLAIN_DATE.test(value)) {
+            throw new RangeError('Expected an ISO calendar date.')
+        }
+        return Temporal.PlainDate.from(value)
+    }
+
+    static toYMD(date: Temporal.PlainDate | Temporal.PlainDateTime): string {
+        if (date.year < 0 || date.year > 9999) {
+            throw new RangeError('YYYYMMDD only supports years from 0000 through 9999.')
+        }
+        return `${date.year.toString().padStart(4, '0')}${date.month
+            .toString()
+            .padStart(2, '0')}${date.day.toString().padStart(2, '0')}`
     }
 }

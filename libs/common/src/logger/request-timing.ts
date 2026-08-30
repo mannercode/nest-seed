@@ -4,10 +4,10 @@ import type { Request } from 'express'
 const startTimestamps = new WeakMap<Request, number>()
 
 export function markRequestStart(request: Request): void {
-    startTimestamps.set(request, Date.now())
+    startTimestamps.set(request, performance.now())
 }
 
 export function elapsedSinceRequestStart(request: Request): number {
     const start = startTimestamps.get(request)
-    return start === undefined ? 0 : Date.now() - start
+    return start === undefined ? 0 : performance.now() - start
 }

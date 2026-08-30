@@ -8,9 +8,9 @@ import type { NatsPubSubServiceFixture } from './nats-pubsub.service.fixture.js'
  * 500ms 초과는 실제 지연 회귀 신호로 본다.
  */
 async function waitFor(predicate: () => boolean, timeoutMs = 500) {
-    const start = Date.now()
+    const start = performance.now()
     while (!predicate()) {
-        if (Date.now() - start > timeoutMs) {
+        if (performance.now() - start > timeoutMs) {
             throw new Error(`waitFor timed out after ${timeoutMs}ms`)
         }
         await new Promise((r) => setTimeout(r, 10))

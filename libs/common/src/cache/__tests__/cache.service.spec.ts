@@ -233,12 +233,12 @@ describe('CacheService', () => {
             // 다른 보유자가 짧게 보유하다 해제하면 같은 호출이 락을 획득해 정상 동작한다.
             await fix.cacheService.set('lock:job', 'other', 100)
 
-            const start = Date.now()
+            const start = performance.now()
             const result = await fix.cacheService.withLockBlocking('job', 5_000, async () => 42, {
                 pollMs: 20,
                 waitMs: 1000
             })
-            const elapsed = Date.now() - start
+            const elapsed = performance.now() - start
 
             expect(result).toBe(42)
             expect(elapsed).toBeLessThan(1000)

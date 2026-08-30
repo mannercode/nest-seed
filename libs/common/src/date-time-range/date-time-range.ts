@@ -1,11 +1,16 @@
 import { DateUtil } from '../utils/index.js'
 
-type DateTimeRangeOptions = { days?: number; end?: Date; minutes?: number; start?: Date }
+type DateTimeRangeOptions = {
+    days?: number
+    end?: Temporal.Instant
+    minutes?: number
+    start?: Temporal.Instant
+}
 
 export class DateTimeRange {
-    end: Date
+    end: Temporal.Instant
 
-    start: Date
+    start: Temporal.Instant
 
     static create({ days, end, minutes, start }: DateTimeRangeOptions): DateTimeRange {
         if (start) {
@@ -22,7 +27,7 @@ export class DateTimeRange {
         throw new Error('Invalid options provided.')
     }
 
-    private static fromValues(start: Date, end: Date): DateTimeRange {
+    private static fromValues(start: Temporal.Instant, end: Temporal.Instant): DateTimeRange {
         const range = new DateTimeRange()
         range.start = start
         range.end = end
@@ -31,7 +36,7 @@ export class DateTimeRange {
 }
 
 export class PartialDateTimeRange {
-    end?: Date
+    end?: Temporal.Instant
 
-    start?: Date
+    start?: Temporal.Instant
 }
