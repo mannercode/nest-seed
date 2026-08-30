@@ -3,7 +3,6 @@ import { glob, readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { createRequire } from 'node:module'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { execFileSync } from 'node:child_process'
 import test from 'node:test'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..')
@@ -21,27 +20,29 @@ test('workspace keeps explicit package and install safety policy', async () => {
     assert.match(workspace, /^strictDepBuilds: true$/m)
 })
 
-test('API JavaScript uses the Node recommended rules in workspace lint', async () => {
-    const packageJson = JSON.parse(await read('apps/api/package.json'))
-    assert.match(packageJson.scripts.lint, /eslint[^&]*'\*\.cjs'/)
-
-    const printedConfig = JSON.parse(
-        execFileSync(
-            'pnpm',
-            [
-                '--filter',
-                './apps/api',
-                '--fail-if-no-match',
-                'exec',
-                'eslint',
-                '--print-config',
-                'scripts/index.cjs'
-            ],
-            { cwd: root, encoding: 'utf8' }
-        )
+test('workspaces share the Nest Oxlint baseline', async () => {
+    const rootPackage = JSON.parse(await read('package.json'))
+    const oxlint = JSON.parse(await read('oxlint.json'))
+    const workspacePackages = await Promise.all(
+        [
+            'apps/api/package.json',
+            'apps/console/package.json',
+            'apps/user-app/package.json',
+            'libs/common/package.json',
+            'libs/testing/package.json',
+            'tests/api-race/package.json',
+            'tests/web/package.json'
+        ].map(async (path) => JSON.parse(await read(path)))
     )
-    const noUndef = printedConfig.rules['no-undef']
-    assert.equal(Array.isArray(noUndef) ? noUndef[0] : noUndef, 2)
+
+    assert.equal(rootPackage.devDependencies.oxlint, '1.80.0')
+    assert.equal(rootPackage.devDependencies.eslint, undefined)
+    assert.equal(oxlint.env.node, true)
+    assert.equal(oxlint.rules['typescript/no-explicit-any'], 'off')
+    assert.equal(oxlint.rules['typescript/no-floating-promises'], 'warn')
+    for (const packageJson of workspacePackages) {
+        assert.match(packageJson.scripts.lint, /oxlint -c \.\.\/\.\.\/oxlint\.json/)
+    }
 })
 
 test('devcontainer installs the frozen lock and pins resolved features', async () => {
@@ -139,8 +140,8 @@ test('backend workspaces use Node ESM and Vitest keeps the TypeScript metadata t
         "import { Injectable } from '@nestjs/common'\nclass Dependency {}\n@Injectable()\nexport class Fixture { constructor(readonly dependency: Dependency) {} }\n",
         join(root, 'apps/api/src/__tests__/metadata.fixture.ts')
     )
-    assert.match(transformed.code, /from ['\"]@nestjs\/common['\"]/)
-    assert.match(transformed.code, /__metadata\(['\"]design:paramtypes['\"]/)
+    assert.match(transformed.code, /from ['"]@nestjs\/common['"]/)
+    assert.match(transformed.code, /__metadata\(['"]design:paramtypes['"]/)
     assert.doesNotMatch(transformed.code, /\brequire\s*\(/)
 })
 
