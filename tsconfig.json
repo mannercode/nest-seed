@@ -11,7 +11,7 @@
         "types": ["node"],
 
         "strict": true,
-        // 응답 DTO 매핑과 ODM은 객체 생성 뒤 필드를 채우므로 생성자 초기화를 두지 않는다.
+        // 응답 DTO와 MongoDB document 모델은 생성자 없이 필드 모양만 선언하므로 초기화 검사를 끈다.
         "strictPropertyInitialization": false,
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
