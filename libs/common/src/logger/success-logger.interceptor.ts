@@ -10,7 +10,6 @@ import {
 import { Request, Response } from 'express'
 import { Observable } from 'rxjs'
 import { tap } from 'rxjs/operators'
-import { redactSensitive } from './redact.js'
 import { elapsedSinceRequestStart, markRequestStart } from './request-timing.js'
 import { HttpSuccessLog } from './types.js'
 
@@ -31,18 +30,13 @@ export class HttpSuccessLoggerInterceptor implements NestInterceptor {
             markRequestStart(context.switchToHttp().getRequest<Request>())
         }
 
-        let responseData: any
-
         return next.handle().pipe(
             tap({
-                next: (data) => {
-                    responseData = data
-                },
                 complete: () => {
                     // 비HTTP 완료 경로도 위와 같은 오등록 진단 분기다.
                     /* istanbul ignore else */
                     if (contextType === 'http') {
-                        this.logHttp(context, responseData)
+                        this.logHttp(context)
                     } else {
                         Logger.error('HttpSuccessLoggerInterceptor: unknown context type', {
                             contextType
@@ -53,19 +47,21 @@ export class HttpSuccessLoggerInterceptor implements NestInterceptor {
         )
     }
 
-    protected logHttp(context: ExecutionContext, responseData: any) {
+    protected logHttp(context: ExecutionContext) {
         const httpContext = context.switchToHttp()
         const httpResponse = httpContext.getResponse<Response>()
         const request = httpContext.getRequest<Request>()
-        const { body, method, url } = request
+        const { method } = request
+        const routePath =
+            typeof request.route?.path === 'string' ? request.route.path : request.path
+        const route = request.baseUrl + routePath
 
-        if (this.shouldLogHttp(url)) {
+        if (this.shouldLogHttp(route)) {
             const elapsedMs = elapsedSinceRequestStart(request)
             const successLog = {
                 contextType: 'http' as const,
                 duration: `${elapsedMs}ms`,
-                request: { body: redactSensitive(body), method, url },
-                response: redactSensitive(responseData),
+                request: { method, route },
                 statusCode: httpResponse.statusCode
             } as HttpSuccessLog
 

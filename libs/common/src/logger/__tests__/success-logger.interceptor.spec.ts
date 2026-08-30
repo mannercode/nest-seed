@@ -13,34 +13,30 @@ describe('HttpSuccessLoggerInterceptor', () => {
         })
 
         it('Logger.verbose로 로그를 남긴다', async () => {
-            const body = { key: 'value' }
-            await fix.httpClient.post('/success').body(body).created({ result: 'success' })
+            await fix.httpClient
+                .post('/success?token=query-secret')
+                .body({ password: 'request-secret' })
+                .created({ result: 'success' })
 
             expect(fix.spyVerbose).toHaveBeenCalledTimes(1)
             expect(fix.spyVerbose).toHaveBeenCalledWith('success', {
                 contextType: 'http',
                 duration: expect.any(String),
-                request: { body, method: 'POST', url: '/success' },
-                response: { result: 'success' },
+                request: { method: 'POST', route: '/success' },
                 statusCode: 201
             })
         })
 
-        // redact의 본격 검증은 redact.spec.ts에 있다. 여기서는 호출 여부만 확인한다.
-        it('요청 본문의 민감 필드를 [REDACTED]로 마스킹한다', async () => {
+        it('요청·응답 본문을 로그에 포함하지 않는다', async () => {
             await fix.httpClient
                 .post('/success')
-                .body({ password: 'secret' })
+                .body({ password: 'request-secret' })
                 .created({ result: 'success' })
 
-            expect(fix.spyVerbose).toHaveBeenCalledWith(
-                'success',
-                expect.objectContaining({
-                    request: expect.objectContaining({
-                        body: expect.objectContaining({ password: '[REDACTED]' })
-                    })
-                })
-            )
+            const log = fix.spyVerbose.mock.calls[0]?.[1]
+            expect(log).not.toHaveProperty('response')
+            expect(log.request).not.toHaveProperty('body')
+            expect(JSON.stringify(log)).not.toContain('request-secret')
         })
     })
 

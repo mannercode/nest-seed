@@ -2,7 +2,6 @@ import { ArgumentsHost, Catch, HttpException, Logger } from '@nestjs/common'
 import { BaseExceptionFilter } from '@nestjs/core'
 import { Request } from 'express'
 import { defaultTo } from '../utils/index.js'
-import { redactSensitive } from './redact.js'
 import { elapsedSinceRequestStart } from './request-timing.js'
 import { HttpErrorLog } from './types.js'
 
@@ -27,17 +26,25 @@ export class HttpExceptionLoggerFilter extends BaseExceptionFilter {
     protected logHttp(exception: Error, host: ArgumentsHost) {
         const httpContext = host.switchToHttp()
         const request = httpContext.getRequest<Request>()
-        const { body, method, url } = request
+        const { method } = request
+        const routePath =
+            typeof request.route?.path === 'string' ? request.route.path : request.path
         const httpLogBase = {
             contextType: 'http' as const,
             duration: `${elapsedSinceRequestStart(request)}ms`,
-            request: { body: redactSensitive(body), method, url }
+            request: { method, route: request.baseUrl + routePath }
         }
 
         if (exception instanceof HttpException) {
+            const response = exception.getResponse()
+            const code =
+                typeof response === 'object' &&
+                typeof (response as Record<string, unknown>).code === 'string'
+                    ? (response as Record<string, string>).code
+                    : undefined
             const errorLog = {
                 ...httpLogBase,
-                response: redactSensitive(exception.getResponse()),
+                error: { ...(code === undefined ? {} : { code }), name: exception.name },
                 stack: defaultTo(exception.stack, '').split('\n'),
                 statusCode: exception.getStatus()
             } as HttpErrorLog
@@ -46,7 +53,7 @@ export class HttpExceptionLoggerFilter extends BaseExceptionFilter {
         } else {
             const errorLog = {
                 ...httpLogBase,
-                response: { message: exception.message },
+                error: { name: exception.name },
                 stack: defaultTo(exception.stack, '').split('\n'),
                 statusCode: 500
             } as HttpErrorLog

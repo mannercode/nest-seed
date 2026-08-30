@@ -1,8 +1,8 @@
 export type HttpErrorLog = {
     contextType: 'http'
     duration: string
-    request: { body: any; method: string; url: string }
-    response: object | string
+    error: { code?: string; name: string }
+    request: { method: string; route: string }
     stack: string[]
     statusCode: number
 }
@@ -10,7 +10,6 @@ export type HttpErrorLog = {
 export type HttpSuccessLog = {
     contextType: 'http'
     duration: string
-    request: { body: any; method: string; url: string }
-    response: any
+    request: { method: string; route: string }
     statusCode: number
 }

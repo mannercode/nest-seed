@@ -22,8 +22,8 @@ describe('HttpExceptionLoggerFilter', () => {
             expect(fix.spyWarn).toHaveBeenCalledWith('fail', {
                 contextType: 'http',
                 duration: expect.any(String),
-                request: { method: 'GET', url: '/exception' },
-                response: { code: 'ERR_CODE', message: 'message' },
+                error: { code: 'ERR_CODE', name: 'NotFoundException' },
+                request: { method: 'GET', route: '/exception' },
                 stack: expect.any(Array),
                 statusCode: 404
             })
@@ -47,27 +47,26 @@ describe('HttpExceptionLoggerFilter', () => {
             )
         })
 
-        it('HttpException 응답이 문자열이어도 마스킹 처리에서 실패하지 않는다', async () => {
+        it('HttpException 응답이 문자열이어도 안정적인 오류 정보만 기록한다', async () => {
             await fix.httpClient.get('/string-response').badRequest()
 
             expect(fix.spyWarn).toHaveBeenCalledWith(
                 'fail',
-                expect.objectContaining({ response: 'plain string body', statusCode: 400 })
+                expect.objectContaining({ error: { name: 'HttpException' }, statusCode: 400 })
             )
         })
 
-        // 마스킹 자체는 redact.spec.ts에서 자세히 검증한다.
-        it('요청 본문에 password가 있으면 [REDACTED]로 마스킹한다', async () => {
-            await fix.httpClient.post('/exception').body({ password: 'secret' }).notFound()
+        it('요청 본문과 query를 오류 로그에 포함하지 않는다', async () => {
+            await fix.httpClient
+                .post('/exception?token=query-secret')
+                .body({ password: 'request-secret' })
+                .notFound()
 
-            expect(fix.spyWarn).toHaveBeenCalledWith(
-                'fail',
-                expect.objectContaining({
-                    request: expect.objectContaining({
-                        body: expect.objectContaining({ password: '[REDACTED]' })
-                    })
-                })
-            )
+            const log = fix.spyWarn.mock.calls[0]?.[1]
+            expect(log).not.toHaveProperty('response')
+            expect(log.request).toEqual({ method: 'POST', route: '/exception' })
+            expect(JSON.stringify(log)).not.toContain('request-secret')
+            expect(JSON.stringify(log)).not.toContain('query-secret')
         })
 
         it('duration을 인터셉터가 마크한 요청 진입 시각부터 계산한다', async () => {
@@ -89,8 +88,8 @@ describe('HttpExceptionLoggerFilter', () => {
             expect(fix.spyError).toHaveBeenCalledWith('error', {
                 contextType: 'http',
                 duration: expect.any(String),
-                request: { method: 'GET', url: '/error' },
-                response: { message: 'error message' },
+                error: { name: 'Error' },
+                request: { method: 'GET', route: '/error' },
                 stack: expect.any(Array),
                 statusCode: 500
             })
