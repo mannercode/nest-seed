@@ -114,7 +114,7 @@ Greenfield에서 MongoDB 공식 driver 우선이 합리적이라는 판단에 �
 - transaction session, read/write concern, duplicate/write-timeout error mapping을 유지했다.
 - 두 persistence 규약을 병행하지 않고 Mongoose 의존성과 공용 계층을 같은 작업에서 제거했다.
 
-이는 작은 adapter 교체가 아니라 persistence 계층 재구현이므로 Vitest·Zod와 분리한 독립 단계로 다뤘다. 최종 검증은 API 42파일·439개, common 36파일·536개 테스트와 양쪽 100% coverage다. 기존 `ERR_MONGOOSE_*` 이름은 외부 오류 응답 호환을 위해 별칭으로만 남겼다.
+이는 작은 adapter 교체가 아니라 persistence 계층 재구현이므로 Vitest·Zod와 분리한 독립 단계로 다뤘다. 최종 검증은 API 42파일·439개, common 36파일·536개 테스트와 양쪽 100% coverage다. 공용 오류 namespace와 응답 code도 `Mongo`·`ERR_MONGO_*`로 통일했다.
 
 ## 6. 각 전환은 서로 독립된 작업이다
 
@@ -150,7 +150,7 @@ Greenfield ESM Nest 12에는 좋은 기본값이다. `@nestjs/testing`은 runner
 
 Vitest 4는 기본적으로 실행 중 load된 파일만 coverage에 넣으므로, 이행 전 `collectCoverageFrom` 계약을 유지하도록 `coverage.include`를 명시했다. TypeScript 6 `transpileModule` 변환으로 Nest decorator metadata와 source map을 보존하고, Vite의 Oxc와 SWC는 사용하지 않는다. [Vitest 4 migration](https://vitest.dev/guide/migration), [Vitest coverage](https://vitest.dev/guide/coverage.html)
 
-global lifecycle, 실제 병렬 invocation 격리, mock·fake timer, 실패 진단과 100% coverage를 모두 통과해 Jest·ts-jest의 직접 의존성과 설정을 제거했다. 순수 JavaScript 계약·race·도구는 잘 맞는 `node:test`를 유지한다. devcontainer의 `firsttris.vscode-jest-runner` 확장은 runtime 의존성이 아니며, 제거에 리빌드가 필요해 사용자 승인 시점까지 보류한다.
+global lifecycle, 실제 병렬 invocation 격리, mock·fake timer, 실패 진단과 100% coverage를 모두 통과해 Jest·ts-jest의 직접 의존성과 설정을 제거했다. 순수 JavaScript 계약·race·도구는 잘 맞는 `node:test`를 유지한다. devcontainer의 `firsttris.vscode-jest-runner`는 현재 Jest / Vitest Runner로 Vitest와 `node:test`를 지원하므로 그대로 유지한다.
 
 ### Zod와 Standard Schema
 
@@ -178,7 +178,7 @@ Nest 12의 native instrumentation hook과 Observe 지원은 “OTel native”라
 현재 저장소에서는 각 단계를 별도 커밋으로 진행한다.
 
 1. ✅ Restate, Node 26, Nest 12, pnpm, Rspack + `ts-loader`, 백엔드 ESM을 순차 적용했다.
-2. ✅ **Vitest로 전환했다.** SWC·Oxc 없이 Nest decorator metadata, lifecycle, mock, 미실행 파일 포함 100% coverage, 진단·결과 출력을 유지하고 Jest·ts-jest를 함께 제거했다. devcontainer 확장 제거만 리빌드 승인 때까지 보류한다.
+2. ✅ **Vitest로 전환했다.** SWC·Oxc 없이 Nest decorator metadata, lifecycle, mock, 미실행 파일 포함 100% coverage, 진단·결과 출력을 유지하고 Jest·ts-jest를 함께 제거했다. devcontainer의 Jest / Vitest Runner는 현재 테스트 실행기를 지원하므로 유지한다.
 3. ✅ **Zod + Standard Schema로 전환했다.** env와 HTTP request 검증을 옮기고 Joi·class-validator·class-transformer를 제거했다.
 4. ✅ **MongoDB 공식 driver로 전환했다.** Mongoose가 담던 schema·index·CAS·transaction 계약을 repository 구현과 테스트로 재구현하고 Mongoose 계층을 제거했다.
 5. **나머지는 명확한 trigger가 있을 때만 하나씩 검토한다.** architecture rule parity가 되면 Oxlint, backend와 데이터 정책이 정해지면 OTel 또는 Observe를 선택한다.

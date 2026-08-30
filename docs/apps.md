@@ -624,7 +624,7 @@ pnpm --filter './apps/api' test users.spec --coverage.enabled=false
 pnpm --filter './apps/api' test users.spec -t '409 Conflict를 반환한다' --coverage.enabled=false
 ```
 
-devcontainer의 Jest Runner 확장은 아직 남아 있지만 현재 Vitest 실행 경로에는 사용하지 않는다. 확장 교체에는 devcontainer 리빌드가 필요하므로 다음 리빌드 시점으로 미뤘다.
+devcontainer의 `firsttris.vscode-jest-runner`는 현재 Jest / Vitest Runner로 Vitest와 `node:test`를 자동 감지한다. 프로젝트에 Jest를 다시 설치하는 의존성이 아니며 파일·테스트 단위 실행과 디버깅에 사용하므로 유지한다.
 
 ## 실행 가능한 API 문서
 
