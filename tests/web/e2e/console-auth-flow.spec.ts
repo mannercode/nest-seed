@@ -34,7 +34,7 @@ test.beforeAll(async () => {
 
         const userResponse = await api.post(`${API_BASE_URL}/users`, {
             data: {
-                birthDate: new Date('2000-01-01').toISOString(),
+                birthDate: '2000-01-01',
                 email: CROSS_ROLE_USER_EMAIL,
                 name: CROSS_ROLE_USER_NAME,
                 password: ADMIN_PASSWORD

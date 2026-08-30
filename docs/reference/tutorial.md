@@ -293,7 +293,7 @@ describe('POST /showtime-creation/showtimes', () => {
                 .body({
                     durationInMinutes: 1,
                     movieId: movie.id,
-                    startTimes: [new Date('2100-01-01T09:00')],
+                    startTimes: [Temporal.Instant.from('2100-01-01T09:00:00Z')],
                     theaterIds: [theater.id]
                 })
                 .accepted()
@@ -339,10 +339,10 @@ it('기존 상영 시간과 겹치면 충돌 목록과 함께 실패 상태를 �
     const initialShowtimes = await createShowtimes(
         fix,
         [
-            new Date('2013-01-31T12:00'),
-            new Date('2013-01-31T14:00'),
-            new Date('2013-01-31T16:30'),
-            new Date('2013-01-31T18:30')
+            Temporal.Instant.from('2013-01-31T12:00:00Z'),
+            Temporal.Instant.from('2013-01-31T14:00:00Z'),
+            Temporal.Instant.from('2013-01-31T16:30:00Z'),
+            Temporal.Instant.from('2013-01-31T18:30:00Z')
         ].map((startTime) => ({
             endTime: DateUtil.add({ base: startTime, minutes: 90 }),
             startTime,
@@ -360,9 +360,9 @@ it('기존 상영 시간과 겹치면 충돌 목록과 함께 실패 상태를 �
             durationInMinutes: 30,
             movieId: movie.id,
             startTimes: [
-                new Date('2013-01-31T12:00'),
-                new Date('2013-01-31T16:00'),
-                new Date('2013-01-31T20:00')
+                Temporal.Instant.from('2013-01-31T12:00:00Z'),
+                Temporal.Instant.from('2013-01-31T16:00:00Z'),
+                Temporal.Instant.from('2013-01-31T20:00:00Z')
             ],
             theaterIds: [theater.id]
         })
@@ -407,7 +407,7 @@ describe('생성 도중 티켓 생성이 실패하면', () => {
             .body({
                 durationInMinutes: 120,
                 movieId: movie.id,
-                startTimes: [new Date('2013-01-31T12:00')],
+                startTimes: [Temporal.Instant.from('2013-01-31T12:00:00Z')],
                 theaterIds: [theater.id]
             })
             .accepted()

@@ -17,7 +17,7 @@ async function createAndLogin(suffix) {
     const password = 'racepassword'
 
     const created = await request('POST', '/users', {
-        body: { name: 'race', birthDate: '1990-01-01T00:00:00.000Z', email, password }
+        body: { name: 'race', birthDate: '1990-01-01', email, password }
     })
     if (created.status !== 201) {
         throw new Error(

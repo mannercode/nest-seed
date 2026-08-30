@@ -19,12 +19,7 @@ export default function SignupPage() {
         setError(null)
         setBusy(true)
         try {
-            await postJson('/users', {
-                name,
-                email,
-                password,
-                birthDate: new Date(birthDate).toISOString()
-            })
+            await postJson('/users', { name, email, password, birthDate })
             router.push('/login')
         } catch (err) {
             setError(err instanceof ApiError ? err.message : '회원가입 실패')

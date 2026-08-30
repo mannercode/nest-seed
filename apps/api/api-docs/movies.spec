@@ -9,7 +9,7 @@ TEST "영화를 생성한다" \
 	-d '{
 			"title": "영화 제목",
 			"genres": ["action", "drama"],
-			"releaseDate": "2024-01-01T00:00:00.000Z",
+			"releaseDate": "2024-01-01",
 			"plot": "API 문서 흐름 검증용 줄거리",
 			"durationInSeconds": 7200,
 			"director": "감독 이름",

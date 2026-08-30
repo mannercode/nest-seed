@@ -58,7 +58,7 @@ export default function NewMoviePage() {
                 plot,
                 genres: [genre],
                 rating,
-                releaseDate: new Date(releaseDate).toISOString(),
+                releaseDate,
                 durationInSeconds: Math.max(1, Number(runtimeMinutes)) * 60
             }
             if (draftMovieId) {

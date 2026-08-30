@@ -305,7 +305,7 @@ async function createPublishedMovieAndTheater({ label, seatCount }) {
         body: {
             title: label,
             genres: ['action'],
-            releaseDate: '2024-01-01T00:00:00.000Z',
+            releaseDate: '2024-01-01',
             plot: 'plot',
             durationInSeconds: 7200,
             director: 'director',
@@ -377,7 +377,7 @@ async function createAndLoginUser({ prefix, index }) {
     const email = `${prefix}.${Date.now()}.${index}.${secureRandomHex()}@example.com`
     const password = `${prefix}password`
     const created = await request('POST', '/users', {
-        body: { name: `${prefix}-${index}`, birthDate: '1990-01-01T00:00:00.000Z', email, password }
+        body: { name: `${prefix}-${index}`, birthDate: '1990-01-01', email, password }
     })
     if (created.status !== 201) throw new Error(`user create ${index}: ${created.status}`)
 

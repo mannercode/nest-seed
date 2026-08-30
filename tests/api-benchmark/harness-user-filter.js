@@ -46,12 +46,7 @@ export function setup() {
     const createReqs = creds.map(({ vu, email, password }) => ({
         method: 'POST',
         url: `${opts.serverUrl}/users`,
-        body: JSON.stringify({
-            name: `probe-${vu}`,
-            email,
-            password,
-            birthDate: '1990-01-01T00:00:00.000Z'
-        }),
+        body: JSON.stringify({ name: `probe-${vu}`, email, password, birthDate: '1990-01-01' }),
         params: { headers: JSON_HEADERS }
     }))
     const createResponses = http.batch(createReqs)

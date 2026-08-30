@@ -52,7 +52,7 @@ const SCENARIOS = {
             name: `perf-${vu}-${iter}`,
             email: uniqueEmail(vu, iter),
             password: 'perfpassword',
-            birthDate: '1990-01-01T00:00:00.000Z'
+            birthDate: '1990-01-01'
         }
     }),
     // `GET /users`는 JWT가 필요하다. 이 시나리오가 재는 것은 인증 실패 응답의 처리량이다.

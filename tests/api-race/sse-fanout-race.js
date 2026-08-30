@@ -32,7 +32,7 @@ async function setupFixture() {
         body: {
             title: 'stress-movie',
             genres: ['action'],
-            releaseDate: '2024-01-01T00:00:00.000Z',
+            releaseDate: '2024-01-01',
             plot: 'stress plot',
             durationInSeconds: 7200,
             director: 'stress',

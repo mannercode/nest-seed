@@ -16,12 +16,7 @@ async function runInner(iteration) {
     const requests = emails.flatMap((email) =>
         Array.from({ length: CLIENTS_PER_GROUP }, () =>
             request('POST', '/users', {
-                body: {
-                    name: 'race',
-                    birthDate: '1990-01-01T00:00:00.000Z',
-                    email,
-                    password: 'racepassword'
-                }
+                body: { name: 'race', birthDate: '1990-01-01', email, password: 'racepassword' }
             }).then((r) => ({ ...r, email }))
         )
     )

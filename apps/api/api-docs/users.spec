@@ -8,7 +8,7 @@ TEST "사용자를 생성한다" \
 	-H 'Content-Type: application/json' \
 	-d '{
 			"name": "사용자 이름",
-			"birthDate": "1990-01-01T00:00:00.000Z",
+			"birthDate": "1990-01-01",
 			"email": "'${USER_EMAIL}'",
 			"password": "password"
 		}'
@@ -20,7 +20,7 @@ TEST "이미 가입한 이메일로 가입하면 409를 반환한다" \
 	-H 'Content-Type: application/json' \
 	-d '{
 			"name": "사용자 이름",
-			"birthDate": "1990-01-01T00:00:00.000Z",
+			"birthDate": "1990-01-01",
 			"email": "'${USER_EMAIL}'",
 			"password": "password"
 		}'
@@ -35,7 +35,7 @@ TEST "이메일 형식이 올바르지 않으면 400을 반환한다" \
 	-H 'Content-Type: application/json' \
 	-d '{
 			"name": "사용자 이름",
-			"birthDate": "1990-01-01T00:00:00.000Z",
+			"birthDate": "1990-01-01",
 			"email": "not-an-email",
 			"password": "password"
 		}'
@@ -45,7 +45,7 @@ TEST "비밀번호 없이 가입하면 400을 반환한다" \
 	-H 'Content-Type: application/json' \
 	-d '{
 			"name": "사용자 이름",
-			"birthDate": "1990-01-01T00:00:00.000Z",
+			"birthDate": "1990-01-01",
 			"email": "'"$(random_email)"'"
 		}'
 
@@ -115,7 +115,7 @@ TEST "관리자가 사용자 정보를 수정한다" \
 	200 PATCH /users/${USER_ID} \
 	-H "Authorization: Bearer ${ADMIN_ACCESS_TOKEN}" \
 	-H "Content-Type: application/json" \
-	-d '{ "name": "수정된 사용자 이름", "birthDate": "2000-01-01T00:00:00.000Z" }'
+	-d '{ "name": "수정된 사용자 이름", "birthDate": "2000-01-01" }'
 
 TEST "관리자가 존재하지 않는 사용자를 수정하면 404를 반환한다" \
 	404 PATCH /users/000000000000000000000000 \
@@ -176,7 +176,7 @@ TEST "본인 삭제 데모용 사용자를 생성한다" \
 	-H 'Content-Type: application/json' \
 	-d '{
 			"name": "self-delete",
-			"birthDate": "1990-01-01T00:00:00.000Z",
+			"birthDate": "1990-01-01",
 			"email": "'${SELF_EMAIL}'",
 			"password": "password"
 		}'

@@ -25,7 +25,7 @@ async function setupFixture() {
         body: {
             title: 'overlap',
             genres: ['action'],
-            releaseDate: '2024-01-01T00:00:00.000Z',
+            releaseDate: '2024-01-01',
             plot: 'overlap plot',
             durationInSeconds: 7200,
             director: 'overlap',

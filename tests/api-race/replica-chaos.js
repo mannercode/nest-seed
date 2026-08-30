@@ -43,12 +43,7 @@ async function trafficWorker(workerId, state) {
         const email = `chaos.${Date.now()}.${workerId}.${secureRandomHex()}@example.com`
         try {
             const r = await request('POST', '/users', {
-                body: {
-                    name: 'chaos',
-                    birthDate: '1990-01-01T00:00:00.000Z',
-                    email,
-                    password: 'chaospassword'
-                }
+                body: { name: 'chaos', birthDate: '1990-01-01', email, password: 'chaospassword' }
             })
             const b = bucketFor(state)
             b.total++

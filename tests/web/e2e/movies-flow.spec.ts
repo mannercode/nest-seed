@@ -160,12 +160,7 @@ test('사용자 목록에서 사용자를 삭제한다', async ({ page }) => {
     const api = await request.newContext()
     try {
         const response = await api.post(`${API_BASE_URL}/users`, {
-            data: {
-                name: 'Delete Me',
-                email,
-                password: 'DevPass1!',
-                birthDate: '2000-01-01T00:00:00.000Z'
-            }
+            data: { name: 'Delete Me', email, password: 'DevPass1!', birthDate: '2000-01-01' }
         })
         expect(response.status()).toBe(201)
     } finally {
