@@ -39,8 +39,7 @@ RUN set -eu; \
         "npm@${NPM_VERSION}"; \
     npm install --global --no-audit --no-fund \
         "pnpm@${PNPM_VERSION}" \
-        "playwright@${PLAYWRIGHT_VERSION}" \
-        "@openai/codex"; \
+        "playwright@${PLAYWRIGHT_VERSION}"; \
     npm cache clean --force
 
 # Chromium은 node 사용자도 읽을 수 있는 공용 경로에 설치한다.
