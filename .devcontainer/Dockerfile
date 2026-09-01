@@ -2,7 +2,6 @@ FROM node:26.8.1-bookworm-slim@sha256:367679cf9792759492a486e4aa4b421764d71a9546
 ARG TARGETARCH
 
 ENV LANG=C.UTF-8 \
-    PLAYWRIGHT_BROWSERS_PATH=/opt/playwright \
     NPM_CONFIG_UPDATE_NOTIFIER=false \
     PNPM_CONFIG_UPDATE_NOTIFIER=false
 
@@ -34,7 +33,6 @@ RUN set -eu; \
     npm install --global --no-audit --no-fund playwright; \
     playwright install-deps chromium; \
     playwright --version; \
-    install -d -o node -g node -m 0755 "$PLAYWRIGHT_BROWSERS_PATH"; \
     npm cache clean --force; \
     rm -rf /var/lib/apt/lists/*
 
