@@ -13,6 +13,8 @@ const originalEnv = new Map()
 let announceBodyStallReached
 let announceHandshakeStallReached
 let sseMode = 'stall'
+let sagaStatusRequestCount = 0
+let sagaStatusResponses = []
 const bodyStallReached = new Promise((resolve) => (announceBodyStallReached = resolve))
 const handshakeStallReached = new Promise((resolve) => (announceHandshakeStallReached = resolve))
 
@@ -61,6 +63,18 @@ before(async () => {
                 'x-replica-id': 'local-replica'
             })
             res.end(JSON.stringify({ ok: true }))
+            return
+        }
+
+        const statusMatch = req.url?.match(/^\/showtime-creation\/showtimes\/([^/]+)\/status$/)
+        if (statusMatch) {
+            const sagaId = decodeURIComponent(statusMatch[1])
+            const response = sagaStatusResponses[
+                Math.min(sagaStatusRequestCount, sagaStatusResponses.length - 1)
+            ] ?? { sagaId, status: 'pending' }
+            sagaStatusRequestCount++
+            res.writeHead(200, { 'content-type': 'application/json' })
+            res.end(JSON.stringify(response))
             return
         }
 
@@ -116,6 +130,8 @@ before(async () => {
 afterEach(async () => {
     destroyServerSockets()
     clearResponseIntervals()
+    sagaStatusRequestCount = 0
+    sagaStatusResponses = []
     await new Promise((resolve) => setImmediate(resolve))
 })
 
@@ -158,6 +174,44 @@ test('HTTP request는 deadline 전에 끝난 응답을 기존 형식으로 반�
         })
     })
     assert.equal(await waitUntil(() => sockets.size === 0), true)
+})
+
+test('사가 완료 대기는 유실 가능한 SSE 대신 영속 상태를 폴링한다', async () => {
+    sagaStatusResponses = [
+        { sagaId: 'durable-saga', status: 'pending' },
+        {
+            createdShowtimeCount: 1,
+            createdTicketCount: 10,
+            sagaId: 'durable-saga',
+            status: 'succeeded'
+        }
+    ]
+
+    await withinOuterWatchdog(
+        common.waitForSagaSuccess('durable-saga', 500),
+        'durable saga status polling'
+    )
+
+    assert.equal(sagaStatusRequestCount, 2)
+})
+
+test('사가의 영속 최종 상태가 실패면 즉시 원인을 드러낸다', async () => {
+    sagaStatusResponses = [{ sagaId: 'failed-saga', status: 'failed' }]
+
+    await assert.rejects(common.waitForSagaSuccess('failed-saga', 500), /status=failed/)
+    assert.equal(sagaStatusRequestCount, 1)
+})
+
+test('사가 상태가 계속 pending이면 지정한 전체 기한에 실패한다', async () => {
+    sagaStatusResponses = [{ sagaId: 'pending-saga', status: 'pending' }]
+
+    await assert.rejects(
+        withinOuterWatchdog(
+            common.waitForSagaSuccess('pending-saga', 150),
+            'pending saga status timeout'
+        ),
+        /did not finish in 150ms \(last status=pending\)/
+    )
 })
 
 test('SSE는 응답 헤더가 멈추면 handshake deadline에 method/path/label 진단과 함께 실패한다', async () => {

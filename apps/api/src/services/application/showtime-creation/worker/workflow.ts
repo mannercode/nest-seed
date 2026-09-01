@@ -1,7 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import * as restate from '@restatedev/restate-sdk'
 import { AppConfigService } from '#config'
-import type { ShowtimeCreationEvent, ValidateAndCreateResult } from '../internal/index.js'
+import type {
+    ShowtimeCreationEvent,
+    ShowtimeCreationTerminalEvent,
+    ValidateAndCreateResult
+} from '../internal/index.js'
 import type { ShowtimeCreationWorkflowInput } from './types.js'
 // 이 직접 import는 internal barrel → orchestrator → worker로 되돌아오는 Nest DI 순환을 피한다.
 import { ShowtimeCreationPersistenceService } from '../internal/showtime-creation-persistence.service.js'
@@ -42,7 +46,7 @@ export function createShowtimeCreationWorkflow({
             run: async (
                 ctx: restate.WorkflowContext,
                 input: ShowtimeCreationWorkflowInput
-            ): Promise<void> => {
+            ): Promise<ShowtimeCreationTerminalEvent> => {
                 await emit(ctx, 'emit waiting', { sagaId: input.sagaId, status: 'waiting' })
                 await emit(ctx, 'emit processing', { sagaId: input.sagaId, status: 'processing' })
 
@@ -64,28 +68,33 @@ export function createShowtimeCreationWorkflow({
                 } catch (error: unknown) {
                     if (error instanceof restate.CancelledError) throw error
 
-                    await emit(ctx, 'emit error', {
+                    const terminal: ShowtimeCreationTerminalEvent = {
                         message: error instanceof Error ? error.message : String(error),
                         sagaId: input.sagaId,
                         status: 'error'
-                    })
-                    return
+                    }
+                    await emit(ctx, 'emit error', terminal)
+                    return terminal
                 }
 
                 if (result.kind === 'succeeded') {
-                    await emit(ctx, 'emit succeeded', {
+                    const terminal: ShowtimeCreationTerminalEvent = {
                         createdShowtimeCount: result.createdShowtimeCount,
                         createdTicketCount: result.createdTicketCount,
                         sagaId: input.sagaId,
                         status: 'succeeded'
-                    })
-                } else {
-                    await emit(ctx, 'emit failed', {
-                        conflictingShowtimes: result.conflictingShowtimes,
-                        sagaId: input.sagaId,
-                        status: 'failed'
-                    })
+                    }
+                    await emit(ctx, 'emit succeeded', terminal)
+                    return terminal
                 }
+
+                const terminal: ShowtimeCreationTerminalEvent = {
+                    conflictingShowtimes: result.conflictingShowtimes,
+                    sagaId: input.sagaId,
+                    status: 'failed'
+                }
+                await emit(ctx, 'emit failed', terminal)
+                return terminal
             }
         },
         name: getShowtimeCreationWorkflowName(projectId),

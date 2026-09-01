@@ -1,5 +1,10 @@
 import { DateUtil, IdempotencyErrors, PaginationDto, OrderDirection } from '@mannercode/common'
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common'
+import {
+    BadRequestException,
+    ConflictException,
+    Injectable,
+    NotFoundException
+} from '@nestjs/common'
 import { MoviesService, ShowtimesService, TheatersService } from '#core'
 import { BulkCreateShowtimesDto, RequestShowtimeCreationResponse } from './dtos/index.js'
 import { ShowtimeCreationErrors } from './errors.js'
@@ -62,6 +67,15 @@ export class ShowtimeCreationService {
         }
 
         return { sagaId: claim.sagaId }
+    }
+
+    async getShowtimeCreationStatus(sagaId: string, principalId: string) {
+        const submission = await this.submissions.findAcceptedBySagaId(principalId, sagaId)
+        if (!submission) {
+            throw new NotFoundException(ShowtimeCreationErrors.SagaNotFound(sagaId))
+        }
+
+        return this.orchestrator.getShowtimeCreationStatus(sagaId)
     }
 
     // 검증 액티비티는 기존 상영과의 충돌만 보므로, 요청 안에서 서로 겹치는 시작 시각은

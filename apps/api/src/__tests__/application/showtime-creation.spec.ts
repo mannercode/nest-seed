@@ -157,6 +157,44 @@ describe('ShowtimeCreationService', () => {
         })
     })
 
+    describe('GET /showtime-creation/showtimes/:sagaId/status', () => {
+        it('SSE를 미리 구독하지 않아도 Restate에 보관된 최종 상태를 조회한다', async () => {
+            const created = await fix.httpClient
+                .post('/showtime-creation/showtimes')
+                .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                .headers({ 'Idempotency-Key': randomUUID() })
+                .body(buildCreateDto())
+                .accepted()
+            const sagaId = created.body.sagaId
+            const deadline = performance.now() + 5_000
+            let status: any
+
+            do {
+                const response = await fix.httpClient
+                    .get(`/showtime-creation/showtimes/${sagaId}/status`)
+                    .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                    .ok()
+                status = response.body
+                if (status.status !== 'pending') break
+                await sleep(25)
+            } while (performance.now() < deadline)
+
+            expect(status).toEqual({
+                createdShowtimeCount: 1,
+                createdTicketCount: expect.any(Number),
+                sagaId,
+                status: 'succeeded'
+            })
+        })
+
+        it('요청한 관리자의 접수 기록이 없는 saga ID는 노출하지 않는다', async () => {
+            await fix.httpClient
+                .get(`/showtime-creation/showtimes/${nullObjectId}/status`)
+                .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                .notFound(Errors.ShowtimeCreation.SagaNotFound(nullObjectId))
+        })
+    })
+
     describe('POST /showtime-creation/showtimes', () => {
         it('Idempotency-Key가 없으면 400을 반환한다', async () => {
             await fix.httpClient

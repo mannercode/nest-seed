@@ -158,6 +158,37 @@ request_showtime_creation() {
 	SAGA_ID=$(echo "${BODY}" | jq -r '.sagaId')
 }
 
+wait_for_showtime_creation() {
+	local attempts=30
+	local attempt
+	local sagaStatus
+
+	for ((attempt = 1; attempt <= attempts; attempt++)); do
+		SETUP GET /showtime-creation/showtimes/${SAGA_ID}/status
+
+		sagaStatus=$(echo "${BODY}" | jq -r '.status')
+		if [[ "${sagaStatus}" = "succeeded" ]]; then
+			return 0
+		fi
+		if [[ "${sagaStatus}" = "failed" || "${sagaStatus}" = "error" ]]; then
+			break
+		fi
+		if [[ "${sagaStatus}" != "pending" ]]; then
+			break
+		fi
+
+		sleep 1
+	done
+
+	LOG_LINE "# 준비 실패: 상영 생성 saga가 성공 상태에 도달하지 않았다"
+	LOG_LINE "RES='setup-failed"
+	LOG_JSON "${BODY}"
+	LOG_LINE "'"
+	LOG_LINE ""
+	echo "[FAIL] SETUP wait_for_showtime_creation: sagaId=${SAGA_ID}, status=${sagaStatus}"
+	exit 2
+}
+
 wait_for_showtime() {
 	local attempts=30
 	local attempt
@@ -227,6 +258,7 @@ setup_showtime_resources() {
 	publish_movie
 	create_theater
 	request_showtime_creation
+	wait_for_showtime_creation
 	wait_for_showtime
 }
 

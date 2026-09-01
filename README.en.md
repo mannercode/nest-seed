@@ -21,7 +21,7 @@ The three problems are solved like this:
 
 - **Double selling** — blocked not with a lock but with an atomic conditional transition (an update whose filter carries the state) (`core/tickets`)
 - **Partial failure** — Restate retries durable steps, while one MongoDB transaction commits showtimes, tickets, and the idempotency operation record together (`application/showtime-creation`)
-- **Progress reporting** — NATS pub/sub carries events all the way to SSE clients attached to other containers (`application/showtime-creation`)
+- **Async job tracking** — durable terminal-status queries backed by Restate, plus NATS-based SSE progress notifications (`application/showtime-creation`)
 
 Whether these solutions actually work is verified by mock-free tests on real infrastructure (100% coverage in implementation workspaces that collect it), a distributed race harness, and repeated CI runs. The full list of patterns is in the [Domain tour](#domain-tour); the reasoning behind tool choices is in [Design decisions](docs/reference/decisions.md).
 
@@ -47,7 +47,7 @@ First boot goes like this:
 
     The full admin API — login, token refresh, deletion — is shown by [admins.spec](apps/api/api-docs/admins.spec).
 
-6. Register movies and theaters in the console. Showtime registration (202+SSE), booking, and purchase are shown not by the UI demo but by the executable API docs — create showtimes with `bash apps/api/api-docs/run.sh showtime-creation.spec`, then sign up in the user app (3200) and see the now-showing movies on its home screen.
+6. Register movies and theaters in the console. Showtime registration (202+status query+SSE), booking, and purchase are shown not by the UI demo but by the executable API docs — create showtimes with `bash apps/api/api-docs/run.sh showtime-creation.spec`, then sign up in the user app (3200) and see the now-showing movies on its home screen.
 
 > `.env.api` and `.env.infra` are committed **development defaults** (including `ROOT_PASSWORD=DevPass1!`). Change them to your own values when you fork.
 
@@ -149,24 +149,24 @@ Each service is built to show one distinct pattern. For a first pass, this order
 
 1. `core/theaters` — the simplest domain. The basic skeleton: model → repository → service → controller → DTO
 2. `application/booking` — a use case composing multiple Core services
-3. `application/showtime-creation` — the whole saga: 202 response → Restate workflow → NATS → SSE
+3. `application/showtime-creation` — the whole saga: 202 response → Restate workflow → durable status query and NATS/SSE notifications
 4. At each step, read the integration test of the same name (`apps/api/src/__tests__`) side by side
 
-| Service                                   | What it shows                                                                                            |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `core/theaters`                           | The simplest CRUD. The reference to clone when adding a new domain                                       |
-| `core/movies`                             | File upload integration, draft→publish state, deletion refused while showtimes reference the movie       |
-| `core/users` · `admins`                   | Soft delete × unique indexes, login and token rotation, session revocation on withdrawal/password change |
-| `core/showtimes` · `tickets`              | The resources the saga produces. tickets change state via atomic conditional transitions                 |
-| `core/ticket-holding`                     | Redis Lua-script seat holds — keys grouped into one hash slot so Lua can handle multiple keys atomically |
-| `core/purchase-records` · `watch-records` | User-record domains. watch-records feeds the recommendations                                             |
-| `application/booking`                     | Booking-flow queries and seat holds, request validation                                                  |
-| `application/purchase`                    | Durable state machine, lease reconciliation and outbox; at-least-once JetStream notification handling    |
-| `application/showtime-creation`           | Restate workflow keyed by `sagaId`, 202+SSE, Mongo transaction, theater-guard CAS, and idempotent retry  |
-| `application/recommendation`              | Watch-history-based recommendations. Domain logic split into a pure module                               |
-| `view/user-app/home`                      | Screen-specific response composition — the View layer                                                    |
-| `infrastructure/assets`                   | Presigned uploads with checksum verification, a cron that cleans up expired uploads (distributed lock)   |
-| `infrastructure/payments`                 | The seat where an external payment integration goes                                                      |
+| Service                                   | What it shows                                                                                                        |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `core/theaters`                           | The simplest CRUD. The reference to clone when adding a new domain                                                   |
+| `core/movies`                             | File upload integration, draft→publish state, deletion refused while showtimes reference the movie                   |
+| `core/users` · `admins`                   | Soft delete × unique indexes, login and token rotation, session revocation on withdrawal/password change             |
+| `core/showtimes` · `tickets`              | The resources the saga produces. tickets change state via atomic conditional transitions                             |
+| `core/ticket-holding`                     | Redis Lua-script seat holds — keys grouped into one hash slot so Lua can handle multiple keys atomically             |
+| `core/purchase-records` · `watch-records` | User-record domains. watch-records feeds the recommendations                                                         |
+| `application/booking`                     | Booking-flow queries and seat holds, request validation                                                              |
+| `application/purchase`                    | Durable state machine, lease reconciliation and outbox; at-least-once JetStream notification handling                |
+| `application/showtime-creation`           | Restate workflow keyed by `sagaId`, 202+status query+SSE, Mongo transaction, theater-guard CAS, and idempotent retry |
+| `application/recommendation`              | Watch-history-based recommendations. Domain logic split into a pure module                                           |
+| `view/user-app/home`                      | Screen-specific response composition — the View layer                                                                |
+| `infrastructure/assets`                   | Presigned uploads with checksum verification, a cron that cleans up expired uploads (distributed lock)               |
+| `infrastructure/payments`                 | The seat where an external payment integration goes                                                                  |
 
 ## Authorization
 

@@ -4,6 +4,7 @@ import type { Mock } from 'vitest'
 import { instant } from '@mannercode/testing'
 import { workflow } from '@restatedev/restate-sdk'
 import type { AppConfigService } from '#config'
+import type { ShowtimeCreationTerminalEvent } from '../../internal/index.js'
 import type { ShowtimeCreationWorkflow } from '../workflow.js'
 import { ShowtimeCreationWorkflowClient } from '../restate-workflow-client.service.js'
 import { TemporalJsonSerde } from '../temporal-json.serde.js'
@@ -16,6 +17,12 @@ vi.mock('@restatedev/restate-sdk-clients', async (importOriginal) => {
 })
 
 describe('ShowtimeCreationWorkflowClient', () => {
+    const terminal: ShowtimeCreationTerminalEvent = {
+        createdShowtimeCount: 1,
+        createdTicketCount: 10,
+        sagaId: 'saga-id',
+        status: 'succeeded'
+    }
     const input = {
         createDto: {
             durationInMinutes: 90,
@@ -25,7 +32,7 @@ describe('ShowtimeCreationWorkflowClient', () => {
         },
         sagaId: 'saga-id'
     }
-    const submission: WorkflowSubmission<void> = {
+    const submission: WorkflowSubmission<ShowtimeCreationTerminalEvent> = {
         attachable: true,
         invocationId: 'invocation-id',
         status: 'Accepted'
@@ -53,10 +60,10 @@ describe('ShowtimeCreationWorkflowClient', () => {
     })
 
     it('호출자가 요청할 때만 workflow 완료를 기다린다', async () => {
-        const result = vi.fn().mockResolvedValue(undefined)
+        const result = vi.fn().mockResolvedValue(terminal)
         const fix = createFixture({ result })
 
-        await expect(fix.client.waitForCompletion(submission)).resolves.toBeUndefined()
+        await expect(fix.client.waitForCompletion(submission)).resolves.toEqual(terminal)
 
         expect(result).toHaveBeenCalledWith(submission)
     })
@@ -79,18 +86,39 @@ describe('ShowtimeCreationWorkflowClient', () => {
         expect(fix.result).not.toHaveBeenCalled()
     })
 
+    it('workflow 출력이 준비되지 않았으면 pending 상태를 반환한다', async () => {
+        const workflowOutput = vi.fn().mockResolvedValue({ ready: false })
+        const fix = createFixture({ result: vi.fn(), workflowOutput })
+
+        await expect(fix.client.getStatus(input.sagaId)).resolves.toEqual({
+            sagaId: input.sagaId,
+            status: 'pending'
+        })
+        expect(fix.workflowClient).toHaveBeenCalledWith(fix.definition, input.sagaId)
+        expect(workflowOutput.mock.calls[0]?.[0].opts).toEqual({ timeout: 10_000 })
+    })
+
+    it('workflow 출력이 준비됐으면 영속 최종 상태를 반환한다', async () => {
+        const workflowOutput = vi.fn().mockResolvedValue({ ready: true, result: terminal })
+        const fix = createFixture({ result: vi.fn(), workflowOutput })
+
+        await expect(fix.client.getStatus(input.sagaId)).resolves.toEqual(terminal)
+    })
+
     function createFixture({
         result,
+        workflowOutput = vi.fn(),
         workflowSubmit = vi.fn().mockResolvedValue(submission)
     }: {
         result: Mock
+        workflowOutput?: Mock
         workflowSubmit?: Mock
     }) {
         const definition = workflow({
-            handlers: { run: async () => undefined },
+            handlers: { run: async () => terminal },
             name: 'WorkflowClientTest'
         })
-        const workflowClient = vi.fn(() => ({ workflowSubmit }))
+        const workflowClient = vi.fn(() => ({ workflowOutput, workflowSubmit }))
         const ingress = { result, workflowClient }
         restateMocks.connect.mockReset()
         restateMocks.connect.mockReturnValue(ingress)
@@ -98,6 +126,6 @@ describe('ShowtimeCreationWorkflowClient', () => {
         const config = { restate: { ingressUrl: 'http://restate.test:8080' } } as AppConfigService
         const client = new ShowtimeCreationWorkflowClient(workflowProvider, config)
 
-        return { client, definition, result, workflowClient, workflowSubmit }
+        return { client, definition, result, workflowClient, workflowOutput, workflowSubmit }
     }
 })

@@ -9,6 +9,11 @@ export const ShowtimeCreationErrors = {
         message: 'Some start times in the request overlap each other.',
         startTimes
     }),
+    SagaNotFound: (sagaId: string) => ({
+        code: 'ERR_SHOWTIME_CREATION_SAGA_NOT_FOUND',
+        message: 'The requested showtime creation saga could not be found.',
+        sagaId
+    }),
     TooManyShowtimes: (maximum: number) => ({
         code: 'ERR_SHOWTIME_CREATION_TOO_MANY_SHOWTIMES',
         maximum,

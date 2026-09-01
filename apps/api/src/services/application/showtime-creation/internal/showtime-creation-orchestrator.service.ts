@@ -18,4 +18,8 @@ export class ShowtimeCreationOrchestratorService {
         // 상태 이벤트는 workflow 내부 순서를 유지하지만 journal 기록 직전 장애에서는 재발행될 수 있다.
         await this.workflow.submit({ createDto, sagaId }, sagaId)
     }
+
+    getShowtimeCreationStatus(sagaId: string) {
+        return this.workflow.getStatus(sagaId)
+    }
 }

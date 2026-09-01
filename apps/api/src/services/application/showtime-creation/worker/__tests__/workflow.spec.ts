@@ -2,7 +2,11 @@ import { instant } from '@mannercode/testing'
 import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { CancelledError, TerminalError, type WorkflowContext } from '@restatedev/restate-sdk'
 import type { AppConfigService } from '#config'
-import type { ShowtimeCreationEvent, ValidateAndCreateResult } from '../../internal/index.js'
+import type {
+    ShowtimeCreationEvent,
+    ShowtimeCreationTerminalEvent,
+    ValidateAndCreateResult
+} from '../../internal/index.js'
 import type { ShowtimeCreationWorkflowInput } from '../types.js'
 import { TemporalJsonSerde } from '../temporal-json.serde.js'
 import {
@@ -35,7 +39,7 @@ describe('Showtime creation Restate workflow', () => {
         }
         const fix = createFixture({ result })
 
-        await run(fix)
+        const terminal = await run(fix)
 
         expect(fix.events).toEqual([
             { sagaId: input.sagaId, status: 'waiting' },
@@ -68,6 +72,12 @@ describe('Showtime creation Restate workflow', () => {
             maxRetryAttempts: 4,
             maxRetryDuration: 195_000
         })
+        expect(terminal).toEqual({
+            createdShowtimeCount: 2,
+            createdTicketCount: 20,
+            sagaId: input.sagaId,
+            status: 'succeeded'
+        })
     })
 
     it('업무 충돌은 failed 상태로 끝낸다', async () => {
@@ -85,7 +95,7 @@ describe('Showtime creation Restate workflow', () => {
             roundTripRunResult: true
         })
 
-        await run(fix)
+        const terminal = await run(fix)
 
         expect(fix.events.at(-1)).toEqual({
             conflictingShowtimes,
@@ -95,6 +105,7 @@ describe('Showtime creation Restate workflow', () => {
         const failed = fix.events.at(-1)
         if (failed?.status !== 'failed') throw new Error('Expected a failed workflow event.')
         expect(failed.conflictingShowtimes[0]?.startTime).toBeInstanceOf(Temporal.Instant)
+        expect(terminal).toEqual(failed)
     })
 
     it.each([
@@ -103,9 +114,10 @@ describe('Showtime creation Restate workflow', () => {
     ])('실행 오류 %p를 error 상태로 바꾼다', async (failure, message) => {
         const fix = createFixture({ failure })
 
-        await run(fix)
+        const terminal = await run(fix)
 
         expect(fix.events.at(-1)).toEqual({ message, sagaId: input.sagaId, status: 'error' })
+        expect(terminal).toEqual({ message, sagaId: input.sagaId, status: 'error' })
     })
 
     it('취소는 error 이벤트로 바꾸지 않고 다시 던진다', async () => {
@@ -241,7 +253,10 @@ describe('Showtime creation Restate workflow', () => {
             workflowRetention?: number
         }
         workflow: {
-            run: (context: WorkflowContext, input: ShowtimeCreationWorkflowInput) => Promise<void>
+            run: (
+                context: WorkflowContext,
+                input: ShowtimeCreationWorkflowInput
+            ) => Promise<ShowtimeCreationTerminalEvent>
         }
     }
 })

@@ -19,7 +19,7 @@
 
 - **이중 판매** — 락이 아니라 원자 조건부 전이(상태를 필터에 박은 갱신)로 막는다 (`core/tickets`)
 - **부분 실패** — Restate가 durable step을 재시도하고, 상영 시간·티켓·멱등 작업 기록은 MongoDB 트랜잭션 하나로 커밋한다 (`application/showtime-creation`)
-- **진행 상황 전달** — NATS pub/sub가 다른 컨테이너에 붙은 SSE 클라이언트까지 이벤트를 나른다 (`application/showtime-creation`)
+- **비동기 작업 추적** — Restate의 영속 최종 상태 조회와 NATS 기반 SSE 진행 알림을 함께 제공한다 (`application/showtime-creation`)
 
 이 해법들이 실제로 동작하는지는 mock 없는 실제 인프라 테스트(커버리지를 수집하는 구현 워크스페이스는 100% 게이트)와 분산 레이스 하네스, CI 반복이 검증한다. 전체 패턴 목록은 [도메인 둘러보기](#도메인-둘러보기)에, 도구 선택의 이유는 [설계 결정](docs/reference/decisions.md)에 있다.
 
@@ -45,7 +45,7 @@
 
     admin API 전체(로그인·재발급·삭제까지)는 [admins.spec](apps/api/api-docs/admins.spec)이 보여준다.
 
-6. 콘솔에서 영화·극장을 등록한다. 상영 등록(202+SSE)·예매·구매는 UI 데모가 아니라 실행 가능한 API 문서가 보여준다 — `bash apps/api/api-docs/run.sh showtime-creation.spec`으로 상영까지 만들면, 사용자 앱(3200)에 가입해 홈에서 상영 중 영화를 확인할 수 있다.
+6. 콘솔에서 영화·극장을 등록한다. 상영 등록(202+상태 조회+SSE)·예매·구매는 UI 데모가 아니라 실행 가능한 API 문서가 보여준다 — `bash apps/api/api-docs/run.sh showtime-creation.spec`으로 상영까지 만들면, 사용자 앱(3200)에 가입해 홈에서 상영 중 영화를 확인할 수 있다.
 
 > `.env.api`와 `.env.infra`는 커밋된 **개발용 기본값**이다(`ROOT_PASSWORD=DevPass1!` 포함). 포크하면 자기 값으로 바꾼다.
 
@@ -147,24 +147,24 @@ nest-seed/
 
 1. `core/theaters` — 가장 단순한 도메인. 모델→리포지토리→서비스→컨트롤러→DTO의 기본 골격
 2. `application/booking` — 여러 Core를 조합하는 유스케이스
-3. `application/showtime-creation` — 사가 전체: 202 응답 → Restate 워크플로 → NATS → SSE
+3. `application/showtime-creation` — 사가 전체: 202 응답 → Restate 워크플로 → 영속 상태 조회와 NATS/SSE 알림
 4. 각 단계마다 같은 이름의 통합 테스트(`apps/api/src/__tests__`)를 나란히 읽는다
 
-| 서비스                                    | 보여주는 것                                                                                     |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `core/theaters`                           | 가장 단순한 CRUD. 새 도메인을 추가할 때 본보기로 복제할 기준                                    |
-| `core/movies`                             | 파일 업로드 연동, draft→publish 공개 상태, 상영이 참조 중이면 삭제 거부                         |
-| `core/users` · `admins`                   | soft delete × unique 인덱스, 로그인·토큰 회전, 탈퇴·비밀번호 변경 시 세션 폐기                  |
-| `core/showtimes` · `tickets`              | 사가가 만들어내는 자원. tickets는 원자 조건부 전이로 상태를 바꾼다                              |
-| `core/ticket-holding`                     | Redis Lua 스크립트 선점 — Lua가 여러 키를 원자적으로 다루도록 같은 hash slot에 키를 모으는 설계 |
-| `core/purchase-records` · `watch-records` | 사용자 기록 도메인. watch-records는 추천의 입력이 된다                                          |
-| `application/booking`                     | 예매 동선 조회와 좌석 선점, 요청 검증                                                           |
-| `application/purchase`                    | HTTP 멱등 응답, durable 상태 머신·lease 재조정·outbox, JetStream 알림의 at-least-once 처리      |
-| `application/showtime-creation`           | HTTP 키→`sagaId`·Restate workflow key 매핑, 202+SSE, Mongo 트랜잭션·guard CAS·멱등 재시도       |
-| `application/recommendation`              | 관람 기록 기반 추천. 도메인 로직을 순수 모듈로 분리                                             |
-| `view/user-app/home`                      | 화면 전용 응답 조합 — View 계층                                                                 |
-| `infrastructure/assets`                   | presigned 업로드와 체크섬 검증, 만료 업로드 정리 cron(분산 락)                                  |
-| `infrastructure/payments`                 | 외부 결제 연동 계층의 자리                                                                      |
+| 서비스                                    | 보여주는 것                                                                                         |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `core/theaters`                           | 가장 단순한 CRUD. 새 도메인을 추가할 때 본보기로 복제할 기준                                        |
+| `core/movies`                             | 파일 업로드 연동, draft→publish 공개 상태, 상영이 참조 중이면 삭제 거부                             |
+| `core/users` · `admins`                   | soft delete × unique 인덱스, 로그인·토큰 회전, 탈퇴·비밀번호 변경 시 세션 폐기                      |
+| `core/showtimes` · `tickets`              | 사가가 만들어내는 자원. tickets는 원자 조건부 전이로 상태를 바꾼다                                  |
+| `core/ticket-holding`                     | Redis Lua 스크립트 선점 — Lua가 여러 키를 원자적으로 다루도록 같은 hash slot에 키를 모으는 설계     |
+| `core/purchase-records` · `watch-records` | 사용자 기록 도메인. watch-records는 추천의 입력이 된다                                              |
+| `application/booking`                     | 예매 동선 조회와 좌석 선점, 요청 검증                                                               |
+| `application/purchase`                    | HTTP 멱등 응답, durable 상태 머신·lease 재조정·outbox, JetStream 알림의 at-least-once 처리          |
+| `application/showtime-creation`           | HTTP 키→`sagaId`·Restate workflow key 매핑, 202+상태 조회+SSE, Mongo 트랜잭션·guard CAS·멱등 재시도 |
+| `application/recommendation`              | 관람 기록 기반 추천. 도메인 로직을 순수 모듈로 분리                                                 |
+| `view/user-app/home`                      | 화면 전용 응답 조합 — View 계층                                                                     |
+| `infrastructure/assets`                   | presigned 업로드와 체크섬 검증, 만료 업로드 정리 cron(분산 락)                                      |
+| `infrastructure/payments`                 | 외부 결제 연동 계층의 자리                                                                          |
 
 ## 인가
 

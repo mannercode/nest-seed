@@ -6,6 +6,10 @@ import {
     type WorkflowSubmission
 } from '@restatedev/restate-sdk-clients'
 import { AppConfigService } from '#config'
+import type {
+    ShowtimeCreationStatusResponse,
+    ShowtimeCreationTerminalEvent
+} from '../internal/index.js'
 import type { ShowtimeCreationWorkflowInput } from './types.js'
 import { TemporalJsonSerde } from './temporal-json.serde.js'
 import { ShowtimeCreationWorkflow } from './workflow.js'
@@ -35,13 +39,21 @@ export class ShowtimeCreationWorkflowClient {
     async submit(
         input: ShowtimeCreationWorkflowInput,
         sagaId: string
-    ): Promise<WorkflowSubmission<void>> {
+    ): Promise<WorkflowSubmission<ShowtimeCreationTerminalEvent>> {
         return this.ingress
             .workflowClient(this.workflow.definition, sagaId)
             .workflowSubmit(input, rpc.sendOpts({ timeout: SUBMIT_ATTEMPT_TIMEOUT_MS }))
     }
 
-    waitForCompletion(submission: WorkflowSubmission<void>) {
+    async getStatus(sagaId: string): Promise<ShowtimeCreationStatusResponse> {
+        const output = await this.ingress
+            .workflowClient(this.workflow.definition, sagaId)
+            .workflowOutput(rpc.opts({ timeout: SUBMIT_ATTEMPT_TIMEOUT_MS }))
+
+        return output.ready ? output.result : { sagaId, status: 'pending' }
+    }
+
+    waitForCompletion(submission: WorkflowSubmission<ShowtimeCreationTerminalEvent>) {
         return this.ingress.result(submission)
     }
 }

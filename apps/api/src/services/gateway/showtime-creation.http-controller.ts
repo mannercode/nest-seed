@@ -6,6 +6,7 @@ import {
     Get,
     HttpCode,
     HttpStatus,
+    Param,
     Post,
     Query,
     Req,
@@ -53,6 +54,11 @@ export class ShowtimeCreationHttpController {
             req.user.sub,
             idempotencyKey
         )
+    }
+
+    @Get('showtimes/:sagaId/status')
+    async getShowtimeCreationStatus(@Param('sagaId') sagaId: string, @Req() req: AdminAuthRequest) {
+        return this.showtimeCreationService.getShowtimeCreationStatus(sagaId, req.user.sub)
     }
 
     @Get('movies')

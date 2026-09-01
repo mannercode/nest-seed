@@ -279,25 +279,35 @@ async function waitUntil(predicate, { timeoutMs, intervalMs = 50 } = {}) {
     return true
 }
 
-/**
- * 사가 하나가 끝날 때까지 SSE를 열어 두고 기다린다.
- * succeeded면 정상 종료, failed/error면 throw, 기한을 넘겨도 throw한다.
- * 호출마다 새 연결을 연다(시나리오들의 회차당 1연결과 동일).
- */
+/** 사가의 영속 상태를 조회해 완료를 기다린다. SSE 전달 자체는 sse-fanout-race가 검증한다. */
 async function waitForSagaSuccess(sagaId, deadlineMs) {
-    const stream = openEventStream()
-    await stream.connected
-    const terminal = ['succeeded', 'failed', 'error']
-    const outcome = () =>
-        stream.events.find((e) => e && e.sagaId === sagaId && terminal.includes(e.status))
-    try {
-        const ok = await waitUntil(() => Boolean(outcome()), { timeoutMs: deadlineMs })
-        if (!ok) throw new Error(`saga ${sagaId} did not finish in ${deadlineMs}ms`)
-        const evt = outcome()
-        if (evt.status !== 'succeeded') throw new Error(`saga ${sagaId} status=${evt.status}`)
-    } finally {
-        await stream.close().catch(() => {})
+    const path = `/showtime-creation/showtimes/${encodeURIComponent(sagaId)}/status`
+    const deadline = Date.now() + deadlineMs
+    let latestStatus = 'unknown'
+
+    while (Date.now() <= deadline) {
+        const response = await request('GET', path)
+        if (response.status !== 200) {
+            throw new Error(`saga ${sagaId} status query returned HTTP ${response.status}`)
+        }
+
+        latestStatus = response.body?.status
+        if (latestStatus === 'succeeded') return
+        if (latestStatus === 'failed' || latestStatus === 'error') {
+            throw new Error(`saga ${sagaId} status=${latestStatus}`)
+        }
+        if (latestStatus !== 'pending') {
+            throw new Error(`saga ${sagaId} returned invalid status=${String(latestStatus)}`)
+        }
+
+        const remainingMs = deadline - Date.now()
+        if (remainingMs <= 0) break
+        await new Promise((resolve) => setTimeout(resolve, Math.min(100, remainingMs)))
     }
+
+    throw new Error(
+        `saga ${sagaId} did not finish in ${deadlineMs}ms (last status=${latestStatus})`
+    )
 }
 
 async function createPublishedMovieAndTheater({ label, seatCount }) {

@@ -43,6 +43,14 @@ export const ShowtimeCreationEventSchema = z.discriminatedUnion('status', [
 
 export type ShowtimeCreationEvent = z.infer<typeof ShowtimeCreationEventSchema>
 
+export type ShowtimeCreationTerminalEvent = Extract<
+    ShowtimeCreationEvent,
+    { status: 'error' | 'failed' | 'succeeded' }
+>
+
+export type ShowtimeCreationStatusResponse =
+    ShowtimeCreationTerminalEvent | { sagaId: string; status: 'pending' }
+
 export type ValidateAndCreateResult =
     | { kind: 'failed'; conflictingShowtimes: ShowtimeDto[] }
     | { kind: 'succeeded'; createdShowtimeCount: number; createdTicketCount: number }

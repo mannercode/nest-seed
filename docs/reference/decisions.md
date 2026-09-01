@@ -81,7 +81,7 @@ MongoDB와 JetStream 갱신은 원자적이지 않고 부수 효과와 consumer 
 
 durable execution runtime 없이 showtime-creation을 만들면 재시도·상태 순서·멱등성·중단 후 재개를 애플리케이션이 각각 관리해야 한다. 사가 단계가 늘면 다음 부담이 빠르게 커진다.
 
-1. **상태 누락이 쉽다** — 단계마다 status를 emit해야 SSE가 이어진다. 한 곳이라도 빠지면 클라이언트가 계속 기다린다.
+1. **상태 누락이 쉽다** — 단계마다 status를 emit해야 SSE가 이어지고, 연결 전에 빠르게 끝나면 종결 이벤트도 놓친다. SSE만 기다리는 클라이언트는 계속 대기할 수 있다.
 2. **재시도와 멱등성을 직접 챙겨야 한다** — 컨테이너가 종료되면 처리 중이던 작업이 불완전한 상태로 남을 수 있다. 메시지 ack만으로는 일부만 진행된 외부 효과를 안전하게 이어 갈 수 없다.
 3. **진행 상황을 밖에서 보기 어렵다** — 단계가 코드 안에만 있다. 운영 중 “지금 어디까지 갔나?”를 보려면 로그를 따라가야 한다.
 
@@ -89,6 +89,7 @@ Restate로 옮기면 실행 기록과 애플리케이션 코드를 가깝게 두
 
 - Restate가 workflow key별 invocation과 durable step 결과를 journal에 저장한다. endpoint 복제본이 종료되어도 다른 복제본에서 이어받는다.
 - `ctx.run`마다 retry와 timeout을 코드로 적고, `waiting → processing → 종결 상태` 순서도 journal에 남긴다.
+- workflow가 종결 값을 출력으로 반환하며, 애플리케이션 상태 API는 완료 전 `pending`과 보존된 종결 결과를 조회한다.
 - Admin API와 query를 통해 invocation과 journal 상태를 애플리케이션 로그 밖에서 조회할 수 있다.
 - 별도 worker bundle·결정성 sandbox 없이 NestJS 제공자와 같은 API 코드에서 workflow endpoint를 제공한다.
 - 개발 인프라는 Restate 단일 컨테이너와 volume만 필요하고 별도 workflow DB·schema/namespace setup이 없다.
@@ -98,7 +99,7 @@ Restate로 옮기면 실행 기록과 애플리케이션 코드를 가깝게 두
 ### 트레이드오프
 
 - Journal은 완료된 step 결과를 재사용하지만 외부 효과 성공과 journal 기록 사이의 장애까지 원자적으로 묶지는 않는다. `ctx.run` 함수는 다시 호출될 수 있으므로 MongoDB operation unique key나 외부 provider idempotency key가 여전히 필요하다.
-- 상태 이벤트 step도 재시도되므로 같은 이벤트가 중복될 수 있다. Core NATS는 저장·redelivery를 제공하지 않아 SSE 연결 전 이벤트를 복구하지 않는다. MongoDB가 업무 결과의 기준이고 SSE는 진행 알림이다.
+- 상태 이벤트 step도 재시도되므로 같은 이벤트가 중복될 수 있다. Core NATS는 저장·redelivery를 제공하지 않아 SSE 연결 전 이벤트를 복구하지 않는다. 종결 상태는 보존 기간 안에 Restate workflow 출력으로 다시 읽고, MongoDB가 업무 결과의 기준이며 SSE는 진행 알림이다.
 - 모든 API 복제본이 HTTP/2 endpoint(:9080)를 열고 Admin API에 배포 URI를 등록해야 한다. 운영에서는 revision별 endpoint와 이전 invocation drain을 설계해야 하며 검증 스택의 고정 NGINX URI만으로 무중단 versioning이 완성되지 않는다.
 
 ### 검토했던 대안

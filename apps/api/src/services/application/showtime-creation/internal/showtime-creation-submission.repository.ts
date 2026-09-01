@@ -122,4 +122,11 @@ export class ShowtimeCreationSubmissionRepository extends CrudRepository<Showtim
         const submission = await this.collection.findOne({ idempotencyKey, principalId })
         return mongoToPublic<ShowtimeCreationSubmission>(submission)
     }
+
+    async findAcceptedBySagaId(principalId: string, sagaId: string) {
+        const submission = await this.collection.findOne(
+            this.activeFilter({ acceptedAt: { $ne: null }, principalId, sagaId })
+        )
+        return mongoToPublic<ShowtimeCreationSubmission>(submission)
+    }
 }

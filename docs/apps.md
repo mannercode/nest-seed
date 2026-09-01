@@ -180,7 +180,7 @@ SoLA는 원래 마이크로서비스를 염두에 둔 원칙이다. 마이크로
 
 현재 두 경로가 이 서비스를 탄다.
 
-- **showtime-creation 사가의 상태 브로드캐스트** — 사가가 상태를 NATS에 발행하면 모든 컨테이너의 구독 핸들러가 그 이벤트를 받는다. 각 핸들러는 이벤트를 로컬 RxJS Subject로 넘기고, SSE 컨트롤러는 자기 컨테이너에 붙은 클라이언트에게 흘려보낸다. 서버는 saga별로 스트림을 나누지 않으므로 클라이언트가 payload의 `sagaId`로 자기 작업을 골라야 한다.
+- **showtime-creation 사가의 상태 브로드캐스트** — 사가가 상태를 NATS에 발행하면 모든 컨테이너의 구독 핸들러가 그 이벤트를 받는다. 각 핸들러는 이벤트를 로컬 RxJS Subject로 넘기고, SSE 컨트롤러는 자기 컨테이너에 붙은 클라이언트에게 흘려보낸다. 서버는 saga별로 스트림을 나누지 않으므로 클라이언트가 payload의 `sagaId`로 자기 작업을 골라야 한다. 연결 전 종결 이벤트는 replay하지 않으며, 클라이언트는 `GET /showtime-creation/showtimes/:sagaId/status`로 Restate에 보관된 최종 결과를 복구한다.
 - **purchase 이벤트** — 완료된 구매 기록의 `purchaseEventStatus=pending`이 durable outbox이다. 복제본 중 publication lease를 CAS로 획득한 하나가 JetStream에 `purchaseRecordId`를 message ID로 발행하고, 서버의 저장 확인(PubAck)을 받은 뒤 MongoDB 기록을 `published`로 바꾼다. [PurchaseNotificationService](../apps/api/src/services/application/purchase/internal/purchase-notification.service.ts)는 네 복제본이 같은 durable pull consumer를 공유하고, 처리 성공 뒤 명시적으로 ack한다.
 
 JetStream PubAck와 MongoDB의 `published` 갱신은 한 트랜잭션으로 묶을 수 없다. 저장은 성공했지만 DB 갱신을 잃으면 lease 만료 뒤 같은 이벤트가 다시 발행될 수 있고, 부수 효과 실행 뒤 consumer ack를 잃어도 재전달될 수 있으므로 전체 계약은 **at-least-once**다. `purchaseRecordId` message ID는 10분 duplicate window 안의 재발행을 줄일 뿐 exactly-once를 만들지 않는다. 실제 알림·메일·외부 제공자 호출을 추가할 때는 이 ID를 durable inbox unique key나 provider idempotency key로 사용해야 한다. 현재 알림 소비자는 실제 발송 대신 `dedupeKey`가 포함된 로그만 남긴다.
@@ -214,6 +214,7 @@ HTTP `Idempotency-Key`와 Restate workflow key는 역할이 다르지만 같은 
 2. [ShowtimeCreationWorkflowClient](../apps/api/src/services/application/showtime-creation/worker/restate-workflow-client.service.ts)가 그 `sagaId`를 workflow key로 제출한다. 제출 응답을 잃고 lease가 만료되어 다른 복제본이 재제출해도 새 invocation을 만들지 않고 기존 실행을 가리킨다.
 3. 워크플로의 첫 durable step이 `waiting`, 다음 단계가 `processing`을 NATS에 발행한다. 따라서 접수 API가 이벤트를 따로 발행하다가 순서가 뒤집히는 경로가 없다.
 4. `validate and create` 단계가 [ShowtimeCreationPersistenceService](../apps/api/src/services/application/showtime-creation/internal/showtime-creation-persistence.service.ts)를 호출하고, `succeeded`·`failed`·`error` 중 하나를 후속 durable step으로 발행한다.
+5. 같은 종결 값을 workflow 출력으로 반환한다. 접수한 인증 주체는 상태 API에서 출력이 준비되기 전 `pending`, 준비된 뒤 종결 값을 조회한다.
 
 `validateAndCreate`는 다음 쓰기를 MongoDB 트랜잭션 하나로 묶는다.
 
@@ -221,9 +222,9 @@ HTTP `Idempotency-Key`와 Restate workflow key는 역할이 다르지만 같은 
 2. 대상 극장의 스케줄 guard를 검증 조회보다 먼저 CAS 갱신한다. 동시 트랜잭션은 WriteConflict를 내고 MongoDB 드라이버가 재시도하므로, 각자 예전 snapshot을 보고 둘 다 검증을 통과하는 일이 없다.
 3. 시간대를 검증하고 상영 시간·티켓을 생성한 뒤 operation 결과를 저장한다.
 
-Restate journal은 완료한 durable step을 재실행하지 않게 하지만, 외부 효과의 성공과 journal 기록 사이에서 연결이 끊기면 step 함수가 다시 호출될 수 있다. 그래서 MongoDB operation unique key와 입력 fingerprint가 최종 멱등성 경계다. NATS 상태 이벤트도 순서는 유지하지만 같은 이유로 at-least-once이며, 각 발행 시도는 10초 안에 끝나지 않으면 Restate 재시도로 넘긴다. 완료 workflow 보존 기간도 1시간이므로 workflow key를 영구 멱등 저장소로 취급하지 않는다. `validate and create`는 일시 오류를 최대 네 번 시도하고 각 시도의 DB 작업에 60초 abort 신호를 전달한다. 실패한 트랜잭션은 부분 데이터를 남기지 않고, 커밋 응답만 잃은 경우에도 다음 시도가 저장된 operation 결과를 돌려준다. 모든 시도가 실패하면 `error`를 발행하며 삭제 보상은 필요 없다.
+Restate journal은 완료한 durable step을 재실행하지 않게 하지만, 외부 효과의 성공과 journal 기록 사이에서 연결이 끊기면 step 함수가 다시 호출될 수 있다. 그래서 MongoDB operation unique key와 입력 fingerprint가 최종 멱등성 경계다. NATS 상태 이벤트도 순서는 유지하지만 같은 이유로 at-least-once이며, 각 발행 시도는 10초 안에 끝나지 않으면 Restate 재시도로 넘긴다. 완료 workflow와 상태 API가 읽는 출력의 보존 기간은 1시간이므로 workflow key를 영구 멱등 저장소로 취급하지 않는다. `validate and create`는 일시 오류를 최대 네 번 시도하고 각 시도의 DB 작업에 60초 abort 신호를 전달한다. 실패한 트랜잭션은 부분 데이터를 남기지 않고, 커밋 응답만 잃은 경우에도 다음 시도가 저장된 operation 결과를 돌려준다. 모든 시도가 실패하면 `error`를 발행하며 삭제 보상은 필요 없다.
 
-상태 이벤트도 durable step으로 재시도하지만 전달 통로는 저장하지 않는 Core NATS다. 이벤트가 중복될 수 있고 연결 전에 지나간 이벤트를 replay하지 않으므로, SSE는 작업 추적용 알림이지 영구 상태 저장소가 아니다. 자원 생성 결과와 멱등성의 기준은 MongoDB다.
+상태 이벤트도 durable step으로 재시도하지만 전달 통로는 저장하지 않는 Core NATS다. 이벤트가 중복될 수 있고 연결 전에 지나간 이벤트를 replay하지 않으므로, SSE는 best-effort 진행 알림이다. 종결 상태 재조회는 Restate workflow 출력, 자원 생성 결과와 멱등성의 기준은 MongoDB가 맡는다.
 
 전체 흐름을 시퀀스로 보면 다음과 같다(다이어그램은 devcontainer의 VS Code 미리보기에서 렌더된다).
 
@@ -269,6 +270,12 @@ else 예외
     mongo --> Endpoint: rollback(부분 쓰기 없음)
     Endpoint -> NATS: error — 재시도 소진 후
 end
+Endpoint --> Restate: terminal workflow output
+Client -> API: GET /showtime-creation/showtimes/:sagaId/status
+API -> mongo: submission 소유권 확인
+API -> Restate: workflowOutput(key=sagaId)
+Restate --> API: pending 또는 terminal output
+API --> Client: status
 @enduml
 ```
 
@@ -440,14 +447,15 @@ async get(@Param('id') id: string) {
 
 #### 오래 걸리는 작업은 비동기로 처리한다
 
-처리에 시간이 걸리는 작업은 바로 결과를 반환하려 하지 않는다. 먼저 `202 Accepted`와 작업 추적용 식별자(sagaId)를 응답하고, 진행 상황은 SSE(Server-Sent Events)로 보낸다.
+처리에 시간이 걸리는 작업은 바로 결과를 반환하려 하지 않는다. 먼저 `202 Accepted`와 작업 추적용 식별자(sagaId)를 응답한다. 종결 상태는 다시 조회할 수 있게 저장하고, SSE(Server-Sent Events)는 진행 알림에 사용한다.
 
 ```
-POST /some-resource               → 202 { sagaId }
-GET  /some-resource/event-stream  → SSE { status, sagaId }
+POST /some-resource                  → 202 { sagaId }
+GET  /some-resource/:sagaId/status   → { status: pending | terminal, sagaId, ... }
+GET  /some-resource/event-stream     → SSE { status, sagaId } (best effort)
 ```
 
-실물 예시는 [showtime-creation.http-controller.ts](../apps/api/src/services/gateway/showtime-creation.http-controller.ts)의 `@Sse('event-stream')`이다.
+실물 예시는 [showtime-creation.http-controller.ts](../apps/api/src/services/gateway/showtime-creation.http-controller.ts)의 상태 조회와 `@Sse('event-stream')`이다.
 
 #### 쿼리 파라미터가 길어질 수 있으면 POST를 사용한다
 
@@ -693,4 +701,4 @@ API 배포 번들은 `nest build -b rspack --rspackPath rspack.config.cjs`로 �
 
 ## console·user-app — 최소 데모
 
-Next.js 앱 두 개는 이 시드로 모노레포를 구성할 사람을 위해 최소한으로 넣은 데모다. 콘솔은 admin 로그인과 영화·극장 등록, 극장·사용자 목록 조회를, 사용자 앱은 가입·로그인과 홈 화면(`view/user-app/home` 응답 소비)을 보여준다. 두 앱의 `/api` Route Handler는 access/refresh 토큰을 HttpOnly 쿠키에 보관하고, 만료 시 회전한 뒤 원 요청을 한 번 재시도하는 BFF다. BFF 응답은 캐시하지 않고 요청 본문을 1MiB로 제한한다. 이 BFF는 catch-all proxy다. 각 앱의 역할과 맞지 않는 login/logout·외부 refresh 같은 일부 auth endpoint를 차단하지만, 최종 인가 경계는 백엔드 guard다. 상영 등록(202+SSE)·예매·구매 흐름은 UI가 아니라 실행 가능한 API 문서(`api-docs/showtime-creation.spec`·`booking.spec`·`purchases.spec`)와 분산 레이스 시나리오(`tests/api-race/`)가 보여준다. 프로덕션 수준의 프론트엔드 구조를 의도하지 않았다.
+Next.js 앱 두 개는 이 시드로 모노레포를 구성할 사람을 위해 최소한으로 넣은 데모다. 콘솔은 admin 로그인과 영화·극장 등록, 극장·사용자 목록 조회를, 사용자 앱은 가입·로그인과 홈 화면(`view/user-app/home` 응답 소비)을 보여준다. 두 앱의 `/api` Route Handler는 access/refresh 토큰을 HttpOnly 쿠키에 보관하고, 만료 시 회전한 뒤 원 요청을 한 번 재시도하는 BFF다. BFF 응답은 캐시하지 않고 요청 본문을 1MiB로 제한한다. 이 BFF는 catch-all proxy다. 각 앱의 역할과 맞지 않는 login/logout·외부 refresh 같은 일부 auth endpoint를 차단하지만, 최종 인가 경계는 백엔드 guard다. 상영 등록(202+상태 조회+SSE)·예매·구매 흐름은 UI가 아니라 실행 가능한 API 문서(`api-docs/showtime-creation.spec`·`booking.spec`·`purchases.spec`)와 분산 레이스 시나리오(`tests/api-race/`)가 보여준다. 프로덕션 수준의 프론트엔드 구조를 의도하지 않았다.
