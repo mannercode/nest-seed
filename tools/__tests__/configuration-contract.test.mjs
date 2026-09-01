@@ -60,14 +60,14 @@ test('workspaces share the Nest Oxlint baseline', async () => {
     }
 })
 
-test('devcontainer keeps reproducible install and cache policy', async () => {
+test('devcontainer floats image tools while keeping project installs locked', async () => {
     const config = await read('.devcontainer/devcontainer.json')
     const dockerfile = await read('.devcontainer/Dockerfile')
     const lock = JSON.parse(await read('.devcontainer/devcontainer-lock.json'))
 
     assert.match(
         config,
-        /"postCreateCommand"\s*:\s*\{\s*"install"\s*:\s*"pnpm install --frozen-lockfile"/
+        /"postCreateCommand"\s*:\s*\{\s*"install"\s*:\s*"pnpm install --frozen-lockfile && pnpm --filter '\.\/tests\/web' exec playwright install chromium"/
     )
     assert.match(config, /source=\$\{localEnv:HOME\}\/\.codex,target=\/home\/node\/\.codex/)
     assert.match(
@@ -76,12 +76,30 @@ test('devcontainer keeps reproducible install and cache policy', async () => {
     )
     assert.match(config, /source=\$\{localEnv:HOME\}\/\.claude,target=\/home\/node\/\.claude/)
     assert.doesNotMatch(config, /initialize-user-state\.sh|devcontainerId/)
-    assert.doesNotMatch(dockerfile, /^ARG NPM_VERSION=/m)
-    assert.ok(
-        dockerfile.indexOf('ARG PNPM_VERSION=') >
-            dockerfile.indexOf('playwright install --with-deps chromium'),
-        'pnpm changes must not invalidate the Chromium install layer'
-    )
+    assert.match(dockerfile, /^FROM node:\d+\.\d+\.\d+-bookworm-slim@sha256:[a-f0-9]{64}$/m)
+    assert.doesNotMatch(dockerfile, /^ARG [A-Z_]+_VERSION=/m)
+
+    const assertVersionCheckedInInstallStep = (installMarker, versionMarker) => {
+        const installIndex = dockerfile.indexOf(installMarker)
+        const nextRunIndex = dockerfile.indexOf('\nRUN ', installIndex + 1)
+        const versionIndex = dockerfile.indexOf(versionMarker, installIndex)
+        assert.notEqual(installIndex, -1, `missing install marker: ${installMarker}`)
+        assert.ok(
+            versionIndex > installIndex && (nextRunIndex === -1 || versionIndex < nextRunIndex),
+            `${versionMarker} must be checked in its install step`
+        )
+    }
+    for (const [installMarker, versionMarker] of [
+        ['apt-get install -y --no-install-recommends', 'shellcheck --version'],
+        ['npm install --global --no-audit --no-fund playwright', 'playwright --version'],
+        ['releases/latest/download/plantuml.jar', 'java -jar /opt/plantuml.jar -version'],
+        ['releases/latest/download/${archive}.tar.gz', 'lychee --version'],
+        ['api.github.com/repos/grafana/k6/releases/latest', 'k6 version'],
+        ['releases/latest/download/cloudflared-linux-${TARGETARCH}', 'cloudflared --version'],
+        ['npm install --global --no-audit --no-fund pnpm', 'pnpm --version']
+    ]) {
+        assertVersionCheckedInInstallStep(installMarker, versionMarker)
+    }
     const configuredFeatures = Array.from(
         config.matchAll(/^\s*"(ghcr\.io\/[^"]+)"\s*:\s*\{/gm),
         ([, feature]) => feature
@@ -98,6 +116,7 @@ test('API image uses BuildKit cache and deploys only its production workspace', 
     const compose = await read('deploy/compose.yml')
 
     assert.match(dockerfile, /^# syntax=docker\/dockerfile:1$/m)
+    assert.doesNotMatch(dockerfile, /pnpm@\d/)
     assert.match(dockerfile, /--mount=type=cache[^\n]+target=\/pnpm\/store/)
     assert.match(
         dockerfile,
@@ -311,7 +330,7 @@ test('local S3 service is internal-only and exposes a dedicated health endpoint'
     assert.doesNotMatch(s3Compose, /VGW_(?:ADMIN|WEBUI)_PORT/)
 })
 
-test('container base and infrastructure image references are digest-pinned', async () => {
+test('deployment base and infrastructure image references are digest-pinned', async () => {
     const infraEnv = await read('.env.infra')
     for (const line of infraEnv
         .split('\n')
