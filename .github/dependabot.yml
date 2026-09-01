@@ -50,8 +50,8 @@ updates:
           actions-minor-patch:
               patterns: ['*']
               update-types: ['minor', 'patch']
-    # 세 Dockerfile의 첫 외부 FROM을 같은 Node 이미지로 유지한다. dependency-name 기준
-    # cross-directory grouping으로 tag+digest 갱신도 항상 하나의 PR에서 수행한다.
+    # Dev Container와 API의 Node 이미지는 patch·배포판·digest까지 동일하게 고정한다.
+    # dependency-name 기준 cross-directory grouping으로 tag+digest 갱신도 한 PR에서 수행한다.
     - package-ecosystem: docker
       directories:
           - '/.devcontainer'

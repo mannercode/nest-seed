@@ -18,7 +18,7 @@
 
 이미지 값의 태그는 사람이 버전을 읽을 수 있게 남기고, multi-architecture manifest digest가 실제 이미지 바이트를 고정한다. 이미지를 올릴 때는 태그와 digest를 함께 검증·갱신한다. 태그만 바꾸거나, 기존 digest를 다른 태그에 그대로 남기지 않는다. MongoDB만 `@testcontainers/mongodb`가 `MONGO_IMAGE`의 태그를 semver로 읽어 `mongosh` 사용 여부를 정하므로 `MONGO_IMAGE`와 `MONGO_IMAGE_DIGEST`를 분리한다. `infra/compose.mongo.yml`은 두 값을 `tag@digest`로 결합해 실제 인프라 이미지의 불변성은 그대로 유지한다.
 
-Dependabot은 설정된 Dockerfile 디렉터리(`.devcontainer`, `apps/api`, `deploy`)와 Compose 디렉터리(`deploy`, `infra`)의 직접 참조를 매주 minor/patch 범위로 확인한다. 변수로 간접 참조하는 `.env.infra` 이미지는 자동 갱신 범위가 아니므로, 버전 갱신 때 사람이 태그와 multi-architecture digest를 함께 확인한다.
+Dependabot은 Dockerfile 디렉터리(`.devcontainer`, `apps/api`, `deploy`)와 Compose 디렉터리(`deploy`, `infra`)의 직접 참조를 매주 minor/patch 범위로 확인한다. Dev Container와 API의 Node 이미지는 patch·배포판·digest까지 동일하게 고정하고 dependency name으로 묶어 한 PR에서 갱신한다. 변수로 간접 참조하는 `.env.infra` 이미지는 자동 갱신 범위가 아니므로, 버전 갱신 때 사람이 태그와 multi-architecture digest를 함께 확인한다.
 
 ---
 

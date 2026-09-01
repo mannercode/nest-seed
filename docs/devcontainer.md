@@ -22,15 +22,15 @@ infra·deploy compose와 devcontainer는 같은 Docker 네트워크로 묶인다
 ## 부팅 순서
 
 1. `initializeCommand` — 사용자명과 workspace basename을 조합한 Docker 네트워크와 도구 설정 디렉터리 준비 (호스트에서 실행)
-2. 이미지 빌드 — `Dockerfile`이 digest로 고정한 Node 26 베이스에 k6, cloudflared, shellcheck, lychee, PlantUML, Playwright Chromium을 설치한다. 직접 다운로드하는 파일은 버전과 SHA-256을 함께 고정한다.
-3. `postCreateCommand` — `pnpm install --frozen-lockfile`(최초 1회). manifest와 lockfile이 다르면 설치를 거부한다.
+2. 이미지 빌드 — patch·배포판·digest까지 고정한 Node 베이스에 현재 릴리스의 k6, cloudflared, shellcheck, lychee, PlantUML과 Playwright의 OS 의존성을 설치한다. 이 도구들은 폐기 가능한 개발 환경 도구이므로 Dockerfile에 개별 버전을 중복해서 고정하지 않는다.
+3. `postCreateCommand` — `pnpm install --frozen-lockfile`(최초 1회) 후 lockfile의 Playwright와 일치하는 Chromium을 설치한다. manifest와 lockfile이 다르면 의존성 설치를 거부한다.
 4. `postStartCommand` — `bash infra/reset.sh`로 개발 인프라 기동 + PlantUML 서버
 
 첫 부팅은 이미지 빌드와 인프라 이미지 다운로드 때문에 시간이 걸린다. 이후 부팅은 인프라 리셋 시간(약 30초)이 대부분이다.
 
 pnpm store는 bind mount된 workspace의 `.pnpm-store`에 둔다. clone마다 디스크를 더 쓰는 대신 컨테이너를 다시 만들어도 같은 clone의 다운로드 캐시가 남고, 호스트별 별도 mount 설정이 필요 없다. 용량을 회수하려면 컨테이너를 정지한 뒤 이 디렉터리만 지울 수 있지만, 다음 설치에서 패키지를 다시 내려받는다.
 
-베이스·인프라 이미지를 올릴 때는 버전 태그만 바꾸지 않고 multi-architecture digest를 함께 확인·갱신한다. Dockerfile에서 직접 받는 도구는 정확한 릴리스 URL과 amd64·arm64 자산의 존재를 확인한다.
+Dev Container의 Node 이미지는 프로젝트 호환성과 재현성을 위해 patch·배포판·digest까지 API 이미지와 동일하게 고정하고, Dependabot이 두 참조의 minor/patch 갱신을 한 PR로 묶는다. 나머지 개발 도구는 이미지를 다시 빌드할 때 현재 릴리스를 받는다. 프로젝트 의존성과 Playwright 브라우저 버전은 manifest와 lockfile이 관리한다.
 
 네트워크·컨테이너·volume 이름은 사용자명과 workspace basename으로 구분한다. 같은 basename의 clone은 이름이 겹치므로, 같은 호스트에서 두 clone을 동시에 띄울 때는 서로 다른 폴더 이름을 사용한다. 개발 인프라는 host 포트를 publish하지 않는다. 선택 기능인 VersityGW Admin API와 WebUI도 활성화하지 않아 devcontainer를 추가로 띄워도 host 포트 때문에 부팅이 실패하지 않는다.
 

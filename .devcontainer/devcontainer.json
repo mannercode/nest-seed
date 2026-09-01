@@ -4,7 +4,7 @@
     "build": { "dockerfile": "Dockerfile" },
     "features": {
         "ghcr.io/devcontainers/features/docker-outside-of-docker:1": { "moby": false },
-        "ghcr.io/devcontainers/features/github-cli:1": {}
+        "ghcr.io/devcontainers/features/github-cli": {}
     },
     "runArgs": [
         "--env-file",
@@ -14,14 +14,13 @@
         "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}",
         "--network=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
     ],
+    "forwardPorts": [5010, 5020],
     "remoteUser": "node",
     "containerEnv": {
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}",
         "COMPOSE_PROJECT_NAME": "${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
     },
-    // 컨테이너 안에서 `docker compose`를 실행해도 실제 작업은 호스트 Docker가 한다.
-    // 호스트가 `compose.yml`의 경로를 그대로 찾을 수 있도록,
-    // 작업 폴더를 컨테이너와 호스트에서 같은 경로로 연결한다.
+    // docker-outside-of-docker는 호스트 daemon을 사용하기 때문에 workspace를 같은 절대 경로에 마운트한다.
     "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind",
     "workspaceFolder": "${localWorkspaceFolder}",
     "mounts": [
@@ -31,18 +30,19 @@
         "source=${localEnv:HOME}/.claude.json,target=/home/node/.claude.json,type=bind"
     ],
     "initializeCommand": {
+        "network": "n=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}; docker network inspect \"$n\" >/dev/null 2>&1 || docker network create \"$n\"",
         "codex": "mkdir -p ${localEnv:HOME}/.codex",
         "claude": "mkdir -p ${localEnv:HOME}/.claude && touch ${localEnv:HOME}/.claude.json",
-        "github": "mkdir -p ${localEnv:HOME}/.config/gh",
-        "network": "n=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}; docker network inspect \"$n\" >/dev/null 2>&1 || docker network create \"$n\""
+        "github": "mkdir -p ${localEnv:HOME}/.config/gh"
     },
-    "postCreateCommand": { "install": "pnpm install --frozen-lockfile" },
+    "postCreateCommand": {
+        "install": "pnpm install --frozen-lockfile && pnpm --filter './tests/web' exec playwright install chromium"
+    },
     "postStartCommand": {
         "infra": "bash infra/reset.sh",
         "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null"
     },
     "waitFor": "postStartCommand",
-    "forwardPorts": [5010, 5020],
     "customizations": {
         "vscode": {
             "extensions": [
@@ -51,12 +51,10 @@
                 "jebbs.plantuml",
                 "esbenp.prettier-vscode",
                 "mutantdino.resourcemonitor",
-                "mkhl.shfmt",
-                "openai.chatgpt"
+                "mkhl.shfmt"
             ],
             "settings": {
                 "remote.autoForwardPorts": false,
-                "remote.downloadExtensionsLocally": true,
                 "livePreview.portNumber": 5010,
                 "plantuml.server": "http://localhost:5020/",
                 "plantuml.render": "PlantUMLServer"
