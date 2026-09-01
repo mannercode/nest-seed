@@ -60,14 +60,33 @@ test('workspaces share the Nest Oxlint baseline', async () => {
     }
 })
 
-test('devcontainer installs the frozen lock and pins resolved features', async () => {
+test('devcontainer keeps reproducible install and cache policy', async () => {
     const config = await read('.devcontainer/devcontainer.json')
+    const dockerfile = await read('.devcontainer/Dockerfile')
     const lock = JSON.parse(await read('.devcontainer/devcontainer-lock.json'))
 
     assert.match(
         config,
         /"postCreateCommand"\s*:\s*\{\s*"install"\s*:\s*"pnpm install --frozen-lockfile"/
     )
+    assert.match(config, /source=\$\{localEnv:HOME\}\/\.codex,target=\/home\/node\/\.codex/)
+    assert.match(
+        config,
+        /source=\$\{localEnv:HOME\}\/\.config\/gh,target=\/home\/node\/\.config\/gh/
+    )
+    assert.match(config, /source=\$\{localEnv:HOME\}\/\.claude,target=\/home\/node\/\.claude/)
+    assert.doesNotMatch(config, /initialize-user-state\.sh|devcontainerId/)
+    assert.doesNotMatch(dockerfile, /^ARG NPM_VERSION=/m)
+    assert.ok(
+        dockerfile.indexOf('ARG PNPM_VERSION=') >
+            dockerfile.indexOf('playwright install --with-deps chromium'),
+        'pnpm changes must not invalidate the Chromium install layer'
+    )
+    const configuredFeatures = Array.from(
+        config.matchAll(/^\s*"(ghcr\.io\/[^"]+)"\s*:\s*\{/gm),
+        ([, feature]) => feature
+    )
+    assert.deepEqual(Object.keys(lock.features).sort(), configuredFeatures.sort())
     for (const feature of Object.values(lock.features)) {
         assert.match(feature.resolved, /@sha256:[a-f0-9]{64}$/)
         assert.match(feature.integrity, /^sha256:[a-f0-9]{64}$/)
