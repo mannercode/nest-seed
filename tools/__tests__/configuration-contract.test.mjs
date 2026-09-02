@@ -60,7 +60,7 @@ test('workspaces share the Nest Oxlint baseline', async () => {
     }
 })
 
-test('devcontainer floats image tools while keeping project installs locked', async () => {
+test('devcontainer avoids redundant version probes while keeping project installs locked', async () => {
     const config = await read('.devcontainer/devcontainer.json')
     const dockerfile = await read('.devcontainer/Dockerfile')
     const lock = JSON.parse(await read('.devcontainer/devcontainer-lock.json'))
@@ -78,27 +78,28 @@ test('devcontainer floats image tools while keeping project installs locked', as
     assert.doesNotMatch(config, /initialize-user-state\.sh|devcontainerId/)
     assert.match(dockerfile, /^FROM node:\d+\.\d+\.\d+-bookworm-slim@sha256:[a-f0-9]{64}$/m)
     assert.doesNotMatch(dockerfile, /^ARG [A-Z_]+_VERSION=/m)
-
-    const assertVersionCheckedInInstallStep = (installMarker, versionMarker) => {
-        const installIndex = dockerfile.indexOf(installMarker)
-        const nextRunIndex = dockerfile.indexOf('\nRUN ', installIndex + 1)
-        const versionIndex = dockerfile.indexOf(versionMarker, installIndex)
-        assert.notEqual(installIndex, -1, `missing install marker: ${installMarker}`)
-        assert.ok(
-            versionIndex > installIndex && (nextRunIndex === -1 || versionIndex < nextRunIndex),
-            `${versionMarker} must be checked in its install step`
-        )
-    }
-    for (const [installMarker, versionMarker] of [
-        ['apt-get install -y --no-install-recommends', 'shellcheck --version'],
-        ['npm install --global --no-audit --no-fund playwright', 'playwright --version'],
-        ['releases/latest/download/plantuml.jar', 'java -jar /opt/plantuml.jar -version'],
-        ['releases/latest/download/${archive}.tar.gz', 'lychee --version'],
-        ['api.github.com/repos/grafana/k6/releases/latest', 'k6 version'],
-        ['releases/latest/download/cloudflared-linux-${TARGETARCH}', 'cloudflared --version'],
-        ['npm install --global --no-audit --no-fund pnpm', 'pnpm --version']
+    for (const versionProbe of [
+        'node --version',
+        'npm --version',
+        'curl --version',
+        'git --version',
+        'ip -Version',
+        'jq --version',
+        'shellcheck --version',
+        'shfmt -version',
+        'ssh -V',
+        'tmux -V',
+        'tree --version',
+        'unzip -v',
+        'xz --version',
+        'playwright --version',
+        'java -jar /opt/plantuml.jar -version',
+        'lychee --version',
+        'k6 version',
+        'cloudflared --version',
+        'pnpm --version'
     ]) {
-        assertVersionCheckedInInstallStep(installMarker, versionMarker)
+        assert.equal(dockerfile.includes(versionProbe), false, `redundant probe: ${versionProbe}`)
     }
     const configuredFeatures = Array.from(
         config.matchAll(/^\s*"(ghcr\.io\/[^"]+)"\s*:\s*\{/gm),
