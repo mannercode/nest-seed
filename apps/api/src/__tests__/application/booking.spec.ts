@@ -26,6 +26,7 @@ describe('BookingService', () => {
     describe('고객 예매 흐름', () => {
         let movie: MovieDto
         let accessToken: string
+        let createdTickets: TicketDto[]
         let user: UserDto
 
         const locations = [
@@ -47,6 +48,7 @@ describe('BookingService', () => {
             const resources = await createAllResources(fix, locations, startTimes)
             movie = resources.movie
             accessToken = resources.accessToken
+            createdTickets = resources.tickets
             user = resources.user
         })
 
@@ -86,24 +88,31 @@ describe('BookingService', () => {
                 const url = `/booking/movies/${movie.id}/theaters/${theater.id}/showdates/${yymmdd}/showtimes`
 
                 const { body: showtimes } = await fix.httpClient.get(url).ok(
-                    expect.arrayContaining(
-                        [
-                            { movieId: movie.id, startTime: startTimes[0], theaterId: theater.id },
-                            { movieId: movie.id, startTime: startTimes[1], theaterId: theater.id }
-                        ].map((item) => expect.objectContaining(item))
+                    [
+                        { movieId: movie.id, startTime: startTimes[0], theaterId: theater.id },
+                        { movieId: movie.id, startTime: startTimes[1], theaterId: theater.id }
+                    ].map((item) =>
+                        expect.objectContaining({
+                            ...item,
+                            ticketSales: { available: 8, sold: 0, total: 8 }
+                        })
                     )
                 )
 
                 showtime = showtimes[0]
             })
 
-            await step('4. 상영 시간의 가용 티켓을 조회한다', async () => {
+            await step('4. 상영 시간의 티켓을 조회해 가용 상태를 확인한다', async () => {
+                const expectedTickets = createdTickets.filter(
+                    (ticket) => ticket.showtimeId === showtime.id
+                )
                 const { body } = await fix.httpClient
                     .get(`/booking/showtimes/${showtime.id}/tickets`)
-                    .ok()
+                    .ok(expectedTickets)
 
                 tickets = body
 
+                expect(tickets).toHaveLength(8)
                 expect(tickets.every((t) => t.status === TicketStatus.Available)).toBe(true)
             })
 
@@ -130,6 +139,13 @@ describe('BookingService', () => {
     describe('POST /booking/showtimes/:showtimeId/tickets/hold', () => {
         const locations = [{ latitude: 30.0, longitude: 130.0 }]
         const startTimes = [instant('2999-01-01T12:00Z')]
+
+        it('인증 없이 요청하면 401을 반환한다', async () => {
+            await fix.httpClient
+                .post(`/booking/showtimes/${nullObjectId}/tickets/hold`)
+                .body({ ticketIds: [nullObjectId] })
+                .unauthorized(Errors.Auth.Unauthorized())
+        })
 
         describe('가용 티켓을 선택했을 때', () => {
             let accessToken: string
