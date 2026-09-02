@@ -17,6 +17,7 @@ export COMPOSE_IGNORE_ORPHANS=True
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 COMPOSE_DIR="${WORKSPACE_ROOT}/deploy"
+K6_RUNNER="${SCRIPT_DIR}/run-k6.sh"
 
 # devcontainer는 deploy compose와 같은 Docker 네트워크에 붙어 있어 서비스 이름으로 직접 접근한다.
 # 호스트 포트(3000)는 기동 직후 공개가 늦을 수 있어 race 러너와 같은 방식을 쓴다.
@@ -114,7 +115,7 @@ seed_theaters() {
             exit 1
         fi
         echo "Seeding theaters... ${count}/${SEED_TARGET}"
-        k6 run --quiet \
+        "${K6_RUNNER}" run --quiet \
             --env "SERVER_URL=${SERVER_URL}" \
             --env "ADMIN_ACCESS_TOKEN=${ADMIN_ACCESS_TOKEN}" \
             --env "SCENARIO=theater-write" \

@@ -87,13 +87,9 @@ test('devcontainer avoids redundant version probes while keeping project install
     assert.doesNotMatch(dockerfile, /^ARG [A-Z_]+_VERSION=/m)
     assert.match(
         dockerfile,
-        /deb \[signed-by=\/etc\/apt\/keyrings\/k6\.asc\] https:\/\/dl\.k6\.io\/deb stable main/
-    )
-    assert.match(
-        dockerfile,
         /deb \[signed-by=\/usr\/share\/keyrings\/cloudflare-main\.gpg\] https:\/\/pkg\.cloudflare\.com\/cloudflared any main/
     )
-    assert.doesNotMatch(dockerfile, /api\.github\.com\/repos\/grafana\/k6/)
+    assert.doesNotMatch(dockerfile, /\bk6\b/)
     assert.doesNotMatch(dockerfile, /github\.com\/cloudflare\/cloudflared\/releases/)
     assert.match(dockerfile, /COPY tests\/web\/package\.json \/tmp\/tests-web-package\.json/)
     assert.match(dockerfile, /playwright_version=.*devDependencies\['@playwright\/test'\]/)
@@ -137,6 +133,23 @@ test('devcontainer avoids redundant version probes while keeping project install
     for (const feature of Object.values(lock.features)) {
         assert.match(feature.resolved, /@sha256:[a-f0-9]{64}$/)
         assert.match(feature.integrity, /^sha256:[a-f0-9]{64}$/)
+    }
+})
+
+test('API benchmark runs the pinned official k6 container', async () => {
+    const compose = await read('deploy/compose.yml')
+    const launcher = await read('tests/api-benchmark/run-k6.sh')
+    const runners = await Promise.all(
+        ['tests/api-benchmark/runner.sh', 'tests/api-benchmark/mixed-runner.sh'].map(read)
+    )
+
+    assert.match(compose, /image: grafana\/k6:\d+\.\d+\.\d+@sha256:[a-f0-9]{64}/)
+    assert.match(compose, /profiles: \[benchmark\]/)
+    assert.match(launcher, /docker compose[^\n]+--project-directory/)
+    assert.match(launcher, /--user "\$\(id -u\):\$\(id -g\)"/)
+    for (const runner of runners) {
+        assert.match(runner, /run-k6\.sh/)
+        assert.doesNotMatch(runner, /\bk6 run\b/)
     }
 })
 

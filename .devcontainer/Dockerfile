@@ -46,17 +46,13 @@ RUN set -eu; \
     rm -rf /tmp/lychee.tar.gz "/tmp/${archive}"
 
 RUN set -eu; \
-    install -d -m 0755 /etc/apt/keyrings /usr/share/keyrings; \
-    curl -fsSL --retry 3 --retry-all-errors \
-    "https://dl.k6.io/key.gpg" -o /etc/apt/keyrings/k6.asc; \
+    install -d -m 0755 /usr/share/keyrings; \
     curl -fsSL --retry 3 --retry-all-errors \
     "https://pkg.cloudflare.com/cloudflare-main.gpg" -o /usr/share/keyrings/cloudflare-main.gpg; \
-    echo "deb [signed-by=/etc/apt/keyrings/k6.asc] https://dl.k6.io/deb stable main" \
-    > /etc/apt/sources.list.d/k6.list; \
     echo "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main" \
     > /etc/apt/sources.list.d/cloudflared.list; \
     apt-get update; \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends cloudflared k6; \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends cloudflared; \
     rm -rf /var/lib/apt/lists/*
 
 COPY package.json /tmp/workspace-package.json

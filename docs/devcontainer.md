@@ -22,7 +22,7 @@ infra·deploy compose와 devcontainer는 같은 Docker 네트워크로 묶인다
 ## 부팅 순서
 
 1. `initializeCommand` — 사용자명과 workspace basename을 조합한 Docker 네트워크와 도구 설정 디렉터리 준비 (호스트에서 실행)
-2. 이미지 빌드 — patch·배포판·digest까지 고정한 Node 베이스에 개발 도구를 설치한다. k6와 cloudflared는 각 공급자의 서명된 APT 저장소를 사용한다. Playwright CLI는 `tests/web/package.json`의 `@playwright/test` 버전으로 일시 실행해 Chromium의 OS 의존성만 설치하고, pnpm은 루트 `package.json`의 `packageManager` 버전을 설치한다. 버전을 Dockerfile에 중복 기입하지 않으며 설치 명령의 실패가 빌드를 중단하므로 별도 `--version` 출력으로 다시 확인하지 않는다.
+2. 이미지 빌드 — patch·배포판·digest까지 고정한 Node 베이스에 개발 도구를 설치한다. cloudflared는 Cloudflare의 서명된 APT 저장소에서 설치한다. Playwright CLI는 `tests/web/package.json`의 `@playwright/test` 버전으로 일시 실행해 Chromium의 OS 의존성만 설치하고, pnpm은 루트 `package.json`의 `packageManager` 버전을 설치한다. 프로젝트 도구 버전을 Dockerfile에 중복 기입하지 않으며 설치 명령의 실패가 빌드를 중단하므로 별도 `--version` 출력으로 다시 확인하지 않는다. k6는 이미지에 설치하지 않고 벤치마크를 실행할 때만 공식 Docker 이미지를 사용한다([tests 문서](tests.md#api-benchmark--성능-비교)).
 3. `updateContentCommand` — `pnpm install --frozen-lockfile`로 워크스페이스 의존성을 설치한다. manifest와 lockfile이 다르면 설치를 거부한다.
 4. `postCreateCommand` — 워크스페이스 의존성 설치가 끝난 뒤 lockfile의 Playwright와 일치하는 Chromium을 설치한다.
 5. `postStartCommand` — `bash infra/reset.sh`로 개발 인프라 기동 + PlantUML 서버

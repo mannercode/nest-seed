@@ -35,18 +35,19 @@ api-race와 api-benchmark 러너는 compose stack이 healthy가 된 뒤 NGINX의
 
 ## api-benchmark — 성능 비교
 
-같은 배포 스택을 대상으로 하는 성능 측정 도구다. 하네스는 k6 스크립트라 `k6 run`으로 실행된다(devcontainer에 설치돼 있고, 아래 러너 두 개가 호출을 대신한다). 실행 전제(스택 기동, 시드 데이터)와 환경 변수는 각 스크립트의 머리 주석에 있다.
+같은 배포 스택을 대상으로 하는 성능 측정 도구다. 하네스는 k6 스크립트이며, devcontainer에 패키지를 설치하지 않고 digest를 고정한 공식 `grafana/k6` 이미지를 `run-k6.sh`가 deploy 네트워크와 workspace에 연결해 실행한다. 아래 러너 두 개가 이 실행기를 호출한다. 실행 전제(스택 기동, 시드 데이터)와 환경 변수는 각 스크립트의 머리 주석에 있다.
 
 | 파일                     | 측정 대상                                                                 |
 | ------------------------ | ------------------------------------------------------------------------- |
+| `run-k6.sh`              | 공식 k6 컨테이너에 deploy 네트워크·workspace·결과 파일 권한 연결          |
 | `mixed-runner.sh`        | 읽기·쓰기 혼합 행렬 — 단독 케이스(`iso-*`) 대비 혼합 케이스의 간섭을 본다 |
 | `harness-crud.js`        | 시나리오 10종(Mongo 읽기/쓰기, 비인덱스 정규식 스캔, health 등) 지속 부하 |
 | `harness-refresh.js`     | `/users/refresh` — Redis 토큰 회전과 MongoDB 계정 상태 조회가 결합된 경로 |
 | `harness-user-filter.js` | 비인덱스 부분 문자열 검색의 전체 컬렉션 스캔 비용                         |
 
 ```bash
-pnpm run benchmark:api                                                   # 스택 기동·시드·측정·정리까지 한 번에
-SERVER_URL=http://localhost:3000 bash tests/api-benchmark/mixed-runner.sh # 떠 있는 스택 반복 측정 — 쓰기 레그는 ADMIN_ACCESS_TOKEN 필요(발급은 runner.sh의 seed_admin_and_login)
+pnpm run benchmark:api                                          # 스택 기동·시드·측정·정리까지 한 번에
+SERVER_URL=http://nginx bash tests/api-benchmark/mixed-runner.sh # 떠 있는 deploy 스택 반복 측정 — 쓰기 레그는 ADMIN_ACCESS_TOKEN 필요(발급은 runner.sh의 seed_admin_and_login)
 ```
 
 결과는 콘솔 한 줄 요약과 `tests/api-benchmark/_output/<scenario>-<ts>-<label>.json`으로 남고, mixed-runner는 런 내부의 시간축 추이를 담은 HTML 대시보드(`tests/api-benchmark/_output/dashboard-*.html`)도 함께 남긴다. 루트 명령의 전체 경과 시간과 측정 목적은 `_output/test-reports/benchmark-api.md`에서 본다.

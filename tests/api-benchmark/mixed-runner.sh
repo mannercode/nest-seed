@@ -13,6 +13,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 HARNESS="${SCRIPT_DIR}/harness-crud.js"
+K6_RUNNER="${SCRIPT_DIR}/run-k6.sh"
 
 # 스택이 죽어 있으면 전체 행렬이 status 0 표본만 만들며 몇 분을 공회전한다. 시작 전에 끊는다.
 if ! curl -fsS "${SERVER_URL}/health" >/dev/null; then
@@ -60,7 +61,7 @@ run_case() {
             K6_WEB_DASHBOARD_PORT=5665 \
             K6_WEB_DASHBOARD_PERIOD=2s \
             K6_WEB_DASHBOARD_EXPORT="${SCRIPT_DIR}/_output/dashboard-${stamp}-${label}-read.html" \
-            k6 run \
+            "${K6_RUNNER}" run \
             --env "SERVER_URL=$SERVER_URL" \
             --env "SCENARIO=theater-read" \
             --env "CONCURRENCY=$read_c" \
@@ -74,7 +75,7 @@ run_case() {
             K6_WEB_DASHBOARD_PORT=5666 \
             K6_WEB_DASHBOARD_PERIOD=2s \
             K6_WEB_DASHBOARD_EXPORT="${SCRIPT_DIR}/_output/dashboard-${stamp}-${label}-write.html" \
-            k6 run \
+            "${K6_RUNNER}" run \
             --env "SERVER_URL=$SERVER_URL" \
             --env "SCENARIO=theater-write" \
             --env "CONCURRENCY=$write_c" \
