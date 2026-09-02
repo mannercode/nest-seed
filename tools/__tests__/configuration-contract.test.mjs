@@ -135,6 +135,19 @@ test('backend workspaces use Node ESM and Vitest keeps the TypeScript metadata t
     const apiPackage = JSON.parse(await read('apps/api/package.json'))
     const commonPackage = JSON.parse(await read('libs/common/package.json'))
     const testingPackage = JSON.parse(await read('libs/testing/package.json'))
+    const parseTypeScriptConfig = (path) =>
+        typescript.getParsedCommandLineOfConfigFile(
+            join(root, path),
+            {},
+            {
+                ...typescript.sys,
+                onUnRecoverableConfigFileDiagnostic(diagnostic) {
+                    assert.fail(
+                        typescript.flattenDiagnosticMessageText(diagnostic.messageText, '\n')
+                    )
+                }
+            }
+        )
 
     assert.equal(rootTsconfig.compilerOptions.module, 'nodenext')
     assert.equal(rootTsconfig.compilerOptions.moduleResolution, 'nodenext')
@@ -157,18 +170,7 @@ test('backend workspaces use Node ESM and Vitest keeps the TypeScript metadata t
         'libs/common/tsconfig.test.json',
         'libs/testing/tsconfig.test.json'
     ]) {
-        const testTsconfig = typescript.getParsedCommandLineOfConfigFile(
-            join(root, path),
-            {},
-            {
-                ...typescript.sys,
-                onUnRecoverableConfigFileDiagnostic(diagnostic) {
-                    assert.fail(
-                        typescript.flattenDiagnosticMessageText(diagnostic.messageText, '\n')
-                    )
-                }
-            }
-        )
+        const testTsconfig = parseTypeScriptConfig(path)
         assert.ok(testTsconfig)
         assert.equal(testTsconfig.options.module, typescript.ModuleKind.NodeNext)
         assert.equal(
@@ -177,6 +179,17 @@ test('backend workspaces use Node ESM and Vitest keeps the TypeScript metadata t
         )
         assert.equal(testTsconfig.options.isolatedModules, true)
         assert.deepEqual([...testTsconfig.options.types].sort(), ['node', 'vitest/globals'])
+    }
+
+    // VS Code는 이름이 tsconfig.json인 가장 가까운 project를 자동 선택한다.
+    // 편집용 project에는 테스트가 보여야 하고 실제 빌드에서는 빠져야 한다.
+    for (const workspace of ['apps/api', 'libs/common', 'libs/testing']) {
+        const editorTsconfig = parseTypeScriptConfig(`${workspace}/tsconfig.json`)
+        const buildTsconfig = parseTypeScriptConfig(`${workspace}/tsconfig.build.json`)
+        assert.ok(editorTsconfig)
+        assert.ok(buildTsconfig)
+        assert.ok(editorTsconfig.fileNames.some((path) => path.includes('/__tests__/')))
+        assert.ok(buildTsconfig.fileNames.every((path) => !path.includes('/__tests__/')))
     }
 
     for (const packageJson of [apiPackage, commonPackage, testingPackage]) {

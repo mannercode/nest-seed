@@ -1,4 +1,4 @@
-import { instant, isDebuggingEnabled, oid, plainDate, step, withTestId } from '../utils.js'
+import { instant, isDebuggingEnabled, oid, plainDate, step, withTestId } from '../index.js'
 
 describe('Temporal fixtures', () => {
     it('시각 문자열과 epoch 값을 밀리초 Instant로 만든다', () => {

@@ -4,8 +4,8 @@
         "declaration": true,
         "declarationMap": true,
         "noEmit": true,
+        "types": ["node", "vitest/globals"],
         "paths": { "@mannercode/testing": ["../testing/src/index.ts"] }
     },
-    "include": ["src/**/*"],
-    "exclude": ["src/**/__tests__/**"]
+    "include": ["src/**/*"]
 }

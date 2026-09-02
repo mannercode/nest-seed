@@ -1,4 +1,4 @@
-import { Env } from '../env.js'
+import { Env } from '../index.js'
 
 describe('Env', () => {
     describe('getString', () => {

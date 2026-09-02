@@ -6,8 +6,12 @@ import {
     MongoClient,
     type UpdateFilter
 } from 'mongodb'
-import { CrudRepository, type CrudRepositoryOptions } from '../crud.repository.js'
-import { CrudDocument, type StoredDocument } from '../mongo.document.js'
+import {
+    CrudDocument,
+    CrudRepository,
+    type CrudRepositoryOptions,
+    type StoredDocument
+} from '../index.js'
 
 export class Sample extends CrudDocument {
     name: string

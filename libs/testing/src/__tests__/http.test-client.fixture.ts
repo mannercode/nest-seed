@@ -12,8 +12,7 @@ import {
     Sse
 } from '@nestjs/common'
 import { Observable } from 'rxjs'
-import { HttpTestClient } from '../http.test-client.js'
-import { createHttpTestContext } from '../index.js'
+import { createHttpTestContext, HttpTestClient } from '../index.js'
 
 export type HttpTestClientFixture = { httpClient: HttpTestClient; teardown: () => Promise<void> }
 

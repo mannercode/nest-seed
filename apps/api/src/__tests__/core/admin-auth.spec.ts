@@ -36,8 +36,7 @@ describe('AdminAuthentication', () => {
         })
 
         it('authVersion 필드가 없는 기존 관리자도 version 0 세션으로 로그인한다', async () => {
-            const { AdminsRepository } =
-                await import('../../services/core/admins/admins.repository.js')
+            const { AdminsRepository } = await import('../../services/core/admins/index.js')
             const repository = fix.module.get(AdminsRepository)
             await repository.collection.updateOne(
                 { email: credentials.email },

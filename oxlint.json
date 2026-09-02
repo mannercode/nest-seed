@@ -22,6 +22,38 @@
     "ignorePatterns": ["**/_output/**", "**/.next/**", "**/coverage/**"],
     "overrides": [
         {
+            "files": [
+                "apps/api/src/**/__tests__/**/*.{spec,test,fixture}.ts",
+                "libs/*/src/**/__tests__/**/*.{spec,test,fixture}.ts"
+            ],
+            "rules": {
+                "no-restricted-imports": [
+                    "error",
+                    {
+                        "patterns": [
+                            {
+                                "group": [
+                                    "../*.js",
+                                    "../**/*.js",
+                                    "!../index.js",
+                                    "!../**/index.js",
+                                    // 공개 API가 아닌 구현 단위 테스트에서만 허용하는 직접 import다.
+                                    "!../booking.utils.js",
+                                    "!../temporal-json.serde.js",
+                                    "!../../services/core/movies/movies.repository.js",
+                                    "!../../services/core/movies/movie-pending-assets.repository.js",
+                                    "!../../services/core/purchase-records/purchase-records.repository.js",
+                                    "!../../services/core/tickets/tickets.repository.js",
+                                    "!../../services/infrastructure/payments/payments.repository.js"
+                                ],
+                                "message": "공개 항목은 해당 모듈의 index.js에서 가져오세요. 비공개 구현 테스트는 oxlint.json의 명시적 허용 목록에 추가하세요."
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
             "files": ["apps/{console,user-app}/src/**/*.{ts,tsx}"],
             "plugins": ["jsx-a11y", "nextjs", "react"],
             "rules": {

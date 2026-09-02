@@ -1,4 +1,4 @@
-import { DateUtil } from '../date.js'
+import { DateUtil } from '../index.js'
 
 describe('DateUtil', () => {
     describe('fromYMD', () => {

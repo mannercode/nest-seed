@@ -1,5 +1,5 @@
 import type { ArgumentsHost } from '@nestjs/common'
-import type { HttpExceptionLoggerFilter } from '../exception-logger.filter.js'
+import type { HttpExceptionLoggerFilter } from '../index.js'
 import type { ExceptionLoggerFilterFixture } from './exception-logger.filter.fixture.js'
 
 describe('HttpExceptionLoggerFilter', () => {
@@ -12,7 +12,7 @@ describe('HttpExceptionLoggerFilter', () => {
     })
     afterEach(() => fix.teardown())
 
-    describe('HTTP 컨텍스트일 때', () => {
+    describe('HTTP 컨텍스트', () => {
         it('HttpException이 발생하면 Logger.warn으로 로그를 남긴다', async () => {
             await fix.httpClient
                 .get('/exception')
@@ -117,7 +117,7 @@ describe('HttpExceptionLoggerFilter', () => {
         let fakeHost: ArgumentsHost
 
         beforeEach(async () => {
-            const { HttpExceptionLoggerFilter } = await import('../exception-logger.filter.js')
+            const { HttpExceptionLoggerFilter } = await import('../index.js')
             filter = new HttpExceptionLoggerFilter()
             fakeHost = {
                 getType: () => 'rpc',

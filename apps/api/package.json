@@ -14,7 +14,7 @@
     "scripts": {
         "start": "node --enable-source-maps _output/dist/index.js",
         "format": "prettier --write src/ scripts/ '*.{cjs,mjs}'",
-        "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json && oxlint -c ../../oxlint.json src/ scripts/ ./*.cjs ./*.mjs && prettier --check src/ scripts/ '*.{cjs,mjs}'",
+        "lint": "tsc --noEmit -p tsconfig.build.json && tsc --noEmit -p tsconfig.test.json && oxlint -c ../../oxlint.json src/ scripts/ ./*.cjs ./*.mjs && prettier --check src/ scripts/ '*.{cjs,mjs}'",
         "build": "nest build -b rspack --rspackPath rspack.config.cjs",
         "predev": "free-port ${API_PORT:?}",
         "dev": "nest start --watch",

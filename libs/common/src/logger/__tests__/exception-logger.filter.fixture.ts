@@ -13,8 +13,7 @@ import {
 } from '@nestjs/common'
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core'
 import { sleep } from '../../utils/index.js'
-import { HttpExceptionLoggerFilter } from '../exception-logger.filter.js'
-import { HttpSuccessLoggerInterceptor } from '../success-logger.interceptor.js'
+import { HttpExceptionLoggerFilter, HttpSuccessLoggerInterceptor } from '../index.js'
 
 export type ExceptionLoggerFilterFixture = {
     httpClient: HttpTestClient

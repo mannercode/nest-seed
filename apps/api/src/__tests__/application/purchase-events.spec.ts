@@ -54,7 +54,7 @@ describe('PurchaseEvents', () => {
 
     it('알림 소비자가 중단된 동안 발행한 이벤트를 재시작 뒤 처리한다', async () => {
         const { PurchaseNotificationService } =
-            await import('../../services/application/purchase/internal/purchase-notification.service.js')
+            await import('../../services/application/purchase/internal/index.js')
         const notification = fix.module.get(PurchaseNotificationService)
 
         await notification.onModuleDestroy()
@@ -264,7 +264,7 @@ function fakeMessages(
 async function createNotificationService(messages: ConsumerMessages) {
     const { Logger } = await import('@nestjs/common')
     const { PurchaseNotificationService } =
-        await import('../../services/application/purchase/internal/purchase-notification.service.js')
+        await import('../../services/application/purchase/internal/index.js')
     const fakeEvents = {
         consumeNotifications: vi.fn(async () => messages)
     } as unknown as PurchaseEvents

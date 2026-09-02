@@ -14,7 +14,7 @@ import {
     plainDateFromMongo,
     QueryBuilder,
     withoutPublicId
-} from '../mongo.util.js'
+} from '../index.js'
 
 describe('ObjectId helpers', () => {
     it('새로운 문자열 ObjectId를 만든다', () => {

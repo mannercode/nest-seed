@@ -3,7 +3,7 @@ import type { RedisModuleFixture } from './redis.module.fixture.js'
 
 describe('RedisConnectionRegistry', () => {
     it('quit이 실패한 연결이 있어도 onModuleDestroy는 예외를 전파하지 않는다', async () => {
-        const { RedisConnectionRegistry } = await import('../redis.module.js')
+        const { RedisConnectionRegistry } = await import('../index.js')
         const registry = new RedisConnectionRegistry()
         const connection = { quit: vi.fn().mockRejectedValue(new Error('boom')) }
         registry.add(connection as any)

@@ -5,8 +5,7 @@ import { instant } from '@mannercode/testing'
 import { workflow } from '@restatedev/restate-sdk'
 import type { AppConfigService } from '#config'
 import type { ShowtimeCreationTerminalEvent } from '../../internal/index.js'
-import type { ShowtimeCreationWorkflow } from '../workflow.js'
-import { ShowtimeCreationWorkflowClient } from '../restate-workflow-client.service.js'
+import { ShowtimeCreationWorkflowClient, type ShowtimeCreationWorkflow } from '../index.js'
 import { TemporalJsonSerde } from '../temporal-json.serde.js'
 
 const restateMocks = vi.hoisted(() => ({ connect: vi.fn() }))

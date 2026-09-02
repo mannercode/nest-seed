@@ -1,8 +1,6 @@
 import { createTestContext } from '@mannercode/testing'
 import { Inject, Injectable } from '@nestjs/common'
-import type { RedisConnection } from '../redis.types.js'
-import { RedisModule } from '../redis.module.js'
-import { getRedisConnectionToken } from '../redis.tokens.js'
+import { getRedisConnectionToken, RedisModule, type RedisConnection } from '../index.js'
 
 export type RedisModuleFixture = { redis: RedisConnection; teardown: () => Promise<void> }
 

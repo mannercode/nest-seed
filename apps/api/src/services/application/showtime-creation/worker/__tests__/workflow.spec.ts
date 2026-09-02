@@ -7,14 +7,14 @@ import type {
     ShowtimeCreationTerminalEvent,
     ValidateAndCreateResult
 } from '../../internal/index.js'
-import type { ShowtimeCreationWorkflowInput } from '../types.js'
 import { TemporalJsonSerde } from '../temporal-json.serde.js'
 import {
     createShowtimeCreationWorkflow,
     getShowtimeCreationWorkflowName,
     ShowtimeCreationWorkflow,
-    type ShowtimeCreationWorkflowDefinition
-} from '../workflow.js'
+    type ShowtimeCreationWorkflowDefinition,
+    type ShowtimeCreationWorkflowInput
+} from '../index.js'
 
 describe('Showtime creation Restate workflow', () => {
     const input = {

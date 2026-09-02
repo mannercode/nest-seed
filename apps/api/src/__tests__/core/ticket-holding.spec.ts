@@ -100,20 +100,6 @@ describe('TicketHoldingService', () => {
             })
         })
 
-        it('보유 시간이 만료되면 다른 고객이 같은 티켓을 잡을 수 있다', async () => {
-            await overrideConfigGetter(fix.module, 'ticket', { holdDurationInMs: 1000 })
-
-            const holdDto = buildHoldTicketsDto({ userId: oid(0xc1) })
-            await ticketHoldingService.holdTickets(holdDto)
-
-            await sleep(1000 + 500)
-
-            const otherHold = buildHoldTicketsDto({ userId: oid(0xc2) })
-            const isHeld = await ticketHoldingService.holdTickets(otherHold)
-
-            expect(isHeld).toBe(true)
-        })
-
         it(
             '여러 고객이 동시에 보유를 시도하면 상영 한 건당 한 명만 성공한다',
             async () => {
@@ -152,21 +138,31 @@ describe('TicketHoldingService', () => {
 
             expect(heldTicketIds).toEqual(holdDto.ticketIds)
         })
+    })
 
-        it('보유 시간이 만료되면 빈 배열을 반환한다', async () => {
+    describe('보유 시간이 만료되면', () => {
+        let holdDto: ReturnType<typeof buildHoldTicketsDto>
+
+        beforeEach(async () => {
             await overrideConfigGetter(fix.module, 'ticket', { holdDurationInMs: 1000 })
-
-            const holdDto = buildHoldTicketsDto()
+            holdDto = buildHoldTicketsDto({ userId: oid(0xc1) })
             await ticketHoldingService.holdTickets(holdDto)
-
             await sleep(1000 + 500)
+        })
 
+        it('빈 보유 목록을 반환한다', async () => {
             const heldTicketIds = await ticketHoldingService.searchHeldTicketIds(
                 holdDto.showtimeId,
                 holdDto.userId
             )
 
             expect(heldTicketIds).toHaveLength(0)
+        })
+
+        it('다른 고객이 같은 티켓을 잡을 수 있다', async () => {
+            const isHeld = await ticketHoldingService.holdTickets({ ...holdDto, userId: oid(0xc2) })
+
+            expect(isHeld).toBe(true)
         })
     })
 

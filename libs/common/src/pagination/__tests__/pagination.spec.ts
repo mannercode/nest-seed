@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common'
 import type { PaginationFixture } from './pagination.fixture.js'
-import { CommonErrors } from '../../errors.js'
+import { CommonErrors } from '../../index.js'
 import { PaginationErrors, PaginationSchema } from '../index.js'
 
 describe('PaginationDto', () => {

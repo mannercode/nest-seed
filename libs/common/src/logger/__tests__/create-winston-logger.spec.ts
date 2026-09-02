@@ -1,5 +1,5 @@
 import type winston from 'winston'
-import { createWinstonLogger } from '../create-winston-logger.js'
+import { createWinstonLogger } from '../index.js'
 
 const MESSAGE = Symbol.for('message')
 

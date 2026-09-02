@@ -331,7 +331,7 @@ describe('POST /showtime-creation/showtimes', () => {
     })
 ```
 
-`describe`·`it`이 함수 이름이 아니라 **동작과 조건**을 말한다 — 내부에서 검증·생성이 어떻게 쪼개지든 이 문장들은 그대로 유효하다. 조건은 `beforeEach`가 만들고 `it`은 검증만 한다. `waitForCompletion`은 SSE 스트림을 구독해 지정한 종결 상태가 올 때까지 기다리는 이 스위트의 유틸이고([showtime-creation.utils.ts](../../apps/api/src/__tests__/application/showtime-creation.utils.ts)), 단언은 서비스가 보고한 값이 아니라 **`sagaId`로 실제 DB를 재조회한 끝 상태**를 센다. 내부 함수를 호출했는지 검사하는 테스트는 없다 — 이 테스트가 성공하려면 사가 전체(202 → 워크플로 → SSE 이벤트)가 실제로 돌아야 한다.
+`describe`·`it`이 함수 이름이 아니라 **동작과 조건**을 말한다 — 내부에서 검증·생성이 어떻게 쪼개지든 이 문장들은 그대로 유효하다. 이 조건형 `describe`에서는 `beforeEach`가 조건을 만들고 `it`이 검증 대상 동작과 결과 검증을 맡는다. 조건 자체가 상태 전이를 포함하는 경우는 `beforeEach`가 그 동작까지 수행하고 `it`이 결과만 관찰해도 된다. 메서드나 엔드포인트처럼 주제만 묶는 `describe`의 단발 시나리오는 `it`이 조건 준비와 동작까지 맡을 수 있다. `waitForCompletion`은 SSE 스트림을 구독해 지정한 종결 상태가 올 때까지 기다리는 이 스위트의 유틸이고([showtime-creation.utils.ts](../../apps/api/src/__tests__/application/showtime-creation.utils.ts)), 단언은 서비스가 보고한 값이 아니라 **`sagaId`로 실제 DB를 재조회한 끝 상태**를 센다. 내부 함수를 호출했는지 검사하는 테스트는 없다 — 이 테스트가 성공하려면 사가 전체(202 → 워크플로 → SSE 이벤트)가 실제로 돌아야 한다.
 
 **실패 흐름(`failed`).** 검증 충돌은 400이 아니다 — 요청 자체는 접수(202)되고, 충돌 목록은 SSE로 온다.
 

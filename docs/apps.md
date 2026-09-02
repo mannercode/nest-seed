@@ -343,7 +343,7 @@ export const MovieErrors = {
 지켜야 할 약속은 다음과 같다.
 
 - 에러 정의는 서비스 디렉터리 안의 `errors.ts` 파일로 분리한다. 서비스 클래스 파일 안에 함께 적지 않는다.
-- 같은 디렉터리의 `index.ts`에서 `export * from './errors'`로 다시 내보낸다.
+- 같은 디렉터리의 `index.ts`에서 `export * from './errors.js'`로 다시 내보낸다.
 - 단순 파싱/검증처럼 한 파일 안에서만 쓰는 gateway 계층의 에러는 예외적으로 가까운 곳에 둘 수 있다. 예: `RequestValidationPipeErrors`, URL 날짜 파싱 에러. 여러 핸들러나 서비스에서 재사용되면 `errors.ts`로 옮긴다.
 - 클라이언트가 분기해야 하는 HTTP 4xx 응답에 `code`를 함께 보낸다. 5xx는 서버 장애이므로 클라이언트에게 자세한 원인을 노출하지 않는다.
 - `message`는 디버깅과 로그를 위한 참고 값이다. 화면에 보여 줄 문구는 클라이언트가 `code`를 보고 정한다.
@@ -352,24 +352,46 @@ export const MovieErrors = {
 
 각 폴더에는 `index.ts`를 둔다. 폴더 밖에서 사용해도 되는 것만 `index.ts`에서 다시 내보낸다. 이렇게 하면 공개 API를 한눈에 볼 수 있다.
 
+#### ESM에서 경로를 읽는 법
+
+백엔드 TypeScript workspace는 `package.json`의 `"type": "module"`과 TypeScript의 `NodeNext` 모드로 Native ESM을 사용한다. 소스 파일 이름과 import 문자열이 가리키는 런타임 파일 이름을 구분해서 읽는다.
+
+| 작성 중인 파일   | 코드에 쓰는 경로     | Node가 실행할 때 찾는 파일  |
+| ---------------- | -------------------- | --------------------------- |
+| `errors.ts`      | `./errors.js`        | 빌드된 `errors.js`          |
+| `index.ts`       | `../index.js`        | 빌드된 `index.js`           |
+| workspace 패키지 | `@mannercode/common` | 패키지의 `main`/`exports`   |
+| API 내부 별칭    | `#core`              | `package.json#imports` 경로 |
+
+따라서 TypeScript 파일에서 `import './errors.js'`라고 써도 옆에 실제 `errors.js` 소스가 있어야 한다는 뜻이 아니다. TypeScript는 `NodeNext` 규칙으로 그 경로를 `errors.ts`에 연결해 타입을 검사하고, 문자열의 `.js`는 그대로 남아 빌드 산출물에서 유효해진다.
+
+- `./`, `../`로 시작하는 상대 경로에는 런타임 확장자 `.js`를 쓴다. 일반 백엔드 소스에서 `.ts`를 직접 가져오지 않는다.
+- Node ESM은 확장자를 보충하거나 디렉터리의 `index.js`를 자동 탐색하지 않는다. `../index.js`까지 전부 쓴다.
+- 패키지 이름과 `#core` 같은 `package.json#imports` 별칭에는 `.js`를 덧붙이지 않는다.
+- `"type": "module"`인 패키지의 `.js`는 ESM이다. CommonJS로 실행해야 하는 설정·도구 파일은 `.cjs`, 패키지 설정과 무관하게 ESM임을 드러낼 파일은 `.mjs`를 쓴다.
+- ESM에는 전역 `require`, `module.exports`, `__dirname`, `__filename`이 없다. CommonJS 연동이 꼭 필요한 ESM 파일만 `createRequire(import.meta.url)`을 사용한다.
+- 타입으로만 쓰는 항목은 `import type`으로 가져온다. 이 import는 JavaScript 산출물에서 사라진다.
+
 가져오기 규칙은 두 가지이다.
 
 **상위 폴더는 상대 경로로 가져온다.** 절대 경로 별칭으로 상위 폴더를 가져오면 순환 참조가 생기기 쉽다. 상위 폴더의 `index.ts`(폴더의 공개 내보내기를 모은 파일, 보통 배럴이라고 부른다)가 다시 하위 모듈을 가져오기 때문이다.
 
 ```ts
 /* core/users/internal/user-authentication.service.ts */
-import { UsersRepository } from '../users.repository' // O
-import { UsersRepository } from 'core' // X — core의 index.ts가 users를 재참조해 순환이 생긴다
+import { UsersRepository } from '../users.repository.js' // O
+import { UsersRepository } from '#core' // X — core의 index.ts가 users를 재참조해 순환이 생긴다
 ```
 
 **상위 경로에 속하지 않는 폴더는 절대 경로로 가져온다.** 이런 경우 상대 경로를 쓰면 `../../../`가 길어져 읽기 어려워진다.
 
 ```ts
 /* gateway/users.http-controller.ts */
-import { UsersService } from 'core' // O — gateway에서 core는 형제 묶음이므로 별칭 사용
+import { UsersService } from '#core' // O — gateway에서 core는 형제 묶음이므로 별칭 사용
 ```
 
-모든 가져오기가 `index.ts`를 지나가면 의존 그래프가 단순해진다. 순환 참조가 생겨도 빌드 오류로 빨리 드러난다.
+폴더 경계를 넘는 공개 API 가져오기가 `index.ts`를 지나가면 의존 그래프가 단순해진다. 순환 참조가 생겨도 빌드 오류로 빨리 드러난다.
+
+`__tests__`는 애플리케이션의 모듈 의존 그래프에 포함되지 않으므로 공개 항목을 테스트할 때 해당 모듈의 `../index.js`에서 가져온다. 그래야 실제 소비자가 사용하는 공개 export도 함께 검증된다. 테스트 fixture에도 같은 규칙을 적용하며, `index.ts`로 내보내지 않은 의도적인 내부 구현을 직접 검증할 때만 구현 파일을 가져온다. Native ESM은 디렉터리의 `index.js`를 자동 탐색하지 않으므로 `../`처럼 생략하지 않고 `../index.js`까지 명시한다. 이 규칙은 `oxlint.json`의 `no-restricted-imports`가 강제하며, 비공개 구현의 직접 import는 같은 설정의 명시적 허용 목록으로만 추가한다.
 
 ### REST API 설계
 
@@ -512,8 +534,8 @@ describe('ServiceName')         -- 서비스나 모듈 이름. 코드 식별자�
   describe('POST /resource')    -- 엔드포인트. 영어
     describe('methodName')      -- 메서드 이름. 코드 식별자이므로 영어
       describe('조건이 충족되면')  -- 조건. 한글로 작성
-        beforeEach(...)         -- 조건을 만드는 셋업
-        it('결과를 반환한다')      -- 결과 검증. 한글로 작성
+        beforeEach(...)         -- describe가 선언한 조건을 만듦
+        it('결과를 반환한다')      -- 동작 실행과 결과 검증. 한글로 작성
 ```
 
 세부 약속은 다음과 같다.
@@ -521,7 +543,11 @@ describe('ServiceName')         -- 서비스나 모듈 이름. 코드 식별자�
 - 최상위 `describe('ServiceName')`, HTTP 메서드/URL `describe('POST /resource')`, 메서드 이름 `describe('methodName')`처럼 코드 식별자를 가리키는 자리는 영어를 그대로 쓴다.
 - 조건을 표현하는 `describe`에는 한글 문자열을 직접 넣는다. `~할 때`, `~되었을 때`, `~않았을 때`처럼 절 형태로 적는다. 같은 내용을 주석으로 다시 쓰지 않는다.
 - 결과 검증을 표현하는 `it`에도 한글 문자열을 직접 넣는다. `~한다`, `~반환한다`, `~던진다`처럼 결과가 드러나게 적는다. HTTP 응답은 `~반환한다`, 서비스 계층의 예외는 `~던진다`로 구분한다. 부모 `describe`에 조건이 이미 있으면 `it` 메시지에서 조건을 반복하지 않는다.
-- 여러 `it`이 같은 조건을 공유하거나 시나리오에 설명이 필요하면 조건 `describe`로 묶고 그 `beforeEach`에서 조건을 만든다. `it` 하나뿐인 단발 조건은 `it` 문장에 `~면` 절로 싣고 본문에서 만든다.
+- 조건을 `describe('~면')`으로 선언했으면 그 조건은 반드시 해당 범위의 before hook에서 만든다. 기본은 `beforeEach`이며, 제목에만 조건을 적고 각 `it` 안에서 조건 준비를 반복하지 않는다. 검증 대상 동작과 결과 검증은 기본적으로 `it`이 맡는다. 다만 조건 자체가 만료나 실패 같은 상태 전이를 포함하면 before hook이 그 동작까지 수행하고 `it`은 결과만 관찰해도 된다. `it` 하나뿐인 단발 조건은 `it` 문장에 `~면` 절로 싣고 본문에서 만들어도 된다.
+- 조건을 만드는 비용이 크더라도 여러 `it`이 같은 시나리오를 다시 실행하는 것은 자연스러운 테스트 문장을 위한 의도된 중복이다. 실행 횟수를 줄이려고 서로 다른 결과를 한 `it`으로 기계적으로 합치지 않는다.
+- 조건형 `describe` 아래의 `it`은 제목이 이어져 `조건이 충족되면 결과를 반환한다`처럼 읽히게 쓴다. 본문에서는 보통 동작을 실행하고 그 결과를 검증한다. 그래서 주된 `expect`가 하나인 경우가 많지만 개수를 규칙으로 강제하지는 않는다. 하나의 결과를 설명하는 객체 형태나 복합 불변식에는 여러 matcher가 필요할 수 있다. 메서드·엔드포인트처럼 주제만 묶는 `describe` 바로 아래의 단발 조건은 `it` 본문에서 준비하고 동작시켜도 된다.
+- 테스트 시나리오의 `beforeAll`은 여러 `it`이 순서를 가지고 하나의 흐름을 이어서 검증할 때만 사용한다. 예를 들어 예매 흐름의 단계별 결과를 차례로 확인하는 경우다. 이때는 `describe.sequential`처럼 순차 실행을 코드로 명시하고, 선행 `it` 실패가 후속 `it`에 미치는 영향도 감수할 가치가 있어야 한다. 단순한 셋업 비용 절감에는 `beforeAll`을 사용하지 않는다.
+- 워커 단위 DB 연결이나 환경 검증처럼 테스트 하네스의 수명을 관리하는 전역 `beforeAll`은 시나리오 훅이 아니므로 이 규칙의 예외다.
 - 조건이 아니라 주제를 묶는 한글 명사구 `describe`도 쓴다(`'인가 경계'`, `'고객 예매 흐름'`). 절 형태 규칙은 조건을 표현하는 `describe`에만 적용된다.
 
 ### 픽스처 패턴
@@ -533,7 +559,7 @@ describe('UsersService', () => {
     let fix: AppTestContext
 
     beforeEach(async () => {
-        const { createAppTestContext } = await import('../helpers')
+        const { createAppTestContext } = await import('../helpers/index.js')
         fix = await createAppTestContext()
     })
 
@@ -557,7 +583,7 @@ describe('UsersService', () => {
 })
 ```
 
-PATCH나 DELETE처럼 상태를 바꾸는 API는 두 가지를 확인한다. 하나는 응답이 올바른지, 다른 하나는 DB 반영 여부다. 두 검증은 서로 다른 `it`으로 나눈다. 그래야 실패했을 때 어느 쪽 문제인지 바로 알 수 있다. DB 반영은 GET 재조회로 확인한다.
+PATCH나 DELETE처럼 상태를 바꾸는 API는 응답과 DB 반영을 각각 읽히는 `it`으로 나눈다. 같은 변경 요청이 반복되더라도 실패한 결과가 테스트 이름으로 바로 드러나는 쪽을 우선한다. DB 반영은 GET 재조회로 확인한다.
 
 ```ts
 describe('PATCH /theaters/:id', () => {
@@ -590,7 +616,7 @@ Nest 모듈 파일은 프로세스에서 한 번만 평가된다. 따라서 데�
 이 구조에서는 모듈 캐시를 테스트마다 초기화할 필요가 없다. 애플리케이션 코드와 Nest/Restate 의존성은 pool worker 안에서 한 번 로드되고, 테스트별 애플리케이션 컨텍스트만 새로 만든다. 픽스처는 정적으로 가져와도 자원 격리가 유지된다.
 
 ```ts
-import { createAppTestContext, type AppTestContext } from '../helpers'
+import { createAppTestContext, type AppTestContext } from '../helpers/index.js'
 
 describe('Users', () => {
     let fix: AppTestContext
@@ -632,7 +658,9 @@ pnpm --filter './apps/api' test users.spec --coverage.enabled=false
 pnpm --filter './apps/api' test users.spec -t '409 Conflict를 반환한다' --coverage.enabled=false
 ```
 
-devcontainer의 `firsttris.vscode-jest-runner`는 현재 Jest / Vitest Runner로 Vitest와 `node:test`를 자동 감지한다. 프로젝트에 Jest를 다시 설치하는 의존성이 아니며 파일·테스트 단위 실행과 디버깅에 사용하므로 유지한다.
+각 backend workspace의 `tsconfig.json`은 VS Code가 운영 소스와 테스트를 모두 같은 workspace 설정으로 해석할 수 있도록 둘 다 포함한다. 실제 검사는 `tsconfig.build.json`이 테스트를 제외한 운영 소스를, `tsconfig.test.json`이 Vitest 전역 타입을 포함한 테스트를 각각 맡는다. 편집기가 `describe`에서 `@types/jest` 설치를 권하거나 정상적인 `.js` 상대 경로와 `#core` 별칭을 찾지 못하면 Jest를 설치하지 말고 `TypeScript: Restart TS Server`를 한 번 실행한다.
+
+devcontainer의 `firsttris.vscode-jest-runner`는 현재 Jest / Vitest Runner로 Vitest와 `node:test`를 자동 감지한다. 이름에 Jest가 남아 있지만 프로젝트에 Jest를 다시 설치하는 의존성이 아니며 파일·테스트 단위 실행과 디버깅에 사용하므로 유지한다.
 
 ## 실행 가능한 API 문서
 

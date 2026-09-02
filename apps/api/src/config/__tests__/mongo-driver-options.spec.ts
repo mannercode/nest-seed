@@ -1,4 +1,4 @@
-import { createMongoDriverOptions } from '../mongo-driver-options.js'
+import { createMongoDriverOptions } from '../index.js'
 
 describe('createMongoDriverOptions', () => {
     it('프로세스 수명의 애플리케이션 풀은 운영 idle capacity를 유지한다', () => {

@@ -74,7 +74,7 @@ describe('RecommendationService', () => {
             })
         })
 
-        describe('게스트일 때', () => {
+        describe('게스트 추천', () => {
             it('개봉일 내림차순 기본 추천을 반환한다', async () => {
                 const { body } = await fix.httpClient.get('/views/user-app/home').ok()
 

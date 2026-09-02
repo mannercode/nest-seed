@@ -14,7 +14,7 @@ import {
     sortBy,
     sumBy,
     uniq
-} from '../lodash.js'
+} from '../index.js'
 
 const temporal = (
     globalThis as typeof globalThis & {

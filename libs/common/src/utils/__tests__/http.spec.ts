@@ -1,4 +1,4 @@
-import { HttpUtil } from '../http.js'
+import { HttpUtil } from '../index.js'
 
 describe('HttpUtil', () => {
     describe('buildContentDisposition', () => {

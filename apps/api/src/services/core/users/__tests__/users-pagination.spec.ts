@@ -1,4 +1,4 @@
-import { UsersRepository } from '../users.repository.js'
+import { UsersRepository } from '../index.js'
 
 describe('UsersRepository pagination', () => {
     it('null pagination 값을 undefined로 정규화하고 값이 있으면 유지한다', async () => {

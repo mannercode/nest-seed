@@ -3,8 +3,7 @@ import { type LoggerTransport, workflow } from '@restatedev/restate-sdk'
 import { once } from 'node:events'
 import { connect } from 'node:http2'
 import type { AppConfigService } from '#config'
-import type { ShowtimeCreationWorkflow } from '../workflow.js'
-import { ShowtimeCreationRestateEndpoint } from '../restate-endpoint.service.js'
+import { ShowtimeCreationRestateEndpoint, type ShowtimeCreationWorkflow } from '../index.js'
 
 describe('ShowtimeCreationRestateEndpoint', () => {
     it('Vitest에서는 임의 포트로 열고 HTTP/2 session까지 정상 종료한다', async () => {
