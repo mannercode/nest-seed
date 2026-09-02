@@ -13,7 +13,7 @@ RUN set -eu; \
 
 RUN set -eu; apt-get update; DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
-    ca-certificates curl git iproute2 jq shellcheck shfmt tmux tree unzip; \
+    ca-certificates curl git iproute2 jq openssh-client shellcheck shfmt tmux tree unzip; \
     rm -rf /var/lib/apt/lists/*
 
 COPY tests/web/package.json /tmp/tests-web-package.json
