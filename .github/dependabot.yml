@@ -73,6 +73,7 @@ updates:
     # updater가 해석하지 않으므로 해당 digest는 인프라 이미지 갱신 시 수동 검증한다.
     - package-ecosystem: docker-compose
       directories:
+          - '/.devcontainer'
           - '/deploy'
           - '/infra'
       schedule:

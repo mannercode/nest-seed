@@ -63,6 +63,8 @@ test('workspaces share the Nest Oxlint baseline', async () => {
 test('devcontainer avoids redundant version probes while keeping project installs locked', async () => {
     const config = await read('.devcontainer/devcontainer.json')
     const dockerfile = await read('.devcontainer/Dockerfile')
+    const plantumlCompose = await read('.devcontainer/compose.plantuml.yml')
+    const dependabot = await read('.github/dependabot.yml')
     const dockerignore = await read('.dockerignore')
     const lock = JSON.parse(await read('.devcontainer/devcontainer-lock.json'))
 
@@ -82,7 +84,35 @@ test('devcontainer avoids redundant version probes while keeping project install
         /source=\$\{localEnv:HOME\}\/\.config\/gh,target=\/home\/node\/\.config\/gh/
     )
     assert.match(config, /source=\$\{localEnv:HOME\}\/\.claude,target=\/home\/node\/\.claude/)
-    assert.doesNotMatch(config, /initialize-user-state\.sh|devcontainerId/)
+    assert.doesNotMatch(config, /initialize-user-state\.sh|initialize-docker\.sh|devcontainerId/)
+    assert.match(config, /"--network=plantuml"/)
+    assert.match(config, /"forwardPorts"\s*:\s*\[5010\]/)
+    assert.match(config, /"plantuml\.server"\s*:\s*"http:\/\/plantuml:8080\/"/)
+    assert.doesNotMatch(config, /java -jar|picoweb/)
+    assert.doesNotMatch(config, /portsAttributes|plantuml-relay|start-plantuml-relay/)
+    assert.ok(
+        config.includes(
+            'docker compose --project-name plantuml --file \\"${localWorkspaceFolder}/.devcontainer/compose.plantuml.yml\\" up --detach'
+        )
+    )
+    assert.doesNotMatch(
+        config,
+        /docker (?:container inspect plantuml|network inspect plantuml|network connect plantuml)|docker run[^"\n]*plantuml/
+    )
+    assert.match(plantumlCompose, /^name: plantuml$/m)
+    assert.match(
+        plantumlCompose,
+        /^\s+image: plantuml\/plantuml-server:jetty-v\d+\.\d+\.\d+@sha256:[a-f0-9]{64}$/m
+    )
+    assert.match(plantumlCompose, /^\s+container_name: plantuml$/m)
+    assert.match(plantumlCompose, /^\s+restart: unless-stopped$/m)
+    assert.match(plantumlCompose, /^\s+name: plantuml$/m)
+    assert.doesNotMatch(plantumlCompose, /^\s+ports:/m)
+    assert.match(
+        dependabot,
+        /package-ecosystem: docker-compose[\s\S]*?directories:\s*\n\s+- '\/\.devcontainer'/
+    )
+    assert.match(dockerfile, /^# syntax=docker\/dockerfile:1$/m)
     assert.match(dockerfile, /^FROM node:\d+\.\d+\.\d+-bookworm-slim@sha256:[a-f0-9]{64}$/m)
     assert.doesNotMatch(dockerfile, /^ARG [A-Z_]+_VERSION=/m)
     assert.match(
@@ -90,15 +120,23 @@ test('devcontainer avoids redundant version probes while keeping project install
         /deb \[signed-by=\/usr\/share\/keyrings\/cloudflare-main\.gpg\] https:\/\/pkg\.cloudflare\.com\/cloudflared any main/
     )
     assert.doesNotMatch(dockerfile, /\bk6\b/)
+    assert.doesNotMatch(dockerfile, /plantuml|default-jre|graphviz|\bsocat\b/)
     assert.doesNotMatch(dockerfile, /github\.com\/cloudflare\/cloudflared\/releases/)
-    assert.match(dockerfile, /COPY tests\/web\/package\.json \/tmp\/tests-web-package\.json/)
+    assert.match(
+        dockerfile,
+        /--mount=type=bind,source=tests\/web\/package\.json,target=\/tmp\/tests-web-package\.json,ro/
+    )
     assert.match(dockerfile, /playwright_version=.*devDependencies\['@playwright\/test'\]/)
     assert.match(
         dockerfile,
         /npx --yes "playwright@\$\{playwright_version\}" install-deps chromium/
     )
     assert.doesNotMatch(dockerfile, /npm install --global[^\n]+playwright/)
-    assert.match(dockerfile, /COPY package\.json \/tmp\/workspace-package\.json/)
+    assert.match(
+        dockerfile,
+        /--mount=type=bind,source=package\.json,target=\/tmp\/workspace-package\.json,ro/
+    )
+    assert.doesNotMatch(dockerfile, /^COPY (?:tests\/web\/)?package\.json /m)
     assert.match(dockerfile, /package_manager=.*\.packageManager/)
     assert.match(dockerfile, /npm install --global[^\n]+"\$package_manager"/)
     assert.doesNotMatch(dockerfile, /\bxz-utils\b/)

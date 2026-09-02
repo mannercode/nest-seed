@@ -6,7 +6,7 @@ Docker Compose로 API 컨테이너를 여러 개 띄우고 NGINX로 요청을 �
 
 MongoDB, Redis, VersityGW, NATS, Restate 같은 인프라는 이미 실행 중이라고 가정한다.
 
-토폴로지는 다음과 같다(다이어그램은 devcontainer의 VS Code 미리보기에서 렌더된다).
+토폴로지는 다음과 같다(다이어그램은 Dev Container의 PlantUML 확장 전용 Preview에서 렌더된다).
 
 ```plantuml
 @startuml

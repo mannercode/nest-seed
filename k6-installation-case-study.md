@@ -177,7 +177,7 @@ Docker 방식에도 wrapper, network, mount, 권한 전달이라는 복잡성이
 - pnpm, Git, shellcheck처럼 개발 루프에서 자주 호출하는 도구는 Dev Container 안에 있는 편이 자연스럽다.
 - Playwright는 workspace package 버전, VS Code의 대화형 실행과 browser cache가 맞물려 있어 현재는 workspace와 Dev Container lifecycle에 두는 편이 단순하다.
 - cloudflared는 사용자가 선택적으로 실행해 Dev Container의 `localhost` 앱을 바로 tunnel하므로 직접 CLI가 현재 경계와 맞는다.
-- PlantUML처럼 장기 실행되는 독립 server는 Docker 후보가 될 수 있지만, IDE 접근 경로·기동 비용·image 고정과 갱신까지 별도로 비교해야 한다.
+- PlantUML처럼 장기 실행되는 독립 server는 Docker 호스트에서 하나를 공유할 수 있다. 이 저장소는 전용 Compose에 공식 server image·고정 이름·restart 정책·공유 네트워크를 선언하고, 모든 Dev Container를 그 네트워크에 붙인다. remote extension host에서 동작하는 PlantUML 전용 Preview에는 이 경로만으로 충분하다. local machine의 Markdown webview까지 지원하려고 port forwarding과 relay를 추가하면 한 기능에 두 접근 경로가 생기므로 지원 범위에서 제외했다. Docker로 옮긴다는 결정 뒤에도 실제 소비자가 어디서 실행되는지 확인하고 범위를 정해야 한다.
 
 도구마다 `공식 image가 있는가`보다 **누가, 언제, 어느 네트워크와 파일을 사용해 실행하는가**를 먼저 본다.
 

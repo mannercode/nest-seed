@@ -105,7 +105,7 @@ Core Service 하나로 처리할 수 있는 API라면 컨트롤러에서 Core를
 - [movies.http-controller.ts](../apps/api/src/services/gateway/movies.http-controller.ts) — 영화 조회·등록은 Core인 `MoviesService`를 바로 호출한다.
 - [showtime-creation.http-controller.ts](../apps/api/src/services/gateway/showtime-creation.http-controller.ts) — 상영 등록은 영화·극장·상영시간·티켓을 한꺼번에 다뤄야 하므로 Application인 `ShowtimeCreationService`를 거친다.
 
-이 규칙이 사용자 여정(가입 → 홈 → 예매 → 구매)에서 어떻게 나타나는지가 다음 유스케이스 지도다 — 각 유스케이스가 어느 계층의 어떤 서비스로 처리되는지 보여준다(다이어그램은 devcontainer의 VS Code 미리보기에서 렌더된다). Application에는 여러 Core를 조합하는 유스케이스만 있고, 단일 도메인으로 끝나는 유스케이스는 Core로 직행한다. 즉 Application은 "유스케이스 계층"이 아니라 "조립이 필요한 유스케이스만 올라오는 계층"이다.
+이 규칙이 사용자 여정(가입 → 홈 → 예매 → 구매)에서 어떻게 나타나는지가 다음 유스케이스 지도다 — 각 유스케이스가 어느 계층의 어떤 서비스로 처리되는지 보여준다(다이어그램은 Dev Container의 PlantUML 확장 전용 Preview에서 렌더된다). Application에는 여러 Core를 조합하는 유스케이스만 있고, 단일 도메인으로 끝나는 유스케이스는 Core로 직행한다. 즉 Application은 "유스케이스 계층"이 아니라 "조립이 필요한 유스케이스만 올라오는 계층"이다.
 
 ```plantuml
 @startuml
@@ -226,7 +226,7 @@ Restate journal은 완료한 durable step을 재실행하지 않게 하지만, �
 
 상태 이벤트도 durable step으로 재시도하지만 전달 통로는 저장하지 않는 Core NATS다. 이벤트가 중복될 수 있고 연결 전에 지나간 이벤트를 replay하지 않으므로, SSE는 best-effort 진행 알림이다. 종결 상태 재조회는 Restate workflow 출력, 자원 생성 결과와 멱등성의 기준은 MongoDB가 맡는다.
 
-전체 흐름을 시퀀스로 보면 다음과 같다(다이어그램은 devcontainer의 VS Code 미리보기에서 렌더된다).
+전체 흐름을 시퀀스로 보면 다음과 같다(다이어그램은 Dev Container의 PlantUML 확장 전용 Preview에서 렌더된다).
 
 ```plantuml
 @startuml
