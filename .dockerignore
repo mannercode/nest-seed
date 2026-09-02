@@ -27,6 +27,8 @@
 !/tools/dev-tools/tunnel.sh
 !/tools/vitest-helpers/package.json
 
+!/tests/web/package.json
+
 **/node_modules
 **/_output
 **/__tests__
