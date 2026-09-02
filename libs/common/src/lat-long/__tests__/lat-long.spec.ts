@@ -1,5 +1,5 @@
 import type { LatLongFixture } from './lat-long.fixture.js'
-import { LatLong, LatLongErrors } from '../lat-long.js'
+import { LatLong, LatLongErrors } from '../index.js'
 
 describe('LatLong', () => {
     let fix: LatLongFixture

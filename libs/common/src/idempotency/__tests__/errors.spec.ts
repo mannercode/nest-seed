@@ -1,4 +1,4 @@
-import { IdempotencyErrors } from '../errors.js'
+import { IdempotencyErrors } from '../index.js'
 
 describe('IdempotencyErrors', () => {
     it('공통 HTTP 멱등성 오류 계약을 제공한다', () => {

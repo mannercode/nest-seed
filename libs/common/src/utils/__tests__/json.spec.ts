@@ -1,4 +1,4 @@
-import { JsonUtil } from '../json.js'
+import { JsonUtil } from '../index.js'
 
 describe('JsonUtil', () => {
     describe('parse', () => {

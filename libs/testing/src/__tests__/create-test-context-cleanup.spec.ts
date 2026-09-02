@@ -15,7 +15,7 @@ describe('test context setup cleanup', () => {
             }
         }
 
-        const { createTestContext } = await import('../create-test-context.js')
+        const { createTestContext } = await import('../index.js')
         const result = createTestContext({ providers: [InitFailureProvider] })
 
         await expect(result).rejects.toBe(setupError)
@@ -33,7 +33,7 @@ describe('test context setup cleanup', () => {
             }
         }
 
-        const { createHttpTestContext } = await import('../create-http-test-context.js')
+        const { createHttpTestContext } = await import('../index.js')
         const result = createHttpTestContext({
             configureApp: async (createdApp) => {
                 app = createdApp
@@ -60,7 +60,7 @@ describe('test context setup cleanup', () => {
             }
         }
 
-        const { createTestContext } = await import('../create-test-context.js')
+        const { createTestContext } = await import('../index.js')
         const result = createTestContext({ providers: [SetupAndCleanupFailureProvider] })
 
         await expect(result).rejects.toBe(setupError)

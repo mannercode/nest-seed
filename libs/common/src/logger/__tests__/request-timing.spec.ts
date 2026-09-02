@@ -1,5 +1,5 @@
 import type { Request } from 'express'
-import { elapsedSinceRequestStart, markRequestStart } from '../request-timing.js'
+import { elapsedSinceRequestStart, markRequestStart } from '../index.js'
 
 describe('request-timing', () => {
     it('동시에 진행되는 두 요청은 각자의 시작 시각을 독립적으로 갖는다', async () => {

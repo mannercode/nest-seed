@@ -280,19 +280,19 @@ describe('NatsPubSubService', () => {
 
 describe('InjectNatsPubSub', () => {
     it('이름 없이 호출하면 파라미터 데코레이터를 반환한다', async () => {
-        const { InjectNatsPubSub } = await import('../nats-pubsub.service.js')
+        const { InjectNatsPubSub } = await import('../index.js')
         expect(typeof InjectNatsPubSub(undefined)).toBe('function')
     })
 
     it('이름과 함께 호출해도 파라미터 데코레이터를 반환한다', async () => {
-        const { InjectNatsPubSub } = await import('../nats-pubsub.service.js')
+        const { InjectNatsPubSub } = await import('../index.js')
         expect(typeof InjectNatsPubSub('my-bus')).toBe('function')
     })
 })
 
 describe('NatsPubSubModule.register', () => {
     it('기본 옵션으로 동적 모듈을 생성한다', async () => {
-        const { NatsPubSubModule } = await import('../nats-pubsub.service.js')
+        const { NatsPubSubModule } = await import('../index.js')
         const dynamicModule = NatsPubSubModule.register()
         expect(dynamicModule.module).toBe(NatsPubSubModule)
         expect(dynamicModule.providers?.length).toBe(1)

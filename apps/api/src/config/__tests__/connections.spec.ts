@@ -1,5 +1,5 @@
 import type { Db, MongoClient } from 'mongodb'
-import { MongoConnection } from '../connections.js'
+import { MongoConnection } from '../index.js'
 
 describe('MongoConnection', () => {
     it('소유한 client는 모듈 종료 시 닫는다', async () => {

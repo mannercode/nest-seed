@@ -34,7 +34,7 @@
 
 | 범위                              | 유지 | 보완 | 축소 | 제거 후보 |
 | --------------------------------- | ---: | ---: | ---: | --------: |
-| 표준 테스트 105개                 |   89 |    8 |    7 |         1 |
+| 표준 테스트 105개                 |   90 |    8 |    6 |         1 |
 | API 문서·race·benchmark·배포 24개 |   15 |    9 |    0 |         0 |
 
 전체적으로 단위·통합·브라우저·분산 race의 계층은 잘 나뉘어 있다. API 통합 테스트와 API 문서가 같은 endpoint를 호출하는 것, workflow 단위 테스트와 multi-replica race가 같은 불변식을 보는 것은 실행 경계가 달라 의도된 중복이다. 정리 효과가 큰 곳은 다음 다섯 군데다.
@@ -70,16 +70,16 @@ k6의 [`measurementStart()`](../tests/api-benchmark/perf-common.js)는 제거하
 
 현재 파일별 판단은 다음과 같다.
 
-| 파일                          |       현재 대기 | 판단                                                                                                                |
-| ----------------------------- | --------------: | ------------------------------------------------------------------------------------------------------------------- |
-| `jwt-auth.service.spec.ts`    |         4초 × 2 | 제거. 이미 만료된 JWT를 서명하는 fixture 하나로 두 오류 분기를 검증한다.                                            |
-| `ticket-holding.spec.ts`      |       1.5초 × 2 | 1회로 합친다. 한 번 만료시킨 뒤 빈 조회와 다른 고객의 선점 성공을 같이 확인한다.                                    |
-| `assets.spec.ts`              | 1~2.5초 여러 번 | S3 만료 대기는 유지한다. cron 실행 뒤의 1초 대기만 공개 메서드를 직접 `await`해서 없애고 중복 만료 케이스를 합친다. |
-| `cache.service.spec.ts`       |   1.5초 여러 번 | 유지. Redis 서버 TTL 자체가 검증 대상이며 polling으로 바꿔도 더 빨라지지 않는다.                                    |
-| `nats-pubsub.service.spec.ts` |        50~200ms | 유지. 도착은 이미 polling하고 있으며 남은 대기는 미수신을 관찰하는 상한이다.                                        |
-| logger 테스트 2개             |         30~50ms | 유지. 총 130ms를 없애려고 `performance.now()` 제어 코드를 추가할 실익이 없다.                                       |
-| `purchase-records.spec.ts`    |            50ms | 유지. 테스트 전용 생성 시각 인자나 Mongo 직접 수정보다 현재 방식이 작고 실제 정렬 경계에 가깝다.                    |
-| `showtime-creation.spec.ts`   |           5.1초 | 유지. Restate의 실제 5초 경계를 넘어야 완료 응답 유실 뒤 durable retry를 재현한다.                                  |
+| 파일                          |       현재 대기 | 판단                                                                                                                                                                            |
+| ----------------------------- | --------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `jwt-auth.service.spec.ts`    |         4초 × 2 | 대기만 제거한다. 두 오류 분기는 별도 `it`으로 유지하고, 각 테스트가 이미 만료된 JWT fixture로 자기 메서드를 검증한다.                                                           |
+| `ticket-holding.spec.ts`      |       1.5초 × 2 | 유지. 만료 조건을 `beforeEach`에서 만들고 빈 조회와 다른 고객의 선점 성공을 각각 읽히는 `it`으로 검증한다. 두 검증은 순서가 있는 흐름이 아니므로 `beforeAll`로 공유하지 않는다. |
+| `assets.spec.ts`              | 1~2.5초 여러 번 | S3 만료 대기는 유지한다. 서로 다른 만료 결과는 별도 `it`으로 두고, cron 실행 뒤의 1초 대기만 공개 메서드를 직접 `await`해서 없앤다.                                             |
+| `cache.service.spec.ts`       |   1.5초 여러 번 | 유지. Redis 서버 TTL 자체가 검증 대상이며 polling으로 바꿔도 더 빨라지지 않는다.                                                                                                |
+| `nats-pubsub.service.spec.ts` |        50~200ms | 유지. 도착은 이미 polling하고 있으며 남은 대기는 미수신을 관찰하는 상한이다.                                                                                                    |
+| logger 테스트 2개             |         30~50ms | 유지. 총 130ms를 없애려고 `performance.now()` 제어 코드를 추가할 실익이 없다.                                                                                                   |
+| `purchase-records.spec.ts`    |            50ms | 유지. 테스트 전용 생성 시각 인자나 Mongo 직접 수정보다 현재 방식이 작고 실제 정렬 경계에 가깝다.                                                                                |
+| `showtime-creation.spec.ts`   |           5.1초 | 유지. Restate의 실제 5초 경계를 넘어야 완료 응답 유실 뒤 durable retry를 재현한다.                                                                                              |
 
 ### `configuration-contract.test.mjs` 16개 항목 상세
 
@@ -166,7 +166,7 @@ k6의 [`measurementStart()`](../tests/api-benchmark/perf-common.js)는 제거하
 - [`src/__tests__/core/theaters.spec.ts`](../apps/api/src/__tests__/core/theaters.spec.ts) — 극장 CRUD와 목록 조회를 검증한다.
   **판정: 유지 · 시드: 예제.**
 - [`src/__tests__/core/ticket-holding.spec.ts`](../apps/api/src/__tests__/core/ticket-holding.spec.ts) — 좌석 선점, 기존 선점 처리, 선점 조회와 구매 claim을 검증한다.
-  **판정: 축소 · 시드: 예제.** Redis TTL 검증 한 번은 유지하되, 같은 1.5초 대기를 두 번 하지 말고 한 만료 뒤 빈 조회와 다른 고객의 선점 성공을 함께 단언한다.
+  **판정: 유지 · 시드: 예제.** Redis TTL 만료 조건을 `beforeEach`에서 두 번 만들더라도 빈 조회와 다른 고객의 선점 성공을 별도 `it`으로 유지한다. 두 검증은 순서를 가진 하나의 흐름이 아니므로 `beforeAll` 공유 대상이 아니다.
 - [`src/__tests__/core/tickets.spec.ts`](../apps/api/src/__tests__/core/tickets.spec.ts) — 티켓 생성·검색·판매 원자 전이와 매출 집계를 검증한다.
   **판정: 유지 · 시드: 예제.**
 - [`src/__tests__/core/user-auth.spec.ts`](../apps/api/src/__tests__/core/user-auth.spec.ts) — 사용자 로그인, 내 정보, 계정 수정·삭제, 구매 목록, refresh, logout과 logout-all을 검증한다.
@@ -176,7 +176,7 @@ k6의 [`measurementStart()`](../tests/api-benchmark/perf-common.js)는 제거하
 - [`src/__tests__/core/watch-records.spec.ts`](../apps/api/src/__tests__/core/watch-records.spec.ts) — 시청 기록 생성과 페이지 검색을 검증한다.
   **판정: 유지 · 시드: 예제.**
 - [`src/__tests__/infrastructure/assets.spec.ts`](../apps/api/src/__tests__/infrastructure/assets.spec.ts) — 업로드 URL 생성·만료, 완료 확인·확정, 조회·삭제와 만료 업로드 정리를 검증한다.
-  **판정: 축소 · 시드: 핵심.** S3 presigned URL과 실제 만료 경계의 대기는 유지한다. 만료 fixture를 공유해 중복 케이스를 합치고, cron callback 뒤 1초 sleep 대신 `cleanupExpiredUploads()`를 직접 await해 코드와 시간 모두 줄인다.
+  **판정: 축소 · 시드: 핵심.** S3 presigned URL과 서로 다른 만료 결과의 독립된 테스트는 유지한다. cron callback 뒤 1초 sleep만 `cleanupExpiredUploads()`를 직접 await해 없앤다.
 - [`src/__tests__/infrastructure/payments.spec.ts`](../apps/api/src/__tests__/infrastructure/payments.spec.ts) — 결제 생성·취소와 구매별 조회를 검증한다.
   **판정: 유지 · 시드: 예제.**
 - [`src/__tests__/view/home.spec.ts`](../apps/api/src/__tests__/view/home.spec.ts) — 사용자 홈의 가까운 상영과 구성 결과를 검증한다.
@@ -230,7 +230,7 @@ k6의 [`measurementStart()`](../tests/api-benchmark/perf-common.js)는 제거하
 - [`src/auth/__tests__/guards.spec.ts`](../libs/common/src/auth/__tests__/guards.spec.ts) — Bearer, Basic, 복합·optional 인증 guard의 헤더 파싱과 오류 경계를 검증한다.
   **판정: 유지 · 시드: 핵심.**
 - [`src/auth/__tests__/jwt-auth.service.spec.ts`](../libs/common/src/auth/__tests__/jwt-auth.service.spec.ts) — access/refresh 발급, 원자 refresh 회전, 폐기, 전체 로그아웃과 보안 이벤트를 검증한다.
-  **판정: 보완 · 시드: 핵심.** 전역 시간을 바꾸지 않고 `expiresIn: '-1s'`인 유효한 refresh token fixture를 두 만료 분기에서 재사용하면 8초 대기와 프로덕션 변경을 모두 피할 수 있다.
+  **판정: 보완 · 시드: 핵심.** 전역 시간을 바꾸지 않고 각 만료 분기가 `expiresIn: '-1s'`인 유효한 refresh token fixture를 사용하면 별도 `it`을 합치지 않고도 8초 대기와 프로덕션 변경을 모두 피할 수 있다.
 - [`src/cache/__tests__/cache.service.spec.ts`](../libs/common/src/cache/__tests__/cache.service.spec.ts) — Redis cache set/delete/script, lock·blocking lock, 복구와 namespace 격리를 검증한다.
   **판정: 유지 · 시드: 핵심.** Redis 서버의 TTL과 lock 소유권 만료가 검증 대상이므로 real sleep을 유지한다. polling은 만료 시점을 앞당기지 못하고 코드만 늘린다.
 - [`src/config/__tests__/base-config.service.spec.ts`](../libs/common/src/config/__tests__/base-config.service.spec.ts) — 문자열·숫자·boolean 환경 설정 조회와 오류를 검증한다.

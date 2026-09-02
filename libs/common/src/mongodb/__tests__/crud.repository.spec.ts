@@ -1,9 +1,7 @@
 import type { Collection, IndexDescription, MongoClient } from 'mongodb'
 import { BadRequestException, Logger, NotFoundException } from '@nestjs/common'
 import { OrderDirection } from '../../pagination/index.js'
-import { CrudRepository } from '../crud.repository.js'
-import { MongoErrors } from '../errors.js'
-import { objectId } from '../mongo.util.js'
+import { CrudRepository, MongoErrors, objectId } from '../index.js'
 import {
     createMongoRepositoryFixture,
     type Sample,
@@ -13,11 +11,11 @@ import {
 describe('CrudRepository', () => {
     let fix: MongoRepositoryFixture
 
-    beforeAll(async () => {
+    beforeEach(async () => {
         fix = await createMongoRepositoryFixture()
     })
 
-    afterAll(async () => {
+    afterEach(async () => {
         await fix.teardown()
     })
 

@@ -1,4 +1,4 @@
-import { InstantFromInputSchema, PlainDateFromInputSchema } from '../date.schema.js'
+import { InstantFromInputSchema, PlainDateFromInputSchema } from '../index.js'
 
 describe('Temporal input schemas', () => {
     it('지원 입력을 의미에 맞는 Temporal 타입으로 변환한다', () => {

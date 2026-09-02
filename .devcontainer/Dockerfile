@@ -9,30 +9,17 @@ RUN set -eu; \
     case "$TARGETARCH" in \
     amd64 | arm64) ;; \
     *) echo "Unsupported architecture: $TARGETARCH" >&2; exit 1 ;; \
-    esac; \
-    node --version; \
-    npm --version
+    esac
 
 RUN set -eu; apt-get update; DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
     ca-certificates curl git iproute2 jq shellcheck shfmt tmux tree unzip xz-utils; \
-    rm -rf /var/lib/apt/lists/*; \
-    curl --version; \
-    git --version; \
-    ip -Version; \
-    jq --version; \
-    shellcheck --version; \
-    shfmt -version; \
-    tmux -V; \
-    tree --version; \
-    unzip -v | sed -n '1p'; \
-    xz --version
+    rm -rf /var/lib/apt/lists/*
 
 # OS 의존성은 이미지에 두고, lockfile과 일치하는 Chromium은 postCreateCommand에서 설치한다.
 RUN set -eu; \
     npm install --global --no-audit --no-fund playwright; \
     playwright install-deps chromium; \
-    playwright --version; \
     npm cache clean --force; \
     rm -rf /var/lib/apt/lists/*
 
@@ -43,8 +30,7 @@ RUN set -eu; apt-get update; DEBIAN_FRONTEND=noninteractive \
     https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar -o /tmp/plantuml.jar; \
     install -m 0644 /tmp/plantuml.jar /opt/plantuml.jar; \
     rm -f /tmp/plantuml.jar; \
-    rm -rf /var/lib/apt/lists/*; \
-    java -jar /opt/plantuml.jar -version
+    rm -rf /var/lib/apt/lists/*
 
 RUN set -eu; \
     case "$TARGETARCH" in \
@@ -56,8 +42,7 @@ RUN set -eu; \
     "https://github.com/lycheeverse/lychee/releases/latest/download/${archive}.tar.gz" -o /tmp/lychee.tar.gz; \
     tar -xzf /tmp/lychee.tar.gz -C /tmp; \
     install -m 0755 "/tmp/${archive}/lychee" /usr/local/bin/lychee; \
-    rm -rf /tmp/lychee.tar.gz "/tmp/${archive}"; \
-    lychee --version
+    rm -rf /tmp/lychee.tar.gz "/tmp/${archive}"
 
 RUN set -eu; \
     suffix="linux-${TARGETARCH}.tar.gz"; \
@@ -69,17 +54,14 @@ RUN set -eu; \
     mkdir /tmp/k6; \
     tar -xzf /tmp/k6.tar.gz -C /tmp/k6 --strip-components=1; \
     install -m 0755 /tmp/k6/k6 /usr/local/bin/k6; \
-    rm -rf /tmp/k6.tar.gz /tmp/k6; \
-    k6 version
+    rm -rf /tmp/k6.tar.gz /tmp/k6
 
 RUN set -eu; \
     curl -fsSL --retry 3 --retry-all-errors \
     "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${TARGETARCH}" -o /tmp/cloudflared; \
     install -m 0755 /tmp/cloudflared /usr/local/bin/cloudflared; \
-    rm -f /tmp/cloudflared; \
-    cloudflared --version
+    rm -f /tmp/cloudflared
 
 RUN set -eu; \
     npm install --global --no-audit --no-fund pnpm; \
-    pnpm --version; \
     npm cache clean --force

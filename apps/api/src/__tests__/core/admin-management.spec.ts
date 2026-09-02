@@ -196,43 +196,37 @@ describe('AdminManagement', () => {
                     .ok({ ...admin, name: 'renamed' })
             })
 
-            it('자기 password를 바꾸면 새 password로 로그인할 수 있다', async () => {
-                await fix.httpClient
-                    .patch('/admins/me')
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body({ password: 'newPassword' })
-                    .ok()
+            describe('password를 변경하면', () => {
+                const newPassword = 'newPassword'
 
-                await fix.httpClient
-                    .post('/admins/login')
-                    .body({ email: adminCredentials.email, password: 'newPassword' })
-                    .ok({ accessToken: expect.any(String), refreshToken: expect.any(String) })
-            })
+                beforeEach(async () => {
+                    await fix.httpClient
+                        .patch('/admins/me')
+                        .headers({ Authorization: `Bearer ${accessToken}` })
+                        .body({ password: newPassword })
+                        .ok()
+                })
 
-            it('password를 바꾸면 기존 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
-                await fix.httpClient
-                    .patch('/admins/me')
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body({ password: 'newPassword' })
-                    .ok()
+                it('새 password로 로그인할 수 있다', async () => {
+                    await fix.httpClient
+                        .post('/admins/login')
+                        .body({ email: adminCredentials.email, password: newPassword })
+                        .ok({ accessToken: expect.any(String), refreshToken: expect.any(String) })
+                })
 
-                await fix.httpClient
-                    .post('/admins/refresh')
-                    .body({ refreshToken })
-                    .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
-            })
+                it('기존 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
+                    await fix.httpClient
+                        .post('/admins/refresh')
+                        .body({ refreshToken })
+                        .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
+                })
 
-            it('password를 바꾸면 기존 액세스 토큰을 즉시 거부한다', async () => {
-                await fix.httpClient
-                    .patch('/admins/me')
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body({ password: 'newPassword' })
-                    .ok()
-
-                await fix.httpClient
-                    .get('/admins/me')
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .unauthorized(Errors.Auth.Unauthorized())
+                it('기존 액세스 토큰을 즉시 거부한다', async () => {
+                    await fix.httpClient
+                        .get('/admins/me')
+                        .headers({ Authorization: `Bearer ${accessToken}` })
+                        .unauthorized(Errors.Auth.Unauthorized())
+                })
             })
 
             it('email을 변경하면 변경된 email을 반환한다', async () => {

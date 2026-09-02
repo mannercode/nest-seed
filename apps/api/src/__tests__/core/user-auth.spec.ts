@@ -76,8 +76,7 @@ describe('UserAuthentication', () => {
         })
 
         it('authVersion 필드가 없는 기존 사용자도 version 0 세션으로 로그인한다', async () => {
-            const { UsersRepository } =
-                await import('../../services/core/users/users.repository.js')
+            const { UsersRepository } = await import('../../services/core/users/index.js')
             const repository = fix.module.get(UsersRepository)
             await repository.collection.updateOne(
                 { email: credentials.email },

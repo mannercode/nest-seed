@@ -1,8 +1,7 @@
 import { plainDate } from '@mannercode/testing'
 import { ConflictException } from '@nestjs/common'
 import { ObjectId, type Collection, type Document } from 'mongodb'
-import { UsersRepository } from '../users.repository.js'
-import { UsersService } from '../users.service.js'
+import { UsersRepository, UsersService } from '../index.js'
 
 describe('user create write concern recovery', () => {
     const createDto = {

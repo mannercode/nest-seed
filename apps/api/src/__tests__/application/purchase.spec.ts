@@ -1,7 +1,16 @@
+import type { MockInstance } from 'vitest'
 import { CacheService, DateUtil, ensure, objectId, pickIds, Require } from '@mannercode/common'
 import { HttpTestClient, oid } from '@mannercode/testing'
 import { createHash, randomUUID } from 'node:crypto'
-import { PurchaseItemType, TicketStatus, type TicketDto, type UserDto } from '#core'
+import type { PurchaseService } from '#application'
+import {
+    PurchaseItemType,
+    TicketStatus,
+    type PurchaseRecordDto,
+    type PurchaseRecordsService,
+    type TicketDto,
+    type UserDto
+} from '#core'
 import { PaymentStatus } from '#infrastructure'
 import {
     createAndLoginUser,
@@ -323,7 +332,7 @@ describe('PurchaseService', () => {
                     })
             })
 
-            it('구매하면 결제 기록이 생성된다', async () => {
+            it('결제 기록을 생성한다', async () => {
                 const createDto = buildCreatePurchaseDto(heldTickets)
                 const { body: purchaseRecord } = await fix.httpClient
                     .post('/purchases')
@@ -337,7 +346,7 @@ describe('PurchaseService', () => {
                 expect(ensure(payments[0]).amount).toEqual(purchaseRecord.totalPrice)
             })
 
-            it('구매하면 티켓 상태가 판매 완료로 바뀐다', async () => {
+            it('티켓 상태를 판매 완료로 바꾼다', async () => {
                 const createDto = buildCreatePurchaseDto(heldTickets)
                 await fix.httpClient
                     .post('/purchases')
@@ -512,99 +521,95 @@ describe('PurchaseService', () => {
             })
 
             describe('티켓이 Sold로 전이된 뒤 구매 완료 커밋이 실패할 때', () => {
+                let emit: MockInstance
+
                 // 보상 흐름이 실제로 Sold→Available 전이를 수행하는 경로를 검증한다.
                 // 위의 시나리오는 `completePurchase` 시작점에서 던지므로 티켓이 Available로 남아 보상은 no-op이지만, 여기는 전이 이후에 던져 보상이 진짜 되돌리기를 하도록 만든다.
                 beforeEach(async () => {
+                    const { PurchaseEvents } = await import('#application')
                     const { PurchaseRecordsService } = await import('#core')
+                    const events = fix.module.get(PurchaseEvents)
                     const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
+                    emit = vi.spyOn(events, 'emitTicketPurchased')
                     vi.spyOn(purchaseRecordsService, 'markCompleted').mockRejectedValueOnce(
                         new Error('commit failed')
                     )
-                })
 
-                it('Sold가 된 티켓을 다시 Available로 되돌린다', async () => {
                     const createDto = buildCreatePurchaseDto(heldTickets)
-
                     await fix.httpClient
                         .post('/purchases')
                         .headers({ 'Idempotency-Key': randomUUID() })
                         .headers({ Authorization: `Bearer ${accessToken}` })
                         .body(createDto)
                         .internalServerError()
+                })
 
+                it('Sold가 된 티켓을 다시 Available로 되돌린다', async () => {
                     const { TicketsService } = await import('#core')
                     const ticketsService = fix.module.get(TicketsService)
                     const tickets = await ticketsService.getMany(pickIds(heldTickets))
                     expect(tickets.every((t) => t.status === TicketStatus.Available)).toBe(true)
                 })
+
+                it('구매 완료 이벤트를 발행하지 않는다', () => {
+                    expect(emit).not.toHaveBeenCalled()
+                })
             })
 
             describe('구매 완료 커밋 뒤 이벤트 발행이 실패할 때', () => {
-                it('구매는 유지하고 durable event를 후속 재발행한다', async () => {
+                let emit: MockInstance
+                let purchaseRecord: PurchaseRecordDto
+                let purchaseRecordsService: PurchaseRecordsService
+                let purchaseService: PurchaseService
+
+                beforeEach(async () => {
                     const { PurchaseEvents, PurchaseService } = await import('#application')
                     const { PurchaseRecordsService } = await import('#core')
                     const events = fix.module.get(PurchaseEvents)
-                    const purchaseService = fix.module.get(PurchaseService)
-                    const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-                    const emit = vi
+                    purchaseService = fix.module.get(PurchaseService)
+                    purchaseRecordsService = fix.module.get(PurchaseRecordsService)
+                    emit = vi
                         .spyOn(events, 'emitTicketPurchased')
                         .mockRejectedValueOnce(new Error('publish failed'))
 
                     const createDto = buildCreatePurchaseDto(heldTickets)
-                    const { body: purchaseRecord } = await fix.httpClient
+                    ;({ body: purchaseRecord } = await fix.httpClient
                         .post('/purchases')
                         .headers({ 'Idempotency-Key': randomUUID() })
                         .headers({ Authorization: `Bearer ${accessToken}` })
                         .body(createDto)
-                        .created()
+                        .created())
+                })
 
+                it('티켓·결제·구매 기록을 완료 상태로 유지한다', async () => {
                     expect(
                         (await getTickets(fix, pickIds(heldTickets))).every(
                             (ticket) => ticket.status === TicketStatus.Sold
                         )
                     ).toBe(true)
-                    expect(
-                        ensure((await getPayments(fix, [purchaseRecord.paymentId]))[0]).status
-                    ).toBe(PaymentStatus.Completed)
+
+                    const paymentId = ensure(purchaseRecord.paymentId)
+                    expect(ensure((await getPayments(fix, [paymentId]))[0]).status).toBe(
+                        PaymentStatus.Completed
+                    )
                     expect(await purchaseRecordsService.findByUserId(user.id)).toEqual([
                         expect.objectContaining({ id: purchaseRecord.id })
                     ])
+                })
+
+                it('durable event를 미발행 상태로 남긴다', async () => {
                     expect(
                         await purchaseRecordsService.findUnpublishedBefore(DateUtil.now())
                     ).toEqual([expect.objectContaining({ id: purchaseRecord.id })])
+                })
 
+                it('후속 발행에서 이벤트를 재발행하고 미발행 상태를 해제한다', async () => {
                     await purchaseService.publishPendingPurchaseEvents()
 
                     expect(emit).toHaveBeenCalledTimes(2)
                     expect(
                         await purchaseRecordsService.findUnpublishedBefore(DateUtil.now())
                     ).toEqual([])
-                })
-
-                it('완료 커밋이 실패하면 이벤트를 발행하지 않고 구매를 보상한다', async () => {
-                    const { PurchaseEvents } = await import('#application')
-                    const { PurchaseRecordsService } = await import('#core')
-                    const events = fix.module.get(PurchaseEvents)
-                    const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-                    vi.spyOn(purchaseRecordsService, 'markCompleted').mockRejectedValueOnce(
-                        new Error('commit failed')
-                    )
-                    const emit = vi.spyOn(events, 'emitTicketPurchased')
-
-                    const createDto = buildCreatePurchaseDto(heldTickets)
-                    await fix.httpClient
-                        .post('/purchases')
-                        .headers({ 'Idempotency-Key': randomUUID() })
-                        .headers({ Authorization: `Bearer ${accessToken}` })
-                        .body(createDto)
-                        .internalServerError()
-
-                    expect(emit).not.toHaveBeenCalled()
-                    expect(
-                        (await getTickets(fix, pickIds(heldTickets))).every(
-                            (ticket) => ticket.status === TicketStatus.Available
-                        )
-                    ).toBe(true)
                 })
             })
 

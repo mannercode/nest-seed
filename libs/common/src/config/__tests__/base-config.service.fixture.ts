@@ -2,7 +2,7 @@ import { createTestContext } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { z } from 'zod'
-import { BaseConfigService } from '../base-config.service.js'
+import { BaseConfigService } from '../index.js'
 
 const configSchema = z.object({
     TEST_BOOLEAN_FALSE_KEY: z

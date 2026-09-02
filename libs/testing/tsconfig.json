@@ -6,6 +6,5 @@
         "noEmit": true,
         "types": ["node", "vitest/globals"]
     },
-    "include": ["src/**/*"],
-    "exclude": ["src/**/__tests__/**"]
+    "include": ["src/**/*"]
 }

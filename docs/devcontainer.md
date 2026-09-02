@@ -22,7 +22,7 @@ infra·deploy compose와 devcontainer는 같은 Docker 네트워크로 묶인다
 ## 부팅 순서
 
 1. `initializeCommand` — 사용자명과 workspace basename을 조합한 Docker 네트워크와 도구 설정 디렉터리 준비 (호스트에서 실행)
-2. 이미지 빌드 — patch·배포판·digest까지 고정한 Node 베이스에 현재 릴리스의 k6, cloudflared, shellcheck, lychee, PlantUML과 Playwright의 OS 의존성을 설치한다. 이 도구들은 폐기 가능한 개발 환경 도구이므로 Dockerfile에 개별 버전을 중복해서 고정하지 않는다.
+2. 이미지 빌드 — patch·배포판·digest까지 고정한 Node 베이스에 현재 릴리스의 k6, cloudflared, shellcheck, lychee, PlantUML과 Playwright의 OS 의존성을 설치한다. 이 도구들은 폐기 가능한 개발 환경 도구이므로 Dockerfile에 개별 버전을 중복해서 고정하지 않는다. 설치 명령의 실패가 빌드를 중단하므로 별도 `--version` 출력으로 다시 확인하지 않는다.
 3. `postCreateCommand` — `pnpm install --frozen-lockfile`(최초 1회) 후 lockfile의 Playwright와 일치하는 Chromium을 설치한다. manifest와 lockfile이 다르면 의존성 설치를 거부한다.
 4. `postStartCommand` — `bash infra/reset.sh`로 개발 인프라 기동 + PlantUML 서버
 

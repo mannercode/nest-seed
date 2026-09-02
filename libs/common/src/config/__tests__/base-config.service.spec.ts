@@ -1,6 +1,6 @@
 import type { ConfigService } from '@nestjs/config'
 import type { BaseConfigServiceFixture } from './base-config.service.fixture.js'
-import { BaseConfigService } from '../base-config.service.js'
+import { BaseConfigService } from '../index.js'
 
 describe('BaseConfigService', () => {
     let fix: BaseConfigServiceFixture

@@ -60,7 +60,7 @@ test('workspaces share the Nest Oxlint baseline', async () => {
     }
 })
 
-test('devcontainer floats image tools while keeping project installs locked', async () => {
+test('devcontainer avoids redundant version probes while keeping project installs locked', async () => {
     const config = await read('.devcontainer/devcontainer.json')
     const dockerfile = await read('.devcontainer/Dockerfile')
     const lock = JSON.parse(await read('.devcontainer/devcontainer-lock.json'))
@@ -78,27 +78,28 @@ test('devcontainer floats image tools while keeping project installs locked', as
     assert.doesNotMatch(config, /initialize-user-state\.sh|devcontainerId/)
     assert.match(dockerfile, /^FROM node:\d+\.\d+\.\d+-bookworm-slim@sha256:[a-f0-9]{64}$/m)
     assert.doesNotMatch(dockerfile, /^ARG [A-Z_]+_VERSION=/m)
-
-    const assertVersionCheckedInInstallStep = (installMarker, versionMarker) => {
-        const installIndex = dockerfile.indexOf(installMarker)
-        const nextRunIndex = dockerfile.indexOf('\nRUN ', installIndex + 1)
-        const versionIndex = dockerfile.indexOf(versionMarker, installIndex)
-        assert.notEqual(installIndex, -1, `missing install marker: ${installMarker}`)
-        assert.ok(
-            versionIndex > installIndex && (nextRunIndex === -1 || versionIndex < nextRunIndex),
-            `${versionMarker} must be checked in its install step`
-        )
-    }
-    for (const [installMarker, versionMarker] of [
-        ['apt-get install -y --no-install-recommends', 'shellcheck --version'],
-        ['npm install --global --no-audit --no-fund playwright', 'playwright --version'],
-        ['releases/latest/download/plantuml.jar', 'java -jar /opt/plantuml.jar -version'],
-        ['releases/latest/download/${archive}.tar.gz', 'lychee --version'],
-        ['api.github.com/repos/grafana/k6/releases/latest', 'k6 version'],
-        ['releases/latest/download/cloudflared-linux-${TARGETARCH}', 'cloudflared --version'],
-        ['npm install --global --no-audit --no-fund pnpm', 'pnpm --version']
+    for (const versionProbe of [
+        'node --version',
+        'npm --version',
+        'curl --version',
+        'git --version',
+        'ip -Version',
+        'jq --version',
+        'shellcheck --version',
+        'shfmt -version',
+        'ssh -V',
+        'tmux -V',
+        'tree --version',
+        'unzip -v',
+        'xz --version',
+        'playwright --version',
+        'java -jar /opt/plantuml.jar -version',
+        'lychee --version',
+        'k6 version',
+        'cloudflared --version',
+        'pnpm --version'
     ]) {
-        assertVersionCheckedInInstallStep(installMarker, versionMarker)
+        assert.equal(dockerfile.includes(versionProbe), false, `redundant probe: ${versionProbe}`)
     }
     const configuredFeatures = Array.from(
         config.matchAll(/^\s*"(ghcr\.io\/[^"]+)"\s*:\s*\{/gm),
@@ -135,6 +136,19 @@ test('backend workspaces use Node ESM and Vitest keeps the TypeScript metadata t
     const apiPackage = JSON.parse(await read('apps/api/package.json'))
     const commonPackage = JSON.parse(await read('libs/common/package.json'))
     const testingPackage = JSON.parse(await read('libs/testing/package.json'))
+    const parseTypeScriptConfig = (path) =>
+        typescript.getParsedCommandLineOfConfigFile(
+            join(root, path),
+            {},
+            {
+                ...typescript.sys,
+                onUnRecoverableConfigFileDiagnostic(diagnostic) {
+                    assert.fail(
+                        typescript.flattenDiagnosticMessageText(diagnostic.messageText, '\n')
+                    )
+                }
+            }
+        )
 
     assert.equal(rootTsconfig.compilerOptions.module, 'nodenext')
     assert.equal(rootTsconfig.compilerOptions.moduleResolution, 'nodenext')
@@ -157,18 +171,7 @@ test('backend workspaces use Node ESM and Vitest keeps the TypeScript metadata t
         'libs/common/tsconfig.test.json',
         'libs/testing/tsconfig.test.json'
     ]) {
-        const testTsconfig = typescript.getParsedCommandLineOfConfigFile(
-            join(root, path),
-            {},
-            {
-                ...typescript.sys,
-                onUnRecoverableConfigFileDiagnostic(diagnostic) {
-                    assert.fail(
-                        typescript.flattenDiagnosticMessageText(diagnostic.messageText, '\n')
-                    )
-                }
-            }
-        )
+        const testTsconfig = parseTypeScriptConfig(path)
         assert.ok(testTsconfig)
         assert.equal(testTsconfig.options.module, typescript.ModuleKind.NodeNext)
         assert.equal(
@@ -177,6 +180,17 @@ test('backend workspaces use Node ESM and Vitest keeps the TypeScript metadata t
         )
         assert.equal(testTsconfig.options.isolatedModules, true)
         assert.deepEqual([...testTsconfig.options.types].sort(), ['node', 'vitest/globals'])
+    }
+
+    // VS Code는 이름이 tsconfig.json인 가장 가까운 project를 자동 선택한다.
+    // 편집용 project에는 테스트가 보여야 하고 실제 빌드에서는 빠져야 한다.
+    for (const workspace of ['apps/api', 'libs/common', 'libs/testing']) {
+        const editorTsconfig = parseTypeScriptConfig(`${workspace}/tsconfig.json`)
+        const buildTsconfig = parseTypeScriptConfig(`${workspace}/tsconfig.build.json`)
+        assert.ok(editorTsconfig)
+        assert.ok(buildTsconfig)
+        assert.ok(editorTsconfig.fileNames.some((path) => path.includes('/__tests__/')))
+        assert.ok(buildTsconfig.fileNames.every((path) => !path.includes('/__tests__/')))
     }
 
     for (const packageJson of [apiPackage, commonPackage, testingPackage]) {

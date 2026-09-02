@@ -1,6 +1,6 @@
 import { nullDate } from '@mannercode/testing'
 import type { RequestValidationPipeFixture } from './request-validation.pipe.fixture.js'
-import { RequestValidationPipe } from '../request-validation.pipe.js'
+import { RequestValidationPipe } from '../index.js'
 
 describe('RequestValidationPipe', () => {
     let fix: RequestValidationPipeFixture

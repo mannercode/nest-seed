@@ -2,7 +2,7 @@ import { createHttpTestContext, type HttpTestContext } from '@mannercode/testing
 import { Body, Controller, Post } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
 import { z } from 'zod'
-import { RequestValidationPipe } from '../request-validation.pipe.js'
+import { RequestValidationPipe } from '../index.js'
 
 export type RequestValidationPipeFixture = HttpTestContext & { teardown: () => Promise<void> }
 

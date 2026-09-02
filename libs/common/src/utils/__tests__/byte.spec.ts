@@ -1,4 +1,4 @@
-import { ByteUtil } from '../byte.js'
+import { ByteUtil } from '../index.js'
 
 describe('ByteUtil', () => {
     describe('fromString', () => {
@@ -46,7 +46,7 @@ describe('ByteUtil', () => {
             expect(ByteUtil.fromString('1gb')).toBe(1024 ** 3)
         })
 
-        describe('형식이 유효하지 않을 때', () => {
+        describe('유효하지 않은 형식', () => {
             it('알 수 없는 단어는 예외를 던진다', () => {
                 expect(() => ByteUtil.fromString('invalid')).toThrow()
             })
