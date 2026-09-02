@@ -13,14 +13,15 @@ RUN set -eu; \
 
 RUN set -eu; apt-get update; DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
-    ca-certificates curl git iproute2 jq shellcheck shfmt tmux tree unzip xz-utils; \
+    ca-certificates curl git iproute2 jq openssh-client shellcheck shfmt tmux tree unzip; \
     rm -rf /var/lib/apt/lists/*
 
-# OS 의존성은 이미지에 두고, lockfile과 일치하는 Chromium은 postCreateCommand에서 설치한다.
+COPY tests/web/package.json /tmp/tests-web-package.json
+
 RUN set -eu; \
-    npm install --global --no-audit --no-fund playwright; \
-    playwright install-deps chromium; \
-    npm cache clean --force; \
+    playwright_version="$(node -p "require('/tmp/tests-web-package.json').devDependencies['@playwright/test']")"; \
+    npm_config_cache=/tmp/npm-cache npx --yes "playwright@${playwright_version}" install-deps chromium; \
+    rm -rf /tmp/npm-cache /tmp/tests-web-package.json; \
     rm -rf /var/lib/apt/lists/*
 
 RUN set -eu; apt-get update; DEBIAN_FRONTEND=noninteractive \
@@ -45,23 +46,18 @@ RUN set -eu; \
     rm -rf /tmp/lychee.tar.gz "/tmp/${archive}"
 
 RUN set -eu; \
-    suffix="linux-${TARGETARCH}.tar.gz"; \
-    download_url="$(curl -fsSL --retry 3 --retry-all-errors \
-    https://api.github.com/repos/grafana/k6/releases/latest \
-    | jq -er --arg suffix "$suffix" \
-    '[.assets[].browser_download_url | select(endswith($suffix))] | if length == 1 then .[0] else error("expected exactly one matching k6 asset") end')"; \
-    curl -fsSL --retry 3 --retry-all-errors "$download_url" -o /tmp/k6.tar.gz; \
-    mkdir /tmp/k6; \
-    tar -xzf /tmp/k6.tar.gz -C /tmp/k6 --strip-components=1; \
-    install -m 0755 /tmp/k6/k6 /usr/local/bin/k6; \
-    rm -rf /tmp/k6.tar.gz /tmp/k6
-
-RUN set -eu; \
+    install -d -m 0755 /usr/share/keyrings; \
     curl -fsSL --retry 3 --retry-all-errors \
-    "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${TARGETARCH}" -o /tmp/cloudflared; \
-    install -m 0755 /tmp/cloudflared /usr/local/bin/cloudflared; \
-    rm -f /tmp/cloudflared
+    "https://pkg.cloudflare.com/cloudflare-main.gpg" -o /usr/share/keyrings/cloudflare-main.gpg; \
+    echo "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main" \
+    > /etc/apt/sources.list.d/cloudflared.list; \
+    apt-get update; \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends cloudflared; \
+    rm -rf /var/lib/apt/lists/*
+
+COPY package.json /tmp/workspace-package.json
 
 RUN set -eu; \
-    npm install --global --no-audit --no-fund pnpm; \
-    npm cache clean --force
+    package_manager="$(node -p "require('/tmp/workspace-package.json').packageManager")"; \
+    npm_config_cache=/tmp/npm-cache npm install --global --no-audit --no-fund "$package_manager"; \
+    rm -rf /tmp/npm-cache /tmp/workspace-package.json

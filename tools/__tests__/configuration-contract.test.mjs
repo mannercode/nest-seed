@@ -63,11 +63,18 @@ test('workspaces share the Nest Oxlint baseline', async () => {
 test('devcontainer avoids redundant version probes while keeping project installs locked', async () => {
     const config = await read('.devcontainer/devcontainer.json')
     const dockerfile = await read('.devcontainer/Dockerfile')
+    const dockerignore = await read('.dockerignore')
     const lock = JSON.parse(await read('.devcontainer/devcontainer-lock.json'))
 
+    assert.match(config, /"build"\s*:\s*\{[^}]*"context"\s*:\s*"\.\."/)
+    assert.match(dockerignore, /^!\/tests\/web\/package\.json$/m)
     assert.match(
         config,
-        /"postCreateCommand"\s*:\s*\{\s*"install"\s*:\s*"pnpm install --frozen-lockfile && pnpm --filter '\.\/tests\/web' exec playwright install chromium"/
+        /"updateContentCommand"\s*:\s*\{\s*"workspace-dependencies"\s*:\s*"pnpm install --frozen-lockfile"/
+    )
+    assert.match(
+        config,
+        /"postCreateCommand"\s*:\s*\{\s*"playwright-chromium"\s*:\s*"pnpm --filter '\.\/tests\/web' exec playwright install chromium"/
     )
     assert.match(config, /source=\$\{localEnv:HOME\}\/\.codex,target=\/home\/node\/\.codex/)
     assert.match(
@@ -78,6 +85,23 @@ test('devcontainer avoids redundant version probes while keeping project install
     assert.doesNotMatch(config, /initialize-user-state\.sh|devcontainerId/)
     assert.match(dockerfile, /^FROM node:\d+\.\d+\.\d+-bookworm-slim@sha256:[a-f0-9]{64}$/m)
     assert.doesNotMatch(dockerfile, /^ARG [A-Z_]+_VERSION=/m)
+    assert.match(
+        dockerfile,
+        /deb \[signed-by=\/usr\/share\/keyrings\/cloudflare-main\.gpg\] https:\/\/pkg\.cloudflare\.com\/cloudflared any main/
+    )
+    assert.doesNotMatch(dockerfile, /\bk6\b/)
+    assert.doesNotMatch(dockerfile, /github\.com\/cloudflare\/cloudflared\/releases/)
+    assert.match(dockerfile, /COPY tests\/web\/package\.json \/tmp\/tests-web-package\.json/)
+    assert.match(dockerfile, /playwright_version=.*devDependencies\['@playwright\/test'\]/)
+    assert.match(
+        dockerfile,
+        /npx --yes "playwright@\$\{playwright_version\}" install-deps chromium/
+    )
+    assert.doesNotMatch(dockerfile, /npm install --global[^\n]+playwright/)
+    assert.match(dockerfile, /COPY package\.json \/tmp\/workspace-package\.json/)
+    assert.match(dockerfile, /package_manager=.*\.packageManager/)
+    assert.match(dockerfile, /npm install --global[^\n]+"\$package_manager"/)
+    assert.doesNotMatch(dockerfile, /\bxz-utils\b/)
     for (const versionProbe of [
         'node --version',
         'npm --version',
@@ -109,6 +133,23 @@ test('devcontainer avoids redundant version probes while keeping project install
     for (const feature of Object.values(lock.features)) {
         assert.match(feature.resolved, /@sha256:[a-f0-9]{64}$/)
         assert.match(feature.integrity, /^sha256:[a-f0-9]{64}$/)
+    }
+})
+
+test('API benchmark runs the pinned official k6 container', async () => {
+    const compose = await read('deploy/compose.yml')
+    const launcher = await read('tests/api-benchmark/run-k6.sh')
+    const runners = await Promise.all(
+        ['tests/api-benchmark/runner.sh', 'tests/api-benchmark/mixed-runner.sh'].map(read)
+    )
+
+    assert.match(compose, /image: grafana\/k6:\d+\.\d+\.\d+@sha256:[a-f0-9]{64}/)
+    assert.match(compose, /profiles: \[benchmark\]/)
+    assert.match(launcher, /docker compose[^\n]+--project-directory/)
+    assert.match(launcher, /--user "\$\(id -u\):\$\(id -g\)"/)
+    for (const runner of runners) {
+        assert.match(runner, /run-k6\.sh/)
+        assert.doesNotMatch(runner, /\bk6 run\b/)
     }
 })
 

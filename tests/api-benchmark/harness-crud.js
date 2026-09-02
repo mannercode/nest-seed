@@ -16,7 +16,7 @@
  *
  * 실행:
  *   mkdir -p tests/api-benchmark/_output  # k6는 출력 디렉토리를 만들지 않는다
- *   k6 run --env SERVER_URL=http://localhost:3000 --env SCENARIO=user-write tests/api-benchmark/harness-crud.js
+ *   bash tests/api-benchmark/run-k6.sh run --env SERVER_URL=http://nginx --env SCENARIO=user-write tests/api-benchmark/harness-crud.js
  */
 
 import http from 'k6/http'

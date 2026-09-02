@@ -8,13 +8,19 @@ import {
 import { SchedulerRegistry } from '@nestjs/schedule'
 import compression from 'compression'
 import express from 'express'
-import { ShowtimeCreationRestateEndpoint, ShowtimeCreationWorkflowClient } from '#application'
+import {
+    PURCHASE_EVENTS_MAX_BYTES,
+    ShowtimeCreationRestateEndpoint,
+    ShowtimeCreationWorkflowClient
+} from '#application'
 import { AppConfigService, MongoConnection } from '#config'
 import { getSharedTestMongoConnection } from '../../../scripts/index.cjs'
 import { AppModule } from '../../app.module.js'
 import { configureTemporalJson } from '../../configure-temporal-json.js'
 
 type AppTestOptions = ModuleMetadataEx & { enableRestate?: boolean }
+
+const TEST_PURCHASE_EVENTS_MAX_BYTES = 1024 * 1024
 
 export async function createAppTestContext({
     enableRestate = false,
@@ -25,6 +31,7 @@ export async function createAppTestContext({
     const imports = [AppModule, ...(metadata.imports ?? [])]
     const sharedMongo = getSharedTestMongoConnection()
     const overrideProviders = [
+        { original: PURCHASE_EVENTS_MAX_BYTES, replacement: TEST_PURCHASE_EVENTS_MAX_BYTES },
         {
             original: MongoConnection,
             replacement: new MongoConnection(sharedMongo.client, sharedMongo.db, false)

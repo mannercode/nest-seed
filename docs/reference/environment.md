@@ -96,7 +96,7 @@ env 파일은 자기 보간이 안 되고 compose 서비스 정의와 스크립�
 | 앱 세션·테스트 격리 이름 | 두 BFF의 cookie 접두사, Vitest Mongo `appName`, API 문서 fixture 이메일처럼 프로젝트끼리 충돌하면 안 되는 내부 값                                                            |
 | 프런트엔드 환경          | `apps/console/.env`·`apps/user-app/.env`의 `API_BASE_URL`; 신뢰 edge 뒤에서만 `BFF_TRUST_PROXY_HEADERS=true`                                                                 |
 | 저장소 링크·연락처       | README badge, 저자 블로그·귀속 표시는 새 소유권과 유지할 원 저작자 정보를 구분해 의도적으로 검토한다. URL이나 `mannercode.com`·이메일을 기계적으로 치환하지 않는다.          |
-| GitHub Settings          | ruleset, Actions/Dependabot 권한, `DOCKERHUB_*` secrets, 필요한 fork에만 `ENABLE_SCHEDULED_CI=true` — [GitHub 운영 설정](../github-setup.md)                                 |
+| GitHub Settings          | ruleset, Actions/Dependabot 권한, `DOCKERHUB_*` secrets, 필요한 fork에만 `ENABLE_SCHEDULED_CI=true`                                                                          |
 
 정기 CI 조건의 `repository_id == '849585972'`는 원본 저장소만 변수 없이 schedule을 실행하게 하는 immutable sentinel이다. fork에서 자기 repository ID로 바꾸면 opt-in 안전장치를 우회하므로 치환하지 않는다.
 

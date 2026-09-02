@@ -1,7 +1,7 @@
 {
     "name": "${containerWorkspaceFolderBasename}",
     "hostRequirements": { "cpus": 4, "memory": "16gb", "storage": "32gb" },
-    "build": { "dockerfile": "Dockerfile" },
+    "build": { "dockerfile": "Dockerfile", "context": ".." },
     "features": {
         "ghcr.io/devcontainers/features/docker-outside-of-docker:1": { "moby": false },
         "ghcr.io/devcontainers/features/github-cli": {}
@@ -35,8 +35,9 @@
         "claude": "mkdir -p ${localEnv:HOME}/.claude && touch ${localEnv:HOME}/.claude.json",
         "github": "mkdir -p ${localEnv:HOME}/.config/gh"
     },
+    "updateContentCommand": { "workspace-dependencies": "pnpm install --frozen-lockfile" },
     "postCreateCommand": {
-        "install": "pnpm install --frozen-lockfile && pnpm --filter './tests/web' exec playwright install chromium"
+        "playwright-chromium": "pnpm --filter './tests/web' exec playwright install chromium"
     },
     "postStartCommand": {
         "infra": "bash infra/reset.sh",
