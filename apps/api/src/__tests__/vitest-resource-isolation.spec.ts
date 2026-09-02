@@ -4,7 +4,7 @@ import {
     PutObjectCommand,
     S3Client
 } from '@aws-sdk/client-s3'
-import { JetStreamApiCodes, jetstreamManager, StorageType } from '@nats-io/jetstream'
+import { jetstreamManager, StorageType } from '@nats-io/jetstream'
 import { connect as connectNats } from '@nats-io/transport-node'
 import { Redis } from 'ioredis'
 import fs from 'node:fs'
@@ -13,7 +13,7 @@ import { setTimeout as delay } from 'node:timers/promises'
 import { getSharedTestMongoConnection } from '../../scripts/index.cjs'
 
 const startupProjectId = process.env.PROJECT_ID
-let previousTestStreamSubject: string | undefined
+let previousTestStream: { name: string; subject: string } | undefined
 
 describe('VitestResourceIsolation', () => {
     it('실행별 namespace를 반영하고 병렬 teardown에서 다른 실행 자원을 보존한다', async () => {
@@ -39,31 +39,33 @@ describe('VitestResourceIsolation', () => {
         if (role === undefined) return
 
         const runId = requiredEnvironment('API_VITEST_RUN_ID')
-        previousTestStreamSubject = `${requiredEnvironment('PROJECT_ID')}.purchase.ticketPurchased`
+        const subject = `${requiredEnvironment('PROJECT_ID')}.purchase.ticketPurchased`
+        const name = `VITEST_CLEANUP_${role}_${runId}`
+        previousTestStream = { name, subject }
         const connection = await createNatsConnection()
 
         try {
             const manager = await jetstreamManager(connection)
             await manager.streams.add({
                 max_bytes: 1024 * 1024,
-                name: `VITEST_CLEANUP_${role}_${runId}`,
+                name,
                 storage: StorageType.File,
-                subjects: [previousTestStreamSubject]
+                subjects: [subject]
             })
         } finally {
             await connection.drain()
         }
     })
 
-    it('직전 테스트의 JetStream을 다음 테스트 전에 제거한다', async () => {
-        if (previousTestStreamSubject === undefined) return
+    it('직전 테스트의 JetStream을 global teardown까지 유지한다', async () => {
+        if (previousTestStream === undefined) return
 
         const connection = await createNatsConnection()
         try {
             const manager = await jetstreamManager(connection)
-            await expect(manager.streams.find(previousTestStreamSubject)).rejects.toMatchObject({
-                code: JetStreamApiCodes.StreamNotFound
-            })
+            await expect(manager.streams.find(previousTestStream.subject)).resolves.toBe(
+                previousTestStream.name
+            )
         } finally {
             await connection.drain()
         }

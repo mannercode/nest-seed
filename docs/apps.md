@@ -609,7 +609,7 @@ describe('PATCH /theaters/:id', () => {
 
 ### 테스트별 자원 격리
 
-각 테스트가 다른 테스트와 부딪히지 않도록, `apps/api/vitest.config.mjs`가 Vitest 명령마다 고유한 실행 ID를 만든다. `setupFiles`로 지정한 `src/__tests__/vitest.setup.ts`는 app 모듈을 읽기 전에 실행 ID와 `VITEST_POOL_ID`가 들어간 startup `PROJECT_ID`를 설정하고, `beforeEach`에서 테스트별 `TEST_ID` suffix로 다시 갱신한다. Redis/cache prefix, NATS subject·JetStream stream과 Restate workflow 서비스 이름이 이 값을 따라 갈라진다. MongoDB 데이터베이스와 S3 버킷도 실행 ID와 `VITEST_POOL_ID`를 조합해 만든다. coverage는 `_output/vitest-runs/r<실행 ID>/coverage/`에서 실행별로 분리된다. global teardown은 subject가 현재 실행 ID와 정확히 일치하는 JetStream stream만 삭제한다. 따라서 같은 devcontainer의 두 API Vitest 명령이 같은 pool ID를 받아도 자원이나 coverage 산출물을 공유하지 않는다.
+각 테스트가 다른 테스트와 부딪히지 않도록, `apps/api/vitest.config.mjs`가 Vitest 명령마다 고유한 실행 ID를 만든다. `setupFiles`로 지정한 `src/__tests__/vitest.setup.ts`는 app 모듈을 읽기 전에 실행 ID와 `VITEST_POOL_ID`가 들어간 startup `PROJECT_ID`를 설정하고, `beforeEach`에서 테스트별 `TEST_ID` suffix로 다시 갱신한다. Redis/cache prefix, NATS subject·JetStream stream과 Restate workflow 서비스 이름이 이 값을 따라 갈라진다. MongoDB 데이터베이스와 S3 버킷도 실행 ID와 `VITEST_POOL_ID`를 조합해 만든다. coverage는 `_output/vitest-runs/r<실행 ID>/coverage/`에서 실행별로 분리된다. 테스트용 JetStream은 운영 기본 256 MiB 대신 stream당 1 MiB를 사용하고 테스트 사이에는 삭제하지 않는다. 모든 worker가 끝난 뒤 global teardown이 subject가 현재 실행 ID와 정확히 일치하는 stream만 한 번에 삭제한다. 따라서 병렬 테스트 중 File stream 삭제와 생성이 교차하지 않고, 같은 devcontainer의 두 API Vitest 명령이 같은 pool ID를 받아도 논리 자원이나 coverage 산출물을 공유하지 않는다.
 
 Nest 모듈 파일은 프로세스에서 한 번만 평가된다. 따라서 데코레이터 인자에서 `process.env.PROJECT_ID`를 읽으면 첫 테스트의 값에 고정된다. cache와 JWT 모듈은 정적인 값을 캡처하지 않고, 제공자를 만들 때 `AppConfigService.projectId`를 주입받아 prefix를 계산한다. NATS subject와 Restate workflow definition 이름도 제공자를 생성할 때 같은 설정값으로 만든다.
 
@@ -643,7 +643,8 @@ vitest.config.base.mjs                 TypeScript 변환, forks pool, tree repor
                                        VITEST_POOL_ID별 DB·버킷 준비, beforeEach마다 TEST_ID 발급
                                        afterEach에서 컬렉션과 버킷 내용 정리
 *.spec.ts                               개별 테스트가 픽스처로 위 자원 사용
-<workspace>/vitest.teardown.cjs         모든 pool worker 종료 후 한 번만 현재 실행 자원 정리
+<workspace>/vitest.teardown.cjs         모든 pool worker 종료 후 한 번만 현재 실행 자원과
+                                       테스트 중 유지한 JetStream들을 정리
 tools/vitest-helpers/index.js            setup·teardown의 공통 자원 격리 로직
 ```
 

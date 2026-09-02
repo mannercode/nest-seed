@@ -18,9 +18,11 @@ import { z } from 'zod'
 import { AppConfigService, NATS_CONNECTION_NAME } from '#config'
 
 const EVENT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
-const EVENT_MAX_BYTES = 256 * 1024 * 1024
 const EVENT_DUPLICATE_WINDOW_MS = 10 * 60 * 1000
 const NOTIFICATION_ACK_WAIT_MS = 30 * 1000
+
+export const PURCHASE_EVENTS_MAX_BYTES = Symbol('PURCHASE_EVENTS_MAX_BYTES')
+export const DEFAULT_PURCHASE_EVENTS_MAX_BYTES = 256 * 1024 * 1024
 
 export const ticketPurchasedEventSchema = z.object({
     purchaseRecordId: z.string().min(1),
@@ -42,7 +44,8 @@ export class PurchaseEvents implements OnModuleInit {
 
     constructor(
         @Inject(getNatsConnectionToken(NATS_CONNECTION_NAME)) connection: NatsConnection,
-        config: AppConfigService
+        config: AppConfigService,
+        @Inject(PURCHASE_EVENTS_MAX_BYTES) private readonly maxBytes: number
     ) {
         this.connection = connection
         this.client = jetstream(connection)
@@ -89,7 +92,7 @@ export class PurchaseEvents implements OnModuleInit {
             discard: DiscardPolicy.New,
             duplicate_window: nanos(EVENT_DUPLICATE_WINDOW_MS),
             max_age: nanos(EVENT_MAX_AGE_MS),
-            max_bytes: EVENT_MAX_BYTES,
+            max_bytes: this.maxBytes,
             name: this.streamName,
             num_replicas: 1,
             retention: RetentionPolicy.Limits,

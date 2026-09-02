@@ -124,7 +124,7 @@ describe('PurchaseEvents', () => {
         expect(stream.config).toMatchObject({
             discard: DiscardPolicy.New,
             max_age: 7 * 24 * 60 * 60 * 1_000_000_000,
-            max_bytes: 256 * 1024 * 1024,
+            max_bytes: 1024 * 1024,
             num_replicas: 1,
             retention: RetentionPolicy.Limits,
             storage: StorageType.File,
