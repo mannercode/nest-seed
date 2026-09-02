@@ -2,7 +2,7 @@
 
 단위·통합 테스트는 보통 각 워크스페이스 안(`apps/api/src/__tests__`, `libs/*/src/**/__tests__`)에 살고 `pnpm run test`로 돈다([apps 문서의 테스트 절](apps.md#테스트) 참고). `tests/`에 모인 것은 주로 **배포된 스택을 밖에서 검증하는** 무거운 테스트라 폴더가 따로 있다. 다만 하네스 자체의 계약은 같은 워크스페이스 안에 둔다. `tests/api-race/contracts`는 공통 HTTP/SSE client·repository 계약을 `pnpm --filter './tests/api-race' test`로, `tests/web/contracts`는 두 Next.js BFF의 공통 보안·프런트 린트 계약을 `pnpm --filter './tests/web' test`로 실행한다. 둘 다 배포 스택이나 브라우저를 시작하지 않고 기본 `pnpm run test`에 포함된다.
 
-한 화면의 실행 명령과 결과 위치는 [`tests/README.md`](../tests/README.md)에 있고, 테스트 파일별 검증 대상은 [테스트 파일 인벤토리](test-inventory.md)에 있다. 루트 테스트 명령은 마지막에 통과·실패한 영역, 검증 이유, 실제 경과 시간과 실행되지 않은 검증을 요약하고 같은 내용을 `_output/test-reports/`의 Markdown 보고서에 남긴다.
+한 화면의 실행 명령과 결과 위치는 [`tests/README.md`](../tests/README.md)에 있고, 테스트 파일별 검증 대상은 [테스트 파일 인벤토리](../test-inventory.md)에 있다. 루트 테스트 명령은 마지막에 통과·실패한 영역, 검증 이유, 실제 경과 시간과 실행되지 않은 검증을 요약하고 같은 내용을 `_output/test-reports/`의 Markdown 보고서에 남긴다.
 
 ## api-race — 분산 레이스 시나리오
 
@@ -88,7 +88,7 @@ pnpm run e2e:report             # 마지막 HTML 결과 열기
 
 ## CI 반복 — test-stability
 
-CI 워크플로는 둘이다. [test-atoz.yaml](../.github/workflows/test-atoz.yaml)은 PR·main push·수동 실행에서 전체 회귀(atoz)를 한 번 돌려 기능 회귀를 잡고, test-stability는 같은 시나리오를 누적 반복해 흔들림(간헐 실패)을 드러낸다. 원본 저장소는 GitHub의 immutable `repository_id == 849585972`로 식별되어 test-atoz가 3시간마다, test-stability가 6시간마다 변수 없이 정기 실행된다. fork의 cron event는 repository variable `ENABLE_SCHEDULED_CI=true`를 명시해야만 job을 실행하고, 수동 실행은 이 변수와 무관하다. 저장소 이름을 재사용해도 원본 권한을 얻지 않으며, fork의 ID로 workflow sentinel을 바꾸지 않는다. 비용·secret·ruleset 준비는 [GitHub 운영 설정](github-setup.md#1-actions와-정기-실행-opt-in)을 따른다.
+CI 워크플로는 둘이다. [test-atoz.yaml](../.github/workflows/test-atoz.yaml)은 PR·main push·수동 실행에서 전체 회귀(atoz)를 한 번 돌려 기능 회귀를 잡고, test-stability는 같은 시나리오를 누적 반복해 흔들림(간헐 실패)을 드러낸다. 원본 저장소는 GitHub의 immutable `repository_id == 849585972`로 식별되어 test-atoz가 3시간마다, test-stability가 6시간마다 변수 없이 정기 실행된다. fork의 cron event는 repository variable `ENABLE_SCHEDULED_CI=true`를 명시해야만 job을 실행하고, 수동 실행은 이 변수와 무관하다. 저장소 이름을 재사용해도 원본 권한을 얻지 않으며, fork의 ID로 workflow sentinel을 바꾸지 않는다.
 
 [test-stability.yaml](../.github/workflows/test-stability.yaml)은 행렬의 각 레그를 독립된 잡으로 실행한다. 각 분산 시나리오는 50회, libs 단위/통합 테스트는 75회, 부팅 검증은 50회를 반복한다. apps/api는 한 러너에 장시간 부하가 누적되지 않고 240분 제한 안에 끝나도록 20회씩 세 레그로 나누어 총 60회를 유지한다.
 
@@ -97,3 +97,5 @@ apps/api 반복은 실행별 coverage 디렉터리를 누적하지 않도록 `--
 분산 레이스 레그는 반복을 시작하기 전 `deploy/prebuild-images.sh`로 API·NGINX 이미지를 한 번만 준비한다. API의 pnpm store는 Docker BuildKit cache로 재사용한다. 각 회차는 `DEPLOY_IMAGES_PREBUILT=true`로 `docker compose up --no-build`를 써서 같은 이미지를 재사용한다. 이렇게 해야 반복 횟수가 이미지 레지스트리 메타데이터 장애와 빌드 시간을 반복 추출하지 않고, 같은 바이너리의 안정성을 측정한다.
 
 부팅 레그는 `infra/reset.sh`(인프라 compose 전체 재기동)를 반복한다. 레이스 코드는 한 번 통과했다고 안전하다고 보기 어렵다. 그래서 결과가 얼마나 흔들리는지 누적으로 확인한다. 반복 횟수와 timeout은 각 레그가 GitHub Actions 상한 안에서 진단 표본을 모으도록 맞춘 값이다. 실패하면 Actions 로그에서 `[Run i/N]` 마커로 실패 회차를 찾는다. 이어지는 컨테이너 로그 덤프는 `repeat.sh`가 의도적으로 남기는 진단이다.
+
+반복 중 `tickets.spec.ts`로 표시된 NATS JetStream 파일 경합과 해결안 교정 과정은 [NATS 테스트 경합 사례 연구](../nats-jetstream-test-race.md)에 정리했다.

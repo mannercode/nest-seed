@@ -31,7 +31,7 @@
 
 처음 부팅 순서는 다음과 같다.
 
-1. **새 프로젝트로 포크했다면** 저장소 전체를 기계적으로 치환하지 말고, [환경 변수 §4](docs/reference/environment.md#4-포크할-때-확인할-값)의 패키지·env·compose 식별자만 새 이름으로 바꾼다. 저자 외부 URL·연락처·원본 `repository_id` sentinel은 일괄 치환 대상이 아니며 각각 의도적으로 검토한다. fork에 복사되지 않는 ruleset·Actions secret·보안 기능과 정기 CI opt-in은 [GitHub 운영 설정](docs/github-setup.md#6-fork-완료-확인)을 따른다.
+1. **새 프로젝트로 포크했다면** 저장소 전체를 기계적으로 치환하지 말고, [환경 변수 §4](docs/reference/environment.md#4-포크할-때-확인할-값)의 패키지·env·compose 식별자만 새 이름으로 바꾼다. 저자 외부 URL·연락처·원본 `repository_id` sentinel은 일괄 치환 대상이 아니며 각각 의도적으로 검토한다.
 2. VS Code에서 `Reopen in Container`를 실행한다. 컨테이너가 열리면 `postStartCommand`가 `bash infra/reset.sh`를 실행해 개발 인프라를 준비한다. 첫 부팅은 Dev Container 이미지 빌드, `pnpm install --frozen-lockfile`, 인프라 이미지 다운로드 때문에 시간이 걸릴 수 있다. 인프라가 꼬이면 `bash infra/reset.sh`로 언제든 초기화한다.
 3. `pnpm run test`로 기본 테스트가 통과하는지 확인한다. 포크 직후 전체 회귀까지 확인하려면 `pnpm run atoz`를 실행한다.
 4. `pnpm run dev`로 watch 모드를 띄운 뒤 `curl http://localhost:3000/health`로 API가 살아 있는지 본다.
@@ -172,7 +172,7 @@ JWT 기반으로 세 역할을 둔다. **root**는 `.env.api` 자격증명의 Ba
 
 ## 문서
 
-README 뒤의 상세는 폴더 문서 여섯과 참고 자료 넷, 운영 문서 하나가 맡는다. 문서와 주석은 한국어가 원본이다. README는 [영어 번역](README.en.md)을 같이 제공하지만, 상세 문서는 두 언어를 동시에 유지하며 생길 드리프트를 피하려고 한국어 하나로 유지한다.
+README 뒤의 상세는 폴더 문서 여섯과 참고 자료 다섯이 맡는다. 문서와 주석은 한국어가 원본이다. README는 [영어 번역](README.en.md)을 같이 제공하지만, 상세 문서는 두 언어를 동시에 유지하며 생길 드리프트를 피하려고 한국어 하나로 유지한다.
 
 **폴더 문서** — 각 폴더가 무엇이고 왜 이렇게 나뉘었는지. 여기서 시작한다:
 
@@ -194,7 +194,4 @@ README 뒤의 상세는 폴더 문서 여섯과 참고 자료 넷, 운영 문서
 - [컨벤션](docs/reference/conventions.md) — 커밋 규칙, fail-fast, 값의 위치, pnpm 스크립트 계약
 - [환경 변수](docs/reference/environment.md) — Dev Container, API, API 문서, console·user-app 환경 변수 흐름과 포크 체크리스트
 - [설계 결정](docs/reference/decisions.md) — 분산 도구·View 계층 등 핵심 설계 결정과 쓰지 않기로 한 대안
-
-**운영 문서**:
-
-- [GitHub 운영 설정](docs/github-setup.md) — fork에 복사되지 않는 ruleset·Actions secret·Dependabot·보안 기능·정기 CI opt-in 체크리스트
+- [NATS 테스트 경합 사례 연구](nats-jetstream-test-race.md) — AI 제안의 문제를 사람의 반문으로 교정한 실제 코딩 문답

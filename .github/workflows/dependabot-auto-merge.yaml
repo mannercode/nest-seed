@@ -1,5 +1,5 @@
 # `--auto` 머지는 main 룰셋의 필수 검사(test-atoz)가 통과할 때까지 기다린다.
-# fork에서 다시 켜야 하는 룰셋·자동 병합·보안 설정 절차는 docs/github-setup.md의 3·4절을 따른다.
+# fork에서 쓰려면 repository의 auto-merge와 필요한 ruleset·Actions write 정책을 별도로 켠다.
 name: Dependabot Auto Merge
 on:
     pull_request:

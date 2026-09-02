@@ -33,7 +33,7 @@ The minimum spec is 4 CPU cores, 16GB RAM, and 32GB of disk. To run the full tes
 
 First boot goes like this:
 
-1. **If you forked this as a new project**, do not mechanically replace names across the entire repository. Change only the package, env, and Compose identifiers listed in [Environment variables §4](docs/reference/environment.md#4-포크할-때-확인할-값). Review author-owned external URLs, contact details, and the original-repository ID sentinel deliberately rather than replacing them in bulk. Then follow [GitHub operations setup](docs/github-setup.md#6-fork-완료-확인) for rulesets, Actions secrets, security features, and scheduled-CI opt-in that forks do not inherit.
+1. **If you forked this as a new project**, do not mechanically replace names across the entire repository. Change only the package, env, and Compose identifiers listed in [Environment variables §4](docs/reference/environment.md#4-포크할-때-확인할-값). Review author-owned external URLs, contact details, and the original-repository ID sentinel deliberately rather than replacing them in bulk.
 2. Run `Reopen in Container` in VS Code. Once the container opens, `postStartCommand` runs `bash infra/reset.sh` to prepare the development infrastructure. The first boot can take a while — Dev Container image build, `pnpm install --frozen-lockfile`, and infrastructure image downloads. If the infrastructure ever gets into a bad state, reset it anytime with `bash infra/reset.sh`.
 3. Run `pnpm run test` to confirm the basic tests pass. To check the full regression right after forking, run `pnpm run atoz`.
 4. Start watch mode with `pnpm run dev`, then check the API is alive with `curl http://localhost:3000/health`.
@@ -174,7 +174,7 @@ JWT-based, with three roles. **root** only creates and deletes admins, using Bas
 
 ## Documentation
 
-The detail behind this README lives in six folder documents, four references, and one operations document. **Korean is the source language for the detailed documents and code comments.** This file is a translation of [README.md](README.md); where the two disagree, the Korean version wins. Keeping the detailed documents in one source language avoids silent drift between two copies.
+The detail behind this README lives in six folder documents and four references. **Korean is the source language for the detailed documents and code comments.** This file is a translation of [README.md](README.md); where the two disagree, the Korean version wins. Keeping the detailed documents in one source language avoids silent drift between two copies.
 
 **Folder documents** — what each folder is and why it is split this way. Start here:
 
@@ -196,7 +196,3 @@ The detail behind this README lives in six folder documents, four references, an
 - [Conventions](docs/reference/conventions.md) — commit rules, fail-fast, where values live, pnpm script contracts
 - [Environment variables](docs/reference/environment.md) — env-variable flow for the Dev Container, API, API docs, and console/user-app, plus the fork checklist
 - [Design decisions](docs/reference/decisions.md) — the key design decisions (distributed tooling, the View layer, and more) and the alternatives not taken
-
-**Operations**:
-
-- [GitHub operations setup](docs/github-setup.md) — rulesets, Actions secrets, Dependabot, security features, and scheduled-CI opt-in for a fork
