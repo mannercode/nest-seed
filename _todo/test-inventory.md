@@ -1,6 +1,6 @@
 # 테스트 파일 인벤토리
 
-활성 표준 테스트 88개와 그 밖의 실행·측정 파일 24개를 경로별로 정리한다. fixture, helper와 `_todo`는 제외한다. 테스트 작성 기준은 [개발 규칙](../docs/reference/conventions.md#5-테스트-문장은-조건과-결과를-이어-읽게-쓴다)를 따른다.
+활성 표준 테스트 87개와 그 밖의 실행·측정 파일 24개를 경로별로 정리한다. fixture, helper와 `_todo`는 제외한다. 테스트 작성 기준은 [개발 규칙](../docs/reference/conventions.md#5-테스트-문장은-조건과-결과를-이어-읽게-쓴다)를 따른다.
 
 ## `apps/api`
 
@@ -139,7 +139,6 @@ libs/
     ├── __tests__/
     │   ├── create-test-context-cleanup.spec.ts — setup 실패 시 부분 생성된 test context 정리
     │   ├── create-test-context.spec.ts         — Nest test context 생성·override·lifecycle
-    │   ├── expect-equal-unsorted.spec.ts      — 순서와 무관한 동등성 matcher
     │   ├── http.test-client.spec.ts           — JSON 응답·상태 코드·multipart·SSE·chain API
     │   └── utils.spec.ts                      — Temporal fixture·단계 실행·test ID·ObjectId helper
     └── vitest/__tests__/
