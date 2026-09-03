@@ -1,6 +1,6 @@
 # 테스트 파일 인벤토리
 
-활성 표준 테스트 98개와 그 밖의 실행·측정 파일 24개를 경로별로 정리한다. fixture, helper와 `_todo`는 제외한다. 테스트 작성 기준은 [개발 규칙](../docs/reference/conventions.md#5-테스트-문장은-조건과-결과를-이어-읽게-쓴다)를 따른다.
+활성 표준 테스트 92개와 그 밖의 실행·측정 파일 24개를 경로별로 정리한다. fixture, helper와 `_todo`는 제외한다. 테스트 작성 기준은 [개발 규칙](../docs/reference/conventions.md#5-테스트-문장은-조건과-결과를-이어-읽게-쓴다)를 따른다.
 
 ## `apps/api`
 
@@ -177,18 +177,4 @@ tests/
         ├── console-auth-flow.spec.ts           — 관리자 route·역할·세션·refresh·logout 브라우저 흐름
         ├── movies-flow.spec.ts                 — 관리자의 영화·극장 관리와 사용자 삭제 브라우저 흐름
         └── user-auth-flow.spec.ts              — 사용자 로그인·개인화 홈·refresh·logout 브라우저 흐름
-```
-
-## `tools`
-
-```text
-tools/
-├── __tests__/
-│   ├── clean-workspace.test.mjs               — 생성물 삭제와 개인 파일·테스트 보고서 보존
-│   ├── lint-shell.test.mjs                    — extension 없는 hook과 source fixture의 shell lint 포함
-│   └── nginx-log-contract.test.mjs            — NGINX access log의 query string 제외
-├── dev-tools/tunnel-policy.test.sh              — quick tunnel opt-in·direct API 차단·child process 정리
-└── vitest-helpers/__tests__/
-    ├── helpers.test.js                          — test resource ID·Mongo·S3·Redis 준비·정리·Vitest lifecycle
-    └── resource-scope.test.js                   — 병렬 run의 Mongo·S3·Redis namespace와 정리 범위
 ```

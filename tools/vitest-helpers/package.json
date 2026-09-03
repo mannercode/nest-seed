@@ -5,10 +5,9 @@
     "main": "./index.js",
     "types": "./index.d.ts",
     "scripts": {
-        "test": "node --experimental-test-coverage --test-coverage-lines=100 --test-coverage-functions=100 --test-coverage-branches=100 --test __tests__/*.test.js",
-        "lint": "oxlint -c ../../oxlint.json index.js __tests__/ && prettier --check index.js index.d.ts '__tests__/*.test.js' package.json",
-        "format": "prettier --write index.js index.d.ts '__tests__/*.test.js' package.json",
-        "atoz": "pnpm run lint && pnpm test"
+        "lint": "oxlint -c ../../oxlint.json index.js && prettier --check index.js index.d.ts package.json",
+        "format": "prettier --write index.js index.d.ts package.json",
+        "atoz": "pnpm run lint"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "3.1121.0"

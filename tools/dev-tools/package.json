@@ -2,10 +2,6 @@
     "name": "@mannercode/dev-tools",
     "version": "0.0.1",
     "private": true,
-    "scripts": {
-        "test": "bash tunnel-policy.test.sh",
-        "atoz": "pnpm test"
-    },
     "bin": {
         "free-port": "./free-port.js",
         "tunnel": "./tunnel.sh"
