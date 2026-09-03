@@ -18,17 +18,7 @@ pnpm --filter './apps/api' test users.spec --coverage.enabled=false
 
 ## 2. 결과
 
-루트 명령은 실행한 영역, 검증 이유, 성공·실패, 경과 시간, 실행하지 않은 영역을 `_output/test-reports/`의 명령별 Markdown 보고서에 남긴다.
-
-| 명령                       | 보고서                                  |
-| -------------------------- | --------------------------------------- |
-| `pnpm run test`            | `_output/test-reports/test.md`          |
-| `pnpm run atoz`            | `_output/test-reports/atoz.md`          |
-| `pnpm run e2e`             | `_output/test-reports/e2e.md`           |
-| `pnpm run race <scenario>` | `_output/test-reports/race.md`          |
-| `pnpm run benchmark:api`   | `_output/test-reports/benchmark-api.md` |
-
-브라우저 실패의 trace·screenshot·HTML은 `tests/web/_output/`, benchmark JSON·dashboard는 `tests/api-benchmark/_output/`에 남는다.
+단위·통합 테스트와 race 결과는 터미널에서 확인한다. 브라우저 실패의 trace·screenshot·HTML은 `tests/web/_output/`, benchmark JSON·dashboard는 `tests/api-benchmark/_output/`에 남는다.
 
 ## 3. 보조 명령
 

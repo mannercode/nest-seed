@@ -81,33 +81,26 @@ test('cleanWorkspace refuses generated paths beneath a symlinked workspace', asy
     )
 })
 
-test('cleanWorkspace preserves test reports and removes other root output', async (t) => {
-    const root = await mkdtemp(join(tmpdir(), 'nest-seed-clean-reports-'))
+test('cleanWorkspace removes root output', async (t) => {
+    const root = await mkdtemp(join(tmpdir(), 'nest-seed-clean-output-'))
     t.after(async () => {
         const { rm } = await import('node:fs/promises')
         await rm(root, { force: true, recursive: true })
     })
 
     await Promise.all([
-        mkdir(join(root, '_output/test-reports'), { recursive: true }),
         mkdir(join(root, '_output/ci-diagnostics'), { recursive: true }),
         mkdir(join(root, '_output/other'), { recursive: true })
     ])
     await Promise.all([
         writeFile(join(root, 'pnpm-workspace.yaml'), "packages:\n    - 'libs/common'\n"),
-        writeFile(join(root, '_output/test-reports/test.md'), 'latest report\n'),
         writeFile(join(root, '_output/ci-diagnostics/failure.txt'), 'generated\n'),
         writeFile(join(root, '_output/other/generated.txt'), 'generated\n')
     ])
 
     const removed = await cleanWorkspace(root)
 
-    assert.equal(
-        await readFile(join(root, '_output/test-reports/test.md'), 'utf8'),
-        'latest report\n'
-    )
     await assert.rejects(readFile(join(root, '_output/ci-diagnostics/failure.txt')))
     await assert.rejects(readFile(join(root, '_output/other/generated.txt')))
-    assert.ok(removed.includes('_output/ci-diagnostics'))
-    assert.ok(removed.includes('_output/other'))
+    assert.ok(removed.includes('_output'))
 })

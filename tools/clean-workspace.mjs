@@ -2,7 +2,13 @@ import { lstat, readFile, readdir, realpath, rm } from 'node:fs/promises'
 import { dirname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
-const rootGeneratedPaths = ['.husky/_', 'coverage', 'node_modules', 'scheduled_tasks.lock']
+const rootGeneratedPaths = [
+    '.husky/_',
+    '_output',
+    'coverage',
+    'node_modules',
+    'scheduled_tasks.lock'
+]
 const workspaceGeneratedPaths = [
     '.next',
     '_output',
@@ -22,18 +28,6 @@ const pathExists = async (path) => {
         if (error?.code === 'ENOENT') return false
         throw error
     }
-}
-
-const rootOutputGeneratedPaths = async (root) => {
-    const outputPath = join(root, '_output')
-    if (!(await pathExists(outputPath))) return []
-
-    const outputStat = await lstat(outputPath)
-    if (!outputStat.isDirectory() || outputStat.isSymbolicLink()) return ['_output']
-
-    return (await readdir(outputPath))
-        .filter((name) => name !== 'test-reports')
-        .map((name) => join('_output', name))
 }
 
 const workspaceDirectories = async (root, patterns) => {
@@ -78,7 +72,7 @@ export async function cleanWorkspace(workspaceRoot) {
     const resolvedRoot = await realpath(root)
     const workspaceConfig = await readFile(join(root, 'pnpm-workspace.yaml'), 'utf8')
     const workspacePaths = await workspaceDirectories(root, parseWorkspacePatterns(workspaceConfig))
-    const candidates = new Set([...rootGeneratedPaths, ...(await rootOutputGeneratedPaths(root))])
+    const candidates = new Set(rootGeneratedPaths)
 
     for (const workspace of workspacePaths) {
         const workspacePath = resolve(root, workspace)
