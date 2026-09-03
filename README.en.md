@@ -57,13 +57,22 @@ Generated request/response logs are diagnostic output, not public documentation 
 ## 4. Project structure
 
 ```text
-apps/           NestJS API and Next.js console/user-app
-libs/           Shared runtime code and test-consumer helpers
-tests/          Race, browser, and benchmark checks outside a deployed stack
-infra/          Development MongoDB, Redis, S3, NATS, and Restate
-deploy/         Multi-replica API + NGINX verification stack
-tools/          Development and test orchestration tools
-docs/           Human-oriented design and operations documentation
+.
+├── apps/
+│   ├── api/             # NestJS API
+│   ├── console/         # Admin-facing Next.js application
+│   └── user-app/        # User-facing Next.js application
+├── libs/
+│   ├── common/          # Shared runtime code used by applications
+│   └── testing/         # Client and fixture helpers for test consumers
+├── tests/
+│   ├── api-race/        # Multi-replica contention checks
+│   ├── api-benchmark/   # Deployed API regression comparison
+│   └── web/             # BFF contracts and browser E2E
+├── infra/               # Development MongoDB, Redis, S3, NATS, and Restate
+├── deploy/              # Multi-replica API + NGINX verification stack
+├── tools/               # Development and test orchestration tools
+└── docs/                # Human-oriented design and operations documentation
 ```
 
 ## 5. Technology choices

@@ -55,13 +55,22 @@ bash apps/api/api-docs/run.sh showtime-creation.spec
 ## 4. 프로젝트 구조
 
 ```text
-apps/           NestJS API, Next.js console·user-app
-libs/           런타임 공용 코드와 테스트 소비자용 helper
-tests/          배포 스택 밖에서 실행하는 race·browser·benchmark
-infra/          개발용 MongoDB·Redis·S3·NATS·Restate
-deploy/         다중 API 복제본 + NGINX 검증 스택
-tools/          개발·테스트 실행 도구
-docs/           사람이 읽을 설계·운영 문서
+.
+├── apps/
+│   ├── api/             # NestJS API
+│   ├── console/         # 관리자용 Next.js 앱
+│   └── user-app/        # 사용자용 Next.js 앱
+├── libs/
+│   ├── common/          # 앱이 운영 중 사용하는 공유 런타임 코드
+│   └── testing/         # 테스트 소비자용 client·fixture helper
+├── tests/
+│   ├── api-race/        # 다중 API 복제본 경합 검증
+│   ├── api-benchmark/   # 배포 스택 API 회귀 비교
+│   └── web/             # BFF 계약·브라우저 E2E
+├── infra/               # 개발용 MongoDB·Redis·S3·NATS·Restate
+├── deploy/              # 다중 API 복제본 + NGINX 검증 스택
+├── tools/               # 개발·테스트 실행 도구
+└── docs/                # 사람이 읽을 설계·운영 문서
 ```
 
 ## 5. 기술 선택
