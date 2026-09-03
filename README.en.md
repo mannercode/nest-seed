@@ -16,9 +16,9 @@ Four ideas define the seed:
 - **Separated distributed guarantees** — Redis locks reduce contention cost; DB transitions, CAS, and transactions preserve consistency. Restate resumes interrupted work, while NATS carries messages across processes.
 - **Behavior-oriented verification** — integration tests use real infrastructure and race tests exercise multiple replicas. The 100% coverage gate is not a bug-free certificate; it prevents untested branches from remaining anonymous.
 
-See [apps](docs/apps.md) for layers and distributed boundaries, [design decisions](docs/reference/decisions.md) for reasoning and limitations, and the [tutorial](docs/reference/tutorial.md) for a guided walkthrough.
+See [apps](docs/apps.md) for layers and distributed boundaries and [design decisions](docs/reference/decisions.md) for reasoning and limitations.
 
-## Getting started
+## 1. Getting started
 
 The Dev Container is the only supported development path. You need Docker and the VS Code Dev Containers extension. The minimum specification is 4 CPU cores, 16GB RAM, and 32GB disk; 32GB+ RAM is recommended for full verification.
 
@@ -37,7 +37,7 @@ The Dev Container is the only supported development path. You need Docker and th
 
 `.env.api` and `.env.infra` contain committed development defaults. Review project identifiers and credentials when forking, and inject production secrets outside the repository. See [Environment variables](docs/reference/environment.md).
 
-## Main commands
+## 2. Main commands
 
 | Command                 | Purpose                                                        |
 | ----------------------- | -------------------------------------------------------------- |
@@ -50,7 +50,7 @@ The Dev Container is the only supported development path. You need Docker and th
 
 `infra/reset.sh` also deletes the Restate journal and JetStream data. It is a development recovery command and must not be used where executions need to survive. Test-specific commands and output locations are in [tests/README.md](tests/README.md).
 
-## API reference
+## 3. API reference
 
 Instead of static Swagger/OpenAPI, `apps/api/api-docs/*.spec` sends real requests and serves as the success-path API contract. This prevents documentation from silently drifting away from behavior.
 
@@ -59,9 +59,9 @@ bash apps/api/api-docs/run.sh
 bash apps/api/api-docs/run.sh showtime-creation.spec
 ```
 
-Generated request/response logs are diagnostic output, not public documentation artifacts. Long-lived SSE and failure paths are covered by integration tests. See [Executable API docs](docs/apps.md#실행-가능한-api-문서) for conventions and security boundaries.
+Generated request/response logs are diagnostic output, not public documentation artifacts. Long-lived SSE and failure paths are covered by integration tests. See [Executable API docs](docs/apps.md#5-실행-가능한-api-문서) for conventions and security boundaries.
 
-## Project structure
+## 4. Project structure
 
 ```text
 apps/           NestJS API and Next.js console/user-app
@@ -73,7 +73,7 @@ tools/          Development and test orchestration tools
 docs/           Human-oriented design and operations documentation
 ```
 
-## Technology choices
+## 5. Technology choices
 
 | Role                                     | Choice                                                 |
 | ---------------------------------------- | ------------------------------------------------------ |
@@ -85,7 +85,7 @@ docs/           Human-oriented design and operations documentation
 
 These tools own different failure boundaries; they are not included merely as a technology showcase. [Design decisions](docs/reference/decisions.md) explains why this combination was chosen and why Kafka, BullMQ, Swagger, Nx, and others were not.
 
-## Domain tour
+## 6. Domain tour
 
 Start with the simple CRUD in `core/theaters`, then read the Core composition in `application/booking`, followed by the durable workflow in `application/showtime-creation`. Read each implementation beside its integration test of the same name.
 
@@ -101,17 +101,17 @@ Start with the simple CRUD in `core/theaters`, then read the Core composition in
 | `view/user-app/home`                  | Screen-specific read-model composition                                    |
 | `infrastructure/assets`, `payments`   | S3 and external-payment boundaries                                        |
 
-## Authorization
+## 7. Authorization
 
 There are three roles. **root** uses Basic auth from the development environment only to create and delete admins; **admin** manages content and operations targeting arbitrary users; **user** can access only its own resources. Admin and user tokens use different signing secrets.
 
 Self-owned resources use `/me` paths whose identity is fixed to the token subject. Any path accepting an arbitrary user ID is admin-only. Together these rules remove IDOR paths where a user could substitute someone else's ID.
 
-## Deployment scope
+## 8. Deployment scope
 
 `deploy/` is a distributed-behavior reference stack, not a production deployment. It does not provide TLS, secret management, backup/restore, an observability backend, a frontend edge, or zero-downtime revision rollout. Restate endpoint versioning and the BFF proxy-IP trust boundary require deployment-specific design. See [deploy](docs/deploy.md) for the relevant hazards and guarantee limits.
 
-## Documentation
+## 9. Documentation
 
 Korean is the source language for documentation and comments. Only this README is translated.
 
@@ -121,7 +121,8 @@ Korean is the source language for documentation and comments. Only this README i
 - [infra](docs/infra.md) — development topology and the destructive reset boundary
 - [deploy](docs/deploy.md) — multi-replica verification and boundaries that must not be copied into production
 - [devcontainer](docs/devcontainer.md) — the single development path, DooD constraints, and security
-- [tutorial](docs/reference/tutorial.md) — the reasoning path from use case to implementation and tests
 - [decisions](docs/reference/decisions.md) — choices, alternatives, and non-guarantees
-- [conventions](docs/reference/conventions.md) — cross-cutting rules automation cannot replace
+- [conventions](docs/reference/conventions.md) — project rules automation cannot enforce
 - [environment](docs/reference/environment.md) — env ownership, recreation, forking, and exposure boundaries
+
+For the design background of the movie-booking domain, see the blog series [Backend Service Analysis and Design 1](https://mannercode.com/2025/04/01/backend-design-1.html), [2](https://mannercode.com/2025/05/01/backend-design-2.html), and [3](https://mannercode.com/2025/06/01/backend-design-3.html).
