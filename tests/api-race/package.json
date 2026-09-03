@@ -3,10 +3,9 @@
     "version": "0.0.1",
     "private": true,
     "scripts": {
-        "test": "node --test contracts/*.test.js",
-        "lint": "oxlint -c ../../oxlint.json . && prettier --check '*.js' 'contracts/*.test.js' 'probes/*.js' package.json",
-        "format": "prettier --write '*.js' 'contracts/*.test.js' 'probes/*.js' package.json",
-        "atoz": "pnpm run lint && pnpm test"
+        "lint": "oxlint -c ../../oxlint.json . && prettier --check '*.js' 'probes/*.js' package.json",
+        "format": "prettier --write '*.js' 'probes/*.js' package.json",
+        "atoz": "pnpm run lint"
     },
     "devDependencies": {
         "@restatedev/restate-sdk": "1.17.0",

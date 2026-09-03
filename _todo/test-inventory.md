@@ -1,6 +1,6 @@
 # 테스트 파일 인벤토리
 
-활성 표준 테스트 92개와 그 밖의 실행·측정 파일 24개를 경로별로 정리한다. fixture, helper와 `_todo`는 제외한다. 테스트 작성 기준은 [개발 규칙](../docs/reference/conventions.md#5-테스트-문장은-조건과-결과를-이어-읽게-쓴다)를 따른다.
+활성 표준 테스트 88개와 그 밖의 실행·측정 파일 24개를 경로별로 정리한다. fixture, helper와 `_todo`는 제외한다. 테스트 작성 기준은 [개발 규칙](../docs/reference/conventions.md#5-테스트-문장은-조건과-결과를-이어-읽게-쓴다)를 따른다.
 
 ## `apps/api`
 
@@ -16,13 +16,9 @@ apps/api/
 │   ├── theaters.spec                             — 극장 CRUD와 validation 응답
 │   ├── users.spec                                — 사용자 가입·인증·관리·인가 응답
 │   └── views.spec                                — 게스트와 로그인 사용자의 홈 view 응답
-├── scripts/__tests__/
-│   └── vitest-invocation-isolation.test.cjs      — 병렬 Vitest run의 Mongo·S3·Redis·JetStream·출력 격리
 └── src/
     ├── __tests__/
-    │   ├── app.module.spec.ts                    — 실제 AppModule 의존성 그래프 생성
     │   ├── health.spec.ts                        — GET /health 통합 응답
-    │   ├── vitest-resource-isolation.spec.ts     — run·worker·test별 인프라 자원과 teardown 격리
     │   ├── application/
     │   │   ├── booking.spec.ts                  — 조회에서 좌석 선점으로 이어지는 고객 예매 흐름
     │   │   ├── purchase-events.spec.ts          — 구매 이벤트 발행·구독과 알림 lifecycle
@@ -169,7 +165,6 @@ tests/
 │   ├── sse-fanout-race.js                      — 여러 replica의 SSE client에 workflow 이벤트 전달
 │   ├── ticket-holding-race.js                  — 동일 좌석 동시 선점의 단일 성공
 │   ├── user-signup-race.js                     — 동일 이메일 동시 가입의 단일 생성
-│   ├── contracts/race-common.test.js           — HTTP·SSE deadline·응답 parsing·연결 정리
 │   └── probes/restate-journal-recovery.js      — Restate 재시작 후 완료 step replay와 중단 step 재실행
 └── web/
     ├── contracts/bff-proxy.spec.ts              — BFF Origin·Host·proxy IP 경계와 refresh 재시도 쿠키

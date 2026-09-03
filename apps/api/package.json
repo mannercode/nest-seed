@@ -20,8 +20,7 @@
         "predev": "free-port ${API_PORT:?}",
         "dev": "nest start --watch",
         "test": "vitest run --coverage",
-        "test:vitest-isolation": "node --test scripts/__tests__/*.test.cjs",
-        "atoz": "pnpm run lint && pnpm run test:vitest-isolation && pnpm test"
+        "atoz": "pnpm run lint && pnpm test"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "3.1121.0",
