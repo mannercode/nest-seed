@@ -13,7 +13,7 @@ const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 30)
 const CONCURRENT_ERROR_CODE = 'ERR_JWT_AUTH_REFRESH_TOKEN_CONCURRENT'
 
 async function createAndLogin(suffix) {
-    const email = `race.${Date.now()}.${suffix}.${secureRandomHex()}@example.com`
+    const email = `race.${suffix}.${secureRandomHex()}@example.com`
     const password = 'racepassword'
 
     const created = await request('POST', '/users', {

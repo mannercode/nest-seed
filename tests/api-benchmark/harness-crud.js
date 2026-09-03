@@ -20,11 +20,11 @@
  */
 
 import http from 'k6/http'
+import exec from 'k6/execution'
 import { Counter, Trend } from 'k6/metrics'
 import {
     buildScenarioOptions,
     buildSummary,
-    measurementStart,
     readOptions,
     secureRandomHex,
     summaryReturn
@@ -32,7 +32,7 @@ import {
 
 const opts = readOptions()
 const scenario = __ENV.SCENARIO || 'user-write'
-const startAt = measurementStart(opts)
+const measurementStartProgress = opts.warmupMs / (opts.warmupMs + opts.durationMs)
 
 // 표준 k6 메트릭은 워밍업까지 포함하므로, 워밍업을 제외한 별도 측정용 메트릭을 둔다.
 const latency = new Trend('measured_latency', true)
@@ -41,7 +41,7 @@ const statusCounter = new Counter('measured_status')
 export const options = buildScenarioOptions(opts)
 
 function uniqueEmail(vu, iter) {
-    return `perf.${Date.now()}.${vu}.${iter}.${secureRandomHex()}@example.com`
+    return `perf.${vu}.${iter}.${secureRandomHex()}@example.com`
 }
 
 const SCENARIOS = {
@@ -64,7 +64,7 @@ const SCENARIOS = {
         method: 'POST',
         path: '/theaters',
         body: {
-            name: `perf-theater-${Date.now()}-${vu}-${iter}-${secureRandomHex()}`,
+            name: `perf-theater-${vu}-${iter}-${secureRandomHex()}`,
             location: { latitude: 37.5, longitude: 127.0 },
             seatmap: {
                 blocks: [
@@ -93,7 +93,7 @@ const SCENARIOS = {
     'movie-write': (vu, iter) => ({
         method: 'POST',
         path: '/movies',
-        body: { title: `perf-movie-${Date.now()}-${vu}-${iter}-${secureRandomHex()}` }
+        body: { title: `perf-movie-${vu}-${iter}-${secureRandomHex()}` }
     }),
     'movie-read-title-filter': () => ({
         method: 'GET',
@@ -123,7 +123,7 @@ export default function () {
 
     const res = http.request(spec.method, `${opts.serverUrl}${spec.path}`, body, { headers })
 
-    if (Date.now() >= startAt) {
+    if (exec.scenario.progress >= measurementStartProgress) {
         latency.add(res.timings.duration)
         statusCounter.add(1, { status: String(res.status) })
     }

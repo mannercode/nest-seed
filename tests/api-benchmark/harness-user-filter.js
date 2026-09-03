@@ -11,16 +11,18 @@
  */
 
 import http from 'k6/http'
+import exec from 'k6/execution'
 import { Counter, Trend } from 'k6/metrics'
 import {
     buildScenarioOptions,
     buildSummary,
-    measurementStart,
     readOptions,
+    secureRandomHex,
     summaryReturn
 } from './perf-common.js'
 
 const opts = readOptions()
+const measurementStartProgress = opts.warmupMs / (opts.warmupMs + opts.durationMs)
 
 const FILTER_PREFIX = __ENV.FILTER_PREFIX || 'perf-user-17769404'
 const requestPath = `/users?page=1&size=50&name=${encodeURIComponent(FILTER_PREFIX)}`
@@ -33,12 +35,11 @@ export const options = buildScenarioOptions(opts)
 const JSON_HEADERS = { 'content-type': 'application/json', accept: 'application/json' }
 
 export function setup() {
-    const seed = Date.now()
     const creds = []
     for (let vu = 1; vu <= opts.concurrency; vu++) {
         creds.push({
             vu,
-            email: `perf-user-filter.${seed}.${vu}@example.com`,
+            email: `perf-user-filter.${vu}.${secureRandomHex()}@example.com`,
             password: 'filterprobepass'
         })
     }
@@ -51,8 +52,6 @@ export function setup() {
     }))
     const createResponses = http.batch(createReqs)
     for (let i = 0; i < creds.length; i++) {
-        // 한 실행 안에서는 seed와 VU 번호로 이메일을 구분한다.
-        // 같은 밀리초에 별도 실행이 시작되면 충돌할 수 있으며, 그때의 409는 실패로 처리한다.
         if (createResponses[i].status !== 201) {
             throw new Error(`vu ${creds[i].vu} create returned ${createResponses[i].status}`)
         }
@@ -73,8 +72,7 @@ export function setup() {
         }
         accounts.push({ authHeader: `Bearer ${accessToken}` })
     }
-    // 측정 창은 setup 종료 기준이다. VU init 기준이면 setup의 가입·로그인(bcrypt)이 워밍업을 잠식한다.
-    return { accounts, startAt: measurementStart(opts) }
+    return { accounts }
 }
 
 let myAuthHeader = null
@@ -88,7 +86,7 @@ export default function (data) {
         headers: { accept: 'application/json', authorization: myAuthHeader }
     })
 
-    if (Date.now() >= data.startAt) {
+    if (exec.scenario.progress >= measurementStartProgress) {
         latency.add(res.timings.duration)
         statusCounter.add(1, { status: String(res.status) })
     }

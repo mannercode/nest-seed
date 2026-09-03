@@ -62,9 +62,9 @@ describe('DateUtil', () => {
 
     describe('now', () => {
         it('밀리초 정밀도의 현재 시각을 반환한다', () => {
-            const before = Date.now()
+            const before = Temporal.Now.instant().epochMilliseconds
             const now = DateUtil.now()
-            const after = Date.now()
+            const after = Temporal.Now.instant().epochMilliseconds
 
             expect(now.epochMilliseconds).toBeGreaterThanOrEqual(before)
             expect(now.epochMilliseconds).toBeLessThanOrEqual(after)
@@ -81,9 +81,9 @@ describe('DateUtil', () => {
         })
 
         it('base가 없으면 현재 시각을 기준으로 한다', () => {
-            const before = Date.now()
+            const before = Temporal.Now.instant().epochMilliseconds
             const instant = DateUtil.add({})
-            const after = Date.now()
+            const after = Temporal.Now.instant().epochMilliseconds
 
             expect(instant.epochMilliseconds).toBeGreaterThanOrEqual(before)
             expect(instant.epochMilliseconds).toBeLessThanOrEqual(after)

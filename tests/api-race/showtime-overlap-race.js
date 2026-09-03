@@ -59,13 +59,12 @@ async function runInner(iteration, movieId, theaterId, sse, baseOffsetMs) {
     sse.events.length = 0
 
     // 위에서 강제한 범위에서는 10분 간격의 120분 상영이 모두 서로 겹친다.
-    const base = new Date(Date.now() + 24 * 60 * 60 * 1000 + baseOffsetMs)
-    base.setUTCSeconds(0, 0)
-    base.setUTCMinutes(0)
-    const toIso = (d) => d.toISOString().replace(/\.\d{3}Z$/, '.000Z')
+    const base = Temporal.Now.instant()
+        .add({ hours: 24, milliseconds: baseOffsetMs })
+        .round({ roundingMode: 'floor', smallestUnit: 'hour' })
 
     const startTimes = Array.from({ length: OVERLAP_COUNT }, (_, i) =>
-        toIso(new Date(base.getTime() + i * 10 * 60 * 1000))
+        base.add({ minutes: i * 10 }).toString({ smallestUnit: 'millisecond' })
     )
 
     const posts = await Promise.all(

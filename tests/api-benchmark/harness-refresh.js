@@ -12,17 +12,18 @@
 
 import { sleep } from 'k6'
 import http from 'k6/http'
+import exec from 'k6/execution'
 import { Counter, Trend } from 'k6/metrics'
 import {
     buildScenarioOptions,
     buildSummary,
-    measurementStart,
     readOptions,
     secureRandomHex,
     summaryReturn
 } from './perf-common.js'
 
 const opts = readOptions()
+const measurementStartProgress = opts.warmupMs / (opts.warmupMs + opts.durationMs)
 
 const latency = new Trend('measured_latency', true)
 const statusCounter = new Counter('measured_status')
@@ -31,15 +32,14 @@ export const options = buildScenarioOptions(opts)
 
 const JSON_HEADERS = { 'content-type': 'application/json', accept: 'application/json' }
 
-function uniqueEmail(vu, seed) {
-    return `perf-refresh.${seed}.${vu}.${secureRandomHex()}@example.com`
+function uniqueEmail(vu) {
+    return `perf-refresh.${vu}.${secureRandomHex()}@example.com`
 }
 
 export function setup() {
-    const seed = Date.now()
     const creds = []
     for (let vu = 1; vu <= opts.concurrency; vu++) {
-        creds.push({ vu, email: uniqueEmail(vu, seed), password: 'refreshpass' })
+        creds.push({ vu, email: uniqueEmail(vu), password: 'refreshpass' })
     }
 
     const createReqs = creds.map(({ vu, email, password }) => ({
@@ -70,8 +70,7 @@ export function setup() {
         }
         accounts.push({ refreshToken })
     }
-    // 측정 창은 setup 종료 기준이다. VU init 기준이면 setup의 가입·로그인(bcrypt)이 워밍업을 잠식한다.
-    return { accounts, startAt: measurementStart(opts) }
+    return { accounts }
 }
 
 // VU별 회전 상태. 모듈 초기화는 VU마다 따로 일어나므로 격리된다.
@@ -97,7 +96,7 @@ export default function (data) {
         { headers: JSON_HEADERS }
     )
 
-    if (Date.now() >= data.startAt) {
+    if (exec.scenario.progress >= measurementStartProgress) {
         latency.add(res.timings.duration)
         statusCounter.add(1, { status: String(res.status) })
     }

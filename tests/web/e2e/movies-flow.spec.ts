@@ -1,4 +1,5 @@
 import { expect, request, test, type Page } from '@playwright/test'
+import { randomUUID } from 'node:crypto'
 
 import { API_BASE_URL } from '../playwright.config'
 
@@ -38,7 +39,7 @@ async function login(page: Page): Promise<void> {
 }
 
 test('admin으로 로그인하고 새 영화를 등록한다', async ({ page }) => {
-    const stamp = Date.now()
+    const stamp = randomUUID()
     const title = `E2E 영화 ${stamp}`
 
     await login(page)
@@ -72,7 +73,7 @@ test('admin으로 로그인하고 새 영화를 등록한다', async ({ page }) 
 })
 
 test('공개가 일시 실패해도 같은 영화 초안을 수정해 재시도한다', async ({ page }) => {
-    const stamp = Date.now()
+    const stamp = randomUUID()
     const initialTitle = `E2E 공개 재시도 ${stamp}`
     const updatedTitle = `${initialTitle} 수정`
     let createRequests = 0
@@ -139,7 +140,7 @@ test('공개가 일시 실패해도 같은 영화 초안을 수정해 재시도�
 })
 
 test('극장을 등록한 뒤 극장 목록에서 확인한다', async ({ page }) => {
-    const name = `E2E 극장 ${Date.now()}`
+    const name = `E2E 극장 ${randomUUID()}`
     await login(page)
 
     await page.goto('/theaters/new')
@@ -155,7 +156,7 @@ test('극장을 등록한 뒤 극장 목록에서 확인한다', async ({ page }
 })
 
 test('사용자 목록에서 사용자를 삭제한다', async ({ page }) => {
-    const stamp = Date.now()
+    const stamp = randomUUID()
     const email = `delete-me-${stamp}@example.com`
     const api = await request.newContext()
     try {

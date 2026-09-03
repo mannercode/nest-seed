@@ -1478,7 +1478,7 @@ describe('PurchaseService', () => {
         const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
         const paymentsRepository = fix.module.get(PaymentsRepository)
         const purchaseRecordsRepository = fix.module.get(PurchaseRecordsRepository)
-        const staleAt = new Date(Date.now() - 11 * 60 * 1000)
+        const staleAt = DateUtil.toDate(DateUtil.add({ minutes: -11 }))
         // native raw insert는 repository defaults를 거치지 않는다. Mongoose가 기존 문서에
         // 만들던 base metadata는 직접 넣고, migration 대상 marker와 연결 ID만 생략한다.
         const insertLegacyPayment = async () =>

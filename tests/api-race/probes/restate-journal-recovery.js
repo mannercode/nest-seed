@@ -1,5 +1,6 @@
 const assert = require('node:assert/strict')
 const { execFileSync } = require('node:child_process')
+const { randomUUID } = require('node:crypto')
 const { once } = require('node:events')
 const { createServer } = require('node:http2')
 const test = require('node:test')
@@ -27,6 +28,7 @@ test(
         let interruptedStepCalls = 0
         let restateContainerId
         let restateStopped = false
+        const runId = randomUUID().replaceAll('-', '')
 
         const definition = restate.workflow({
             handlers: {
@@ -53,7 +55,7 @@ test(
                     )
                 }
             },
-            name: `JournalRecoveryProbe${process.pid}${Date.now()}`,
+            name: `JournalRecoveryProbe${runId}`,
             options: { abortTimeout: 1_000, inactivityTimeout: 10_000, workflowRetention: 60_000 }
         })
         try {
@@ -69,7 +71,7 @@ test(
                 },
                 url: INGRESS_URL
             })
-            const client = ingress.workflowClient(definition, `recovery-${Date.now()}`)
+            const client = ingress.workflowClient(definition, `recovery-${runId}`)
             const submission = await client.workflowSubmit()
 
             await withTimeout(completedStepEntered.promise, 15_000, 'completed step did not start')
@@ -217,8 +219,8 @@ function findRestateContainer() {
 }
 
 async function waitForRestate() {
-    const deadline = Date.now() + 60_000
-    while (Date.now() < deadline) {
+    const deadline = performance.now() + 60_000
+    while (performance.now() < deadline) {
         try {
             const response = await fetch(`${ADMIN_URL}/health`, {
                 signal: AbortSignal.timeout(2_000)

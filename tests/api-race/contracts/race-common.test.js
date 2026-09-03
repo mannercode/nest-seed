@@ -33,8 +33,8 @@ function clearResponseIntervals() {
 }
 
 async function waitUntil(predicate, timeoutMs = 500) {
-    const deadline = Date.now() + timeoutMs
-    while (!predicate() && Date.now() < deadline) {
+    const deadline = performance.now() + timeoutMs
+    while (!predicate() && performance.now() < deadline) {
         await new Promise((resolve) => setTimeout(resolve, 10))
     }
     return predicate()

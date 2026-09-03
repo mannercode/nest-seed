@@ -271,9 +271,9 @@ function openEventStream(opts = {}) {
 
 /** predicate가 참이 될 때까지 폴링한다. 기한 안에 참이 되면 true, 넘기면 false. */
 async function waitUntil(predicate, { timeoutMs, intervalMs = 50 } = {}) {
-    const start = Date.now()
+    const start = performance.now()
     while (!predicate()) {
-        if (Date.now() - start > timeoutMs) return false
+        if (performance.now() - start > timeoutMs) return false
         await new Promise((r) => setTimeout(r, intervalMs))
     }
     return true
@@ -282,10 +282,10 @@ async function waitUntil(predicate, { timeoutMs, intervalMs = 50 } = {}) {
 /** 사가의 영속 상태를 조회해 완료를 기다린다. SSE 전달 자체는 sse-fanout-race가 검증한다. */
 async function waitForSagaSuccess(sagaId, deadlineMs) {
     const path = `/showtime-creation/showtimes/${encodeURIComponent(sagaId)}/status`
-    const deadline = Date.now() + deadlineMs
+    const deadline = performance.now() + deadlineMs
     let latestStatus = 'unknown'
 
-    while (Date.now() <= deadline) {
+    while (performance.now() <= deadline) {
         const response = await request('GET', path)
         if (response.status !== 200) {
             throw new Error(`saga ${sagaId} status query returned HTTP ${response.status}`)
@@ -300,7 +300,7 @@ async function waitForSagaSuccess(sagaId, deadlineMs) {
             throw new Error(`saga ${sagaId} returned invalid status=${String(latestStatus)}`)
         }
 
-        const remainingMs = deadline - Date.now()
+        const remainingMs = deadline - performance.now()
         if (remainingMs <= 0) break
         await new Promise((resolve) => setTimeout(resolve, Math.min(100, remainingMs)))
     }
@@ -351,9 +351,10 @@ async function createShowtimeWithTickets({
     minimumTicketCount,
     deadlineMs
 }) {
-    const startTime = new Date(Date.now() + 24 * 60 * 60 * 1000 + startTimeOffsetMs)
-        .toISOString()
-        .replace(/\.\d{3}Z$/, '.000Z')
+    const startTime = Temporal.Now.instant()
+        .add({ hours: 24, milliseconds: startTimeOffsetMs })
+        .round({ roundingMode: 'floor', smallestUnit: 'second' })
+        .toString({ smallestUnit: 'millisecond' })
     const created = await request('POST', '/showtime-creation/showtimes', {
         body: { movieId, theaterIds: [theaterId], durationInMinutes: 120, startTimes: [startTime] },
         headers: { 'idempotency-key': secureRandomHex() }
@@ -384,7 +385,7 @@ async function createShowtimeWithTickets({
 }
 
 async function createAndLoginUser({ prefix, index }) {
-    const email = `${prefix}.${Date.now()}.${index}.${secureRandomHex()}@example.com`
+    const email = `${prefix}.${index}.${secureRandomHex()}@example.com`
     const password = `${prefix}password`
     const created = await request('POST', '/users', {
         body: { name: `${prefix}-${index}`, birthDate: '1990-01-01', email, password }

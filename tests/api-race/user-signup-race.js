@@ -10,7 +10,7 @@ const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 30)
 async function runInner(iteration) {
     const emails = Array.from(
         { length: EMAIL_GROUPS },
-        (_, g) => `race.${Date.now()}.${iteration}.${g}.${secureRandomHex()}@example.com`
+        (_, g) => `race.${iteration}.${g}.${secureRandomHex()}@example.com`
     )
 
     const requests = emails.flatMap((email) =>

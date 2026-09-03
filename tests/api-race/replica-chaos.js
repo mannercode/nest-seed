@@ -40,7 +40,7 @@ function bucketFor(state) {
 
 async function trafficWorker(workerId, state) {
     while (!state.stop) {
-        const email = `chaos.${Date.now()}.${workerId}.${secureRandomHex()}@example.com`
+        const email = `chaos.${workerId}.${secureRandomHex()}@example.com`
         try {
             const r = await request('POST', '/users', {
                 body: { name: 'chaos', birthDate: '1990-01-01', email, password: 'chaospassword' }
@@ -88,17 +88,17 @@ test('트래픽 중 복제본을 재시작해도 오류율과 복구 조건을 �
     console.log(`[chaos] t=${KILL_AT_MS + RESTART_AFTER_MS}ms restarting ${target.slice(0, 12)}`)
     execSync(`docker start ${target}`)
 
-    const healStart = Date.now()
+    const healStart = performance.now()
     const healDeadline = healStart + HEALTH_TIMEOUT_MS
     let healthyAt = null
-    while (Date.now() < healDeadline) {
+    while (performance.now() < healDeadline) {
         if (inspectHealth(target) === 'healthy') {
-            healthyAt = Date.now()
+            healthyAt = performance.now()
             break
         }
         await sleep(1000)
     }
-    if (!healthyAt) {
+    if (healthyAt === null) {
         state.stop = true
         await Promise.all(workers)
         throw new Error(`replica did not become healthy within ${HEALTH_TIMEOUT_MS}ms`)

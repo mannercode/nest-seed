@@ -199,7 +199,7 @@ test('관리자 로그아웃은 쿠키와 서버 refresh 토큰을 함께 폐기
 
 test('BFF가 전달한 클라이언트 IP별로 로그인 실패 한도를 격리한다', async ({ page }) => {
     await page.goto('/login')
-    const stamp = `${Date.now()}-${randomUUID()}`
+    const stamp = randomUUID()
     const addressSeed = randomBytes(4).toString('hex')
     const firstIp = `2001:db8:${addressSeed.slice(0, 4)}:${addressSeed.slice(4)}::10`
     const secondIp = `2001:db8:${addressSeed.slice(0, 4)}:${addressSeed.slice(4)}::11`
