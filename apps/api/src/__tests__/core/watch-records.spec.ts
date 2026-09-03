@@ -1,10 +1,11 @@
 import { ensure } from '@mannercode/common'
 import { oid } from '@mannercode/testing'
-import type { WatchRecordDto, WatchRecordsService } from '#core'
+import { type WatchRecordDto, WatchRecordsService } from '#core'
 import {
     buildCreateWatchRecordDto,
     createWatchRecord,
-    type AppTestContext
+    type AppTestContext,
+    createAppTestContext
 } from '../helpers/index.js'
 
 describe('WatchRecordsService', () => {
@@ -14,8 +15,7 @@ describe('WatchRecordsService', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers/index.js')
-        const { WatchRecordsService } = await import('#core')
+
         fix = await createAppTestContext()
         teardown = fix.teardown
         watchRecordsService = fix.module.get(WatchRecordsService)

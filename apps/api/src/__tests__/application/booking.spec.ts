@@ -6,10 +6,12 @@ import {
     type ShowtimeDto,
     type TheaterDto,
     type TicketDto,
-    type UserDto
+    type UserDto,
+    TicketHoldingService
 } from '#core'
-import { Errors, type AppTestContext } from '../helpers/index.js'
+import { Errors, type AppTestContext, createAppTestContext, holdTickets } from '../helpers/index.js'
 import { createAllResources } from './booking.utils.js'
+import { AppConfigService } from '#config'
 
 describe('BookingService', () => {
     let fix: AppTestContext
@@ -17,7 +19,7 @@ describe('BookingService', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers/index.js')
+
         fix = await createAppTestContext()
         teardown = fix.teardown
     })
@@ -125,7 +127,6 @@ describe('BookingService', () => {
                     .body({ ticketIds })
                     .noContent()
 
-                const { TicketHoldingService } = await import('#core')
                 const ticketHoldingService = fix.module.get(TicketHoldingService)
                 const heldTicketIds = await ticketHoldingService.searchHeldTicketIds(
                     showtime.id,
@@ -176,7 +177,6 @@ describe('BookingService', () => {
                     .body({ ticketIds })
                     .noContent()
 
-                const { TicketHoldingService } = await import('#core')
                 const ticketHoldingService = fix.module.get(TicketHoldingService)
                 const heldTicketIds = await ticketHoldingService.searchHeldTicketIds(
                     showtimeId,
@@ -192,7 +192,6 @@ describe('BookingService', () => {
             const showtimeId = ensure(resources.showtimes[0]).id
             const ticketIds = pickIds(resources.tickets.slice(0, 2))
 
-            const { holdTickets } = await import('../helpers/index.js')
             await holdTickets(fix, { userId: oid(0xff), showtimeId, ticketIds })
 
             await fix.httpClient
@@ -234,7 +233,6 @@ describe('BookingService', () => {
             const resources = await createAllResources(fix, locations, startTimes)
             const showtimeId = ensure(resources.showtimes[0]).id
 
-            const { AppConfigService } = await import('#config')
             const max = fix.module.get(AppConfigService).ticket.maxPerPurchase
             const ticketIds = Array.from({ length: max + 1 }, (_, i) => oid(0x100 + i))
 

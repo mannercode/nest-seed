@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, readFile, symlink, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -10,7 +10,6 @@ test('cleanWorkspace removes only generated paths and preserves personal files',
     const root = await mkdtemp(join(tmpdir(), 'nest-seed-clean-'))
     const outside = await mkdtemp(join(tmpdir(), 'nest-seed-clean-outside-'))
     t.after(async () => {
-        const { rm } = await import('node:fs/promises')
         await Promise.all([
             rm(root, { force: true, recursive: true }),
             rm(outside, { force: true, recursive: true })
@@ -37,7 +36,6 @@ test('cleanWorkspace removes only generated paths and preserves personal files',
         writeFile(join(outside, 'marker.txt'), 'outside\n')
     ])
 
-    const { rm } = await import('node:fs/promises')
     await rm(join(root, 'outside-marker'))
     await symlink(outside, join(root, '_output'))
 
@@ -57,7 +55,6 @@ test('cleanWorkspace refuses generated paths beneath a symlinked workspace', asy
     const root = await mkdtemp(join(tmpdir(), 'nest-seed-clean-link-'))
     const outside = await mkdtemp(join(tmpdir(), 'nest-seed-clean-link-outside-'))
     t.after(async () => {
-        const { rm } = await import('node:fs/promises')
         await Promise.all([
             rm(root, { force: true, recursive: true }),
             rm(outside, { force: true, recursive: true })
@@ -84,7 +81,6 @@ test('cleanWorkspace refuses generated paths beneath a symlinked workspace', asy
 test('cleanWorkspace removes root output', async (t) => {
     const root = await mkdtemp(join(tmpdir(), 'nest-seed-clean-output-'))
     t.after(async () => {
-        const { rm } = await import('node:fs/promises')
         await rm(root, { force: true, recursive: true })
     })
 

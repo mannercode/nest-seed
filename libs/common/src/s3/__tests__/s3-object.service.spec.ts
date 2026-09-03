@@ -4,7 +4,8 @@ import { Checksum, HttpUtil } from '../../utils/index.js'
 import {
     testBuffer,
     uploadObject,
-    type S3ObjectServiceFixture
+    type S3ObjectServiceFixture,
+    createS3ObjectServiceFixture
 } from './s3-object.service.fixture.js'
 
 function buildPresignedPostForm(
@@ -31,7 +32,6 @@ describe('S3ObjectService', () => {
     let fix: S3ObjectServiceFixture
 
     beforeEach(async () => {
-        const { createS3ObjectServiceFixture } = await import('./s3-object.service.fixture.js')
         fix = await createS3ObjectServiceFixture()
     })
     afterEach(() => fix.teardown())

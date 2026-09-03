@@ -1,13 +1,14 @@
 import type { ArgumentsHost } from '@nestjs/common'
-import type { HttpExceptionLoggerFilter } from '../index.js'
-import type { ExceptionLoggerFilterFixture } from './exception-logger.filter.fixture.js'
+import { HttpExceptionLoggerFilter } from '../index.js'
+import {
+    type ExceptionLoggerFilterFixture,
+    createExceptionLoggerFilterFixture
+} from './exception-logger.filter.fixture.js'
 
 describe('HttpExceptionLoggerFilter', () => {
     let fix: ExceptionLoggerFilterFixture
 
     beforeEach(async () => {
-        const { createExceptionLoggerFilterFixture } =
-            await import('./exception-logger.filter.fixture.js')
         fix = await createExceptionLoggerFilterFixture()
     })
     afterEach(() => fix.teardown())
@@ -117,7 +118,6 @@ describe('HttpExceptionLoggerFilter', () => {
         let fakeHost: ArgumentsHost
 
         beforeEach(async () => {
-            const { HttpExceptionLoggerFilter } = await import('../index.js')
             filter = new HttpExceptionLoggerFilter()
             fakeHost = {
                 getType: () => 'rpc',
@@ -147,8 +147,6 @@ describe('HttpExceptionLoggerFilter', () => {
         let solo: ExceptionLoggerFilterFixture
 
         beforeEach(async () => {
-            const { createExceptionLoggerFilterFixture } =
-                await import('./exception-logger.filter.fixture.js')
             solo = await createExceptionLoggerFilterFixture({ withInterceptor: false })
         })
         afterEach(() => solo.teardown())

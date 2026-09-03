@@ -1,8 +1,8 @@
-import type { SchedulerRegistry } from '@nestjs/schedule'
+import { SchedulerRegistry } from '@nestjs/schedule'
 import { Checksum, ensure, pickIds, S3ObjectService, sleep } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
-import { HttpStatus } from '@nestjs/common'
-import type { AssetDto, AssetPresignedUploadDto, AssetsService } from '#infrastructure'
+import { HttpStatus, Logger } from '@nestjs/common'
+import { type AssetDto, type AssetPresignedUploadDto, AssetsService } from '#infrastructure'
 import {
     buildCreateAssetDto,
     buildFinalizeAssetDto,
@@ -13,8 +13,10 @@ import {
     uploadAndFinalizeAsset,
     uploadAsset,
     uploadFile,
-    type AppTestContext
+    type AppTestContext,
+    createAppTestContext
 } from '../helpers/index.js'
+import { AppConfigService } from '#config'
 
 describe('AssetsService', () => {
     let fix: AppTestContext
@@ -25,9 +27,7 @@ describe('AssetsService', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers/index.js')
-        const { AssetsService } = await import('#infrastructure')
-        const { SchedulerRegistry } = await import('@nestjs/schedule')
+
         fix = await createAppTestContext()
         teardown = fix.teardown
         assetsService = fix.module.get(AssetsService)
@@ -297,7 +297,6 @@ describe('AssetsService', () => {
             const s3Service = fix.module.get<S3ObjectService>(S3ObjectService.getName())
             vi.spyOn(s3Service, 'deleteObject').mockRejectedValueOnce(new Error('s3 down'))
 
-            const { Logger } = await import('@nestjs/common')
             const warnSpy = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
 
             await expect(assetsService.deleteMany([asset.id])).rejects.toThrow('s3 down')
@@ -332,7 +331,6 @@ describe('AssetsService', () => {
         })
 
         it('업로드가 만료된 에셋은 제거한다', async () => {
-            const { AppConfigService } = await import('#config')
             const config = fix.module.get(AppConfigService)
             await sleep(config.asset.uploadExpiresInSec * 1000 + 500)
 

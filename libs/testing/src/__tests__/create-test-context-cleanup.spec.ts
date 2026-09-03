@@ -1,4 +1,5 @@
 import type { INestApplication } from '@nestjs/common'
+import { createTestContext, createHttpTestContext } from '../index.js'
 
 describe('test context setup cleanup', () => {
     it('앱 초기화가 실패하면 모듈을 정리하고 원래 오류를 다시 던진다', async () => {
@@ -15,7 +16,6 @@ describe('test context setup cleanup', () => {
             }
         }
 
-        const { createTestContext } = await import('../index.js')
         const result = createTestContext({ providers: [InitFailureProvider] })
 
         await expect(result).rejects.toBe(setupError)
@@ -33,7 +33,6 @@ describe('test context setup cleanup', () => {
             }
         }
 
-        const { createHttpTestContext } = await import('../index.js')
         const result = createHttpTestContext({
             configureApp: async (createdApp) => {
                 app = createdApp
@@ -60,7 +59,6 @@ describe('test context setup cleanup', () => {
             }
         }
 
-        const { createTestContext } = await import('../index.js')
         const result = createTestContext({ providers: [SetupAndCleanupFailureProvider] })
 
         await expect(result).rejects.toBe(setupError)

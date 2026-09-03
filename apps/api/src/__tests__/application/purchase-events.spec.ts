@@ -1,8 +1,22 @@
-import type { NatsConnection } from '@mannercode/common'
-import type { ConsumerMessages } from '@nats-io/jetstream'
+import { type NatsConnection, getNatsConnectionToken } from '@mannercode/common'
+import {
+    type ConsumerMessages,
+    AckPolicy,
+    DeliverPolicy,
+    DiscardPolicy,
+    ReplayPolicy,
+    RetentionPolicy,
+    StorageType,
+    jetstream,
+    jetstreamManager
+} from '@nats-io/jetstream'
 import type { MockInstance } from 'vitest'
-import type { PurchaseEvents } from '#application'
-import type { AppTestContext } from '../helpers/index.js'
+import { PurchaseEvents } from '#application'
+import { type AppTestContext, createAppTestContext } from '../helpers/index.js'
+import { Logger } from '@nestjs/common'
+import { waitFor } from './purchase-events.utils.js'
+import { PurchaseNotificationService } from '../../services/application/purchase/internal/index.js'
+import { NATS_CONNECTION_NAME } from '#config'
 
 const NOTIFICATION_LOG = 'would send purchase confirmation'
 
@@ -17,12 +31,10 @@ describe('PurchaseEvents', () => {
     let errorSpy: MockInstance
 
     beforeEach(async () => {
-        const { createAppTestContext } = await import('../helpers/index.js')
-        const { PurchaseEvents } = await import('#application')
         fix = await createAppTestContext()
         teardowns = [fix.teardown]
         events = fix.module.get(PurchaseEvents)
-        const { Logger } = await import('@nestjs/common')
+
         logSpy = vi.spyOn(Logger.prototype, 'log')
         errorSpy = vi.spyOn(Logger.prototype, 'error')
     })
@@ -30,10 +42,8 @@ describe('PurchaseEvents', () => {
     afterEach(async () => Promise.all(teardowns.map((teardown) => teardown())))
 
     it('4개 복제본이 알림을 전체 한 번만 처리한다', async () => {
-        const { createAppTestContext } = await import('../helpers/index.js')
         const replicas = await Promise.all(Array.from({ length: 3 }, createAppTestContext))
         teardowns.push(...replicas.map((replica) => replica.teardown))
-        const { waitFor } = await import('./purchase-events.utils.js')
 
         await events.emitTicketPurchased({
             purchaseRecordId: 'purchase-replicas',
@@ -53,8 +63,6 @@ describe('PurchaseEvents', () => {
     })
 
     it('알림 소비자가 중단된 동안 발행한 이벤트를 재시작 뒤 처리한다', async () => {
-        const { PurchaseNotificationService } =
-            await import('../../services/application/purchase/internal/index.js')
         const notification = fix.module.get(PurchaseNotificationService)
 
         await notification.onModuleDestroy()
@@ -66,12 +74,11 @@ describe('PurchaseEvents', () => {
         expect(countLogCalls(logSpy, NOTIFICATION_LOG)).toBe(0)
 
         await notification.onModuleInit()
-        const { waitFor } = await import('./purchase-events.utils.js')
+
         await waitFor(() => countLogCalls(logSpy, NOTIFICATION_LOG) === 1)
     })
 
     it('알림 처리 실패를 ack하지 않고 지연 재전달한다', async () => {
-        const { waitFor } = await import('./purchase-events.utils.js')
         let attempts = 0
         logSpy.mockImplementation((message) => {
             if (message === NOTIFICATION_LOG && attempts++ === 0) {
@@ -108,14 +115,6 @@ describe('PurchaseEvents', () => {
     })
 
     it('구매 stream과 알림 durable consumer의 내구성 계약을 고정한다', async () => {
-        const {
-            AckPolicy,
-            DeliverPolicy,
-            DiscardPolicy,
-            ReplayPolicy,
-            RetentionPolicy,
-            StorageType
-        } = await import('@nats-io/jetstream')
         const { manager, streamName } = await getJetStream(fix, events)
         const stream = await manager.streams.info(streamName)
         const consumers = await manager.consumers.list(streamName).next()
@@ -140,7 +139,6 @@ describe('PurchaseEvents', () => {
     })
 
     it('형식이 잘못된 이벤트는 재시도하지 않고 종료한다', async () => {
-        const { jetstream } = await import('@nats-io/jetstream')
         const { connection, manager, streamName } = await getJetStream(fix, events)
 
         await jetstream(connection).publish(
@@ -149,7 +147,6 @@ describe('PurchaseEvents', () => {
             { expect: { streamName }, msgID: 'invalid-purchase-event' }
         )
 
-        const { waitFor } = await import('./purchase-events.utils.js')
         await waitFor(() =>
             errorSpy.mock.calls.some(
                 ([message]) => message === 'invalid purchase notification event'
@@ -162,7 +159,6 @@ describe('PurchaseEvents', () => {
     })
 
     it('JSON이 아닌 이벤트도 재시도하지 않고 종료한다', async () => {
-        const { jetstream } = await import('@nats-io/jetstream')
         const { connection, streamName } = await getJetStream(fix, events)
 
         await jetstream(connection).publish(events.subjects.purchased, 'not-json', {
@@ -170,7 +166,6 @@ describe('PurchaseEvents', () => {
             msgID: 'malformed-purchase-event'
         })
 
-        const { waitFor } = await import('./purchase-events.utils.js')
         await waitFor(() =>
             errorSpy.mock.calls.some(
                 ([message]) => message === 'invalid purchase notification event'
@@ -185,7 +180,7 @@ describe('PurchaseNotificationService lifecycle', () => {
         const { service, errorSpy } = await createNotificationService(messages)
 
         await service.onModuleInit()
-        const { waitFor } = await import('./purchase-events.utils.js')
+
         await waitFor(() =>
             errorSpy.mock.calls.some(
                 ([message]) => message === 'purchase notification consumer stopped unexpectedly'
@@ -204,7 +199,7 @@ describe('PurchaseNotificationService lifecycle', () => {
         const { service, errorSpy } = await createNotificationService(messages)
 
         await service.onModuleInit()
-        const { waitFor } = await import('./purchase-events.utils.js')
+
         await waitFor(() =>
             errorSpy.mock.calls.some(
                 ([message]) => message === 'purchase notification consumer failed'
@@ -243,9 +238,6 @@ describe('PurchaseNotificationService lifecycle', () => {
 })
 
 async function getJetStream(fix: AppTestContext, events: PurchaseEvents) {
-    const { getNatsConnectionToken } = await import('@mannercode/common')
-    const { jetstreamManager } = await import('@nats-io/jetstream')
-    const { NATS_CONNECTION_NAME } = await import('#config')
     const connection = fix.module.get<NatsConnection>(getNatsConnectionToken(NATS_CONNECTION_NAME))
     const manager = await jetstreamManager(connection)
     const streamName = await manager.streams.find(events.subjects.purchased)
@@ -262,9 +254,6 @@ function fakeMessages(
 }
 
 async function createNotificationService(messages: ConsumerMessages) {
-    const { Logger } = await import('@nestjs/common')
-    const { PurchaseNotificationService } =
-        await import('../../services/application/purchase/internal/index.js')
     const fakeEvents = {
         consumeNotifications: vi.fn(async () => messages)
     } as unknown as PurchaseEvents

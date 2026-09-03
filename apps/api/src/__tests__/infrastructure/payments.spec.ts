@@ -1,13 +1,15 @@
 import { ensure, pickIds } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
-import type { PaymentsService } from '#infrastructure'
+import { PaymentsService } from '#infrastructure'
 import {
     buildCreatePaymentDto,
     createPayment,
     Errors,
-    type AppTestContext
+    type AppTestContext,
+    createAppTestContext
 } from '../helpers/index.js'
+import { PaymentsRepository } from '../../services/infrastructure/payments/payments.repository.js'
 
 describe('PaymentsService', () => {
     let fix: AppTestContext
@@ -16,8 +18,7 @@ describe('PaymentsService', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers/index.js')
-        const { PaymentsService } = await import('#infrastructure')
+
         fix = await createAppTestContext()
         teardown = fix.teardown
         paymentsService = fix.module.get(PaymentsService)
@@ -89,8 +90,7 @@ describe('PaymentsService', () => {
 
         it('동시 upsert의 중복 키 loser는 winner가 만든 결제를 반환한다', async () => {
             const existing = await createPayment(fix)
-            const { PaymentsRepository } =
-                await import('../../services/infrastructure/payments/payments.repository.js')
+
             const repository = fix.module.get(PaymentsRepository)
             vi.spyOn(repository.collection, 'updateOne').mockRejectedValueOnce(
                 Object.assign(new Error('duplicate key'), { code: 11000 })
@@ -105,8 +105,6 @@ describe('PaymentsService', () => {
         })
 
         it('중복 키가 아닌 저장소 오류는 그대로 전달한다', async () => {
-            const { PaymentsRepository } =
-                await import('../../services/infrastructure/payments/payments.repository.js')
             const repository = fix.module.get(PaymentsRepository)
             vi.spyOn(repository.collection, 'updateOne').mockRejectedValueOnce(
                 new Error('database unavailable')
@@ -120,8 +118,6 @@ describe('PaymentsService', () => {
 
     describe('getMany', () => {
         it('기존 문서에 purchaseRecordId가 없어도 null로 정규화한다', async () => {
-            const { PaymentsRepository } =
-                await import('../../services/infrastructure/payments/payments.repository.js')
             const repository = fix.module.get(PaymentsRepository)
             const now = new Date()
             // native raw insert는 repository defaults를 거치지 않는다. Mongoose가 기존 문서에

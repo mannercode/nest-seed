@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common'
-import type { PaginationFixture } from './pagination.fixture.js'
+import { type PaginationFixture, createPaginationFixture } from './pagination.fixture.js'
 import { CommonErrors } from '../../index.js'
 import { PaginationErrors, PaginationSchema } from '../index.js'
 
@@ -7,7 +7,6 @@ describe('PaginationDto', () => {
     let fix: PaginationFixture
 
     beforeEach(async () => {
-        const { createPaginationFixture } = await import('./pagination.fixture.js')
         fix = await createPaginationFixture()
     })
     afterEach(() => fix.teardown())

@@ -1,5 +1,11 @@
 import { JwtService } from '@nestjs/jwt'
-import type { JwtAuthServiceFixture } from './jwt-auth.service.fixture.js'
+import {
+    type JwtAuthServiceFixture,
+    createJwtAuthServiceFixture,
+    TEST_AUTH_AUDIENCE,
+    TEST_AUTH_ISSUER,
+    createJwtAuthServiceFixtureWithShortTtl
+} from './jwt-auth.service.fixture.js'
 import { sleep } from '../../utils/index.js'
 
 async function expireConcurrentRefreshGrace(fix: JwtAuthServiceFixture, refreshToken: string) {
@@ -39,7 +45,6 @@ describe('JwtAuthService', () => {
     let fix: JwtAuthServiceFixture
 
     beforeEach(async () => {
-        const { createJwtAuthServiceFixture } = await import('./jwt-auth.service.fixture.js')
         fix = await createJwtAuthServiceFixture()
     })
     afterEach(() => fix.teardown())
@@ -90,8 +95,6 @@ describe('JwtAuthService', () => {
         })
 
         it('액세스 토큰에 issuer와 audience가 포함된다', async () => {
-            const { TEST_AUTH_AUDIENCE, TEST_AUTH_ISSUER } =
-                await import('./jwt-auth.service.fixture.js')
             const tokens = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
 
             const decoded = new JwtService().decode<Record<string, unknown>>(tokens.accessToken)
@@ -129,8 +132,6 @@ describe('JwtAuthService', () => {
         })
 
         it('액세스 토큰 TTL이 1초 미만이면 발급 즉시 만료된다', async () => {
-            const { createJwtAuthServiceFixtureWithShortTtl } =
-                await import('./jwt-auth.service.fixture.js')
             const fix2 = await createJwtAuthServiceFixtureWithShortTtl()
             try {
                 const tokens = await fix2.jwtService.generateAuthTokens({ sub: 'u1' })
@@ -320,8 +321,6 @@ describe('JwtAuthService', () => {
         })
 
         it('refreshTokenId나 familyId가 없는 토큰은 거부한다', async () => {
-            const { TEST_AUTH_AUDIENCE, TEST_AUTH_ISSUER } =
-                await import('./jwt-auth.service.fixture.js')
             const malformed = await new JwtService().signAsync(
                 { sub: 'u1' },
                 {
@@ -578,8 +577,6 @@ describe('JwtAuthService', () => {
         })
 
         it('familyId가 없는 토큰을 폐기해도 아무 일도 일어나지 않는다', async () => {
-            const { TEST_AUTH_AUDIENCE, TEST_AUTH_ISSUER } =
-                await import('./jwt-auth.service.fixture.js')
             const noFamily = await new JwtService().signAsync(
                 { sub: 'u1' },
                 {
@@ -762,8 +759,6 @@ describe('JwtAuthService', () => {
 
     describe('알고리즘 고정', () => {
         const signWithAlgorithm = async (algorithm: string) => {
-            const { TEST_AUTH_AUDIENCE, TEST_AUTH_ISSUER } =
-                await import('./jwt-auth.service.fixture.js')
             return new JwtService().signAsync(
                 { familyId: 'x', refreshTokenId: 'y', sub: 'u1' },
                 {
@@ -793,7 +788,6 @@ describe('JwtAuthService', () => {
 
     describe('issuer와 audience 검증', () => {
         it('issuer가 다른 토큰은 거부한다', async () => {
-            const { TEST_AUTH_AUDIENCE } = await import('./jwt-auth.service.fixture.js')
             const wrong = await new JwtService().signAsync(
                 { familyId: 'x', refreshTokenId: 'y', sub: 'u1' },
                 {
@@ -807,7 +801,6 @@ describe('JwtAuthService', () => {
         })
 
         it('audience가 다른 토큰은 거부한다', async () => {
-            const { TEST_AUTH_ISSUER } = await import('./jwt-auth.service.fixture.js')
             const wrong = await new JwtService().signAsync(
                 { familyId: 'x', refreshTokenId: 'y', sub: 'u1' },
                 {

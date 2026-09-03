@@ -1,6 +1,6 @@
 import { omit } from '@mannercode/common'
 import { HttpTestClient, nullObjectId, plainDate } from '@mannercode/testing'
-import type { UserDto } from '#core'
+import { type UserDto, UsersRepository, UsersService } from '#core'
 import {
     buildCreateUserDto,
     createAndLoginAdmin,
@@ -8,8 +8,10 @@ import {
     createUser,
     Errors,
     loginUser,
-    type AppTestContext
+    type AppTestContext,
+    createAppTestContext
 } from '../helpers/index.js'
+import { ConflictException } from '@nestjs/common'
 
 describe('UsersService', () => {
     let fix: AppTestContext
@@ -18,7 +20,7 @@ describe('UsersService', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers/index.js')
+
         fix = await createAppTestContext()
         teardown = fix.teardown
         const { accessToken } = await createAndLoginAdmin(fix)
@@ -88,8 +90,6 @@ describe('UsersService', () => {
         })
 
         it('중복 키가 아닌 저장 오류는 ConflictException으로 바꾸지 않고 그대로 던진다', async () => {
-            const { UsersRepository, UsersService } = await import('#core')
-            const { ConflictException } = await import('@nestjs/common')
             const service = fix.module.get(UsersService)
             const repository = fix.module.get(UsersRepository)
             const failure = new Error('storage unavailable')
@@ -239,7 +239,6 @@ describe('UsersService', () => {
         })
 
         it('존재하지 않는 고객의 세션 전체 회수는 404를 던진다', async () => {
-            const { UsersService } = await import('#core')
             const service = fix.module.get(UsersService)
 
             await expect(service.revokeAllForUser(nullObjectId)).rejects.toThrow(

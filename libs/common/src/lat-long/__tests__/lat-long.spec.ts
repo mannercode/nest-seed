@@ -1,11 +1,10 @@
-import type { LatLongFixture } from './lat-long.fixture.js'
+import { type LatLongFixture, createLatLongFixture } from './lat-long.fixture.js'
 import { LatLong, LatLongErrors } from '../index.js'
 
 describe('LatLong', () => {
     let fix: LatLongFixture
 
     beforeEach(async () => {
-        const { createLatLongFixture } = await import('./lat-long.fixture.js')
         fix = await createLatLongFixture()
     })
     afterEach(() => fix.teardown())

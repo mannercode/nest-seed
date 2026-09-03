@@ -9,7 +9,8 @@ import {
     NotFoundException,
     Post,
     UnauthorizedException,
-    UnprocessableEntityException
+    UnprocessableEntityException,
+    Logger
 } from '@nestjs/common'
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core'
 import { sleep } from '../../utils/index.js'
@@ -83,7 +84,6 @@ export async function createExceptionLoggerFilterFixture(
         providers
     })
 
-    const { Logger } = await import('@nestjs/common')
     const spyWarn = vi.spyOn(Logger, 'warn')
     const spyError = vi.spyOn(Logger, 'error')
 

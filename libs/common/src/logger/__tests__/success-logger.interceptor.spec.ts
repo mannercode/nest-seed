@@ -1,4 +1,7 @@
-import type { SuccessLoggerInterceptorFixture } from './success-logger.interceptor.fixture.js'
+import {
+    type SuccessLoggerInterceptorFixture,
+    createSuccessLoggerInterceptorFixture
+} from './success-logger.interceptor.fixture.js'
 
 describe('HttpSuccessLoggerInterceptor', () => {
     let fix: SuccessLoggerInterceptorFixture
@@ -7,8 +10,6 @@ describe('HttpSuccessLoggerInterceptor', () => {
 
     describe('요청이 성공하면', () => {
         beforeEach(async () => {
-            const { createSuccessLoggerInterceptorFixture } =
-                await import('./success-logger.interceptor.fixture.js')
             fix = await createSuccessLoggerInterceptorFixture([])
         })
 
@@ -42,8 +43,6 @@ describe('HttpSuccessLoggerInterceptor', () => {
 
     describe('요청 처리 중 에러가 발생하면', () => {
         beforeEach(async () => {
-            const { createSuccessLoggerInterceptorFixture } =
-                await import('./success-logger.interceptor.fixture.js')
             fix = await createSuccessLoggerInterceptorFixture([])
         })
 
@@ -57,8 +56,6 @@ describe('HttpSuccessLoggerInterceptor', () => {
     describe('LOGGING_EXCLUDE_HTTP_PATHS', () => {
         describe('제외 목록에 요청 경로가 포함되면', () => {
             beforeEach(async () => {
-                const { createSuccessLoggerInterceptorFixture } =
-                    await import('./success-logger.interceptor.fixture.js')
                 fix = await createSuccessLoggerInterceptorFixture([
                     { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: ['/exclude-path'] }
                 ])
@@ -73,8 +70,6 @@ describe('HttpSuccessLoggerInterceptor', () => {
 
         describe('제외 경로의 하위 경로를 요청하면', () => {
             beforeEach(async () => {
-                const { createSuccessLoggerInterceptorFixture } =
-                    await import('./success-logger.interceptor.fixture.js')
                 fix = await createSuccessLoggerInterceptorFixture([
                     { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: ['/exclude-path'] }
                 ])
@@ -89,8 +84,6 @@ describe('HttpSuccessLoggerInterceptor', () => {
 
         describe('제외 목록이 빈 배열이면', () => {
             beforeEach(async () => {
-                const { createSuccessLoggerInterceptorFixture } =
-                    await import('./success-logger.interceptor.fixture.js')
                 fix = await createSuccessLoggerInterceptorFixture([
                     { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: [] }
                 ])
@@ -105,8 +98,6 @@ describe('HttpSuccessLoggerInterceptor', () => {
 
         describe('제외 목록에 일치하지 않는 경로가 섞여 있으면', () => {
             beforeEach(async () => {
-                const { createSuccessLoggerInterceptorFixture } =
-                    await import('./success-logger.interceptor.fixture.js')
                 fix = await createSuccessLoggerInterceptorFixture([
                     {
                         provide: 'LOGGING_EXCLUDE_HTTP_PATHS',

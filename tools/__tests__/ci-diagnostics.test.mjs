@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { chmod, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -11,7 +11,6 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..')
 test('CI diagnostic wrapper persists output and preserves the original exit code', async (t) => {
     const workspace = await mkdtemp(join(tmpdir(), 'nest-seed-ci-diagnostics-'))
     const mockBin = join(workspace, 'bin')
-    const { mkdir, rm } = await import('node:fs/promises')
     await mkdir(mockBin)
     t.after(() => rm(workspace, { force: true, recursive: true }))
 

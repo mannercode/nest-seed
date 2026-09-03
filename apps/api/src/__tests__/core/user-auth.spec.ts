@@ -1,13 +1,17 @@
 import { oid } from '@mannercode/testing'
 import { HttpStatus, type INestApplication } from '@nestjs/common'
-import type { UserDto } from '#core'
+import { type UserDto, UsersService } from '#core'
 import {
     createPurchaseRecord,
     createUser,
     Errors,
     loginUser,
-    type AppTestContext
+    type AppTestContext,
+    createAppTestContext
 } from '../helpers/index.js'
+import { UsersRepository } from '../../services/core/users/index.js'
+import { LoginRateLimiterService } from '#gateway'
+import { JwtAuthService } from '@mannercode/common'
 
 const ACCOUNT_FAILURE_LIMIT = 5
 const IP_FAILURE_LIMIT = 50
@@ -59,7 +63,7 @@ describe('UserAuthentication', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers/index.js')
+
         fix = await createAppTestContext({ configureApp: async (app) => trustPrivateProxy(app) })
         teardown = fix.teardown
 
@@ -76,7 +80,6 @@ describe('UserAuthentication', () => {
         })
 
         it('authVersion 필드가 없는 기존 사용자도 version 0 세션으로 로그인한다', async () => {
-            const { UsersRepository } = await import('../../services/core/users/index.js')
             const repository = fix.module.get(UsersRepository)
             await repository.collection.updateOne(
                 { email: credentials.email },
@@ -109,7 +112,6 @@ describe('UserAuthentication', () => {
         })
 
         it('정규화한 계정의 실패를 Redis에서 공유하고 6번째 요청부터 429를 반환한다', async () => {
-            const { createAppTestContext } = await import('../helpers/index.js')
             const replica = await createAppTestContext({
                 configureApp: async (app) => trustPrivateProxy(app)
             })
@@ -137,7 +139,6 @@ describe('UserAuthentication', () => {
         })
 
         it('동시 요청이 사전 검사를 함께 통과해도 증가 후 한도 초과 요청은 429로 끝낸다', async () => {
-            const { LoginRateLimiterService } = await import('#gateway')
             const rateLimiter = fix.module.get(LoginRateLimiterService)
 
             const results = await Promise.allSettled(
@@ -343,8 +344,6 @@ describe('UserAuthentication', () => {
             })
 
             it('password 변경과 리프레시가 겹쳐도 구 세션의 새 토큰을 재사용할 수 없다', async () => {
-                const { JwtAuthService } = await import('@mannercode/common')
-                const { UsersService } = await import('#core')
                 const session = await loginUser(fix, credentials)
                 const jwtAuthService = fix.module.get(JwtAuthService.getName())
                 const usersService = fix.module.get(UsersService)
@@ -497,8 +496,6 @@ describe('UserAuthentication', () => {
         })
 
         it('리프레시가 전체 로그아웃과 겹쳐도 성공으로 반환된 토큰은 재사용할 수 없다', async () => {
-            const { JwtAuthService } = await import('@mannercode/common')
-            const { UsersService } = await import('#core')
             const session = await loginUser(fix, credentials)
             const jwtAuthService = fix.module.get(JwtAuthService.getName())
             const usersService = fix.module.get(UsersService)

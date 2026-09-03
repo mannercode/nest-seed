@@ -10,9 +10,5 @@ const base = createVitestBase({ tsconfigPath: path.join(libraryDirectory, 'tscon
 
 export default defineConfig({
     ...base,
-    cacheDir: path.join(libraryDirectory, '_output/vite-cache'),
-    test: {
-        ...base.test,
-        setupFiles: [path.join(libraryDirectory, 'src/__tests__/vitest.setup.ts')]
-    }
+    cacheDir: path.join(libraryDirectory, '_output/vite-cache')
 })

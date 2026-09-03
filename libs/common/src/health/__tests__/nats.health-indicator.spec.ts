@@ -1,11 +1,12 @@
-import type { NatsHealthIndicatorFixture } from './nats.health-indicator.fixture.js'
+import {
+    type NatsHealthIndicatorFixture,
+    createNatsHealthIndicatorFixture
+} from './nats.health-indicator.fixture.js'
 
 describe('NatsHealthIndicator', () => {
     let fix: NatsHealthIndicatorFixture
 
     beforeEach(async () => {
-        const { createNatsHealthIndicatorFixture } =
-            await import('./nats.health-indicator.fixture.js')
         fix = await createNatsHealthIndicatorFixture()
     })
     afterEach(() => fix.teardown())

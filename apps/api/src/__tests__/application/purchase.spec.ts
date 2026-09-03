@@ -2,25 +2,35 @@ import type { MockInstance } from 'vitest'
 import { CacheService, DateUtil, ensure, objectId, pickIds, Require } from '@mannercode/common'
 import { HttpTestClient, oid } from '@mannercode/testing'
 import { createHash, randomUUID } from 'node:crypto'
-import type { PurchaseService } from '#application'
+import { PurchaseService, PurchaseEvents } from '#application'
 import {
     PurchaseItemType,
     TicketStatus,
     type PurchaseRecordDto,
-    type PurchaseRecordsService,
+    PurchaseRecordsService,
     type TicketDto,
-    type UserDto
+    type UserDto,
+    TicketHoldingService,
+    TicketsService,
+    PurchaseRecordStatus
 } from '#core'
-import { PaymentStatus } from '#infrastructure'
+import { PaymentStatus, PaymentsService } from '#infrastructure'
 import {
     createAndLoginUser,
     Errors,
     getPayments,
     getTickets,
     overrideConfigGetter,
-    type AppTestContext
+    type AppTestContext,
+    createAppTestContext
 } from '../helpers/index.js'
-import { buildCreatePurchaseDto } from './purchase.utils.js'
+import { buildCreatePurchaseDto, createShowtimeAndTickets, holdTickets } from './purchase.utils.js'
+import { TicketPurchaseService } from '../../services/application/purchase/internal/index.js'
+import { AppConfigService } from '#config'
+import { Logger, HttpException } from '@nestjs/common'
+import { PurchaseRecordsRepository } from '../../services/core/purchase-records/purchase-records.repository.js'
+import { PaymentsRepository } from '../../services/infrastructure/payments/payments.repository.js'
+import { TicketsRepository } from '../../services/core/tickets/tickets.repository.js'
 
 describe('PurchaseService', () => {
     let fix: AppTestContext
@@ -30,7 +40,7 @@ describe('PurchaseService', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers/index.js')
+
         fix = await createAppTestContext()
         teardown = fix.teardown
         ;({ user, accessToken } = await createAndLoginUser(fix))
@@ -42,8 +52,6 @@ describe('PurchaseService', () => {
             let heldTickets: TicketDto[]
 
             beforeEach(async () => {
-                const { createShowtimeAndTickets, holdTickets } =
-                    await import('./purchase.utils.js')
                 const tickets = await createShowtimeAndTickets(fix)
                 heldTickets = await holdTickets(fix, user.id, tickets)
             })
@@ -65,7 +73,6 @@ describe('PurchaseService', () => {
             })
 
             it('같은 키와 같은 요청은 결제를 다시 만들지 않고 최초 구매 응답을 반환한다', async () => {
-                const { PaymentsService } = await import('#infrastructure')
                 const createPayment = vi.spyOn(fix.module.get(PaymentsService), 'create')
                 const createDto = buildCreatePurchaseDto(heldTickets)
                 const idempotencyKey = randomUUID()
@@ -92,10 +99,6 @@ describe('PurchaseService', () => {
             })
 
             it('동시에 도착한 같은 키와 요청도 한 구매와 한 결제로 수렴한다', async () => {
-                const { TicketPurchaseService } =
-                    await import('../../services/application/purchase/internal/index.js')
-                const { PurchaseRecordsService } = await import('#core')
-                const { PaymentsService } = await import('#infrastructure')
                 const ticketPurchaseService = fix.module.get(TicketPurchaseService)
                 const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
                 const createPayment = vi.spyOn(fix.module.get(PaymentsService), 'create')
@@ -161,7 +164,6 @@ describe('PurchaseService', () => {
             })
 
             it('서로 다른 티켓 묶음이 같은 키로 경합해도 한 요청만 실행한다', async () => {
-                const { PurchaseRecordsService } = await import('#core')
                 const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
                 const createRecord = purchaseRecordsService.create.bind(purchaseRecordsService)
                 let createCallCount = 0
@@ -241,7 +243,6 @@ describe('PurchaseService', () => {
             })
 
             it('같은 키의 최초 요청을 처리 중이면 409를 반환한다', async () => {
-                const { PaymentsService } = await import('#infrastructure')
                 const paymentsService = fix.module.get(PaymentsService)
                 const createPayment = paymentsService.create.bind(paymentsService)
                 let paymentStarted!: () => void
@@ -361,7 +362,6 @@ describe('PurchaseService', () => {
             })
 
             it('판매 뒤 Redis claim 정리가 실패해도 완료 구매를 되돌리지 않는다', async () => {
-                const { TicketHoldingService } = await import('#core')
                 const ticketHoldingService = fix.module.get(TicketHoldingService)
                 vi.spyOn(ticketHoldingService, 'releasePurchaseClaims').mockRejectedValueOnce(
                     new Error('redis cleanup failed')
@@ -398,7 +398,6 @@ describe('PurchaseService', () => {
             })
 
             it('구매 가능 시간이 종료되면 400을 반환한다', async () => {
-                const { AppConfigService } = await import('#config')
                 const config = fix.module.get(AppConfigService)
                 await overrideConfigGetter(fix.module, 'ticket', {
                     purchaseCutoffMinutes: config.ticket.purchaseCutoffMinutes + 2
@@ -437,7 +436,6 @@ describe('PurchaseService', () => {
                 // 티켓은 아직 전이 전이므로 되돌릴 것이 없다.
                 // 특정 메서드 호출을 직접 가로채지 않고 관측 가능한 로그를 기준으로 삼아, 테스트가 구현 세부에 지나치게 묶이지 않게 한다.
                 beforeEach(async () => {
-                    const { Logger } = await import('@nestjs/common')
                     vi.spyOn(Logger.prototype, 'log').mockImplementation((message: unknown) => {
                         if (message === 'completePurchase') {
                             throw new Error('purchase error')
@@ -455,14 +453,12 @@ describe('PurchaseService', () => {
                         .body(createDto)
                         .internalServerError()
 
-                    const { TicketsService } = await import('#core')
                     const ticketsService = fix.module.get(TicketsService)
                     const tickets = await ticketsService.getMany(pickIds(heldTickets))
                     expect(tickets.every((t) => t.status === TicketStatus.Available)).toBe(true)
                 })
 
                 it('결제를 취소하고 구매 기록을 비노출 상태로 확정한다', async () => {
-                    const { PaymentsService } = await import('#infrastructure')
                     const paymentsService = fix.module.get(PaymentsService)
 
                     // 보상으로 결제가 취소될 뿐 행은 남으므로, 생성된 결제 id를 가로채 상태를 확인한다.
@@ -489,7 +485,7 @@ describe('PurchaseService', () => {
                     expect(ensure(payments[0]).status).toBe(PaymentStatus.Cancelled)
 
                     // cancelled 구매는 감사 추적용 행으로 남지만 정상 구매 목록에는 노출되지 않는다.
-                    const { PurchaseRecordsService } = await import('#core')
+
                     const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
                     const records = await purchaseRecordsService.findByUserId(user.id)
                     expect(records).toEqual([])
@@ -526,8 +522,6 @@ describe('PurchaseService', () => {
                 // 보상 흐름이 실제로 Sold→Available 전이를 수행하는 경로를 검증한다.
                 // 위의 시나리오는 `completePurchase` 시작점에서 던지므로 티켓이 Available로 남아 보상은 no-op이지만, 여기는 전이 이후에 던져 보상이 진짜 되돌리기를 하도록 만든다.
                 beforeEach(async () => {
-                    const { PurchaseEvents } = await import('#application')
-                    const { PurchaseRecordsService } = await import('#core')
                     const events = fix.module.get(PurchaseEvents)
                     const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
                     emit = vi.spyOn(events, 'emitTicketPurchased')
@@ -545,7 +539,6 @@ describe('PurchaseService', () => {
                 })
 
                 it('Sold가 된 티켓을 다시 Available로 되돌린다', async () => {
-                    const { TicketsService } = await import('#core')
                     const ticketsService = fix.module.get(TicketsService)
                     const tickets = await ticketsService.getMany(pickIds(heldTickets))
                     expect(tickets.every((t) => t.status === TicketStatus.Available)).toBe(true)
@@ -563,8 +556,6 @@ describe('PurchaseService', () => {
                 let purchaseService: PurchaseService
 
                 beforeEach(async () => {
-                    const { PurchaseEvents, PurchaseService } = await import('#application')
-                    const { PurchaseRecordsService } = await import('#core')
                     const events = fix.module.get(PurchaseEvents)
                     purchaseService = fix.module.get(PurchaseService)
                     purchaseRecordsService = fix.module.get(PurchaseRecordsService)
@@ -617,7 +608,6 @@ describe('PurchaseService', () => {
                 // 보상 체인은 best-effort라 한 단계가 실패해도 다음 단계를 계속 시도해야 한다.
                 // 완료 커밋 실패로 보상을 촉발하고 마지막 상태 전이를 실패시켜 durable pending을 남긴다.
                 beforeEach(async () => {
-                    const { PurchaseRecordsService } = await import('#core')
                     const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
                     vi.spyOn(purchaseRecordsService, 'markCompleted').mockRejectedValueOnce(
                         new Error('commit failed')
@@ -628,7 +618,6 @@ describe('PurchaseService', () => {
                 })
 
                 it('나머지 보상 단계는 계속 수행한다', async () => {
-                    const { PaymentsService } = await import('#infrastructure')
                     const paymentsService = fix.module.get(PaymentsService)
 
                     // 보상으로 결제가 취소될 뿐 행은 남으므로, 생성된 결제 id를 가로채 상태를 확인한다.
@@ -655,8 +644,6 @@ describe('PurchaseService', () => {
                 })
 
                 it('남은 구매 상태를 후속 reconciliation으로 정리할 수 있다', async () => {
-                    const { PurchaseService } = await import('#application')
-                    const { PurchaseRecordsService } = await import('#core')
                     const purchaseService = fix.module.get(PurchaseService)
                     const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
 
@@ -698,9 +685,6 @@ describe('PurchaseService', () => {
             })
 
             it('티켓·결제 보상이 모두 실패해도 durable 상태를 남기고 재시도한다', async () => {
-                const { PurchaseService } = await import('#application')
-                const { PurchaseRecordsService, TicketsService } = await import('#core')
-                const { PaymentsService } = await import('#infrastructure')
                 const purchaseService = fix.module.get(PurchaseService)
                 const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
                 const ticketsService = fix.module.get(TicketsService)
@@ -755,9 +739,6 @@ describe('PurchaseService', () => {
             })
 
             it('active 완료와 reconciliation이 경쟁해도 한쪽 상태만 원자적으로 확정한다', async () => {
-                const { PurchaseService } = await import('#application')
-                const { PurchaseRecordsService, TicketHoldingService } = await import('#core')
-                const { PaymentsService } = await import('#infrastructure')
                 const purchaseService = fix.module.get(PurchaseService)
                 const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
                 const ticketHoldingService = fix.module.get(TicketHoldingService)
@@ -840,11 +821,6 @@ describe('PurchaseService', () => {
             })
 
             it('만료된 completion lease를 보상한 뒤 active worker가 늦게 티켓을 판매하지 않는다', async () => {
-                const { PurchaseService } = await import('#application')
-                const { PurchaseRecordsService, TicketsService } = await import('#core')
-                const { PaymentsService } = await import('#infrastructure')
-                const { PurchaseRecordsRepository } =
-                    await import('../../services/core/purchase-records/purchase-records.repository.js')
                 const purchaseService = fix.module.get(PurchaseService)
                 const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
                 const purchaseRecordsRepository = fix.module.get(PurchaseRecordsRepository)
@@ -941,8 +917,6 @@ describe('PurchaseService', () => {
             })
 
             it('durable 구매 기록 생성이 실패하면 외부 효과를 만들지 않는다', async () => {
-                const { PurchaseRecordsService } = await import('#core')
-                const { PaymentsService } = await import('#infrastructure')
                 const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
                 const paymentsService = fix.module.get(PaymentsService)
 
@@ -964,8 +938,6 @@ describe('PurchaseService', () => {
             })
 
             it('응답 저장 전 종료된 구매는 보상 후 명시적인 operation 실패로 응답한다', async () => {
-                const { PurchaseService } = await import('#application')
-                const { PurchaseRecordsService } = await import('#core')
                 const purchaseService = fix.module.get(PurchaseService)
                 const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
                 const createDto = buildCreatePurchaseDto(heldTickets)
@@ -1001,9 +973,6 @@ describe('PurchaseService', () => {
             })
 
             it('문자열 HttpException도 같은 키 재시도에서 같은 상태와 본문을 반환한다', async () => {
-                const { HttpException } = await import('@nestjs/common')
-                const { TicketPurchaseService } =
-                    await import('../../services/application/purchase/internal/index.js')
                 const ticketPurchaseService = fix.module.get(TicketPurchaseService)
                 vi.spyOn(ticketPurchaseService, 'claimPurchase').mockRejectedValueOnce(
                     new HttpException('purchase dependency rejected the request', 418)
@@ -1037,7 +1006,6 @@ describe('PurchaseService', () => {
         })
 
         it('티켓을 보유하지 않은 채로 구매하면 400을 반환한다', async () => {
-            const { createShowtimeAndTickets } = await import('./purchase.utils.js')
             const tickets = await createShowtimeAndTickets(fix)
 
             const createDto = buildCreatePurchaseDto(tickets.slice(0, 1))
@@ -1051,7 +1019,6 @@ describe('PurchaseService', () => {
         })
 
         it('다른 사용자가 보유한 티켓을 구매하면 400을 반환한다', async () => {
-            const { createShowtimeAndTickets, holdTickets } = await import('./purchase.utils.js')
             const tickets = await createShowtimeAndTickets(fix)
             // 보유 검증은 결제자 본인의 보유만 인정한다 — 남이 선점한 좌석은 미보유와 동일하게 거절돼야 한다.
             const heldByOther = await holdTickets(fix, oid(0xff), tickets)
@@ -1067,11 +1034,6 @@ describe('PurchaseService', () => {
         })
 
         it('보유 검증 뒤 다른 고객에게 넘어간 티켓을 판매하지 않는다', async () => {
-            const { TicketPurchaseService } =
-                await import('../../services/application/purchase/internal/index.js')
-            const { TicketHoldingService } = await import('#core')
-            const { PaymentsService } = await import('#infrastructure')
-            const { createShowtimeAndTickets, holdTickets } = await import('./purchase.utils.js')
             const tickets = await createShowtimeAndTickets(fix)
             const heldByFirst = await holdTickets(fix, user.id, tickets)
             const showtimeId = ensure(heldByFirst[0]).showtimeId
@@ -1140,9 +1102,6 @@ describe('PurchaseService', () => {
         })
 
         it('결제 중 purchase claim이 만료돼 다른 고객이 다시 보유한 티켓을 판매하지 않는다', async () => {
-            const { TicketHoldingService } = await import('#core')
-            const { PaymentsService } = await import('#infrastructure')
-            const { createShowtimeAndTickets, holdTickets } = await import('./purchase.utils.js')
             const tickets = await createShowtimeAndTickets(fix)
             const heldByFirst = await holdTickets(fix, user.id, tickets)
             const showtimeId = ensure(heldByFirst[0]).showtimeId
@@ -1231,7 +1190,6 @@ describe('PurchaseService', () => {
     })
 
     it('주기 reconciliation은 stale 구매·결제 보상과 durable event 발행을 함께 실행한다', async () => {
-        const { PurchaseService } = await import('#application')
         const purchaseService = fix.module.get(PurchaseService)
         const reconcile = vi
             .spyOn(purchaseService, 'reconcilePendingPurchases')
@@ -1256,8 +1214,6 @@ describe('PurchaseService', () => {
     })
 
     it('후속 reconciliation 실패는 lease를 풀어 다음 주기에 재시도한다', async () => {
-        const { PurchaseService } = await import('#application')
-        const { PurchaseRecordsService } = await import('#core')
         const purchaseService = fix.module.get(PurchaseService)
         const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
         const pending = await purchaseRecordsService.create(
@@ -1278,10 +1234,6 @@ describe('PurchaseService', () => {
     })
 
     it('pending 조회 직후 완료된 구매는 보상하지 않는다', async () => {
-        const { PurchaseService } = await import('#application')
-        const { PurchaseRecordsService } = await import('#core')
-        const { TicketPurchaseService } =
-            await import('../../services/application/purchase/internal/index.js')
         const purchaseService = fix.module.get(PurchaseService)
         const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
         const ticketPurchaseService = fix.module.get(TicketPurchaseService)
@@ -1300,10 +1252,6 @@ describe('PurchaseService', () => {
     })
 
     it('Cancelled 확정 뒤 생성된 결제의 즉시 취소가 실패해도 주기 작업이 다시 취소한다', async () => {
-        const { PurchaseService } = await import('#application')
-        const { PurchaseRecordsService } = await import('#core')
-        const { PaymentsService } = await import('#infrastructure')
-        const { createShowtimeAndTickets, holdTickets } = await import('./purchase.utils.js')
         const purchaseService = fix.module.get(PurchaseService)
         const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
         const paymentsService = fix.module.get(PaymentsService)
@@ -1382,9 +1330,6 @@ describe('PurchaseService', () => {
     })
 
     it('미해소 결제의 구매가 완료 상태면 취소하지 않고 resolution만 마친다', async () => {
-        const { PurchaseService } = await import('#application')
-        const { PurchaseRecordsService } = await import('#core')
-        const { PaymentsService } = await import('#infrastructure')
         const purchaseService = fix.module.get(PurchaseService)
         const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
         const paymentsService = fix.module.get(PaymentsService)
@@ -1416,9 +1361,6 @@ describe('PurchaseService', () => {
     })
 
     it('미해소 결제의 구매가 아직 진행 중이면 terminal 상태가 될 때까지 보류한다', async () => {
-        const { PurchaseService } = await import('#application')
-        const { PurchaseRecordsService } = await import('#core')
-        const { PaymentsService } = await import('#infrastructure')
         const purchaseService = fix.module.get(PurchaseService)
         const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
         const paymentsService = fix.module.get(PaymentsService)
@@ -1448,8 +1390,6 @@ describe('PurchaseService', () => {
     })
 
     it('미해소 결제의 구매 기록이 없으면 fail-safe로 취소한다', async () => {
-        const { PurchaseService } = await import('#application')
-        const { PaymentsService } = await import('#infrastructure')
         const purchaseService = fix.module.get(PurchaseService)
         const paymentsService = fix.module.get(PaymentsService)
         const payment = await paymentsService.create({
@@ -1468,12 +1408,6 @@ describe('PurchaseService', () => {
     })
 
     it('marker와 purchaseRecordId가 없는 legacy 결제도 구매 결과에 맞게 백필·정리한다', async () => {
-        const { PurchaseService } = await import('#application')
-        const { PurchaseRecordsService, PurchaseRecordStatus } = await import('#core')
-        const { PaymentsRepository } =
-            await import('../../services/infrastructure/payments/payments.repository.js')
-        const { PurchaseRecordsRepository } =
-            await import('../../services/core/purchase-records/purchase-records.repository.js')
         const purchaseService = fix.module.get(PurchaseService)
         const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
         const paymentsRepository = fix.module.get(PaymentsRepository)
@@ -1578,15 +1512,6 @@ describe('PurchaseService', () => {
     })
 
     it('이전 보상이 티켓을 풀고 실패한 뒤 재판매되어도 새 owner를 유지하며 취소로 수렴한다', async () => {
-        const { PurchaseService } = await import('#application')
-        const { PurchaseRecordsService, PurchaseRecordStatus, TicketsService } =
-            await import('#core')
-        const { PaymentsService } = await import('#infrastructure')
-        const { createShowtimeAndTickets, holdTickets } = await import('./purchase.utils.js')
-        const { PurchaseRecordsRepository } =
-            await import('../../services/core/purchase-records/purchase-records.repository.js')
-        const { TicketsRepository } =
-            await import('../../services/core/tickets/tickets.repository.js')
         const purchaseService = fix.module.get(PurchaseService)
         const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
         const purchaseRecordsRepository = fix.module.get(PurchaseRecordsRepository)
@@ -1644,8 +1569,6 @@ describe('PurchaseService', () => {
     })
 
     it('두 outbox publisher가 경쟁해도 publication lease 소유자만 한 번 emit한다', async () => {
-        const { PurchaseEvents, PurchaseService } = await import('#application')
-        const { PurchaseRecordsService } = await import('#core')
         const events = fix.module.get(PurchaseEvents)
         const purchaseService = fix.module.get(PurchaseService)
         const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
@@ -1699,8 +1622,6 @@ describe('PurchaseService', () => {
     })
 
     it('emit 성공 후 outbox ack가 실패하면 안정 key로 at-least-once 재발행한다', async () => {
-        const { PurchaseEvents, PurchaseService } = await import('#application')
-        const { PurchaseRecordsService } = await import('#core')
         const events = fix.module.get(PurchaseEvents)
         const purchaseService = fix.module.get(PurchaseService)
         const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
@@ -1736,8 +1657,6 @@ describe('PurchaseService', () => {
     })
 
     it('outbox publish와 publication claim 해제가 모두 실패해도 완료 구매를 되돌리지 않는다', async () => {
-        const { PurchaseEvents, PurchaseService } = await import('#application')
-        const { PurchaseRecordsService } = await import('#core')
         const events = fix.module.get(PurchaseEvents)
         const purchaseService = fix.module.get(PurchaseService)
         const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
@@ -1775,10 +1694,6 @@ describe('PurchaseService', () => {
     })
 
     it('보상과 lease 해제가 함께 실패해도 주기 reconciliation 호출자는 실패하지 않는다', async () => {
-        const { PurchaseService } = await import('#application')
-        const { PurchaseRecordsService } = await import('#core')
-        const { TicketPurchaseService } =
-            await import('../../services/application/purchase/internal/index.js')
         const purchaseService = fix.module.get(PurchaseService)
         const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
         const ticketPurchaseService = fix.module.get(TicketPurchaseService)

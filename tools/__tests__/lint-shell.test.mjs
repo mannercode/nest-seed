@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { chmod, copyFile, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { chmod, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -14,7 +14,6 @@ test('shell lint discovers extensionless hooks and checks sourced fixtures throu
     const argumentLog = join(repository, 'shellcheck-arguments.jsonl')
     const lintShell = join(repository, 'tools/lint-shell.mjs')
     t.after(async () => {
-        const { rm } = await import('node:fs/promises')
         await rm(repository, { force: true, recursive: true })
     })
 

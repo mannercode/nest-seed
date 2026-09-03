@@ -1,12 +1,13 @@
 import { ensure, pickIds } from '@mannercode/common'
 import { nullObjectId, oid } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
-import { TicketStatus, type TicketDto, type TicketsService } from '#core'
+import { TicketStatus, type TicketDto, TicketsService } from '#core'
 import {
     buildCreateTicketDto,
     createTickets,
     Errors,
-    type AppTestContext
+    type AppTestContext,
+    createAppTestContext
 } from '../helpers/index.js'
 
 describe('TicketsService', () => {
@@ -16,8 +17,7 @@ describe('TicketsService', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers/index.js')
-        const { TicketsService } = await import('#core')
+
         fix = await createAppTestContext()
         teardown = fix.teardown
         ticketsService = fix.module.get(TicketsService)

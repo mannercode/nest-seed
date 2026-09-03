@@ -1,10 +1,11 @@
 import { DateUtil, ensure, pickIds, sleep } from '@mannercode/common'
 import { instant, oid } from '@mannercode/testing'
-import type { PurchaseRecordsService } from '#core'
+import { PurchaseRecordsService } from '#core'
 import {
     buildCreatePurchaseRecordDto,
     createPurchaseRecord,
-    type AppTestContext
+    type AppTestContext,
+    createAppTestContext
 } from '../helpers/index.js'
 
 describe('PurchaseRecordsService', () => {
@@ -14,8 +15,7 @@ describe('PurchaseRecordsService', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers/index.js')
-        const { PurchaseRecordsService } = await import('#core')
+
         fix = await createAppTestContext()
         teardown = fix.teardown
         purchaseRecordsService = fix.module.get(PurchaseRecordsService)

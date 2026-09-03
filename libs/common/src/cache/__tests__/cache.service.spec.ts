@@ -1,11 +1,10 @@
-import type { CacheServiceFixture } from './cache.service.fixture.js'
+import { type CacheServiceFixture, createCacheServiceFixture } from './cache.service.fixture.js'
 import { sleep } from '../../utils/index.js'
 
 describe('CacheService', () => {
     let fix: CacheServiceFixture
 
     beforeEach(async () => {
-        const { createCacheServiceFixture } = await import('./cache.service.fixture.js')
         fix = await createCacheServiceFixture()
     })
     afterEach(() => fix.teardown())

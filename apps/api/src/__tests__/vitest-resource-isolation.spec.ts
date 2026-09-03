@@ -13,9 +13,16 @@ import { setTimeout as delay } from 'node:timers/promises'
 import { getSharedTestMongoConnection } from '../../scripts/index.cjs'
 
 const startupProjectId = process.env.PROJECT_ID
+let previousProjectId = startupProjectId
 let previousTestStream: { name: string; subject: string } | undefined
 
 describe('VitestResourceIsolation', () => {
+    beforeEach(() => {
+        const projectId = requiredEnvironment('PROJECT_ID')
+        expect(projectId).not.toBe(previousProjectId)
+        previousProjectId = projectId
+    })
+
     it('실행별 namespace를 반영하고 병렬 teardown에서 다른 실행 자원을 보존한다', async () => {
         const runId = process.env.API_VITEST_RUN_ID
         const workerId = process.env.VITEST_POOL_ID ?? '1'

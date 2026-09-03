@@ -1,12 +1,13 @@
 import { DateUtil, ensure, pickIds } from '@mannercode/common'
 import { instant, nullObjectId, oid, plainDate } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
-import type { ShowtimeDto, ShowtimesService } from '#core'
+import { type ShowtimeDto, ShowtimesService } from '#core'
 import {
     buildCreateShowtimeDto,
     createShowtimes,
     Errors,
-    type AppTestContext
+    type AppTestContext,
+    createAppTestContext
 } from '../helpers/index.js'
 
 describe('ShowtimesService', () => {
@@ -16,8 +17,7 @@ describe('ShowtimesService', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers/index.js')
-        const { ShowtimesService } = await import('#core')
+
         fix = await createAppTestContext()
         teardown = fix.teardown
         showtimesService = fix.module.get(ShowtimesService)

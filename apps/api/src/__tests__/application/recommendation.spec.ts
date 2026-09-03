@@ -5,9 +5,11 @@ import {
     createMovie,
     createShowtimes,
     createTheater,
-    type AppTestContext
+    type AppTestContext,
+    createAppTestContext
 } from '../helpers/index.js'
 import { createShowingMovies, createWatchedMovies } from './recommendation.utils.js'
+import { AppConfigService } from '#config'
 
 describe('RecommendationService', () => {
     let fix: AppTestContext
@@ -15,7 +17,7 @@ describe('RecommendationService', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers/index.js')
+
         fix = await createAppTestContext()
         teardown = fix.teardown
     })
@@ -88,7 +90,6 @@ describe('RecommendationService', () => {
             })
 
             it('구매 마감 안에 시작하는 상영만 남은 영화는 추천에서 제외한다', async () => {
-                const { AppConfigService } = await import('#config')
                 const config = fix.module.get(AppConfigService)
 
                 // releaseDate를 가장 최신으로 둬, 필터 회귀 시 목록 맨 앞에 나타나 바로 드러난다.

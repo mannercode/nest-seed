@@ -1,12 +1,14 @@
 import { nullObjectId } from '@mannercode/testing'
-import type { TheaterDto } from '#core'
+import { type TheaterDto, TheatersService } from '#core'
 import {
     buildCreateTheaterDto,
     createShowtimes,
     createTheater,
     Errors,
-    type AppTestContext
+    type AppTestContext,
+    createAppTestContext
 } from '../helpers/index.js'
+import { AdminAuthGuard } from '#gateway'
 
 describe('TheatersService', () => {
     let fix: AppTestContext
@@ -14,8 +16,7 @@ describe('TheatersService', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers/index.js')
-        const { AdminAuthGuard } = await import('#gateway')
+
         fix = await createAppTestContext({ ignoreGuards: [AdminAuthGuard] })
         teardown = fix.teardown
     })
@@ -87,7 +88,6 @@ describe('TheatersService', () => {
         })
 
         it('필수 필드를 null로 바꾸는 직접 호출은 저장 전에 거부한다', async () => {
-            const { TheatersService } = await import('#core')
             const theatersService = fix.module.get(TheatersService)
 
             await expect(theatersService.update(theater.id, { name: null })).rejects.toThrow()

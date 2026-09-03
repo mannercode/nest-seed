@@ -1,11 +1,14 @@
 import { nullObjectId, nullPlainDate } from '@mannercode/testing'
-import { MovieDefaults, MovieGenre, MovieRating, type MovieDto } from '#core'
+import { MovieDefaults, MovieGenre, MovieRating, type MovieDto, MoviesService } from '#core'
 import {
     createMovie,
     createUnpublishedMovie,
     Errors,
-    type AppTestContext
+    type AppTestContext,
+    createAppTestContext
 } from '../helpers/index.js'
+import { AdminAuthGuard } from '#gateway'
+import { MoviesRepository } from '../../services/core/movies/movies.repository.js'
 
 describe('MoviesPublish', () => {
     let fix: AppTestContext
@@ -13,8 +16,7 @@ describe('MoviesPublish', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers/index.js')
-        const { AdminAuthGuard } = await import('#gateway')
+
         fix = await createAppTestContext({ ignoreGuards: [AdminAuthGuard] })
         teardown = fix.teardown
     })
@@ -108,7 +110,6 @@ describe('MoviesPublish', () => {
     })
 
     it('공개된 영화를 빈 genres로 되돌리는 수정이면 검증 오류를 던진다', async () => {
-        const { MoviesService } = await import('#core')
         const moviesService = fix.module.get(MoviesService)
         const movie = await createMovie(fix)
 
@@ -119,7 +120,6 @@ describe('MoviesPublish', () => {
     })
 
     it('공개된 영화의 필수값을 비우는 수정은 모두 저장소 경계에서 거부한다', async () => {
-        const { MoviesService } = await import('#core')
         const moviesService = fix.module.get(MoviesService)
         const movie = await createMovie(fix)
         const invalidUpdates = [
@@ -143,7 +143,6 @@ describe('MoviesPublish', () => {
     })
 
     it('공개 여부와 무관하게 저장 타입을 깨뜨리는 null 수정은 거부한다', async () => {
-        const { MoviesService } = await import('#core')
         const moviesService = fix.module.get(MoviesService)
         const movie = await createUnpublishedMovie(fix)
 
@@ -153,8 +152,6 @@ describe('MoviesPublish', () => {
     })
 
     it('동시 갱신으로 CAS가 한 번 빗나가면 최신 문서를 다시 읽어 갱신한다', async () => {
-        const { MoviesService } = await import('#core')
-        const { MoviesRepository } = await import('../../services/core/movies/movies.repository.js')
         const moviesService = fix.module.get(MoviesService)
         const repository = fix.module.get(MoviesRepository)
         const movie = await createMovie(fix)
@@ -169,8 +166,6 @@ describe('MoviesPublish', () => {
     })
 
     it('CAS가 반복해서 빗나가면 정해진 횟수 뒤 명시적으로 실패한다', async () => {
-        const { MoviesService } = await import('#core')
-        const { MoviesRepository } = await import('../../services/core/movies/movies.repository.js')
         const moviesService = fix.module.get(MoviesService)
         const repository = fix.module.get(MoviesRepository)
         const movie = await createMovie(fix)

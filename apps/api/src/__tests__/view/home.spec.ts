@@ -3,7 +3,8 @@ import {
     createMovie,
     createShowtimes,
     createTheater,
-    type AppTestContext
+    type AppTestContext,
+    createAppTestContext
 } from '../helpers/index.js'
 
 type HomeResponse = {
@@ -22,7 +23,7 @@ describe('UserHomeView', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers/index.js')
+
         fix = await createAppTestContext()
         teardown = fix.teardown
     })

@@ -1,4 +1,6 @@
 import type { Mock } from 'vitest'
+import { Cluster } from 'ioredis'
+import { createRedisModuleClusterFixture } from './redis.module.fixture.js'
 
 vi.mock('ioredis', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>()
@@ -11,7 +13,6 @@ describe('RedisModule', () => {
         // jwt-auth 통합 테스트는 단일 Redis로 해시 태그 키 배치 호환성만 검증한다.
         // 실제 클러스터 연결은 infra의 Redis 클러스터를 쓰는 api 앱에서 검증된다.
         it('클러스터 옵션을 주면 Cluster 인스턴스를 생성한다', async () => {
-            const { Cluster } = await import('ioredis')
             // 모듈 destroy 시 RedisConnectionRegistry가 quit을 호출하므로 mock에도 포함한다.
             const mockCluster = {
                 ping: vi.fn().mockResolvedValue('PONG'),
@@ -25,7 +26,6 @@ describe('RedisModule', () => {
                 }
             )
 
-            const { createRedisModuleClusterFixture } = await import('./redis.module.fixture.js')
             const fix = await createRedisModuleClusterFixture()
             try {
                 expect(Cluster).toHaveBeenCalledWith([{ host: 'localhost', port: 7000 }], undefined)

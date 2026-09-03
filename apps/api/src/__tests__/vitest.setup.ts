@@ -3,6 +3,8 @@ import { S3Client } from '@aws-sdk/client-s3'
 import { setupVitestLifecycle } from '@mannercode/vitest-helpers'
 import { MongoClient } from 'mongodb'
 import { createRequire } from 'node:module'
+import { createMongoDriverOptions } from '../config/mongo-driver-options.js'
+import { registerMongoClientDiagnostics } from './support/mongo-client-diagnostics.js'
 
 process.env.LOG_CONSOLE_LEVEL = 'silent'
 
@@ -13,11 +15,9 @@ const {
 } = require('../../scripts/index.cjs')
 const { initializeApiVitestWorkerEnvironment } = require('../../scripts/vitest-resource-wiring.cjs')
 
-// app 모듈이 PROJECT_ID를 최초 평가하기 전에 공유 .env 값을 실행별 namespace로 덮어쓴다.
+// 테스트 파일을 평가하기 전에 실행·worker 범위 자원을 정하고, PROJECT_ID는 아래
+// onBeforeEach에서 테스트마다 새로 정한다.
 const resourceScope = initializeApiVitestWorkerEnvironment()
-
-const { createMongoDriverOptions } = await import('../config/mongo-driver-options.js')
-const { registerMongoClientDiagnostics } = await import('./support/mongo-client-diagnostics.js')
 
 const sharedMongoAppName = () =>
     `nest-seed-test-w${process.env.VITEST_POOL_ID ?? '0'}-p${process.pid}-shared`

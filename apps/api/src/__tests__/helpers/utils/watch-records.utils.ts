@@ -1,5 +1,5 @@
 import { nullInstant, oid, type TestContext } from '@mannercode/testing'
-import type { CreateWatchRecordDto } from '#core'
+import { type CreateWatchRecordDto, WatchRecordsService } from '#core'
 
 export function buildCreateWatchRecordDto(
     overrides: Partial<CreateWatchRecordDto> = {}
@@ -17,7 +17,6 @@ export async function createWatchRecord(
     ctx: TestContext,
     override: Partial<CreateWatchRecordDto> = {}
 ) {
-    const { WatchRecordsService } = await import('#core')
     const watchRecordsService = ctx.module.get(WatchRecordsService)
 
     const createDto = buildCreateWatchRecordDto(override)

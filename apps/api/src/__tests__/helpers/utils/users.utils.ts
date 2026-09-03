@@ -1,5 +1,5 @@
 import { nullPlainDate, type TestContext } from '@mannercode/testing'
-import type { CreateUserDto, UserCredentialsDto } from '#core'
+import { type CreateUserDto, type UserCredentialsDto, UsersService } from '#core'
 
 export function buildCreateUserDto(overrides: Partial<CreateUserDto> = {}): CreateUserDto {
     return {
@@ -22,7 +22,6 @@ export async function createAndLoginUser(ctx: TestContext) {
 }
 
 export async function createUser(ctx: TestContext, override: Partial<CreateUserDto> = {}) {
-    const { UsersService } = await import('#core')
     const usersService = ctx.module.get(UsersService)
 
     const createDto = buildCreateUserDto(override)
@@ -32,7 +31,6 @@ export async function createUser(ctx: TestContext, override: Partial<CreateUserD
 }
 
 export async function loginUser(ctx: TestContext, credentials: UserCredentialsDto) {
-    const { UsersService } = await import('#core')
     const usersService = ctx.module.get(UsersService)
 
     const result = await usersService.login(credentials)

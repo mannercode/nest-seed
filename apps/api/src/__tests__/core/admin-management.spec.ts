@@ -1,6 +1,13 @@
 import { nullObjectId } from '@mannercode/testing'
-import type { AdminDto } from '#core'
-import { createAdmin, Errors, loginAdmin, type AppTestContext } from '../helpers/index.js'
+import { type AdminDto, AdminsService, AdminsRepository } from '#core'
+import {
+    createAdmin,
+    Errors,
+    loginAdmin,
+    type AppTestContext,
+    createAppTestContext
+} from '../helpers/index.js'
+import { ConflictException } from '@nestjs/common'
 
 describe('AdminManagement', () => {
     let fix: AppTestContext
@@ -9,7 +16,7 @@ describe('AdminManagement', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers/index.js')
+
         fix = await createAppTestContext()
         teardown = fix.teardown
     })
@@ -52,8 +59,6 @@ describe('AdminManagement', () => {
         })
 
         it('중복 키 외의 저장 오류는 ConflictException으로 바꾸지 않고 그대로 던진다', async () => {
-            const { AdminsService } = await import('#core')
-            const { ConflictException } = await import('@nestjs/common')
             const service = fix.module.get(AdminsService)
 
             // required 필드를 null로 보내 저장 경계 검증 오류를 유도한다.
@@ -69,7 +74,6 @@ describe('AdminManagement', () => {
 
     describe('AdminsService.remove', () => {
         it('존재하지 않는 admin이면 404를 반환한다', async () => {
-            const { AdminsService } = await import('#core')
             const service = fix.module.get(AdminsService)
 
             await expect(service.remove(nullObjectId)).rejects.toThrow(
@@ -79,7 +83,7 @@ describe('AdminManagement', () => {
 
         it('제거된 admin의 이메일로 다시 admin을 만들 수 있다', async () => {
             const created = await createAdmin(fix, adminCredentials)
-            const { AdminsService } = await import('#core')
+
             const service = fix.module.get(AdminsService)
 
             await service.remove(created.id)
@@ -92,7 +96,7 @@ describe('AdminManagement', () => {
         it('제거된 admin의 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
             const created = await createAdmin(fix, adminCredentials)
             const { refreshToken } = await loginAdmin(fix, adminCredentials)
-            const { AdminsService } = await import('#core')
+
             const service = fix.module.get(AdminsService)
 
             await service.remove(created.id)
@@ -188,7 +192,6 @@ describe('AdminManagement', () => {
             })
 
             it('자기 도큐먼트가 삭제되면 기존 액세스 토큰으로 쓰기도 401을 반환한다', async () => {
-                const { AdminsService } = await import('#core')
                 await fix.module.get(AdminsService).remove(admin.id)
 
                 await fix.httpClient
@@ -206,7 +209,6 @@ describe('AdminManagement', () => {
         it('중복 키 외의 저장 오류는 ConflictException으로 바꾸지 않고 그대로 던진다', async () => {
             const created = await createAdmin(fix, adminCredentials)
 
-            const { AdminsRepository, AdminsService } = await import('#core')
             const service = fix.module.get(AdminsService)
             const repo = fix.module.get(AdminsRepository)
             vi.spyOn(repo, 'update').mockRejectedValueOnce(new Error('boom'))
@@ -215,7 +217,6 @@ describe('AdminManagement', () => {
         })
 
         it('존재하지 않는 admin을 수정하면 404를 던진다', async () => {
-            const { AdminsService } = await import('#core')
             const service = fix.module.get(AdminsService)
 
             await expect(service.update(nullObjectId, { name: 'x' })).rejects.toThrow(
@@ -228,7 +229,6 @@ describe('AdminManagement', () => {
         it('자기 도큐먼트가 삭제되면 기존 액세스 토큰을 401로 거부한다', async () => {
             const created = await createAdmin(fix, adminCredentials)
             const { accessToken } = await loginAdmin(fix, adminCredentials)
-            const { AdminsService } = await import('#core')
 
             await fix.module.get(AdminsService).remove(created.id)
 

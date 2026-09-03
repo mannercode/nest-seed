@@ -1,5 +1,5 @@
 import type { TestContext } from '@mannercode/testing'
-import type { AdminCredentialsDto, CreateAdminDto } from '#core'
+import { type AdminCredentialsDto, type CreateAdminDto, AdminsService } from '#core'
 
 export function buildCreateAdminDto(overrides: Partial<CreateAdminDto> = {}): CreateAdminDto {
     return { email: 'admin@mail.com', name: 'admin', password: 'password', ...overrides }
@@ -15,7 +15,6 @@ export async function createAndLoginAdmin(ctx: TestContext) {
 }
 
 export async function createAdmin(ctx: TestContext, override: Partial<CreateAdminDto> = {}) {
-    const { AdminsService } = await import('#core')
     const adminsService = ctx.module.get(AdminsService)
 
     const createDto = buildCreateAdminDto(override)
@@ -25,7 +24,6 @@ export async function createAdmin(ctx: TestContext, override: Partial<CreateAdmi
 }
 
 export async function loginAdmin(ctx: TestContext, credentials: AdminCredentialsDto) {
-    const { AdminsService } = await import('#core')
     const adminsService = ctx.module.get(AdminsService)
 
     const result = await adminsService.login(credentials)

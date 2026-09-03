@@ -1,6 +1,6 @@
 import type { MockInstance } from 'vitest'
 import { HttpTestClient, createHttpTestContext } from '@mannercode/testing'
-import { Controller, Get, Post, Provider } from '@nestjs/common'
+import { Controller, Get, Post, Provider, Logger } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { HttpSuccessLoggerInterceptor } from '../index.js'
 
@@ -42,7 +42,6 @@ export async function createSuccessLoggerInterceptorFixture(providers: Provider[
         ]
     })
 
-    const { Logger } = await import('@nestjs/common')
     const spyVerbose = vi.spyOn(Logger, 'verbose')
 
     const teardown = async () => {

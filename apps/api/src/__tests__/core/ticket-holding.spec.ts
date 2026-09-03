@@ -1,7 +1,12 @@
 import { CacheService, ensure, sleep } from '@mannercode/common'
 import { oid } from '@mannercode/testing'
-import type { TicketHoldingService } from '#core'
-import { buildHoldTicketsDto, overrideConfigGetter, type AppTestContext } from '../helpers/index.js'
+import { TicketHoldingService } from '#core'
+import {
+    buildHoldTicketsDto,
+    overrideConfigGetter,
+    type AppTestContext,
+    createAppTestContext
+} from '../helpers/index.js'
 
 describe('TicketHoldingService', () => {
     let fix: AppTestContext
@@ -10,8 +15,7 @@ describe('TicketHoldingService', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        const { createAppTestContext } = await import('../helpers/index.js')
-        const { TicketHoldingService } = await import('#core')
+
         fix = await createAppTestContext()
         teardown = fix.teardown
         ticketHoldingService = fix.module.get(TicketHoldingService)
