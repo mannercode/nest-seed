@@ -2,7 +2,7 @@
 
 단위·통합 테스트는 보통 각 워크스페이스 안(`apps/api/src/__tests__`, `libs/*/src/**/__tests__`)에 살고 `pnpm run test`로 돈다([apps 문서의 테스트 절](apps.md#테스트) 참고). `tests/`에 모인 것은 주로 **배포된 스택을 밖에서 검증하는** 무거운 테스트라 폴더가 따로 있다. 다만 하네스 자체의 계약은 같은 워크스페이스 안에 둔다. `tests/api-race/contracts`는 공통 HTTP/SSE client·repository 계약을 `pnpm --filter './tests/api-race' test`로, `tests/web/contracts`는 두 Next.js BFF의 공통 보안·프런트 린트 계약을 `pnpm --filter './tests/web' test`로 실행한다. 둘 다 배포 스택이나 브라우저를 시작하지 않고 기본 `pnpm run test`에 포함된다.
 
-한 화면의 실행 명령과 결과 위치는 [`tests/README.md`](../tests/README.md)에 있고, 테스트 파일별 검증 대상은 [테스트 파일 인벤토리](../test-inventory.md)에 있다. 루트 테스트 명령은 마지막에 통과·실패한 영역, 검증 이유, 실제 경과 시간과 실행되지 않은 검증을 요약하고 같은 내용을 `_output/test-reports/`의 Markdown 보고서에 남긴다.
+한 화면의 실행 명령과 결과 위치는 [`tests/README.md`](../tests/README.md)에 있다. 루트 테스트 명령은 마지막에 통과·실패한 영역, 검증 이유, 실제 경과 시간과 실행되지 않은 검증을 요약하고 같은 내용을 `_output/test-reports/`의 Markdown 보고서에 남긴다.
 
 ## api-race — 분산 레이스 시나리오
 
