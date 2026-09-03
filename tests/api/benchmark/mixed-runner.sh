@@ -3,13 +3,13 @@
 # theater-read와 theater-write가 측정 창과 LABEL을 공유하며 HTML 리포트를 `_output`에 남긴다.
 # 실행 중인 스택, 약 50K 이상의 theater, ADMIN_ACCESS_TOKEN이 필요하다. 전체 수명주기는 runner.sh가 맡는다.
 #
-# 사용법: SERVER_URL=http://localhost:3000 bash tests/api-benchmark/mixed-runner.sh
-#   재정의: DURATION_MS=60000 WARMUP_MS=5000 SERVER_URL=... bash tests/api-benchmark/mixed-runner.sh
+# 사용법: SERVER_URL=http://localhost:3000 bash tests/api/benchmark/mixed-runner.sh
+#   재정의: DURATION_MS=60000 WARMUP_MS=5000 SERVER_URL=... bash tests/api/benchmark/mixed-runner.sh
 
 set -euo pipefail
 
 : "${WORKSPACE_ROOT:?}"
-: "${SERVER_URL:?SERVER_URL must be set (예: SERVER_URL=http://localhost:3000 bash tests/api-benchmark/mixed-runner.sh)}"
+: "${SERVER_URL:?SERVER_URL must be set (예: SERVER_URL=http://localhost:3000 bash tests/api/benchmark/mixed-runner.sh)}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 HARNESS="${SCRIPT_DIR}/harness-crud.js"
@@ -107,6 +107,6 @@ run_case mixed-r200w100 200 100
 
 echo
 echo "=========================================================="
-echo "DONE. results in tests/api-benchmark/_output/<scenario>-<ts>-<label>.json"
-echo "      dashboards in tests/api-benchmark/_output/dashboard-<ts>-<label>-<leg>.html"
+echo "DONE. results in tests/api/benchmark/_output/<scenario>-<ts>-<label>.json"
+echo "      dashboards in tests/api/benchmark/_output/dashboard-<ts>-<label>-<type>.html"
 echo "=========================================================="

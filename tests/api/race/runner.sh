@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# deploy 스택 기동, admin 인증, 단일 race 시나리오 실행, deploy 정리를 한 번에 수행한다.
-# 사용: bash tests/api-race/runner.sh <scenario-name>
-#  예) bash tests/api-race/runner.sh purchase-double-spend
+# API 테스트 스택 기동, admin 인증, 단일 race 시나리오 실행과 정리를 한 번에 수행한다.
+# 사용: bash tests/api/race/runner.sh <scenario-name>
+#  예) bash tests/api/race/runner.sh purchase-double-spend
 
 set -Eeuo pipefail
 
@@ -35,9 +35,9 @@ if [ ! -f "${TEST_SCRIPT}" ]; then
 fi
 
 : "${WORKSPACE_ROOT:?}"
-# shellcheck source=../../.env.seed
+# shellcheck source=../../../.env.seed
 . "${WORKSPACE_ROOT}/.env.seed"
-COMPOSE_DIR="${WORKSPACE_ROOT}/deploy"
+COMPOSE_DIR="${WORKSPACE_ROOT}/tests/api"
 
 cd "${COMPOSE_DIR}"
 
@@ -62,19 +62,9 @@ dump_diagnostics() {
 }
 
 bring_up_stack() {
-    local build_option="--build"
-    if [ "${DEPLOY_IMAGES_PREBUILT:-false}" = "true" ]; then
-        echo "Deploying prebuilt 4-replica api stack..."
-        if ! docker image inspect nest-seed-api >/dev/null 2>&1; then
-            echo "[FAIL] DEPLOY_IMAGES_PREBUILT=true but nest-seed-api is unavailable"
-            exit 1
-        fi
-        build_option="--no-build"
-    else
-        echo "Building and deploying 4-replica api stack..."
-    fi
+    echo "Building 4-replica api test stack..."
 
-    if ! docker compose up -d "${build_option}" --wait; then
+    if ! docker compose up -d --build --wait; then
         echo "[FAIL] compose up failed before ${TEST_NAME} could start"
         dump_diagnostics
         exit 1

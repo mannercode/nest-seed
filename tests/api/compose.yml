@@ -1,9 +1,9 @@
 x-api-base: &api-base
     env_file:
-        - ../.env.infra
-        - ../.env.api
+        - ../../.env.infra
+        - ../../.env.api
     environment:
-        # 실행 환경은 공용 env 파일에 두지 않고 배포 경로에서 명시한다.
+        # 실행 환경은 공용 env 파일에 두지 않고 이 테스트 스택에서 명시한다.
         # 비밀번호 암호화(bcrypt)와 파일 작업은 같은 작업 스레드를 사용한다.
         # 기본 4개로는 요청이 몰릴 때 부족하므로 16개로 늘린다.
         - NODE_ENV=production
@@ -20,7 +20,7 @@ services:
     api:
         <<: *api-base
         build:
-            context: ..
+            context: ../..
             dockerfile: apps/api/Dockerfile
         image: nest-seed-api
         # restart 정책은 일부러 두지 않는다.
@@ -43,19 +43,11 @@ services:
             timeout: 3s
         restart: unless-stopped
 
-    k6:
-        profiles: [benchmark]
-        image: grafana/k6:2.2.0@sha256:9bd01d6941fca969cb61bb57d2da5ee9b385fe2aa8881df3798c196564d6ace6
-        working_dir: ${WORKSPACE_ROOT:?}
-        environment:
-            WORKSPACE_ROOT: ${WORKSPACE_ROOT:?}
-        volumes: ['..:${WORKSPACE_ROOT:?}']
-
     restate-register:
         profiles: [setup]
         image: nest-seed-api
         env_file:
-            - ../.env.infra
+            - ../../.env.infra
         environment:
             RESTATE_DEPLOYMENT_URI: http://nginx:9080
         entrypoint: ['/bin/sh', '-ec']

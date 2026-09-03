@@ -6,7 +6,7 @@ coverage
 next-env.d.ts
 *.tsbuildinfo
 
-# 개인 로컬 환경 변수는 커밋하지 않는다. `pnpm run clean`도 이 파일들은 보존한다.
+# 개인 로컬 환경 변수는 커밋하지 않는다.
 .env*.local
 
 .DS_Store

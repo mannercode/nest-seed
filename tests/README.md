@@ -5,7 +5,7 @@
 ## 1. 범위
 
 - `pnpm run test` — workspace의 단위·통합 테스트. 브라우저 E2E·실제 race·benchmark는 포함하지 않는다.
-- `pnpm run atoz` — 정적 검사, build, 기본 테스트, 브라우저 E2E, 배포 검증을 포함한 전체 회귀.
+- `pnpm run atoz` — 정적 검사, build, 기본 테스트, 브라우저 E2E, 다중 복제본 검증을 포함한 전체 회귀.
 - `pnpm run e2e` — production build의 console·user-app 브라우저 흐름.
 - `pnpm run race <scenario>` — 다중 API 복제본의 경합·fan-out·장애 복구.
 - `pnpm run benchmark:api` — 같은 머신의 이전 실행과 비교하는 API 성능 측정.
@@ -18,7 +18,7 @@ pnpm --filter './apps/api' test users.spec --coverage.enabled=false
 
 ## 2. 결과
 
-단위·통합 테스트와 race 결과는 터미널에서 확인한다. 브라우저 실패의 trace·screenshot·HTML은 `tests/web/_output/`, benchmark JSON·dashboard는 `tests/api-benchmark/_output/`에 남는다.
+단위·통합 테스트와 race 결과는 터미널에서 확인한다. 브라우저 실패의 trace·screenshot·HTML은 `tests/web/_output/`, benchmark JSON·dashboard는 `tests/api/benchmark/_output/`에 남는다.
 
 ## 3. 보조 명령
 

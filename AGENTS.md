@@ -8,9 +8,8 @@
 
 - `apps/`: [애플리케이션](docs/apps.md), [설계 결정](docs/reference/decisions.md)
 - `libs/`: [공유 패키지](docs/libs.md), [개발 규칙](docs/reference/conventions.md)
-- `tests/`: [외부 스택 테스트](docs/tests.md), [실행 방법](tests/README.md)
+- `tests/`: [외부 스택 테스트](docs/tests.md), [API 스택](docs/api-stack.md), [실행 방법](tests/README.md)
 - `infra/`: [개발 인프라](docs/infra.md), [환경 변수](docs/reference/environment.md)
-- `deploy/`: [검증 배포](docs/deploy.md)
 - `.devcontainer/`: [개발 환경](docs/devcontainer.md)
 
 문서와 코드가 충돌하고 어느 쪽이 의도인지 판단해야 한다면 임의로 한쪽을 맞추지 말고 작업을 중단해 사용자에게 묻는다.

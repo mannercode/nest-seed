@@ -72,7 +72,6 @@ services:
             HOME: /tmp
             MONGO_DATABASE: ${MONGO_DATABASE:?}
             MONGO_URI: ${MONGO_URI:?}
-            PLAYWRIGHT_RETRIES: ${PLAYWRIGHT_RETRIES:-0}
             USER_APP_BASE_URL: http://user-app:${USER_APP_PORT:?}
         volumes:
             - ./e2e:/work/e2e:ro

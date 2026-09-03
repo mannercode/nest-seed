@@ -12,6 +12,14 @@ services:
             - ..:/workspace
         command: [--offline, --include-fragments, '*.md', 'docs/**/*.md', 'tests/README.md']
 
+    k6:
+        profiles: [benchmark]
+        image: grafana/k6:2.2.0@sha256:9bd01d6941fca969cb61bb57d2da5ee9b385fe2aa8881df3798c196564d6ace6
+        working_dir: ${WORKSPACE_ROOT:?}
+        environment:
+            WORKSPACE_ROOT: ${WORKSPACE_ROOT:?}
+        volumes: ['..:${WORKSPACE_ROOT:?}']
+
 networks:
     default:
         name: ${DEVCONTAINER_NETWORK}

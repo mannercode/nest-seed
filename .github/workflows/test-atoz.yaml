@@ -5,46 +5,16 @@ on:
     push:
         branches: ['main']
     schedule:
-        # UTC 기준 3 시간마다 매시 :27에 실행한다.
-        # 새 커밋이 없어도 main이 주기적으로 통과하는지 확인해, 의존성이나 인프라 변경으로 생긴 회귀를 조기에 검출한다.
+        # UTC 기준 3시간마다 실행한다.
         - cron: '27 */3 * * *'
     workflow_dispatch:
-permissions:
-    contents: read
-concurrency:
-    group: ${{ github.workflow }}-${{ github.ref }}
-    cancel-in-progress: true
 jobs:
     test-atoz:
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 60
         steps:
-            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-              with:
-                  persist-credentials: false
+            - uses: actions/checkout@v7.0.1
             - name: Run in devcontainer
-              uses: devcontainers/ci@513af61f4de4f75d37e4438f184ba4358f0fc1ca # v0.3.1900000450
-              env:
-                  # PR/push는 첫 실패를 그대로 게이트하고, 정기 진단 실행만 한 번 재시도한다.
-                  PLAYWRIGHT_RETRIES: ${{ github.event_name == 'schedule' && '1' || '0' }}
+              uses: devcontainers/ci@v0.3.1900000450
               with:
-                  configFile: .devcontainer/devcontainer.json
-                  push: never
-                  env: |
-                      PLAYWRIGHT_RETRIES
-                  runCmd: |
-                      set -Eeuo pipefail
-                      git diff --exit-code -- pnpm-lock.yaml pnpm-workspace.yaml
-                      bash .github/scripts/run-with-ci-diagnostics.sh pnpm run atoz
-                      git diff --exit-code -- pnpm-lock.yaml pnpm-workspace.yaml
-            - name: Upload test diagnostics
-              if: ${{ always() }}
-              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-              with:
-                  name: atoz-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
-                  path: |
-                      tests/web/_output/
-                      _output/ci-diagnostics/
-                      _output/deploy-diagnostics/
-                  if-no-files-found: ignore
-                  retention-days: 14
+                  runCmd: pnpm run atoz

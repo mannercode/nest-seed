@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 공식 k6 이미지를 deploy 네트워크와 현재 workspace에 연결해 실행한다.
+# 공식 k6 이미지를 API 테스트 스택 네트워크와 현재 workspace에 연결해 실행한다.
 
 set -Eeuo pipefail
 
@@ -15,7 +15,8 @@ for name in K6_WEB_DASHBOARD K6_WEB_DASHBOARD_PORT K6_WEB_DASHBOARD_PERIOD K6_WE
     fi
 done
 
-exec docker compose --project-directory "${WORKSPACE_ROOT}/deploy" run \
+cd "${WORKSPACE_ROOT}"
+exec pnpm compose:tools run \
     --rm \
     --no-deps \
     --no-TTY \

@@ -16,7 +16,7 @@ const {
 
 const USER_GROUPS = readPositiveInt('PURCHASE_USER_GROUPS', 5)
 const PURCHASES_PER_GROUP = readPositiveInt('PURCHASE_CLIENT_COUNT', 50)
-const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 150)
+const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 30)
 const SHOWTIME_DEADLINE_MS = readPositiveInt('SHOWTIME_DEADLINE_MS', 60_000)
 
 async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs) {

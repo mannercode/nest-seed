@@ -158,7 +158,7 @@ Core Service는 도메인 이름, Application Service는 조합하는 유스케�
 
 ## 4. 테스트
 
-인덱스, transaction, race condition, 프로토콜 경계는 mock으로 재현하기 어렵다. 그래서 도메인 통합 테스트는 실제 NestJS 모듈과 MongoDB·Redis·S3·NATS·Restate를 사용하고, mock을 최소화한다. 배포 스택 전체가 필요한 race·browser·benchmark는 [tests 문서](tests.md)의 별도 계층이 담당한다.
+인덱스, transaction, race condition, 프로토콜 경계는 mock으로 재현하기 어렵다. 그래서 도메인 통합 테스트는 실제 NestJS 모듈과 MongoDB·Redis·S3·NATS·Restate를 사용하고, mock을 최소화한다. 다중 컨테이너 스택이 필요한 race·browser·benchmark는 [tests 문서](tests.md)의 별도 계층이 담당한다.
 
 테스트의 unit은 함수 하나가 아니라 **사용자가 관찰하는 행동**이다. 내부 함수 호출 순서보다 API 응답·DB의 최종 상태·외부 계약을 검증한다. 내부 구현을 나누거나 합쳐도 행동이 같으면 테스트는 유지되어야 한다.
 

@@ -1,11 +1,11 @@
 const http = require('http')
 const { randomBytes, randomInt } = require('node:crypto')
 
-// race 시나리오는 runner.sh가 띄운 4-replica 배포 스택을 전제한다.
+// race 시나리오는 runner.sh가 띄운 4-replica API 테스트 스택을 전제한다.
 // 기본값으로 단일 dev 서버에 조용히 붙으면 경쟁이 재현되지 않아 결과가 왜곡되므로 필수로 받는다.
 const SERVER_URL = process.env.SERVER_URL
 if (!SERVER_URL) {
-    throw new Error('SERVER_URL must be set (bash tests/api-race/runner.sh <scenario>로 실행한다)')
+    throw new Error('SERVER_URL must be set (bash tests/api/race/runner.sh <scenario>로 실행한다)')
 }
 
 // 빈 값은 기본값을 쓰되 잘못된 입력은 즉시 거절한다.

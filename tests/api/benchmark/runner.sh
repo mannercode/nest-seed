@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# deploy 스택 기동, theater 시드, 혼합 성능 측정, deploy 정리를 한 번에 실행한다.
-# 결과는 tests/api-benchmark/_output/에 남는다 — 집계 JSON과 dashboard-*.html(시간축 추이).
+# API 테스트 스택 기동, theater 시드, 혼합 성능 측정과 정리를 한 번에 실행한다.
+# 결과는 tests/api/benchmark/_output/에 남는다 — 집계 JSON과 dashboard-*.html(시간축 추이).
 # 시드한 theaters는 인프라 Mongo에 남는다. 지우려면 bash infra/reset.sh를 실행한다.
 #
-# 사용: bash tests/api-benchmark/runner.sh
-#   재정의: SEED_TARGET=10000 DURATION_MS=10000 bash tests/api-benchmark/runner.sh
+# 사용: bash tests/api/benchmark/runner.sh
+#   재정의: SEED_TARGET=10000 DURATION_MS=10000 bash tests/api/benchmark/runner.sh
 
 set -Eeuo pipefail
 
 : "${WORKSPACE_ROOT:?}"
-# shellcheck source=../../.env.seed
+# shellcheck source=../../../.env.seed
 . "${WORKSPACE_ROOT}/.env.seed"
 
 # infra compose와 docker network를 공유하므로 docker compose가 infra 컨테이너를 orphan으로 표시한다.
@@ -17,10 +17,10 @@ set -Eeuo pipefail
 export COMPOSE_IGNORE_ORPHANS=True
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-COMPOSE_DIR="${WORKSPACE_ROOT}/deploy"
+COMPOSE_DIR="${WORKSPACE_ROOT}/tests/api"
 K6_RUNNER="${SCRIPT_DIR}/run-k6.sh"
 
-# devcontainer는 deploy compose와 같은 Docker 네트워크에 붙어 있어 서비스 이름으로 직접 접근한다.
+# devcontainer는 API 테스트 스택과 같은 Docker 네트워크에 붙어 있어 서비스 이름으로 직접 접근한다.
 # 호스트 포트(3000)는 기동 직후 공개가 늦을 수 있어 race 러너와 같은 방식을 쓴다.
 SERVER_URL="http://nginx"
 # 비인덱스 정규식 스캔 비용이 현실적으로 나오려면 표본이 이 정도는 있어야 한다.
@@ -50,7 +50,7 @@ dump_diagnostics() {
     done
 }
 
-echo "Building and deploying 4-replica api stack..."
+echo "Building 4-replica api test stack..."
 # EXIT trap이 곧 컨테이너를 지우므로, 기동 실패의 원인은 여기서 남기지 않으면 영구 소실된다.
 if ! docker compose up -d --build --wait; then
     echo "[FAIL] compose up failed"
@@ -58,7 +58,7 @@ if ! docker compose up -d --build --wait; then
     exit 1
 fi
 
-# Restate를 직접 쓰지 않는 benchmark leg도 실제 배포 스택과 같은 등록 상태로 검증한다.
+# Restate를 직접 쓰지 않는 benchmark 실행도 같은 endpoint 등록 상태로 검증한다.
 docker compose run --rm --no-deps restate-register
 
 # compose up --wait가 돌아온 직후에는 nginx가 아직 첫 연결을 못 받을 수 있다. 상한을 두고 기다린다.

@@ -14,7 +14,6 @@ export default defineConfig({
     testDir: './e2e',
     outputDir: './_output/test-results',
     forbidOnly: !!process.env.CI,
-    retries: Number(process.env.PLAYWRIGHT_RETRIES ?? 0),
     workers: 1,
     reporter: [
         ['list'],

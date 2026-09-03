@@ -32,14 +32,14 @@ The Dev Container is the only supported development path. You need Docker and th
 
 ## 2. Main commands
 
-| Command                 | Purpose                                                         |
-| ----------------------- | --------------------------------------------------------------- |
-| `pnpm run dev`          | Run the API and both frontends in watch mode                    |
-| `pnpm run test`         | Run workspace unit, integration, and contract tests             |
-| `pnpm run lint`         | Check types, code, formatting, shell, and documentation links   |
-| `pnpm run atoz`         | Run the full regression after forking or before deployment      |
-| `bash infra/reset.sh`   | Recreate development infrastructure and the fixed admin fixture |
-| `bash deploy/verify.sh` | Start, verify, and remove the multi-replica verification stack  |
+| Command                    | Purpose                                                         |
+| -------------------------- | --------------------------------------------------------------- |
+| `pnpm run dev`             | Run the API and both frontends in watch mode                    |
+| `pnpm run test`            | Run workspace unit, integration, and contract tests             |
+| `pnpm run lint`            | Check types, code, formatting, shell, and documentation links   |
+| `pnpm run atoz`            | Run the full regression after forking or before deployment      |
+| `bash infra/reset.sh`      | Recreate development infrastructure and the fixed admin fixture |
+| `bash tests/api/runner.sh` | Check Restate recovery and API docs across replicas             |
 
 `infra/reset.sh` deletes the volumes and then recreates the fixed admin fixture. It also deletes the Restate journal and JetStream data, so it must not be used where executions need to survive. Test-specific commands and output locations are in [tests/README.md](tests/README.md).
 
@@ -66,11 +66,9 @@ Each `TEST` detail log records the actual response body. The spec itself shows t
 │   ├── common/          # Shared runtime code used by applications
 │   └── testing/         # Client and fixture helpers for test consumers
 ├── tests/
-│   ├── api-race/        # Multi-replica contention checks
-│   ├── api-benchmark/   # Deployed API regression comparison
+│   ├── api/             # Shared multi-replica stack, race, and benchmark
 │   └── web/             # Browser E2E
 ├── infra/               # Development MongoDB, Redis, S3, NATS, and Restate
-├── deploy/              # Multi-replica API + NGINX verification stack
 ├── tools/               # Development and test orchestration tools
 └── docs/                # Human-oriented design and operations documentation
 ```
@@ -109,9 +107,9 @@ There are two application roles. **admin** manages content and operations target
 
 Self-owned resources use `/me` paths whose identity is fixed to the token subject. Any path accepting an arbitrary user ID is admin-only. Together these rules remove IDOR paths where a user could substitute someone else's ID.
 
-## 8. Deployment scope
+## 8. Production scope
 
-`deploy/` is a distributed-behavior reference stack, not a production deployment. It does not provide TLS, secret management, backup/restore, an observability backend, a frontend edge, or zero-downtime revision rollout. Restate endpoint versioning and the BFF proxy-IP trust boundary require deployment-specific design. See [deploy](docs/deploy.md) for the relevant hazards and guarantee limits.
+`tests/api/compose.yml` exercises distributed behavior; it is not a production deployment. It does not provide TLS, secret management, backup/restore, an observability backend, a frontend edge, or zero-downtime revision rollout. Restate endpoint versioning and the BFF proxy-IP trust boundary require deployment-specific design. See [API stack](docs/api-stack.md) for the relevant hazards and guarantee limits.
 
 ## 9. Documentation
 
@@ -121,7 +119,7 @@ Korean is the source language for documentation and comments. Only this README i
 - [libs](docs/libs.md) — boundary between runtime shared code and test helpers
 - [tests](docs/tests.md) — why external-stack verification exists and how to interpret it
 - [infra](docs/infra.md) — development topology and the destructive reset boundary
-- [deploy](docs/deploy.md) — multi-replica verification and boundaries that must not be copied into production
+- [API stack](docs/api-stack.md) — multi-replica verification and boundaries that must not be copied into production
 - [devcontainer](docs/devcontainer.md) — the single development path, DooD constraints, and security
 - [decisions](docs/reference/decisions.md) — choices, alternatives, and non-guarantees
 - [development rules](docs/reference/conventions.md) — rules automation cannot enforce

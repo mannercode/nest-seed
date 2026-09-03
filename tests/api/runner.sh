@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# 다중 API 복제본에서 Restate 재시작 복구와 실행 가능한 API 문서를 검증한다.
 set -euo pipefail
 
 : "${WORKSPACE_ROOT:?}"
@@ -13,7 +14,7 @@ cd "$SCRIPT_DIR"
 
 cleanup() {
     local exit_code=$?
-    local diagnostics_dir="${WORKSPACE_ROOT}/_output/deploy-diagnostics"
+    local diagnostics_dir="${WORKSPACE_ROOT}/_output/api-diagnostics"
 
     trap - EXIT
     set +e
@@ -21,7 +22,7 @@ cleanup() {
         mkdir -p "${diagnostics_dir}"
         docker compose ps --all >"${diagnostics_dir}/compose-ps.txt" 2>&1
         docker compose logs --no-color --timestamps >"${diagnostics_dir}/compose-logs.txt" 2>&1
-        printf 'deploy verification diagnostics: %s\n' "${diagnostics_dir}" >&2
+        printf 'api stack diagnostics: %s\n' "${diagnostics_dir}" >&2
     fi
 
     docker compose down -v -t 0
@@ -31,6 +32,6 @@ trap cleanup EXIT
 
 docker compose up -d --build --wait
 docker compose run --rm --no-deps restate-register
-node --test --test-reporter=spec "${WORKSPACE_ROOT}/tests/api-race/probes/restate-journal-recovery.js"
+node --test --test-reporter=spec "${WORKSPACE_ROOT}/tests/api/race/probes/restate-journal-recovery.js"
 
 SERVER_URL=http://nginx bash "${APP_DIR}/api-docs/run.sh"

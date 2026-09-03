@@ -30,14 +30,14 @@
 
 ## 2. 주요 명령
 
-| 명령                    | 용도                                       |
-| ----------------------- | ------------------------------------------ |
-| `pnpm run dev`          | API와 두 frontend를 watch mode로 실행      |
-| `pnpm run test`         | workspace의 단위·통합·계약 테스트          |
-| `pnpm run lint`         | 타입, 코드, format, shell, 문서 링크 검사  |
-| `pnpm run atoz`         | 포크 직후나 배포 전 실행하는 전체 회귀     |
-| `bash infra/reset.sh`   | 개발 인프라와 고정 admin fixture를 재생성  |
-| `bash deploy/verify.sh` | 다중 API 복제본 검증 스택을 기동·검증·정리 |
+| 명령                       | 용도                                      |
+| -------------------------- | ----------------------------------------- |
+| `pnpm run dev`             | API와 두 frontend를 watch mode로 실행     |
+| `pnpm run test`            | workspace의 단위·통합·계약 테스트         |
+| `pnpm run lint`            | 타입, 코드, format, shell, 문서 링크 검사 |
+| `pnpm run atoz`            | 포크 직후나 배포 전 실행하는 전체 회귀    |
+| `bash infra/reset.sh`      | 개발 인프라와 고정 admin fixture를 재생성 |
+| `bash tests/api/runner.sh` | 다중 복제본의 Restate 복구·API 문서 검증  |
 
 `infra/reset.sh`는 volume을 지운 뒤 고정 admin fixture까지 다시 만드는 개발용 복구 명령이다. Restate journal과 JetStream 데이터도 지우므로 보존할 실행이 있는 환경에서는 사용하지 않는다. 테스트별 명령과 결과 위치는 [tests/README.md](tests/README.md)에 있다.
 
@@ -64,11 +64,9 @@ bash apps/api/api-docs/run.sh showtime-creation.spec
 │   ├── common/          # 앱이 운영 중 사용하는 공유 런타임 코드
 │   └── testing/         # 테스트 소비자용 client·fixture helper
 ├── tests/
-│   ├── api-race/        # 다중 API 복제본 경합 검증
-│   ├── api-benchmark/   # 배포 스택 API 회귀 비교
+│   ├── api/             # 공용 다중 복제본 스택, race와 benchmark
 │   └── web/             # 브라우저 E2E
 ├── infra/               # 개발용 MongoDB·Redis·S3·NATS·Restate
-├── deploy/              # 다중 API 복제본 + NGINX 검증 스택
 ├── tools/               # 개발·테스트 실행 도구
 └── docs/                # 사람이 읽을 설계·운영 문서
 ```
@@ -107,9 +105,9 @@ bash apps/api/api-docs/run.sh showtime-creation.spec
 
 본인 자원은 URL의 ID가 아니라 token subject로 고정한 `/me` 경로를 사용하고, 임의 ID를 받는 경로는 admin에게만 허용한다. 두 규칙을 함께 적용해 user가 ID를 바꿔 다른 사용자의 자원에 접근하는 IDOR 경로를 제거한다.
 
-## 8. 배포 범위
+## 8. 운영 적용 범위
 
-`deploy/`는 분산 동작을 확인하는 참고 스택이지 운영 배포본이 아니다. TLS, secret manager, backup/restore, 관측 backend, frontend edge, 무중단 revision 전환은 포함하지 않는다. 특히 Restate endpoint versioning과 BFF proxy IP 신뢰 경계는 운영 환경에서 별도로 설계해야 한다. [deploy 문서](docs/deploy.md)에 필요한 위험과 보장 한계를 정리했다.
+`tests/api/compose.yml`은 분산 동작을 확인하는 테스트 스택이지 운영 배포본이 아니다. TLS, secret manager, backup/restore, 관측 backend, frontend edge, 무중단 revision 전환은 포함하지 않는다. 특히 Restate endpoint versioning과 BFF proxy IP 신뢰 경계는 운영 환경에서 별도로 설계해야 한다. [API 스택 문서](docs/api-stack.md)에 필요한 위험과 보장 한계를 정리했다.
 
 ## 9. 문서
 
@@ -119,7 +117,7 @@ bash apps/api/api-docs/run.sh showtime-creation.spec
 - [libs](docs/libs.md) — 런타임 공용 코드와 테스트 helper의 분리 기준
 - [tests](docs/tests.md) — 외부 스택 검증이 필요한 이유와 결과 해석
 - [infra](docs/infra.md) — 개발 topology와 파괴적 reset의 범위
-- [deploy](docs/deploy.md) — 다중 복제본 검증 및 운영으로 복사하면 안 되는 경계
+- [API 스택](docs/api-stack.md) — 다중 복제본 검증 및 운영으로 복사하면 안 되는 경계
 - [devcontainer](docs/devcontainer.md) — 단일 개발 경로, DooD 제약과 보안
 - [decisions](docs/reference/decisions.md) — 선택 이유, 대안, 보장하지 않는 것
 - [개발 규칙](docs/reference/conventions.md) — 자동화로 대신할 수 없는 규칙

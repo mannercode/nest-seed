@@ -79,13 +79,6 @@ apps/api/
             └── request-validation.pipe.spec.ts        — body·배열·중첩 요청 스키마와 오류 응답
 ```
 
-## `deploy`
-
-```text
-deploy/
-└── verify.sh — Compose stack build·기동, Restate recovery, API 문서 요청과 정리
-```
-
 ## `libs`
 
 ```text
@@ -149,22 +142,24 @@ libs/
 
 ```text
 tests/
-├── api-benchmark/
-│   ├── harness-crud.js                         — CRUD 읽기·쓰기 RPS와 latency 측정
-│   ├── harness-refresh.js                      — refresh token 회전 경로의 Redis·Mongo 비용 측정
-│   ├── harness-user-filter.js                  — 사용자 이름 부분 검색의 collection scan 비용 측정
-│   ├── mixed-runner.sh                         — 단독·혼합 부하 행렬 실행과 결과 비교
-│   └── runner.sh                               — 배포 스택 기동·seed·측정·정리
-├── api-race/
-│   ├── jwt-refresh-race.js                     — 동일 refresh token 동시 회전의 단일 성공과 family 유지
-│   ├── purchase-double-spend.js                — 동일 티켓 묶음 동시 결제의 단일 구매
-│   ├── purchase-overlap-race.js                — 겹치는 티켓 구매의 원자 전이와 패자 보상
-│   ├── replica-chaos.js                        — replica 중단 중 NGINX 우회와 복구 후 참여
-│   ├── showtime-overlap-race.js                — 겹치는 상영 생성 workflow의 단일 성공
-│   ├── sse-fanout-race.js                      — 여러 replica의 SSE client에 workflow 이벤트 전달
-│   ├── ticket-holding-race.js                  — 동일 좌석 동시 선점의 단일 성공
-│   ├── user-signup-race.js                     — 동일 이메일 동시 가입의 단일 생성
-│   └── probes/restate-journal-recovery.js      — Restate 재시작 후 완료 step replay와 중단 step 재실행
+├── api/
+│   ├── runner.sh                               — 다중 복제본의 Restate recovery와 API 문서 요청
+│   ├── benchmark/
+│   │   ├── harness-crud.js                     — CRUD 읽기·쓰기 RPS와 latency 측정
+│   │   ├── harness-refresh.js                  — refresh token 회전 경로의 Redis·Mongo 비용 측정
+│   │   ├── harness-user-filter.js              — 사용자 이름 부분 검색의 collection scan 비용 측정
+│   │   ├── mixed-runner.sh                     — 단독·혼합 부하 행렬 실행과 결과 비교
+│   │   └── runner.sh                           — API 테스트 스택 기동·seed·측정·정리
+│   └── race/
+│       ├── jwt-refresh-race.js                 — 동일 refresh token 동시 회전의 단일 성공과 family 유지
+│       ├── purchase-double-spend.js            — 동일 티켓 묶음 동시 결제의 단일 구매
+│       ├── purchase-overlap-race.js            — 겹치는 티켓 구매의 원자 전이와 패자 보상
+│       ├── replica-chaos.js                    — replica 중단 중 NGINX 우회와 복구 후 참여
+│       ├── showtime-overlap-race.js            — 겹치는 상영 생성 workflow의 단일 성공
+│       ├── sse-fanout-race.js                  — 여러 replica의 SSE client에 workflow 이벤트 전달
+│       ├── ticket-holding-race.js              — 동일 좌석 동시 선점의 단일 성공
+│       ├── user-signup-race.js                 — 동일 이메일 동시 가입의 단일 생성
+│       └── probes/restate-journal-recovery.js  — Restate 재시작 후 완료 step replay와 중단 step 재실행
 └── web/
     └── e2e/
         ├── console-auth-flow.spec.ts           — 관리자 route·역할·세션·refresh·logout 브라우저 흐름

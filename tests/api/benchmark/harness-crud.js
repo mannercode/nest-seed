@@ -2,7 +2,7 @@
  * API 스택에 지속 부하를 걸어 시나리오별 처리량과 응답 시간 분위수를 측정하는 k6 하네스다.
  *
  * 결과는 stdout 마지막 줄에 JSON 한 줄로 출력하고, 사람이 읽을 요약은 stderr에 출력한다.
- * 원본 결과는 `tests/api-benchmark/_output/<scenario>-<timestamp>.json`에 저장한다.
+ * 원본 결과는 `tests/api/benchmark/_output/<scenario>-<timestamp>.json`에 저장한다.
  *
  * 환경 변수 (k6는 `--env` 또는 `K6_` 접두사로 전달):
  *  SERVER_URL    - 대상 서버 (필수 — dev 단일 프로세스와 deploy 4-replica를 묵시 기본값으로 헷갈리지 않게 명시한다)
@@ -15,8 +15,8 @@
  *  ADMIN_ACCESS_TOKEN - admin 가드 뒤의 쓰기 시나리오(theater-write, movie-write)에 필요. runner.sh가 발급해 넘긴다
  *
  * 실행:
- *   mkdir -p tests/api-benchmark/_output  # k6는 출력 디렉토리를 만들지 않는다
- *   bash tests/api-benchmark/run-k6.sh run --env SERVER_URL=http://nginx --env SCENARIO=user-write tests/api-benchmark/harness-crud.js
+ *   mkdir -p tests/api/benchmark/_output  # k6는 출력 디렉토리를 만들지 않는다
+ *   bash tests/api/benchmark/run-k6.sh run --env SERVER_URL=http://nginx --env SCENARIO=user-write tests/api/benchmark/harness-crud.js
  */
 
 import http from 'k6/http'

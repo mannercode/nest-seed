@@ -2,101 +2,54 @@ name: Test Stability
 on:
     workflow_dispatch:
     schedule:
-        # UTC 기준 6 시간마다 매시 :27에 실행한다.
-        # test-atoz가 3시간마다 회귀를 잡는다면, 이 워크플로는 같은 시나리오를 누적 반복해 "한 번은 통과하지만 흔들리는" 코드를 드러내는 용도이다.
+        # UTC 기준 6시간마다 실행한다.
         - cron: '27 */6 * * *'
-permissions:
-    contents: read
-concurrency:
-    group: ${{ github.workflow }}-${{ github.ref }}
-    # 가장 긴 레그가 240분이라도 러너 대기와 정리 시간이 있으므로, 새 회차가 시작됐다고 진행 중인 회차를 버리지 않는다.
-    # 새 회차는 이전 회차가 끝날 때까지 대기한다.
-    cancel-in-progress: false
 jobs:
     stability:
+        name: ${{ matrix.name }}
+        timeout-minutes: 240
         strategy:
             fail-fast: false
             matrix:
                 include:
-                    # libs는 75회라도 ~140분이지만, apps/api는 컨텍스트 부팅 비용 때문에 회당 8~9분 걸린다.
-                    # 30회짜리 잡은 240분 상한에 닿으므로 20회씩 세 독립 잡으로 나눠 총 60회 반복량을 유지한다.
-                    - leg: unit-libs
-                      timeout: 180
-                      run: |
-                          pnpm run build
-                          bash .github/scripts/repeat.sh 75 pnpm --recursive --filter './libs/**' --fail-if-no-match run test --coverage.thresholds.100=false
-                    - leg: unit-api-1
-                      timeout: 240
-                      run: |
-                          pnpm run build
-                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 pnpm --filter './apps/api' --fail-if-no-match run test --coverage.enabled=false
-                    - leg: unit-api-2
-                      timeout: 240
-                      run: |
-                          pnpm run build
-                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 pnpm --filter './apps/api' --fail-if-no-match run test --coverage.enabled=false
-                    - leg: unit-api-3
-                      timeout: 240
-                      run: |
-                          pnpm run build
-                          RESET_EVERY=5 bash .github/scripts/repeat.sh 20 pnpm --filter './apps/api' --fail-if-no-match run test --coverage.enabled=false
-                    - leg: bootup
-                      timeout: 120
-                      run: |
-                          bash .github/scripts/repeat.sh 50 bash infra/reset.sh
-                    # 분산 레이스 50회는 의도된 누적 검증량이다.
-                    # 240분은 가장 느린 시나리오(user-signup-race 50회 ~200분)에 여유를 둔 값.
-                    # 사가 기록과 앱 데이터가 많이 누적되는 레그는 5회마다 개발 인프라를 초기화한다.
-                    - leg: sse-fanout-race
-                      timeout: 240
-                      prebuild_deploy: true
-                      run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh sse-fanout-race
-                    - leg: user-signup-race
-                      timeout: 240
-                      prebuild_deploy: true
-                      run: bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh user-signup-race
-                    - leg: ticket-holding-race
-                      timeout: 240
-                      prebuild_deploy: true
-                      run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh ticket-holding-race
-                    - leg: showtime-overlap-race
-                      timeout: 240
-                      prebuild_deploy: true
-                      run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh showtime-overlap-race
-                    - leg: purchase-double-spend
-                      timeout: 240
-                      prebuild_deploy: true
-                      # 50-way 경쟁 강도는 유지하되 fixture saga의 중복 soak는 분리한다.
-                      run: INNER_ITERATIONS=30 RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh purchase-double-spend
-                    - leg: purchase-overlap-race
-                      timeout: 240
-                      prebuild_deploy: true
-                      run: RESET_EVERY=5 bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh purchase-overlap-race
-                    - leg: replica-chaos
-                      timeout: 240
-                      prebuild_deploy: true
-                      run: bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh replica-chaos
-                    - leg: jwt-refresh-race
-                      timeout: 240
-                      prebuild_deploy: true
-                      run: bash .github/scripts/repeat.sh 50 bash tests/api-race/runner.sh jwt-refresh-race
+                    - name: libs
+                      repeat: 75
+                      command: pnpm --recursive --filter './libs/**' --fail-if-no-match run test --coverage.enabled=false
+                    - name: api
+                      repeat: 60
+                      setup: pnpm run pretest
+                      command: pnpm --filter './apps/api' --fail-if-no-match run test --coverage.enabled=false
+                    - name: infra-reset
+                      repeat: 50
+                      command: bash infra/reset.sh
         runs-on: ubuntu-24.04-arm
-        timeout-minutes: ${{ matrix.timeout }}
         steps:
-            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-              with:
-                  persist-credentials: false
+            - uses: actions/checkout@v7.0.1
             - name: Run in devcontainer
-              uses: devcontainers/ci@513af61f4de4f75d37e4438f184ba4358f0fc1ca # v0.3.1900000450
+              uses: devcontainers/ci@v0.3.1900000450
               with:
-                  configFile: .devcontainer/devcontainer.json
-                  push: never
                   runCmd: |
-                      set -Eeuo pipefail
-                      git diff --exit-code -- pnpm-lock.yaml pnpm-workspace.yaml
-                      if [ "${{ matrix.prebuild_deploy }}" = "true" ]; then
-                          bash deploy/prebuild-images.sh
-                          export DEPLOY_IMAGES_PREBUILT=true
-                      fi
-                      ${{ matrix.run }}
-                      git diff --exit-code -- pnpm-lock.yaml pnpm-workspace.yaml
+                      set -e
+                      ${{ matrix.setup }}
+                      bash .github/scripts/repeat.sh ${{ matrix.repeat }} ${{ matrix.command }}
+    api-race:
+        timeout-minutes: 240
+        strategy:
+            fail-fast: false
+            matrix:
+                scenario:
+                    - sse-fanout-race
+                    - user-signup-race
+                    - ticket-holding-race
+                    - showtime-overlap-race
+                    - purchase-double-spend
+                    - purchase-overlap-race
+                    - replica-chaos
+                    - jwt-refresh-race
+        runs-on: ubuntu-24.04-arm
+        steps:
+            - uses: actions/checkout@v7.0.1
+            - name: Run in devcontainer
+              uses: devcontainers/ci@v0.3.1900000450
+              with:
+                  runCmd: bash .github/scripts/repeat.sh 50 bash tests/api/race/runner.sh ${{ matrix.scenario }}

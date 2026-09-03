@@ -1,4 +1,4 @@
-# deploy/ — 다중 복제본 검증 스택
+# tests/api — 다중 복제본 테스트 스택
 
 > **운영 배포본이 아니다.** API 복제본·NGINX·개발 인프라로 분산 동작을 재현하는 검증용 참고 스택이다. TLS, secret 관리, backup/restore, 모니터링, frontend 배포, 무중단 revision 전환은 별도로 설계해야 한다.
 
@@ -9,7 +9,7 @@ client ─→ NGINX ─┬→ API replica
 Restate ─→ NGINX HTTP/2 endpoint ─→ API replica
 ```
 
-`bash deploy/verify.sh`는 이 스택을 새로 띄워 실행 가능한 API 문서와 배포 경계를 검증한 뒤 정리한다. 세부 빌드·Compose 순서와 이미지 설정은 스크립트·Dockerfile·Compose 파일이 소유한다.
+`tests/api/compose.yml`은 race, benchmark와 AtoZ 검증이 공유한다. `bash tests/api/runner.sh`는 이 스택에서 실행 가능한 API 문서와 Restate 복구를 검증한 뒤 정리한다.
 
 ## 1. 왜 복제본이 여러 개인가
 
