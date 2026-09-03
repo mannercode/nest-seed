@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common'
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
 import {
     BookingModule,
+    CatalogManagementModule,
     PurchaseModule,
     RecommendationModule,
     ShowtimeCreationModule
@@ -54,6 +55,7 @@ import { AppConfigModule, GlobalModule, HealthModule } from './modules/index.js'
         PaymentsModule,
         AssetsModule,
         BookingModule,
+        CatalogManagementModule,
         PurchaseModule,
         RecommendationModule,
         ShowtimeCreationModule,

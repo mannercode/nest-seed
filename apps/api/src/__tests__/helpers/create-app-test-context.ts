@@ -8,15 +8,15 @@ import {
 import { SchedulerRegistry } from '@nestjs/schedule'
 import compression from 'compression'
 import express from 'express'
-import {
-    PURCHASE_EVENTS_MAX_BYTES,
-    ShowtimeCreationRestateEndpoint,
-    ShowtimeCreationWorkflowClient
-} from '#application'
+import { PURCHASE_EVENTS_MAX_BYTES } from '#application'
 import { AppConfigService, MongoConnection } from '#config'
 import { getSharedTestMongoConnection } from '../../../scripts/index.cjs'
 import { AppModule } from '../../app.module.js'
 import { configureTemporalJson } from '../../configure-temporal-json.js'
+import {
+    ShowtimeCreationRestateEndpoint,
+    ShowtimeCreationWorkflowClient
+} from '../../services/application/showtime-creation/worker/index.js'
 
 type AppTestOptions = ModuleMetadataEx & { enableRestate?: boolean }
 

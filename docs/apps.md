@@ -100,9 +100,10 @@ View가 해도 되는 일은 필요한 서비스의 읽기 API를 호출하고, 
 
 Core Service 하나로 처리할 수 있는 API라면 컨트롤러에서 Core를 바로 호출한다. Application 계층을 억지로 끼워 넣지 않는다. 여러 Core를 함께 써야 하는 유스케이스에서만 Application Service를 만든다.
 
-실제 코드의 두 패턴이 그 예다.
+실제 코드의 세 패턴이 그 예다.
 
 - [movies.http-controller.ts](../apps/api/src/services/gateway/movies.http-controller.ts) — 영화 조회·등록은 Core인 `MoviesService`를 바로 호출한다.
+- 영화·극장 컨트롤러의 삭제 — 상영 참조까지 확인해야 하므로 Application인 [CatalogManagementService](../apps/api/src/services/application/catalog-management/catalog-management.service.ts)를 거친다.
 - [showtime-creation.http-controller.ts](../apps/api/src/services/gateway/showtime-creation.http-controller.ts) — 상영 등록은 영화·극장·상영시간·티켓을 한꺼번에 다뤄야 하므로 Application인 `ShowtimeCreationService`를 거친다.
 
 이 규칙이 사용자 여정(가입 → 홈 → 예매 → 구매)에서 어떻게 나타나는지가 다음 유스케이스 지도다 — 각 유스케이스가 어느 계층의 어떤 서비스로 처리되는지 보여준다(다이어그램은 Dev Container의 PlantUML 확장 전용 Preview에서 렌더된다). Application에는 여러 Core를 조합하는 유스케이스만 있고, 단일 도메인으로 끝나는 유스케이스는 Core로 직행한다. 즉 Application은 "유스케이스 계층"이 아니라 "조립이 필요한 유스케이스만 올라오는 계층"이다.
@@ -521,7 +522,7 @@ async delete(@Param('userId') userId: string) {
 
 ## 테스트
 
-이 시드의 테스트는 mock 객체를 거의 사용하지 않는다. 인덱스, 트랜잭션, 레이스 컨디션처럼 mock으로는 놓치기 쉬운 문제를 실제 환경에 가깝게 확인하기 위해서다. `apps/api` 통합 테스트는 devcontainer가 띄운 MongoDB Replica Set, Redis Cluster, VersityGW, NATS와 Restate를 재사용하고, `libs/common` 테스트는 Testcontainers로 MongoDB·Redis·VersityGW·NATS를 직접 시작한다. 커버리지를 수집하는 `apps/api`·`libs/common`·`tools/vitest-helpers`는 100%를 못 채우면 실패한다. 하네스·BFF·shell 계약 테스트처럼 커버리지를 수집하지 않는 예외는 목적과 실행 경로를 [설계 결정 §6](reference/decisions.md#6-테스트-커버리지-100-게이트)에 명시한다.
+이 시드의 테스트는 mock 객체 사용을 최소화한다. 인덱스, 트랜잭션, 레이스 컨디션처럼 mock으로는 놓치기 쉬운 문제를 실제 환경에 가깝게 확인하기 위해서다. `apps/api` 통합 테스트는 devcontainer가 띄운 MongoDB Replica Set, Redis Cluster, VersityGW, NATS와 Restate를 재사용하고, `libs/common` 테스트는 Testcontainers로 MongoDB·Redis·VersityGW·NATS를 직접 시작한다. 커버리지를 수집하는 `apps/api`·`libs/common`·`tools/vitest-helpers`는 100%를 못 채우면 실패한다. 하네스·BFF·shell 계약 테스트처럼 커버리지를 수집하지 않는 예외는 목적과 실행 경로를 [설계 결정 §6](reference/decisions.md#6-테스트-커버리지-100-게이트)에 명시한다.
 
 이 구조는 테스트 주도 개발과 잘 맞고, 그 이점은 모듈 경계 설계에서 나온다. 테스트가 필요한 환경(인프라·해당 모듈)을 코드로 세우므로, 한 모듈을 작업할 때 다른 앱이나 서비스를 함께 띄울 필요가 없다 — 모듈을 독립 서비스로 떼어내도 그 모듈의 작업 루프는 그대로다. 반대로 `pnpm run dev`로 앱을 직접 띄우는 방식은 서비스가 늘수록 기동 대상이 늘어 부담이 커진다. 단, 이 이점은 단위·단일 모듈 통합 테스트의 inner-loop에 한한다 — 여러 서비스를 가로지르는 e2e·분산 레이스 테스트는 여전히 배포 스택 전체가 필요하다([tests 문서](tests.md)).
 
@@ -664,6 +665,8 @@ pnpm --filter './apps/api' test users.spec -t '409 Conflict를 반환한다' --c
 ## 실행 가능한 API 문서
 
 `apps/api/api-docs/*.spec`는 bash와 curl로 작성한 실행 가능한 API 문서이다. 문서를 따로 손으로 관리하지 않고, 실제 요청을 보내는 spec을 실행해 API 목록과 상세 요청/응답 로그를 만든다.
+
+프런트엔드 개발자는 이 spec을 전달받아 직접 실행하고, 생성된 상세 로그에서 현재 API의 실제 요청·응답 값을 확보한다.
 
 이 카탈로그는 현재 HTTP 요청·응답을 `TEST`로 표현할 수 있는 엔드포인트를 담는다. 단, 연결이 즉시 종료되지 않는 SSE 라우트 `GET /showtime-creation/event-stream`은 curl 문서 목록에서 제외한다. 이 장기 연결 계약은 [showtime-creation 통합 테스트](../apps/api/src/__tests__/application/showtime-creation.spec.ts)가 상태 스트림 종결까지 검증한다. 따라서 `_output/docs/summary.md`를 SSE를 포함한 전체 라우트 인벤토리로 간주하지 않는다.
 

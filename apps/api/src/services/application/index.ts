@@ -1,4 +1,5 @@
 export * from './booking/index.js'
+export * from './catalog-management/index.js'
 export * from './errors.js'
 export * from './purchase/index.js'
 export * from './recommendation/index.js'

@@ -104,5 +104,3 @@ apps/api 반복은 실행별 coverage 디렉터리를 누적하지 않도록 `--
 분산 레이스 레그는 반복을 시작하기 전 `deploy/prebuild-images.sh`로 API·NGINX 이미지를 한 번만 준비한다. API의 pnpm store는 Docker BuildKit cache로 재사용한다. 각 회차는 `DEPLOY_IMAGES_PREBUILT=true`로 `docker compose up --no-build`를 써서 같은 이미지를 재사용한다. 이렇게 해야 반복 횟수가 이미지 레지스트리 메타데이터 장애와 빌드 시간을 반복 추출하지 않고, 같은 바이너리의 안정성을 측정한다.
 
 부팅 레그는 `infra/reset.sh`(인프라 compose 전체 재기동)를 반복한다. 레이스 코드는 한 번 통과했다고 안전하다고 보기 어렵다. 그래서 결과가 얼마나 흔들리는지 누적으로 확인한다. 반복 횟수와 timeout은 각 레그가 GitHub Actions 상한 안에서 진단 표본을 모으도록 맞춘 값이다. 실패하면 Actions 로그에서 `[Run i/N]` 마커로 실패 회차를 찾는다. 이어지는 컨테이너 로그 덤프는 `repeat.sh`가 의도적으로 남기는 진단이다.
-
-반복 중 `tickets.spec.ts`로 표시된 NATS JetStream 파일 경합과 해결안 교정 과정은 [NATS 테스트 경합 사례 연구](../nats-jetstream-test-race.md)에 정리했다.

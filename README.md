@@ -9,7 +9,7 @@
 
 경계의 실체는 두 가지다. SoLA 5계층은 같은 계층의 모듈끼리 직접 부르지 않게 하고, 컨트롤러는 NestJS 관례처럼 각 모듈 안에 두지 않고 Gateway 계층으로 분리한다. 그래서 모듈은 이웃 모듈과 HTTP 어느 쪽에도 묶이지 않는다 — 계층 규칙은 [apps 문서](docs/apps.md#sola-5계층)가 설명한다.
 
-서비스를 떼어낼 때 DB부터 풀지 않아도 되도록, 외래 키·조인처럼 경계를 넘는 DB 관계를 두지 않고 서비스가 ID로 관계를 관리한다. 관계형 DB의 핵심 가치가 쓰일 일이 없으니 MongoDB를 쓰고, 도메인 사이 정합성은 DB 제약이 아니라 서비스가 책임진다.
+서비스를 떼어낼 때 DB부터 풀지 않아도 되도록, 외래 키·조인처럼 경계를 넘는 DB 관계를 두지 않고 서비스가 ID로 관계를 관리한다. 이 설계는 관계형 DB의 관계 모델을 적극 활용하지 않으므로 문서 단위 모델과 잘 맞는 MongoDB를 쓰고, 도메인 사이 정합성은 DB 제약이 아니라 서비스가 책임진다.
 
 관리자 콘솔과 사용자 앱은 모노레포에 프런트엔드를 얹는 최소 데모다.
 
@@ -21,7 +21,7 @@
 - **부분 실패** — Restate가 durable step을 재시도하고, 상영 시간·티켓·멱등 작업 기록은 MongoDB 트랜잭션 하나로 커밋한다 (`application/showtime-creation`)
 - **비동기 작업 추적** — Restate의 영속 최종 상태 조회와 NATS 기반 SSE 진행 알림을 함께 제공한다 (`application/showtime-creation`)
 
-이 해법들이 실제로 동작하는지는 mock 없는 실제 인프라 테스트(커버리지를 수집하는 구현 워크스페이스는 100% 게이트)와 분산 레이스 하네스, CI 반복이 검증한다. 전체 패턴 목록은 [도메인 둘러보기](#도메인-둘러보기)에, 도구 선택의 이유는 [설계 결정](docs/reference/decisions.md)에 있다.
+이 해법들이 실제로 동작하는지는 mock 사용을 최소화한 실제 인프라 테스트(커버리지를 수집하는 구현 워크스페이스는 100% 게이트)와 분산 레이스 하네스, CI 반복이 검증한다. 전체 패턴 목록은 [도메인 둘러보기](#도메인-둘러보기)에, 도구 선택의 이유는 [설계 결정](docs/reference/decisions.md)에 있다.
 
 ## 시작하기
 
@@ -153,11 +153,12 @@ nest-seed/
 | 서비스                                    | 보여주는 것                                                                                         |
 | ----------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | `core/theaters`                           | 가장 단순한 CRUD. 새 도메인을 추가할 때 본보기로 복제할 기준                                        |
-| `core/movies`                             | 파일 업로드 연동, draft→publish 공개 상태, 상영이 참조 중이면 삭제 거부                             |
+| `core/movies`                             | 파일 업로드 연동과 draft→publish 공개 상태                                                          |
 | `core/users` · `admins`                   | soft delete × unique 인덱스, 로그인·토큰 회전, 탈퇴·비밀번호 변경 시 세션 폐기                      |
 | `core/showtimes` · `tickets`              | 사가가 만들어내는 자원. tickets는 원자 조건부 전이로 상태를 바꾼다                                  |
 | `core/ticket-holding`                     | Redis Lua 스크립트 선점 — Lua가 여러 키를 원자적으로 다루도록 같은 hash slot에 키를 모으는 설계     |
 | `core/purchase-records` · `watch-records` | 사용자 기록 도메인. watch-records는 추천의 입력이 된다                                              |
+| `application/catalog-management`          | 영화·극장 삭제 시 상영 참조를 함께 확인하는 cross-Core 조정                                         |
 | `application/booking`                     | 예매 동선 조회와 좌석 선점, 요청 검증                                                               |
 | `application/purchase`                    | HTTP 멱등 응답, durable 상태 머신·lease 재조정·outbox, JetStream 알림의 at-least-once 처리          |
 | `application/showtime-creation`           | HTTP 키→`sagaId`·Restate workflow key 매핑, 202+상태 조회+SSE, Mongo 트랜잭션·guard CAS·멱등 재시도 |
@@ -172,7 +173,7 @@ JWT 기반으로 세 역할을 둔다. **root**는 `.env.api` 자격증명의 Ba
 
 ## 문서
 
-README 뒤의 상세는 폴더 문서 여섯과 참고 자료 여섯이 맡는다. 문서와 주석은 한국어가 원본이다. README는 [영어 번역](README.en.md)을 같이 제공하지만, 상세 문서는 두 언어를 동시에 유지하며 생길 드리프트를 피하려고 한국어 하나로 유지한다.
+README 뒤의 상세는 폴더 문서 여섯과 참고 자료 넷이 맡는다. 문서와 주석은 한국어가 원본이다. README는 [영어 번역](README.en.md)을 같이 제공하지만, 상세 문서는 두 언어를 동시에 유지하며 생길 드리프트를 피하려고 한국어 하나로 유지한다.
 
 **폴더 문서** — 각 폴더가 무엇이고 왜 이렇게 나뉘었는지. 여기서 시작한다:
 
@@ -194,5 +195,3 @@ README 뒤의 상세는 폴더 문서 여섯과 참고 자료 여섯이 맡는�
 - [컨벤션](docs/reference/conventions.md) — 커밋 규칙, fail-fast, 값의 위치, pnpm 스크립트 계약
 - [환경 변수](docs/reference/environment.md) — Dev Container, API, API 문서, console·user-app 환경 변수 흐름과 포크 체크리스트
 - [설계 결정](docs/reference/decisions.md) — 분산 도구·View 계층 등 핵심 설계 결정과 쓰지 않기로 한 대안
-- [NATS 테스트 경합 사례 연구](nats-jetstream-test-race.md) — AI 제안의 문제를 사람의 반문으로 교정한 실제 코딩 문답
-- [k6 설치 사례 연구](k6-installation-case-study.md) — 공식 배포 방식과 실제 실행 경계를 반문·CI로 다시 검증한 AI 협업 사례

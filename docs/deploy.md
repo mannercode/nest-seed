@@ -94,7 +94,7 @@ API 컨테이너는 `${COMPOSE_PROJECT_NAME}` Docker 네트워크에 붙은 뒤,
 
 ## 로그 출력과 로컬 회전
 
-활성화된 API 콘솔 로그는 모든 환경에서 ECS JSON 한 줄을 stdout/stderr로 내보내고 NGINX access log도 JSON 한 줄을 쓴다. HTTP 로그에는 method·route·status·duration과 오류 식별 정보만 남기며 요청·응답 본문과 query는 기록하지 않는다. 컨테이너 안에 별도 회전 파일을 만들지 않는다. Compose의 `json-file` driver는 컨테이너별 10MB 파일 3개까지만 로컬 버퍼로 남겨 호스트 디스크가 무한히 차는 것을 막는다.
+활성화된 API 콘솔 로그는 모든 환경에서 ECS JSON 한 줄을 stdout/stderr로 내보내고 NGINX access log도 JSON 한 줄을 쓴다. API HTTP 로그에는 method·route·status·duration과 오류 식별 정보를, NGINX access log에는 method·query를 제외한 path·status·duration·upstream 정보를 남긴다. 둘 다 요청·응답 본문과 query는 기록하지 않는다. 컨테이너 안에 별도 회전 파일을 만들지 않는다. Compose의 `json-file` driver는 컨테이너별 10MB 파일 3개까지만 로컬 버퍼로 남겨 호스트 디스크가 무한히 차는 것을 막는다.
 
 로그 저장·검색 backend는 배포 환경마다 다르므로 시드에 포함하지 않는다. 실제 프로젝트는 stdout을 해당 환경의 수집기로 전달한다. 기본 `LOG_CONSOLE_LEVEL=info`에서는 NGINX가 요청별 access log를, API가 애플리케이션 info 이상을 남겨 같은 성공 요청을 두 번 상세 기록하지 않는다.
 
@@ -125,12 +125,6 @@ API `/health`의 Restate 항목은 ingress의 `/restate/health`만 확인한다.
 이 폴더는 같은 URI 뒤의 컨테이너 이미지를 바꿔 가는 **검증 스택**이다. 실제 운영의 무중단 버전 전환 계약은 아니다. 운영에서는 새 revision마다 구별되는 endpoint URI를 등록하고, 기존 deployment에 묶인 invocation이 끝날 때까지 이전 revision을 유지한 뒤 제거한다. `force: true`로 같은 URI의 정의를 덮어쓰면 실행 중인 invocation의 호환성을 깨뜨릴 수 있다. 개발 스크립트의 강제 등록을 운영 절차로 복사하지 않는다.
 
 Restate의 deployment/version 동작은 [공식 versioning 문서](https://docs.restate.dev/services/versioning)를 기준으로 운영 환경에 맞게 설계한다.
-
-## 인증·구매 상태 스키마 교체
-
-`authVersion`과 구매 상태 머신을 처음 도입하는 버전은 구·신 API 바이너리를 함께 서비스하지 않는다. 기존 DB 문서와 `authVersion` claim이 없는 version 0 토큰은 신 버전이 읽을 수 있지만, 구 버전은 신 `pending`/`compensating` 구매 기록을 완료 구매처럼 노출할 수 있다.
-
-따라서 이 릴리스는 새 구매 유입을 잠시 중지하고 기존 복제본을 모두 내린 뒤 동일 이미지로 한 번에 교체한다. 교체 후 `pending`/`completing`/`compensating` 기록이 재조정 주기에서 정상 수렴하는지 확인한 뒤 트래픽을 다시 연다.
 
 ## `x-replica-id` 응답 헤더
 

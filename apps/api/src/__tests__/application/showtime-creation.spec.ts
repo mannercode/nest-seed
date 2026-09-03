@@ -2,8 +2,8 @@ import type { MockInstance } from 'vitest'
 import { DateUtil, JsonUtil, newObjectIdString, sleep } from '@mannercode/common'
 import { HttpTestClient, instant, nullObjectId, type Response } from '@mannercode/testing'
 import { randomUUID } from 'node:crypto'
-import type { ShowtimeCreationPersistenceService } from '#application'
 import type { MovieDto, ShowtimesService, TheaterDto, TicketsService } from '#core'
+import type { ShowtimeCreationPersistenceService } from '../../services/application/showtime-creation/internal/index.js'
 import {
     createAndLoginAdmin,
     createMovie,
@@ -28,7 +28,8 @@ describe('ShowtimeCreationService', () => {
         teardown = undefined
         const { createAppTestContext } = await import('../helpers/index.js')
         const { ShowtimesService, TicketsService } = await import('#core')
-        const { ShowtimeCreationPersistenceService } = await import('#application')
+        const { ShowtimeCreationPersistenceService } =
+            await import('../../services/application/showtime-creation/internal/index.js')
         fix = await createAppTestContext({ enableRestate: true })
         teardown = fix.teardown
         ;({ accessToken: adminAccessToken } = await createAndLoginAdmin(fix))
@@ -253,7 +254,8 @@ describe('ShowtimeCreationService', () => {
         })
 
         it('같은 키의 최초 요청을 처리 중이면 409를 반환한다', async () => {
-            const { ShowtimeCreationWorkflowClient } = await import('#application')
+            const { ShowtimeCreationWorkflowClient } =
+                await import('../../services/application/showtime-creation/worker/index.js')
             const workflow = fix.module.get(ShowtimeCreationWorkflowClient)
             const submitWorkflow = workflow.submit.bind(workflow)
             let workflowStartEntered!: () => void
@@ -295,7 +297,8 @@ describe('ShowtimeCreationService', () => {
         })
 
         it('Restate 제출 실패 뒤 같은 키를 재시도하면 같은 submission을 이어서 시작한다', async () => {
-            const { ShowtimeCreationWorkflowClient } = await import('#application')
+            const { ShowtimeCreationWorkflowClient } =
+                await import('../../services/application/showtime-creation/worker/index.js')
             const workflow = fix.module.get(ShowtimeCreationWorkflowClient)
             const submitWorkflow = vi
                 .spyOn(workflow, 'submit')
@@ -322,10 +325,11 @@ describe('ShowtimeCreationService', () => {
         })
 
         it('Restate에는 제출됐지만 accepted 저장이 실패하면 같은 saga로 복구한다', async () => {
-            const { ShowtimeCreationEvents, ShowtimeCreationWorkflowClient } =
-                await import('#application')
+            const { ShowtimeCreationEvents } = await import('#application')
             const { ShowtimeCreationSubmissionRepository } =
                 await import('../../services/application/showtime-creation/internal/index.js')
+            const { ShowtimeCreationWorkflowClient } =
+                await import('../../services/application/showtime-creation/worker/index.js')
             const events = fix.module.get(ShowtimeCreationEvents)
             const workflow = fix.module.get(ShowtimeCreationWorkflowClient)
             const submissions = fix.module.get(ShowtimeCreationSubmissionRepository)
@@ -391,7 +395,8 @@ describe('ShowtimeCreationService', () => {
         })
 
         it('submission 저장 실패 시 workflow를 시작하지 않는다', async () => {
-            const { ShowtimeCreationWorkflowClient } = await import('#application')
+            const { ShowtimeCreationWorkflowClient } =
+                await import('../../services/application/showtime-creation/worker/index.js')
             const { ShowtimeCreationSubmissionRepository } =
                 await import('../../services/application/showtime-creation/internal/index.js')
             const workflow = fix.module.get(ShowtimeCreationWorkflowClient)

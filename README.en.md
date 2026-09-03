@@ -11,7 +11,7 @@ This seed is built with learning in mind, but it is also a base for real product
 
 The boundaries take two concrete forms. The five SoLA layers forbid modules in the same layer from calling each other directly, and controllers live in a separate Gateway layer rather than inside each module as NestJS convention would have it. As a result, a module is coupled neither to its neighbor modules nor to HTTP — the layer rules are explained in the [apps document](docs/apps.md#sola-5계층).
 
-So that splitting a service off never has to start with untangling the database, no DB relationship crosses a module boundary — no foreign keys, no joins; services manage relationships by ID. Since the core value of a relational database would go unused, the seed uses MongoDB, and consistency across domains is the services' responsibility rather than a DB constraint's.
+So that splitting a service off never has to start with untangling the database, no DB relationship crosses a module boundary — no foreign keys, no joins; services manage relationships by ID. Because this design does not actively use a relational database's relationship model, the seed uses MongoDB, which fits its document-shaped models, and consistency across domains is the services' responsibility rather than a DB constraint's.
 
 The admin console and the user app are minimal demos showing how frontends sit in the monorepo.
 
@@ -23,7 +23,7 @@ The three problems are solved like this:
 - **Partial failure** — Restate retries durable steps, while one MongoDB transaction commits showtimes, tickets, and the idempotency operation record together (`application/showtime-creation`)
 - **Async job tracking** — durable terminal-status queries backed by Restate, plus NATS-based SSE progress notifications (`application/showtime-creation`)
 
-Whether these solutions actually work is verified by mock-free tests on real infrastructure (100% coverage in implementation workspaces that collect it), a distributed race harness, and repeated CI runs. The full list of patterns is in the [Domain tour](#domain-tour); the reasoning behind tool choices is in [Design decisions](docs/reference/decisions.md).
+Whether these solutions actually work is verified by tests that minimize mocks and run against real infrastructure (100% coverage in implementation workspaces that collect it), a distributed race harness, and repeated CI runs. The full list of patterns is in the [Domain tour](#domain-tour); the reasoning behind tool choices is in [Design decisions](docs/reference/decisions.md).
 
 ## Getting started
 
@@ -155,11 +155,12 @@ Each service is built to show one distinct pattern. For a first pass, this order
 | Service                                   | What it shows                                                                                                        |
 | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | `core/theaters`                           | The simplest CRUD. The reference to clone when adding a new domain                                                   |
-| `core/movies`                             | File upload integration, draft→publish state, deletion refused while showtimes reference the movie                   |
+| `core/movies`                             | File upload integration and draft→publish state                                                                      |
 | `core/users` · `admins`                   | Soft delete × unique indexes, login and token rotation, session revocation on withdrawal/password change             |
 | `core/showtimes` · `tickets`              | The resources the saga produces. tickets change state via atomic conditional transitions                             |
 | `core/ticket-holding`                     | Redis Lua-script seat holds — keys grouped into one hash slot so Lua can handle multiple keys atomically             |
 | `core/purchase-records` · `watch-records` | User-record domains. watch-records feeds the recommendations                                                         |
+| `application/catalog-management`          | Cross-Core coordination that checks showtime references before deleting a movie or theater                           |
 | `application/booking`                     | Booking-flow queries and seat holds, request validation                                                              |
 | `application/purchase`                    | Durable state machine, lease reconciliation and outbox; at-least-once JetStream notification handling                |
 | `application/showtime-creation`           | Restate workflow keyed by `sagaId`, 202+status query+SSE, Mongo transaction, theater-guard CAS, and idempotent retry |

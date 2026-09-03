@@ -18,4 +18,4 @@ NATS도 개발 환경에서는 한 서버이므로 JetStream의 `num_replicas: 1
 
 Restate가 API 내부 워크플로 구현을 호출하려면 서비스 endpoint를 한 번 등록해야 한다. `pnpm run dev`는 API와 함께 `dev:restate`를 실행해 [`register-restate.cjs`](../apps/api/scripts/register-restate.cjs)가 `http://${COMPOSE_PROJECT_NAME}:9080`을 Admin API에 개발용 `force: true`로 등록한다. 검증 배포는 복제본 하나를 직접 등록하지 않고 NGINX의 안정적인 `http://nginx:9080` endpoint를 `force: false`로 등록한다([deploy 문서](deploy.md)). 운영에서 `force` 등록은 실행 중인 invocation의 routing을 바꿀 수 있으므로 개발 편의 설정을 그대로 복사하지 않는다.
 
-토폴로지를 운영과 같게 두는 이유는 [설계 결정 §5](reference/decisions.md#5-개발-환경-dev-container-단일-경로)가, 환경 변수가 여기서 앱까지 흐르는 전체 경로는 [환경 변수](reference/environment.md)가 설명한다. 각 설정값의 사유는 compose 파일의 현장 주석에 있다.
+토폴로지를 운영과 유사하게 두는 이유는 [설계 결정 §5](reference/decisions.md#5-개발-환경-dev-container-단일-경로)가, 환경 변수가 여기서 앱까지 흐르는 전체 경로는 [환경 변수](reference/environment.md)가 설명한다. 각 설정값의 사유는 compose 파일의 현장 주석에 있다.

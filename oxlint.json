@@ -22,6 +22,23 @@
     "ignorePatterns": ["**/_output/**", "**/.next/**", "**/coverage/**"],
     "overrides": [
         {
+            "files": ["apps/api/src/**/*.ts"],
+            "excludeFiles": ["apps/api/src/**/__tests__/**/*.ts"],
+            "rules": {
+                "no-restricted-imports": [
+                    "error",
+                    {
+                        "patterns": [
+                            {
+                                "regex": "(?:^|/)showtime-creation/(?:internal|worker)(?:/|$)",
+                                "message": "showtime-creation의 internal/worker는 공개 API가 아닙니다. 외부 운영 코드는 #application을 사용하세요."
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
             "files": [
                 "apps/api/src/**/__tests__/**/*.{spec,test,fixture}.ts",
                 "libs/*/src/**/__tests__/**/*.{spec,test,fixture}.ts"
