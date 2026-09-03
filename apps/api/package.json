@@ -12,6 +12,7 @@
         "#view": "./_output/build/src/services/view/index.js"
     },
     "scripts": {
+        "admin:create": "node --enable-source-maps _output/dist/admin-create.js",
         "start": "node --enable-source-maps _output/dist/index.js",
         "format": "prettier --write src/ scripts/ '*.{cjs,mjs}'",
         "lint": "tsc --noEmit -p tsconfig.build.json && tsc --noEmit -p tsconfig.test.json && oxlint -c ../../oxlint.json src/ scripts/ ./*.cjs ./*.mjs && prettier --check src/ scripts/ '*.{cjs,mjs}'",

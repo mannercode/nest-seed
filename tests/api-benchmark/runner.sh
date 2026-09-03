@@ -9,7 +9,8 @@
 set -Eeuo pipefail
 
 : "${WORKSPACE_ROOT:?}"
-: "${ROOT_PASSWORD:?ROOT_PASSWORD must be set (devcontainer가 .env.api에서 inject)}"
+# shellcheck source=../../.env.seed
+. "${WORKSPACE_ROOT}/.env.seed"
 
 # infra compose와 docker network를 공유하므로 docker compose가 infra 컨테이너를 orphan으로 표시한다.
 # 의미적으로 별개의 묶음이라 경고만 끈다.
@@ -76,24 +77,12 @@ theater_count() {
     curl -fsS "${SERVER_URL}/theaters?page=1&size=1" | jq -r '.total'
 }
 
-# theaters 생성은 admin 전용이다. race 러너와 같은 방식으로 root Basic Auth로 admin을 만들고 로그인한다.
-# 반복 실행 시 1회차의 admin이 mongo에 남아 2회차부터 409가 나오는데, 로그인 결과는 같으므로 둘 다 인정한다.
-seed_admin_and_login() {
-    local create_status
-    create_status=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "${SERVER_URL}/admins" \
-        -u "root:${ROOT_PASSWORD}" \
-        -H 'Content-Type: application/json' \
-        -d '{"email":"seeded-admin@nest-seed.local","password":"DevPass1!","name":"Seeded Admin"}')
-    if [ "${create_status}" != "201" ] && [ "${create_status}" != "409" ]; then
-        echo "Error: admin creation returned HTTP ${create_status}"
-        dump_diagnostics
-        exit 1
-    fi
-
+# theaters 생성은 admin 전용이므로 infra/reset.sh가 만든 고정 개발 fixture로 로그인한다.
+login_admin() {
     local login_res
     login_res=$(curl -sS -X POST "${SERVER_URL}/admins/login" \
         -H 'Content-Type: application/json' \
-        -d '{"email":"seeded-admin@nest-seed.local","password":"DevPass1!"}')
+        -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}")
     ADMIN_ACCESS_TOKEN=$(echo "${login_res}" | jq -r '.accessToken // empty')
     if [ -z "${ADMIN_ACCESS_TOKEN}" ]; then
         echo "Error: admin login failed: ${login_res}"
@@ -128,7 +117,7 @@ seed_theaters() {
     echo "Theaters: ${count} (target ${SEED_TARGET})"
 }
 
-seed_admin_and_login
+login_admin
 seed_theaters
 
 # ADMIN_ACCESS_TOKEN은 export되어 mixed-runner의 쓰기 레그까지 전달된다.

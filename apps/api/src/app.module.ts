@@ -27,7 +27,6 @@ import {
     LoginRateLimiterService,
     PurchaseHttpController,
     RequestValidationPipe,
-    RootAuthGuard,
     ShowtimeCreationHttpController,
     TheatersHttpController,
     UserAuthGuard,
@@ -74,7 +73,6 @@ import { AppConfigModule, GlobalModule, HealthModule } from './modules/index.js'
     providers: [
         AdminAuthGuard,
         LoginRateLimiterService,
-        RootAuthGuard,
         UserAuthGuard,
         { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: ['/health'] },
         { provide: APP_PIPE, useClass: RequestValidationPipe },

@@ -1,6 +1,12 @@
 #!/bin/bash
 set -Eeuo pipefail
 cd "$(dirname "$0")"
+workspace_dir="$(cd .. && pwd)"
+
+set -a
+# shellcheck source=../.env.seed
+. "${workspace_dir}/.env.seed"
+set +a
 
 diagnose_and_exit() {
     local exit_code="$1"
@@ -31,3 +37,6 @@ fi
 
 docker compose rm -f \
     infra-setup mongo-setup redis-setup s3-setup
+
+cd "${workspace_dir}"
+NODE_ENV=development pnpm run admin:create

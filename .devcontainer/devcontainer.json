@@ -37,9 +37,8 @@
         "github": "mkdir -p ${localEnv:HOME}/.config/gh"
     },
     "postStartCommand": {
-        "workspace-dependencies": "pnpm install --frozen-lockfile",
-        "plantuml": "pnpm compose:tools up -d plantuml",
-        "infra": "bash infra/reset.sh"
+        "workspace": "pnpm install --frozen-lockfile && bash infra/reset.sh",
+        "plantuml": "pnpm compose:tools up -d plantuml"
     },
     "waitFor": "postStartCommand",
     "customizations": {

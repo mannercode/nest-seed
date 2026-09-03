@@ -15,50 +15,19 @@ USER_BIRTHDATE="1990-01-01"
 USER_PASSWORD="testpassword"
 USER_EMAIL="user@example.com"
 
-# root는 env 자격증명으로 Basic Auth 인증되며 admin lifecycle(생성/삭제)만 책임진다.
-# admin은 root가 POST /admins로 만든 DB 도큐먼트이고, 이후 콘텐츠 spec은 admin 토큰으로 진행한다.
+# admin은 infra/reset.sh가 만든 고정 개발 fixture이고, 콘텐츠 spec은 그 admin 토큰으로 진행한다.
 # `CURRENT_AUTH_TOKEN`이 세팅돼 있으면 run.sh의 CURL이 모든 호출에 자동으로 Bearer 헤더를 붙인다.
 # admin → user로 전환할 때는 다시 login_user를 호출한다.
 #
-# ADMIN_ACCESS_TOKEN은 `:=`로 spec 사이에 유지한다(첫 spec이 만든 admin 도큐먼트와 토큰을
-# 다음 spec이 재사용해 root Basic Auth + admin 생성을 반복하지 않는다).
+# ADMIN_ACCESS_TOKEN은 `:=`로 spec 사이에 유지한다.
 # CURRENT_AUTH_TOKEN은 매 spec에서 비워, 이전 spec의 admin 토큰이 "인증 없이" 케이스를
 # admin 인증 또는 잘못된 user 서명 경로로 바꾸지 않게 한다.
-: "${ROOT_PASSWORD:?ROOT_PASSWORD must be set}"
-ROOT_BASIC_AUTH="Basic $(printf 'root:%s' "${ROOT_PASSWORD}" | base64)"
-
-ADMIN_EMAIL="seeded-admin@nest-seed.local"
-ADMIN_PASSWORD="DevPass1!"
-ADMIN_NAME="Seeded Admin"
+: "${ADMIN_EMAIL:?ADMIN_EMAIL must be set}"
+: "${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set}"
 : "${ADMIN_ACCESS_TOKEN:=}"
 CURRENT_AUTH_TOKEN=""
 
-# root는 token 발급 없는 stateless 인증이다.
-# admin 도큐먼트가 이미 있으면 409가 떨어지는데, spec 재실행이나 다음 spec에서 무해하게 넘긴다.
-create_admin() {
-	LOG_LINE "# 준비 요청: admin 생성(root Basic Auth, 이미 있으면 409 무시)"
-
-	CURL POST "${SERVER_URL}/admins" \
-		-H 'Content-Type: application/json' \
-		-H "Authorization: ${ROOT_BASIC_AUTH}" \
-		-d '{ "email": "'"${ADMIN_EMAIL}"'", "password": "'"${ADMIN_PASSWORD}"'", "name": "'"${ADMIN_NAME}"'" }'
-
-	LOG_LINE "RES='${STATUS}"
-	LOG_JSON "${BODY}"
-	LOG_LINE "'"
-	LOG_LINE ""
-
-	if [[ "${STATUS}" -ge 400 && "${STATUS}" -ne 409 ]]; then
-		printf '%b 준비 요청 실패: POST /admins (상태 %s)\n' "${BOLD}${RED}[FAIL]${RESET}" "${STATUS}"
-		exit 2
-	fi
-}
-
 login_admin() {
-	if [ -z "${ADMIN_ACCESS_TOKEN}" ]; then
-		create_admin
-	fi
-
 	SETUP POST /admins/login \
 		-H 'Content-Type: application/json' \
 		-d '{ "email": "'"${ADMIN_EMAIL}"'", "password": "'"${ADMIN_PASSWORD}"'" }'

@@ -3,32 +3,14 @@ import { randomUUID } from 'node:crypto'
 
 import { API_BASE_URL } from '../playwright.config'
 
-// API가 admin을 자동 생성하지 않으므로 root로 만들고 기존 계정의 409는 허용한다.
+const ADMIN_EMAIL = requiredEnvironment('ADMIN_EMAIL')
+const ADMIN_PASSWORD = requiredEnvironment('ADMIN_PASSWORD')
 
-const ADMIN_EMAIL = 'admin@nest-seed.local'
-const ADMIN_PASSWORD = 'DevPass1!'
-const ADMIN_NAME = 'Admin'
-
-const rootPassword = process.env.ROOT_PASSWORD
-if (!rootPassword) {
-    throw new Error('ROOT_PASSWORD must be set by tests/web/compose.yml')
+function requiredEnvironment(name: string): string {
+    const value = process.env[name]
+    if (!value) throw new Error(`${name} must be set by tests/web/compose.yml`)
+    return value
 }
-const ROOT_BASIC_AUTH = `Basic ${Buffer.from(`root:${rootPassword}`).toString('base64')}`
-
-test.beforeAll(async () => {
-    const ctx = await request.newContext()
-    try {
-        const res = await ctx.post(`${API_BASE_URL}/admins`, {
-            data: { email: ADMIN_EMAIL, name: ADMIN_NAME, password: ADMIN_PASSWORD },
-            headers: { Authorization: ROOT_BASIC_AUTH }
-        })
-        if (!res.ok() && res.status() !== 409) {
-            throw new Error(`admin creation failed: ${res.status()} ${await res.text()}`)
-        }
-    } finally {
-        await ctx.dispose()
-    }
-})
 
 async function login(page: Page): Promise<void> {
     await page.goto('/login')

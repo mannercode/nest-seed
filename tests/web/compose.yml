@@ -64,6 +64,8 @@ services:
         ipc: host
         user: ${E2E_UID:?}:${E2E_GID:?}
         environment:
+            ADMIN_EMAIL: ${ADMIN_EMAIL:?}
+            ADMIN_PASSWORD: ${ADMIN_PASSWORD:?}
             API_BASE_URL: http://api:${API_PORT:?}
             CI: ${CI:-}
             CONSOLE_BASE_URL: http://console:${CONSOLE_PORT:?}
@@ -71,7 +73,6 @@ services:
             MONGO_DATABASE: ${MONGO_DATABASE:?}
             MONGO_URI: ${MONGO_URI:?}
             PLAYWRIGHT_RETRIES: ${PLAYWRIGHT_RETRIES:-0}
-            ROOT_PASSWORD: ${ROOT_PASSWORD:?}
             USER_APP_BASE_URL: http://user-app:${USER_APP_PORT:?}
         volumes:
             - ./e2e:/work/e2e:ro

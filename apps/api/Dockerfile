@@ -37,7 +37,7 @@ RUN apt-get update \
 WORKDIR /workspace/apps/api
 COPY --from=build /workspace/deploy/api/package.json ./
 COPY --from=build /workspace/deploy/api/node_modules ./node_modules
-COPY --from=build /workspace/apps/api/_output/dist/index.js /workspace/apps/api/_output/dist/index.js.map _output/dist/
+COPY --from=build /workspace/apps/api/_output/dist/ _output/dist/
 
 USER node
 

@@ -3,9 +3,8 @@ import { randomBytes, randomUUID } from 'node:crypto'
 
 import { API_BASE_URL } from '../playwright.config'
 
-const ADMIN_EMAIL = 'session-admin@nest-seed.local'
-const ADMIN_PASSWORD = 'DevPass1!'
-const ADMIN_NAME = 'Session Admin'
+const ADMIN_EMAIL = requiredEnvironment('ADMIN_EMAIL')
+const ADMIN_PASSWORD = requiredEnvironment('ADMIN_PASSWORD')
 const CROSS_ROLE_USER_EMAIL = 'console-cross-role-user@nest-seed.local'
 const CROSS_ROLE_USER_NAME = 'Console Cross Role User'
 const ACCESS_COOKIE = 'nest-seed-admin-access'
@@ -15,23 +14,9 @@ const BFF_PAYLOAD_TOO_LARGE = {
     message: 'Request body too large'
 }
 
-const rootPassword = process.env.ROOT_PASSWORD
-if (!rootPassword) {
-    throw new Error('ROOT_PASSWORD must be set by tests/web/compose.yml')
-}
-const ROOT_BASIC_AUTH = `Basic ${Buffer.from(`root:${rootPassword}`).toString('base64')}`
-
 test.beforeAll(async () => {
     const api = await request.newContext()
     try {
-        const response = await api.post(`${API_BASE_URL}/admins`, {
-            data: { email: ADMIN_EMAIL, name: ADMIN_NAME, password: ADMIN_PASSWORD },
-            headers: { Authorization: ROOT_BASIC_AUTH }
-        })
-        if (!response.ok() && response.status() !== 409) {
-            throw new Error(`admin creation failed: ${response.status()} ${await response.text()}`)
-        }
-
         const userResponse = await api.post(`${API_BASE_URL}/users`, {
             data: {
                 birthDate: '2000-01-01',
@@ -49,6 +34,12 @@ test.beforeAll(async () => {
         await api.dispose()
     }
 })
+
+function requiredEnvironment(name: string): string {
+    const value = process.env[name]
+    if (!value) throw new Error(`${name} must be set by tests/web/compose.yml`)
+    return value
+}
 
 async function login(page: Page): Promise<void> {
     await page.goto('/login')

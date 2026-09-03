@@ -7,6 +7,7 @@
         "node": "^26.0.0"
     },
     "scripts": {
+        "admin:create": "pnpm --filter './libs/common' --fail-if-no-match run build && pnpm --filter './apps/api' --fail-if-no-match run build && pnpm --filter './apps/api' --fail-if-no-match run admin:create",
         "prepare": "husky",
         "build": "pnpm --recursive --if-present run build",
         "clean": "node tools/clean-workspace.mjs",
@@ -23,7 +24,7 @@
         "e2e:report": "pnpm --filter './tests/web' --fail-if-no-match run e2e:report",
         "race": "bash tests/api-race/runner.sh",
         "benchmark:api": "bash tests/api-benchmark/runner.sh",
-        "preatoz": "pnpm run clean && bash infra/reset.sh && pnpm install --frozen-lockfile",
+        "preatoz": "pnpm run clean && pnpm install --frozen-lockfile && bash infra/reset.sh",
         "atoz": "pnpm run test:tools && pnpm --recursive --workspace-concurrency=1 --if-present run atoz && pnpm run lint:root && bash deploy/verify.sh",
         "test:tools": "node --test tools/__tests__/*.test.mjs",
         "predev": "pnpm --recursive --filter './libs/**' --fail-if-no-match run build",

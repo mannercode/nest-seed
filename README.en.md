@@ -25,41 +25,34 @@ The Dev Container is the only supported development path. You need Docker and th
 1. Open the repository in VS Code and run `Reopen in Container`. The first boot may take a while while images and development infrastructure are prepared.
 2. Run `pnpm run test`. Use `pnpm run atoz` after forking or when you need to verify every boundary.
 3. Run `pnpm run dev`, then check the API with `curl http://localhost:3000/health`.
-4. No admin exists initially. Create one using the development root account. The username is `root`; the password is `ROOT_PASSWORD` from `.env.api`.
+4. Sign in to the console (3100) with the development admin (`admin@nest-seed.local` / `DevPass1!`) and create movies and theaters. The Dev Container recreates this account whenever it resets the infrastructure.
+5. Use the user app (3200) to explore sign-up, login, and the composed home view. The executable API docs run showtime, booking, and purchase APIs through an independent fixture flow.
 
-    ```bash
-    curl -u "root:${ROOT_PASSWORD}" -H 'Content-Type: application/json' \
-        -d '{"email":"admin@example.com","password":"admin1234!","name":"Admin"}' \
-        http://localhost:3000/admins
-    ```
-
-5. Create movies and theaters in the console (3100), then use the executable API docs for showtime, booking, and purchase flows. The user app (3200) demonstrates sign-up, login, and the composed home view.
-
-`.env.api` and `.env.infra` contain committed development defaults. Review project identifiers and credentials when forking, and inject production secrets outside the repository. See [Environment variables](docs/reference/environment.md).
+`.env.api` and `.env.infra` contain committed development defaults, while `.env.seed` contains disposable development and verification fixtures. Review project identifiers and credentials when forking, and inject production secrets outside the repository. See [Environment variables](docs/reference/environment.md).
 
 ## 2. Main commands
 
-| Command                 | Purpose                                                        |
-| ----------------------- | -------------------------------------------------------------- |
-| `pnpm run dev`          | Run the API and both frontends in watch mode                   |
-| `pnpm run test`         | Run workspace unit, integration, and contract tests            |
-| `pnpm run lint`         | Check types, code, formatting, shell, and documentation links  |
-| `pnpm run atoz`         | Run the full regression after forking or before deployment     |
-| `bash infra/reset.sh`   | Recreate development infrastructure, including volumes         |
-| `bash deploy/verify.sh` | Start, verify, and remove the multi-replica verification stack |
+| Command                 | Purpose                                                         |
+| ----------------------- | --------------------------------------------------------------- |
+| `pnpm run dev`          | Run the API and both frontends in watch mode                    |
+| `pnpm run test`         | Run workspace unit, integration, and contract tests             |
+| `pnpm run lint`         | Check types, code, formatting, shell, and documentation links   |
+| `pnpm run atoz`         | Run the full regression after forking or before deployment      |
+| `bash infra/reset.sh`   | Recreate development infrastructure and the fixed admin fixture |
+| `bash deploy/verify.sh` | Start, verify, and remove the multi-replica verification stack  |
 
-`infra/reset.sh` also deletes the Restate journal and JetStream data. It is a development recovery command and must not be used where executions need to survive. Test-specific commands and output locations are in [tests/README.md](tests/README.md).
+`infra/reset.sh` deletes the volumes and then recreates the fixed admin fixture. It also deletes the Restate journal and JetStream data, so it must not be used where executions need to survive. Test-specific commands and output locations are in [tests/README.md](tests/README.md).
 
 ## 3. API reference
 
-Instead of static Swagger/OpenAPI, `apps/api/api-docs/*.spec` sends real requests and serves as the success-path API contract. This prevents documentation from silently drifting away from behavior.
+Instead of static Swagger/OpenAPI, `apps/api/api-docs/*.spec` sends real requests and serves as the HTTP contract for representative success and failure paths. This prevents documentation from silently drifting away from behavior.
 
 ```bash
 bash apps/api/api-docs/run.sh
 bash apps/api/api-docs/run.sh showtime-creation.spec
 ```
 
-Generated request/response logs are diagnostic output, not public documentation artifacts. Long-lived SSE and failure paths are covered by integration tests. See [Executable API docs](docs/apps.md#5-실행-가능한-api-문서) for conventions and security boundaries.
+Generated request/response logs are diagnostic output, not public documentation artifacts. Long-lived SSE and infrastructure failure paths are covered by integration tests. See [Executable API docs](docs/apps.md#5-실행-가능한-api-문서) for conventions and security boundaries.
 
 ## 4. Project structure
 
@@ -103,7 +96,7 @@ Start with the simple CRUD in `core/theaters`, then read the Core composition in
 
 ## 7. Authorization
 
-There are three roles. **root** uses Basic auth from the development environment only to create and delete admins; **admin** manages content and operations targeting arbitrary users; **user** can access only its own resources. Admin and user tokens use different signing secrets.
+There are two application roles. **admin** manages content and operations targeting arbitrary users, while **user** can access only its own resources. The initial admin is provisioned through an operational command rather than HTTP. Admin and user tokens use different signing secrets.
 
 Self-owned resources use `/me` paths whose identity is fixed to the token subject. Any path accepting an arbitrary user ID is admin-only. Together these rules remove IDOR paths where a user could substitute someone else's ID.
 

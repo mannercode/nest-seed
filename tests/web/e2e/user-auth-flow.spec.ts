@@ -5,42 +5,22 @@ import { randomUUID } from 'node:crypto'
 import { API_BASE_URL, USER_APP_BASE_URL } from '../playwright.config'
 
 const PASSWORD = 'DevPass1!'
-const CROSS_ROLE_ADMIN_EMAIL = 'user-app-cross-role-admin@nest-seed.local'
-const CROSS_ROLE_ADMIN_NAME = 'User App Cross Role Admin'
+const ADMIN_EMAIL = requiredEnvironment('ADMIN_EMAIL')
+const ADMIN_PASSWORD = requiredEnvironment('ADMIN_PASSWORD')
 const ACCESS_COOKIE = 'nest-seed-user-access'
 const REFRESH_COOKIE = 'nest-seed-user-refresh'
 
-const rootPassword = process.env.ROOT_PASSWORD
-if (!rootPassword) {
-    throw new Error('ROOT_PASSWORD must be set by tests/web/compose.yml')
-}
-const ROOT_BASIC_AUTH = `Basic ${Buffer.from(`root:${rootPassword}`).toString('base64')}`
 const mongoUri = process.env.MONGO_URI
 const mongoDatabase = process.env.MONGO_DATABASE
 if (!mongoUri || !mongoDatabase) {
     throw new Error('MONGO_URI and MONGO_DATABASE must be set')
 }
 
-test.beforeAll(async () => {
-    const api = await request.newContext()
-    try {
-        const response = await api.post(`${API_BASE_URL}/admins`, {
-            data: {
-                email: CROSS_ROLE_ADMIN_EMAIL,
-                name: CROSS_ROLE_ADMIN_NAME,
-                password: PASSWORD
-            },
-            headers: { Authorization: ROOT_BASIC_AUTH }
-        })
-        if (!response.ok() && response.status() !== 409) {
-            throw new Error(
-                `cross-role admin creation failed: ${response.status()} ${await response.text()}`
-            )
-        }
-    } finally {
-        await api.dispose()
-    }
-})
+function requiredEnvironment(name: string): string {
+    const value = process.env[name]
+    if (!value) throw new Error(`${name} must be set by tests/web/compose.yml`)
+    return value
+}
 
 async function signupAndLogin(page: Page): Promise<string> {
     const email = `e2e-user-${randomUUID()}@example.com`
@@ -81,7 +61,7 @@ test('교차 역할 관리자 로그인 경로는 user BFF에서 토큰을 노�
                 status: response.status
             }
         },
-        { email: CROSS_ROLE_ADMIN_EMAIL, password: PASSWORD }
+        { email: ADMIN_EMAIL, password: ADMIN_PASSWORD }
     )
 
     expect(result).toEqual({ exposesToken: false, status: 404 })

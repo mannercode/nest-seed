@@ -1,12 +1,10 @@
 import {
     Body,
     Controller,
-    Delete,
     Get,
     HttpCode,
     HttpStatus,
     Ip,
-    Param,
     Patch,
     Post,
     Req,
@@ -17,15 +15,13 @@ import {
     AdminCredentialsSchema,
     AdminRefreshTokenBodySchema,
     AdminsService,
-    CreateAdminSchema,
     type AdminCredentialsDto,
     type AdminRefreshTokenBodyDto,
-    type CreateAdminDto,
     type UpdateAdminDto,
     UpdateAdminSchema
 } from '#core'
 import type { AdminAuthRequest } from './types.js'
-import { AdminAuthGuard, AuthErrors, RootAuthGuard } from './guards/index.js'
+import { AdminAuthGuard, AuthErrors } from './guards/index.js'
 import { LoginRateLimiterService } from './login-rate-limiter.service.js'
 
 @Controller('admins')
@@ -81,18 +77,5 @@ export class AdminsHttpController {
         @Body({ schema: UpdateAdminSchema }) body: UpdateAdminDto
     ) {
         return this.adminsService.update(req.user.sub, body)
-    }
-
-    @Post()
-    @UseGuards(RootAuthGuard)
-    async create(@Body({ schema: CreateAdminSchema }) body: CreateAdminDto) {
-        return this.adminsService.create(body)
-    }
-
-    @Delete(':id')
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @UseGuards(RootAuthGuard)
-    async remove(@Param('id') id: string) {
-        await this.adminsService.remove(id)
     }
 }

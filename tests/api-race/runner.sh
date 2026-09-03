@@ -35,16 +35,13 @@ if [ ! -f "${TEST_SCRIPT}" ]; then
 fi
 
 : "${WORKSPACE_ROOT:?}"
-: "${ROOT_PASSWORD:?ROOT_PASSWORD must be set (devcontainer가 .env.api에서 inject)}"
+# shellcheck source=../../.env.seed
+. "${WORKSPACE_ROOT}/.env.seed"
 COMPOSE_DIR="${WORKSPACE_ROOT}/deploy"
 
 cd "${COMPOSE_DIR}"
 
 SERVER_URL="http://nginx"
-ADMIN_EMAIL="seeded-admin@nest-seed.local"
-ADMIN_PASSWORD="DevPass1!"
-ADMIN_NAME="Seeded Admin"
-
 cleanup() {
     echo ""
     echo "Tearing down..."
@@ -91,29 +88,10 @@ bring_up_stack() {
     docker compose run --rm --no-deps restate-register
 }
 
-# admin은 API가 부팅 시 만들지 않는다.
-# root Basic Auth로 직접 만들고 그 admin으로 로그인한다.
+# admin은 infra/reset.sh가 만든 고정 개발 fixture로 로그인한다.
 # 콘텐츠 endpoint(POST /movies, /theaters, /showtime-creation/*)는 admin token만 통과한다.
-# repeat.sh가 같은 시나리오를 여러 회 돌릴 때 mongo(infra)는 회차 간 살아 있어 1회차의 seed admin이 남는다.
-# 그래서 2회차부터는 201 대신 409가 나오는데, 같은 패스워드로 로그인 결과는 동일하므로 둘 다 인정한다.
-# 그 외 코드는 실제 오류로 본다.
-seed_admin_and_login() {
-    local create_body create_status
-    create_body=$(mktemp)
-    create_status=$(curl -sS -o "${create_body}" -w '%{http_code}' -X POST "${SERVER_URL}/admins" \
-        -u "root:${ROOT_PASSWORD}" \
-        -H 'Content-Type: application/json' \
-        -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\",\"name\":\"${ADMIN_NAME}\"}")
-    if [ "${create_status}" != "201" ] && [ "${create_status}" != "409" ]; then
-        echo "Error: admin creation returned HTTP ${create_status}: $(cat "${create_body}")"
-        rm -f "${create_body}"
-        # 이 실패 모드(부팅은 됐는데 인증 API가 이상)는 컨테이너 로그가 필요한 경우인데,
-        # EXIT trap이 곧 컨테이너를 지우므로 여기서 남기지 않으면 영구 소실된다.
-        dump_diagnostics
-        exit 1
-    fi
-    rm -f "${create_body}"
-
+# admin이 없으면 개발 상태가 준비되지 않은 것이므로 로그인 실패를 그대로 보고한다.
+login_admin() {
     local login_res
     login_res=$(curl -sS -X POST "${SERVER_URL}/admins/login" \
         -H 'Content-Type: application/json' \
@@ -141,5 +119,5 @@ run_scenario() {
 }
 
 bring_up_stack
-seed_admin_and_login
+login_admin
 run_scenario

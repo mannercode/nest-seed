@@ -15,7 +15,10 @@ module.exports = (options) => {
     return {
         ...options,
         context: appDir,
-        entry: path.resolve(dirname, 'main.ts'),
+        entry: {
+            'admin-create': path.resolve(dirname, 'admin-create.ts'),
+            index: path.resolve(dirname, 'main.ts')
+        },
         module: {
             ...options.module,
             rules: options.module.rules.map((rule) =>
@@ -48,7 +51,7 @@ module.exports = (options) => {
         output: {
             ...options.output,
             path: path.resolve(appDir, '_output/dist'),
-            filename: 'index.js'
+            filename: '[name].js'
         },
         // 번들이 단일 파일이라 소스맵이 없으면 운영 에러 스택이 index.js의 수만 번째 줄로 찍힌다.
         // node --enable-source-maps(Dockerfile CMD)가 이 맵을 읽어 TS 소스 위치로 되돌린다.

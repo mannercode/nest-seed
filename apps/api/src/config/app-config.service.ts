@@ -39,7 +39,6 @@ export class AppConfigService extends BaseConfigService {
             .default(50),
         AUTH_REFRESH_SECRET: z.string().min(20),
         AUTH_REFRESH_TOKEN_EXPIRATION: requiredString,
-        ROOT_PASSWORD: z.string().min(8),
         API_PORT: numberFromEnvironment,
         HTTP_PAGINATION_DEFAULT_SIZE: numberFromEnvironment,
         // 페이지 상한. 기본값(HTTP_PAGINATION_DEFAULT_SIZE)과 분리해, 기본값을 조정해도 상한이 따라 움직이지 않게 한다.
@@ -110,10 +109,6 @@ export class AppConfigService extends BaseConfigService {
             failureWindow: this.getString('AUTH_LOGIN_FAILURE_WINDOW'),
             ipFailureLimit: this.getNumber('AUTH_LOGIN_IP_FAILURE_LIMIT')
         }
-    }
-
-    get root() {
-        return { password: this.getString('ROOT_PASSWORD') }
     }
 
     get http() {

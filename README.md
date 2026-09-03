@@ -23,17 +23,10 @@
 1. VS Code에서 저장소를 열고 `Reopen in Container`를 실행한다. 첫 부팅은 이미지와 개발 인프라를 준비하므로 시간이 걸릴 수 있다.
 2. `pnpm run test`로 기본 검증을 실행한다. 포크 직후 전체 경계를 확인하려면 `pnpm run atoz`를 실행한다.
 3. `pnpm run dev`를 실행하고 `curl http://localhost:3000/health`로 API를 확인한다.
-4. 처음에는 admin이 없으므로 개발용 root 계정으로 하나를 만든다. 사용자명은 `root`, 비밀번호는 `.env.api`의 `ROOT_PASSWORD`다.
+4. console(3100)에 개발용 admin(`admin@nest-seed.local` / `DevPass1!`)으로 로그인해 영화와 극장을 만든다. 이 계정은 Dev Container가 인프라를 초기화할 때 자동으로 다시 만든다.
+5. user-app(3200)에서 가입·로그인과 홈 화면 조합을 확인한다. 실행 가능한 API 문서는 독립된 fixture 흐름으로 상영·예매·구매 API를 실행한다.
 
-    ```bash
-    curl -u "root:${ROOT_PASSWORD}" -H 'Content-Type: application/json' \
-        -d '{"email":"admin@example.com","password":"admin1234!","name":"Admin"}' \
-        http://localhost:3000/admins
-    ```
-
-5. console(3100)에서 영화와 극장을 만들고, 실행 가능한 API 문서로 상영·예매·구매 흐름을 실행한다. user-app(3200)은 가입·로그인과 홈 화면 조합을 보여 준다.
-
-`.env.api`와 `.env.infra`는 커밋된 개발용 기본값이다. 포크할 때 프로젝트 식별자와 자격증명을 검토하고, 운영 secret은 저장소 밖에서 주입한다. 자세한 기준은 [환경 변수](docs/reference/environment.md)에 있다.
+`.env.api`와 `.env.infra`는 커밋된 개발용 기본값이고 `.env.seed`는 폐기 가능한 개발·검증 fixture다. 포크할 때 프로젝트 식별자와 자격증명을 검토하고, 운영 secret은 저장소 밖에서 주입한다. 자세한 기준은 [환경 변수](docs/reference/environment.md)에 있다.
 
 ## 2. 주요 명령
 
@@ -43,21 +36,21 @@
 | `pnpm run test`         | workspace의 단위·통합·계약 테스트          |
 | `pnpm run lint`         | 타입, 코드, format, shell, 문서 링크 검사  |
 | `pnpm run atoz`         | 포크 직후나 배포 전 실행하는 전체 회귀     |
-| `bash infra/reset.sh`   | 개발 인프라를 volume까지 초기화            |
+| `bash infra/reset.sh`   | 개발 인프라와 고정 admin fixture를 재생성  |
 | `bash deploy/verify.sh` | 다중 API 복제본 검증 스택을 기동·검증·정리 |
 
-`infra/reset.sh`는 Restate journal과 JetStream 데이터도 지우는 개발용 복구 명령이다. 보존할 실행이 있는 환경에서는 사용하지 않는다. 테스트별 명령과 결과 위치는 [tests/README.md](tests/README.md)에 있다.
+`infra/reset.sh`는 volume을 지운 뒤 고정 admin fixture까지 다시 만드는 개발용 복구 명령이다. Restate journal과 JetStream 데이터도 지우므로 보존할 실행이 있는 환경에서는 사용하지 않는다. 테스트별 명령과 결과 위치는 [tests/README.md](tests/README.md)에 있다.
 
 ## 3. API 레퍼런스
 
-정적 Swagger/OpenAPI 대신 실제 요청을 보내는 `apps/api/api-docs/*.spec`를 성공 흐름의 API 계약으로 사용한다. 이 선택은 문서와 동작이 따로 낡는 것을 막기 위한 것이다.
+정적 Swagger/OpenAPI 대신 실제 요청을 보내는 `apps/api/api-docs/*.spec`를 주요 성공·실패 흐름의 HTTP 계약으로 사용한다. 이 선택은 문서와 동작이 따로 낡는 것을 막기 위한 것이다.
 
 ```bash
 bash apps/api/api-docs/run.sh                   # 실행 중인 개발 API 대상
 bash apps/api/api-docs/run.sh showtime-creation.spec
 ```
 
-생성되는 요청·응답 로그는 진단 산출물이며 공개 문서 호스팅 대상이 아니다. 장기 SSE와 실패 조건은 통합 테스트가 검증한다. 규칙과 보안 경계는 [실행 가능한 API 문서](docs/apps.md#5-실행-가능한-api-문서)에 있다.
+생성되는 요청·응답 로그는 진단 산출물이며 공개 문서 호스팅 대상이 아니다. 장기 SSE와 인프라 장애 조건은 통합 테스트가 검증한다. 규칙과 보안 경계는 [실행 가능한 API 문서](docs/apps.md#5-실행-가능한-api-문서)에 있다.
 
 ## 4. 프로젝트 구조
 
@@ -101,7 +94,7 @@ docs/           사람이 읽을 설계·운영 문서
 
 ## 7. 인가
 
-역할은 세 가지다. **root**는 개발 env의 Basic 인증으로 admin 생성·삭제만 하고, **admin**은 콘텐츠와 임의 사용자 대상 작업을, **user**는 본인 자원만 다룬다. admin과 user token은 서로 다른 secret으로 서명한다.
+애플리케이션 역할은 두 가지다. **admin**은 콘텐츠와 임의 사용자 대상 작업을, **user**는 본인 자원만 다룬다. 최초 admin은 HTTP가 아닌 운영 명령으로 준비하며, admin과 user token은 서로 다른 secret으로 서명한다.
 
 본인 자원은 URL의 ID가 아니라 token subject로 고정한 `/me` 경로를 사용하고, 임의 ID를 받는 경로는 admin에게만 허용한다. 두 규칙을 함께 적용해 user가 ID를 바꿔 다른 사용자의 자원에 접근하는 IDOR 경로를 제거한다.
 
