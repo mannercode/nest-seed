@@ -13,14 +13,11 @@ import { setTimeout as delay } from 'node:timers/promises'
 import { getSharedTestMongoConnection } from '../../scripts/index.cjs'
 
 const startupProjectId = process.env.PROJECT_ID
-let previousProjectId = startupProjectId
-let previousTestStream: { name: string; subject: string } | undefined
 
 describe('VitestResourceIsolation', () => {
     beforeEach(() => {
         const projectId = requiredEnvironment('PROJECT_ID')
-        expect(projectId).not.toBe(previousProjectId)
-        previousProjectId = projectId
+        expect(projectId).not.toBe(startupProjectId)
     })
 
     it('실행별 namespace를 반영하고 병렬 teardown에서 다른 실행 자원을 보존한다', async () => {
@@ -40,43 +37,6 @@ describe('VitestResourceIsolation', () => {
         expect(['A', 'B']).toContain(role)
         await runInfrastructureProbe(role as 'A' | 'B')
     }, 60_000)
-
-    it('테스트 전용 JetStream을 현재 PROJECT_ID namespace에 만든다', async () => {
-        const role = process.env.VITEST_ISOLATION_ROLE
-        if (role === undefined) return
-
-        const runId = requiredEnvironment('API_VITEST_RUN_ID')
-        const subject = `${requiredEnvironment('PROJECT_ID')}.purchase.ticketPurchased`
-        const name = `VITEST_CLEANUP_${role}_${runId}`
-        previousTestStream = { name, subject }
-        const connection = await createNatsConnection()
-
-        try {
-            const manager = await jetstreamManager(connection)
-            await manager.streams.add({
-                max_bytes: 1024 * 1024,
-                name,
-                storage: StorageType.File,
-                subjects: [subject]
-            })
-        } finally {
-            await connection.drain()
-        }
-    })
-
-    it('직전 테스트의 JetStream을 global teardown까지 유지한다', async () => {
-        if (previousTestStream === undefined) return
-
-        const connection = await createNatsConnection()
-        try {
-            const manager = await jetstreamManager(connection)
-            await expect(manager.streams.find(previousTestStream.subject)).resolves.toBe(
-                previousTestStream.name
-            )
-        } finally {
-            await connection.drain()
-        }
-    })
 })
 
 async function runInfrastructureProbe(role: 'A' | 'B'): Promise<void> {
@@ -90,14 +50,19 @@ async function runInfrastructureProbe(role: 'A' | 'B'): Promise<void> {
     const sentinel = `sentinel-${role.toLowerCase()}-${runId}`
     const redisKey = `vitest-isolation:${projectId}:${sentinel}`
     const s3Key = `vitest-isolation/${sentinel}`
+    const jetStreamName = `VITEST_CLEANUP_${role}_${runId}`
+    const jetStreamSubject = `${projectId}.purchase.ticketPurchased`
     const mongo = getSharedTestMongoConnection().client
     const s3 = createS3Client()
     const redis = createRedisCluster()
+    const nats = await createNatsConnection()
 
     const result = {
         bucketName,
         coverageDirectory: requiredEnvironment('VITEST_ISOLATION_PROBE_COVERAGE_DIRECTORY'),
         databaseName,
+        jetStreamName,
+        jetStreamSubject,
         outputDirectory: requiredEnvironment('VITEST_ISOLATION_PROBE_OUTPUT_DIRECTORY'),
         projectId,
         redisKey,
@@ -109,10 +74,17 @@ async function runInfrastructureProbe(role: 'A' | 'B'): Promise<void> {
     }
 
     try {
+        const manager = await jetstreamManager(nats)
         await Promise.all([
             mongo.db(databaseName).collection('vitestInvocationSentinels').insertOne({ sentinel }),
             s3.send(new PutObjectCommand({ Body: sentinel, Bucket: bucketName, Key: s3Key })),
-            redis.set(redisKey, sentinel)
+            redis.set(redisKey, sentinel),
+            manager.streams.add({
+                max_bytes: 1024 * 1024,
+                name: jetStreamName,
+                storage: StorageType.File,
+                subjects: [jetStreamSubject]
+            })
         ])
         writeJsonAtomic(resultPath, result)
 
@@ -147,12 +119,20 @@ async function runInfrastructureProbe(role: 'A' | 'B'): Promise<void> {
         expect((Buckets ?? []).map(({ Name }) => Name)).not.toContain(peer.bucketName)
         await expect(redis.get(peer.redisKey)).resolves.toBeNull()
 
+        const streamNames: string[] = []
+        for await (const stream of manager.streams.list()) {
+            streamNames.push(stream.config.name)
+        }
+        expect(streamNames).toContain(jetStreamName)
+        expect(streamNames).not.toContain(peer.jetStreamName)
+
         writeJsonAtomic(resultPath, {
             ...result,
             peerResourcesRemoved: true,
             sentinelsPreserved: true
         })
     } finally {
+        await nats.drain()
         await redis.quit()
         s3.destroy()
     }

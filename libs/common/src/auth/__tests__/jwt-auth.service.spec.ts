@@ -6,7 +6,19 @@ import {
     TEST_AUTH_ISSUER,
     createJwtAuthServiceFixtureWithShortTtl
 } from './jwt-auth.service.fixture.js'
-import { sleep } from '../../utils/index.js'
+
+function createExpiredRefreshToken() {
+    return new JwtService().signAsync(
+        { familyId: 'expired-family', refreshTokenId: 'expired-token', sub: 'u1' },
+        {
+            algorithm: 'HS256',
+            audience: TEST_AUTH_AUDIENCE,
+            expiresIn: '-1s',
+            issuer: TEST_AUTH_ISSUER,
+            secret: 'refreshSecret'
+        }
+    )
+}
 
 async function expireConcurrentRefreshGrace(fix: JwtAuthServiceFixture, refreshToken: string) {
     const decoded = new JwtService().decode<Record<string, unknown>>(refreshToken)
@@ -288,9 +300,8 @@ describe('JwtAuthService', () => {
         })
 
         it('만료된 토큰은 401(token expired)로 거부한다', async () => {
-            // 픽스처 TTL(3000ms)보다 길게 기다려 부하 환경에서도 만료를 보장한다.
-            await sleep(4000)
-            const promise = fix.jwtService.refreshAuthTokens(refreshToken)
+            const expiredRefreshToken = await createExpiredRefreshToken()
+            const promise = fix.jwtService.refreshAuthTokens(expiredRefreshToken)
             await expect(promise).rejects.toThrow('token expired')
         })
 
@@ -568,9 +579,8 @@ describe('JwtAuthService', () => {
         })
 
         it('만료된 토큰을 폐기하면 401(token expired)을 전파한다', async () => {
-            const { refreshToken } = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
-            await sleep(4000)
-            await expect(fix.jwtService.revokeRefreshToken(refreshToken)).rejects.toThrow(
+            const expiredRefreshToken = await createExpiredRefreshToken()
+            await expect(fix.jwtService.revokeRefreshToken(expiredRefreshToken)).rejects.toThrow(
                 'token expired'
             )
             expect(fix.events.find((e) => e.type === 'verify.failed')).toBeUndefined()

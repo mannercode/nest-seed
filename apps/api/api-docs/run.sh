@@ -3,8 +3,6 @@ set -Eeuo pipefail
 trap 'echo "[ERR] ${BASH_SOURCE[0]}:${LINENO} (종료 코드: $?)" >&2' ERR
 cd "$(dirname "$0")"
 . ./.env
-# shellcheck source=log-redaction.sh
-. ./log-redaction.sh
 
 RESET='\033[0m'
 BOLD='\033[1m'
@@ -29,38 +27,12 @@ LOG_LINE() {
 	echo "$*" >>"${LOG_FILE}"
 }
 
-LOG_JSON() {
-	local payload=$1
-	local redacted
-	redacted=$(redact_body_for_log "${payload}")
+LOG_RESPONSE() {
+	local body=$1
 
-	if [[ -n "${redacted}" ]]; then
-		echo "${redacted}" | jq '.' >>"${LOG_FILE}" 2>/dev/null || echo "${redacted}" >>"${LOG_FILE}"
+	if [[ -n "${body}" ]]; then
+		printf '%s' "${body}" | jq '.' >>"${LOG_FILE}" 2>/dev/null || printf '%s\n' "${body}" >>"${LOG_FILE}"
 	fi
-}
-
-LOG_COMMAND() {
-	local method=$1
-	local url=$2
-	shift 2
-
-	local -a command=(curl -sSX "${method}" "${url}" "$@")
-	local redacted_arg=''
-	local line=''
-
-	for arg in "${command[@]}"; do
-		redacted_arg=$(redact_log_argument "${arg}")
-		redacted_arg="${redacted_arg//$'\n'/ }"
-		redacted_arg="${redacted_arg//$'\t'/ }"
-
-		if [[ "${redacted_arg}" =~ [[:space:]] ]]; then
-			line+="'${redacted_arg//\'/\'\\\'\'}' "
-		else
-			line+="${redacted_arg} "
-		fi
-	done
-
-	LOG_LINE "${line}"
 }
 
 CURL() {
@@ -92,29 +64,26 @@ CURL() {
 	response=$(curl -sSX "${method}" -w "%{http_code}" "${url}" "${args[@]}") || curl_exit=$?
 
 	if [[ "${curl_exit}" -ne 0 ]]; then
-		printf '%b %s %s\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method ${method})" "$(redact_log_argument "${url}")"
-		printf '  curl 종료 코드: %d, 응답: %s\n' "${curl_exit}" "$(redact_body_for_log "${response}")"
+		printf '%b %s %s\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method "${method}")" "$(format_endpoint "${url}")"
+		printf '  curl 종료 코드: %d\n' "${curl_exit}"
 		exit 1
 	fi
-
-	# 로그는 호출 구조를 남기되 인증 헤더와 민감 JSON 필드는 redaction한다.
-	LOG_COMMAND "${method}" "${url}" "${args[@]}"
 
 	STATUS="${response:${#response}-3}"
 	BODY="${response:0:${#response}-3}"
 }
 
 format_endpoint() {
-	local endpoint=$1
-	endpoint=$(redact_log_argument "${endpoint}")
-	local path=$endpoint
-	local query=''
+	local endpoint=${1%%\?*}
+	local path=${endpoint}
 	local i=0
 	local -a segments=()
 
-	if [[ "${endpoint}" == *\?* ]]; then
-		path="${endpoint%%\?*}"
-		query="?${endpoint#*\?}"
+	if [[ "${path}" == "${SERVER_URL}"* ]]; then
+		path=${path#"${SERVER_URL}"}
+	elif [[ "${path}" =~ ^https?:// ]]; then
+		printf ':external'
+		return
 	fi
 
 	IFS='/' read -r -a segments <<<"${path}"
@@ -130,7 +99,7 @@ format_endpoint() {
 	echo "$(
 		IFS=/
 		echo "${segments[*]}"
-	)${query}"
+	)"
 }
 
 format_method() {
@@ -183,7 +152,6 @@ init_summary() {
 		printf '# API 문서\n\n'
 		printf '실행 가능한 curl spec에서 생성한 최신 API 호출 목록이다.\n\n'
 		printf -- '- 생성 시각: `%s`\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-		printf -- '- 서버: `%s`\n' "$(redact_log_argument "${SERVER_URL}")"
 		printf -- '- 상세 로그: [%s](../logs/%s/)\n\n' "${RUN_ID}" "${RUN_ID}"
 		printf '| 그룹 | 설명 | Method | Endpoint | 기대 | 실제 | 결과 | 상세 |\n'
 		printf '| --- | --- | --- | --- | ---: | ---: | --- | --- |\n'
@@ -199,10 +167,8 @@ record_summary() {
 	local display_endpoint
 	local log_path
 	local result
-	local safe_endpoint
 
-	safe_endpoint=$(redact_log_argument "${endpoint}")
-	display_endpoint=$(format_endpoint "${safe_endpoint}")
+	display_endpoint=$(format_endpoint "${endpoint}")
 	log_path="${LOG_FILE#${OUTPUT_ROOT}/}"
 
 	if [[ "${STATUS}" -eq "${expected_status}" ]]; then
@@ -228,7 +194,6 @@ record_summary() {
 		--arg description "${description}" \
 		--arg method "${method}" \
 		--arg endpoint "${display_endpoint}" \
-		--arg actualEndpoint "${safe_endpoint}" \
 		--arg expectedStatus "${expected_status}" \
 		--arg actualStatus "${STATUS}" \
 		--arg result "${result}" \
@@ -240,7 +205,6 @@ record_summary() {
 			description: $description,
 			method: $method,
 			endpoint: $endpoint,
-			actualEndpoint: $actualEndpoint,
 			expectedStatus: ($expectedStatus | tonumber),
 			actualStatus: ($actualStatus | tonumber),
 			result: $result,
@@ -264,18 +228,19 @@ TEST() {
 
 	if [[ "${STATUS}" -ne "${expected_status}" ]]; then
 		FAILED_TESTS=$((FAILED_TESTS + 1))
-		LOG_LINE "RES='${STATUS}(기대:${expected_status})"
+		LOG_LINE "${method} $(format_endpoint "${endpoint}")"
+		LOG_LINE "기대=${expected_status} 실제=$(format_response "${STATUS}" "${BODY}")"
 
-		printf '%b %s %s → 실제 %s, 기대 %s\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method ${method})" "$(format_endpoint "${endpoint}")" "$(format_response "${STATUS}" "${BODY}")" "${expected_status}"
+		printf '%b %s %s → 실제 %s, 기대 %s\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method "${method}")" "$(format_endpoint "${endpoint}")" "$(format_response "${STATUS}" "${BODY}")" "${expected_status}"
 	else
 		PASSED_TESTS=$((PASSED_TESTS + 1))
-		LOG_LINE "RES='${STATUS}"
+		LOG_LINE "${method} $(format_endpoint "${endpoint}")"
+		LOG_LINE "기대=${expected_status} 실제=${STATUS}"
 
-		printf '%b %s %s → %s\n' "${BOLD}${GREEN}[PASS]${RESET}" "$(format_method ${method})" "$(format_endpoint "${endpoint}")" "$(format_response "${STATUS}" "${BODY}")"
+		printf '%b %s %s → %s\n' "${BOLD}${GREEN}[PASS]${RESET}" "$(format_method "${method}")" "$(format_endpoint "${endpoint}")" "$(format_response "${STATUS}" "${BODY}")"
 	fi
 
-	LOG_JSON "${BODY}"
-	LOG_LINE "'"
+	LOG_RESPONSE "${BODY}"
 	LOG_LINE ""
 
 	record_summary "${description}" "${expected_status}" "${method}" "${endpoint}"
@@ -290,15 +255,13 @@ SETUP() {
 
 	CURL "${method}" "${SERVER_URL}${endpoint}" "$@"
 
-	LOG_LINE "RES='${STATUS}"
-	LOG_JSON "${BODY}"
-	LOG_LINE "'"
+	LOG_LINE "${method} $(format_endpoint "${endpoint}")"
+	LOG_LINE "실제=$(format_response "${STATUS}" "${BODY}")"
 	LOG_LINE ""
 
 	if [[ "${STATUS}" -ge 400 ]]; then
 		LOG_LINE "# 준비 요청 실패"
-		printf '%b SETUP %s %s (상태 %s)\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method ${method})" "$(format_endpoint "${endpoint}")" "${STATUS}"
-		printf '  %s\n' "$(redact_body_for_log "${BODY}")" | head -5
+		printf '%b SETUP %s %s (실제 %s)\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method "${method}")" "$(format_endpoint "${endpoint}")" "$(format_response "${STATUS}" "${BODY}")"
 		exit 2
 	fi
 }

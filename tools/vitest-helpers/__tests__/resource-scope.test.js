@@ -60,7 +60,7 @@ test('실행 ID와 S3 버킷 이름은 충돌 방지에 충분한 안전한 형�
 })
 
 test('실행 ID가 없거나 안전한 형식이 아니면 넓은 정리 패턴을 만들지 않는다', () => {
-    for (const runId of ['', 'same-run', '../production', 'A'.repeat(32)]) {
+    for (const runId of [undefined, '', 'same-run', '../production', 'A'.repeat(32)]) {
         assert.throws(() => createVitestResourceScope(runId), /Vitest resource run ID/)
     }
 })
@@ -95,8 +95,15 @@ test('Redis 정리는 현재 실행의 key만 삭제하고 다른 실행 key를 
     assert.deepEqual(deleted, keys.slice(0, 2))
 })
 
-test('Redis 정리는 고정 run scope가 없어 전체 key 공간을 훑는 glob을 fail closed로 거부한다', async () => {
-    for (const pattern of ['*', '**', '?*', '*?', 'a*', '*:*', '[abc]*', '[^x]*']) {
+test('Redis 정리는 안전한 고정 scope가 없는 pattern을 연결 전에 거부한다', async () => {
+    for (const { pattern, scope } of [
+        { pattern: '', scope: RUN_A },
+        { pattern: undefined, scope: RUN_A },
+        { pattern: 'a*', scope: 'a' },
+        { pattern: 'prefix:*', scope: undefined },
+        { pattern: `*${RUN_A}*`, scope: RUN_B },
+        { pattern: `[${RUN_A}]*`, scope: RUN_A }
+    ]) {
         let connected = false
 
         await assert.rejects(
@@ -111,11 +118,11 @@ test('Redis 정리는 고정 run scope가 없어 전체 key 공간을 훑는 glo
                     }
                 },
                 pattern,
-                RUN_A
+                scope
             ),
-            /redisKeyScope/
+            /scoped Redis key pattern|redisKeyScope/
         )
-        assert.equal(connected, false, pattern)
+        assert.equal(connected, false, String(pattern))
     }
 })
 

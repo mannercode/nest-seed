@@ -52,7 +52,7 @@ bash apps/api/api-docs/run.sh
 bash apps/api/api-docs/run.sh showtime-creation.spec
 ```
 
-Generated request/response logs are diagnostic output, not public documentation artifacts. Long-lived SSE and infrastructure failure paths are covered by integration tests. See [Executable API docs](docs/apps.md#5-실행-가능한-api-문서) for conventions and security boundaries.
+Each `TEST` detail log records the actual response body. The spec itself shows the request, while preparation-only `SETUP` calls are not documentation entries. Long-lived SSE and infrastructure failure paths are covered by integration tests. See [Executable API docs](docs/apps.md#5-실행-가능한-api-문서) for the detailed conventions.
 
 ## 4. Project structure
 

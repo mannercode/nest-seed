@@ -150,9 +150,7 @@ wait_for_showtime_creation() {
 	done
 
 	LOG_LINE "# 준비 실패: 상영 생성 saga가 성공 상태에 도달하지 않았다"
-	LOG_LINE "RES='setup-failed"
-	LOG_JSON "${BODY}"
-	LOG_LINE "'"
+	LOG_LINE "상태=${sagaStatus}"
 	LOG_LINE ""
 	echo "[FAIL] SETUP wait_for_showtime_creation: sagaId=${SAGA_ID}, status=${sagaStatus}"
 	exit 2
@@ -184,12 +182,8 @@ wait_for_showtime() {
 	done
 
 	LOG_LINE "# 준비 실패: ${attempts}초 안에 상영 시간이 생성되지 않았다"
-	LOG_LINE "RES='setup-timeout'"
-	LOG_JSON "${BODY}"
-	LOG_LINE "'"
 	LOG_LINE ""
 	echo "[FAIL] SETUP wait_for_showtime: ${attempts}초 동안 기다렸지만 상영 시간이 생성되지 않았다 (movieId=${MOVIE_ID}, theaterId=${THEATER_ID})"
-	echo "  마지막 응답: $(redact_body_for_log "${BODY}")" | head -5
 	exit 2
 }
 
@@ -213,12 +207,8 @@ wait_for_tickets() {
 	done
 
 	LOG_LINE "# 준비 실패: ${attempts}초 안에 티켓이 생성되지 않았다"
-	LOG_LINE "RES='setup-timeout'"
-	LOG_JSON "${BODY}"
-	LOG_LINE "'"
 	LOG_LINE ""
 	echo "[FAIL] SETUP wait_for_tickets: ${attempts}초 동안 기다렸지만 티켓이 생성되지 않았다 (showtimeId=${SHOWTIME_ID}, ticketCount=${ticketCount})"
-	echo "  마지막 응답: $(redact_body_for_log "${BODY}")" | head -5
 	exit 2
 }
 
@@ -247,9 +237,7 @@ upload_presigned_post() {
 
 	if [[ "${STATUS}" -ge 300 ]]; then
 		LOG_LINE "# 업로드 실패"
-		LOG_LINE "RES='${STATUS}"
-		LOG_JSON "${BODY}"
-		LOG_LINE "'"
+		LOG_LINE "실제=${STATUS}"
 		exit 2
 	fi
 }

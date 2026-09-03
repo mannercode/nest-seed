@@ -65,7 +65,6 @@ test('resource scope는 숫자가 아닌 worker ID를 거부한다', () => {
     const scope = createVitestResourceScope(RUN_ID)
 
     assert.throws(() => scope.databaseName('worker-1'), /worker ID/)
-    assert.throws(() => createVitestResourceScope(), /run ID/)
 })
 
 test('test ID는 고정 길이의 허용 문자로 생성된다', () => {
@@ -428,40 +427,4 @@ test('Redis SCAN pagination은 전달된 glob으로 찾은 key를 모두 unlink�
 
     assert.deepEqual(patterns, [redisKeyPattern, redisKeyPattern])
     assert.deepEqual(deleted, ['scope:first', 'scope:second'])
-})
-
-test('Redis scoped cleanup은 빈 값과 문자열이 아닌 pattern도 거부한다', async () => {
-    for (const pattern of ['', undefined]) {
-        await assert.rejects(
-            cleanupRedisMatching(
-                () => {
-                    throw new Error('must not connect')
-                },
-                pattern,
-                'scope-0123456789abcdef'
-            ),
-            /scoped Redis key pattern/
-        )
-    }
-})
-
-test('Redis scoped cleanup은 pattern에 긴 고정 scope marker를 요구한다', async () => {
-    for (const options of [
-        { pattern: 'a*', scope: 'a' },
-        { pattern: 'prefix:*', scope: undefined },
-        { pattern: '*0123456789abcdef*', scope: 'fedcba9876543210' },
-        { pattern: '[0123456789abcdef]*', scope: '0123456789abcdef' },
-        { pattern: '[\\]0123456789abcdef]*', scope: '0123456789abcdef' }
-    ]) {
-        await assert.rejects(
-            cleanupRedisMatching(
-                () => {
-                    throw new Error('must not connect')
-                },
-                options.pattern,
-                options.scope
-            ),
-            /redisKeyScope/
-        )
-    }
 })

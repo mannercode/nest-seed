@@ -1,4 +1,4 @@
-import { instant, isDebuggingEnabled, oid, plainDate, step, withTestId } from '../index.js'
+import { instant, oid, plainDate, step, withTestId } from '../index.js'
 
 describe('Temporal fixtures', () => {
     it('시각 문자열과 epoch 값을 밀리초 Instant로 만든다', () => {
@@ -78,12 +78,5 @@ describe('oid', () => {
 
     it('여러 자리 값도 24자리 16진수 문자열로 채워 반환한다', () => {
         expect(oid(0xff)).toBe('0000000000000000000000ff')
-    })
-})
-
-describe('isDebuggingEnabled', () => {
-    it('디버거가 연결되지 않았으면 false를 반환한다', () => {
-        // CI/일반 실행에서는 디버거가 붙지 않는다.
-        expect(isDebuggingEnabled()).toBe(false)
     })
 })

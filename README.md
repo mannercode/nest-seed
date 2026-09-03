@@ -50,7 +50,7 @@ bash apps/api/api-docs/run.sh                   # 실행 중인 개발 API 대�
 bash apps/api/api-docs/run.sh showtime-creation.spec
 ```
 
-생성되는 요청·응답 로그는 진단 산출물이며 공개 문서 호스팅 대상이 아니다. 장기 SSE와 인프라 장애 조건은 통합 테스트가 검증한다. 규칙과 보안 경계는 [실행 가능한 API 문서](docs/apps.md#5-실행-가능한-api-문서)에 있다.
+각 `TEST`의 상세 로그에는 실제 응답 본문을 기록한다. 요청은 spec 자체가 보여 주며 준비용 `SETUP`은 문서 항목에 포함하지 않는다. 장기 SSE와 인프라 장애 조건은 통합 테스트가 검증한다. 자세한 규칙은 [실행 가능한 API 문서](docs/apps.md#5-실행-가능한-api-문서)에 있다.
 
 ## 4. 프로젝트 구조
 
