@@ -4,6 +4,27 @@ export type AuthTokens = { accessToken: string; refreshToken: string }
 
 type HeaderReader = Pick<Headers, 'get'>
 
+export function hasSameOrigin(
+    method: string,
+    headers: HeaderReader,
+    requestProtocol: string
+): boolean {
+    if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return true
+
+    const origin = headers.get('origin')
+    if (origin === null) return true
+
+    const host = headers.get('host')?.trim().toLowerCase()
+    if (!host) return false
+
+    try {
+        const originUrl = new URL(origin)
+        return originUrl.protocol === requestProtocol && originUrl.host.toLowerCase() === host
+    } catch {
+        return false
+    }
+}
+
 export function resolveForwardedClientIp(
     headers: HeaderReader,
     trustProxyHeaders: boolean

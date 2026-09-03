@@ -1,11 +1,10 @@
-name: plantuml
-
 services:
     plantuml:
         image: plantuml/plantuml-server:jetty-v1.2026.6@sha256:5b9968b8723e03ef585396b257127337ca5f91e58ccbffc88f085bd649a717dc
-        container_name: plantuml
+        container_name: ${COMPOSE_PROJECT_NAME}-plantuml
         restart: unless-stopped
 
 networks:
     default:
-        name: plantuml
+        name: ${COMPOSE_PROJECT_NAME}
+        external: true

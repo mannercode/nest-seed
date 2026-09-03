@@ -4,14 +4,14 @@
 
 ## 무엇을 실행하는가
 
-| 영역                 | 검증 이유                                                            | 기본 명령                               | 결과                                  |
-| -------------------- | -------------------------------------------------------------------- | --------------------------------------- | ------------------------------------- |
-| `api-race/contracts` | 실제 race가 쓰는 HTTP/SSE deadline과 workflow 목록이 유지되는지 확인 | `pnpm --filter './tests/api-race' test` | 터미널 `node:test` 결과               |
-| `api-race/probes`    | Restate 재시작 뒤 journal replay와 중단 step 재실행을 확인           | `pnpm run atoz`                         | AtoZ 보고서와 터미널 `node:test` 결과 |
-| `web/contracts`      | 두 BFF의 proxy·refresh 보안 경계와 프런트 린트 계약 확인             | `pnpm --filter './tests/web' test`      | 터미널 Playwright 결과                |
-| `web/e2e`            | 관리자·사용자의 실제 브라우저 흐름과 세션 보안 확인                  | `pnpm run e2e`                          | 실행 보고서, HTML, trace·screenshot   |
-| `api-race` 시나리오  | 4개 API replica 사이의 경합·fanout·장애 복구 불변식 확인             | `pnpm run race <scenario>`              | 실행 보고서와 실패 시 컨테이너 진단   |
-| `api-benchmark`      | 같은 머신의 이전 실행과 RPS·latency 비교                             | `pnpm run benchmark:api`                | 실행 보고서, JSON과 HTML dashboard    |
+| 영역                 | 검증 이유                                                             | 기본 명령                               | 결과                                  |
+| -------------------- | --------------------------------------------------------------------- | --------------------------------------- | ------------------------------------- |
+| `api-race/contracts` | 실제 race가 쓰는 HTTP/SSE deadline과 workflow 목록이 유지되는지 확인  | `pnpm --filter './tests/api-race' test` | 터미널 `node:test` 결과               |
+| `api-race/probes`    | Restate 재시작 뒤 journal replay와 중단 step 재실행을 확인            | `pnpm run atoz`                         | AtoZ 보고서와 터미널 `node:test` 결과 |
+| `web/contracts`      | 두 BFF의 origin·proxy·refresh 보안 경계와 프런트 린트 계약 확인       | `pnpm --filter './tests/web' test`      | 터미널 Playwright 결과                |
+| `web/e2e`            | production 앱 이미지에서 관리자·사용자 브라우저 흐름과 세션 보안 확인 | `pnpm run e2e`                          | 실행 보고서, HTML, trace·screenshot   |
+| `api-race` 시나리오  | 4개 API replica 사이의 경합·fanout·장애 복구 불변식 확인              | `pnpm run race <scenario>`              | 실행 보고서와 실패 시 컨테이너 진단   |
+| `api-benchmark`      | 같은 머신의 이전 실행과 RPS·latency 비교                              | `pnpm run benchmark:api`                | 실행 보고서, JSON과 HTML dashboard    |
 
 ## 전체 명령의 범위
 
@@ -40,12 +40,12 @@
 ### 브라우저 E2E
 
 ```bash
-pnpm run e2e:list                # 서버를 띄우지 않고 테스트 이름만 확인
-pnpm run e2e:ui                  # 테스트 선택·실행·디버깅
+pnpm run e2e:list                # 앱을 띄우지 않고 runner에서 테스트 이름만 확인
+pnpm run e2e:ui                  # production 앱들과 container UI를 실행
 pnpm run e2e:report              # 마지막 HTML 보고서 열기
 ```
 
-실패한 테스트의 trace와 screenshot은 `tests/web/_output/test-results/`에 있고 HTML 보고서에서도 열 수 있다. GitHub AtoZ artifact는 이 `_output` 폴더를 14일 동안 보관한다.
+wrapper가 API·console·user-app 이미지를 만들고 같은 Docker 네트워크에 띄운 뒤 공식 Playwright runner를 일회성으로 실행하고 web stack만 정리한다. 실패한 테스트의 trace와 screenshot은 `tests/web/_output/test-results/`에 있고 HTML 보고서에서도 열 수 있다. GitHub AtoZ artifact는 이 `_output` 폴더를 14일 동안 보관한다. Remote SSH에서 UI를 쓸 때는 Docker host의 loopback `9323`을 remote host port forwarding이나 `ssh -L`로 전달한다.
 
 ### API race
 

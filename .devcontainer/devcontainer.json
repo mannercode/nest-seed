@@ -3,7 +3,10 @@
     "hostRequirements": { "cpus": 4, "memory": "16gb", "storage": "32gb" },
     "build": { "dockerfile": "Dockerfile", "context": ".." },
     "features": {
-        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": { "moby": false },
+        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+            "moby": false,
+            "dockerDashComposeVersion": "none"
+        },
         "ghcr.io/devcontainers/features/github-cli": {}
     },
     "runArgs": [
@@ -12,10 +15,8 @@
         "--env-file",
         ".env.api",
         "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}",
-        "--network=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}",
-        "--network=plantuml"
+        "--network=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
     ],
-    "forwardPorts": [5010],
     "remoteUser": "node",
     "containerEnv": {
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}",
@@ -32,17 +33,17 @@
     ],
     "initializeCommand": {
         "project-network": "n=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}; docker network inspect \"$n\" >/dev/null 2>&1 || docker network create \"$n\" >/dev/null",
-        "plantuml": "docker compose --project-name plantuml --file \"${localWorkspaceFolder}/.devcontainer/compose.plantuml.yml\" up --detach",
         "codex": "mkdir -p ${localEnv:HOME}/.codex",
         "claude": "mkdir -p ${localEnv:HOME}/.claude && touch ${localEnv:HOME}/.claude.json",
         "github": "mkdir -p ${localEnv:HOME}/.config/gh"
     },
-    "updateContentCommand": { "workspace-dependencies": "pnpm install --frozen-lockfile" },
-    "postCreateCommand": {
-        "playwright-chromium": "pnpm --filter './tests/web' exec playwright install chromium"
+    "postStartCommand": {
+        "workspace-dependencies": "pnpm install --frozen-lockfile",
+        "plantuml": "docker compose -f .devcontainer/compose.plantuml.yml up -d",
+        "infra": "bash infra/reset.sh"
     },
-    "postStartCommand": { "infra": "bash infra/reset.sh" },
     "waitFor": "postStartCommand",
+    "forwardPorts": [5010],
     "customizations": {
         "vscode": {
             "extensions": [

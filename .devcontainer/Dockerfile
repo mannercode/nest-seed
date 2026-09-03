@@ -3,9 +3,7 @@
 FROM node:26.8.1-bookworm-slim@sha256:367679cf9792759492a486e4aa4b421764d71a9546a6dae8aab81a99eb797b3e
 ARG TARGETARCH
 
-ENV LANG=C.UTF-8 \
-    NPM_CONFIG_UPDATE_NOTIFIER=false \
-    PNPM_CONFIG_UPDATE_NOTIFIER=false
+ENV LANG=C.UTF-8
 
 RUN set -eu; \
     case "$TARGETARCH" in \
@@ -16,13 +14,6 @@ RUN set -eu; \
 RUN set -eu; apt-get update; DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
     ca-certificates curl git iproute2 jq openssh-client shellcheck shfmt tmux tree unzip; \
-    rm -rf /var/lib/apt/lists/*
-
-RUN --mount=type=bind,source=tests/web/package.json,target=/tmp/tests-web-package.json,ro \
-    set -eu; \
-    playwright_version="$(node -p "require('/tmp/tests-web-package.json').devDependencies['@playwright/test']")"; \
-    npm_config_cache=/tmp/npm-cache npx --yes "playwright@${playwright_version}" install-deps chromium; \
-    rm -rf /tmp/npm-cache; \
     rm -rf /var/lib/apt/lists/*
 
 RUN set -eu; \
@@ -47,8 +38,4 @@ RUN set -eu; \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends cloudflared; \
     rm -rf /var/lib/apt/lists/*
 
-RUN --mount=type=bind,source=package.json,target=/tmp/workspace-package.json,ro \
-    set -eu; \
-    package_manager="$(node -p "require('/tmp/workspace-package.json').packageManager")"; \
-    npm_config_cache=/tmp/npm-cache npm install --global --no-audit --no-fund "$package_manager"; \
-    rm -rf /tmp/npm-cache
+RUN npm install -g pnpm

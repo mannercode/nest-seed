@@ -6,19 +6,19 @@
 
 ## 1. 파일 역할
 
-| 파일                     | 읽는 곳                                                        | 역할                                                                                                                                                                         |
-| ------------------------ | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.env.infra`             | Dev Container `runArgs`, `infra` compose, `deploy/compose.yml` | 개발 인프라 이미지 태그·digest와 접속 값. MongoDB, Redis, VersityGW, NATS, Restate 서비스 이름·포트와 dev 서버 포트(`API_PORT`, `CONSOLE_PORT`, `USER_APP_PORT`)를 정의한다. |
-| `.env.api`               | Dev Container `runArgs`, `deploy/compose.yml` `env_file`       | API 런타임의 앱 설정. `NODE_ENV`(개발·테스트는 test, deploy가 production으로 덮어씀), `PROJECT_ID`, HTTP, 인증, 콘솔 로그 레벨, `ROOT_PASSWORD`를 둔다.                      |
-| `apps/api/api-docs/.env` | `apps/api/api-docs/run.sh`                                     | curl 기반 API 문서 실행 설정. `SERVER_URL`과 업로드 fixture 값을 둔다.                                                                                                       |
-| `apps/console/.env`      | Next.js console                                                | 관리 콘솔이 호출할 API 기준 URL과 선택적인 trusted-proxy opt-in을 둔다.                                                                                                      |
-| `apps/user-app/.env`     | Next.js user-app                                               | 사용자 앱이 호출할 API 기준 URL과 선택적인 trusted-proxy opt-in을 둔다.                                                                                                      |
+| 파일                     | 읽는 곳                                                    | 역할                                                                                                                                                                         |
+| ------------------------ | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.env.infra`             | Dev Container `runArgs`, `infra`·`deploy`·web test Compose | 개발 인프라 이미지 태그·digest와 접속 값. MongoDB, Redis, VersityGW, NATS, Restate 서비스 이름·포트와 dev 서버 포트(`API_PORT`, `CONSOLE_PORT`, `USER_APP_PORT`)를 정의한다. |
+| `.env.api`               | Dev Container `runArgs`, `deploy`·web test Compose         | API 런타임의 앱 설정. `NODE_ENV`(개발·테스트는 test, Compose가 필요하면 덮어씀), `PROJECT_ID`, HTTP, 인증, 콘솔 로그 레벨, `ROOT_PASSWORD`를 둔다.                           |
+| `apps/api/api-docs/.env` | `apps/api/api-docs/run.sh`                                 | curl 기반 API 문서 실행 설정. `SERVER_URL`과 업로드 fixture 값을 둔다.                                                                                                       |
+| `apps/console/.env`      | Next.js console                                            | 관리 콘솔이 호출할 API 기준 URL과 선택적인 trusted-proxy opt-in을 둔다.                                                                                                      |
+| `apps/user-app/.env`     | Next.js user-app                                           | 사용자 앱이 호출할 API 기준 URL과 선택적인 trusted-proxy opt-in을 둔다.                                                                                                      |
 
 `.env` 파일은 역할별로 분리한다. 인프라가 소유한 값은 `.env.infra`, API가 소유한 값은 `.env.api`에 둔다.
 
 이미지 값의 태그는 사람이 버전을 읽을 수 있게 남기고, multi-architecture manifest digest가 실제 이미지 바이트를 고정한다. 이미지를 올릴 때는 태그와 digest를 함께 검증·갱신한다. 태그만 바꾸거나, 기존 digest를 다른 태그에 그대로 남기지 않는다. MongoDB만 `@testcontainers/mongodb`가 `MONGO_IMAGE`의 태그를 semver로 읽어 `mongosh` 사용 여부를 정하므로 `MONGO_IMAGE`와 `MONGO_IMAGE_DIGEST`를 분리한다. `infra/compose.mongo.yml`은 두 값을 `tag@digest`로 결합해 실제 인프라 이미지의 불변성은 그대로 유지한다.
 
-Dependabot은 Dockerfile 디렉터리(`.devcontainer`, `apps/api`, `deploy`)와 Compose 디렉터리(`.devcontainer`, `deploy`, `infra`)의 직접 참조를 매주 minor/patch 범위로 확인한다. Dev Container와 API의 Node 이미지는 patch·배포판·digest까지 동일하게 고정하고 dependency name으로 묶어 한 PR에서 갱신한다. 변수로 간접 참조하는 `.env.infra` 이미지는 자동 갱신 범위가 아니므로, 버전 갱신 때 사람이 태그와 multi-architecture digest를 함께 확인한다.
+Dependabot은 Dockerfile 디렉터리(`.devcontainer`, `apps/api`, `apps/console`, `apps/user-app`, `deploy`, `tests/web`)와 Compose 디렉터리(`.devcontainer`, `deploy`, `infra`, `tests/web`)의 직접 참조를 매주 minor/patch 범위로 확인한다. Dev Container와 세 앱의 Node 이미지는 patch·배포판·digest까지 동일하게 고정하고 dependency name으로 묶어 한 PR에서 갱신한다. 변수로 간접 참조하는 `.env.infra` 이미지는 자동 갱신 범위가 아니므로, 버전 갱신 때 사람이 태그와 multi-architecture digest를 함께 확인한다. Playwright 이미지 갱신은 `tests/web/package.json`·`package-lock.json`의 package 버전도 함께 맞춰야 한다.
 
 ---
 
@@ -58,6 +58,11 @@ apps/api/api-docs/run.sh
   -> apps/api/api-docs/.env 로드
   -> SERVER_URL 대상에 curl 요청 실행
   -> _output/logs, _output/docs 산출
+
+pnpm run e2e
+  -> tests/web/run-e2e.sh가 .env.infra와 .env.api를 web Compose 보간에 사용
+  -> API 컨테이너만 두 env 파일을 그대로 받고, 두 BFF에는 필요한 URL·port·test override만 전달
+  -> Playwright runner는 Compose service DNS로 세 앱에 접근
 ```
 
 ---
@@ -66,19 +71,19 @@ apps/api/api-docs/run.sh
 
 env 파일은 자기 보간이 안 되고 compose 서비스 정의와 스크립트에는 리터럴이 남으므로, 일부 값은 짝으로 맞춰야 한다. 아래 값을 바꿀 때는 짝을 함께 바꾼다.
 
-| 값                             | 정의처                                                                             | 같이 바꿔야 할 곳                                                                                                                                                                                                               |
-| ------------------------------ | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| API 포트 3000                  | `.env.infra` `API_PORT`                                                            | `apps/console/.env`·`apps/user-app/.env`의 `API_BASE_URL`, `deploy/nginx.conf`의 upstream `api:3000`, `deploy/compose.yml` nginx `ports`의 호스트 포트, README (tunnel.sh·api predev·playwright·deploy healthcheck는 자동 추종) |
-| console 포트 3100              | `.env.infra` `CONSOLE_PORT`                                                        | README (package.json 스크립트·tunnel.sh·playwright는 자동 추종)                                                                                                                                                                 |
-| user-app 포트 3200             | `.env.infra` `USER_APP_PORT`                                                       | README (package.json 스크립트·tunnel.sh는 자동 추종)                                                                                                                                                                            |
-| Mongo `mongo1~3:27016`         | `infra/compose.mongo.yml`                                                          | `.env.infra` `MONGO_URI`                                                                                                                                                                                                        |
-| Redis `redis1~3:6379`          | `infra/compose.redis.yml`                                                          | `.env.infra` `REDIS_HOST1~3`/`REDIS_PORT1~3`                                                                                                                                                                                    |
-| NATS `nats:4222`               | `infra/compose.nats.yml` 서비스 이름(4222는 NATS 기본 포트라 파일에 리터럴이 없다) | `.env.infra` `NATS_HOST`/`NATS_PORT`                                                                                                                                                                                            |
-| Restate ingress `restate:8080` | `infra/compose.restate.yml`                                                        | `.env.infra` `RESTATE_INGRESS_URL`; API workflow client와 health indicator                                                                                                                                                      |
-| Restate admin `restate:9070`   | `infra/compose.restate.yml`                                                        | `.env.infra` `RESTATE_ADMIN_URL`; 개발·deploy endpoint 등록 스크립트                                                                                                                                                            |
-| Restate endpoint `:9080`       | `.env.infra` `RESTATE_SERVICE_PORT`                                                | API의 HTTP/2 listen, `apps/api/scripts/register-restate.cjs`, `deploy/nginx.conf`의 listen/upstream, `deploy/compose.yml` 등록 URI                                                                                              |
-| VersityGW `s3:7070`            | `infra/compose.s3.yml`                                                             | `.env.infra` `S3_ENDPOINT` (Admin API와 WebUI는 비활성화)                                                                                                                                                                       |
-| 배포 NGINX `http://nginx` (80) | `deploy/compose.yml`·`deploy/nginx.conf`                                           | `deploy/verify.sh`·`tests/api-race/runner.sh`·`tests/api-benchmark/runner.sh`의 `SERVER_URL`                                                                                                                                    |
+| 값                             | 정의처                                                                             | 같이 바꿔야 할 곳                                                                                                                                                                                                                |
+| ------------------------------ | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API 포트 3000                  | `.env.infra` `API_PORT`                                                            | `apps/console/.env`·`apps/user-app/.env`의 `API_BASE_URL`, `deploy/nginx.conf`의 upstream `api:3000`, `deploy/compose.yml` nginx `ports`의 호스트 포트, README (tunnel.sh·api predev·web Compose·deploy healthcheck는 자동 추종) |
+| console 포트 3100              | `.env.infra` `CONSOLE_PORT`                                                        | README (package.json 스크립트·tunnel.sh·web Compose는 자동 추종)                                                                                                                                                                 |
+| user-app 포트 3200             | `.env.infra` `USER_APP_PORT`                                                       | README (package.json 스크립트·tunnel.sh·web Compose는 자동 추종)                                                                                                                                                                 |
+| Mongo `mongo1~3:27016`         | `infra/compose.mongo.yml`                                                          | `.env.infra` `MONGO_URI`                                                                                                                                                                                                         |
+| Redis `redis1~3:6379`          | `infra/compose.redis.yml`                                                          | `.env.infra` `REDIS_HOST1~3`/`REDIS_PORT1~3`                                                                                                                                                                                     |
+| NATS `nats:4222`               | `infra/compose.nats.yml` 서비스 이름(4222는 NATS 기본 포트라 파일에 리터럴이 없다) | `.env.infra` `NATS_HOST`/`NATS_PORT`                                                                                                                                                                                             |
+| Restate ingress `restate:8080` | `infra/compose.restate.yml`                                                        | `.env.infra` `RESTATE_INGRESS_URL`; API workflow client와 health indicator                                                                                                                                                       |
+| Restate admin `restate:9070`   | `infra/compose.restate.yml`                                                        | `.env.infra` `RESTATE_ADMIN_URL`; 개발·deploy endpoint 등록 스크립트                                                                                                                                                             |
+| Restate endpoint `:9080`       | `.env.infra` `RESTATE_SERVICE_PORT`                                                | API의 HTTP/2 listen, `apps/api/scripts/register-restate.cjs`, `deploy/nginx.conf`의 listen/upstream, `deploy/compose.yml` 등록 URI                                                                                               |
+| VersityGW `s3:7070`            | `infra/compose.s3.yml`                                                             | `.env.infra` `S3_ENDPOINT` (Admin API와 WebUI는 비활성화)                                                                                                                                                                        |
+| 배포 NGINX `http://nginx` (80) | `deploy/compose.yml`·`deploy/nginx.conf`                                           | `deploy/verify.sh`·`tests/api-race/runner.sh`·`tests/api-benchmark/runner.sh`의 `SERVER_URL`                                                                                                                                     |
 
 ---
 

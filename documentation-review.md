@@ -257,10 +257,11 @@ TLS 없음 등 운영 HA 토폴로지와 다르다. [`infra.md`](docs/infra.md) 
 
 **현재 상태:** 후속 변경에서 해당 script를 제거하고
 [`compose.plantuml.yml`](.devcontainer/compose.plantuml.yml)을 단일 Compose 선언으로
-교체했다. `initializeCommand`가 같은 project name으로 `docker compose up --detach`를
-실행하므로 image pin이 바뀌면 Compose가 변경된 선언으로 컨테이너를 교체한다.
-[`devcontainer.md`](docs/devcontainer.md)도 서로 다른 revision이 공유 서버의 pin을
-번갈아 적용할 수 있다는 잔여 제약과 갱신 시점 조율 필요성을 명시한다.
+교체했다. `initializeCommand`는 사용자명과 workspace basename으로 구분한 네트워크를
+Dev Container 생성 전에 한 번 확보하고, Dev Container의 `runArgs`와 모든 Compose
+파일은 이 네트워크 하나를 사용한다. 컨테이너 안의 `postStartCommand`가
+`docker compose up -d`로 PlantUML 선언을 매번 맞추므로 image pin이 바뀌면 해당 작업
+폴더의 컨테이너만 교체한다. 전역 컨테이너나 별도 `plantuml` network는 공유하지 않는다.
 
 최초 지적은 현재 작업 트리에서 해결된 것으로 판정한다.
 
