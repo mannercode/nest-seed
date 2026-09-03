@@ -35,9 +35,9 @@
         "dev:user-app": "pnpm --filter './apps/user-app' --fail-if-no-match run dev"
     },
     "devDependencies": {
-        "@aws-sdk/client-s3": "3.1121.0",
-        "@aws-sdk/s3-presigned-post": "3.1121.0",
-        "@aws-sdk/s3-request-presigner": "3.1121.0",
+        "@aws-sdk/client-s3": "3.1122.0",
+        "@aws-sdk/s3-presigned-post": "3.1122.0",
+        "@aws-sdk/s3-request-presigner": "3.1122.0",
         "@commitlint/cli": "21.2.2",
         "@commitlint/config-conventional": "21.2.2",
         "@mannercode/dev-tools": "workspace:*",
