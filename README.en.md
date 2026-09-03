@@ -20,7 +20,7 @@ See [apps](docs/apps.md) for layers and distributed boundaries and [design decis
 
 ## 1. Getting started
 
-The Dev Container is the only supported development path. You need Docker and the VS Code Dev Containers extension. The minimum specification is 4 CPU cores, 16GB RAM, and 32GB disk; 32GB+ RAM is recommended for full verification.
+The Dev Container is the only supported development path. You need Docker and the VS Code Dev Containers extension.
 
 1. Open the repository in VS Code and run `Reopen in Container`. The first boot may take a while while images and development infrastructure are prepared.
 2. Run `pnpm run test`. Use `pnpm run atoz` after forking or when you need to verify every boundary.
@@ -122,7 +122,7 @@ Korean is the source language for documentation and comments. Only this README i
 - [deploy](docs/deploy.md) — multi-replica verification and boundaries that must not be copied into production
 - [devcontainer](docs/devcontainer.md) — the single development path, DooD constraints, and security
 - [decisions](docs/reference/decisions.md) — choices, alternatives, and non-guarantees
-- [conventions](docs/reference/conventions.md) — project rules automation cannot enforce
+- [development rules](docs/reference/conventions.md) — rules automation cannot enforce
 - [environment](docs/reference/environment.md) — env ownership, recreation, forking, and exposure boundaries
 
 For the design background of the movie-booking domain, see the blog series [Backend Service Analysis and Design 1](https://mannercode.com/2025/04/01/backend-design-1.html), [2](https://mannercode.com/2025/05/01/backend-design-2.html), and [3](https://mannercode.com/2025/06/01/backend-design-3.html).

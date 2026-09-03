@@ -18,7 +18,7 @@
 
 ## 1. 시작하기
 
-공식 개발 경로는 Dev Container 하나다. Docker와 VS Code Dev Containers 확장이 필요하다. 최소 사양은 CPU 4코어, RAM 16GB, 디스크 32GB이며 전체 검증에는 RAM 32GB 이상을 권장한다.
+공식 개발 경로는 Dev Container 하나다. Docker와 VS Code Dev Containers 확장이 필요하다.
 
 1. VS Code에서 저장소를 열고 `Reopen in Container`를 실행한다. 첫 부팅은 이미지와 개발 인프라를 준비하므로 시간이 걸릴 수 있다.
 2. `pnpm run test`로 기본 검증을 실행한다. 포크 직후 전체 경계를 확인하려면 `pnpm run atoz`를 실행한다.
@@ -120,7 +120,7 @@ docs/           사람이 읽을 설계·운영 문서
 - [deploy](docs/deploy.md) — 다중 복제본 검증 및 운영으로 복사하면 안 되는 경계
 - [devcontainer](docs/devcontainer.md) — 단일 개발 경로, DooD 제약과 보안
 - [decisions](docs/reference/decisions.md) — 선택 이유, 대안, 보장하지 않는 것
-- [conventions](docs/reference/conventions.md) — 자동화로 대신할 수 없는 프로젝트 규칙
+- [개발 규칙](docs/reference/conventions.md) — 자동화로 대신할 수 없는 규칙
 - [environment](docs/reference/environment.md) — env 소유권, 재생성, 포크와 공개 경계
 
 영화 예매 도메인의 설계 배경은 블로그 연재 [백엔드 서비스 분석과 설계 1](https://mannercode.com/2025/04/01/backend-design-1.html)·[2](https://mannercode.com/2025/05/01/backend-design-2.html)·[3](https://mannercode.com/2025/06/01/backend-design-3.html)에 있다.
