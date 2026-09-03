@@ -5,7 +5,6 @@ packages:
     - 'tools/*'
 
 saveExact: true
-strictDepBuilds: true
 
 allowBuilds:
     'bcrypt@6.0.0': true

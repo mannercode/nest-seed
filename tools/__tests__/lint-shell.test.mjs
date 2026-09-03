@@ -20,6 +20,7 @@ test('shell lint discovers extensionless hooks and checks sourced fixtures throu
 
     await Promise.all([
         mkdir(join(repository, '.husky'), { recursive: true }),
+        mkdir(join(repository, '_todo'), { recursive: true }),
         mkdir(join(repository, 'apps/api/api-docs'), { recursive: true }),
         mkdir(join(repository, 'tools'), { recursive: true }),
         mkdir(mockBin)
@@ -27,6 +28,7 @@ test('shell lint discovers extensionless hooks and checks sourced fixtures throu
     await Promise.all([
         copyFile(join(root, 'tools/lint-shell.mjs'), lintShell),
         writeFile(join(repository, '.husky/pre-commit'), '#!/bin/sh\nexit 0\n'),
+        writeFile(join(repository, '_todo/ignored.sh'), '#!/bin/bash\nexit 1\n'),
         writeFile(
             join(repository, 'apps/api/api-docs/common.fixture'),
             '#!/bin/bash\nSHARED_VALUE=value\n'
@@ -81,6 +83,7 @@ test('shell lint discovers extensionless hooks and checks sourced fixtures throu
     assert.ok(calls[0].includes(join(repository, '.husky/pre-commit')))
     assert.ok(calls[0].includes(join(repository, 'apps/api/api-docs/health.spec')))
     assert.ok(calls[0].includes(join(repository, 'untracked-check.sh')))
+    assert.ok(!calls[0].includes(join(repository, '_todo/ignored.sh')))
     assert.ok(!calls[0].includes(join(repository, 'apps/api/api-docs/common.fixture')))
     assert.ok(!calls[0].includes(join(repository, 'not-shell.js')))
     assert.deepEqual(calls[1].slice(3), [join(repository, 'apps/api/api-docs/health.spec')])

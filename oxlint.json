@@ -17,7 +17,7 @@
 
     "rules": { "typescript/no-explicit-any": "off" },
     "env": { "node": true },
-    "ignorePatterns": ["**/_output/**", "**/.next/**", "**/coverage/**"],
+    "ignorePatterns": ["_todo/**", "**/_output/**", "**/.next/**", "**/coverage/**"],
     "overrides": [
         {
             "files": ["apps/api/src/**/*.ts"],

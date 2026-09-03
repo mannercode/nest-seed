@@ -1,21 +1,9 @@
 # infra/ — 개발 인프라
 
-devcontainer가 부팅할 때 `postStartCommand`로 `bash infra/reset.sh`를 실행해 이 compose 묶음을 띄운다. 인프라가 꼬이면 언제든 같은 명령으로 초기화한다.
+개발 환경은 MongoDB Replica Set, Redis Cluster, S3 호환 스토리지, NATS/JetStream, Restate를 함께 띄운다. 단순한 로컬 대체재로 줄이지 않은 이유는 트랜잭션·Redis hash slot·프로세스 간 메시지처럼 토폴로지에서만 드러나는 문제를 개발 단계에서 발견하기 위해서다.
 
-- `compose.yml` — 진입점. 아래 파일들을 include하고, 모든 준비가 끝나면 종료되는 `infra-setup` 서비스를 정의한다(`reset.sh`가 이 종료로 준비 완료를 판단한다).
-- `compose.common.yml` — 모든 서비스가 공유하는 로깅·healthcheck 공통 옵션.
-- `compose.mongo.yml` — MongoDB Replica Set. 트랜잭션이 Replica Set을 요구한다.
-- `compose.redis.yml` — Redis Cluster. 스탠드얼론에서는 통과하지만 Cluster에서만 실패하는 코드가 개발 단계에서 드러나게 한다.
-- `compose.s3.yml` — VersityGW POSIX backend 기반 S3 호환 스토리지. 애플리케이션은 구현체 전용 API 없이 AWS SDK v3의 S3 API만 사용한다.
-- `compose.nats.yml` — Core pub/sub와 구매 이벤트용 JetStream. JetStream 파일 저장소는 `nats_data` volume을 사용한다.
-- `compose.restate.yml` — 단일 Restate 서버와 영속 volume. ingress(8080)와 Admin API(9070)의 health가 모두 준비되어야 healthy다.
+이 인프라는 dev server, API 통합 테스트, 다중 복제본 검증 스택이 공유한다. 접속 값은 `.env.infra`, 서비스 구성은 Compose 파일이 각각 소유한다.
 
-이 인프라는 세 소비자가 공유한다. dev 서버(`pnpm run dev`)와 `apps/api` 통합 테스트가 직접 붙고, 검증용 4-replica 배포 스택(`deploy/`)도 같은 Docker 네트워크(`COMPOSE_PROJECT_NAME`)에 붙어 서비스 이름(`mongo1`, `redis1`, `restate` 등)으로 접근한다. 접속 값의 정의처는 `.env.infra`다.
+`bash infra/reset.sh`는 개발 인프라를 다시 만드는 복구 수단이지만 volume도 지운다. 따라서 Restate journal과 JetStream의 미처리 이벤트도 삭제된다. 보존해야 할 실행이 없는 개발·검증 환경에서만 사용한다.
 
-Restate는 Temporal 서버·별도 PostgreSQL·스키마/namespace setup을 대신하는 단일 컨테이너다. API endpoint는 여러 복제본이지만 이 개발용 Restate 서버 자체는 한 인스턴스라 HA 구성이 아니다. `infra/reset.sh`의 `down -v`는 개발용 Restate journal도 함께 초기화한다. 일반 컨테이너 재시작은 `restate_data` volume을 보존하지만, reset은 실행 기록을 지우는 개발·테스트 전용 작업이다.
-
-NATS도 개발 환경에서는 한 서버이므로 JetStream의 `num_replicas: 1`은 API 컨테이너 네 개와 별개의 제약이다. 일반 NATS 컨테이너 재시작은 `nats_data`를 보존하지만 `infra/reset.sh`의 `down -v`는 개발용 stream과 미처리 이벤트를 초기화한다. 운영에서 broker 장애까지 견뎌야 한다면 NATS 서버를 세 노드 이상으로 구성하고 stream replica 수도 함께 올려야 한다.
-
-Restate가 API 내부 워크플로 구현을 호출하려면 서비스 endpoint를 한 번 등록해야 한다. `pnpm run dev`는 API와 함께 `dev:restate`를 실행해 [`register-restate.cjs`](../apps/api/scripts/register-restate.cjs)가 `http://${COMPOSE_PROJECT_NAME}:9080`을 Admin API에 개발용 `force: true`로 등록한다. 검증 배포는 복제본 하나를 직접 등록하지 않고 NGINX의 안정적인 `http://nginx:9080` endpoint를 `force: false`로 등록한다([deploy 문서](deploy.md)). 운영에서 `force` 등록은 실행 중인 invocation의 routing을 바꿀 수 있으므로 개발 편의 설정을 그대로 복사하지 않는다.
-
-토폴로지를 운영과 유사하게 두는 이유는 [설계 결정 §5](reference/decisions.md#5-개발-환경-dev-container-단일-경로)가, 환경 변수가 여기서 앱까지 흐르는 전체 경로는 [환경 변수](reference/environment.md)가 설명한다. 각 설정값의 사유는 compose 파일의 현장 주석에 있다.
+개발용 NATS와 Restate는 단일 서버다. API 복제본 사이의 동작은 검증하지만 broker·workflow runtime 자체의 HA를 보장하지는 않는다. 운영은 별도의 클러스터링과 복구 정책이 필요하다.

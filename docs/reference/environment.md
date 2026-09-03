@@ -1,123 +1,45 @@
 # 환경 변수
 
-이 저장소의 공식 개발 경로는 Dev Container 하나다(이유는 [설계 결정 §5](decisions.md#5-개발-환경-dev-container-단일-경로)). 환경 변수도 Dev Container, Docker Compose, 테스트 실행기가 함께 쓰는 값을 기준으로 나뉘어 있다.
+이 문서는 값의 목록이 아니라 **누가 값을 소유하고, 언제 반영되는지**를 설명한다. 정확한 키와 기본값은 각 env 파일과 검증 스키마가 소유한다.
 
----
+## 값의 소유권
 
-## 1. 파일 역할
+| 위치                                      | 소유하는 값                                   |
+| ----------------------------------------- | --------------------------------------------- |
+| `.env.infra`                              | 개발 인프라 이미지·접속 정보·서비스 포트      |
+| `.env.api`                                | API 런타임, 인증, 로그, 개발용 root 자격증명  |
+| `apps/api/api-docs/.env`                  | 실행 가능한 API 문서의 대상 서버와 fixture    |
+| `apps/console/.env`, `apps/user-app/.env` | 각 Next.js BFF의 API 대상과 신뢰 proxy opt-in |
 
-| 파일                     | 읽는 곳                                                    | 역할                                                                                                                                                                         |
-| ------------------------ | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.env.infra`             | Dev Container `runArgs`, `infra`·`deploy`·web test Compose | 개발 인프라 이미지 태그·digest와 접속 값. MongoDB, Redis, VersityGW, NATS, Restate 서비스 이름·포트와 dev 서버 포트(`API_PORT`, `CONSOLE_PORT`, `USER_APP_PORT`)를 정의한다. |
-| `.env.api`               | Dev Container `runArgs`, `deploy`·web test Compose         | API 런타임의 앱 설정. `PROJECT_ID`, HTTP, 인증, 콘솔 로그 레벨, `ROOT_PASSWORD`를 둔다.                                                                                      |
-| `apps/api/api-docs/.env` | `apps/api/api-docs/run.sh`                                 | curl 기반 API 문서 실행 설정. `SERVER_URL`과 업로드 fixture 값을 둔다.                                                                                                       |
-| `apps/console/.env`      | Next.js console                                            | 관리 콘솔이 호출할 API 기준 URL과 선택적인 trusted-proxy opt-in을 둔다.                                                                                                      |
-| `apps/user-app/.env`     | Next.js user-app                                           | 사용자 앱이 호출할 API 기준 URL과 선택적인 trusted-proxy opt-in을 둔다.                                                                                                      |
+인프라 값은 `.env.infra`, API 런타임 값은 `.env.api`로 나누어 소유권을 섞지 않는다. `NODE_ENV`처럼 실행 방식이 결정해야 하는 값은 공용 env에 두지 않고 해당 entry point가 정한다.
 
-`.env` 파일은 역할별로 분리한다. 인프라가 소유한 값은 `.env.infra`, API가 소유한 값은 `.env.api`에 둔다.
+인프라 이미지는 버전을 읽을 수 있는 tag와 실제 바이트를 고정하는 digest를 함께 사용한다. 이미지를 올릴 때는 두 값이 같은 release를 가리키는지 확인한다. 어떤 파일이 해당 이미지를 쓰는지는 Dependabot 설정과 저장소 검색이 소유한다.
 
-이미지 값의 태그는 사람이 버전을 읽을 수 있게 남기고, multi-architecture manifest digest가 실제 이미지 바이트를 고정한다. 이미지를 올릴 때는 태그와 digest를 함께 검증·갱신한다. 태그만 바꾸거나, 기존 digest를 다른 태그에 그대로 남기지 않는다. MongoDB만 `@testcontainers/mongodb`가 `MONGO_IMAGE`의 태그를 semver로 읽어 `mongosh` 사용 여부를 정하므로 `MONGO_IMAGE`와 `MONGO_IMAGE_DIGEST`를 분리한다. `infra/compose.mongo.yml`은 두 값을 `tag@digest`로 결합해 실제 인프라 이미지의 불변성은 그대로 유지한다.
+## 주입과 재생성
 
-Dependabot은 Dockerfile 디렉터리(`.devcontainer`, `apps/api`, `apps/console`, `apps/user-app`, `deploy`, `tests/web`)와 Compose 디렉터리(`.devcontainer`, `deploy`, `infra`, `tests/web`)의 직접 참조를 매주 minor/patch 범위로 확인한다. Dev Container와 세 앱의 Node 이미지는 patch·배포판·digest까지 동일하게 고정하고 dependency name으로 묶어 한 PR에서 갱신한다. 변수로 간접 참조하는 `.env.infra` 이미지는 자동 갱신 범위가 아니므로, 버전 갱신 때 사람이 태그와 multi-architecture digest를 함께 확인한다. Playwright 이미지 갱신은 `tests/web/package.json`·`package-lock.json`의 package 버전도 함께 맞춰야 한다.
+Dev Container가 생성될 때 개발 env가 컨테이너의 `process.env`로 주입된다. API는 `.env` 파일을 직접 읽지 않고 이 환경을 부팅 시 검증한다. 따라서 env 파일을 바꾼 뒤에는 Dev Container를 재시작하는 것이 아니라 **재생성**해야 한다.
 
----
+Docker env-file은 shell script가 아니다. 따옴표를 붙이면 문자 그대로 값에 포함되고, 다른 변수를 `${...}`로 참조해도 보간되지 않는다.
 
-## 2. 값 흐름
+서비스 DNS·포트는 env, Compose, NGINX 경계에 리터럴로 남을 수 있다. 이 값을 바꿀 때는 문서의 수동 표를 믿지 말고 저장소 전체에서 기존 값과 변수명을 검색한 뒤 `atoz`로 경계를 검증한다.
 
-Dev Container가 시작될 때 `.devcontainer/devcontainer.json`은 `.env.infra`와 `.env.api`를 `runArgs --env-file`로 컨테이너 환경에 주입하고, `containerEnv`로 `WORKSPACE_ROOT`, `COMPOSE_PROJECT_NAME`도 함께 세팅한다.
+## 포크할 때 확인할 것
 
-`--env-file`은 컨테이너 생성 시점에 평가된다. 두 파일의 값을 바꾸면 Dev Container를 Rebuild해야 반영된다. 또한 docker env-file은 셸이 아니라서 따옴표를 값에 그대로 포함시키고, `${...}`를 다른 변수의 값으로 치환하는 보간도 하지 않는다.
+`nest-seed`나 `mannercode`를 저장소 전체에서 일괄 치환하지 않는다. 같은 문자열이라도 내부 식별자, 저작자 소유 URL, 인증 issuer, 테스트 격리 이름처럼 의미가 다르다.
 
-```
-Dev Container
-  -> .env.infra, .env.api
-  -> process.env 안의 API_PORT, CONSOLE_PORT, USER_APP_PORT, HTTP_*, AUTH_*, LOG_CONSOLE_LEVEL, ROOT_PASSWORD, MONGO_*, REDIS_*, S3_*, NATS_*, RESTATE_*
-```
+다음 범주를 새 프로젝트 정책에 맞게 각각 검토한다.
 
-`postStartCommand`는 `infra/reset.sh`를 실행한다. 이 스크립트는 `infra`의 compose 파일들로 MongoDB Replica Set, Redis Cluster, VersityGW, NATS와 단일 Restate 서버를 시작한다. 이미지 태그와 `S3_BUCKET` 등은 컨테이너 환경에 이미 주입된 `.env.infra` 변수로 보간되고, 서비스 이름·포트는 compose 파일의 리터럴이다(그래서 3절의 포트 표가 필요하다).
+- 패키지 이름과 내부 scope
+- Compose project·network·배포 이미지 식별자
+- API project ID, 인증 issuer/audience, root 자격증명
+- DB·bucket·cookie·test fixture의 충돌 방지 이름
+- README badge, 링크, 연락처의 소유권
 
-API는 Nest `ConfigModule`에서 `.env` 파일을 직접 읽지 않는다. `ignoreEnvFile: true`로 두고, 실행 경로가 준비한 `process.env`만 검증한다. Dev Container가 두 `.env`를 미리 주입했으므로 모든 워크스페이스의 pnpm 프로세스는 그 환경을 그대로 상속한다.
+개발용 secret은 시드 실행을 위한 기본값일 뿐이다. 운영 secret은 저장소에 커밋하지 않고 배포 환경의 secret 관리 경로에서 주입한다.
 
-`NODE_ENV`는 공용 env 파일에 두지 않는다. Next.js와 Vitest가 실행 모드에 맞게 정하고, API 개발 엔트리와 Compose 배포가 각각 `development`와 `production`을 명시한다.
+## Quick Tunnel 공개 경계
 
-```
-apps/api 통합 테스트 (pnpm --filter './apps/api' test)
-  -> .env.api + .env.infra 값이 Dev Container 환경에 이미 주입되어 있음
-  -> Vitest는 추가 .env 로드 없이 그 process.env로 동작
-  -> vitest.config.mjs가 실행 ID를 만들고 setupFiles가 VITEST_POOL_ID별 자원 이름을 파생
-
-pnpm run dev
-  -> dev:api가 일반 HTTP(:3000)와 Restate HTTP/2 endpoint(:9080)를 시작
-  -> dev:restate가 Admin API(:9070)에 개발 endpoint를 force 등록
-
-deploy/verify.sh
-  -> docker compose가 service의 env_file로 ../.env.infra, ../.env.api를 자동 inject
-  -> deploy/compose.yml이 API replica와 NGINX 실행
-  -> Restate Admin API에 NGINX HTTP/2 endpoint(:9080) 등록
-  -> verify.sh는 run.sh에 SERVER_URL만 넘긴다 (ROOT_PASSWORD는 Dev Container가 주입한 환경에서 상속)
-
-apps/api/api-docs/run.sh
-  -> apps/api/api-docs/.env 로드
-  -> SERVER_URL 대상에 curl 요청 실행
-  -> _output/logs, _output/docs 산출
-
-pnpm run e2e
-  -> tests/web/run-e2e.sh가 .env.infra와 .env.api를 web Compose 보간에 사용
-  -> API 컨테이너만 두 env 파일을 그대로 받고, 두 BFF에는 필요한 URL·port·test override만 전달
-  -> Playwright runner는 Compose service DNS로 세 앱에 접근
-```
-
----
-
-## 3. 포트 표 — 같이 바꿔야 할 곳
-
-env 파일은 자기 보간이 안 되고 compose 서비스 정의와 스크립트에는 리터럴이 남으므로, 일부 값은 짝으로 맞춰야 한다. 아래 값을 바꿀 때는 짝을 함께 바꾼다.
-
-| 값                             | 정의처                                                                             | 같이 바꿔야 할 곳                                                                                                                                                                                                                |
-| ------------------------------ | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| API 포트 3000                  | `.env.infra` `API_PORT`                                                            | `apps/console/.env`·`apps/user-app/.env`의 `API_BASE_URL`, `deploy/nginx.conf`의 upstream `api:3000`, `deploy/compose.yml` nginx `ports`의 호스트 포트, README (tunnel.sh·api predev·web Compose·deploy healthcheck는 자동 추종) |
-| console 포트 3100              | `.env.infra` `CONSOLE_PORT`                                                        | README (package.json 스크립트·tunnel.sh·web Compose는 자동 추종)                                                                                                                                                                 |
-| user-app 포트 3200             | `.env.infra` `USER_APP_PORT`                                                       | README (package.json 스크립트·tunnel.sh·web Compose는 자동 추종)                                                                                                                                                                 |
-| Mongo `mongo1~3:27016`         | `infra/compose.mongo.yml`                                                          | `.env.infra` `MONGO_URI`                                                                                                                                                                                                         |
-| Redis `redis1~3:6379`          | `infra/compose.redis.yml`                                                          | `.env.infra` `REDIS_HOST1~3`/`REDIS_PORT1~3`                                                                                                                                                                                     |
-| NATS `nats:4222`               | `infra/compose.nats.yml` 서비스 이름(4222는 NATS 기본 포트라 파일에 리터럴이 없다) | `.env.infra` `NATS_HOST`/`NATS_PORT`                                                                                                                                                                                             |
-| Restate ingress `restate:8080` | `infra/compose.restate.yml`                                                        | `.env.infra` `RESTATE_INGRESS_URL`; API workflow client와 health indicator                                                                                                                                                       |
-| Restate admin `restate:9070`   | `infra/compose.restate.yml`                                                        | `.env.infra` `RESTATE_ADMIN_URL`; 개발·deploy endpoint 등록 스크립트                                                                                                                                                             |
-| Restate endpoint `:9080`       | `.env.infra` `RESTATE_SERVICE_PORT`                                                | API의 HTTP/2 listen, `apps/api/scripts/register-restate.cjs`, `deploy/nginx.conf`의 listen/upstream, `deploy/compose.yml` 등록 URI                                                                                               |
-| VersityGW `s3:7070`            | `infra/compose.s3.yml`                                                             | `.env.infra` `S3_ENDPOINT` (Admin API와 WebUI는 비활성화)                                                                                                                                                                        |
-| 배포 NGINX `http://nginx` (80) | `deploy/compose.yml`·`deploy/nginx.conf`                                           | `deploy/verify.sh`·`tests/api-race/runner.sh`·`tests/api-benchmark/runner.sh`의 `SERVER_URL`                                                                                                                                     |
-
----
-
-## 4. 포크할 때 확인할 값
-
-`nest-seed`나 `mannercode`라는 문자열을 저장소 전체에서 일괄 치환하지 않는다. 같은 문자열이어도 내부 식별자, 저자 소유 URL, 원 프로젝트의 운영 sentinel처럼 소유권과 의미가 다르다. 아래 대상만 새 프로젝트 정책에 맞춰 하나씩 바꾸고, 나머지 검색 결과는 용도를 확인한 뒤 유지하거나 수정한다.
-
-| 대상                     | 확인할 값                                                                                                                                                                    |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 패키지 식별자            | 루트 `package.json`의 `name`, 내부 워크스페이스의 `@mannercode/*` 이름·의존성·import·도구 alias. 새 내부 scope로 바꾸면 `pnpm-lock.yaml`도 함께 갱신한다.                    |
-| Dev Container 식별자     | `.devcontainer/devcontainer.json`의 `${localEnv:USER:unknown}-${localWorkspaceFolderBasename}` network·Compose project 이름                                                  |
-| API 런타임               | `.env.api`의 `PROJECT_ID`, `AUTH_ISSUER`, `AUTH_AUDIENCE`, `ROOT_PASSWORD`                                                                                                   |
-| 인프라 런타임            | `.env.infra`의 `MONGO_DATABASE`, `S3_BUCKET`; Restate workflow 서비스 이름은 `.env.api`의 `PROJECT_ID`를 따른다.                                                             |
-| 배포 이미지              | `deploy/compose.yml`의 `nest-seed-api` 이미지 이름. replica 수는 배포 검증 정책이므로 줄이면 api-race·test-stability의 분산 전제가 깨진다([deploy 문서](../deploy.md) 참고). |
-| 앱 세션·테스트 격리 이름 | 두 BFF의 cookie 접두사, Vitest Mongo `appName`, API 문서 fixture 이메일처럼 프로젝트끼리 충돌하면 안 되는 내부 값                                                            |
-| 프런트엔드 환경          | `apps/console/.env`·`apps/user-app/.env`의 `API_BASE_URL`; 신뢰 edge 뒤에서만 `BFF_TRUST_PROXY_HEADERS=true`                                                                 |
-| 저장소 링크·연락처       | README badge, 저자 블로그·귀속 표시는 새 소유권과 유지할 원 저작자 정보를 구분해 의도적으로 검토한다. URL이나 `mannercode.com`·이메일을 기계적으로 치환하지 않는다.          |
-| GitHub 기능              | fork에서 필요할 때 scheduled workflow와 Dependabot version updates 활성화                                                                                                    |
-
-로컬 개발과 `pnpm run atoz`, PR·push의 Test AtoZ에는 별도 GitHub 설정이 필요 없다. CI는 공개 Docker 이미지를 익명으로 받아 사용하므로 Docker Hub 계정이나 secret도 요구하지 않는다. GitHub 기능을 사용할 때만 다음 선택 사항을 확인한다.
-
-- GitHub는 public fork의 scheduled workflow를 기본으로 비활성화한다. 정기 AtoZ·Stability가 필요한 fork만 Actions 화면에서 활성화한다.
-- Dependabot은 정책상 허용한 의존성 갱신 PR을 주 1회 제안한다. `test-atoz`가 성공하면 후속 workflow가 실제로 검증한 head commit과 현재 PR head가 같은지 확인해 squash merge한다. 이 흐름은 repository auto-merge나 필수 검사 설정에 의존하지 않으며, 기존 branch 보호 정책이 있다면 그대로 따른다.
-- GitHub가 public fork에서 강제로 끄는 Dependabot version updates는 사용할 fork에서 한 번 활성화해야 한다. 그 밖의 별도 token, Actions variable·secret, Environment, 프로젝트용 GHCR package 설정은 사용하지 않는다.
-
-패키지 scope를 바꿨다면 의존성과 lockfile을 갱신한 뒤 `pnpm run format`으로 import 정렬과 줄바꿈을 정리한다. 끝나면 devcontainer를 재생성(Rebuild Container)해 바뀐 `.env.*` 값이 `--env-file`로 다시 주입되게 한다. 컨테이너의 `process.env`는 생성 시점에 굳으므로, 재생성하지 않으면 개발 API와 등록 스크립트가 옛 `PROJECT_ID`·`RESTATE_*` 값으로 떠서 workflow 이름이나 endpoint URI가 어긋날 수 있다.
-
-개발용 `.env`의 인증 secret과 `ROOT_PASSWORD`는 시드 실행을 위한 값이다. 운영 secret은 저장소에 커밋하지 않고 배포 환경의 secret 관리 경로에서 주입한다.
-
-## 5. Quick Tunnel 공개 경계
-
-`pnpm exec tunnel`은 서버를 인터넷에 공개하는 명시적 작업이므로 무플래그 실행을 거부한다. console·user-app을 공개하려면 다음 두 값을 **모두** 설정해야 한다.
+Quick Tunnel은 개발 서버를 인터넷에 공개하는 명시적 위험 작업이다. console·user-app의 BFF는 일부 auth 경로만 차단하고 대부분의 API를 proxy하므로, 사실상 백엔드 기능 대부분을 공개한다. 격리된 폐기성 환경에서만 두 위험 승인 플래그를 명시해 실행한다.
 
 ```bash
 TUNNEL_EXPOSE_APPS=true \
@@ -125,8 +47,4 @@ TUNNEL_ACKNOWLEDGE_PUBLIC_DEV_STACK_RISK=true \
 pnpm exec tunnel
 ```
 
-이 모드는 console·user-app Next.js 서버를 공개한다. 두 BFF는 catch-all proxy이며, 각 앱의 역할과 맞지 않는 login/logout·외부 refresh 같은 일부 auth endpoint만 차단한다. 따라서 백엔드 API surface의 대부분이 결국 인터넷에 노출되고, 최종 권한 경계는 백엔드 guard다. 두 번째 값은 이 사실을 인지했고 격리된 폐기성 환경에서만 쓴다는 명시적 승인이다.
-
-direct API Quick Tunnel은 secret 값을 교체했더라도 **항상 거부**한다. tunnel 프로세스는 이미 실행 중인 API 프로세스가 어떤 secret을 쓰는지 증명할 수 없기 때문이다. `TUNNEL_EXPOSE_API=true`를 주면 opt-in이 아니라 그 위험한 요청을 명시적으로 거부하고 종료한다.
-
-운영 secret·실제 데이터를 쓰는 환경을 quick tunnel에 연결하지 않는다. 사용 후 tunnel을 종료하고 외부에 노출한 임시 자격증명은 다시 회전한다. 공유 환경에는 Quick Tunnel 대신 신원 확인·접근 제어·장기 관리 도메인을 갖춘 엣지를 사용한다.
+direct API tunnel은 허용하지 않는다. tunnel 프로세스가 이미 실행 중인 API의 secret 안전성을 증명할 수 없기 때문이다. 운영 데이터·secret이 있는 환경은 Quick Tunnel에 연결하지 않는다.
