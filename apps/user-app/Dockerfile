@@ -13,7 +13,7 @@ RUN --mount=type=cache,id=nest-seed-pnpm,target=/pnpm/store,sharing=locked \
     HUSKY=0 pnpm install --frozen-lockfile --filter './apps/user-app...' --store-dir /pnpm/store
 
 COPY apps/user-app/ apps/user-app/
-RUN API_BASE_URL=http://api:3000 pnpm --filter './apps/user-app' --fail-if-no-match run build
+RUN pnpm --filter './apps/user-app' --fail-if-no-match run build
 
 FROM node:26.8.1-bookworm-slim@sha256:367679cf9792759492a486e4aa4b421764d71a9546a6dae8aab81a99eb797b3e AS runtime
 

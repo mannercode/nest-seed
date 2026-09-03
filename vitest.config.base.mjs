@@ -133,13 +133,10 @@ export function createVitestBase({ tsconfigPath }) {
         oxc: false,
         plugins: [createTypeScriptTransform(tsconfigPath)],
         test: {
-            environment: 'node',
             globals: true,
             hookTimeout: 60_000,
             include: ['src/**/__tests__/**/*.spec.ts'],
-            isolate: true,
             mockReset: true,
-            pool: 'forks',
             reporters: ['tree'],
             restoreMocks: true,
             sequence: { hooks: 'list', setupFiles: 'list' },
