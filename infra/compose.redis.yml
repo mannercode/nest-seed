@@ -15,8 +15,7 @@ x-redis-base: &redis-base
           --cluster-announce-port 6379 \
           --cluster-announce-bus-port 16379 \
           --cluster-require-full-coverage no \
-          --protected-mode no \
-          --appendonly yes
+          --protected-mode no
         '
 
 services:

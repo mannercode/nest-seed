@@ -5,37 +5,25 @@
 [![Test AtoZ](https://github.com/mannercode/nest-seed/actions/workflows/test-atoz.yaml/badge.svg)](https://github.com/mannercode/nest-seed/actions/workflows/test-atoz.yaml)
 [![Test Stability](https://github.com/mannercode/nest-seed/actions/workflows/test-stability.yaml/badge.svg)](https://github.com/mannercode/nest-seed/actions/workflows/test-stability.yaml)
 
-이 시드는 학습을 염두에 뒀지만, 실제 프로덕션의 베이스이기도 하다 — 저자가 이걸로 실무 프로젝트를 진행한다. NestJS 백엔드(`apps/api`)가 본체이고, 모놀리스로 설계되어 있지만 필요할 때 특정 기능을 독립 서비스로 떼어내기 쉽도록 모듈 경계를 미리 그어 두었다.
+실무 프로젝트의 출발점으로 사용하는 NestJS 모노레포다. 영화 예매라는 익숙한 도메인으로 모놀리스의 모듈 경계, 다중 복제본의 경합, 부분 실패, 비동기 작업 추적을 함께 보여 준다. `apps/api`가 본체이고 `console`과 `user-app`은 Next.js 연결을 보여 주는 최소 데모다.
 
-경계의 실체는 두 가지다. SoLA 5계층은 같은 계층의 모듈끼리 직접 부르지 않게 하고, 컨트롤러는 NestJS 관례처럼 각 모듈 안에 두지 않고 Gateway 계층으로 분리한다. 그래서 모듈은 이웃 모듈과 HTTP 어느 쪽에도 묶이지 않는다 — 계층 규칙은 [apps 문서](docs/apps.md#sola-5계층)가 설명한다.
+이 시드에서 먼저 이해할 개념은 네 가지다.
 
-서비스를 떼어낼 때 DB부터 풀지 않아도 되도록, 외래 키·조인처럼 경계를 넘는 DB 관계를 두지 않고 서비스가 ID로 관계를 관리한다. 이 설계는 관계형 DB의 관계 모델을 적극 활용하지 않으므로 문서 단위 모델과 잘 맞는 MongoDB를 쓰고, 도메인 사이 정합성은 DB 제약이 아니라 서비스가 책임진다.
+- **SoLA 5계층** — 같은 계층의 모듈끼리도 직접 호출하지 않는다. 여러 모듈의 조합은 위 계층으로 올리고, HTTP controller는 Gateway로 분리한다.
+- **서비스가 소유하는 데이터 경계** — 도메인은 자기 collection만 직접 다루고 다른 도메인과 ID·공개 API로 협력한다. 이 모델과 잘 맞는 MongoDB를 사용한다.
+- **분산 보장의 분리** — Redis 락은 경합 비용을 줄일 뿐이고, 정합성은 DB 원자 전이·CAS·transaction이 지킨다. Restate는 중단 후 재개를, NATS는 프로세스 사이 메시지를 맡는다.
+- **행동 중심 검증** — 실제 인프라를 사용하는 통합 테스트와 다중 복제본 race test를 둔다. 커버리지 100%는 무결점 인증이 아니라 테스트되지 않은 분기를 익명으로 남기지 않는 개발 제약이다.
 
-관리자 콘솔과 사용자 앱은 모노레포에 프런트엔드를 얹는 최소 데모다.
-
-예제 도메인은 영화 예매다. 누구나 아는 도메인인 데다 좌석이라는 경합 자원이 있고, 코드는 모놀리스지만 검증 스택은 API 컨테이너 4개를 띄워 이중 판매·부분 실패·진행 상황 전달 같은 분산 문제를 재현한다. 영화·극장·상영·티켓 같은 모델 위에 상영 등록·예매·구매 같은 유스케이스를 올렸고, 코드의 패턴 이름이 모두 이 도메인 용어를 쓴다.
-
-세 문제는 각각 이렇게 푼다.
-
-- **이중 판매** — 락이 아니라 원자 조건부 전이(상태를 필터에 박은 갱신)로 막는다 (`core/tickets`)
-- **부분 실패** — Restate가 durable step을 재시도하고, 상영 시간·티켓·멱등 작업 기록은 MongoDB 트랜잭션 하나로 커밋한다 (`application/showtime-creation`)
-- **비동기 작업 추적** — Restate의 영속 최종 상태 조회와 NATS 기반 SSE 진행 알림을 함께 제공한다 (`application/showtime-creation`)
-
-이 해법들이 실제로 동작하는지는 mock 사용을 최소화한 실제 인프라 테스트(커버리지를 수집하는 구현 워크스페이스는 100% 게이트)와 분산 레이스 하네스, CI 반복이 검증한다. 전체 패턴 목록은 [도메인 둘러보기](#도메인-둘러보기)에, 도구 선택의 이유는 [설계 결정](docs/reference/decisions.md)에 있다.
+계층과 분산 경계는 [apps 문서](docs/apps.md), 선택 이유와 한계는 [설계 결정](docs/reference/decisions.md), 처음부터 따라가는 설명은 [튜토리얼](docs/reference/tutorial.md)에 있다.
 
 ## 시작하기
 
-개발은 Dev Container에서 진행한다. Docker와 VS Code가 필요하며, VS Code에는 Dev Containers 확장을 설치해야 한다. MongoDB Replica Set과 Redis Cluster 등 여러 인프라를 맞춰 띄워야 하므로, 로컬에서 직접 실행하는 절차는 따로 지원하지 않는다. 환경 변수 흐름과 부팅 과정은 [환경 변수](docs/reference/environment.md)에 정리했다.
+공식 개발 경로는 Dev Container 하나다. Docker와 VS Code Dev Containers 확장이 필요하다. 최소 사양은 CPU 4코어, RAM 16GB, 디스크 32GB이며 전체 검증에는 RAM 32GB 이상을 권장한다.
 
-최소 사양은 CPU 4코어, RAM 16GB, 디스크 32GB다. 전체 테스트까지 안정적으로 돌리려면 RAM 32GB 이상을 권장한다.
-
-처음 부팅 순서는 다음과 같다.
-
-1. **새 프로젝트로 포크했다면** 저장소 전체를 기계적으로 치환하지 말고, [환경 변수 §4](docs/reference/environment.md#4-포크할-때-확인할-값)의 패키지·env·compose 식별자만 새 이름으로 바꾼다. 저자 외부 URL과 연락처는 새 프로젝트의 소유권에 맞게 각각 검토한다.
-2. VS Code에서 `Reopen in Container`를 실행한다. 컨테이너가 열리면 `postStartCommand`가 `bash infra/reset.sh`를 실행해 개발 인프라를 준비한다. 첫 부팅은 Dev Container 이미지 빌드, `pnpm install --frozen-lockfile`, 인프라 이미지 다운로드 때문에 시간이 걸릴 수 있다. 인프라가 꼬이면 `bash infra/reset.sh`로 언제든 초기화한다.
-3. `pnpm run test`로 기본 테스트가 통과하는지 확인한다. 포크 직후 전체 회귀까지 확인하려면 `pnpm run atoz`를 실행한다.
-4. `pnpm run dev`로 watch 모드를 띄운 뒤 `curl http://localhost:3000/health`로 API가 살아 있는지 본다.
-5. 콘솔(3100)에 로그인한다. 부팅 직후엔 admin이 없으므로 root 계정(사용자명은 `root` 고정, 비밀번호는 `.env.api`의 `ROOT_PASSWORD` — devcontainer 터미널에 주입되어 있다)의 Basic 인증으로 첫 admin을 만든다.
+1. VS Code에서 저장소를 열고 `Reopen in Container`를 실행한다. 첫 부팅은 이미지와 개발 인프라를 준비하므로 시간이 걸릴 수 있다.
+2. `pnpm run test`로 기본 검증을 실행한다. 포크 직후 전체 경계를 확인하려면 `pnpm run atoz`를 실행한다.
+3. `pnpm run dev`를 실행하고 `curl http://localhost:3000/health`로 API를 확인한다.
+4. 처음에는 admin이 없으므로 개발용 root 계정으로 하나를 만든다. 사용자명은 `root`, 비밀번호는 `.env.api`의 `ROOT_PASSWORD`다.
 
     ```bash
     curl -u "root:${ROOT_PASSWORD}" -H 'Content-Type: application/json' \
@@ -43,155 +31,95 @@
         http://localhost:3000/admins
     ```
 
-    admin API 전체(로그인·재발급·삭제까지)는 [admins.spec](apps/api/api-docs/admins.spec)이 보여준다.
+5. console(3100)에서 영화와 극장을 만들고, 실행 가능한 API 문서로 상영·예매·구매 흐름을 실행한다. user-app(3200)은 가입·로그인과 홈 화면 조합을 보여 준다.
 
-6. 콘솔에서 영화·극장을 등록한다. 상영 등록(202+상태 조회+SSE)·예매·구매는 UI 데모가 아니라 실행 가능한 API 문서가 보여준다 — `bash apps/api/api-docs/run.sh showtime-creation.spec`으로 상영까지 만들면, 사용자 앱(3200)에 가입해 홈에서 상영 중 영화를 확인할 수 있다.
+`.env.api`와 `.env.infra`는 커밋된 개발용 기본값이다. 포크할 때 프로젝트 식별자와 자격증명을 검토하고, 운영 secret은 저장소 밖에서 주입한다. 자세한 기준은 [환경 변수](docs/reference/environment.md)에 있다.
 
-> `.env.api`와 `.env.infra`는 커밋된 **개발용 기본값**이다(`ROOT_PASSWORD=DevPass1!` 포함). 포크하면 자기 값으로 바꾼다.
+## 주요 명령
 
-## 개발 명령
+| 명령                    | 용도                                       |
+| ----------------------- | ------------------------------------------ |
+| `pnpm run dev`          | API와 두 frontend를 watch mode로 실행      |
+| `pnpm run test`         | workspace의 단위·통합·계약 테스트          |
+| `pnpm run lint`         | 타입, 코드, format, shell, 문서 링크 검사  |
+| `pnpm run atoz`         | 포크 직후나 배포 전 실행하는 전체 회귀     |
+| `bash infra/reset.sh`   | 개발 인프라를 volume까지 초기화            |
+| `bash deploy/verify.sh` | 다중 API 복제본 검증 스택을 기동·검증·정리 |
 
-개발은 테스트 주도다 — 테스트가 필요한 환경(인프라·해당 모듈)을 코드로 띄우므로, 서비스를 나눠 가도 한 모듈을 작업하는 루프가 그대로다(왜 이게 설계와 맞는지는 [apps 문서](docs/apps.md#테스트)). 작업 루프는 주로 단일 spec 실행이고(아래 [테스트](#테스트)), `pnpm run dev`로 앱을 직접 띄우는 건 서비스가 늘수록 기동 부담이 커지니 실제 앱이 필요할 때만 쓴다.
-
-| 명령                   | 용도                                                                            |
-| ---------------------- | ------------------------------------------------------------------------------- |
-| `pnpm run test`        | 워크스페이스 단위·통합·계약 테스트. 커버리지 수집 대상 구현은 100% 게이트       |
-| `pnpm run lint`        | 정적 검사 전부 — 타입 체크·Oxlint·Prettier·shellcheck·문서 링크                 |
-| `pnpm run dev`         | 실제 앱을 띄워 볼 때 — api(3000)·console(3100)·user-app(3200) + libs watch      |
-| `pnpm run dev:api`     | API만 띄울 때                                                                   |
-| `pnpm run dev:restate` | `dev:api`를 따로 띄운 경우 개발 Restate endpoint 등록. 전체 `dev`에는 포함      |
-| `pnpm run atoz`        | 포크 직후/배포 전 전체 검증 — 깨끗한 상태에서 lint·테스트·API 문서·e2e·배포까지 |
-
-> `pnpm run atoz`가 내부 호출하는 `pnpm run clean`은 `tools/clean-workspace.mjs`의 allowlist에 적은 `node_modules`·coverage·build 산출물과 `_output`의 진단 파일만 지운다. 명령별 마지막 실행 보고서인 `_output/test-reports/`와 개인 env·설정 파일은 보존한다. 나머지 스크립트는 [package.json](package.json)을 본다.
-
-## 테스트
-
-```bash
-pnpm --filter './apps/api' test users.spec --coverage.enabled=false # 단일 spec만 실행 (게이트 끔)
-pnpm run e2e                                                     # console·user-app 브라우저 e2e (Playwright)
-pnpm run e2e:report                                              # 마지막 브라우저 e2e HTML 결과 열기
-pnpm run race <scenario>                                         # 분산 레이스 — 다중 복제본 배포 스택을 직접 띄운다
-pnpm run benchmark:api                                           # 성능 측정 — 스택 기동·시드·측정·정리까지 한 번에
-```
-
-Vitest는 `describe`·`it` 구조를 tree reporter로 터미널에 보여 준다. 루트 테스트 명령의 영역별 목적·결과·실제 경과 시간은 `_output/test-reports/`의 마지막 실행 보고서에 남는다. 전체 API 테스트의 실행별 coverage는 `apps/api/_output/vitest-runs/r<실행 ID>/coverage/`에, common coverage는 `libs/common/_output/coverage/`에 남는다. 활성화된 테스트 콘솔 로그는 별도 파일로 복제하지 않는다. 테스트 체계와 작성 규칙은 [apps 문서](docs/apps.md#테스트)가, 분산 레이스·성능 측정의 실행과 해석은 [tests 문서](docs/tests.md)가 설명한다.
-
-## 배포
-
-```bash
-bash deploy/verify.sh   # API 4-replica + NGINX 스택을 새로 띄워 검증하고 내린다
-```
-
-`verify.sh`는 BuildKit cache를 사용하는 API 이미지 빌드부터 실행 가능한 API 문서 검증까지 다중 복제본 검증 흐름을 한 번에 돈다. `deploy/`는 TLS·시크릿 관리·백업·프런트엔드 배포를 갖춘 운영 배포본이 아니라 **검증용 참고 스택**이다. 구성 파일과 복제본 정책, 반복 CI용 이미지 미리 빌드, `x-replica-id` 응답 헤더는 [deploy 문서](docs/deploy.md)에 있다.
+`infra/reset.sh`는 Restate journal과 JetStream 데이터도 지우는 개발용 복구 명령이다. 보존할 실행이 있는 환경에서는 사용하지 않는다. 테스트별 명령과 결과 위치는 [tests/README.md](tests/README.md)에 있다.
 
 ## API 레퍼런스
 
-Swagger/OpenAPI는 의도적으로 두지 않았다(이유는 [설계 결정](docs/reference/decisions.md)). 요청·응답 엔드포인트 카탈로그는 **실행 가능한 `apps/api/api-docs/*.spec`** 자체다. dev 서버가 떠 있으면 `bash apps/api/api-docs/run.sh`로 실행하고, 아니면 위 [배포](#배포)의 `verify.sh`가 실행까지 겸한다. 어느 쪽이든 브라우징 가능한 목록이 `apps/api/api-docs/_output/`에 생성된다 — gitignore라 클론 직후엔 없으니 한 번 실행해야 한다. 장기 SSE는 통합 테스트가 대신 검증한다. spec 작성 규약·redaction·SSE 제외 범위는 [apps 문서](docs/apps.md#실행-가능한-api-문서)를 본다.
+정적 Swagger/OpenAPI 대신 실제 요청을 보내는 `apps/api/api-docs/*.spec`를 성공 흐름의 API 계약으로 사용한다. 이 선택은 문서와 동작이 따로 낡는 것을 막기 위한 것이다.
+
+```bash
+bash apps/api/api-docs/run.sh                   # 실행 중인 개발 API 대상
+bash apps/api/api-docs/run.sh showtime-creation.spec
+```
+
+생성되는 요청·응답 로그는 진단 산출물이며 공개 문서 호스팅 대상이 아니다. 장기 SSE와 실패 조건은 통합 테스트가 검증한다. 규칙과 보안 경계는 [실행 가능한 API 문서](docs/apps.md#실행-가능한-api-문서)에 있다.
 
 ## 프로젝트 구조
 
-```
-nest-seed/
-├── libs/                    ← 공유 라이브러리(workspace 패키지)
-│   ├── common/              ← @mannercode/common — MongoDB driver, Redis, JWT, S3, Logger, NATS
-│   └── testing/             ← @mannercode/testing — HttpTestClient, 픽스처 헬퍼
-│
-├── apps/
-│   ├── api/                 ← NestJS API — 5계층 서비스 + 실행 가능한 api-docs/
-│   ├── console/             ← Next.js 관리 콘솔 — 최소 데모
-│   └── user-app/            ← Next.js 사용자 앱 — 최소 데모
-│
-├── tests/
-│   ├── api-race/            ← 배포된 API 스택을 대상으로 하는 분산 레이스 시나리오
-│   ├── api-benchmark/       ← 배포된 API 스택을 대상으로 하는 성능 비교 도구
-│   └── web/                 ← Playwright browser e2e + 공통 BFF 계약 테스트
-│
-├── infra/                   ← 개발 인프라 Compose (MongoDB·Redis·VersityGW·NATS·Restate)
-├── deploy/                  ← Docker Compose, NGINX (앱 배포 진입점)
-├── tools/                   ← 개발·테스트 보조 도구 (free-port, Vitest 헬퍼, quick tunnel)
-├── docs/                    ← 폴더 문서와 횡단 주제 참고 문서(reference/)
-├── .github/                 ← CI 워크플로 (atoz, test-stability)
-│
-└── .devcontainer/           ← Dev Container 정의
+```text
+apps/           NestJS API, Next.js console·user-app
+libs/           런타임 공용 코드와 테스트 소비자용 helper
+tests/          배포 스택 밖에서 실행하는 race·browser·benchmark
+infra/          개발용 MongoDB·Redis·S3·NATS·Restate
+deploy/         다중 API 복제본 + NGINX 검증 스택
+tools/          개발·테스트 실행 도구
+docs/           사람이 읽을 설계·운영 문서
 ```
 
-각 폴더가 무엇이고 왜 이렇게 나뉘었는지는 [문서](#문서) 절의 폴더 문서가 안내한다. `apps/api/src/services`의 다섯 계층(SoLA)과 분산 협력 구조는 [apps 문서](docs/apps.md)가 설명한다.
+## 기술 선택
 
-## 사용 기술
+| 역할                          | 선택                                                   |
+| ----------------------------- | ------------------------------------------------------ |
+| API·frontend                  | NestJS, Next.js, Zod                                   |
+| 주 데이터와 원자성            | MongoDB Replica Set, 공식 Node.js driver               |
+| 경합·메시지·durable execution | Redis Cluster, NATS/JetStream, Restate                 |
+| 객체 저장                     | AWS SDK와 S3 호환 VersityGW                            |
+| 검증                          | Vitest, Testcontainers, Playwright, k6, Docker Compose |
 
-처음 보는 도구가 있다면 "어디에 쓰나" 열의 코드 경로나 문서부터 따라가면 된다.
-
-| 도구                                | 어디에 쓰나                                                                                                                  |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| MongoDB (Replica Set) + 공식 driver | 주 데이터베이스. 트랜잭션, soft delete — `libs/common/mongodb`                                                               |
-| Redis (Cluster) + ioredis           | 캐시와 분산 락 — `libs/common/redis`, `libs/common/cache`                                                                    |
-| NATS                                | 컨테이너 사이 pub/sub — `libs/common/nats`                                                                                   |
-| Restate                             | durable 사가 워크플로 — `application/showtime-creation/worker`                                                               |
-| VersityGW (S3 API)                  | presigned 파일 업로드·다운로드 — `libs/common/s3`, `infrastructure/assets`                                                   |
-| NestJS                              | API 서버. 가드·파이프를 Passport 없이 직접 구현 — `gateway/`                                                                 |
-| Next.js                             | console·user-app 최소 데모                                                                                                   |
-| @nestjs/jwt + bcrypt                | 역할별 토큰 서명·검증 — `gateway/guards`; 비밀번호 해시 — `core/{users,admins}/internal`                                     |
-| Zod + Standard Schema               | 환경 설정과 HTTP request 검증 — `config/`, `gateway/`                                                                        |
-| pnpm workspace                      | 모노레포 구성. libs를 내부 패키지로 공유                                                                                     |
-| Vitest + Testcontainers             | 단위·통합 테스트. `libs/common`은 인프라를 직접 띄운다 — [apps 문서](docs/apps.md#테스트)                                    |
-| Playwright                          | console·user-app 브라우저 e2e와 공통 BFF 계약 — `tests/web`                                                                  |
-| k6                                  | 성능 비교 하네스 — `tests/api-benchmark`                                                                                     |
-| Docker Compose + NGINX              | 개발 인프라(`infra/`)와 다중 컨테이너 배포(`deploy/`)                                                                        |
-| GitHub Actions                      | atoz 회귀와 반복 안정성 검증 — `.github/workflows`                                                                           |
-| cloudflared (`pnpm exec tunnel`)    | direct API는 항상 거부. 두 앱+BFF가 일부 auth를 제외한 대부분 API를 proxy하므로 두 opt-in 플래그를 준 폐기성 환경에서만 공개 |
-| Oxlint·Prettier·husky·commitlint    | 기본 코드 오류·프런트 규칙 검사와 커밋 훅 — [컨벤션](docs/reference/conventions.md)                                          |
+도구는 학습용 나열이 아니라 서로 다른 실패 경계를 맡는다. 왜 이 조합을 골랐고 Kafka·BullMQ·Swagger·Nx 등을 넣지 않았는지는 [설계 결정](docs/reference/decisions.md)이 설명한다.
 
 ## 도메인 둘러보기
 
-각 서비스는 서로 다른 패턴을 하나씩 보여주도록 만들었다. 처음에는 다음 순서가 효율적이다.
+처음에는 `core/theaters`의 단순한 CRUD, `application/booking`의 Core 조합, `application/showtime-creation`의 durable workflow 순서로 읽는다. 각 구현과 같은 이름의 통합 테스트를 나란히 보면 경계가 더 잘 드러난다.
 
-1. `core/theaters` — 가장 단순한 도메인. 모델→리포지토리→서비스→컨트롤러→DTO의 기본 골격
-2. `application/booking` — 여러 Core를 조합하는 유스케이스
-3. `application/showtime-creation` — 사가 전체: 202 응답 → Restate 워크플로 → 영속 상태 조회와 NATS/SSE 알림
-4. 각 단계마다 같은 이름의 통합 테스트(`apps/api/src/__tests__`)를 나란히 읽는다
-
-| 서비스                                    | 보여주는 것                                                                                         |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `core/theaters`                           | 가장 단순한 CRUD. 새 도메인을 추가할 때 본보기로 복제할 기준                                        |
-| `core/movies`                             | 파일 업로드 연동과 draft→publish 공개 상태                                                          |
-| `core/users` · `admins`                   | soft delete × unique 인덱스, 로그인·토큰 회전, 탈퇴·비밀번호 변경 시 세션 폐기                      |
-| `core/showtimes` · `tickets`              | 사가가 만들어내는 자원. tickets는 원자 조건부 전이로 상태를 바꾼다                                  |
-| `core/ticket-holding`                     | Redis Lua 스크립트 선점 — Lua가 여러 키를 원자적으로 다루도록 같은 hash slot에 키를 모으는 설계     |
-| `core/purchase-records` · `watch-records` | 사용자 기록 도메인. watch-records는 추천의 입력이 된다                                              |
-| `application/catalog-management`          | 영화·극장 삭제 시 상영 참조를 함께 확인하는 cross-Core 조정                                         |
-| `application/booking`                     | 예매 동선 조회와 좌석 선점, 요청 검증                                                               |
-| `application/purchase`                    | HTTP 멱등 응답, durable 상태 머신·lease 재조정·outbox, JetStream 알림의 at-least-once 처리          |
-| `application/showtime-creation`           | HTTP 키→`sagaId`·Restate workflow key 매핑, 202+상태 조회+SSE, Mongo 트랜잭션·guard CAS·멱등 재시도 |
-| `application/recommendation`              | 관람 기록 기반 추천. 도메인 로직을 순수 모듈로 분리                                                 |
-| `view/user-app/home`                      | 화면 전용 응답 조합 — View 계층                                                                     |
-| `infrastructure/assets`                   | presigned 업로드와 체크섬 검증, 만료 업로드 정리 cron(분산 락)                                      |
-| `infrastructure/payments`                 | 외부 결제 연동 계층의 자리                                                                          |
+| 영역                                  | 보여 주는 개념                                        |
+| ------------------------------------- | ----------------------------------------------------- |
+| `core/movies`, `core/theaters`        | 기본 도메인 구조, publish 상태, 파일 연결             |
+| `core/users`, `core/admins`           | 역할별 인증, token 회전, soft delete와 unique index   |
+| `core/tickets`, `core/ticket-holding` | 원자 상태 전이와 Redis Lua 기반 좌석 선점             |
+| `application/booking`                 | 여러 Core를 조합하는 사용자 동선                      |
+| `application/showtime-creation`       | 202, Restate workflow, 상태 조회·SSE, transaction·CAS |
+| `application/purchase`                | 멱등 응답, durable 상태 머신, lease 재조정, outbox    |
+| `application/recommendation`          | 관람 기록 기반 추천과 순수 도메인 로직                |
+| `view/user-app/home`                  | 화면에 맞춘 읽기 응답 조합                            |
+| `infrastructure/assets`, `payments`   | S3와 외부 결제의 경계                                 |
 
 ## 인가
 
-JWT 기반으로 세 역할을 둔다. **root**는 `.env.api` 자격증명의 Basic 인증으로 admin 생성·삭제만 하고, **admin**(콘솔이 쓰는 역할)은 콘텐츠 관리와 임의 사용자 대상 작업을, **user**(사용자 앱)는 본인 자원만 다룬다. admin과 user 토큰은 서로 다른 secret으로 서명해 교차 사용이 안 된다. 본인 자원은 경로에 식별자가 없는 `/me` 계열로만 다루고(식별자는 토큰 주체로 고정), 임의 ID를 받는 경로는 전부 admin 전용이다. 그래서 로그인 사용자가 ID를 바꿔 남의 자원에 접근하는 경로(IDOR)가 user 역할에는 존재하지 않는다 — 설계 규칙은 [apps 문서](docs/apps.md#본인-자원은-me로-다룬다)를 본다.
+역할은 세 가지다. **root**는 개발 env의 Basic 인증으로 admin 생성·삭제만 하고, **admin**은 콘텐츠와 임의 사용자 대상 작업을, **user**는 본인 자원만 다룬다. admin과 user token은 서로 다른 secret으로 서명한다.
+
+본인 자원은 URL의 ID가 아니라 token subject로 고정한 `/me` 경로를 사용하고, 임의 ID를 받는 경로는 admin에게만 허용한다. 두 규칙을 함께 적용해 user가 ID를 바꿔 다른 사용자의 자원에 접근하는 IDOR 경로를 제거한다.
+
+## 배포 범위
+
+`deploy/`는 분산 동작을 확인하는 참고 스택이지 운영 배포본이 아니다. TLS, secret manager, backup/restore, 관측 backend, frontend edge, 무중단 revision 전환은 포함하지 않는다. 특히 Restate endpoint versioning과 BFF proxy IP 신뢰 경계는 운영 환경에서 별도로 설계해야 한다. [deploy 문서](docs/deploy.md)에 필요한 위험과 보장 한계를 정리했다.
 
 ## 문서
 
-README 뒤의 상세는 폴더 문서 여섯과 참고 자료 넷이 맡는다. 문서와 주석은 한국어가 원본이다. README는 [영어 번역](README.en.md)을 같이 제공하지만, 상세 문서는 두 언어를 동시에 유지하며 생길 드리프트를 피하려고 한국어 하나로 유지한다.
+문서와 주석의 원본 언어는 한국어다. 영어는 이 README만 제공한다.
 
-**폴더 문서** — 각 폴더가 무엇이고 왜 이렇게 나뉘었는지. 여기서 시작한다:
-
-- [apps/](docs/apps.md) — 본체 API와 최소 데모 두 앱
-    - [SoLA 5계층](docs/apps.md#sola-5계층) — 순환 참조를 없애는 계층 규칙
-    - [분산 협력](docs/apps.md#분산-협력--msa-준비형-모놀리스) — 분산 락·NATS·Restate를 쓰는 곳
-    - [코드 컨벤션](docs/apps.md#코드-컨벤션) — 이름·에러·가져오기·REST·비정규화
-    - [테스트](docs/apps.md#테스트) — 실제 인프라 테스트 규칙과 픽스처
-    - [실행 가능한 API 문서](docs/apps.md#실행-가능한-api-문서) — spec 작성 규약과 산출물
-- [libs/](docs/libs.md) — 공유 패키지 셋의 분리 기준
-- [tests/](docs/tests.md) — 배포된 스택을 밖에서 검증하는 테스트들과 실행법
-- [infra/](docs/infra.md) — 개발 인프라 compose 묶음과 그 소비자들
-- [deploy/](docs/deploy.md) — Docker Compose 다중 API 컨테이너 + NGINX, `x-replica-id` 응답 헤더
-- [.devcontainer/](docs/devcontainer.md) — 환경 변수 주입 경로, `WORKSPACE_ROOT`, DooD
-
-**참고 자료** — 폴더 하나에 속하지 않는 횡단 주제는 `docs/reference/`가 맡는다:
-
-- [튜토리얼](docs/reference/tutorial.md) — 유스케이스에서 테스트까지, 이 시드의 설계 흐름을 처음부터 걷는다 (백엔드 초급자 대상)
-- [컨벤션](docs/reference/conventions.md) — 커밋 규칙, fail-fast, 값의 위치, pnpm 스크립트 계약
-- [환경 변수](docs/reference/environment.md) — Dev Container, API, API 문서, console·user-app 환경 변수 흐름과 포크 체크리스트
-- [설계 결정](docs/reference/decisions.md) — 분산 도구·View 계층 등 핵심 설계 결정과 쓰지 않기로 한 대안
+- [apps](docs/apps.md) — SoLA 계층, 분산 보장, API·테스트 규칙
+- [libs](docs/libs.md) — 런타임 공용 코드와 테스트 helper의 분리 기준
+- [tests](docs/tests.md) — 외부 스택 검증이 필요한 이유와 결과 해석
+- [infra](docs/infra.md) — 개발 topology와 파괴적 reset의 범위
+- [deploy](docs/deploy.md) — 다중 복제본 검증 및 운영으로 복사하면 안 되는 경계
+- [devcontainer](docs/devcontainer.md) — 단일 개발 경로, DooD 제약과 보안
+- [tutorial](docs/reference/tutorial.md) — 유스케이스에서 구현과 테스트까지의 사고 흐름
+- [decisions](docs/reference/decisions.md) — 선택 이유, 대안, 보장하지 않는 것
+- [conventions](docs/reference/conventions.md) — 자동화로 대신할 수 없는 횡단 약속
+- [environment](docs/reference/environment.md) — env 소유권, 재생성, 포크와 공개 경계

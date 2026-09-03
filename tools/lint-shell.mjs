@@ -30,6 +30,11 @@ const insideWorkspace = (file) => {
     return pathFromRoot !== '..' && !pathFromRoot.startsWith(`..${sep}`)
 }
 
+const isTemporaryFile = (file) => {
+    const pathFromRoot = relative(workspaceRoot, file)
+    return pathFromRoot === '_todo' || pathFromRoot.startsWith(`_todo${sep}`)
+}
+
 const isShellFile = (file) => {
     try {
         if (!lstatSync(file).isFile()) return false
@@ -47,7 +52,9 @@ if (requestedFiles.some((file) => !insideWorkspace(file))) {
 }
 
 const selected = new Set(
-    (requestedFiles.length > 0 ? requestedFiles : allWorkspaceFiles).filter(isShellFile)
+    (requestedFiles.length > 0 ? requestedFiles : allWorkspaceFiles).filter(
+        (file) => !isTemporaryFile(file) && isShellFile(file)
+    )
 )
 // common.fixture는 직접 실행하지 않고 source한다. 모든 spec을 -x로 검사하면 실제 문맥에서 fixture를
 // 해석하므로, fixture만 따로 검사할 때 생기는 잘못된 미사용 변수 경고를 피할 수 있다.

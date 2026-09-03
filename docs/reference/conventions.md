@@ -1,66 +1,23 @@
 # 컨벤션 — 횡단 약속
 
-폴더 하나에 속하지 않는, 저장소 전체에 적용되는 약속을 둔다. 코드 컨벤션(이름 짓기, 에러 규칙, 가져오기, REST API 설계, 데이터 비정규화, Type vs Interface)은 [apps 문서](../apps.md#코드-컨벤션)에 있다.
+자동 포맷터의 설정이 아니라, 사람의 판단을 통일해야 하는 약속만 둔다. API 구조·에러·import 규칙은 [apps 문서](../apps.md#코드-컨벤션)가 소유한다.
 
----
+## 1. 커밋은 의도를 말한다
 
-## 1. 커밋 메시지
+커밋 메시지는 Conventional Commits의 `type(scope): subject` 형식을 따른다. type의 정확한 허용 목록은 commitlint 설정이 소유한다. 제목은 변경한 파일보다 변경의 의도를 설명한다.
 
-[`@commitlint/config-conventional`](https://github.com/conventional-changelog/commitlint) 규칙을 따른다. `commit-msg` 훅이 강제하므로 규칙을 어기면 commit이 거절된다. `pre-commit` 훅은 staged 파일에 Oxlint `--fix`와 Prettier를 자동 적용한다(lint-staged).
+## 2. 잘못된 상태는 그 자리에서 실패시킨다
 
-형식은 `type(scope): subject`이다. 사용할 수 있는 type은 `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`, `style`이다.
+문제를 덮는 폴백은 원인에서 먼 곳에 다른 모양의 오류를 만든다. 필수 env는 부팅 시 검증하고, 반드시 있어야 하는 값은 `Require.defined`·`ensure`로 단언하며, 정리 작업이 대상을 찾지 못하면 성공처럼 넘어가지 않는다.
 
-예: `feat: add user login`, `fix(api): handle null pointer in auth`
+폴백이 필요한 경우에는 무엇을 복구하는지와 최종적으로 실패해야 하는 조건을 코드에 드러낸다.
 
----
+## 3. 환경 값과 정책 값을 구분한다
 
-## 2. 실패는 빨리 드러낸다
+접속 정보·포트·secret처럼 배포 환경마다 다른 값만 env로 받는다. 화면의 최대 항목 수, cron 주기, 업무 상한처럼 코드 변경과 함께 검증해야 하는 정책은 사용하는 코드 가까이에 둔다. 모든 값을 env로 빼면 설정이 두 번째 코드베이스가 된다.
 
-문제를 덮는 폴백 대신, 잘못된 상태를 그 자리에서 명시적으로 실패시킨다. 폴백은 오류를 뒤로 미루고, 미뤄진 오류는 원인에서 먼 곳에서 엉뚱한 모습으로 나타난다.
+## 4. pnpm 스크립트는 공통 인터페이스다
 
-- 셸 스크립트의 필수 변수는 `${VAR:?}`로 선언한다. 비어 있으면 그 줄에서 죽는다.
-- 앱은 부팅할 때 Zod 스키마로 `process.env`를 검증한다. 값이 빠지면 서버가 뜨지 않는다.
-- 코드에서 "반드시 있어야 하는" 값은 `Require.defined`·`ensure`로 단언한다. 임의의 기본값을 만들어 계속 진행하지 않는다.
+루트 `package.json`을 사람과 CI의 진입점으로 두고, workspace는 지원하는 공통 동사(`build`, `test`, `lint`, `format`, `dev`)를 같은 이름으로 제공한다. 구체적인 fan-out 순서와 예외는 실행 코드가 소유한다.
 
-    ```ts
-    Require.defined(theater, `theater missing for showtime ${showtime.id}`) // 없으면 그 자리에서 던진다
-    const dto = ensure(dtos[0]) // 단언 + 좁혀진 값 반환 — 대입에 쓴다
-    ```
-
-- 정리 작업이 대상을 못 찾으면 조용히 넘어가지 않고 예외를 던진다. 무음 no-op은 성공처럼 보이는 실패다.
-
----
-
-## 3. 값은 어디에 두나
-
-환경마다 달라지는 값만 환경 변수로 받는다. 접속 정보, 포트, 시크릿이 여기에 속하고, 부팅할 때 검증한다. 흐름은 [환경 변수](environment.md)에 있다.
-
-도메인 정책 값은 코드에 둔다. 홈 화면의 영화 수, 정리 cron 주기, 티켓 가격 기본값처럼 환경별로 바꿀 일이 없는 값은 사용하는 코드 옆의 상수나 설정 스키마의 기본값으로 적는다. 모든 값을 env로 빼면 설정 파일이 두 번째 코드베이스가 된다.
-
-두 배치 형식은 이렇게 갈린다 — 설정 스키마의 기본값은 "env로 덮을 수는 있지만 보통 안 덮는" 값이고, 코드 옆 상수는 코드 수정으로만 바뀌는 값이다.
-
-```ts
-TICKET_PRICE: numberFromEnvironment.default(10_000) // 설정 스키마의 기본값 (config/app-config.service.ts)
-const HOME_MOVIE_COUNT = 12 // 사용하는 코드 옆 상수 (view/user-app/home)
-```
-
----
-
-## 4. pnpm 스크립트 계약
-
-루트 package.json이 진입점이다. 루트는 동사를 워크스페이스로 팬아웃하고(`pnpm --recursive --if-present run <동사>`), pnpm의 기본 dependency graph 정렬로 의존 라이브러리를 소비자보다 먼저 실행하면서 서로 독립적인 워크스페이스는 병렬로 처리한다. 각 워크스페이스는 자기가 지원하는 동사만 같은 이름으로 구현한다. 한 워크스페이스만 실행할 때는 경로 filter(`pnpm --filter './apps/api' run <동사>`)를 쓴다. 루트 `lint`는 typecheck가 package output을 읽기 전에 `prelint`에서 내부 라이브러리를 build한다. `atoz`는 각 단계의 결과와 시간을 따로 보고해야 하므로 `libs/*`를 먼저 끝낸 뒤 나머지 워크스페이스를 순차 실행한다. 워크스페이스 밖의 Prettier·셸·문서 링크 검사는 `lint:root`가 맡고, 루트 `lint`와 `atoz`가 이를 호출한다. 구체적인 실행 순서는 각 package.json을 기준으로 한다.
-
-| 동사     | 의미                                                                                                                          |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `dev`    | watch 모드 실행                                                                                                               |
-| `build`  | 빌드 산출물 생성                                                                                                              |
-| `test`   | 개발 루프용 빠른 회귀. API는 devcontainer 인프라를 재사용하고 common은 Testcontainers를 띄우는 Vitest                         |
-| `lint`   | 타입 체크 + Oxlint + Prettier 검사. 루트 `lint:root`가 셸·문서 링크 검사를 더한다                                             |
-| `format` | Prettier 쓰기                                                                                                                 |
-| `e2e`    | console·user-app 브라우저 시나리오 (`tests/web/e2e`)                                                                          |
-| `atoz`   | 클린룸 전체 회귀 — clean·인프라 리셋·`pnpm install --frozen-lockfile` 후 lint·build·test·e2e·배포 검증까지. `test`를 포함한다 |
-| `clean`  | (루트 전용) allowlist에 적은 `node_modules`·`_output`·coverage·build 산출물만 정리                                            |
-
-`clean`은 workspace 밖의 경로와 workspace 밖으로 향하는 symlink를 거부한다. `.gitignore`에 있다는 이유만으로 개인 env·설정 파일을 지우지 않으며, 새 산출물을 추가할 때는 `tools/clean-workspace.mjs`의 allowlist와 전용 동작 테스트를 함께 갱신한다.
-
-`atoz`의 워크스페이스 구현은 "그 워크스페이스를 전부 검증한다"는 의미만 같고 단계는 각자 다르다. libs는 build→lint→test, Next 앱은 테스트가 없어 lint→build, api는 배포 검증에서 Docker가 빌드를 맡으므로 lint→test다.
+`clean`은 삭제 안전성이 인터페이스의 일부다. 명시적으로 허용한 산출물만 지우고 workspace 밖이나 밖을 가리키는 symlink는 거부한다. 새 산출물을 추가할 때는 삭제 허용 목록과 안전성 테스트를 함께 갱신한다.

@@ -8,12 +8,9 @@ x-mongo-base: &mongo-base
     ulimits: { nofile: { soft: 65536, hard: 65536 } }
     # 개발 및 테스트용 MongoDB 복제 묶음(Replica Set)이다.
     # 운영용 보안 설정보다는 테스트 속도와 설정 단순성을 우선한다.
-    # 27016 포트는 인증(MONGO_INITDB_*)을 쓰던 시절 엔트리포인트가 27017에 띄우던 임시 mongod와의 충돌을 피한 값이다.
-    # 인증 제거 후 임시 mongod는 더 이상 뜨지 않지만, MONGO_URI 등 접속 값이 이 포트와 짝이라 유지한다.
     command: >
         --replSet mongo
         --bind_ip_all
-        --port 27016
         --wiredTigerCacheSizeGB 1.0
 
 services:
@@ -21,21 +18,21 @@ services:
         <<: *mongo-base
         healthcheck:
             test: >
-                mongosh "mongodb://localhost:27016/?directConnection=true"
+                mongosh "mongodb://localhost:27017/?directConnection=true"
                 --eval "db.adminCommand('ping')"
 
     mongo2:
         <<: *mongo-base
         healthcheck:
             test: >
-                mongosh "mongodb://localhost:27016/?directConnection=true"
+                mongosh "mongodb://localhost:27017/?directConnection=true"
                 --eval "db.adminCommand('ping')"
 
     mongo3:
         <<: *mongo-base
         healthcheck:
             test: >
-                mongosh "mongodb://localhost:27016/?directConnection=true"
+                mongosh "mongodb://localhost:27017/?directConnection=true"
                 --eval "db.adminCommand('ping')"
 
     mongo-setup:
@@ -51,15 +48,15 @@ services:
             sh -eucx '
                 # `rs.initiate`에 등록한 host는 드라이버가 이후 Replica Set 멤버를 찾아갈 때 그대로 사용한다.
                 # devcontainer도 같은 compose 네트워크에 있으므로 서비스 이름(mongo1/mongo2/mongo3)을 등록한다.
-                url="mongodb://mongo1:27016/?directConnection=true"
+                url="mongodb://mongo1:27017/?directConnection=true"
 
                 mongosh "$$url" --eval "
                     rs.initiate({
                     _id: \"mongo\",
                     members: [
-                        { _id: 0, host: \"mongo1:27016\" },
-                        { _id: 1, host: \"mongo2:27016\" },
-                        { _id: 2, host: \"mongo3:27016\" }
+                        { _id: 0, host: \"mongo1:27017\" },
+                        { _id: 1, host: \"mongo2:27017\" },
+                        { _id: 2, host: \"mongo3:27017\" }
                         ]
                     })
                     "
@@ -81,7 +78,7 @@ services:
                     sleep 1
                 done
 
-                replica_url="mongodb://mongo1:27016,mongo2:27016,mongo3:27016/?replicaSet=mongo"
+                replica_url="mongodb://mongo1:27017,mongo2:27017,mongo3:27017/?replicaSet=mongo"
                 i=0
                 until mongosh "$$replica_url" --quiet --eval "
                     const result = db.getSiblingDB(\"infra_readiness\").runCommand({

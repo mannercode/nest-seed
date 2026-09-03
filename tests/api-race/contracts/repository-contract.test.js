@@ -15,7 +15,7 @@ function sortedUnique(values) {
     return [...new Set(values)].sort()
 }
 
-test('Stability workflow와 문서의 시나리오 목록이 root 파일과 일치한다', () => {
+test('Stability workflow의 시나리오 목록이 root 파일과 일치한다', () => {
     assert.ok(scenarioNames.length > 0)
 
     const workflow = fs.readFileSync(
@@ -26,12 +26,5 @@ test('Stability workflow와 문서의 시나리오 목록이 root 파일과 일�
         (match) => match[1]
     )
 
-    const docs = fs.readFileSync(path.join(workspaceRoot, 'docs/tests.md'), 'utf8')
-    const documentedFiles = [...docs.matchAll(/^\| `([^`]+\.js)`/gm)].map((match) => match[1])
-    const documentedNames = documentedFiles
-        .filter((file) => scenarioFiles.includes(file))
-        .map((file) => path.basename(file, '.js'))
-
     assert.deepEqual(sortedUnique(workflowNames), scenarioNames)
-    assert.deepEqual(sortedUnique(documentedNames), scenarioNames)
 })

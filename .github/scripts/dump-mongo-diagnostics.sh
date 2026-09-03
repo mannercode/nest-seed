@@ -69,7 +69,7 @@ dump_mongo_node() {
         return
     fi
 
-    local mongo_uri='mongodb://localhost:27016/admin?directConnection=true&serverSelectionTimeoutMS=3000&connectTimeoutMS=3000&socketTimeoutMS=5000&minPoolSize=0&maxPoolSize=1'
+    local mongo_uri='mongodb://localhost:27017/admin?directConnection=true&serverSelectionTimeoutMS=3000&connectTimeoutMS=3000&socketTimeoutMS=5000&minPoolSize=0&maxPoolSize=1'
     if ! timeout "${query_timeout_seconds}s" docker exec -i "${container_id}" \
         mongosh "${mongo_uri}" --quiet --file /dev/stdin <"${node_diagnostics}"; then
         echo "${service} diagnostics timed out or failed"

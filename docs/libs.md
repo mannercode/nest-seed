@@ -1,15 +1,13 @@
 # libs/ — 공유 패키지
 
-워크스페이스 내부 공유 패키지 두 개다. 둘로 나뉜 기준은 **어디서 실행되는 코드인가**다.
+공유 코드는 **어디서 실행되는가**로 나뉜다.
 
-## common — 런타임 공유 코드
+## common — 런타임 코드
 
-앱이 운영 중에 실행하는 공유 코드다. MongoDB 공식 driver CRUD 기반 클래스, Redis 캐시·분산 락, JWT 인증, S3, NATS, 로거 등이 들어 있다. Restate 워크플로는 showtime-creation 도메인의 NestJS 제공자를 직접 사용하므로 공용 패키지에 억지로 추상화하지 않는다. 각 모듈의 사용법은 내보낸 심볼의 JSDoc(에디터 hover)이 소유하고, 도구 선택의 이유는 [설계 결정](reference/decisions.md)이 소유한다.
+앱이 운영 중 사용하는 MongoDB, Redis/cache, JWT, S3, NATS, 로거 코드다. 특정 도메인에서만 쓰는 구현을 공유 패키지로 올리지 않는다. 예를 들어 Restate workflow는 showtime-creation의 NestJS 제공자를 직접 사용하므로 해당 도메인에 남는다.
 
-## testing — 테스트 전용 헬퍼
+## testing — 테스트 소비자용 코드
 
-HttpTestClient와 픽스처 헬퍼처럼 테스트에서만 쓰는 코드다. common과 분리한 이유는 의존 방향이다 — 앱은 testing을 devDependencies로만 받으므로, 테스트 도구가 프로덕션 의존성에 섞이는 일이 패키지 경계에서 차단된다.
+spec이 import하는 HTTP client와 fixture helper를 둔다. 앱은 이 패키지를 dev dependency로만 받으므로 테스트 도구가 운영 의존성에 섞이지 않는다.
 
-`pnpm-workspace.yaml`이 workspace 경로를 정의하고, pnpm은 패키지 의존 그래프에 따라 의존되는 패키지를 먼저 빌드한다.
-
-테스트 지원 코드는 두 곳에 나뉜다 — 같은 기준("어디서 실행되는가")의 결과다. spec이 import하는 `HttpTestClient`·픽스처 헬퍼는 `libs/testing`(TS, 빌드 필요)에 둔다. Vitest config·global setup·setupFiles·global teardown이 빌드 전에 불러야 하는 실행 ID, `VITEST_POOL_ID`별 Mongo/S3 준비와 제한된 최종 정리 로직은 `tools/vitest-helpers`(순수 CJS + 타입 선언)에 둔다. 이 도구 자체는 변환기가 필요 없는 CJS이므로 `node:test`와 내장 coverage로 직접 검증한다.
+Vitest가 소스 변환 전에 불러야 하는 실행 ID·자원 준비·정리 로직은 `tools/vitest-helpers`에 둔다. 테스트 코드가 직접 쓰는 패키지와 테스트 런타임을 부팅하는 도구를 구분하기 위한 경계다.

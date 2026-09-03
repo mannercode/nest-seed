@@ -203,13 +203,6 @@ k6의 [`measurementStart()`](tests/api-benchmark/perf-common.js)는 제거하고
 - [`src/services/gateway/pipes/__tests__/request-validation.pipe.spec.ts`](apps/api/src/services/gateway/pipes/__tests__/request-validation.pipe.spec.ts) — body·배열·중첩 요청의 Standard Schema 검증과 오류 응답을 검증한다.
   **판정: 유지 · 시드: 핵심.**
 
-### standalone `demo` — 2개
-
-- [`src/__tests__/dynamic-loader.spec.ts`](demo/src/__tests__/dynamic-loader.spec.ts) — module reset 뒤 중앙 loader가 전체 Nest 모듈 그래프와 `@MessagePattern`을 새 namespace로 다시 평가하는지 검증한다.
-  **판정: 유지 · 시드: 선택.**
-- [`src/__tests__/fixed-namespace.spec.ts`](demo/src/__tests__/fixed-namespace.spec.ts) — worker별 고정 message namespace로 실제 Nest NATS 요청을 왕복하고 테스트마다 client와 server를 정리하는지 검증한다.
-  **판정: 유지 · 시드: 선택.**
-
 ### `libs/common` — 37개
 
 #### 인증·캐시·설정

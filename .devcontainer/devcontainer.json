@@ -45,6 +45,7 @@
     "customizations": {
         "vscode": {
             "extensions": [
+                // 이름과 달리 Vitest도 자동 감지한다. 이 저장소에서는 Vitest spec의 실행·디버깅에 사용한다.
                 "firsttris.vscode-jest-runner",
                 "jebbs.plantuml",
                 "esbenp.prettier-vscode",

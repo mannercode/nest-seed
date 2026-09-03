@@ -10,7 +10,7 @@ services:
         working_dir: /workspace
         volumes:
             - ..:/workspace
-        command: [--offline, --include-fragments, '*.md', 'docs/**/*.md']
+        command: [--offline, --include-fragments, '*.md', 'docs/**/*.md', 'tests/README.md']
 
 networks:
     default:

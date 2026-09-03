@@ -58,7 +58,6 @@ updates:
           - '/apps/api'
           - '/apps/console'
           - '/apps/user-app'
-          - '/deploy'
           - '/tests/web'
       schedule:
           interval: weekly
