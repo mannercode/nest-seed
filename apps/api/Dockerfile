@@ -4,8 +4,7 @@ FROM node:26.8.1-bookworm-slim@sha256:367679cf9792759492a486e4aa4b421764d71a9546
 
 FROM base AS build
 
-RUN npm install --global --no-audit --no-fund pnpm \
-    && pnpm --version
+RUN npm install -g pnpm
 
 WORKDIR /workspace
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./

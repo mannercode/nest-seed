@@ -12,7 +12,7 @@ const REFRESH_COOKIE = 'nest-seed-user-refresh'
 
 const rootPassword = process.env.ROOT_PASSWORD
 if (!rootPassword) {
-    throw new Error('ROOT_PASSWORD must be set (devcontainer ambient env에서 주입된다)')
+    throw new Error('ROOT_PASSWORD must be set by tests/web/compose.yml')
 }
 const ROOT_BASIC_AUTH = `Basic ${Buffer.from(`root:${rootPassword}`).toString('base64')}`
 const mongoUri = process.env.MONGO_URI

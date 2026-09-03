@@ -1,0 +1,24 @@
+{
+    "name": "nest-message-pattern-demo",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "packageManager": "pnpm@11.24.0",
+    "scripts": {
+        "test": "vitest run",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@nats-io/transport-node": "3.4.0",
+        "@nestjs/common": "12.0.1",
+        "@nestjs/core": "12.0.1",
+        "@nestjs/microservices": "12.0.1",
+        "reflect-metadata": "0.2.2",
+        "rxjs": "7.8.2"
+    },
+    "devDependencies": {
+        "@types/node": "26.4.0",
+        "typescript": "6.0.3",
+        "vitest": "4.1.11"
+    }
+}

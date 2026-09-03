@@ -1,0 +1,43 @@
+{
+    "compilerOptions": {
+        // CommonJS 모듈의 default export를 ESM default import처럼 타입 검사할 수 있게 한다.
+        // 이 옵션 자체는 JavaScript를 만들지 않으며, 여기서는 라이브러리 호환성을 위한 설정이다.
+        "allowSyntheticDefaultImports": true,
+
+        // Nest가 생성자 매개변수 타입 같은 런타임 타입 정보를 읽을 수 있도록
+        // 데코레이터 메타데이터를 생성한다. 실제 실행 시에는 reflect-metadata도 필요하다.
+        "emitDecoratorMetadata": true,
+
+        // CommonJS와 ESM 사이의 import 호환 규칙을 활성화한다.
+        "esModuleInterop": true,
+
+        // @Module(), @Controller(), @MessagePattern() 같은 Nest 데코레이터를 허용한다.
+        "experimentalDecorators": true,
+
+        // Vitest가 파일별로 TypeScript를 변환해도 안전한 코드인지 검사한다.
+        "isolatedModules": true,
+
+        // package.json의 "type": "module"과 맞물려 Node.js의 실제 ESM 규칙을 따른다.
+        // 그래서 TypeScript 파일을 import할 때도 실행 결과 기준인 '.js' 확장자를 쓴다.
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+
+        // 이 프로젝트에서 tsc는 빌드가 아니라 타입 검사만 담당한다.
+        "noEmit": true,
+
+        // 외부 라이브러리의 .d.ts 내부까지 재검사하지 않아 검사 시간을 줄인다.
+        "skipLibCheck": true,
+
+        // 암시적 any와 nullable 값 누락 등을 잡는 TypeScript의 엄격 모드다.
+        "strict": true,
+
+        // Node.js 24에서 바로 실행할 수 있는 최신 JavaScript 문법을 기준으로 검사한다.
+        "target": "ES2023",
+
+        // Node 전역(process 등)과 Vitest 전역(describe, it, expect, vi 등)의 타입을 추가한다.
+        "types": ["node", "vitest/globals"]
+    },
+
+    // 애플리케이션·테스트 코드와 Vitest 설정 파일만 타입 검사 대상으로 삼는다.
+    "include": ["src/**/*.ts", "vitest.config.ts"]
+}

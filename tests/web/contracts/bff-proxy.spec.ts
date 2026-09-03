@@ -12,6 +12,21 @@ for (const [appName, bff] of [
     ['user-app', userAppBff]
 ] as const satisfies ReadonlyArray<readonly [string, BffProxyModule]>) {
     test.describe(`${appName} BFF proxy`, () => {
+        test('production server의 내부 bind 주소와 달라도 브라우저 Origin과 Host가 같으면 허용한다', () => {
+            const headers = new Headers({
+                host: 'app.internal:3100',
+                origin: 'http://app.internal:3100'
+            })
+
+            expect(bff.hasSameOrigin('POST', headers, 'http:')).toBe(true)
+        })
+
+        test('브라우저 Origin과 Host가 다르면 거절한다', () => {
+            const headers = new Headers({ host: `${appName}:3100`, origin: 'http://attacker:3100' })
+
+            expect(bff.hasSameOrigin('POST', headers, 'http:')).toBe(false)
+        })
+
         test('직접 노출 기본값에서는 브라우저가 보낸 proxy IP 헤더를 신뢰하지 않는다', () => {
             const headers = new Headers({
                 'X-Forwarded-For': '203.0.113.7',

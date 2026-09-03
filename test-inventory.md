@@ -81,7 +81,7 @@ k6의 [`measurementStart()`](tests/api-benchmark/perf-common.js)는 제거하고
 | `purchase-records.spec.ts`    |            50ms | 유지. 테스트 전용 생성 시각 인자나 Mongo 직접 수정보다 현재 방식이 작고 실제 정렬 경계에 가깝다.                                                                                |
 | `showtime-creation.spec.ts`   |           5.1초 | 유지. Restate의 실제 5초 경계를 넘어야 완료 응답 유실 뒤 durable retry를 재현한다.                                                                                              |
 
-### `configuration-contract.test.mjs` 16개 항목 상세
+### `configuration-contract.test.mjs` 18개 항목 상세
 
 이 파일은 [설정 계약 테스트](tools/__tests__/configuration-contract.test.mjs)라는 한 이름 아래 서로 성격이 다른 검증이 섞여 있다. 아래 표는 파일을 삭제했을 때 사라지는 검사를 보여 준다. `유지`로 적힌 항목도 이 파일을 유지한다는 뜻이 아니라, 해당 정책이 필요하다면 별도 lint로 옮길 가치가 있다는 뜻이다.
 
@@ -90,6 +90,8 @@ k6의 [`measurementStart()`](tests/api-benchmark/perf-common.js)는 제거하고
 | package·설치 안전 정책                     | 제거 후보 | `package.json` script 문자열과 pnpm 설정의 현재 값을 다시 적는다. 실제 명령 실행과 pnpm 자체 검증이 실패 신호를 낸다.                              |
 | 공통 Nest Oxlint baseline                  | 제거 후보 | lint를 실제로 실행하는데 도구 버전·규칙 값·script 철자를 다시 검사한다. 필요한 규칙의 효과는 위반 fixture 테스트로 검증한다.                       |
 | devcontainer 재현 설치·cache 정책          | 축소      | feature digest와 frozen install 정책은 남길 수 있다. 개인 mount, 과거 script·npm 인자 부재, Dockerfile layer 순서는 기능 계약이 아니므로 제거한다. |
+| API benchmark 공식 k6 runner               | 유지      | 상시 설치 회귀와 가변 image를 막는 실행 경계·공급망 계약이다. 실제 `run-k6.sh version` 실행과 함께 둔다.                                           |
+| web e2e 공식 Playwright runner             | 유지      | package·lock·image 버전 일치와 digest, Docker socket 비전달을 강제한다. 앱 기동·정리는 실제 e2e 실행으로 확인한다.                                 |
 | API image cache·production workspace       | 축소      | production artifact가 실행되고 dev dependency가 빠졌는지를 검증한다. cache mount와 과거 image 이름 부재 같은 Dockerfile 문자열은 제거한다.         |
 | backend ESM·Vitest metadata 변환           | 축소      | 실제 TypeScript config 해석과 decorator metadata 변환은 남긴다. alias 목록, package `files`, test script 철자 snapshot은 제거한다.                 |
 | 상대 import의 runtime 확장자               | 제거 후보 | NodeNext typecheck와 실제 build가 이미 검증하는 컴파일 계약이다. 동일 소스를 별도 AST로 전수 검사할 필요가 없다.                                   |
@@ -110,7 +112,7 @@ k6의 [`measurementStart()`](tests/api-benchmark/perf-common.js)는 제거하고
 | -------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `pnpm run test`            | `libs/testing`, `libs/common`, API race 계약, Web 계약, tunnel 정책, Vitest 자원 helper, `apps/api` 테스트 |
 | `pnpm run atoz`            | `pnpm run test` 범위에 설정 계약, 정적 검사, 앱 build, 브라우저 E2E, API 문서와 배포 검증을 추가           |
-| `pnpm run e2e`             | `tests/web/e2e`의 Chromium 브라우저 테스트                                                                 |
+| `pnpm run e2e`             | production 앱 이미지와 공식 Playwright runner로 실행하는 `tests/web/e2e` Chromium 테스트                   |
 | `pnpm run race <scenario>` | 선택한 4-replica 분산 race 시나리오                                                                        |
 | `pnpm run benchmark:api`   | k6 API 부하 측정; 절대 합격선이 없는 비교 측정                                                             |
 
@@ -335,7 +337,7 @@ k6의 [`measurementStart()`](tests/api-benchmark/perf-common.js)는 제거하고
 
 ### `tests/web` — 5개
 
-- [`contracts/bff-proxy.spec.ts`](tests/web/contracts/bff-proxy.spec.ts) — Console/User BFF의 proxy IP 신뢰 경계와 refresh 재시도 시 회전 쿠키 보존을 검증한다.
+- [`contracts/bff-proxy.spec.ts`](tests/web/contracts/bff-proxy.spec.ts) — Console/User BFF의 Origin·Host와 proxy IP 신뢰 경계, refresh 재시도 시 회전 쿠키 보존을 검증한다.
   **판정: 유지 · 시드: 핵심.**
 - [`contracts/frontend-lint.spec.ts`](tests/web/contracts/frontend-lint.spec.ts) — 두 Next 앱에 React hooks, 접근성, Next image lint 규칙이 실제로 적용되는지 검증한다.
   **판정: 축소 · 시드: 선택.** 실제 위반 파일을 lint하는 방식은 유효하나 동일 shared 규칙은 한 번만 검증하고 두 앱 자체 lint로 적용 범위를 보장할 수 있다.
@@ -352,7 +354,7 @@ k6의 [`measurementStart()`](tests/api-benchmark/perf-common.js)는 제거하고
   **판정: 유지 · 시드: 선택.**
 - [`__tests__/clean-workspace.test.mjs`](tools/__tests__/clean-workspace.test.mjs) — 생성물만 지우고 개인 파일·테스트 보고서를 보존하며 symlink workspace를 거부하는지 검증한다.
   **판정: 유지 · 시드: 핵심.**
-- [`__tests__/configuration-contract.test.mjs`](tools/__tests__/configuration-contract.test.mjs) — workspace, lint, devcontainer, Docker, ESM, 배포·인프라와 workflow 설정의 정책 계약 16개를 검사한다.
+- [`__tests__/configuration-contract.test.mjs`](tools/__tests__/configuration-contract.test.mjs) — workspace, lint, devcontainer, Docker, ESM, 배포·인프라와 workflow 설정의 정책 계약 18개를 검사한다.
   **판정: 제거 후보 · 시드: 선택.** 서로 무관한 정책 snapshot을 묶은 메타 테스트이며 AtoZ의 실제 install·lint·build·배포 검증과 대부분 겹친다. 계속 강제할 소수 정책은 필요해질 때 전용 lint로 분리한다.
 - [`__tests__/lint-shell.test.mjs`](tools/__tests__/lint-shell.test.mjs) — extension 없는 hook과 source된 fixture까지 shell lint 대상에 포함되는지 검증한다.
   **판정: 유지 · 시드: 핵심.**
@@ -449,7 +451,7 @@ k6의 [`measurementStart()`](tests/api-benchmark/perf-common.js)는 제거하고
 | [`libs/testing/vitest.config.mjs`](libs/testing/vitest.config.mjs)                                       | testing library의 Vitest 설정을 정의한다.                                                                                                               | **유지 · 핵심** |
 | [`libs/testing/src/__tests__/vitest.setup.ts`](libs/testing/src/__tests__/vitest.setup.ts)               | 각 testing library 테스트 전에 Vitest module cache를 초기화한다.                                                                                        | **유지 · 핵심** |
 | [`tests/web/playwright.contract.config.ts`](tests/web/playwright.contract.config.ts)                     | 브라우저와 web server 없이 `contracts`만 실행한다.                                                                                                      | **유지 · 핵심** |
-| [`tests/web/playwright.config.ts`](tests/web/playwright.config.ts)                                       | API·Console·User app을 build/start하고 Chromium E2E, trace, screenshot과 report를 구성한다.                                                             | **유지 · 핵심** |
+| [`tests/web/playwright.config.ts`](tests/web/playwright.config.ts)                                       | Compose가 주입한 앱 URL을 사용해 Chromium E2E, trace, screenshot과 report를 구성한다.                                                                   | **유지 · 핵심** |
 | [`apps/api/api-docs/run.sh`](apps/api/api-docs/run.sh)                                                   | `*.spec` 파일의 `TEST`/`SETUP`을 실행하고 응답·요약 보고서를 생성한다.                                                                                  | **유지 · 핵심** |
 | [`apps/api/api-docs/common.fixture`](apps/api/api-docs/common.fixture)                                   | API 문서의 로그인과 영화·극장·상영 fixture를 제공한다.                                                                                                  | **유지 · 예제** |
 | [`apps/api/api-docs/log-redaction.sh`](apps/api/api-docs/log-redaction.sh)                               | API 문서 로그에서 민감값을 제거한다.                                                                                                                    | **유지 · 핵심** |

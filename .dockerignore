@@ -22,12 +22,24 @@
 !/apps/api/src/
 !/apps/api/scripts/
 
+!/apps/console/package.json
+!/apps/console/next-env.d.ts
+!/apps/console/next.config.mjs
+!/apps/console/postcss.config.mjs
+!/apps/console/tsconfig.json
+!/apps/console/src/
+
+!/apps/user-app/package.json
+!/apps/user-app/next-env.d.ts
+!/apps/user-app/next.config.mjs
+!/apps/user-app/postcss.config.mjs
+!/apps/user-app/tsconfig.json
+!/apps/user-app/src/
+
 !/tools/dev-tools/package.json
 !/tools/dev-tools/free-port.js
 !/tools/dev-tools/tunnel.sh
 !/tools/vitest-helpers/package.json
-
-!/tests/web/package.json
 
 **/node_modules
 **/_output

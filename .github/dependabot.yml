@@ -50,13 +50,16 @@ updates:
           actions-minor-patch:
               patterns: ['*']
               update-types: ['minor', 'patch']
-    # Dev Container와 API의 Node 이미지는 patch·배포판·digest까지 동일하게 고정한다.
+    # Dev Container와 앱들의 Node 이미지는 patch·배포판·digest까지 동일하게 고정한다.
     # dependency-name 기준 cross-directory grouping으로 tag+digest 갱신도 한 PR에서 수행한다.
     - package-ecosystem: docker
       directories:
           - '/.devcontainer'
           - '/apps/api'
+          - '/apps/console'
+          - '/apps/user-app'
           - '/deploy'
+          - '/tests/web'
       schedule:
           interval: weekly
       allow:
@@ -73,8 +76,10 @@ updates:
     # updater가 해석하지 않으므로 해당 digest는 인프라 이미지 갱신 시 수동 검증한다.
     - package-ecosystem: docker-compose
       directories:
+          - '/.devcontainer'
           - '/deploy'
           - '/infra'
+          - '/tests/web'
       schedule:
           interval: weekly
       allow:

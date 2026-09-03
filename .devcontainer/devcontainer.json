@@ -3,7 +3,10 @@
     "hostRequirements": { "cpus": 4, "memory": "16gb", "storage": "32gb" },
     "build": { "dockerfile": "Dockerfile", "context": ".." },
     "features": {
-        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": { "moby": false },
+        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+            "moby": false,
+            "dockerDashComposeVersion": "none"
+        },
         "ghcr.io/devcontainers/features/github-cli": {}
     },
     "runArgs": [
@@ -14,7 +17,6 @@
         "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}",
         "--network=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
     ],
-    "forwardPorts": [5010, 5020],
     "remoteUser": "node",
     "containerEnv": {
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}",
@@ -30,20 +32,18 @@
         "source=${localEnv:HOME}/.claude.json,target=/home/node/.claude.json,type=bind"
     ],
     "initializeCommand": {
-        "network": "n=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}; docker network inspect \"$n\" >/dev/null 2>&1 || docker network create \"$n\"",
+        "project-network": "n=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}; docker network inspect \"$n\" >/dev/null 2>&1 || docker network create \"$n\" >/dev/null",
         "codex": "mkdir -p ${localEnv:HOME}/.codex",
         "claude": "mkdir -p ${localEnv:HOME}/.claude && touch ${localEnv:HOME}/.claude.json",
         "github": "mkdir -p ${localEnv:HOME}/.config/gh"
     },
-    "updateContentCommand": { "workspace-dependencies": "pnpm install --frozen-lockfile" },
-    "postCreateCommand": {
-        "playwright-chromium": "pnpm --filter './tests/web' exec playwright install chromium"
-    },
     "postStartCommand": {
-        "infra": "bash infra/reset.sh",
-        "plantuml": "nohup bash -c 'java -jar /opt/plantuml.jar -picoweb:5020 >/tmp/plantuml.log &' >/dev/null"
+        "workspace-dependencies": "pnpm install --frozen-lockfile",
+        "plantuml": "docker compose -f .devcontainer/compose.plantuml.yml up -d",
+        "infra": "bash infra/reset.sh"
     },
     "waitFor": "postStartCommand",
+    "forwardPorts": [5010],
     "customizations": {
         "vscode": {
             "extensions": [
@@ -57,7 +57,7 @@
             "settings": {
                 "remote.autoForwardPorts": false,
                 "livePreview.portNumber": 5010,
-                "plantuml.server": "http://localhost:5020/",
+                "plantuml.server": "http://plantuml:8080/",
                 "plantuml.render": "PlantUMLServer"
             }
         }

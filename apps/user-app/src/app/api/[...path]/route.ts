@@ -1,7 +1,12 @@
 import { createHash } from 'node:crypto'
 import { cookies } from 'next/headers'
 import { type NextRequest, NextResponse } from 'next/server'
-import { resolveForwardedClientIp, retryWithRotatedSession, type AuthTokens } from '@/lib/bff-proxy'
+import {
+    hasSameOrigin,
+    resolveForwardedClientIp,
+    retryWithRotatedSession,
+    type AuthTokens
+} from '@/lib/bff-proxy'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -21,7 +26,7 @@ const COOKIE_OPTIONS = {
     httpOnly: true,
     path: '/',
     sameSite: 'lax' as const,
-    secure: process.env.NODE_ENV === 'production'
+    secure: process.env.BFF_COOKIE_SECURE !== 'false' && process.env.NODE_ENV === 'production'
 }
 
 type RouteContext = { params: Promise<{ path: string[] }> }
@@ -38,7 +43,7 @@ function getApiBaseUrl(): string {
 }
 
 async function proxy(request: NextRequest, context: RouteContext): Promise<NextResponse> {
-    if (!hasTrustedOrigin(request)) {
+    if (!hasSameOrigin(request.method, request.headers, request.nextUrl.protocol)) {
         return jsonResponse({ message: 'Invalid request origin' }, 403)
     }
 
@@ -138,14 +143,6 @@ function isBlockedAuthEndpoint(path: string[]): boolean {
 
     // login/logout은 이 BFF가 담당하는 역할만 허용하고, refresh는 내부 회전에서만 호출한다.
     return isAuthEndpoint && (namespace !== AUTH_PREFIX || operation === 'refresh')
-}
-
-function hasTrustedOrigin(request: NextRequest): boolean {
-    if (request.method === 'GET' || request.method === 'HEAD' || request.method === 'OPTIONS') {
-        return true
-    }
-    const origin = request.headers.get('origin')
-    return origin === null || origin === request.nextUrl.origin
 }
 
 async function readBody(request: NextRequest): Promise<ArrayBuffer | undefined> {

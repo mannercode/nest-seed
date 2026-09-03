@@ -6,7 +6,7 @@ Docker Compose로 API 컨테이너를 여러 개 띄우고 NGINX로 요청을 �
 
 MongoDB, Redis, VersityGW, NATS, Restate 같은 인프라는 이미 실행 중이라고 가정한다.
 
-토폴로지는 다음과 같다(다이어그램은 devcontainer의 VS Code 미리보기에서 렌더된다).
+토폴로지는 다음과 같다(다이어그램은 Dev Container의 PlantUML 확장 전용 Preview에서 렌더된다).
 
 ```plantuml
 @startuml
@@ -102,14 +102,14 @@ API 컨테이너는 `${COMPOSE_PROJECT_NAME}` Docker 네트워크에 붙은 뒤,
 
 이 Compose 스택은 API만 배포한다. `console`과 `user-app`을 운영에 함께 배포할 때는 두 Next.js 서버를 신뢰할 수 있는 edge/reverse proxy 뒤에 두고, 브라우저가 Next origin에 직접 접근하지 못하게 제한해야 한다. edge는 외부 요청의 `X-Forwarded-For`를 그대로 신뢰하지 않고 실제 연결 주소를 체인의 오른쪽 끝에 append하며, `X-Real-IP`는 실제 연결 주소로 덮어써야 한다.
 
-BFF는 기본적으로 proxy IP 헤더를 무시한다. 위 경계를 보장한 배포에서만 두 Next.js 서버에 `BFF_TRUST_PROXY_HEADERS=true`를 명시해 opt-in한다. 이때 BFF는 `X-Forwarded-For`의 오른쪽 끝 값 하나(헤더가 없으면 검증된 `X-Real-IP`)가 실제 IP일 때만 API로 전달한다. 오른쪽 끝 값이 잘못됐다고 앞쪽 값으로 후퇴하지 않는다.
+BFF는 기본적으로 proxy IP 헤더를 무시한다. 위 경계를 보장한 배포에서만 두 Next.js 서버에 `BFF_TRUST_PROXY_HEADERS=true`를 명시해 opt-in한다. 이때 BFF는 `X-Forwarded-For`의 오른쪽 끝 값 하나(헤더가 없으면 검증된 `X-Real-IP`)가 실제 IP일 때만 API로 전달한다. 오른쪽 끝 값이 잘못됐다고 앞쪽 값으로 후퇴하지 않는다. 상태 변경 요청의 same-origin 판정은 서버의 내부 bind URL이 아니라 브라우저가 보낸 `Origin`과 `Host`의 protocol·host를 비교한다. production cookie는 기본적으로 `Secure`이며, TLS 없이 내부 HTTP service DNS를 쓰는 web e2e만 `BFF_COOKIE_SECURE=false`로 명시한다.
 
 API는 `loopback`·`linklocal`·`uniquelocal` 프록시만 신뢰하므로, API 포트 역시 사설 네트워크의 BFF/NGINX에서만 접근 가능해야 한다. 이 경계를 보장할 수 없는 환경에서는 opt-in하지 말고 IP 제한을 신뢰 가능한 edge로 옮겨야 한다. 기본값에서는 모든 요청이 API 관점에서 BFF 주소 하나로 보이므로 IP별 로그인 버킷도 공유된다는 점에 유의한다.
 
 이 경계는 `deploy/verify.sh`가 아니라 각 테스트 계층이 자기 범위만 검증한다.
 
-- [BFF 계약 테스트](../tests/web/contracts/bff-proxy.spec.ts)는 기본값에서 proxy IP 헤더를 무시하는 규칙, opt-in에서 오른쪽 끝 IP만 선택하는 규칙, 잘못된 끝값에서 앞쪽 공격자 값으로 후퇴하지 않는 규칙을 두 Next.js 앱에 공통으로 검증한다.
-- Playwright는 두 BFF를 의도적으로 `BFF_TRUST_PROXY_HEADERS=true`로 시작한다. 브라우저가 보낸 `X-Forwarded-For`로 신뢰 edge를 모사해 서로 다른 주소의 로그인 실패가 별도 IP 버킷에 쌓이는 opt-in wiring을 검증한다. 이것은 실제 public edge가 외부 헤더를 덮어쓰는지는 증명하지 않는다.
+- [BFF 계약 테스트](../tests/web/contracts/bff-proxy.spec.ts)는 Origin·Host 일치, 기본값에서 proxy IP 헤더를 무시하는 규칙, opt-in에서 오른쪽 끝 IP만 선택하는 규칙, 잘못된 끝값에서 앞쪽 공격자 값으로 후퇴하지 않는 규칙을 두 Next.js 앱에 공통으로 검증한다.
+- web Compose는 두 BFF의 production 이미지를 의도적으로 `BFF_TRUST_PROXY_HEADERS=true`로 시작한다. Playwright 브라우저가 보낸 `X-Forwarded-For`로 신뢰 edge를 모사해 서로 다른 주소의 로그인 실패가 별도 IP 버킷에 쌓이는 opt-in wiring을 검증한다. 이것은 실제 public edge가 외부 헤더를 덮어쓰는지는 증명하지 않는다.
 - API 인증 통합 테스트는 프로세스 안에서 trusted-proxy 해석과 로그인 rate-limit 동작을 검증한다. Compose의 BFF·edge 경계를 통과하는 통합 검증은 아니다.
 
 ## Restate endpoint 등록과 운영 전환

@@ -75,17 +75,23 @@ SERVER_URL=http://nginx bash tests/api-benchmark/mixed-runner.sh # 떠 있는 de
 
 ## web — 브라우저 e2e와 BFF 계약
 
-Playwright가 `apps/api`·`apps/console`·`apps/user-app`을 빌드해 띄운 뒤, 브라우저에서 관리자 로그인과 영화·극장·사용자 관리, 사용자 가입·로그인·세션 회전 흐름을 검증한다. 개발 중 이미 서버가 떠 있으면 재사용한다(`reuseExistingServer`). PR/push CI는 재시도 없이 첫 실패를 게이트하고, 정기 실행만 한 번 재시도한다. 실패 시 trace·screenshot·JUnit·HTML report는 workflow artifact로 보존한다.
+[`run-e2e.sh`](../tests/web/run-e2e.sh)가 전용 Compose project에서 `apps/api`·`apps/console`·`apps/user-app`의 production 이미지를 빌드하고 healthy 상태까지 기다린 뒤, 공식 Playwright 이미지의 일회성 컨테이너를 실행한다. 브라우저에서는 관리자 로그인과 영화·극장·사용자 관리, 사용자 가입·로그인·세션 회전 흐름을 검증한다. 개발 서버를 재사용하지 않으므로 e2e가 실제로 검사한 앱 바이너리와 실행 환경이 분명하다. PR/push CI는 재시도 없이 첫 실패를 게이트하고, 정기 실행만 한 번 재시도한다. 실패 시 trace·screenshot·JUnit·HTML report와 Compose 상태·로그는 workflow artifact로 보존한다.
 
-같은 워크스페이스의 `contracts/bff-proxy.spec.ts`는 BFF의 proxy IP 경계와 refresh 재시도 쿠키 보존을 두 앱에 동일하게 적용하는 계약 테스트다. 별도 Playwright 설정을 써서 webServer와 브라우저를 시작하지 않는다.
+앱과 runner는 Dev Container·인프라가 쓰는 기존 외부 네트워크에 붙지만 Compose project 이름은 `${COMPOSE_PROJECT_NAME}-web`으로 분리한다. 따라서 종료할 때 web 앱들만 내리고 MongoDB 같은 개발 인프라는 건드리지 않는다. API·프런트엔드는 host port를 publish하지 않고 runner가 `http://api:${API_PORT}`, `http://console:${CONSOLE_PORT}`, `http://user-app:${USER_APP_PORT}`처럼 service DNS로 접근한다. Docker socket은 runner에 전달하지 않으며 stack의 build·기동·정리는 Dev Container의 wrapper가 맡는다.
+
+Playwright 공식 이미지는 브라우저와 OS 의존성을 제공할 뿐 프로젝트의 `@playwright/test` package를 포함하지 않는다. runner 이미지는 `tests/web/package-lock.json`으로 `npm ci`하고, e2e 소스·설정과 결과 폴더만 bind mount한다. `tests/web/package.json`의 `@playwright/test` 버전, lockfile의 직접 버전과 이미지 tag는 정확히 같아야 하며 구성 계약 테스트가 이를 확인한다. console·user-app은 Next.js standalone 출력만 runtime 이미지에 복사한다. 내부 HTTP로 도는 e2e에서만 `BFF_COOKIE_SECURE=false`를 주입하고, 일반 production 기본값은 secure cookie다.
+
+같은 워크스페이스의 `contracts/bff-proxy.spec.ts`는 BFF의 Origin·Host 경계, proxy IP 경계와 refresh 재시도 쿠키 보존을 두 앱에 동일하게 적용하는 계약 테스트다. 별도 Playwright 설정을 써서 앱과 브라우저를 시작하지 않으며, 이 빠른 계약 테스트는 루트 pnpm workspace에서 실행한다.
 
 ```bash
 pnpm --filter './tests/web' test # 브라우저 없는 BFF·프런트 린트 계약
 pnpm run e2e                    # AtoZ에도 포함되는 browser e2e
-pnpm run e2e:list               # 서버를 띄우지 않고 테스트 이름 확인
-pnpm run e2e:ui                 # 인터랙티브 실행·트레이스 뷰
+pnpm run e2e:list               # 앱을 띄우지 않고 runner에서 테스트 이름 확인
+pnpm run e2e:ui                 # 컨테이너 UI를 127.0.0.1:9323에 publish
 pnpm run e2e:report             # 마지막 HTML 결과 열기
 ```
+
+`e2e:ui`는 Docker host의 loopback `127.0.0.1:9323`에만 UI를 publish한다. Remote SSH에서는 remote host port forwarding 또는 로컬 터미널의 `ssh -L 9323:127.0.0.1:9323 <host>`로 전달해 연다. 일반 e2e 실행은 어떤 port도 publish하지 않는다.
 
 ## CI 반복 — test-stability
 

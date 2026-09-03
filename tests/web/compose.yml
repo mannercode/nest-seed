@@ -1,0 +1,87 @@
+x-logging: &logging
+    logging: { driver: json-file, options: { max-size: '1m', max-file: '1' } }
+
+services:
+    api:
+        <<: *logging
+        build:
+            context: ../..
+            dockerfile: apps/api/Dockerfile
+        env_file:
+            - ../../.env.infra
+            - ../../.env.api
+        environment:
+            NODE_ENV: production
+        healthcheck:
+            test: 'curl -fsS http://localhost:$${API_PORT:?}/health'
+            interval: 2s
+            timeout: 5s
+            retries: 60
+            start_period: 5s
+
+    console:
+        <<: *logging
+        build:
+            context: ../..
+            dockerfile: apps/console/Dockerfile
+        environment:
+            API_BASE_URL: http://api:${API_PORT:?}
+            BFF_COOKIE_SECURE: 'false'
+            BFF_TRUST_PROXY_HEADERS: 'true'
+            PORT: ${CONSOLE_PORT:?}
+        depends_on:
+            api: { condition: service_healthy }
+        healthcheck: &frontend-healthcheck
+            test:
+                [
+                    'CMD',
+                    'node',
+                    '-e',
+                    "fetch('http://localhost:'+process.env.PORT).then(response=>process.exit(response.ok?0:1)).catch(()=>process.exit(1))"
+                ]
+            interval: 2s
+            timeout: 5s
+            retries: 60
+            start_period: 5s
+
+    user-app:
+        <<: *logging
+        build:
+            context: ../..
+            dockerfile: apps/user-app/Dockerfile
+        environment:
+            API_BASE_URL: http://api:${API_PORT:?}
+            BFF_COOKIE_SECURE: 'false'
+            BFF_TRUST_PROXY_HEADERS: 'true'
+            PORT: ${USER_APP_PORT:?}
+        depends_on:
+            api: { condition: service_healthy }
+        healthcheck: *frontend-healthcheck
+
+    playwright:
+        build: .
+        init: true
+        ipc: host
+        user: ${E2E_UID:?}:${E2E_GID:?}
+        environment:
+            API_BASE_URL: http://api:${API_PORT:?}
+            CI: ${CI:-}
+            CONSOLE_BASE_URL: http://console:${CONSOLE_PORT:?}
+            HOME: /tmp
+            MONGO_DATABASE: ${MONGO_DATABASE:?}
+            MONGO_URI: ${MONGO_URI:?}
+            PLAYWRIGHT_RETRIES: ${PLAYWRIGHT_RETRIES:-0}
+            ROOT_PASSWORD: ${ROOT_PASSWORD:?}
+            USER_APP_BASE_URL: http://user-app:${USER_APP_PORT:?}
+        volumes:
+            - ./e2e:/work/e2e:ro
+            - ./playwright.config.ts:/work/playwright.config.ts:ro
+            - ./tsconfig.json:/work/tsconfig.json:ro
+            - ./_output:/work/_output
+        ports:
+            - '127.0.0.1:9323:9323'
+
+networks:
+    default:
+        name: ${DEVCONTAINER_NETWORK:?}
+        external: true

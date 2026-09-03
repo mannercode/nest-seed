@@ -6,6 +6,6 @@ if (!API_BASE_URL) {
 }
 
 /** @type {import('next').NextConfig} */
-const nextConfig = {}
+const nextConfig = { output: 'standalone' }
 
 export default nextConfig

@@ -63,18 +63,20 @@ test('workspaces share the Nest Oxlint baseline', async () => {
 test('devcontainer avoids redundant version probes while keeping project installs locked', async () => {
     const config = await read('.devcontainer/devcontainer.json')
     const dockerfile = await read('.devcontainer/Dockerfile')
+    const plantumlCompose = await read('.devcontainer/compose.plantuml.yml')
+    const dependabot = await read('.github/dependabot.yml')
     const dockerignore = await read('.dockerignore')
     const lock = JSON.parse(await read('.devcontainer/devcontainer-lock.json'))
 
     assert.match(config, /"build"\s*:\s*\{[^}]*"context"\s*:\s*"\.\."/)
-    assert.match(dockerignore, /^!\/tests\/web\/package\.json$/m)
+    assert.doesNotMatch(dockerignore, /^!\/tests\/web(?:\/|$)/m)
     assert.match(
         config,
-        /"updateContentCommand"\s*:\s*\{\s*"workspace-dependencies"\s*:\s*"pnpm install --frozen-lockfile"/
+        /"postStartCommand"\s*:\s*\{\s*"workspace-dependencies"\s*:\s*"pnpm install --frozen-lockfile"/
     )
-    assert.match(
+    assert.doesNotMatch(
         config,
-        /"postCreateCommand"\s*:\s*\{\s*"playwright-chromium"\s*:\s*"pnpm --filter '\.\/tests\/web' exec playwright install chromium"/
+        /updateContentCommand|postCreateCommand|playwright install chromium/
     )
     assert.match(config, /source=\$\{localEnv:HOME\}\/\.codex,target=\/home\/node\/\.codex/)
     assert.match(
@@ -82,7 +84,42 @@ test('devcontainer avoids redundant version probes while keeping project install
         /source=\$\{localEnv:HOME\}\/\.config\/gh,target=\/home\/node\/\.config\/gh/
     )
     assert.match(config, /source=\$\{localEnv:HOME\}\/\.claude,target=\/home\/node\/\.claude/)
-    assert.doesNotMatch(config, /initialize-user-state\.sh|devcontainerId/)
+    assert.doesNotMatch(config, /initialize-user-state\.sh|initialize-docker\.sh|devcontainerId/)
+    assert.match(config, /"dockerDashComposeVersion"\s*:\s*"none"/)
+    assert.match(
+        config,
+        /"--network=\$\{localEnv:USER:unknown\}-\$\{localWorkspaceFolderBasename\}"/
+    )
+    assert.match(
+        config,
+        /"project-network"\s*:\s*"n=\$\{localEnv:USER:unknown\}-\$\{localWorkspaceFolderBasename\}; docker network inspect \\"\$n\\" >\/dev\/null 2>&1 \|\| docker network create \\"\$n\\" >\/dev\/null"/
+    )
+    assert.doesNotMatch(config, /"--network=plantuml"/)
+    assert.match(config, /"forwardPorts"\s*:\s*\[5010\]/)
+    assert.match(config, /"plantuml\.server"\s*:\s*"http:\/\/plantuml:8080\/"/)
+    assert.doesNotMatch(config, /java -jar|picoweb/)
+    assert.doesNotMatch(config, /portsAttributes|plantuml-relay|start-plantuml-relay/)
+    assert.ok(
+        config.includes('"plantuml": "docker compose -f .devcontainer/compose.plantuml.yml up -d"')
+    )
+    assert.doesNotMatch(
+        config,
+        /docker (?:container inspect plantuml|network inspect plantuml|network (?:connect|disconnect))|docker run[^"\n]*plantuml/
+    )
+    assert.match(
+        plantumlCompose,
+        /^\s+image: plantuml\/plantuml-server:jetty-v\d+\.\d+\.\d+@sha256:[a-f0-9]{64}$/m
+    )
+    assert.match(plantumlCompose, /^\s+container_name: \$\{COMPOSE_PROJECT_NAME\}-plantuml$/m)
+    assert.match(plantumlCompose, /^\s+restart: unless-stopped$/m)
+    assert.match(plantumlCompose, /^\s+name: \$\{COMPOSE_PROJECT_NAME\}$/m)
+    assert.match(plantumlCompose, /^\s+external: true$/m)
+    assert.doesNotMatch(plantumlCompose, /^\s+ports:/m)
+    assert.match(
+        dependabot,
+        /package-ecosystem: docker-compose[\s\S]*?directories:\s*\n\s+- '\/\.devcontainer'/
+    )
+    assert.match(dockerfile, /^# syntax=docker\/dockerfile:1$/m)
     assert.match(dockerfile, /^FROM node:\d+\.\d+\.\d+-bookworm-slim@sha256:[a-f0-9]{64}$/m)
     assert.doesNotMatch(dockerfile, /^ARG [A-Z_]+_VERSION=/m)
     assert.match(
@@ -90,17 +127,13 @@ test('devcontainer avoids redundant version probes while keeping project install
         /deb \[signed-by=\/usr\/share\/keyrings\/cloudflare-main\.gpg\] https:\/\/pkg\.cloudflare\.com\/cloudflared any main/
     )
     assert.doesNotMatch(dockerfile, /\bk6\b/)
+    assert.doesNotMatch(dockerfile, /plantuml|default-jre|graphviz|\bsocat\b/)
     assert.doesNotMatch(dockerfile, /github\.com\/cloudflare\/cloudflared\/releases/)
-    assert.match(dockerfile, /COPY tests\/web\/package\.json \/tmp\/tests-web-package\.json/)
-    assert.match(dockerfile, /playwright_version=.*devDependencies\['@playwright\/test'\]/)
-    assert.match(
-        dockerfile,
-        /npx --yes "playwright@\$\{playwright_version\}" install-deps chromium/
-    )
-    assert.doesNotMatch(dockerfile, /npm install --global[^\n]+playwright/)
-    assert.match(dockerfile, /COPY package\.json \/tmp\/workspace-package\.json/)
-    assert.match(dockerfile, /package_manager=.*\.packageManager/)
-    assert.match(dockerfile, /npm install --global[^\n]+"\$package_manager"/)
+    assert.doesNotMatch(dockerfile, /playwright|chromium|ms-playwright|tests\/web/i)
+    assert.doesNotMatch(dockerfile, /^COPY (?:tests\/web\/)?package\.json /m)
+    assert.doesNotMatch(dockerfile, /workspace-package|package_manager=.*\.packageManager/)
+    assert.match(dockerfile, /^RUN npm install -g pnpm$/m)
+    assert.doesNotMatch(dockerfile, /npm-cache/)
     assert.doesNotMatch(dockerfile, /\bxz-utils\b/)
     for (const versionProbe of [
         'node --version',
@@ -150,6 +183,75 @@ test('API benchmark runs the pinned official k6 container', async () => {
     for (const runner of runners) {
         assert.match(runner, /run-k6\.sh/)
         assert.doesNotMatch(runner, /\bk6 run\b/)
+    }
+})
+
+test('web E2E runs production app images from a pinned official Playwright runner', async () => {
+    const packageJson = JSON.parse(await read('tests/web/package.json'))
+    const packageLock = JSON.parse(await read('tests/web/package-lock.json'))
+    const runnerDockerfile = await read('tests/web/Dockerfile')
+    const compose = await read('tests/web/compose.yml')
+    const launcher = await read('tests/web/run-e2e.sh')
+    const config = await read('tests/web/playwright.config.ts')
+    const dependabot = await read('.github/dependabot.yml')
+    const nextConfigs = await Promise.all(
+        ['apps/console/next.config.mjs', 'apps/user-app/next.config.mjs'].map(read)
+    )
+    const appDockerfiles = await Promise.all(
+        ['apps/console/Dockerfile', 'apps/user-app/Dockerfile'].map(read)
+    )
+
+    const image = runnerDockerfile.match(
+        /^FROM mcr\.microsoft\.com\/playwright:v(\d+\.\d+\.\d+)-noble@sha256:[a-f0-9]{64}$/m
+    )
+    assert.ok(image, 'Playwright image must pin an exact version and digest')
+    assert.equal(image[1], packageJson.devDependencies['@playwright/test'])
+    assert.equal(packageLock.lockfileVersion, 3)
+    assert.deepEqual(packageLock.packages[''].devDependencies, packageJson.devDependencies)
+    assert.equal(
+        packageLock.packages['node_modules/@playwright/test'].version,
+        packageJson.devDependencies['@playwright/test']
+    )
+    assert.match(runnerDockerfile, /RUN npm ci --ignore-scripts --no-audit --no-fund/)
+    assert.match(
+        runnerDockerfile,
+        /ENTRYPOINT \["node", "node_modules\/@playwright\/test\/cli\.js", "test"\]/
+    )
+    assert.doesNotMatch(runnerDockerfile, /playwright install|pnpm/)
+
+    for (const service of ['api', 'console', 'user-app']) {
+        assert.match(compose, new RegExp(`dockerfile: apps/${service}/Dockerfile`))
+    }
+    assert.match(compose, /^\s+init: true$/m)
+    assert.match(compose, /^\s+ipc: host$/m)
+    assert.match(compose, /^\s+user: \$\{E2E_UID:\?}:\$\{E2E_GID:\?}$/m)
+    assert.match(compose, /CONSOLE_BASE_URL: http:\/\/console:\$\{CONSOLE_PORT:\?}/)
+    assert.match(compose, /USER_APP_BASE_URL: http:\/\/user-app:\$\{USER_APP_PORT:\?}/)
+    assert.match(compose, /^\s+name: \$\{DEVCONTAINER_NETWORK:\?}$/m)
+    assert.match(compose, /^\s+external: true$/m)
+    assert.match(compose, /127\.0\.0\.1:9323:9323/)
+    assert.doesNotMatch(compose, /docker\.sock/)
+
+    assert.match(launcher, /--project-name "\$\{COMPOSE_PROJECT_NAME\}-web"/)
+    assert.match(launcher, /build api console user-app playwright/)
+    assert.match(launcher, /up --detach --no-build --wait api console user-app/)
+    assert.match(launcher, /run "\$\{run_options\[@\]\}" playwright/)
+    assert.match(launcher, /down -t 0/)
+    assert.match(packageJson.scripts['e2e:ui'], /--ui-port=9323/)
+    assert.doesNotMatch(config, /webServer|reuseExistingServer|localhost|WORKSPACE_ROOT/)
+    for (const environment of ['API_BASE_URL', 'CONSOLE_BASE_URL', 'USER_APP_BASE_URL']) {
+        assert.match(config, new RegExp(`requiredEnvironment\\('${environment}'\\)`))
+    }
+
+    for (const nextConfig of nextConfigs) assert.match(nextConfig, /output: 'standalone'/)
+    for (const dockerfile of appDockerfiles) {
+        assert.match(dockerfile, /\.next\/standalone/)
+        assert.match(dockerfile, /^USER node$/m)
+        assert.match(dockerfile, /^RUN npm install -g pnpm$/m)
+        assert.doesNotMatch(dockerfile, /workspace-package|packageManager|pnpm@\d|pnpm --version/)
+    }
+    for (const directory of ['/apps/console', '/apps/user-app', '/tests/web']) {
+        assert.match(dependabot, new RegExp(`- '${directory}'`))
     }
 })
 
@@ -407,7 +509,12 @@ test('deployment base and infrastructure image references are digest-pinned', as
     )
 
     const nodeBaseImages = []
-    for (const dockerfile of ['.devcontainer/Dockerfile', 'apps/api/Dockerfile']) {
+    for (const dockerfile of [
+        '.devcontainer/Dockerfile',
+        'apps/api/Dockerfile',
+        'apps/console/Dockerfile',
+        'apps/user-app/Dockerfile'
+    ]) {
         const contents = await read(dockerfile)
         const stages = new Set()
         for (const [, image, alias] of contents.matchAll(/^FROM\s+(\S+)(?:\s+AS\s+(\S+))?/gim)) {
@@ -417,11 +524,11 @@ test('deployment base and infrastructure image references are digest-pinned', as
             if (alias) stages.add(alias)
         }
     }
-    assert.equal(nodeBaseImages.length, 2)
+    assert.equal(nodeBaseImages.length, 6)
     assert.equal(
         new Set(nodeBaseImages).size,
         1,
-        'devcontainer and API build must use one Node tag and digest'
+        'devcontainer and app builds must use one Node tag and digest'
     )
 
     for (const compose of ['deploy/compose.yml', 'infra/compose.s3.yml', 'infra/compose.yml']) {

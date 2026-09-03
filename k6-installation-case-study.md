@@ -25,13 +25,13 @@ RUN set -eu; \
 
 검토 과정은 다음처럼 진행됐다.
 
-| AI 에이전트의 제안·구현                                         | 빠졌던 질문·문제                                                       | 사용자의 반문                                             | 최종 반영                                                                 |
-| --------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------- |
-| 설치 뒤 모든 CLI의 버전을 출력했다.                             | 설치 명령의 성공과 버전 출력이 중복됐고 출력값을 판정하지도 않았다.    | “이걸 다 version 봐야 해?”                                | 의미 없는 버전 출력 명령을 모두 없앴다.                                   |
-| 한 `install` 단계에서 workspace와 Playwright 브라우저를 깔았다. | 이름이 무엇을 설치하는지 말하지 못했고 서로 다른 lifecycle을 합쳤다.   | “두 개를 설치하는데 나눠야 하지 않나?”                    | workspace 의존성과 Playwright Chromium 단계를 분리하고 이름을 구체화했다. |
-| GitHub API와 `jq`로 k6 최신 자산 URL을 계산했다.                | 공식 배포 통로가 있는데 자체 설치 로직부터 만들었다.                   | “왜 `download_url`을 별도로 구하지?”, “공식이 낫지 않나?” | 자체 최신 자산 탐색을 버렸다.                                             |
-| 공식 k6 APT 저장소에서 패키지를 설치했다.                       | 공식 절차라는 사실만 확인하고 실제 CI 아키텍처 지원은 확인하지 않았다. | “그게 공식 안내인가?”                                     | 공식 문서와 실제 배포 대상을 따로 검증했다.                               |
-| k6를 Dev Container의 상시 패키지로 유지하려 했다.               | k6가 언제, 어디서 실행되는 도구인지 먼저 따지지 않았다.                | “패키지 꼭 설치해야 하나? Docker 이미지는 없나?”          | 필요할 때만 공식 k6 컨테이너를 실행하게 바꿨다.                           |
+| AI 에이전트의 제안·구현                                         | 빠졌던 질문·문제                                                       | 사용자의 반문                                             | 최종 반영                                                                              |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| 설치 뒤 모든 CLI의 버전을 출력했다.                             | 설치 명령의 성공과 버전 출력이 중복됐고 출력값을 판정하지도 않았다.    | “이걸 다 version 봐야 해?”                                | 의미 없는 버전 출력 명령을 모두 없앴다.                                                |
+| 한 `install` 단계에서 workspace와 Playwright 브라우저를 깔았다. | 이름이 무엇을 설치하는지 말하지 못했고 서로 다른 lifecycle을 합쳤다.   | “두 개를 설치하는데 나눠야 하지 않나?”                    | workspace 의존성은 start lifecycle에 두고 web e2e는 공식 Playwright runner로 분리했다. |
+| GitHub API와 `jq`로 k6 최신 자산 URL을 계산했다.                | 공식 배포 통로가 있는데 자체 설치 로직부터 만들었다.                   | “왜 `download_url`을 별도로 구하지?”, “공식이 낫지 않나?” | 자체 최신 자산 탐색을 버렸다.                                                          |
+| 공식 k6 APT 저장소에서 패키지를 설치했다.                       | 공식 절차라는 사실만 확인하고 실제 CI 아키텍처 지원은 확인하지 않았다. | “그게 공식 안내인가?”                                     | 공식 문서와 실제 배포 대상을 따로 검증했다.                                            |
+| k6를 Dev Container의 상시 패키지로 유지하려 했다.               | k6가 언제, 어디서 실행되는 도구인지 먼저 따지지 않았다.                | “패키지 꼭 설치해야 하나? Docker 이미지는 없나?”          | 필요할 때만 공식 k6 컨테이너를 실행하게 바꿨다.                                        |
 
 한 번의 반문으로 완성된 답이 나온 것이 아니다. 각 답은 다음 질문의 대상이 됐고, 그 과정에서 문제의 층위가 `설치 스크립트를 어떻게 잘 쓸까`에서 `이 도구를 여기에 설치할 필요가 있는가`로 올라갔다.
 
@@ -51,7 +51,7 @@ shellcheck --version
 
 `set -e`가 적용된 build step에서는 설치가 실패하면 이미 빌드가 멈춘다. `--version`이 성공해도 실제 프로젝트 명령, 설정, 아키텍처 호환성이 맞는다는 뜻은 아니다. 출력된 버전을 기대값과 비교하지도 않으므로 로그만 늘어난다.
 
-버전 확인이 항상 잘못인 것은 아니다. 특정 버전이 계약이라면 출력만 할 것이 아니라 정확한 기대값과 비교해야 하고, 실제 사용 가능성이 계약이라면 대표 명령을 실행해야 한다. 이 사례에서는 Node 베이스 tag·digest, pnpm의 `packageManager`, Playwright의 package manifest처럼 **버전의 근거를 선언부에 고정하는 것**이 맞았다.
+버전 확인이 항상 잘못인 것은 아니다. 특정 버전이 계약이라면 출력만 할 것이 아니라 정확한 기대값과 비교해야 하고, 실제 사용 가능성이 계약이라면 대표 명령을 실행해야 한다. 이 사례에서는 Node 베이스 tag·digest, pnpm의 `packageManager`, Playwright package와 공식 image tag처럼 **버전의 근거를 선언부에 고정하고 서로 대조하는 것**이 맞았다.
 
 ### 질문 2. “`install`은 무엇을 설치한다는 뜻인가?”
 
@@ -63,14 +63,15 @@ shellcheck --version
 }
 ```
 
-앞 명령은 workspace package 의존성을 복원하고, 뒤 명령은 그 package가 관리하는 Playwright 버전에 맞는 브라우저 실행 파일을 받는다. 실패 원인과 재실행 시점이 다른 작업이다. 최종 구성은 다음처럼 lifecycle과 이름을 분리했다.
+앞 명령은 workspace package 의존성을 복원하고, 뒤 명령은 그 package가 관리하는 Playwright 버전에 맞는 브라우저 실행 파일을 받는다. 실패 원인과 재실행 시점이 다른 작업이다. 먼저 두 명령을 lifecycle과 이름에 따라 분리했고, 후속 검토에서는 Chromium을 Dev Container 이미지로 옮겼다. 그러나 여기서도 “브라우저와 많은 OS package를 모든 개발 환경에 둘 필요가 있는가?”라는 상위 질문이 남았다. 최종적으로 web e2e 전체를 Docker 경계로 옮겼다.
 
 ```text
-updateContentCommand.workspace-dependencies → pnpm install --frozen-lockfile
-postCreateCommand.playwright-chromium       → workspace의 Playwright로 Chromium 설치
+postStartCommand     → bind mount된 workspace에 pnpm install --frozen-lockfile
+tests/web/Dockerfile → 공식 Playwright image + npm lockfile로 전용 runner 생성
+tests/web Compose    → production 앱 이미지들을 띄우고 일회성 runner 실행
 ```
 
-이 질문은 k6 방식도 다시 보게 했다. 설치 명령 하나를 줄이는 것보다 먼저 **각 도구가 어느 lifecycle에 속하는지** 알아야 했다.
+브라우저와 OS 의존성은 공식 runner image에 남고, `@playwright/test`는 그 image에 `npm ci`로 설치한다. package 버전과 image tag는 구성 계약에서 같은 값인지 비교한다. 테스트 소스와 결과 폴더만 bind mount하며 Docker socket은 runner에 주지 않는다. 반면 workspace 의존성을 Dev Container image에 설치하면 실행 시 bind mount에 가려지므로 컨테이너 시작 lifecycle에 남겨야 한다. 이 질문은 k6 방식도 다시 보게 했다. 설치 명령 하나를 줄이는 것보다 먼저 **각 도구가 어느 lifecycle에 속하는지** 알아야 했다.
 
 ### 질문 3. “왜 k6의 `download_url`을 직접 구하나?”
 
@@ -175,9 +176,9 @@ Docker 방식에도 wrapper, network, mount, 권한 전달이라는 복잡성이
 그렇지 않다. k6 사례를 “CLI는 모두 container로 실행한다”는 규칙으로 일반화하면 같은 실수를 반복한다.
 
 - pnpm, Git, shellcheck처럼 개발 루프에서 자주 호출하는 도구는 Dev Container 안에 있는 편이 자연스럽다.
-- Playwright는 workspace package 버전, VS Code의 대화형 실행과 browser cache가 맞물려 있어 현재는 workspace와 Dev Container lifecycle에 두는 편이 단순하다.
+- Playwright의 빠른 BFF 계약은 workspace package로 실행하고, 브라우저 e2e는 공식 Playwright runner container에서 실행한다. 이 경우 API와 두 Next.js 앱도 이미 전용 production container로 띄우므로 service DNS·소스 bind·결과 bind라는 경계가 테스트 lifecycle 안에 닫힌다. Dev Container에 Chromium과 OS package를 상시 넣지 않는다.
 - cloudflared는 사용자가 선택적으로 실행해 Dev Container의 `localhost` 앱을 바로 tunnel하므로 직접 CLI가 현재 경계와 맞는다.
-- PlantUML처럼 장기 실행되는 독립 server는 Docker 후보가 될 수 있지만, IDE 접근 경로·기동 비용·image 고정과 갱신까지 별도로 비교해야 한다.
+- PlantUML처럼 장기 실행되는 독립 server는 sibling container가 자연스럽다. 이 저장소는 전용 Compose에 공식 server image·restart 정책을 선언하고, workspace별 Dev Container와 같은 외부 네트워크에 붙인다. remote extension host에서 동작하는 PlantUML 전용 Preview에는 이 경로만으로 충분하다. local machine의 Markdown webview까지 지원하려고 port forwarding과 relay를 추가하면 한 기능에 두 접근 경로가 생기므로 지원 범위에서 제외했다. Docker로 옮긴다는 결정 뒤에도 실제 소비자가 어디서 실행되는지 확인하고 범위를 정해야 한다.
 
 도구마다 `공식 image가 있는가`보다 **누가, 언제, 어느 네트워크와 파일을 사용해 실행하는가**를 먼저 본다.
 
