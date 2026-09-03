@@ -16,7 +16,6 @@ compose=(
     --project-name "${COMPOSE_PROJECT_NAME}-web"
     --env-file "${WORKSPACE_ROOT}/.env.infra"
     --env-file "${WORKSPACE_ROOT}/.env.api"
-    --env-file "${WORKSPACE_ROOT}/.env.seed"
     --file "${SCRIPT_DIR}/compose.yml"
 )
 

@@ -28,7 +28,7 @@ The Dev Container is the only supported development path. You need Docker and th
 4. Sign in to the console (3100) with the development admin (`admin@nest-seed.local` / `DevPass1!`) and create movies and theaters. The Dev Container recreates this account whenever it resets the infrastructure.
 5. Use the user app (3200) to explore sign-up, login, and the composed home view. The executable API docs run showtime, booking, and purchase APIs through an independent fixture flow.
 
-`.env.api` and `.env.infra` contain committed development defaults, while `.env.seed` contains disposable development and verification fixtures. Review project identifiers and credentials when forking, and inject production secrets outside the repository. See [Environment variables](docs/reference/environment.md).
+`.env.api` and `.env.infra` contain committed development and verification defaults. Review project identifiers and credentials when forking, and inject production secrets outside the repository. See [Environment variables](docs/reference/environment.md).
 
 ## 2. Main commands
 

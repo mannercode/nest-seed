@@ -9,8 +9,10 @@
 set -Eeuo pipefail
 
 : "${WORKSPACE_ROOT:?}"
-# shellcheck source=../../../.env.seed
-. "${WORKSPACE_ROOT}/.env.seed"
+set -a
+# shellcheck source=../../../.env.infra
+. "${WORKSPACE_ROOT}/.env.infra"
+set +a
 
 # infra compose와 docker network를 공유하므로 docker compose가 infra 컨테이너를 orphan으로 표시한다.
 # 의미적으로 별개의 묶음이라 경고만 끈다.

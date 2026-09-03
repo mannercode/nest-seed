@@ -4,8 +4,8 @@ cd "$(dirname "$0")"
 workspace_dir="$(cd .. && pwd)"
 
 set -a
-# shellcheck source=../.env.seed
-. "${workspace_dir}/.env.seed"
+# shellcheck source=../.env.infra
+. "${workspace_dir}/.env.infra"
 set +a
 
 diagnose_and_exit() {

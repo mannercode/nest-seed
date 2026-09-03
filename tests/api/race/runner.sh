@@ -35,8 +35,10 @@ if [ ! -f "${TEST_SCRIPT}" ]; then
 fi
 
 : "${WORKSPACE_ROOT:?}"
-# shellcheck source=../../../.env.seed
-. "${WORKSPACE_ROOT}/.env.seed"
+set -a
+# shellcheck source=../../../.env.infra
+. "${WORKSPACE_ROOT}/.env.infra"
+set +a
 COMPOSE_DIR="${WORKSPACE_ROOT}/tests/api"
 
 cd "${COMPOSE_DIR}"

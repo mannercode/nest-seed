@@ -26,7 +26,7 @@
 4. console(3100)에 개발용 admin(`admin@nest-seed.local` / `DevPass1!`)으로 로그인해 영화와 극장을 만든다. 이 계정은 Dev Container가 인프라를 초기화할 때 자동으로 다시 만든다.
 5. user-app(3200)에서 가입·로그인과 홈 화면 조합을 확인한다. 실행 가능한 API 문서는 독립된 fixture 흐름으로 상영·예매·구매 API를 실행한다.
 
-`.env.api`와 `.env.infra`는 커밋된 개발용 기본값이고 `.env.seed`는 폐기 가능한 개발·검증 fixture다. 포크할 때 프로젝트 식별자와 자격증명을 검토하고, 운영 secret은 저장소 밖에서 주입한다. 자세한 기준은 [환경 변수](docs/reference/environment.md)에 있다.
+`.env.api`와 `.env.infra`는 커밋된 개발·검증 기본값이다. 포크할 때 프로젝트 식별자와 자격증명을 검토하고, 운영 secret은 저장소 밖에서 주입한다. 자세한 기준은 [환경 변수](docs/reference/environment.md)에 있다.
 
 ## 2. 주요 명령
 
