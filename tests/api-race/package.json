@@ -4,7 +4,7 @@
     "private": true,
     "scripts": {
         "test": "node --test contracts/*.test.js",
-        "lint": "for file in *.js contracts/*.test.js probes/*.js; do node --check \"$file\"; done && oxlint -c ../../oxlint.json . && prettier --check '*.js' 'contracts/*.test.js' 'probes/*.js' package.json",
+        "lint": "oxlint -c ../../oxlint.json . && prettier --check '*.js' 'contracts/*.test.js' 'probes/*.js' package.json",
         "format": "prettier --write '*.js' 'contracts/*.test.js' 'probes/*.js' package.json",
         "atoz": "pnpm run lint && pnpm test"
     },

@@ -14,9 +14,9 @@
 - **분산 보장의 분리** — Redis 락은 경합 비용을 줄일 뿐이고, 정합성은 DB 원자 전이·CAS·transaction이 지킨다. Restate는 중단 후 재개를, NATS는 프로세스 사이 메시지를 맡는다.
 - **행동 중심 검증** — 실제 인프라를 사용하는 통합 테스트와 다중 복제본 race test를 둔다. 커버리지 100%는 무결점 인증이 아니라 테스트되지 않은 분기를 익명으로 남기지 않는 개발 제약이다.
 
-계층과 분산 경계는 [apps 문서](docs/apps.md), 선택 이유와 한계는 [설계 결정](docs/reference/decisions.md), 처음부터 따라가는 설명은 [튜토리얼](docs/reference/tutorial.md)에 있다.
+계층과 분산 경계는 [apps 문서](docs/apps.md), 선택 이유와 한계는 [설계 결정](docs/reference/decisions.md)에 있다.
 
-## 시작하기
+## 1. 시작하기
 
 공식 개발 경로는 Dev Container 하나다. Docker와 VS Code Dev Containers 확장이 필요하다. 최소 사양은 CPU 4코어, RAM 16GB, 디스크 32GB이며 전체 검증에는 RAM 32GB 이상을 권장한다.
 
@@ -35,7 +35,7 @@
 
 `.env.api`와 `.env.infra`는 커밋된 개발용 기본값이다. 포크할 때 프로젝트 식별자와 자격증명을 검토하고, 운영 secret은 저장소 밖에서 주입한다. 자세한 기준은 [환경 변수](docs/reference/environment.md)에 있다.
 
-## 주요 명령
+## 2. 주요 명령
 
 | 명령                    | 용도                                       |
 | ----------------------- | ------------------------------------------ |
@@ -48,7 +48,7 @@
 
 `infra/reset.sh`는 Restate journal과 JetStream 데이터도 지우는 개발용 복구 명령이다. 보존할 실행이 있는 환경에서는 사용하지 않는다. 테스트별 명령과 결과 위치는 [tests/README.md](tests/README.md)에 있다.
 
-## API 레퍼런스
+## 3. API 레퍼런스
 
 정적 Swagger/OpenAPI 대신 실제 요청을 보내는 `apps/api/api-docs/*.spec`를 성공 흐름의 API 계약으로 사용한다. 이 선택은 문서와 동작이 따로 낡는 것을 막기 위한 것이다.
 
@@ -57,9 +57,9 @@ bash apps/api/api-docs/run.sh                   # 실행 중인 개발 API 대�
 bash apps/api/api-docs/run.sh showtime-creation.spec
 ```
 
-생성되는 요청·응답 로그는 진단 산출물이며 공개 문서 호스팅 대상이 아니다. 장기 SSE와 실패 조건은 통합 테스트가 검증한다. 규칙과 보안 경계는 [실행 가능한 API 문서](docs/apps.md#실행-가능한-api-문서)에 있다.
+생성되는 요청·응답 로그는 진단 산출물이며 공개 문서 호스팅 대상이 아니다. 장기 SSE와 실패 조건은 통합 테스트가 검증한다. 규칙과 보안 경계는 [실행 가능한 API 문서](docs/apps.md#5-실행-가능한-api-문서)에 있다.
 
-## 프로젝트 구조
+## 4. 프로젝트 구조
 
 ```text
 apps/           NestJS API, Next.js console·user-app
@@ -71,7 +71,7 @@ tools/          개발·테스트 실행 도구
 docs/           사람이 읽을 설계·운영 문서
 ```
 
-## 기술 선택
+## 5. 기술 선택
 
 | 역할                          | 선택                                                   |
 | ----------------------------- | ------------------------------------------------------ |
@@ -83,7 +83,7 @@ docs/           사람이 읽을 설계·운영 문서
 
 도구는 학습용 나열이 아니라 서로 다른 실패 경계를 맡는다. 왜 이 조합을 골랐고 Kafka·BullMQ·Swagger·Nx 등을 넣지 않았는지는 [설계 결정](docs/reference/decisions.md)이 설명한다.
 
-## 도메인 둘러보기
+## 6. 도메인 둘러보기
 
 처음에는 `core/theaters`의 단순한 CRUD, `application/booking`의 Core 조합, `application/showtime-creation`의 durable workflow 순서로 읽는다. 각 구현과 같은 이름의 통합 테스트를 나란히 보면 경계가 더 잘 드러난다.
 
@@ -99,17 +99,17 @@ docs/           사람이 읽을 설계·운영 문서
 | `view/user-app/home`                  | 화면에 맞춘 읽기 응답 조합                            |
 | `infrastructure/assets`, `payments`   | S3와 외부 결제의 경계                                 |
 
-## 인가
+## 7. 인가
 
 역할은 세 가지다. **root**는 개발 env의 Basic 인증으로 admin 생성·삭제만 하고, **admin**은 콘텐츠와 임의 사용자 대상 작업을, **user**는 본인 자원만 다룬다. admin과 user token은 서로 다른 secret으로 서명한다.
 
 본인 자원은 URL의 ID가 아니라 token subject로 고정한 `/me` 경로를 사용하고, 임의 ID를 받는 경로는 admin에게만 허용한다. 두 규칙을 함께 적용해 user가 ID를 바꿔 다른 사용자의 자원에 접근하는 IDOR 경로를 제거한다.
 
-## 배포 범위
+## 8. 배포 범위
 
 `deploy/`는 분산 동작을 확인하는 참고 스택이지 운영 배포본이 아니다. TLS, secret manager, backup/restore, 관측 backend, frontend edge, 무중단 revision 전환은 포함하지 않는다. 특히 Restate endpoint versioning과 BFF proxy IP 신뢰 경계는 운영 환경에서 별도로 설계해야 한다. [deploy 문서](docs/deploy.md)에 필요한 위험과 보장 한계를 정리했다.
 
-## 문서
+## 9. 문서
 
 문서와 주석의 원본 언어는 한국어다. 영어는 이 README만 제공한다.
 
@@ -119,7 +119,8 @@ docs/           사람이 읽을 설계·운영 문서
 - [infra](docs/infra.md) — 개발 topology와 파괴적 reset의 범위
 - [deploy](docs/deploy.md) — 다중 복제본 검증 및 운영으로 복사하면 안 되는 경계
 - [devcontainer](docs/devcontainer.md) — 단일 개발 경로, DooD 제약과 보안
-- [tutorial](docs/reference/tutorial.md) — 유스케이스에서 구현과 테스트까지의 사고 흐름
 - [decisions](docs/reference/decisions.md) — 선택 이유, 대안, 보장하지 않는 것
-- [conventions](docs/reference/conventions.md) — 자동화로 대신할 수 없는 횡단 약속
+- [conventions](docs/reference/conventions.md) — 자동화로 대신할 수 없는 프로젝트 규칙
 - [environment](docs/reference/environment.md) — env 소유권, 재생성, 포크와 공개 경계
+
+영화 예매 도메인의 설계 배경은 블로그 연재 [백엔드 서비스 분석과 설계 1](https://mannercode.com/2025/04/01/backend-design-1.html)·[2](https://mannercode.com/2025/05/01/backend-design-2.html)·[3](https://mannercode.com/2025/06/01/backend-design-3.html)에 있다.

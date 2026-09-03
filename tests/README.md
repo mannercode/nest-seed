@@ -2,7 +2,7 @@
 
 이 파일은 실행 명령과 산출물 위치만 안내한다. 각 계층이 필요한 이유와 보장하는 내용은 [`docs/tests.md`](../docs/tests.md)를 본다.
 
-## 범위
+## 1. 범위
 
 - `pnpm run test` — workspace의 단위·통합·빠른 계약 테스트. 브라우저 E2E·실제 race·benchmark는 포함하지 않는다.
 - `pnpm run atoz` — 정적 검사, build, 기본 테스트, 브라우저 E2E, 배포 검증을 포함한 전체 회귀.
@@ -16,7 +16,7 @@
 pnpm --filter './apps/api' test users.spec --coverage.enabled=false
 ```
 
-## 결과
+## 2. 결과
 
 루트 명령은 실행한 영역, 검증 이유, 성공·실패, 경과 시간, 실행하지 않은 영역을 `_output/test-reports/`의 명령별 Markdown 보고서에 남긴다.
 
@@ -30,7 +30,7 @@ pnpm --filter './apps/api' test users.spec --coverage.enabled=false
 
 브라우저 실패의 trace·screenshot·HTML은 `tests/web/_output/`, benchmark JSON·dashboard는 `tests/api-benchmark/_output/`에 남는다.
 
-## 보조 명령
+## 3. 보조 명령
 
 ```bash
 pnpm run e2e:list                   # 브라우저 시나리오 목록
