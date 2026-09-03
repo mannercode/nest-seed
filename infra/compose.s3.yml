@@ -2,7 +2,6 @@ services:
     s3:
         extends: { file: ./compose.common.yml, service: common-options }
         image: ${S3_IMAGE}
-        deploy: { resources: { limits: { memory: 256m } } }
         # 앱과 테스트는 compose 네트워크 안에서 S3 API(7070)에 접근한다.
         # VersityGW의 Admin API와 WebUI는 활성화하지 않고, host port도 publish하지 않는다.
         environment:

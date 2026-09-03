@@ -101,9 +101,13 @@ env 파일은 자기 보간이 안 되고 compose 서비스 정의와 스크립�
 | 앱 세션·테스트 격리 이름 | 두 BFF의 cookie 접두사, Vitest Mongo `appName`, API 문서 fixture 이메일처럼 프로젝트끼리 충돌하면 안 되는 내부 값                                                            |
 | 프런트엔드 환경          | `apps/console/.env`·`apps/user-app/.env`의 `API_BASE_URL`; 신뢰 edge 뒤에서만 `BFF_TRUST_PROXY_HEADERS=true`                                                                 |
 | 저장소 링크·연락처       | README badge, 저자 블로그·귀속 표시는 새 소유권과 유지할 원 저작자 정보를 구분해 의도적으로 검토한다. URL이나 `mannercode.com`·이메일을 기계적으로 치환하지 않는다.          |
-| GitHub Settings          | ruleset, Actions/Dependabot 권한, `DOCKERHUB_*` secrets, 필요한 fork에만 `ENABLE_SCHEDULED_CI=true`                                                                          |
+| GitHub 기능              | fork에서 필요할 때 scheduled workflow와 Dependabot version updates 활성화                                                                                                    |
 
-정기 CI 조건의 `repository_id == '849585972'`는 원본 저장소만 변수 없이 schedule을 실행하게 하는 immutable sentinel이다. fork에서 자기 repository ID로 바꾸면 opt-in 안전장치를 우회하므로 치환하지 않는다.
+로컬 개발과 `pnpm run atoz`, PR·push의 Test AtoZ에는 별도 GitHub 설정이 필요 없다. CI는 공개 Docker 이미지를 익명으로 받아 사용하므로 Docker Hub 계정이나 secret도 요구하지 않는다. GitHub 기능을 사용할 때만 다음 선택 사항을 확인한다.
+
+- GitHub는 public fork의 scheduled workflow를 기본으로 비활성화한다. 정기 AtoZ·Stability가 필요한 fork만 Actions 화면에서 활성화한다.
+- Dependabot은 정책상 허용한 의존성 갱신 PR을 주 1회 제안한다. `test-atoz`가 성공하면 후속 workflow가 실제로 검증한 head commit과 현재 PR head가 같은지 확인해 squash merge한다. 이 흐름은 repository auto-merge나 필수 검사 설정에 의존하지 않으며, 기존 branch 보호 정책이 있다면 그대로 따른다.
+- GitHub가 public fork에서 강제로 끄는 Dependabot version updates는 사용할 fork에서 한 번 활성화해야 한다. 그 밖의 별도 token, Actions variable·secret, Environment, 프로젝트용 GHCR package 설정은 사용하지 않는다.
 
 패키지 scope를 바꿨다면 의존성과 lockfile을 갱신한 뒤 `pnpm run format`으로 import 정렬과 줄바꿈을 정리한다. 끝나면 devcontainer를 재생성(Rebuild Container)해 바뀐 `.env.*` 값이 `--env-file`로 다시 주입되게 한다. 컨테이너의 `process.env`는 생성 시점에 굳으므로, 재생성하지 않으면 개발 API와 등록 스크립트가 옛 `PROJECT_ID`·`RESTATE_*` 값으로 떠서 workflow 이름이나 endpoint URI가 어긋날 수 있다.
 

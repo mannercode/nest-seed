@@ -4,7 +4,6 @@ x-mongo-base: &mongo-base
     # 테스트 데이터가 많으면 MongoDB 메모리 캐시가 부족해 조회가 느려진다.
     # 데이터를 메모리에 더 오래 둘 수 있도록 컨테이너와 캐시 용량을 늘린다.
     deploy: { resources: { limits: { memory: 2g } } }
-    shm_size: '8m'
     # MongoDB 복제 묶음을 만들고 테스트를 동시에 돌릴 때 열 수 있는 파일 수가 부족하지 않도록 한도를 넉넉하게 둔다.
     ulimits: { nofile: { soft: 65536, hard: 65536 } }
     # 개발 및 테스트용 MongoDB 복제 묶음(Replica Set)이다.

@@ -48,7 +48,7 @@ const HOME_MOVIE_COUNT = 12 // 사용하는 코드 옆 상수 (view/user-app/hom
 
 ## 4. pnpm 스크립트 계약
 
-루트 package.json이 진입점이다. 루트는 동사를 워크스페이스로 순차 팬아웃하고(`pnpm --recursive --workspace-concurrency=1 --if-present run <동사>`), 각 워크스페이스는 자기가 지원하는 동사만 같은 이름으로 구현한다. 한 워크스페이스만 실행할 때는 경로 filter(`pnpm --filter './apps/api' run <동사>`)를 쓴다. `atoz`만은 브라우저 테스트가 API를 직접 빌드하기 전에 내부 라이브러리 산출물이 필요하므로 `libs/*`의 `atoz`를 먼저 끝내고 나머지 워크스페이스를 순차 실행한다. 워크스페이스 밖의 Prettier·셸·문서 링크 검사는 `lint:root`가 맡고, 루트 `lint`와 `atoz`가 이를 호출한다. 구체적인 실행 순서는 각 package.json을 기준으로 한다.
+루트 package.json이 진입점이다. 루트는 동사를 워크스페이스로 팬아웃하고(`pnpm --recursive --if-present run <동사>`), pnpm의 기본 dependency graph 정렬로 의존 라이브러리를 소비자보다 먼저 실행하면서 서로 독립적인 워크스페이스는 병렬로 처리한다. 각 워크스페이스는 자기가 지원하는 동사만 같은 이름으로 구현한다. 한 워크스페이스만 실행할 때는 경로 filter(`pnpm --filter './apps/api' run <동사>`)를 쓴다. 루트 `lint`는 typecheck가 package output을 읽기 전에 `prelint`에서 내부 라이브러리를 build한다. `atoz`는 각 단계의 결과와 시간을 따로 보고해야 하므로 `libs/*`를 먼저 끝낸 뒤 나머지 워크스페이스를 순차 실행한다. 워크스페이스 밖의 Prettier·셸·문서 링크 검사는 `lint:root`가 맡고, 루트 `lint`와 `atoz`가 이를 호출한다. 구체적인 실행 순서는 각 package.json을 기준으로 한다.
 
 | 동사     | 의미                                                                                                                          |
 | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
@@ -61,6 +61,6 @@ const HOME_MOVIE_COUNT = 12 // 사용하는 코드 옆 상수 (view/user-app/hom
 | `atoz`   | 클린룸 전체 회귀 — clean·인프라 리셋·`pnpm install --frozen-lockfile` 후 lint·build·test·e2e·배포 검증까지. `test`를 포함한다 |
 | `clean`  | (루트 전용) allowlist에 적은 `node_modules`·`_output`·coverage·build 산출물만 정리                                            |
 
-`clean`은 workspace 밖의 경로와 workspace 밖으로 향하는 symlink를 거부한다. `.gitignore`에 있다는 이유만으로 개인 env·설정 파일을 지우지 않으며, 새 산출물을 추가할 때는 `tools/clean-workspace.mjs`의 allowlist와 구성 계약 테스트를 함께 갱신한다.
+`clean`은 workspace 밖의 경로와 workspace 밖으로 향하는 symlink를 거부한다. `.gitignore`에 있다는 이유만으로 개인 env·설정 파일을 지우지 않으며, 새 산출물을 추가할 때는 `tools/clean-workspace.mjs`의 allowlist와 전용 동작 테스트를 함께 갱신한다.
 
 `atoz`의 워크스페이스 구현은 "그 워크스페이스를 전부 검증한다"는 의미만 같고 단계는 각자 다르다. libs는 build→lint→test, Next 앱은 테스트가 없어 lint→build, api는 배포 검증에서 Docker가 빌드를 맡으므로 lint→test다.

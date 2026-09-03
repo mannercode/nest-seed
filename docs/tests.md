@@ -79,7 +79,7 @@ SERVER_URL=http://nginx bash tests/api-benchmark/mixed-runner.sh # 떠 있는 de
 
 앱과 runner는 Dev Container·인프라가 쓰는 기존 외부 네트워크에 붙지만 Compose project 이름은 `${COMPOSE_PROJECT_NAME}-web`으로 분리한다. 따라서 종료할 때 web 앱들만 내리고 MongoDB 같은 개발 인프라는 건드리지 않는다. API·프런트엔드는 host port를 publish하지 않고 runner가 `http://api:${API_PORT}`, `http://console:${CONSOLE_PORT}`, `http://user-app:${USER_APP_PORT}`처럼 service DNS로 접근한다. Docker socket은 runner에 전달하지 않으며 stack의 build·기동·정리는 Dev Container의 wrapper가 맡는다.
 
-Playwright 공식 이미지는 브라우저와 OS 의존성을 제공할 뿐 프로젝트의 `@playwright/test` package를 포함하지 않는다. runner 이미지는 `tests/web/package-lock.json`으로 `npm ci`하고, e2e 소스·설정과 결과 폴더만 bind mount한다. `tests/web/package.json`의 `@playwright/test` 버전, lockfile의 직접 버전과 이미지 tag는 정확히 같아야 하며 구성 계약 테스트가 이를 확인한다. console·user-app은 Next.js standalone 출력만 runtime 이미지에 복사한다. 내부 HTTP로 도는 e2e에서만 `BFF_COOKIE_SECURE=false`를 주입하고, 일반 production 기본값은 secure cookie다.
+Playwright 공식 이미지는 브라우저와 OS 의존성을 제공할 뿐 프로젝트의 `@playwright/test` package를 포함하지 않는다. runner 이미지는 `tests/web/package-lock.json`으로 `npm ci`하고, e2e 소스·설정과 결과 폴더만 bind mount한다. `tests/web/package.json`의 `@playwright/test` 버전, lockfile의 직접 버전과 이미지 tag는 정확히 같게 함께 갱신한다. console·user-app은 Next.js standalone 출력만 runtime 이미지에 복사한다. 내부 HTTP로 도는 e2e에서만 `BFF_COOKIE_SECURE=false`를 주입하고, 일반 production 기본값은 secure cookie다.
 
 같은 워크스페이스의 `contracts/bff-proxy.spec.ts`는 BFF의 Origin·Host 경계, proxy IP 경계와 refresh 재시도 쿠키 보존을 두 앱에 동일하게 적용하는 계약 테스트다. 별도 Playwright 설정을 써서 앱과 브라우저를 시작하지 않으며, 이 빠른 계약 테스트는 루트 pnpm workspace에서 실행한다.
 
@@ -95,7 +95,7 @@ pnpm run e2e:report             # 마지막 HTML 결과 열기
 
 ## CI 반복 — test-stability
 
-CI 워크플로는 둘이다. [test-atoz.yaml](../.github/workflows/test-atoz.yaml)은 PR·main push·수동 실행에서 전체 회귀(atoz)를 한 번 돌려 기능 회귀를 잡고, test-stability는 같은 시나리오를 누적 반복해 흔들림(간헐 실패)을 드러낸다. 원본 저장소는 GitHub의 immutable `repository_id == 849585972`로 식별되어 test-atoz가 3시간마다, test-stability가 6시간마다 변수 없이 정기 실행된다. fork의 cron event는 repository variable `ENABLE_SCHEDULED_CI=true`를 명시해야만 job을 실행하고, 수동 실행은 이 변수와 무관하다. 저장소 이름을 재사용해도 원본 권한을 얻지 않으며, fork의 ID로 workflow sentinel을 바꾸지 않는다.
+CI 워크플로는 둘이다. [test-atoz.yaml](../.github/workflows/test-atoz.yaml)은 PR·main push·수동 실행에서 전체 회귀(atoz)를 한 번 돌려 기능 회귀를 잡고, test-stability는 같은 시나리오를 누적 반복해 흔들림(간헐 실패)을 드러낸다. test-atoz는 3시간마다, test-stability는 6시간마다 정기 실행되도록 선언되어 있다. GitHub는 public fork의 scheduled workflow를 기본으로 비활성화하므로, fork 소유자가 필요할 때 Actions 화면에서 명시적으로 활성화한다. 수동 실행은 schedule 활성화 여부와 무관하다.
 
 [test-stability.yaml](../.github/workflows/test-stability.yaml)은 행렬의 각 레그를 독립된 잡으로 실행한다. 각 분산 시나리오는 50회, libs 단위/통합 테스트는 75회, 부팅 검증은 50회를 반복한다. apps/api는 한 러너에 장시간 부하가 누적되지 않고 240분 제한 안에 끝나도록 20회씩 세 레그로 나누어 총 60회를 유지한다.
 

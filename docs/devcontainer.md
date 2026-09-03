@@ -9,7 +9,7 @@
 `containerEnv`는 두 값을 더 정의한다.
 
 - `WORKSPACE_ROOT` — 저장소 루트의 절대 경로. 스크립트들이 `${WORKSPACE_ROOT:?}`로 받아 위치에 상관없이 저장소 파일을 가리킨다.
-- `COMPOSE_PROJECT_NAME` — `${localEnv:USER:unknown}-${localWorkspaceFolderBasename}` 값. infra와 deploy compose가 공유하는 Docker 네트워크의 이름이 된다. 같은 사용자가 같은 basename의 clone을 동시에 열면 이름이 충돌하므로 서로 다른 폴더 이름을 사용한다.
+- `COMPOSE_PROJECT_NAME` — `${localEnv:USER:unknown}-${localWorkspaceFolderBasename}` 값이다. infra와 deploy의 Compose project 및 모든 컨테이너가 공유하는 Docker network를 지정한다. 같은 사용자가 같은 basename의 clone을 동시에 열면 이름이 충돌하므로 서로 다른 폴더 이름을 사용한다.
 
 ## 컨테이너 안의 `docker` 명령은 호스트 Docker가 실행한다 (DooD)
 
@@ -21,27 +21,27 @@ devcontainer 안에는 Docker 데몬이 없다. `docker-outside-of-docker` featu
 
 Dev Container·PlantUML·infra·deploy는 사용자명과 workspace basename으로 구분한 Docker 네트워크 하나에 함께 붙는다. Dev Container는 생성될 때부터 이 네트워크가 필요하므로, 호스트에서 먼저 실행되는 `initializeCommand`가 네트워크가 없을 때만 만든다. `runArgs`의 `--network`가 Dev Container를 연결하고, 모든 Compose 파일은 같은 이름의 기존 네트워크를 `external`로 참조한다. 별도 네트워크나 사후 `docker network connect`는 사용하지 않는다.
 
-`compose.plantuml.yml`은 VS Code 개발 환경만을 위한 자원이므로 `.devcontainer/`에 둔다. 컨테이너 안의 `postStartCommand`가 `docker compose up -d`로 선언을 맞춘다. `COMPOSE_PROJECT_NAME`은 이미 `containerEnv`로 전달되므로 명령에서 프로젝트명을 다시 만들지 않는다. 애플리케이션과 테스트가 소비하며 `infra/reset.sh`로 초기화하는 프로젝트별 인프라에는 포함하지 않는다. Dev Container 자체는 단일 컨테이너 설정(`build`와 `runArgs`)으로 실행한다.
+`compose.tools.yml`은 VS Code 개발 환경의 컨테이너 도구를 한곳에서 관리하며, 루트의 `pnpm compose:tools`가 공통 진입점이다. `postStartCommand`는 `pnpm compose:tools up -d plantuml`로 상시 서비스인 PlantUML만 기동한다. 링크 검사기 lychee는 `lint` profile에 두고 `pnpm run lint:root`가 `pnpm compose:tools run --rm lychee`로 필요할 때만 실행한 뒤 제거한다. `--offline`은 네트워크 보안 제한이 아니라 외부 링크 상태에 따라 lint가 흔들리지 않도록 검사 범위를 저장소 내부로 한정하는 옵션이다. 도구의 Compose project는 `${COMPOSE_PROJECT_NAME}-tools`로 분리해 다른 Compose 파일의 컨테이너를 orphan으로 오인하지 않으며, `compose:tools` 명령은 원래 project 이름을 외부 network 이름으로 넘겨 기존 stack과 동일한 network를 사용한다. 이 도구들은 `infra/reset.sh`로 초기화하는 프로젝트별 인프라에는 포함하지 않는다. Dev Container 자체는 단일 컨테이너 설정(`build`와 `runArgs`)으로 실행한다.
 
 ## 부팅 순서
 
 1. `initializeCommand` — 공유 프로젝트 네트워크가 없으면 만들고 호스트의 도구 설정 디렉터리 준비
-2. 이미지 빌드 — patch·배포판·digest까지 고정한 Node 베이스에 개발 도구를 설치한다. cloudflared는 Cloudflare의 서명된 APT 저장소에서 설치한다. 베이스 이미지에는 pnpm과 Corepack이 없으므로 npm으로 pnpm을 전역 설치한다. 이 전역 설치본은 bootstrap 역할만 하며, workspace 안에서는 루트 `package.json`의 `packageManager`가 지정한 정확한 pnpm 버전을 자동으로 내려받아 실행한다. Dockerfile의 `RUN`은 root로 실행되어 `sudo`가 필요 없고, 실행 중인 `node` 사용자에게 npm용 sudo 권한을 주지 않는다. 설치 명령의 실패가 빌드를 중단하므로 별도 `--version` 출력으로 다시 확인하지 않는다. k6와 Playwright 브라우저는 이미지에 설치하지 않고 각 테스트를 실행할 때 공식 Docker 이미지를 사용한다([tests 문서](tests.md)).
+2. 이미지 빌드 — patch·배포판·digest까지 고정한 Node 베이스에 개발 도구를 설치한다. cloudflared는 Cloudflare의 서명된 APT 저장소에서 설치한다. 베이스 이미지에는 pnpm과 Corepack이 없으므로 npm으로 pnpm을 전역 설치한다. workspace 안에서는 루트 `package.json`과 같은 정확한 pnpm 버전을 사용한다. Dockerfile의 `RUN`은 root로 실행되어 `sudo`가 필요 없고, 실행 중인 `node` 사용자에게 npm용 sudo 권한을 주지 않는다. 설치 명령의 실패가 빌드를 중단하므로 별도 `--version` 출력으로 다시 확인하지 않는다. k6·Playwright·lychee는 이미지에 설치하지 않고 필요할 때 Docker 이미지로 실행한다([tests 문서](tests.md)).
 3. `postStartCommand` — `pnpm install --frozen-lockfile`로 워크스페이스 의존성을 맞추고, PlantUML과 개발 인프라를 기동한다. 세 명령은 서로 독립적이므로 병렬로 실행되며, manifest와 lockfile이 다르거나 어느 하나라도 실패하면 연결 준비가 실패한다.
 
 첫 부팅은 Dev Container 빌드와 PlantUML·인프라 이미지 다운로드 때문에 시간이 걸린다. 이후 부팅은 인프라 리셋 시간(약 30초)이 대부분이다.
 
 Playwright와 Chromium은 Dev Container에 설치하지 않는다. web e2e가 필요할 때만 브라우저와 OS 의존성이 든 공식 Playwright 이미지를 받고, 테스트 package는 그 전용 이미지에 `npm ci`로 설치한다. 따라서 첫 Dev Container 부팅은 브라우저 다운로드와 무관하다. 워크스페이스 의존성은 bind mount된 작업 트리에 있어야 하므로 image에 넣지 않고 `postStartCommand`에서 복원한다. image에 설치하면 실행 시 workspace mount에 가려진다. 이 명령은 기존 컨테이너를 시작하거나 다시 연결할 때도 실행되지만, lockfile과 `node_modules`가 그대로면 pnpm이 변경할 내용 없이 끝난다.
 
-PlantUML 이미지는 version tag와 multi-architecture digest를 같이 고정한다. 호스트 port를 publish하거나 VS Code로 forward하지 않는다. Remote extension host에서 실행되는 PlantUML 확장이 `http://plantuml:8080`으로 서버를 호출하고, 받은 이미지를 data URL로 전용 Preview에 넣으므로 Docker 네트워크만으로 충분하다. Markdown 파일에서 커서를 다이어그램 안에 두고 `PlantUML: Preview Current Diagram`(`Alt+D`, macOS는 `Option+D`)을 실행한다.
+PlantUML은 공식 `plantuml/plantuml-server` 이미지를 사용한다. 호스트 port를 publish하거나 VS Code로 forward하지 않는다. Remote extension host에서 실행되는 PlantUML 확장이 `http://plantuml:8080`으로 서버를 호출하고, 받은 이미지를 data URL로 전용 Preview에 넣으므로 Docker 네트워크만으로 충분하다. Markdown 파일에서 커서를 다이어그램 안에 두고 `PlantUML: Preview Current Diagram`(`Alt+D`, macOS는 `Option+D`)을 실행한다.
 
-PlantUML 컨테이너 이름은 `${USER}-${localWorkspaceFolderBasename}-plantuml`, 네트워크 이름은 Dev Container와 같은 `${USER}-${localWorkspaceFolderBasename}`이다. `plantuml`은 이 네트워크 안의 service DNS 이름이다. image pin이 바뀌면 다음 `postStartCommand`의 `up -d`가 해당 작업 폴더의 컨테이너만 새 선언으로 교체한다.
+PlantUML 컨테이너 이름은 `${USER}-${localWorkspaceFolderBasename}-plantuml`, 네트워크 이름은 Dev Container와 같은 `${USER}-${localWorkspaceFolderBasename}`이다. `plantuml`은 이 네트워크 안의 service DNS 이름이다. 다음 `postStartCommand`의 `up -d`가 해당 작업 폴더의 컨테이너를 Compose 선언에 맞춘다.
 
 VS Code의 내장 Markdown 전체 Preview는 이 구성의 지원 대상이 아니다. PlantUML 확장의 Markdown 연동은 HTML에 `http://plantuml:8080` 이미지 주소를 넣는데, local machine의 webview는 Docker DNS 이름 `plantuml`을 해석할 수 없다. 전체 Preview까지 지원하려면 local machine으로 이어지는 별도 port forwarding과 접근 경로가 필요하다. 한 기능을 위해 실행 경로를 둘로 늘리지 않고 전용 Preview 하나를 공식 경로로 정한다.
 
 pnpm store는 bind mount된 workspace의 `.pnpm-store`에 둔다. clone마다 디스크를 더 쓰는 대신 컨테이너를 다시 만들어도 같은 clone의 다운로드 캐시가 남고, 호스트별 별도 mount 설정이 필요 없다. 용량을 회수하려면 컨테이너를 정지한 뒤 이 디렉터리만 지울 수 있지만, 다음 설치에서 패키지를 다시 내려받는다.
 
-Dev Container의 Node 이미지는 프로젝트 호환성과 재현성을 위해 patch·배포판·digest까지 API·프런트엔드 이미지와 동일하게 고정하고, Dependabot이 참조들의 minor/patch 갱신을 한 PR로 묶는다. 나머지 개발 도구는 이미지를 다시 빌드할 때 현재 릴리스를 받는다. 프로젝트 의존성은 pnpm manifest와 lockfile이 관리한다. Playwright runner의 package 버전은 `tests/web/package.json`·`package-lock.json`과 공식 이미지 tag를 같은 값으로 맞추고 구성 계약 테스트로 어긋남을 막는다.
+Dev Container의 Node 이미지는 프로젝트 호환성과 재현성을 위해 patch·배포판·digest까지 API·프런트엔드 이미지와 동일하게 고정하고, Dependabot이 참조들의 minor/patch 갱신을 한 PR로 묶는다. 프로젝트 의존성은 pnpm manifest와 lockfile이 관리하고, 컨테이너 도구는 `compose.tools.yml`이 관리한다. Playwright runner를 갱신할 때는 `tests/web/package.json`·`package-lock.json`의 package 버전과 공식 이미지 tag를 함께 맞춘다.
 
 프로젝트 네트워크·PlantUML·개발 인프라 컨테이너·volume 이름은 사용자명과 workspace basename으로 구분한다. 같은 basename의 clone은 프로젝트 자원 이름이 겹치므로, 같은 호스트에서 두 clone을 동시에 띄울 때는 서로 다른 폴더 이름을 사용한다. 개발 인프라와 PlantUML은 host 포트를 publish하지 않는다. 선택 기능인 VersityGW Admin API와 WebUI도 활성화하지 않아 Dev Container를 추가로 띄워도 host port 때문에 부팅이 실패하지 않는다.
 

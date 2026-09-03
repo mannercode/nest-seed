@@ -52,7 +52,7 @@ dev ..> nginx : http://nginx\n(verify.sh · api-race/api-benchmark 러너)
 | -------------------- | ----------------------------------------------------------------------------------------- |
 | `compose.yml`        | API 컨테이너 N개 + NGINX 로드밸런서 + Restate endpoint 등록용 one-shot 서비스             |
 | `nginx.conf`         | HTTP API(:80)와 Restate HTTP/2 endpoint(:9080)를 API 복제본에 `least_conn`으로 분배       |
-| `prebuild-images.sh` | Stability 반복 전 API·NGINX 이미지를 한 번만 준비. 실패하면 짧은 backoff로 최대 3회 시도  |
+| `prebuild-images.sh` | Stability 반복 전 API·NGINX 이미지를 한 번만 준비하고 실패를 그대로 반환                  |
 | `verify.sh`          | compose build/up → Restate endpoint 등록 → [API 문서](../apps/api/api-docs/run.sh) → down |
 
 ## 주요 설정

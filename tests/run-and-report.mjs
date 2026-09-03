@@ -112,24 +112,6 @@ function workspaceStage(workspace, script) {
     )
 }
 
-function installStage() {
-    return {
-        area: '의존성 설치',
-        reason: 'lockfile 설치 검증; 일시적 registry 오류는 최대 5회 재시도',
-        command: 'pnpm install --frozen-lockfile (최대 5회)',
-        async run() {
-            for (let attempt = 1; attempt <= 5; attempt += 1) {
-                const exitCode = await execute('pnpm', ['install', '--frozen-lockfile'])
-                if (exitCode === 0 || attempt === 5) return exitCode
-
-                const waitSeconds = attempt * 10
-                console.warn(`설치 ${attempt}/5회 실패 — ${waitSeconds}초 뒤 다시 시도합니다.`)
-                await new Promise((resolve) => setTimeout(resolve, waitSeconds * 1000))
-            }
-        }
-    }
-}
-
 function stagesFor(mode, extraArguments) {
     if (mode === 'test') {
         return [
@@ -137,15 +119,7 @@ function stagesFor(mode, extraArguments) {
                 '테스트 사전 build',
                 '소비자가 실제 package output을 쓰도록 공용 라이브러리를 먼저 build',
                 'pnpm',
-                [
-                    '--recursive',
-                    '--filter',
-                    './libs/**',
-                    '--workspace-concurrency=1',
-                    '--fail-if-no-match',
-                    'run',
-                    'build'
-                ]
+                ['--recursive', '--filter', './libs/**', '--fail-if-no-match', 'run', 'build']
             ),
             ...workspaceChecks
                 .filter((workspace) => workspace.reason)
@@ -159,13 +133,16 @@ function stagesFor(mode, extraArguments) {
             stage('로컬 인프라 초기화', 'MongoDB·Redis·NATS·Restate를 깨끗한 상태로 기동', 'bash', [
                 'infra/reset.sh'
             ]),
-            installStage(),
             stage(
-                '저장소 설정 계약',
-                'devcontainer·의존성·workflow·build·lint 설정의 안전장치',
+                '의존성 설치',
+                'frozen lockfile 설치 검증; registry fetch 재시도는 pnpm 기본 정책 사용',
                 'pnpm',
-                ['run', 'test:config']
+                ['install', '--frozen-lockfile']
             ),
+            stage('루트 도구 테스트', 'clean·CI 진단·shell lint 도구의 동작', 'pnpm', [
+                'run',
+                'test:tools'
+            ]),
             ...workspaceChecks.map((workspace) => workspaceStage(workspace, 'atoz')),
             stage('루트 정적 검사', '전체 포맷, Markdown 링크와 shell 문법', 'pnpm', [
                 'run',
