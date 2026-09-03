@@ -4,7 +4,7 @@
 
 ## 범위와 분류
 
-- `*.spec.ts`, `*.test.{js,cjs,mjs,sh}`처럼 테스트 케이스를 직접 선언하는 파일은 현재 105개다.
+- `*.spec.ts`, `*.test.{js,cjs,mjs,sh}`처럼 테스트 케이스를 직접 선언하는 추적 파일은 현재 106개다. 루트 pnpm workspace 소속 104개와 독립 `demo` 프로젝트의 2개를 모두 센 값이다.
 - 실행 가능한 curl 문서 `apps/api/api-docs/*.spec`, 분산 race 시나리오, Restate probe와 k6 benchmark는 이름 규칙이 달라 별도 절에 기록한다.
 - fixture, mock, 공통 helper는 테스트 케이스가 없으므로 파일별 테스트 목록에서는 제외하고 주요 실행 지원 파일만 마지막 절에 정리한다.
 - `apps/console`과 `apps/user-app`에는 colocated 테스트 파일이 없다. 두 앱의 계약과 브라우저 흐름은 `tests/web`에서 검증한다.
@@ -26,22 +26,22 @@
 | ------ | ---------------------------------------------------------------------------------------- |
 | `핵심` | 포크 후에도 같은 기반 기술을 쓰는 동안 남겨야 하는 재사용 가능한 안전장치다.             |
 | `예제` | 영화 예매 예제 코드와 함께 있어야 하지만 새 도메인으로 교체할 때 같이 바뀌거나 사라진다. |
-| `선택` | 특정 개발 도구, CI 비용 정책이나 운영 편의 기능을 채택할 때만 필요하다.                  |
+| `선택` | 특정 개발 도구, 독립 데모, CI 비용 정책이나 운영 편의 기능을 채택할 때만 필요하다.       |
 
 각 파일의 목적 바로 다음 줄에 판정을 적었다. 별도 지적이 없는 `유지`는 목적 문장 자체가 유지 근거이며, 의미 없는 중복이나 방법상 문제가 발견되지 않았다는 뜻이다. `보완`과 `축소`는 문제와 바꿀 방법을 같은 줄에 적었다.
 
-파일 단위 판정 집계는 다음과 같다. `configuration-contract.test.mjs`는 유효한 정책 검사도 일부 포함하지만 응집된 테스트 대상이 없고 실제 build·lint·배포 검증과 과도하게 겹쳐 파일 전체를 제거 후보로 분류했다.
+파일 단위 판정 집계는 다음과 같다. 서로 무관한 설정 문자열을 한 파일에서 되풀이하던 `configuration-contract.test.mjs`는 실제 build·lint·배포 검증과 겹쳐 제거했다.
 
 | 범위                              | 유지 | 보완 | 축소 | 제거 후보 |
 | --------------------------------- | ---: | ---: | ---: | --------: |
-| 표준 테스트 105개                 |   90 |    8 |    6 |         1 |
+| 표준 테스트 106개                 |   92 |    8 |    6 |         0 |
 | API 문서·race·benchmark·배포 24개 |   15 |    9 |    0 |         0 |
 
 전체적으로 단위·통합·브라우저·분산 race의 계층은 잘 나뉘어 있다. API 통합 테스트와 API 문서가 같은 endpoint를 호출하는 것, workflow 단위 테스트와 multi-replica race가 같은 불변식을 보는 것은 실행 경계가 달라 의도된 중복이다. 정리 효과가 큰 곳은 다음 다섯 군데다.
 
-1. `configuration-contract.test.mjs`는 삭제한다. Standard Schema 전수 검사, image digest, loopback binding처럼 계속 강제할 정책이 있다면 각각 이름과 책임이 분명한 전용 lint로 다시 만든다.
-2. 실행 가능한 API 문서는 성공 응답뿐 아니라 소비자가 만날 400·401·404·409 응답과 오류 body를 보여주는 문서다. API 통합 테스트와 endpoint가 겹쳐도 공개 예시의 목적이 다르므로 83건을 유지한다.
-3. 시간 테스트는 무조건 줄이지 않는다. 외부 인프라의 실제 TTL·retry가 검증 대상이면 real clock을 유지하고, 중복 대기나 이미 만료된 fixture로 같은 분기를 만들 수 있는 경우만 줄인다. 최근 기본 테스트 1분 19.6초 중 API가 47.1초, common이 20.8초지만 실행 시간만을 위해 테스트 경계를 약화하지 않는다.
+1. 제거한 `configuration-contract.test.mjs` 같은 통합 설정 snapshot은 되살리지 않는다. 실제 실행으로 잡히지 않는 불변식이 필요하면 이름과 책임이 분명한 전용 lint나 동작 테스트로 추가한다.
+2. 실행 가능한 API 문서는 성공 응답뿐 아니라 소비자가 만날 400·401·404·409 응답과 오류 body를 보여주는 문서다. API 통합 테스트와 endpoint가 겹쳐도 공개 예시의 목적이 다르므로 현재 82건을 유지한다.
+3. 시간 테스트는 무조건 줄이지 않는다. 외부 인프라의 실제 TTL·retry가 검증 대상이면 real clock을 유지하고, 중복 대기나 이미 만료된 fixture로 같은 분기를 만들 수 있는 경우만 줄인다. 기본 테스트에서는 API와 common이 실행 시간의 대부분을 차지하지만 정확한 수치는 환경마다 달라지므로 `_output/test-reports/test.md`의 최신 실행 보고서에서 확인한다.
 4. Vitest 명령·race 파일 목록·lint 규칙을 문자열로 다시 검사하는 계약은 실제 실행 테스트나 하나의 machine-readable manifest로 통합한다.
 5. 테스트 이름·이메일처럼 시간 의미가 없는 고유값에서는 `Date.now()`를 제거한다. Node 테스트는 `randomUUID()`, race와 k6는 이미 제공하는 CSPRNG helper를 사용한다. k6의 워밍업 종료 판정도 wall clock 대신 실행기의 scenario 진행률을 사용한다.
 
@@ -64,9 +64,9 @@ Node.js 26은 `Temporal`을 기본 제공하지만 `Date`를 제거하지 않는
 | `DateUtil.now()`의 독립적인 wall-clock 대조 | `performance.timeOrigin + performance.now()`   | `Temporal.Now`와 독립된 epoch millisecond 대조값을 만들 수 있으므로 테스트에서도 `Date.now()`를 유지할 이유가 없다.              |
 | k6 결과의 ISO timestamp·파일명              | `Date.prototype.toISOString()`                 | k6 2.2.0에는 `Temporal`이 없다. 날짜 계산에는 쓰지 않고, 결과를 사람이 읽는 ISO 문자열로 직렬화하는 runtime 경계에서만 쓴다.     |
 
-현재 raw `Date.now()`는 17개 파일에 38번 있다. 모두 제거 대상으로 분류한다. 고유값은 Web E2E 3개, race 시나리오·probe 4개, race 공통 helper 1개와 k6 harness 3개에서 난수로 바꾼다. Node.js deadline 4개는 `performance.now()`, 미래 상영 시각 3개는 `Temporal`, MongoDB용 과거 fixture 1개는 `DateUtil.add()` 후 `DateUtil.toDate()`, `DateUtil` 테스트 1개는 `performance.timeOrigin + performance.now()`를 사용한다. 한 파일이 둘 이상의 용도를 포함할 수 있다.
+현재 raw `Date.now()`는 17개 파일에 41번 있다. 모두 제거 대상으로 분류한다. 고유값은 Web E2E 3개, race 시나리오·probe 4개, race 공통 helper 1개와 k6 harness 3개에서 난수로 바꾼다. Node.js deadline 4개는 `performance.now()`, 미래 상영 시각 3개는 `Temporal`, MongoDB용 과거 fixture 1개는 `DateUtil.add()` 후 `DateUtil.toDate()`, `DateUtil` 테스트 1개는 `performance.timeOrigin + performance.now()`를 사용한다. 한 파일이 둘 이상의 용도를 포함할 수 있다.
 
-k6의 [`measurementStart()`](tests/api-benchmark/perf-common.js)는 제거하고 세 harness의 측정 조건을 [`k6/execution`](https://grafana.com/docs/k6/latest/javascript-api/k6-execution/)의 `exec.scenario.progress >= warmupMs / (warmupMs + durationMs)`로 바꾼다. 현재 devcontainer가 설치하는 k6 2.2.0에는 `Temporal`과 `performance`가 없지만, scenario 진행률은 setup 종료 후 0부터 시작하므로 이 용도에 wall clock이 필요 없다. `new Date().toISOString()`은 k6 결과 timestamp와 파일명을 직렬화하는 호환 경계로만 남긴다.
+k6의 [`measurementStart()`](tests/api-benchmark/perf-common.js)는 제거하고 세 harness의 측정 조건을 [`k6/execution`](https://grafana.com/docs/k6/latest/javascript-api/k6-execution/)의 `exec.scenario.progress >= warmupMs / (warmupMs + durationMs)`로 바꾼다. 배포 Compose가 고정해 실행하는 k6 2.2.0에는 `Temporal`과 `performance`가 없지만, scenario 진행률은 setup 종료 후 0부터 시작하므로 이 용도에 wall clock이 필요 없다. `new Date().toISOString()`은 k6 결과 timestamp와 파일명을 직렬화하는 호환 경계로만 남긴다.
 
 현재 파일별 판단은 다음과 같다.
 
@@ -81,42 +81,20 @@ k6의 [`measurementStart()`](tests/api-benchmark/perf-common.js)는 제거하고
 | `purchase-records.spec.ts`    |            50ms | 유지. 테스트 전용 생성 시각 인자나 Mongo 직접 수정보다 현재 방식이 작고 실제 정렬 경계에 가깝다.                                                                                |
 | `showtime-creation.spec.ts`   |           5.1초 | 유지. Restate의 실제 5초 경계를 넘어야 완료 응답 유실 뒤 durable retry를 재현한다.                                                                                              |
 
-### `configuration-contract.test.mjs` 18개 항목 상세
-
-이 파일은 [설정 계약 테스트](tools/__tests__/configuration-contract.test.mjs)라는 한 이름 아래 서로 성격이 다른 검증이 섞여 있다. 아래 표는 파일을 삭제했을 때 사라지는 검사를 보여 준다. `유지`로 적힌 항목도 이 파일을 유지한다는 뜻이 아니라, 해당 정책이 필요하다면 별도 lint로 옮길 가치가 있다는 뜻이다.
-
-| 테스트 항목                                | 판단      | 이유와 정리 방향                                                                                                                                   |
-| ------------------------------------------ | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| package·설치 안전 정책                     | 제거 후보 | `package.json` script 문자열과 pnpm 설정의 현재 값을 다시 적는다. 실제 명령 실행과 pnpm 자체 검증이 실패 신호를 낸다.                              |
-| 공통 Nest Oxlint baseline                  | 제거 후보 | lint를 실제로 실행하는데 도구 버전·규칙 값·script 철자를 다시 검사한다. 필요한 규칙의 효과는 위반 fixture 테스트로 검증한다.                       |
-| devcontainer 재현 설치·cache 정책          | 축소      | feature digest와 frozen install 정책은 남길 수 있다. 개인 mount, 과거 script·npm 인자 부재, Dockerfile layer 순서는 기능 계약이 아니므로 제거한다. |
-| API benchmark 공식 k6 runner               | 유지      | 상시 설치 회귀와 가변 image를 막는 실행 경계·공급망 계약이다. 실제 `run-k6.sh version` 실행과 함께 둔다.                                           |
-| web e2e 공식 Playwright runner             | 유지      | package·lock·image 버전 일치와 digest, Docker socket 비전달을 강제한다. 앱 기동·정리는 실제 e2e 실행으로 확인한다.                                 |
-| API image cache·production workspace       | 축소      | production artifact가 실행되고 dev dependency가 빠졌는지를 검증한다. cache mount와 과거 image 이름 부재 같은 Dockerfile 문자열은 제거한다.         |
-| backend ESM·Vitest metadata 변환           | 축소      | 실제 TypeScript config 해석과 decorator metadata 변환은 남긴다. alias 목록, package `files`, test script 철자 snapshot은 제거한다.                 |
-| 상대 import의 runtime 확장자               | 제거 후보 | NodeNext typecheck와 실제 build가 이미 검증하는 컴파일 계약이다. 동일 소스를 별도 AST로 전수 검사할 필요가 없다.                                   |
-| API body·query의 Standard Schema           | 유지      | 모든 controller를 AST로 훑어 schema 누락을 잡는 독립적인 요청 검증·보안 불변식이다.                                                                |
-| Nest Rspack ESM·loader 변환                | 유지      | 설정 함수에 입력을 주고 최종 loader·ESM 결과를 확인하므로 단순 파일 문자열 검사가 아니다.                                                          |
-| 배포 port의 loopback binding               | 보완      | 외부 노출 방지라는 보안 계약은 필요하다. 원문 regex 대신 `docker compose config`의 유효 published address를 검사한다.                              |
-| S3 internal-only·health                    | 축소      | published port 부재와 유효 healthcheck만 Compose 결과에서 확인한다. backend 종류와 과거 환경변수 부재는 제거한다.                                  |
-| container image digest pin                 | 유지      | mutable tag 회귀를 막는 공급망·재현성 안전장치이며 일반 build 성공만으로는 보장되지 않는다.                                                        |
-| 구조화 stdout·Docker log 한도              | 보완      | 운영 안전 계약은 남기되 service 개수와 원문 문자열 대신 Compose·NGINX의 유효 설정을 검사한다.                                                      |
-| Restate durable volume                     | 축소      | 영속 volume mount는 핵심이다. 고정 node 이름과 health URL의 현재 값까지 묶어 검사하지 않는다.                                                      |
-| GitHub Action pin·schedule guard·진단 보존 | 보완      | 공급망·fork 비용·실패 진단 계약은 필요하다. YAML을 파싱해 의미를 검증하고 경로·문자열 snapshot은 최소화한다.                                       |
-| Stability 반복 횟수·bootup 명령            | 제거 후보 | 75·20·50 같은 현재 비용 정책을 복사할 뿐 제품 회귀를 잡지 못한다. workflow 자체를 단일 진실 원천으로 둔다.                                         |
-| Stability 진단의 Compose 범위              | 보완      | 다른 project를 건드리지 않는 격리 계약은 필요하다. regex 출현 횟수 대신 fake `docker`로 실행 동작을 검증하고 shell 테스트로 옮긴다.                |
-
 ## 루트 명령과 포함 범위
 
 | 명령                       | 포함 범위                                                                                                  |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `pnpm run test`            | `libs/testing`, `libs/common`, API race 계약, Web 계약, tunnel 정책, Vitest 자원 helper, `apps/api` 테스트 |
-| `pnpm run atoz`            | `pnpm run test` 범위에 설정 계약, 정적 검사, 앱 build, 브라우저 E2E, API 문서와 배포 검증을 추가           |
+| `pnpm run atoz`            | `pnpm run test` 범위에 루트 도구 테스트, 정적 검사, 앱 build, 브라우저 E2E, API 문서와 배포 검증을 추가    |
 | `pnpm run e2e`             | production 앱 이미지와 공식 Playwright runner로 실행하는 `tests/web/e2e` Chromium 테스트                   |
 | `pnpm run race <scenario>` | 선택한 4-replica 분산 race 시나리오                                                                        |
 | `pnpm run benchmark:api`   | k6 API 부하 측정; 절대 합격선이 없는 비교 측정                                                             |
+| `pnpm --dir demo test`     | 루트 workspace와 별도로 설치·실행하는 Nest NATS 격리 데모 테스트 2개                                       |
 
-## 표준 테스트 파일 105개
+`demo`는 루트 pnpm workspace 밖의 독립 프로젝트이므로 `pnpm run test`와 `pnpm run atoz`에 포함되지 않는다.
+
+## 표준 테스트 파일 106개
 
 ### `apps/api` — 48개
 
@@ -224,6 +202,13 @@ k6의 [`measurementStart()`](tests/api-benchmark/perf-common.js)는 제거하고
   **판정: 유지 · 시드: 예제.**
 - [`src/services/gateway/pipes/__tests__/request-validation.pipe.spec.ts`](apps/api/src/services/gateway/pipes/__tests__/request-validation.pipe.spec.ts) — body·배열·중첩 요청의 Standard Schema 검증과 오류 응답을 검증한다.
   **판정: 유지 · 시드: 핵심.**
+
+### standalone `demo` — 2개
+
+- [`src/__tests__/dynamic-loader.spec.ts`](demo/src/__tests__/dynamic-loader.spec.ts) — module reset 뒤 중앙 loader가 전체 Nest 모듈 그래프와 `@MessagePattern`을 새 namespace로 다시 평가하는지 검증한다.
+  **판정: 유지 · 시드: 선택.**
+- [`src/__tests__/fixed-namespace.spec.ts`](demo/src/__tests__/fixed-namespace.spec.ts) — worker별 고정 message namespace로 실제 Nest NATS 요청을 왕복하고 테스트마다 client와 server를 정리하는지 검증한다.
+  **판정: 유지 · 시드: 선택.**
 
 ### `libs/common` — 37개
 
@@ -348,14 +333,12 @@ k6의 [`measurementStart()`](tests/api-benchmark/perf-common.js)는 제거하고
 - [`e2e/user-auth-flow.spec.ts`](tests/web/e2e/user-auth-flow.spec.ts) — 사용자 역할 분리, 로그인·개인화 홈, access 만료 후 refresh 회전과 logout을 브라우저로 검증한다.
   **판정: 보완 · 시드: 예제.** 가입 이메일은 이미 포함된 `randomUUID()`만으로 충분하므로 `Date.now()`를 제거한다.
 
-### `tools` — 7개
+### `tools` — 6개
 
 - [`__tests__/ci-diagnostics.test.mjs`](tools/__tests__/ci-diagnostics.test.mjs) — CI 진단 wrapper가 stdout/stderr를 보존하고 원래 종료 코드를 전달하는지 검증한다.
   **판정: 유지 · 시드: 선택.**
 - [`__tests__/clean-workspace.test.mjs`](tools/__tests__/clean-workspace.test.mjs) — 생성물만 지우고 개인 파일·테스트 보고서를 보존하며 symlink workspace를 거부하는지 검증한다.
   **판정: 유지 · 시드: 핵심.**
-- [`__tests__/configuration-contract.test.mjs`](tools/__tests__/configuration-contract.test.mjs) — workspace, lint, devcontainer, Docker, ESM, 배포·인프라와 workflow 설정의 정책 계약 18개를 검사한다.
-  **판정: 제거 후보 · 시드: 선택.** 서로 무관한 정책 snapshot을 묶은 메타 테스트이며 AtoZ의 실제 install·lint·build·배포 검증과 대부분 겹친다. 계속 강제할 소수 정책은 필요해질 때 전용 lint로 분리한다.
 - [`__tests__/lint-shell.test.mjs`](tools/__tests__/lint-shell.test.mjs) — extension 없는 hook과 source된 fixture까지 shell lint 대상에 포함되는지 검증한다.
   **판정: 유지 · 시드: 핵심.**
 - [`dev-tools/tunnel-policy.test.sh`](tools/dev-tools/tunnel-policy.test.sh) — cloudflared quick tunnel의 허용 포트, 시작 실패, 중복 실행과 child process 정리를 검증한다.
@@ -367,7 +350,7 @@ k6의 [`measurementStart()`](tests/api-benchmark/perf-common.js)는 제거하고
 
 ## 이름 규칙 밖의 실행 테스트와 측정 파일
 
-### 실행 가능한 API 문서 — 9개, curl 검증 83건
+### 실행 가능한 API 문서 — 9개, `TEST` 검증 82건
 
 이 파일들은 `api-docs/run.sh`가 source해서 실제 배포 API에 curl 요청을 보낸다. 각 성공·실패 요청의 예상 HTTP status를 검사하고 실제 응답 body와 오류 code를 문서 로그에 남긴다. 따라서 API 통합 테스트와 같은 endpoint를 호출하더라도 중복 테스트로 보지 않는다.
 
@@ -379,13 +362,13 @@ k6의 [`measurementStart()`](tests/api-benchmark/perf-common.js)는 제거하고
   **판정: 유지 · 시드: 핵심.** 비용이 작고 배포 stack의 최소 생존 신호라 남긴다.
 - [`movies.spec`](apps/api/api-docs/movies.spec) — 영화 CRUD·목록·발행과 오류 12건.
   **판정: 유지 · 시드: 예제.** CRUD·발행·presigned upload의 전체 curl 예시와 조회·수정 404 응답을 함께 문서화한다.
-- [`purchases.spec`](apps/api/api-docs/purchases.spec) — 티켓 구매, 멱등 재시도·충돌과 사용자 구매 조회 6건.
+- [`purchases.spec`](apps/api/api-docs/purchases.spec) — 티켓 구매, 멱등 재시도·충돌과 사용자 구매 조회 5건.
   **판정: 유지 · 시드: 예제.** 배포 환경의 구매·멱등성 흐름을 함께 증명하므로 통합 테스트와 실행 경계가 다르다.
-- [`showtime-creation.spec`](apps/api/api-docs/showtime-creation.spec) — 상영 생성용 자원 조회, workflow 요청과 검색 4건.
+- [`showtime-creation.spec`](apps/api/api-docs/showtime-creation.spec) — 상영 생성용 자원 조회, workflow 요청·영속 최종 상태와 검색 5건.
   **판정: 유지 · 시드: 예제.** Restate가 연결된 배포 workflow의 실제 호출 예제로 필요하다.
 - [`theaters.spec`](apps/api/api-docs/theaters.spec) — 극장 CRUD와 validation 8건.
   **판정: 유지 · 시드: 예제.** 정상 CRUD와 필수 값 누락 400, 조회·수정 404의 공개 응답을 문서화한다.
-- [`users.spec`](apps/api/api-docs/users.spec) — 가입·로그인·refresh·내 정보·관리·인가 오류 32건.
+- [`users.spec`](apps/api/api-docs/users.spec) — 가입·로그인·refresh·내 정보·관리·인가 오류 31건.
   **판정: 유지 · 시드: 예제.** 가입 validation·409, 로그인·refresh 401, 사용자/admin 권한 경계, logout·계정 삭제 이후 상태까지 공개 성공·실패 계약을 문서화한다.
 - [`views.spec`](apps/api/api-docs/views.spec) — 게스트와 로그인 사용자의 홈 view 2건.
   **판정: 유지 · 시드: 예제.** 게스트와 로그인 사용자의 배포 응답 차이를 보여 주는 최소 문서 예제다.
@@ -426,46 +409,46 @@ k6의 [`measurementStart()`](tests/api-benchmark/perf-common.js)는 제거하고
 
 ### 배포 검증
 
-- [`deploy/verify.sh`](deploy/verify.sh) — 실제 compose stack을 build·기동하고 Restate endpoint 등록, journal recovery probe와 83개 curl 문서를 실행한 뒤 stack을 정리한다.
+- [`deploy/verify.sh`](deploy/verify.sh) — 실제 compose stack을 build·기동하고 Restate endpoint 등록, journal recovery probe와 9개 spec의 82건 curl 검증을 실행한 뒤 stack을 정리한다.
   **판정: 유지 · 시드: 핵심.** build 결과물·Compose wiring·Restate 등록을 함께 보는 artifact-level acceptance라 단위 테스트로 대체할 수 없다.
 
 ## 주요 테스트 지원 파일
 
 지원 파일은 직접 테스트 케이스를 선언하지 않지만 어떤 테스트가 어떻게 실행되는지를 결정한다.
 
-| 파일                                                                                                     | 역할                                                                                                                                                    | 평가            |
-| -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
-| [`tests/run-and-report.mjs`](tests/run-and-report.mjs)                                                   | 루트 `test`, `atoz`, `e2e`, `race`, `benchmark` 단계를 실행하고 Markdown 보고서를 작성한다.                                                             | **유지 · 핵심** |
-| [`vitest.config.base.mjs`](vitest.config.base.mjs)                                                       | 세 Vitest workspace의 Node 환경, include pattern, timeout, 격리와 TypeScript decorator metadata 변환을 정의한다.                                        | **유지 · 핵심** |
-| [`apps/api/vitest.config.mjs`](apps/api/vitest.config.mjs)                                               | API alias, run별 coverage 경로, 100% coverage gate, global/setup 파일을 정의한다.                                                                       | **유지 · 핵심** |
-| [`apps/api/vitest.global.cjs`](apps/api/vitest.global.cjs)                                               | config에서 만든 API Vitest run ID와 output 경로가 worker·teardown에 동일하게 전달됐는지 확인한다.                                                       | **유지 · 핵심** |
-| [`apps/api/vitest.teardown.cjs`](apps/api/vitest.teardown.cjs)                                           | 현재 API Vitest run의 Mongo, S3, Redis와 JetStream 자원을 정리한다.                                                                                     | **유지 · 핵심** |
-| [`apps/api/src/__tests__/vitest.setup.ts`](apps/api/src/__tests__/vitest.setup.ts)                       | API test file별 Mongo·S3 연결과 test namespace를 준비하며 JetStream은 테스트 사이에 유지한다.                                                           | **유지 · 핵심** |
-| [`apps/api/scripts/vitest-run-context.cjs`](apps/api/scripts/vitest-run-context.cjs)                     | run ID와 실행별 output/coverage 디렉터리를 생성한다.                                                                                                    | **유지 · 핵심** |
-| [`apps/api/scripts/vitest-resource-wiring.cjs`](apps/api/scripts/vitest-resource-wiring.cjs)             | run/worker별 Mongo, S3, Redis, NATS 자원 이름과 환경변수를 연결한다.                                                                                    | **유지 · 핵심** |
-| [`apps/api/scripts/shared-test-mongo-connection.cjs`](apps/api/scripts/shared-test-mongo-connection.cjs) | test file 수명의 공유 native Mongo 연결을 제공한다.                                                                                                     | **유지 · 핵심** |
-| [`libs/common/vitest.config.mjs`](libs/common/vitest.config.mjs)                                         | common의 coverage gate와 setup/global teardown을 정의한다.                                                                                              | **유지 · 핵심** |
-| [`libs/common/vitest.global.cjs`](libs/common/vitest.global.cjs)                                         | common 통합 테스트가 쓸 Mongo·NATS 등 전역 자원을 준비한다.                                                                                             | **유지 · 핵심** |
-| [`libs/common/vitest.teardown.cjs`](libs/common/vitest.teardown.cjs)                                     | common 전역 테스트 자원을 정리한다.                                                                                                                     | **유지 · 핵심** |
-| [`libs/common/src/__tests__/vitest.setup.ts`](libs/common/src/__tests__/vitest.setup.ts)                 | common test file별 setup을 연결한다.                                                                                                                    | **유지 · 핵심** |
-| [`libs/testing/vitest.config.mjs`](libs/testing/vitest.config.mjs)                                       | testing library의 Vitest 설정을 정의한다.                                                                                                               | **유지 · 핵심** |
-| [`libs/testing/src/__tests__/vitest.setup.ts`](libs/testing/src/__tests__/vitest.setup.ts)               | 각 testing library 테스트 전에 Vitest module cache를 초기화한다.                                                                                        | **유지 · 핵심** |
-| [`tests/web/playwright.contract.config.ts`](tests/web/playwright.contract.config.ts)                     | 브라우저와 web server 없이 `contracts`만 실행한다.                                                                                                      | **유지 · 핵심** |
-| [`tests/web/playwright.config.ts`](tests/web/playwright.config.ts)                                       | Compose가 주입한 앱 URL을 사용해 Chromium E2E, trace, screenshot과 report를 구성한다.                                                                   | **유지 · 핵심** |
-| [`apps/api/api-docs/run.sh`](apps/api/api-docs/run.sh)                                                   | `*.spec` 파일의 `TEST`/`SETUP`을 실행하고 응답·요약 보고서를 생성한다.                                                                                  | **유지 · 핵심** |
-| [`apps/api/api-docs/common.fixture`](apps/api/api-docs/common.fixture)                                   | API 문서의 로그인과 영화·극장·상영 fixture를 제공한다.                                                                                                  | **유지 · 예제** |
-| [`apps/api/api-docs/log-redaction.sh`](apps/api/api-docs/log-redaction.sh)                               | API 문서 로그에서 민감값을 제거한다.                                                                                                                    | **유지 · 핵심** |
-| [`tests/api-race/runner.sh`](tests/api-race/runner.sh)                                                   | 선택한 race를 위해 4-replica stack을 준비·실행·진단·정리한다.                                                                                           | **유지 · 핵심** |
-| [`tests/api-race/race-common.js`](tests/api-race/race-common.js)                                         | race용 HTTP/SSE client, deadline과 공통 fixture를 제공한다. deadline은 `performance.now()`, 미래 상영 시각은 `Temporal`, 생성 이메일은 난수만 사용한다. | **보완 · 핵심** |
-| [`tests/api-benchmark/perf-common.js`](tests/api-benchmark/perf-common.js)                               | k6 옵션, 측정 구간, 상태 코드와 JSON/HTML summary 생성을 제공한다. `measurementStart()` 대신 scenario 진행률 기반 helper를 제공한다.                    | **보완 · 선택** |
-| [`.github/workflows/test-atoz.yaml`](.github/workflows/test-atoz.yaml)                                   | PR·push·schedule에서 전체 AtoZ 회귀를 실행하고 진단 artifact를 보존한다.                                                                                | **유지 · 핵심** |
-| [`.github/workflows/test-stability.yaml`](.github/workflows/test-stability.yaml)                         | 단위·통합·부팅·race 시나리오를 누적 반복해 간헐 실패를 찾는다.                                                                                          | **유지 · 선택** |
-| [`.github/scripts/repeat.sh`](.github/scripts/repeat.sh)                                                 | Stability 명령 반복과 실패 시 현재 Compose 프로젝트 진단을 담당한다.                                                                                    | **유지 · 선택** |
-| [`.github/scripts/run-with-ci-diagnostics.sh`](.github/scripts/run-with-ci-diagnostics.sh)               | 명령 출력을 저장하고 실패 진단을 남기면서 원래 종료 코드를 보존한다.                                                                                    | **유지 · 선택** |
+| 파일                                                                                                     | 역할                                                                                                             | 평가            |
+| -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | --------------- |
+| [`tests/run-and-report.mjs`](tests/run-and-report.mjs)                                                   | 루트 `test`, `atoz`, `e2e`, `race`, `benchmark` 단계를 실행하고 Markdown 보고서를 작성한다.                      | **유지 · 핵심** |
+| [`vitest.config.base.mjs`](vitest.config.base.mjs)                                                       | 세 Vitest workspace의 Node 환경, include pattern, timeout, 격리와 TypeScript decorator metadata 변환을 정의한다. | **유지 · 핵심** |
+| [`apps/api/vitest.config.mjs`](apps/api/vitest.config.mjs)                                               | API alias, run별 coverage 경로, 100% coverage gate, global/setup 파일을 정의한다.                                | **유지 · 핵심** |
+| [`apps/api/vitest.global.cjs`](apps/api/vitest.global.cjs)                                               | config에서 만든 API Vitest run ID와 output 경로가 worker·teardown에 동일하게 전달됐는지 확인한다.                | **유지 · 핵심** |
+| [`apps/api/vitest.teardown.cjs`](apps/api/vitest.teardown.cjs)                                           | 현재 API Vitest run의 Mongo, S3, Redis와 JetStream 자원을 정리한다.                                              | **유지 · 핵심** |
+| [`apps/api/src/__tests__/vitest.setup.ts`](apps/api/src/__tests__/vitest.setup.ts)                       | API test file별 Mongo·S3 연결과 test namespace를 준비하며 JetStream은 테스트 사이에 유지한다.                    | **유지 · 핵심** |
+| [`apps/api/scripts/vitest-run-context.cjs`](apps/api/scripts/vitest-run-context.cjs)                     | run ID와 실행별 output/coverage 디렉터리를 생성한다.                                                             | **유지 · 핵심** |
+| [`apps/api/scripts/vitest-resource-wiring.cjs`](apps/api/scripts/vitest-resource-wiring.cjs)             | run/worker별 Mongo, S3, Redis, NATS 자원 이름과 환경변수를 연결한다.                                             | **유지 · 핵심** |
+| [`apps/api/scripts/shared-test-mongo-connection.cjs`](apps/api/scripts/shared-test-mongo-connection.cjs) | test file 수명의 공유 native Mongo 연결을 제공한다.                                                              | **유지 · 핵심** |
+| [`libs/common/vitest.config.mjs`](libs/common/vitest.config.mjs)                                         | common의 coverage gate와 setup/global teardown을 정의한다.                                                       | **유지 · 핵심** |
+| [`libs/common/vitest.global.cjs`](libs/common/vitest.global.cjs)                                         | common 통합 테스트가 쓸 Mongo·NATS 등 전역 자원을 준비한다.                                                      | **유지 · 핵심** |
+| [`libs/common/vitest.teardown.cjs`](libs/common/vitest.teardown.cjs)                                     | common 전역 테스트 자원을 정리한다.                                                                              | **유지 · 핵심** |
+| [`libs/common/src/__tests__/vitest.setup.ts`](libs/common/src/__tests__/vitest.setup.ts)                 | common test file별 setup을 연결한다.                                                                             | **유지 · 핵심** |
+| [`libs/testing/vitest.config.mjs`](libs/testing/vitest.config.mjs)                                       | testing library의 Vitest 설정을 정의한다.                                                                        | **유지 · 핵심** |
+| [`libs/testing/src/__tests__/vitest.setup.ts`](libs/testing/src/__tests__/vitest.setup.ts)               | 각 testing library 테스트 전에 Vitest module cache를 초기화한다.                                                 | **유지 · 핵심** |
+| [`tests/web/playwright.contract.config.ts`](tests/web/playwright.contract.config.ts)                     | 브라우저와 web server 없이 `contracts`만 실행한다.                                                               | **유지 · 핵심** |
+| [`tests/web/playwright.config.ts`](tests/web/playwright.config.ts)                                       | Compose가 주입한 앱 URL을 사용해 Chromium E2E, trace, screenshot과 report를 구성한다.                            | **유지 · 핵심** |
+| [`apps/api/api-docs/run.sh`](apps/api/api-docs/run.sh)                                                   | `*.spec` 파일의 `TEST`/`SETUP`을 실행하고 응답·요약 보고서를 생성한다.                                           | **유지 · 핵심** |
+| [`apps/api/api-docs/common.fixture`](apps/api/api-docs/common.fixture)                                   | API 문서의 로그인과 영화·극장·상영 fixture를 제공한다.                                                           | **유지 · 예제** |
+| [`apps/api/api-docs/log-redaction.sh`](apps/api/api-docs/log-redaction.sh)                               | API 문서 로그에서 민감값을 제거한다.                                                                             | **유지 · 핵심** |
+| [`tests/api-race/runner.sh`](tests/api-race/runner.sh)                                                   | 선택한 race를 위해 4-replica stack을 준비·실행·진단·정리한다.                                                    | **유지 · 핵심** |
+| [`tests/api-race/race-common.js`](tests/api-race/race-common.js)                                         | race용 HTTP/SSE client, `Date.now()` 기반 deadline·미래 상영 시각·고유 이메일과 공통 fixture를 제공한다.         | **보완 · 핵심** |
+| [`tests/api-benchmark/perf-common.js`](tests/api-benchmark/perf-common.js)                               | k6 옵션, `Date.now()` 기반 `measurementStart()`, 상태 코드와 JSON/HTML summary 생성을 제공한다.                  | **보완 · 선택** |
+| [`.github/workflows/test-atoz.yaml`](.github/workflows/test-atoz.yaml)                                   | PR·push·schedule에서 전체 AtoZ 회귀를 실행하고 진단 artifact를 보존한다.                                         | **유지 · 핵심** |
+| [`.github/workflows/test-stability.yaml`](.github/workflows/test-stability.yaml)                         | 단위·통합·부팅·race 시나리오를 누적 반복해 간헐 실패를 찾는다.                                                   | **유지 · 선택** |
+| [`.github/scripts/repeat.sh`](.github/scripts/repeat.sh)                                                 | Stability 명령 반복과 실패 시 현재 Compose 프로젝트 진단을 담당한다.                                             | **유지 · 선택** |
+| [`.github/scripts/run-with-ci-diagnostics.sh`](.github/scripts/run-with-ci-diagnostics.sh)               | 명령 출력을 저장하고 실패 진단을 남기면서 원래 종료 코드를 보존한다.                                             | **유지 · 선택** |
 
 ## 이 문서를 갱신할 때
 
-1. 표준 테스트 파일 목록과 105개 기준을 다시 계산한다.
+1. 표준 테스트 파일 목록과 106개 기준을 다시 계산한다. 루트 workspace 104개뿐 아니라 독립 `demo`의 2개도 포함한다.
 2. 새 파일이 루트 `test`, `atoz`, 전용 `e2e`·`race`·`benchmark` 중 어디에서 실행되는지 적는다.
 3. 새 파일에는 `유지`·`보완`·`축소`·`제거 후보`와 `핵심`·`예제`·`선택` 판정을 함께 적는다.
 4. fixture와 helper를 테스트 케이스처럼 세지 않는다.

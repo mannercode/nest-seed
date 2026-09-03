@@ -659,9 +659,7 @@ pnpm --filter './apps/api' test users.spec --coverage.enabled=false
 pnpm --filter './apps/api' test users.spec -t '409 Conflict를 반환한다' --coverage.enabled=false
 ```
 
-각 backend workspace의 `tsconfig.json`은 VS Code가 운영 소스와 테스트를 모두 같은 workspace 설정으로 해석할 수 있도록 둘 다 포함한다. 실제 검사는 `tsconfig.build.json`이 테스트를 제외한 운영 소스를, `tsconfig.test.json`이 Vitest 전역 타입을 포함한 테스트를 각각 맡는다. 편집기가 `describe`에서 `@types/jest` 설치를 권하거나 정상적인 `.js` 상대 경로와 `#core` 별칭을 찾지 못하면 Jest를 설치하지 말고 `TypeScript: Restart TS Server`를 한 번 실행한다.
-
-devcontainer의 `firsttris.vscode-jest-runner`는 현재 Jest / Vitest Runner로 Vitest와 `node:test`를 자동 감지한다. 이름에 Jest가 남아 있지만 프로젝트에 Jest를 다시 설치하는 의존성이 아니며 파일·테스트 단위 실행과 디버깅에 사용하므로 유지한다.
+각 backend workspace의 `tsconfig.json`은 VS Code가 운영 소스와 테스트를 모두 같은 workspace 설정으로 해석할 수 있도록 둘 다 포함한다. 실제 검사는 `tsconfig.build.json`이 테스트를 제외한 운영 소스를, `tsconfig.test.json`이 Vitest 전역 타입을 포함한 테스트를 각각 맡는다. Dev Container의 Jest Runner 확장은 이름과 달리 Vitest와 Node.js test runner도 자동 감지해 파일·테스트 단위 실행과 디버깅을 제공하며, Jest package를 요구하지 않는다. 편집기가 `describe`에서 `@types/jest` 설치를 권하거나 정상적인 `.js` 상대 경로와 `#core` 별칭을 찾지 못하면 Jest를 설치하지 말고 `TypeScript: Restart TS Server`를 한 번 실행한다.
 
 ## 실행 가능한 API 문서
 

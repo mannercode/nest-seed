@@ -31,7 +31,7 @@
 
 처음 부팅 순서는 다음과 같다.
 
-1. **새 프로젝트로 포크했다면** 저장소 전체를 기계적으로 치환하지 말고, [환경 변수 §4](docs/reference/environment.md#4-포크할-때-확인할-값)의 패키지·env·compose 식별자만 새 이름으로 바꾼다. 저자 외부 URL·연락처·원본 `repository_id` sentinel은 일괄 치환 대상이 아니며 각각 의도적으로 검토한다.
+1. **새 프로젝트로 포크했다면** 저장소 전체를 기계적으로 치환하지 말고, [환경 변수 §4](docs/reference/environment.md#4-포크할-때-확인할-값)의 패키지·env·compose 식별자만 새 이름으로 바꾼다. 저자 외부 URL과 연락처는 새 프로젝트의 소유권에 맞게 각각 검토한다.
 2. VS Code에서 `Reopen in Container`를 실행한다. 컨테이너가 열리면 `postStartCommand`가 `bash infra/reset.sh`를 실행해 개발 인프라를 준비한다. 첫 부팅은 Dev Container 이미지 빌드, `pnpm install --frozen-lockfile`, 인프라 이미지 다운로드 때문에 시간이 걸릴 수 있다. 인프라가 꼬이면 `bash infra/reset.sh`로 언제든 초기화한다.
 3. `pnpm run test`로 기본 테스트가 통과하는지 확인한다. 포크 직후 전체 회귀까지 확인하려면 `pnpm run atoz`를 실행한다.
 4. `pnpm run dev`로 watch 모드를 띄운 뒤 `curl http://localhost:3000/health`로 API가 살아 있는지 본다.

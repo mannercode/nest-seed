@@ -14,15 +14,9 @@ COPY libs/testing/package.json libs/testing/
 COPY tools/dev-tools/package.json tools/dev-tools/free-port.js tools/dev-tools/tunnel.sh tools/dev-tools/
 COPY tools/vitest-helpers/package.json tools/vitest-helpers/
 
-# BuildKit이 registry package store를 관리하고, install은 API 빌드에 필요한 workspace closure만 연결한다.
-# npm registry의 일시적 연결 오류는 같은 frozen install을 최대 다섯 번 재시도한다.
+# install 결과는 image layer에 남고, registry fetch 재시도는 pnpm의 기본 정책에 맡긴다.
 RUN --mount=type=cache,id=nest-seed-pnpm,target=/pnpm/store,sharing=locked \
-    for attempt in 1 2 3 4 5; do \
-        HUSKY=0 pnpm install --frozen-lockfile --filter './apps/api...' --filter './libs/common' --store-dir /pnpm/store && break; \
-        [ "$attempt" = 5 ] && exit 1; \
-        echo "pnpm install failed (attempt ${attempt}/5), retrying in $((attempt * 10))s..." >&2; \
-        sleep $((attempt * 10)); \
-    done
+    HUSKY=0 pnpm install --frozen-lockfile --filter './apps/api...' --filter './libs/common' --store-dir /pnpm/store
 
 COPY tsconfig.json ./
 COPY libs/common/ libs/common/

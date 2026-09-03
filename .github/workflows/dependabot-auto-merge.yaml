@@ -1,25 +1,26 @@
-# `--auto` 머지는 main 룰셋의 필수 검사(test-atoz)가 통과할 때까지 기다린다.
-# fork에서 쓰려면 repository의 auto-merge와 필요한 ruleset·Actions write 정책을 별도로 켠다.
+# Dependabot PR의 Test AtoZ가 성공하면, 그 실행이 검증한 head commit을 직접 squash merge한다.
+# workflow_run은 기본 브랜치의 이 파일을 사용하며 PR 코드를 실행하지 않는다.
 name: Dependabot Auto Merge
 on:
-    pull_request:
-        branches: ['main']
-# dependabot이 트리거한 실행의 GITHUB_TOKEN은 기본 읽기 전용이라 머지 권한을 명시한다.
+    workflow_run:
+        workflows: ['Test AtoZ']
+        types: [completed]
 permissions:
     contents: write
     pull-requests: write
 jobs:
     auto-merge:
-        if: github.actor == 'dependabot[bot]'
+        if: >-
+            github.event.workflow_run.conclusion == 'success' &&
+            github.event.workflow_run.event == 'pull_request' &&
+            github.event.workflow_run.actor.login == 'dependabot[bot]' &&
+            github.event.workflow_run.pull_requests[0].base.ref == 'main'
         runs-on: ubuntu-latest
         timeout-minutes: 5
         steps:
-            - name: Read Dependabot update metadata
-              id: metadata
-              uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
-            - name: Enable auto-merge for non-major updates
-              if: steps.metadata.outputs.update-type != 'version-update:semver-major'
-              run: gh pr merge --auto --squash "$PR_URL"
+            - name: Merge the tested Dependabot commit
+              run: gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --squash --match-head-commit "$PR_HEAD_SHA"
               env:
-                  PR_URL: ${{ github.event.pull_request.html_url }}
-                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+                  PR_HEAD_SHA: ${{ github.event.workflow_run.pull_requests[0].head.sha }}
+                  GH_TOKEN: ${{ github.token }}

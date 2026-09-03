@@ -33,7 +33,7 @@ The minimum spec is 4 CPU cores, 16GB RAM, and 32GB of disk. To run the full tes
 
 First boot goes like this:
 
-1. **If you forked this as a new project**, do not mechanically replace names across the entire repository. Change only the package, env, and Compose identifiers listed in [Environment variables §4](docs/reference/environment.md#4-포크할-때-확인할-값). Review author-owned external URLs, contact details, and the original-repository ID sentinel deliberately rather than replacing them in bulk.
+1. **If you forked this as a new project**, do not mechanically replace names across the entire repository. Change only the package, env, and Compose identifiers listed in [Environment variables §4](docs/reference/environment.md#4-포크할-때-확인할-값). Review author-owned external URLs and contact details individually for the new project's ownership.
 2. Run `Reopen in Container` in VS Code. Once the container opens, `postStartCommand` runs `bash infra/reset.sh` to prepare the development infrastructure. The first boot can take a while — Dev Container image build, `pnpm install --frozen-lockfile`, and infrastructure image downloads. If the infrastructure ever gets into a bad state, reset it anytime with `bash infra/reset.sh`.
 3. Run `pnpm run test` to confirm the basic tests pass. To check the full regression right after forking, run `pnpm run atoz`.
 4. Start watch mode with `pnpm run dev`, then check the API is alive with `curl http://localhost:3000/health`.

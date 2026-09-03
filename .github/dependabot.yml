@@ -6,7 +6,7 @@
 # 따르는 생태계만 묶는다. lockfile 간접 의존성 전체를 한 PR로 묶으면 무관한 변경 하나가
 # 모든 안전한 갱신을 막고 install-script 심사 범위도 불필요하게 커진다.
 # `allow.update-types`는 security update에는 적용되지 않아 major 보안 수정 PR도 계속 열린다.
-# 올라온 PR은 기존 test-atoz 워크플로(pull_request 트리거)가 그대로 검증한다.
+# 올라온 PR은 기존 test-atoz 워크플로(pull_request 트리거)가 검증하고, 성공한 PR의 동일한 head commit은 후속 workflow가 자동 병합한다.
 version: 2
 updates:
     - package-ecosystem: npm

@@ -1,0 +1,18 @@
+services:
+    plantuml:
+        image: plantuml/plantuml-server:latest
+        container_name: ${DEVCONTAINER_NETWORK}-plantuml
+        restart: unless-stopped
+
+    lychee:
+        profiles: [lint]
+        image: lycheeverse/lychee:latest
+        working_dir: /workspace
+        volumes:
+            - ..:/workspace
+        command: [--offline, --include-fragments, '*.md', 'docs/**/*.md']
+
+networks:
+    default:
+        name: ${DEVCONTAINER_NETWORK}
+        external: true

@@ -1,6 +1,5 @@
 {
     "name": "${containerWorkspaceFolderBasename}",
-    "hostRequirements": { "cpus": 4, "memory": "16gb", "storage": "32gb" },
     "build": { "dockerfile": "Dockerfile", "context": ".." },
     "features": {
         "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
@@ -39,7 +38,7 @@
     },
     "postStartCommand": {
         "workspace-dependencies": "pnpm install --frozen-lockfile",
-        "plantuml": "docker compose -f .devcontainer/compose.plantuml.yml up -d",
+        "plantuml": "pnpm compose:tools up -d plantuml",
         "infra": "bash infra/reset.sh"
     },
     "waitFor": "postStartCommand",

@@ -16,8 +16,6 @@ concurrency:
     cancel-in-progress: true
 jobs:
     test-atoz:
-        # 원본 저장소의 불변 ID다. fork에 맞출 때도 이 보호 조건의 의미는 유지한다.
-        if: ${{ github.event_name != 'schedule' || github.repository_id == '849585972' || vars.ENABLE_SCHEDULED_CI == 'true' }}
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 60
         steps:

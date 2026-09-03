@@ -186,7 +186,7 @@ Docker 방식에도 wrapper, network, mount, 권한 전달이라는 복잡성이
 
 최종 변경에서는 서로 다른 층을 따로 검증했다.
 
-1. `pnpm run test:config`의 22개 테스트로 k6가 Dev Container에서 빠지고, Compose image가 tag+digest로 고정되며, 두 benchmark runner가 wrapper를 사용하는지 확인했다.
+1. 당시에는 `pnpm run test:config`의 구성 snapshot으로 k6가 Dev Container에서 빠지고, Compose image가 tag+digest로 고정되며, 두 benchmark runner가 wrapper를 사용하는지 확인했다. 이 통합 설정 계약 파일은 이후 실제 build·lint와 겹치고 서로 무관한 설정을 한곳에 묶는다는 이유로 제거했다.
 2. `shellcheck`로 새 wrapper와 기존 runner의 shell 문법·일반 오류를 확인했다.
 3. `docker compose --project-directory deploy config --quiet`으로 Compose 구성을 해석했다.
 4. `bash tests/api-benchmark/run-k6.sh version`으로 실제 image pull·container 실행·자동 제거 경로를 확인했다.
