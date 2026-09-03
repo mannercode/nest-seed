@@ -47,5 +47,5 @@ jobs:
                       _output/test-reports/
                       _output/ci-diagnostics/
                       _output/deploy-diagnostics/
-                  if-no-files-found: warn
+                  if-no-files-found: ignore
                   retention-days: 14

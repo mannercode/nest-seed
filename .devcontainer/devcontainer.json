@@ -42,12 +42,10 @@
         "infra": "bash infra/reset.sh"
     },
     "waitFor": "postStartCommand",
-    "forwardPorts": [5010],
     "customizations": {
         "vscode": {
             "extensions": [
                 "firsttris.vscode-jest-runner",
-                "ms-vscode.live-server",
                 "jebbs.plantuml",
                 "esbenp.prettier-vscode",
                 "mutantdino.resourcemonitor",
@@ -55,7 +53,6 @@
             ],
             "settings": {
                 "remote.autoForwardPorts": false,
-                "livePreview.portNumber": 5010,
                 "plantuml.server": "http://plantuml:8080/",
                 "plantuml.render": "PlantUMLServer"
             }

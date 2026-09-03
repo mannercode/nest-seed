@@ -8,8 +8,6 @@ import {
     type AuthTokens
 } from '@/lib/bff-proxy'
 
-const API_BASE_URL = getApiBaseUrl()
-
 const ACCESS_COOKIE = 'nest-seed-user-access'
 const REFRESH_COOKIE = 'nest-seed-user-refresh'
 const AUTH_PREFIX = 'users'
@@ -191,7 +189,8 @@ async function callApi(
     accessToken: string | undefined,
     body: ArrayBuffer | undefined
 ): Promise<Response> {
-    const url = new URL(pathname, API_BASE_URL.endsWith('/') ? API_BASE_URL : `${API_BASE_URL}/`)
+    const apiBaseUrl = getApiBaseUrl()
+    const url = new URL(pathname, apiBaseUrl.endsWith('/') ? apiBaseUrl : `${apiBaseUrl}/`)
     url.search = request.nextUrl.search
     const headers = new Headers()
     const accept = request.headers.get('accept')
@@ -232,7 +231,7 @@ async function refreshAuthTokens(authPath: string, refreshToken: string): Promis
 
 async function performRefresh(authPath: string, refreshToken: string): Promise<RefreshResult> {
     try {
-        const response = await fetch(new URL(`${authPath}refresh`, API_BASE_URL), {
+        const response = await fetch(new URL(`${authPath}refresh`, getApiBaseUrl()), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ refreshToken }),
