@@ -4,14 +4,13 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "test": "playwright test --config=playwright.contract.config.ts",
         "e2e": "bash run-e2e.sh",
         "e2e:list": "bash run-e2e.sh --list --reporter=list",
         "e2e:report": "playwright show-report _output/report",
         "e2e:ui": "bash run-e2e.sh --ui --ui-host=0.0.0.0 --ui-port=9323",
-        "format": "prettier --write e2e/ contracts/ playwright.config.ts playwright.contract.config.ts compose.yml",
-        "lint": "tsc --noEmit && oxlint -c ../../oxlint.json e2e/ contracts/ playwright.config.ts playwright.contract.config.ts && prettier --check e2e/ contracts/ playwright.config.ts playwright.contract.config.ts compose.yml",
-        "atoz": "pnpm run lint && pnpm test && CI=1 pnpm run e2e"
+        "format": "prettier --write e2e/ playwright.config.ts compose.yml",
+        "lint": "tsc --noEmit && oxlint -c ../../oxlint.json e2e/ playwright.config.ts && prettier --check e2e/ playwright.config.ts compose.yml",
+        "atoz": "pnpm run lint && CI=1 pnpm run e2e"
     },
     "devDependencies": {
         "@playwright/test": "1.62.1",

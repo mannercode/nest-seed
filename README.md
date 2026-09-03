@@ -66,7 +66,7 @@ bash apps/api/api-docs/run.sh showtime-creation.spec
 ├── tests/
 │   ├── api-race/        # 다중 API 복제본 경합 검증
 │   ├── api-benchmark/   # 배포 스택 API 회귀 비교
-│   └── web/             # BFF 계약·브라우저 E2E
+│   └── web/             # 브라우저 E2E
 ├── infra/               # 개발용 MongoDB·Redis·S3·NATS·Restate
 ├── deploy/              # 다중 API 복제본 + NGINX 검증 스택
 ├── tools/               # 개발·테스트 실행 도구

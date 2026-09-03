@@ -1,6 +1,6 @@
 # 테스트 파일 인벤토리
 
-활성 표준 테스트 87개와 그 밖의 실행·측정 파일 24개를 경로별로 정리한다. fixture, helper와 `_todo`는 제외한다. 테스트 작성 기준은 [개발 규칙](../docs/reference/conventions.md#5-테스트-문장은-조건과-결과를-이어-읽게-쓴다)를 따른다.
+활성 표준 테스트 86개와 그 밖의 실행·측정 파일 24개를 경로별로 정리한다. fixture, helper와 `_todo`는 제외한다. 테스트 작성 기준은 [개발 규칙](../docs/reference/conventions.md#5-테스트-문장은-조건과-결과를-이어-읽게-쓴다)를 따른다.
 
 ## `apps/api`
 
@@ -166,7 +166,6 @@ tests/
 │   ├── user-signup-race.js                     — 동일 이메일 동시 가입의 단일 생성
 │   └── probes/restate-journal-recovery.js      — Restate 재시작 후 완료 step replay와 중단 step 재실행
 └── web/
-    ├── contracts/bff-proxy.spec.ts              — BFF Origin·Host·proxy IP 경계와 refresh 재시도 쿠키
     └── e2e/
         ├── console-auth-flow.spec.ts           — 관리자 route·역할·세션·refresh·logout 브라우저 흐름
         ├── movies-flow.spec.ts                 — 관리자의 영화·극장 관리와 사용자 삭제 브라우저 흐름

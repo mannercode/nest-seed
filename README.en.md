@@ -68,7 +68,7 @@ Each `TEST` detail log records the actual response body. The spec itself shows t
 ├── tests/
 │   ├── api-race/        # Multi-replica contention checks
 │   ├── api-benchmark/   # Deployed API regression comparison
-│   └── web/             # BFF contracts and browser E2E
+│   └── web/             # Browser E2E
 ├── infra/               # Development MongoDB, Redis, S3, NATS, and Restate
 ├── deploy/              # Multi-replica API + NGINX verification stack
 ├── tools/               # Development and test orchestration tools

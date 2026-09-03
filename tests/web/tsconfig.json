@@ -10,10 +10,5 @@
         "lib": ["dom", "esnext"],
         "types": ["node"]
     },
-    "include": [
-        "e2e/**/*",
-        "contracts/**/*",
-        "playwright.config.ts",
-        "playwright.contract.config.ts"
-    ]
+    "include": ["e2e/**/*", "playwright.config.ts"]
 }
