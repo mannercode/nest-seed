@@ -19,6 +19,26 @@ The seed connects examples, design decisions, and verification through one coher
 - **A development environment for verifying changes** — the Dev Container uses real infrastructure, including MongoDB Replica Set and Redis Cluster. Integration tests, race tests across replicas, and repeated CI runs verify changes. The 100% coverage gate makes unexecuted branches visible when they are introduced.
 - **Documentation that supports execution and decisions** — executable API scenarios show actual request and response flows, while design decisions explain choices, alternatives, and limitations. Together they help you decide what to retain or change for your own project.
 
+```mermaid
+flowchart TB
+    Gateway["Gateway<br/>HTTP controllers · auth · input conversion"]
+    View["View<br/>Screen-specific read composition"]
+    Application["Application<br/>Use cases spanning domains"]
+    Core["Core<br/>Domain rules · data ownership"]
+    Infrastructure["Infrastructure<br/>Payments · storage integration"]
+
+    Gateway --> View
+    Gateway --> Application
+    Gateway -->|Single-Core CRUD| Core
+    View -->|Reads| Application
+    View -->|Reads| Core
+    Application --> Core
+    Application --> Infrastructure
+    Core --> Infrastructure
+```
+
+Arrows show representative module dependency directions in SoLA. Any needed lower layer can be used directly; dependencies between distinct modules in the same layer are forbidden. View only composes reads.
+
 See [apps](docs/apps.md) for layers and distributed boundaries and [design decisions](docs/reference/decisions.md) for reasoning and limitations.
 
 ## 1. Getting started

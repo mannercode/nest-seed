@@ -17,6 +17,26 @@
 - **변경을 검증할 수 있는 개발 환경** — Dev Container에서 실제 MongoDB Replica Set·Redis Cluster 등을 사용하고, 통합 테스트·다중 복제본 race test·반복 CI로 변경을 검증한다. 커버리지 100%는 실행되지 않은 분기를 변경 시점에 드러내는 개발 제약이다.
 - **실행과 판단에 연결되는 문서** — 실행 가능한 API 시나리오로 실제 요청·응답 흐름을 확인하고, 설계 결정 문서에서 선택 이유와 대안·한계를 읽는다. 자신의 프로젝트에 맞춰 무엇을 유지하고 바꿀지 판단할 근거를 제공한다.
 
+```mermaid
+flowchart TB
+    Gateway["Gateway<br/>HTTP controller · 인증 · 입력 변환"]
+    View["View<br/>화면 전용 읽기 조합"]
+    Application["Application<br/>여러 도메인의 유스케이스 조합"]
+    Core["Core<br/>도메인 규칙 · 데이터 소유"]
+    Infrastructure["Infrastructure<br/>결제 · 스토리지 연동"]
+
+    Gateway --> View
+    Gateway --> Application
+    Gateway -->|단일 Core CRUD| Core
+    View -->|읽기| Application
+    View -->|읽기| Core
+    Application --> Core
+    Application --> Infrastructure
+    Core --> Infrastructure
+```
+
+화살표는 SoLA의 대표적인 모듈 참조 방향이다. 필요한 하위 계층을 직접 사용할 수 있으며, 같은 계층의 서로 다른 모듈 간 참조는 금지한다. View는 읽기 조합만 맡는다.
+
 계층과 분산 경계는 [apps 문서](docs/apps.md), 선택 이유와 한계는 [설계 결정](docs/reference/decisions.md)에 있다.
 
 ## 1. 시작하기
