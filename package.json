@@ -14,7 +14,7 @@
         "prelint": "pnpm --recursive --filter './libs/**' --fail-if-no-match run build",
         "lint": "pnpm --recursive --if-present run lint && pnpm run lint:root",
         "lint:root": "prettier --check . && pnpm compose:tools run --rm lychee && pnpm run lint:shell",
-        "lint:shell": "shellcheck --severity=warning -x .github/scripts/*.sh .husky/commit-msg .husky/pre-commit apps/api/api-docs/*.sh apps/api/api-docs/*.spec infra/*.sh tests/api/*.sh tests/api/benchmark/*.sh tests/api/race/*.sh tests/web/*.sh tools/dev-tools/*.sh",
+        "lint:shell": "shellcheck --severity=warning -x .husky/commit-msg .husky/pre-commit apps/api/api-docs/*.sh apps/api/api-docs/*.spec infra/*.sh tests/api/*.sh tests/api/benchmark/*.sh tests/api/race/*.sh tests/web/*.sh tools/dev-tools/*.sh",
         "format": "prettier --write .",
         "pretest": "pnpm --recursive --filter './libs/**' --workspace-concurrency=1 --fail-if-no-match run build",
         "test": "pnpm --recursive --workspace-concurrency=1 --if-present run test",

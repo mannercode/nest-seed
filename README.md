@@ -4,6 +4,7 @@
 
 [![Test AtoZ](https://github.com/mannercode/nest-seed/actions/workflows/test-atoz.yaml/badge.svg)](https://github.com/mannercode/nest-seed/actions/workflows/test-atoz.yaml)
 [![Test Stability](https://github.com/mannercode/nest-seed/actions/workflows/test-stability.yaml/badge.svg)](https://github.com/mannercode/nest-seed/actions/workflows/test-stability.yaml)
+[![Test API Race](https://github.com/mannercode/nest-seed/actions/workflows/test-api-race.yaml/badge.svg)](https://github.com/mannercode/nest-seed/actions/workflows/test-api-race.yaml)
 
 실무 프로젝트의 출발점으로 사용하는 NestJS 모노레포다. 영화 예매라는 익숙한 도메인으로 모놀리스의 모듈 경계, 다중 복제본의 경합, 부분 실패, 비동기 작업 추적을 함께 보여 준다. `apps/api`가 본체이고 `console`과 `user-app`은 Next.js 연결을 보여 주는 최소 데모다.
 

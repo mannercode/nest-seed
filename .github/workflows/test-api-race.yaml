@@ -1,0 +1,35 @@
+name: Test API Race
+on:
+    workflow_dispatch:
+    schedule:
+        # UTC 기준 6시간마다 실행한다.
+        - cron: '27 */6 * * *'
+jobs:
+    api-race:
+        timeout-minutes: 240
+        strategy:
+            fail-fast: false
+            matrix:
+                scenario:
+                    - sse-fanout-race
+                    - user-signup-race
+                    - ticket-holding-race
+                    - showtime-overlap-race
+                    - purchase-double-spend
+                    - purchase-overlap-race
+                    - replica-chaos
+                    - jwt-refresh-race
+        runs-on: ubuntu-24.04-arm
+        steps:
+            - uses: actions/checkout@v7.0.1
+            - name: Run in devcontainer
+              uses: devcontainers/ci@v0.3.1900000450
+              with:
+                  runCmd: |
+                      set -e
+                      run=1
+                      while [ "$run" -le 50 ]; do
+                          echo "[Run ${run}/50]"
+                          bash tests/api/race/runner.sh ${{ matrix.scenario }}
+                          run=$((run + 1))
+                      done

@@ -34,6 +34,6 @@
 
 web 테스트는 개발 서버가 아닌 production build로 관리자·사용자 흐름과 세션 회전을 검증한다. 운영 배포의 BFF 신뢰 경계는 [API 스택 문서](api-stack.md#3-프런트엔드-bff와-클라이언트-ip-경계)가 소유한다.
 
-## 5. CI 반복 — test-stability
+## 5. CI 반복 — test-stability, test-api-race
 
-한 번의 성공은 레이스와 타이밍 문제의 안전을 증명하지 못한다. Stability CI는 같은 바이너리와 시나리오를 반복해 간헐 실패를 드러낸다. 반복 횟수·스케줄·timeout은 워크플로의 운영 값이므로 문서에 복제하지 않는다.
+한 번의 성공은 레이스와 타이밍 문제의 안전을 증명하지 못한다. Stability CI는 라이브러리·API·인프라 초기화를, API Race CI는 다중 복제본 race 시나리오를 반복해 간헐 실패를 드러낸다. 반복 횟수·스케줄·timeout은 워크플로의 운영 값이므로 문서에 복제하지 않는다.
