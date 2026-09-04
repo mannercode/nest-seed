@@ -8,14 +8,16 @@
 
 _This is a translation of [README.md](README.md). The Korean original is authoritative._
 
-A NestJS monorepo used as the starting point for production projects. Its familiar movie-booking domain demonstrates module boundaries inside a monolith as well as contention, partial failure, and asynchronous job tracking across replicas. `apps/api` is the main application; `console` and `user-app` are minimal Next.js integration demos.
+A NestJS monorepo used as the starting point for production projects. Follow a familiar movie-booking flow to read and run examples of module boundaries, contention across replicas, duplicate requests, partial failure, and recovery. `apps/api` is the main application; `console` and `user-app` are minimal Next.js integration demos.
 
-Four ideas define the seed:
+The seed connects examples, design decisions, and verification through one coherent flow:
 
-- **Five SoLA layers** — modules in the same layer do not call each other directly. Composition moves to a higher layer, and HTTP controllers live in Gateway.
-- **Service-owned data boundaries** — each domain accesses only its own collection and collaborates through IDs and public APIs. MongoDB fits this document-oriented model.
-- **Separated distributed guarantees** — Redis locks reduce contention cost; DB transitions, CAS, and transactions preserve consistency. Restate resumes interrupted work, while NATS carries messages across processes.
-- **Behavior-oriented verification** — integration tests use real infrastructure and race tests exercise multiple replicas. The 100% coverage gate is not a bug-free certificate; it prevents untested branches from remaining anonymous.
+- **Connected examples in one domain** — movie and theater CRUD leads into seat holds, purchases, and showtime creation, introducing concurrency, idempotency, and recovery step by step. Domain features illustrate design patterns that can be reused in other projects.
+- **Module boundaries applied where needed** — within the five SoLA layers, modules in the same layer do not call each other directly; composition moves to a higher layer. Each domain owns its collection and collaborates through IDs and public APIs. Gateway calls Core directly for CRUD that needs only one Core, avoiding an unnecessary Application service.
+- **Distributed execution within a monolith** — multiple replicas of the same API handle seat contention, duplicate requests, and events across replicas. This exposes the distributed design concerns that arise even within a single application.
+- **Guarantees and recovery suited to the problem** — Redis locks reduce contention cost, while atomic DB transitions, CAS, and transactions preserve consistency. Purchases use a state machine and lease reconciliation; showtime creation uses a Restate workflow. The examples show how recovery approaches fit different problems.
+- **A development environment for verifying changes** — the Dev Container uses real infrastructure, including MongoDB Replica Set and Redis Cluster. Integration tests, race tests across replicas, and repeated CI runs verify changes. The 100% coverage gate makes unexecuted branches visible when they are introduced.
+- **Documentation that supports execution and decisions** — executable API scenarios show actual request and response flows, while design decisions explain choices, alternatives, and limitations. Together they help you decide what to retain or change for your own project.
 
 See [apps](docs/apps.md) for layers and distributed boundaries and [design decisions](docs/reference/decisions.md) for reasoning and limitations.
 

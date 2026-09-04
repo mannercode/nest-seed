@@ -6,14 +6,16 @@
 [![Test Stability](https://github.com/mannercode/nest-seed/actions/workflows/test-stability.yaml/badge.svg)](https://github.com/mannercode/nest-seed/actions/workflows/test-stability.yaml)
 [![Test API Race](https://github.com/mannercode/nest-seed/actions/workflows/test-api-race.yaml/badge.svg)](https://github.com/mannercode/nest-seed/actions/workflows/test-api-race.yaml)
 
-실무 프로젝트의 출발점으로 사용하는 NestJS 모노레포다. 영화 예매라는 익숙한 도메인으로 모놀리스의 모듈 경계, 다중 복제본의 경합, 부분 실패, 비동기 작업 추적을 함께 보여 준다. `apps/api`가 본체이고 `console`과 `user-app`은 Next.js 연결을 보여 주는 최소 데모다.
+실무 프로젝트의 출발점으로 사용하는 NestJS 모노레포다. 영화 예매라는 익숙한 흐름을 따라 모듈 경계부터 다중 복제본의 경합, 중복 요청, 부분 실패와 복구까지 읽고 실행할 수 있다. `apps/api`가 본체이고 `console`과 `user-app`은 Next.js 연결을 보여 주는 최소 데모다.
 
-이 시드에서 먼저 이해할 개념은 네 가지다.
+이 시드의 특징은 예제·설계·검증을 하나의 흐름으로 연결한 구성에 있다.
 
-- **SoLA 5계층** — 같은 계층의 모듈끼리도 직접 호출하지 않는다. 여러 모듈의 조합은 위 계층으로 올리고, HTTP controller는 Gateway로 분리한다.
-- **서비스가 소유하는 데이터 경계** — 도메인은 자기 collection만 직접 다루고 다른 도메인과 ID·공개 API로 협력한다. 이 모델과 잘 맞는 MongoDB를 사용한다.
-- **분산 보장의 분리** — Redis 락은 경합 비용을 줄일 뿐이고, 정합성은 DB 원자 전이·CAS·transaction이 지킨다. Restate는 중단 후 재개를, NATS는 프로세스 사이 메시지를 맡는다.
-- **행동 중심 검증** — 실제 인프라를 사용하는 통합 테스트와 다중 복제본 race test를 둔다. 커버리지 100%는 무결점 인증이 아니라 테스트되지 않은 분기를 익명으로 남기지 않는 개발 제약이다.
+- **하나의 도메인으로 이어지는 예제** — 영화·극장 CRUD에서 좌석 선점, 구매, 상영 생성으로 이어지며 동시성·멱등성·복구를 단계적으로 보여 준다. 도메인 기능은 다른 프로젝트에서도 재사용할 설계 패턴을 설명하는 예제로 구성한다.
+- **필요한 만큼 적용하는 모듈 경계** — SoLA 5계층에서 같은 계층의 모듈끼리 직접 호출하지 않고, 조합은 위 계층으로 올린다. 각 도메인은 자기 collection을 소유하고 ID·공개 API로 협력한다. Core 하나로 끝나는 CRUD는 Gateway가 직접 호출해 불필요한 Application을 만들지 않는다.
+- **모놀리스에서 다루는 분산 실행** — 같은 API를 여러 복제본으로 실행하며 좌석 경쟁, 중복 요청, 복제본 사이의 이벤트 전달을 다룬다. 하나의 애플리케이션에서도 필요한 분산 설계를 확인할 수 있다.
+- **문제에 맞춘 보장과 복구 방식** — Redis 락은 경합 비용을 줄이고, DB 원자 전이·CAS·transaction이 정합성을 지킨다. 구매에는 상태 머신과 lease 재조정을, 상영 생성에는 Restate workflow를 적용해 문제에 따른 복구 방식을 비교할 수 있다.
+- **변경을 검증할 수 있는 개발 환경** — Dev Container에서 실제 MongoDB Replica Set·Redis Cluster 등을 사용하고, 통합 테스트·다중 복제본 race test·반복 CI로 변경을 검증한다. 커버리지 100%는 실행되지 않은 분기를 변경 시점에 드러내는 개발 제약이다.
+- **실행과 판단에 연결되는 문서** — 실행 가능한 API 시나리오로 실제 요청·응답 흐름을 확인하고, 설계 결정 문서에서 선택 이유와 대안·한계를 읽는다. 자신의 프로젝트에 맞춰 무엇을 유지하고 바꿀지 판단할 근거를 제공한다.
 
 계층과 분산 경계는 [apps 문서](docs/apps.md), 선택 이유와 한계는 [설계 결정](docs/reference/decisions.md)에 있다.
 
