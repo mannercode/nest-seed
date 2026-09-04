@@ -86,5 +86,5 @@ API와 NGINX의 활성 로그는 구조화된 한 줄로 stdout/stderr에 남긴
 | OpenAPI / Swagger | 성공 흐름은 실제 요청을 보내는 curl spec으로 검증한다. 정적 카탈로그와 실제 동작의 drift를 두지 않는 선택이다. |
 | Passport          | 현재 인증 흐름은 NestJS Guard로 직접 표현하는 편이 더 작고 읽기 쉽다.                                          |
 | Nx / Turborepo    | 현재 workspace 규모에서 pnpm으로 충분하며 추가 task graph·cache 도구의 이득이 유지 비용보다 작다.              |
-| pino              | 현재 로깅 처리량은 병목이 아니며 winston 기반 context·redaction을 다시 작성할 이유가 없다.                     |
+| pino              | 현재 로깅 처리량은 병목이 아니며 winston 기반 구조화 로그를 교체할 이유가 없다.                                |
 | Service Mesh      | 현재 Compose 기반 시드에는 과하며 Kubernetes 운영으로 이동할 때 재검토한다.                                    |

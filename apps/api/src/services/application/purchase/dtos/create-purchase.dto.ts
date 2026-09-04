@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { PurchaseItemSchema, PurchaseItemType } from '#core'
+import { PurchaseItemSchema } from '#core'
 
 const positiveNumber = z
     .union([z.number(), z.string(), z.boolean()])
@@ -7,13 +7,7 @@ const positiveNumber = z
     .pipe(z.number().positive())
 
 export const CreatePurchaseSchema = z.strictObject({
-    purchaseItems: z
-        .array(PurchaseItemSchema)
-        .min(1)
-        .refine(
-            (items) => items.every((item) => item.type === PurchaseItemType.Tickets),
-            'Food purchases are not supported; only tickets can be purchased.'
-        ),
+    purchaseItems: z.array(PurchaseItemSchema).min(1),
     totalPrice: positiveNumber
 })
 

@@ -6,7 +6,7 @@ import {
     UpdateAdminSchema
 } from '../index.js'
 
-describe('admin request schemas', () => {
+describe('AdminAuthPayloadSchema, AdminCredentialsSchema, AdminRefreshTokenBodySchema, CreateAdminSchema, UpdateAdminSchema', () => {
     it('문자열 필드의 기존 암시적 변환을 유지한다', () => {
         expect(AdminCredentialsSchema.parse({ email: 'admin@mail.com', password: 1234 })).toEqual({
             email: 'admin@mail.com',
@@ -44,11 +44,14 @@ describe('admin request schemas', () => {
     it('JWT 전용 부가 claim은 허용하되 필요한 claim만 반환한다', () => {
         expect(
             AdminAuthPayloadSchema.parse({
-                authVersion: null,
+                authVersion: 0,
                 email: 'admin@mail.com',
                 exp: 1,
                 sub: 'admin-id'
             })
-        ).toEqual({ authVersion: null, email: 'admin@mail.com', sub: 'admin-id' })
+        ).toEqual({ authVersion: 0, email: 'admin@mail.com', sub: 'admin-id' })
+        expect(
+            AdminAuthPayloadSchema.safeParse({ email: 'admin@mail.com', sub: 'admin-id' }).success
+        ).toBe(false)
     })
 })

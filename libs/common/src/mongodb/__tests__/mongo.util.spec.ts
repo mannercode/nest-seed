@@ -1,10 +1,9 @@
 import { BadRequestException, Logger } from '@nestjs/common'
-import { Decimal128, MongoWriteConcernError, ObjectId } from 'mongodb'
+import { Decimal128, ObjectId } from 'mongodb'
 import {
     assignIfDefined,
     encodeMongoValues,
     isDuplicateKeyError,
-    isWriteConcernTimeoutError,
     mapDocToDto,
     mongoArrayToPublic,
     mongoToPublic,
@@ -16,7 +15,7 @@ import {
     withoutPublicId
 } from '../index.js'
 
-describe('ObjectId helpers', () => {
+describe('newObjectIdString, objectId, objectIds', () => {
     it('새로운 문자열 ObjectId를 만든다', () => {
         const first = newObjectIdString()
         const second = newObjectIdString()
@@ -40,7 +39,7 @@ describe('ObjectId helpers', () => {
     })
 })
 
-describe('Mongo document mapping', () => {
+describe('mongoToPublic, mongoArrayToPublic, withoutPublicId, encodeMongoValues, plainDateFromMongo', () => {
     it('ObjectId의 문자열 id를 원본 문서에 추가한다', () => {
         const _id = new ObjectId()
         const doc = { _id, name: 'sample' }
@@ -213,7 +212,7 @@ describe('QueryBuilder', () => {
     })
 })
 
-describe('Mongo errors', () => {
+describe('isDuplicateKeyError', () => {
     it('duplicate key code만 식별한다', () => {
         expect(isDuplicateKeyError({ code: 11000 })).toBe(true)
         expect(isDuplicateKeyError({ code: 121 })).toBe(false)
@@ -221,68 +220,9 @@ describe('Mongo errors', () => {
         expect(isDuplicateKeyError(null)).toBe(false)
         expect(isDuplicateKeyError('error')).toBe(false)
     })
-
-    it('MongoWriteConcernError와 중첩된 timeout 정보를 식별한다', () => {
-        const driverError = new MongoWriteConcernError({
-            ok: 1,
-            writeConcernError: {
-                code: 64,
-                codeName: 'WriteConcernFailed',
-                errInfo: { wtimeout: true },
-                errmsg: 'waiting for replication timed out'
-            }
-        })
-
-        expect(isWriteConcernTimeoutError(driverError)).toBe(true)
-        expect(
-            isWriteConcernTimeoutError({
-                errorResponse: { codeName: 'WriteConcernFailed', errInfo: { wtimeout: true } }
-            })
-        ).toBe(true)
-        expect(
-            isWriteConcernTimeoutError({
-                result: {
-                    writeConcernError: { code: 64, errmsg: 'waiting for replication timed out' }
-                }
-            })
-        ).toBe(true)
-    })
-
-    it('timeout 메시지의 지원 형태와 대소문자를 처리한다', () => {
-        expect(isWriteConcernTimeoutError({ code: 64, message: 'WTIMEOUT' })).toBe(true)
-        expect(isWriteConcernTimeoutError({ code: 64, message: 'Write Concern Timed Out' })).toBe(
-            true
-        )
-        expect(
-            isWriteConcernTimeoutError({
-                name: 'MongoWriteConcernError',
-                errmsg: 'timed out waiting for replication'
-            })
-        ).toBe(true)
-    })
-
-    it('write concern timeout이 아닌 값과 순환 cause는 거부한다', () => {
-        expect(
-            isWriteConcernTimeoutError({
-                code: 64,
-                codeName: 'WriteConcernFailed',
-                errInfo: { wtimeout: false },
-                message: 'write concern failed'
-            })
-        ).toBe(false)
-        expect(
-            isWriteConcernTimeoutError({ errInfo: { wtimeout: true }, name: 'OtherError' })
-        ).toBe(false)
-
-        const circular: { cause?: unknown; name: string } = { name: 'OtherError' }
-        circular.cause = circular
-        expect(isWriteConcernTimeoutError(circular)).toBe(false)
-        expect(isWriteConcernTimeoutError(null)).toBe(false)
-        expect(isWriteConcernTimeoutError('wtimeout')).toBe(false)
-    })
 })
 
-describe('plain object helpers', () => {
+describe('assignIfDefined, mapDocToDto', () => {
     class SampleDto {
         id: string
         name: string

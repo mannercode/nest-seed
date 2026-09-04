@@ -42,10 +42,6 @@ export class TicketsService {
         return this.toDtos(tickets)
     }
 
-    async releaseOwnedPurchaseForCompensation(ticketIds: string[], purchaseRecordId: string) {
-        await this.repository.releaseOwnedPurchaseForCompensation(ticketIds, purchaseRecordId)
-    }
-
     async sellForPurchase(
         ticketIds: string[],
         purchaseRecordId: string,

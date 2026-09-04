@@ -6,6 +6,8 @@
 
 앱이 운영 중 사용하는 MongoDB, Redis/cache, JWT, S3, NATS, 로거 코드다. 특정 도메인에서만 쓰는 구현을 공유 패키지로 올리지 않는다. 예를 들어 Restate workflow는 showtime-creation의 NestJS 제공자를 직접 사용하므로 해당 도메인에 남는다.
 
+`apps/api`는 시간·JSON·환경·경로 처럼 런타임 API 변경의 영향을 받는 작업을 `common`의 제공 유틸로 통일한다. 사용처가 적어도 그 교체 경계를 바로 없애지 않는다.
+
 ## 2. testing — 테스트 소비자용 코드
 
 spec이 import하는 HTTP client와 fixture helper를 둔다. 앱은 이 패키지를 dev dependency로만 받으므로 테스트 도구가 운영 의존성에 섞이지 않는다.

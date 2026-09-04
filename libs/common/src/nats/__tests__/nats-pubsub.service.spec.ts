@@ -163,12 +163,12 @@ describe('NatsPubSubService', () => {
         expect(queueReceivedA.length + queueReceivedB.length).toBe(1)
     })
 
-    it('핸들러가 예외를 던지면 소비 루프가 종료되고 이후 메시지는 전달되지 않는다', async () => {
+    it('한 핸들러가 예외를 던져도 나머지 핸들러와 이후 메시지를 계속 전달한다', async () => {
         const errorSpy = vi.spyOn(NestLogger.prototype, 'error').mockImplementation(() => undefined)
 
         const received: string[] = []
 
-        await fix.pubSubB.subscribe(subject, () => {
+        await fix.pubSubB.subscribe(subject, async () => {
             throw new Error('boom')
         })
         await fix.pubSubB.subscribe(subject, (msg) => received.push(msg))
@@ -178,9 +178,9 @@ describe('NatsPubSubService', () => {
         await waitFor(() => errorSpy.mock.calls.some((c) => String(c[0]).includes(subject)))
 
         await fix.pubSubA.publish(subject, 'next')
-        await new Promise((r) => setTimeout(r, 100))
+        await waitFor(() => received.length === 2)
 
-        expect(received).toEqual([])
+        expect(received).toEqual(['after-throw', 'next'])
         errorSpy.mockRestore()
     })
 

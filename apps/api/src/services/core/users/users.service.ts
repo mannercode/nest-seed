@@ -23,11 +23,8 @@ export class UsersService {
         const password = await this.authenticationService.hash(createDto.password)
 
         try {
-            const result = await this.repository.create({ ...createDto, password })
-            if (result.status === 'conflict') {
-                throw new ConflictException(UserErrors.EmailAlreadyExists(createDto.email))
-            }
-            return this.toDto(result.user)
+            const user = await this.repository.create({ ...createDto, password })
+            return this.toDto(user)
         } catch (error) {
             if (isDuplicateKeyError(error)) {
                 throw new ConflictException(UserErrors.EmailAlreadyExists(createDto.email))
@@ -47,7 +44,7 @@ export class UsersService {
         if (!user) return null
 
         const tokens = await this.authenticationService.generateAuthTokens({
-            authVersion: (user as { authVersion?: number }).authVersion ?? 0,
+            authVersion: user.authVersion,
             email: user.email,
             sub: user.id
         })

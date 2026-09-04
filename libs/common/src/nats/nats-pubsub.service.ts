@@ -17,7 +17,7 @@ function getSubscriptionKey(subject: string, queue?: string) {
     return JSON.stringify([subject, queue ?? null])
 }
 
-// 같은 subject/queue의 핸들러는 등록 순서로 실행되며 예외가 나면 그 소비 루프가 중단된다.
+// 같은 subject/queue의 핸들러는 등록 순서로 실행한다.
 @Injectable()
 export class NatsPubSubService implements OnModuleDestroy {
     private readonly logger = new Logger(NatsPubSubService.name)
@@ -80,7 +80,14 @@ export class NatsPubSubService implements OnModuleDestroy {
                 for await (const msg of state.sub) {
                     const text = msg.string()
                     for (const handler of state.handlers) {
-                        handler(text)
+                        try {
+                            await handler(text)
+                        } catch (err) {
+                            this.logger.error(
+                                `NATS message handler failed (subject=${state.subject}, queue=${state.queue ?? 'none'})`,
+                                err
+                            )
+                        }
                     }
                 }
             } catch (err) {

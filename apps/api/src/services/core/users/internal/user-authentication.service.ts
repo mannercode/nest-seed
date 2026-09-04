@@ -8,10 +8,9 @@ import {
 } from '../dtos/index.js'
 import { UsersRepository } from '../users.repository.js'
 
-// OWASP가 legacy bcrypt에 제시하는 최소 work factor다. 운영 하드웨어에 맞춰 더 큰 값을 검토한다.
 const BCRYPT_SALT_ROUNDS = 10
 
-// 없는 이메일도 bcrypt를 거쳐 가입 여부가 응답 시간으로 드러나지 않게 한다.
+// 없는 계정도 bcrypt 비교를 거쳐 로그인 실패 응답 시간 차이를 줄인다.
 const TIMING_DUMMY_HASH = hashSync('timing-equalization-only', BCRYPT_SALT_ROUNDS)
 
 @Injectable()
@@ -63,6 +62,6 @@ export class UserAuthenticationService {
         if (!result.success) return false
 
         const candidate = result.data
-        return this.repository.isAuthVersionCurrent(candidate.sub, candidate.authVersion ?? 0)
+        return this.repository.isAuthVersionCurrent(candidate.sub, candidate.authVersion)
     }
 }

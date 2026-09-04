@@ -30,19 +30,15 @@ export class AppConfigService extends BaseConfigService {
         AUTH_ADMIN_REFRESH_TOKEN_EXPIRATION: requiredString,
         AUTH_AUDIENCE: requiredString,
         AUTH_ISSUER: requiredString,
-        AUTH_LOGIN_ACCOUNT_FAILURE_LIMIT: numberFromEnvironment
-            .pipe(z.number().int().min(1))
-            .default(5),
-        AUTH_LOGIN_FAILURE_WINDOW: requiredString.default('15m'),
-        AUTH_LOGIN_IP_FAILURE_LIMIT: numberFromEnvironment
-            .pipe(z.number().int().min(1))
-            .default(50),
+        AUTH_LOGIN_ACCOUNT_FAILURE_LIMIT: numberFromEnvironment.pipe(z.number().int().min(1)),
+        AUTH_LOGIN_FAILURE_WINDOW: requiredString,
+        AUTH_LOGIN_IP_FAILURE_LIMIT: numberFromEnvironment.pipe(z.number().int().min(1)),
         AUTH_REFRESH_SECRET: z.string().min(20),
         AUTH_REFRESH_TOKEN_EXPIRATION: requiredString,
         API_PORT: numberFromEnvironment,
         HTTP_PAGINATION_DEFAULT_SIZE: numberFromEnvironment,
         // 페이지 상한. 기본값(HTTP_PAGINATION_DEFAULT_SIZE)과 분리해, 기본값을 조정해도 상한이 따라 움직이지 않게 한다.
-        HTTP_PAGINATION_MAX_SIZE: numberFromEnvironment.default(100),
+        HTTP_PAGINATION_MAX_SIZE: numberFromEnvironment,
 
         HTTP_REQUEST_PAYLOAD_LIMIT: requiredString,
         LOG_CONSOLE_LEVEL: requiredString,
@@ -72,12 +68,12 @@ export class AppConfigService extends BaseConfigService {
 
         PROJECT_ID: requiredString,
 
-        ASSET_UPLOAD_EXPIRES_SEC: numberFromEnvironment.default(60 * 60),
-        ASSET_DOWNLOAD_EXPIRES_SEC: numberFromEnvironment.default(60 * 60),
-        TICKET_HOLD_DURATION_MS: numberFromEnvironment.default(10 * 60 * 1000),
-        TICKET_MAX_PER_PURCHASE: numberFromEnvironment.default(10),
-        TICKET_PRICE: numberFromEnvironment.default(10_000),
-        TICKET_PURCHASE_CUTOFF_MINUTES: numberFromEnvironment.default(30)
+        ASSET_UPLOAD_EXPIRES_SEC: numberFromEnvironment,
+        ASSET_DOWNLOAD_EXPIRES_SEC: numberFromEnvironment,
+        TICKET_HOLD_DURATION_MS: numberFromEnvironment,
+        TICKET_MAX_PER_PURCHASE: numberFromEnvironment,
+        TICKET_PRICE: numberFromEnvironment,
+        TICKET_PURCHASE_CUTOFF_MINUTES: numberFromEnvironment
     })
 
     get auth() {

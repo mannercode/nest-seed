@@ -1,7 +1,7 @@
 import type { INestApplication } from '@nestjs/common'
 import { createTestContext, createHttpTestContext } from '../index.js'
 
-describe('test context setup cleanup', () => {
+describe('createTestContext, createHttpTestContext', () => {
     it('앱 초기화가 실패하면 모듈을 정리하고 원래 오류를 다시 던진다', async () => {
         const setupError = new Error('app init failed')
         const onModuleDestroy = vi.fn()

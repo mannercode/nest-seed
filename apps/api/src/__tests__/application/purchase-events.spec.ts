@@ -174,7 +174,7 @@ describe('PurchaseEvents', () => {
     })
 })
 
-describe('PurchaseNotificationService lifecycle', () => {
+describe('PurchaseNotificationService', () => {
     it('소비 iterator가 조용히 끝나도 비정상 종료로 기록한다', async () => {
         const messages = fakeMessages(async function* () {})
         const { service, errorSpy } = await createNotificationService(messages)

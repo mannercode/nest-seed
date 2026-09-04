@@ -20,15 +20,8 @@ export type BearerAuthOptions = {
     validate?: (payload: unknown) => Promise<boolean>
 }
 
-export type BasicAuthOptions = {
-    validate: (username: string, password: string) => Promise<unknown>
-}
-
 export type AuthGuardOptions = {
-    /** 설정하면 `Authorization: Bearer ...` JWT를 검증한다. */
-    bearer?: BearerAuthOptions
-    /** 설정하면 `Authorization: Basic ...` 자격증명을 검증한다. */
-    basic?: BasicAuthOptions
+    bearer: BearerAuthOptions
     /** true이면 `Authorization` 헤더가 없을 때도 통과시키고 `req.user`를 null로 둔다. */
     optional?: boolean
     /**
@@ -39,19 +32,13 @@ export type AuthGuardOptions = {
     errorBody?: string | object
 }
 
-// 설정된 Bearer/Basic 방식만 허용하고 optional 라우트는 헤더가 없을 때 user=null로 통과시킨다.
 @Injectable()
 export abstract class AuthGuard implements CanActivate {
     constructor(
         protected readonly jwtService: JwtService,
         protected readonly reflector: Reflector,
         protected readonly options: AuthGuardOptions
-    ) {
-        // 모든 요청이 401이 되는 설정 오류를 부팅 시점에 드러낸다.
-        if (!options.bearer && !options.basic) {
-            throw new Error('AuthGuard requires at least one of `bearer` or `basic` options')
-        }
-    }
+    ) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         if (this.isPublicRoute(context)) return true
@@ -67,28 +54,18 @@ export abstract class AuthGuard implements CanActivate {
             throw new UnauthorizedException(this.options.errorBody)
         }
 
-        // Basic(RFC 7617)과 Bearer(RFC 6750)는 스킴 뒤에 공백과 자격증명 값을 요구한다.
-        // 이 두 형식에 필요한 공백이 없으면 지원하는 인증값으로 해석하지 않는다.
         const sep = authorization.indexOf(' ')
         if (sep === -1) {
             throw new UnauthorizedException(this.options.errorBody)
         }
         const scheme = authorization.slice(0, sep)
-        const value = authorization.slice(sep + 1).trim()
-
-        // RFC 9110 §11.1에 따라 인증 스킴 이름은 대소문자를 구분하지 않는다.
-        const lower = scheme.toLowerCase()
-
-        const { bearer, basic } = this.options
-        if (lower === 'bearer' && bearer) {
-            request.user = await this.verifyBearer(value, bearer)
-            return true
+        const token = authorization.slice(sep + 1).trim()
+        if (scheme.toLowerCase() !== 'bearer') {
+            throw new UnauthorizedException(this.options.errorBody)
         }
-        if (lower === 'basic' && basic) {
-            request.user = await this.verifyBasic(value, basic)
-            return true
-        }
-        throw new UnauthorizedException(this.options.errorBody)
+
+        request.user = await this.verifyBearer(token, this.options.bearer)
+        return true
     }
 
     // JWT 검증 오류는 종류를 노출하지 않고 같은 401 응답으로 매핑한다.
@@ -109,20 +86,6 @@ export abstract class AuthGuard implements CanActivate {
             throw new UnauthorizedException(this.options.errorBody)
         }
         return payload
-    }
-
-    protected async verifyBasic(value: string, basic: BasicAuthOptions): Promise<unknown> {
-        const decoded = Buffer.from(value, 'base64').toString('utf-8')
-        // password에 ':'가 포함될 수 있으므로 첫 번째 ':'만 분리한다.
-        const idx = decoded.indexOf(':')
-        if (idx === -1) throw new UnauthorizedException(this.options.errorBody)
-
-        const username = decoded.slice(0, idx)
-        const password = decoded.slice(idx + 1)
-
-        const user = await basic.validate(username, password)
-        if (!user) throw new UnauthorizedException(this.options.errorBody)
-        return user
     }
 
     protected isPublicRoute(context: ExecutionContext): boolean {

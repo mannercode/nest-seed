@@ -16,7 +16,7 @@ import {
     type ShowtimeCreationWorkflowInput
 } from '../index.js'
 
-describe('Showtime creation Restate workflow', () => {
+describe('createShowtimeCreationWorkflow', () => {
     const input = {
         createDto: {
             durationInMinutes: 90,

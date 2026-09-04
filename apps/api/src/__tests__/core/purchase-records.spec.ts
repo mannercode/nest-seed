@@ -69,7 +69,7 @@ describe('PurchaseRecordsService', () => {
         })
     })
 
-    describe('durable purchase state', () => {
+    describe('PurchaseRecordStatus', () => {
         it('pending은 고객 이력에서 숨기고 완료 전이 뒤 durable event로 조회한다', async () => {
             const createDto = buildCreatePurchaseRecordDto({ paymentId: null })
             const pending = await purchaseRecordsService.create(createDto, { pending: true })

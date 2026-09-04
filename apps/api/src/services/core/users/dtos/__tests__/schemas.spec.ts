@@ -7,7 +7,7 @@ import {
     UserCredentialsSchema
 } from '../index.js'
 
-describe('user request schemas', () => {
+describe('CreateUserSchema, RefreshTokenBodySchema, SearchUsersPageSchema, UpdateUserSchema, UserAuthPayloadSchema, UserCredentialsSchema', () => {
     it('생년월일과 문자열 필드의 기존 암시적 변환을 유지한다', () => {
         expect(
             CreateUserSchema.parse({
@@ -59,11 +59,14 @@ describe('user request schemas', () => {
     it('JWT 전용 부가 claim은 허용하되 필요한 claim만 반환한다', () => {
         expect(
             UserAuthPayloadSchema.parse({
-                authVersion: null,
+                authVersion: 0,
                 email: 'user@mail.com',
                 familyId: 'family-id',
                 sub: 'user-id'
             })
-        ).toEqual({ authVersion: null, email: 'user@mail.com', sub: 'user-id' })
+        ).toEqual({ authVersion: 0, email: 'user@mail.com', sub: 'user-id' })
+        expect(
+            UserAuthPayloadSchema.safeParse({ email: 'user@mail.com', sub: 'user-id' }).success
+        ).toBe(false)
     })
 })

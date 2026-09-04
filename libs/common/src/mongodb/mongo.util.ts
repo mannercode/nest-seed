@@ -96,57 +96,6 @@ export function isDuplicateKeyError(error: unknown): boolean {
     return typeof error === 'object' && error !== null && 'code' in error && error.code === 11000
 }
 
-const WRITE_CONCERN_FAILED_CODE = 64
-type ErrorRecord = Record<string, unknown>
-
-export function isWriteConcernTimeoutError(error: unknown): boolean {
-    const pending: { isWriteConcernField: boolean; value: unknown }[] = [
-        { isWriteConcernField: false, value: error }
-    ]
-    const visited = new Set<object>()
-
-    while (pending.length > 0) {
-        const current = pending.pop()
-        if (!current || !isErrorRecord(current.value) || visited.has(current.value)) continue
-
-        const record = current.value
-        visited.add(record)
-        const errInfo = isErrorRecord(record.errInfo) ? record.errInfo : undefined
-        const identifiesWriteConcern =
-            current.isWriteConcernField ||
-            record.name === 'MongoWriteConcernError' ||
-            record.code === WRITE_CONCERN_FAILED_CODE ||
-            record.codeName === 'WriteConcernFailed'
-        const identifiesTimeout =
-            errInfo?.wtimeout === true ||
-            [record.message, record.errmsg].some(
-                (message) => typeof message === 'string' && isWriteConcernTimeoutMessage(message)
-            )
-
-        if (identifiesWriteConcern && identifiesTimeout) return true
-
-        for (const key of ['cause', 'errorResponse', 'result'] as const) {
-            pending.push({ isWriteConcernField: false, value: record[key] })
-        }
-        pending.push({ isWriteConcernField: true, value: record.writeConcernError })
-    }
-
-    return false
-}
-
-function isErrorRecord(value: unknown): value is ErrorRecord {
-    return typeof value === 'object' && value !== null
-}
-
-function isWriteConcernTimeoutMessage(value: string): boolean {
-    const message = value.toLowerCase()
-    return (
-        message.includes('wtimeout') ||
-        (message.includes('timed out') &&
-            (message.includes('waiting for replication') || message.includes('write concern')))
-    )
-}
-
 export type QueryBuilderOptions = { allowEmpty?: boolean }
 type Transform<T> = (value: T) => any
 

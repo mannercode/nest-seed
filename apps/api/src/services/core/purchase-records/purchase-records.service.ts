@@ -50,18 +50,9 @@ export class PurchaseRecordsService {
         return record ? this.toDto(record) : undefined
     }
 
-    async findStatusById(purchaseRecordId: string) {
-        const record = await this.repository.findById(purchaseRecordId)
-        if (!record) return undefined
-
-        return this.getLegacyCompatibleStatus(record)
-    }
-
-    async findResolutionByPaymentId(paymentId: string) {
-        const record = await this.repository.findByPaymentId(paymentId)
-        if (!record) return undefined
-
-        return { purchaseRecordId: record.id, status: this.getLegacyCompatibleStatus(record) }
+    async getStatusById(purchaseRecordId: string) {
+        const record = await this.repository.getById(purchaseRecordId)
+        return record.status
     }
 
     async findPendingBefore(before: Temporal.Instant) {
@@ -159,12 +150,6 @@ export class PurchaseRecordsService {
 
     private toDto(purchaseRecord: PurchaseRecord) {
         return ensure(this.toDtos([purchaseRecord])[0])
-    }
-
-    private getLegacyCompatibleStatus(record: PurchaseRecord) {
-        // status 도입 전 raw 문서는 런타임에는 undefined일 수 있다.
-        const { status } = record as Partial<Pick<PurchaseRecord, 'status'>>
-        return status ?? PurchaseRecordStatus.Completed
     }
 
     private toDtos(purchaseRecords: PurchaseRecord[]) {

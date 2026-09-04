@@ -1,6 +1,6 @@
 import { InstantFromInputSchema, PlainDateFromInputSchema } from '../index.js'
 
-describe('Temporal input schemas', () => {
+describe('InstantFromInputSchema, PlainDateFromInputSchema', () => {
     it('지원 입력을 의미에 맞는 Temporal 타입으로 변환한다', () => {
         expect(InstantFromInputSchema.parse('2023-06-18T12:12:34.567Z')).toBeInstanceOf(
             Temporal.Instant

@@ -11,8 +11,7 @@ import {
     type TicketDto,
     type UserDto,
     TicketHoldingService,
-    TicketsService,
-    PurchaseRecordStatus
+    TicketsService
 } from '#core'
 import { PaymentStatus, PaymentsService } from '#infrastructure'
 import {
@@ -29,8 +28,6 @@ import { TicketPurchaseService } from '../../services/application/purchase/inter
 import { AppConfigService } from '#config'
 import { Logger, HttpException } from '@nestjs/common'
 import { PurchaseRecordsRepository } from '../../services/core/purchase-records/purchase-records.repository.js'
-import { PaymentsRepository } from '../../services/infrastructure/payments/payments.repository.js'
-import { TicketsRepository } from '../../services/core/tickets/tickets.repository.js'
 
 describe('PurchaseService', () => {
     let fix: AppTestContext
@@ -516,11 +513,10 @@ describe('PurchaseService', () => {
                 })
             })
 
-            describe('티켓이 Sold로 전이된 뒤 구매 완료 커밋이 실패할 때', () => {
+            describe('티켓 판매와 구매 완료를 묶은 transaction이 실패할 때', () => {
                 let emit: MockInstance
 
-                // 보상 흐름이 실제로 Sold→Available 전이를 수행하는 경로를 검증한다.
-                // 위의 시나리오는 `completePurchase` 시작점에서 던지므로 티켓이 Available로 남아 보상은 no-op이지만, 여기는 전이 이후에 던져 보상이 진짜 되돌리기를 하도록 만든다.
+                // 티켓 판매 뒤 같은 transaction의 구매 완료를 실패시켜 전체 rollback을 검증한다.
                 beforeEach(async () => {
                     const events = fix.module.get(PurchaseEvents)
                     const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
@@ -538,7 +534,7 @@ describe('PurchaseService', () => {
                         .internalServerError()
                 })
 
-                it('Sold가 된 티켓을 다시 Available로 되돌린다', async () => {
+                it('티켓 판매를 rollback한다', async () => {
                     const ticketsService = fix.module.get(TicketsService)
                     const tickets = await ticketsService.getMany(pickIds(heldTickets))
                     expect(tickets.every((t) => t.status === TicketStatus.Available)).toBe(true)
@@ -682,60 +678,6 @@ describe('PurchaseService', () => {
                     )
                     expect(pendingAfter).toEqual([])
                 })
-            })
-
-            it('티켓·결제 보상이 모두 실패해도 durable 상태를 남기고 재시도한다', async () => {
-                const purchaseService = fix.module.get(PurchaseService)
-                const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-                const ticketsService = fix.module.get(TicketsService)
-                const paymentsService = fix.module.get(PaymentsService)
-
-                // 트랜잭션 fence 도입 전에 남았거나 이전 버전이 만든
-                // Sold+Pending 상태도 durable reconciliation이 복구해야 한다.
-                const createDto = buildCreatePurchaseDto(heldTickets)
-                const purchaseRecord = await purchaseRecordsService.create(
-                    { ...createDto, paymentId: null, userId: user.id },
-                    { pending: true }
-                )
-                const payment = await paymentsService.create({
-                    amount: createDto.totalPrice,
-                    purchaseRecordId: purchaseRecord.id,
-                    userId: user.id
-                })
-                await purchaseRecordsService.setPaymentId(purchaseRecord.id, payment.id)
-                await ticketsService.sellForPurchase(pickIds(heldTickets), purchaseRecord.id)
-
-                vi.spyOn(
-                    ticketsService,
-                    'releaseOwnedPurchaseForCompensation'
-                ).mockRejectedValueOnce(new Error('ticket compensation failed'))
-                vi.spyOn(paymentsService, 'cancel').mockRejectedValueOnce(
-                    new Error('payment compensation failed')
-                )
-
-                const pendingBefore = await purchaseRecordsService.findPendingBefore(DateUtil.now())
-                expect(pendingBefore).toEqual([expect.objectContaining({ id: purchaseRecord.id })])
-                expect(
-                    (await getTickets(fix, pickIds(heldTickets))).every(
-                        (ticket) => ticket.status === TicketStatus.Sold
-                    )
-                ).toBe(true)
-                expect(ensure((await getPayments(fix, [payment.id]))[0]).status).toBe(
-                    PaymentStatus.Completed
-                )
-
-                await purchaseService.reconcilePendingPurchases()
-                await purchaseService.reconcilePendingPurchases()
-
-                expect(
-                    (await getTickets(fix, pickIds(heldTickets))).every(
-                        (ticket) => ticket.status === TicketStatus.Available
-                    )
-                ).toBe(true)
-                expect(ensure((await getPayments(fix, [payment.id]))[0]).status).toBe(
-                    PaymentStatus.Cancelled
-                )
-                expect(await purchaseRecordsService.findPendingBefore(DateUtil.now())).toEqual([])
             })
 
             it('active 완료와 reconciliation이 경쟁해도 한쪽 상태만 원자적으로 확정한다', async () => {
@@ -1165,28 +1107,6 @@ describe('PurchaseService', () => {
                 )
             ).toBe(true)
         })
-
-        it('미구현 food 구매는 DTO 검증에서 명확한 400을 반환한다', async () => {
-            await fix.httpClient
-                .post('/purchases')
-                .headers({ 'Idempotency-Key': randomUUID() })
-                .headers({ Authorization: `Bearer ${accessToken}` })
-                .body({
-                    purchaseItems: [{ itemId: oid(0xf0), type: PurchaseItemType.Foods }],
-                    totalPrice: 1
-                })
-                .badRequest(
-                    Errors.RequestValidation.Failed([
-                        {
-                            constraints: {
-                                validation:
-                                    'Food purchases are not supported; only tickets can be purchased.'
-                            },
-                            field: 'purchaseItems'
-                        }
-                    ])
-                )
-        })
     })
 
     it('주기 reconciliation은 stale 구매·결제 보상과 durable event 발행을 함께 실행한다', async () => {
@@ -1389,7 +1309,7 @@ describe('PurchaseService', () => {
         ])
     })
 
-    it('미해소 결제의 구매 기록이 없으면 fail-safe로 취소한다', async () => {
+    it('미해소 결제의 구매 기록이 없으면 결제를 변경하지 않는다', async () => {
         const purchaseService = fix.module.get(PurchaseService)
         const paymentsService = fix.module.get(PaymentsService)
         const payment = await paymentsService.create({
@@ -1402,170 +1322,11 @@ describe('PurchaseService', () => {
         await purchaseService.reconcileUnresolvedPayments(future)
 
         expect(ensure((await getPayments(fix, [payment.id]))[0]).status).toBe(
-            PaymentStatus.Cancelled
+            PaymentStatus.Completed
         )
-        expect(await paymentsService.findUnresolvedBefore(future)).toEqual([])
-    })
-
-    it('marker와 purchaseRecordId가 없는 legacy 결제도 구매 결과에 맞게 백필·정리한다', async () => {
-        const purchaseService = fix.module.get(PurchaseService)
-        const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-        const paymentsRepository = fix.module.get(PaymentsRepository)
-        const purchaseRecordsRepository = fix.module.get(PurchaseRecordsRepository)
-        const staleAt = DateUtil.toDate(DateUtil.add({ minutes: -11 }))
-        // native raw insert는 repository defaults를 거치지 않는다. Mongoose가 기존 문서에
-        // 만들던 base metadata는 직접 넣고, migration 대상 marker와 연결 ID만 생략한다.
-        const insertLegacyPayment = async () =>
-            paymentsRepository.collection.insertOne({
-                __v: 0,
-                amount: 1,
-                createdAt: staleAt,
-                deletedAt: null,
-                status: PaymentStatus.Completed,
-                updatedAt: staleAt,
-                userId: user.id
-            })
-
-        const successfulPayment = await insertLegacyPayment()
-        // PurchaseRecord raw 문서도 __v·timestamps·deletedAt은 당시 Mongoose 생성값을
-        // 재현한다. 첫 문서의 status만 upgrade 전 호환 경로를 검증하려고 생략한다.
-        const { insertedId: successfulRecordId } =
-            await purchaseRecordsRepository.collection.insertOne({
-                __v: 0,
-                createdAt: staleAt,
-                deletedAt: null,
-                paymentId: String(successfulPayment.insertedId),
-                purchaseEventStatus: 'published',
-                purchaseItems: [],
-                totalPrice: 1,
-                updatedAt: staleAt,
-                userId: user.id
-                // status 필드가 없는 upgrade 전 성공 기록이다.
-            })
-
-        const cancelledPayment = await insertLegacyPayment()
-        await purchaseRecordsRepository.collection.insertOne({
-            __v: 0,
-            createdAt: staleAt,
-            deletedAt: null,
-            paymentId: String(cancelledPayment.insertedId),
-            purchaseEventStatus: 'published',
-            purchaseItems: [],
-            status: PurchaseRecordStatus.Cancelled,
-            totalPrice: 1,
-            updatedAt: staleAt,
-            userId: user.id
-        })
-        const orphanPayment = await insertLegacyPayment()
-        const pendingPayment = await insertLegacyPayment()
-        const { insertedId: pendingRecordId } =
-            await purchaseRecordsRepository.collection.insertOne({
-                __v: 0,
-                createdAt: staleAt,
-                deletedAt: null,
-                paymentId: String(pendingPayment.insertedId),
-                purchaseEventStatus: 'pending',
-                purchaseItems: [],
-                status: PurchaseRecordStatus.Pending,
-                totalPrice: 1,
-                updatedAt: staleAt,
-                userId: user.id
-            })
-
-        expect(await purchaseRecordsService.findStatusById(String(successfulRecordId))).toBe(
-            PurchaseRecordStatus.Completed
-        )
-
-        await purchaseService.reconcileUnresolvedPayments(DateUtil.now())
-
-        const [successful, cancelled, orphan, pending] = await Promise.all(
-            [successfulPayment, cancelledPayment, orphanPayment, pendingPayment].map(
-                ({ insertedId }) => paymentsRepository.collection.findOne({ _id: insertedId })
-            )
-        )
-        expect(successful).toEqual(
-            expect.objectContaining({
-                purchaseRecordId: String(successfulRecordId),
-                requiresPurchaseResolution: false,
-                status: PaymentStatus.Completed
-            })
-        )
-        expect(cancelled).toEqual(
-            expect.objectContaining({
-                requiresPurchaseResolution: false,
-                status: PaymentStatus.Cancelled
-            })
-        )
-        expect(orphan).toEqual(
-            expect.objectContaining({
-                requiresPurchaseResolution: false,
-                status: PaymentStatus.Cancelled
-            })
-        )
-        expect(pending).toEqual(
-            expect.objectContaining({
-                purchaseRecordId: String(pendingRecordId),
-                requiresPurchaseResolution: true,
-                status: PaymentStatus.Completed
-            })
-        )
-    })
-
-    it('이전 보상이 티켓을 풀고 실패한 뒤 재판매되어도 새 owner를 유지하며 취소로 수렴한다', async () => {
-        const purchaseService = fix.module.get(PurchaseService)
-        const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-        const purchaseRecordsRepository = fix.module.get(PurchaseRecordsRepository)
-        const ticketsService = fix.module.get(TicketsService)
-        const ticketsRepository = fix.module.get(TicketsRepository)
-        const paymentsService = fix.module.get(PaymentsService)
-        const heldTickets = await holdTickets(fix, user.id, await createShowtimeAndTickets(fix))
-        const createDto = buildCreatePurchaseDto(heldTickets)
-        const oldPurchase = await purchaseRecordsService.create(
-            { ...createDto, paymentId: null, userId: user.id },
-            { pending: true }
-        )
-        const oldPayment = await paymentsService.create({
-            amount: createDto.totalPrice,
-            purchaseRecordId: oldPurchase.id,
-            userId: user.id
-        })
-        await purchaseRecordsService.setPaymentId(oldPurchase.id, oldPayment.id)
-        await ticketsService.sellForPurchase(pickIds(heldTickets), oldPurchase.id)
-        vi.spyOn(paymentsService, 'cancel').mockRejectedValueOnce(
-            new Error('payment compensation failed after ticket release')
-        )
-
-        await purchaseService.reconcilePendingPurchases(DateUtil.add({ milliseconds: 1000 }))
-        expect(
-            (await getTickets(fix, pickIds(heldTickets))).every(
-                (ticket) => ticket.status === TicketStatus.Available
-            )
-        ).toBe(true)
-
-        const newPurchase = await purchaseRecordsService.create({
-            ...createDto,
-            paymentId: oid(0xf8),
-            userId: user.id
-        })
-        await ticketsService.sellForPurchase(pickIds(heldTickets), newPurchase.id)
-
-        await purchaseService.reconcilePendingPurchases(DateUtil.add({ milliseconds: 1000 }))
-
-        const oldRecord = await purchaseRecordsRepository.collection.findOne({
-            _id: objectId(oldPurchase.id),
-            deletedAt: null
-        })
-        const tickets = await ticketsRepository.collection
-            .find({ _id: { $in: pickIds(heldTickets).map(objectId) }, deletedAt: null })
-            .toArray()
-        expect(oldRecord?.status).toBe(PurchaseRecordStatus.Cancelled)
-        expect(
-            tickets.every(
-                (ticket) =>
-                    ticket.status === TicketStatus.Sold &&
-                    ticket.purchaseRecordId === newPurchase.id
-            )
-        ).toBe(true)
+        expect(await paymentsService.findUnresolvedBefore(future)).toEqual([
+            expect.objectContaining({ id: payment.id })
+        ])
     })
 
     it('두 outbox publisher가 경쟁해도 publication lease 소유자만 한 번 emit한다', async () => {

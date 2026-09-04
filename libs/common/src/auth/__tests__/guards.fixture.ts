@@ -19,39 +19,6 @@ class BearerOnlyGuard extends AuthGuard {
 }
 
 @Injectable()
-class BasicOnlyGuard extends AuthGuard {
-    constructor(jwtService: JwtService, reflector: Reflector) {
-        super(jwtService, reflector, {
-            basic: {
-                validate: async (username, password) => {
-                    if (username === 'admin' && password === 'pass') {
-                        return { kind: 'admin', name: username }
-                    }
-                    // 콜론 포함 비밀번호 분리 검증 전용 계정.
-                    if (username === 'colon' && password === 'pa:ss:word') {
-                        return { kind: 'colon', name: username }
-                    }
-                    return null
-                }
-            }
-        })
-    }
-}
-
-@Injectable()
-class BearerAndBasicGuard extends AuthGuard {
-    constructor(jwtService: JwtService, reflector: Reflector) {
-        super(jwtService, reflector, {
-            bearer: { secret: TEST_SECRET },
-            basic: {
-                validate: async (username, password) =>
-                    username === 'root' && password === 'pass' ? { kind: 'root' } : null
-            }
-        })
-    }
-}
-
-@Injectable()
 class OptionalBearerGuard extends AuthGuard {
     constructor(jwtService: JwtService, reflector: Reflector) {
         super(jwtService, reflector, { bearer: { secret: TEST_SECRET }, optional: true })
@@ -79,24 +46,6 @@ class BearerController {
     }
 }
 
-@Controller('basic')
-@UseGuards(BasicOnlyGuard)
-class BasicController {
-    @Get('protected')
-    getProtected() {
-        return { message: 'ok' }
-    }
-}
-
-@Controller('mixed')
-@UseGuards(BearerAndBasicGuard)
-class MixedController {
-    @Get('protected')
-    getProtected() {
-        return { message: 'ok' }
-    }
-}
-
 @Controller('optional')
 @UseGuards(OptionalBearerGuard)
 class OptionalController {
@@ -120,16 +69,12 @@ export type GuardsFixture = {
 
 export async function createGuardsFixture(): Promise<GuardsFixture> {
     const testContext = await createHttpTestContext({
-        controllers: [BearerController, BasicController, MixedController, OptionalController],
+        controllers: [BearerController, OptionalController],
         imports: [JwtModule.register({ secret: TEST_SECRET })],
-        providers: [BearerOnlyGuard, BasicOnlyGuard, BearerAndBasicGuard, OptionalBearerGuard]
+        providers: [BearerOnlyGuard, OptionalBearerGuard]
     })
 
     const jwtService = testContext.module.get(JwtService)
 
     return { httpClient: testContext.httpClient, jwtService, teardown: testContext.close }
-}
-
-export function basicHeader(username: string, password: string) {
-    return 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64')
 }

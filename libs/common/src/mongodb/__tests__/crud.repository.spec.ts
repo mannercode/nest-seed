@@ -19,7 +19,7 @@ describe('CrudRepository', () => {
         await fix.teardown()
     })
 
-    describe('initialization', () => {
+    describe('onModuleInit', () => {
         let sequence = 0
 
         const harness = (options: { hardDelete?: boolean; indexes?: IndexDescription[] } = {}) => {
@@ -89,9 +89,16 @@ describe('CrudRepository', () => {
 
             expect(createIndexes).toHaveBeenCalledWith([sagaIndex])
         })
+
+        it('실제 초기화에서 빠진 인덱스를 만들었다', async () => {
+            const indexes = await fix.soft.collection.listIndexes().toArray()
+            const names = indexes.map(({ name }) => name)
+
+            expect(names).toEqual(expect.arrayContaining(['_id_', 'deletedAt_1', 'name_lookup']))
+        })
     })
 
-    describe('insert and mapping', () => {
+    describe('insertOne, insertMany, toDomainDocument', () => {
         it('기본 필드를 채우고 public id는 저장하지 않는다', async () => {
             const controller = new AbortController()
             const insertOne = vi.spyOn(fix.soft.collection, 'insertOne')
@@ -190,7 +197,7 @@ describe('CrudRepository', () => {
         })
     })
 
-    describe('read contracts', () => {
+    describe('findById, getById, findByIds, getByIds, allExist', () => {
         it('find/get 단건 조회와 누락을 구분한다', async () => {
             const created = await fix.soft.create('sample')
             const missingId = objectId('000000000000000000000000').toHexString()
@@ -239,7 +246,7 @@ describe('CrudRepository', () => {
         })
     })
 
-    describe('delete contracts', () => {
+    describe('deleteById, deleteByIds', () => {
         it('soft delete는 문서를 남기되 공용 조회에서 제외한다', async () => {
             const created = await fix.soft.create('soft')
 
@@ -279,7 +286,7 @@ describe('CrudRepository', () => {
         })
     })
 
-    describe('pagination', () => {
+    describe('findWithPagination', () => {
         it('page, size와 정렬 구간을 반환한다', async () => {
             await fix.soft.createMany(['d', 'a', 'c', 'b', 'e'])
 
@@ -319,7 +326,7 @@ describe('CrudRepository', () => {
             ).rejects.toMatchObject({ response: MongoErrors.MaxSizeExceeded(5, 6) })
         })
 
-        it('필터가 없으면 estimated count를 사용해 soft-deleted 문서도 total에 포함한다', async () => {
+        it('필터가 없어도 soft-deleted 문서를 total에서 제외한다', async () => {
             const [active, deleted] = await fix.soft.createMany(['active', 'deleted'])
             if (!active || !deleted) throw new Error('samples must exist')
             await fix.soft.deleteById(deleted.id)
@@ -328,10 +335,13 @@ describe('CrudRepository', () => {
 
             const result = await fix.soft.findWithPagination({ pagination: {} })
 
-            expect(result.total).toBe(2)
+            expect(result.total).toBe(1)
             expect(result.items).toEqual([expect.objectContaining({ id: active.id })])
-            expect(estimated).toHaveBeenCalledTimes(1)
-            expect(count).not.toHaveBeenCalled()
+            expect(count).toHaveBeenCalledWith(
+                { $and: [{}, { deletedAt: null }] },
+                { session: undefined }
+            )
+            expect(estimated).not.toHaveBeenCalled()
         })
 
         it('필터가 있으면 active filter를 포함한 정확한 count를 사용한다', async () => {
@@ -356,7 +366,7 @@ describe('CrudRepository', () => {
         })
     })
 
-    describe('protected helpers', () => {
+    describe('activeFilter, timestamped', () => {
         it('soft/hard active filter를 구분한다', () => {
             const filter = { name: 'sample' }
 
@@ -381,16 +391,9 @@ describe('CrudRepository', () => {
                 $set: { updatedAt: expect.any(Date) }
             })
         })
-
-        it('실제 초기화에서 빠진 인덱스를 만들었다', async () => {
-            const indexes = await fix.soft.collection.listIndexes().toArray()
-            const names = indexes.map(({ name }) => name)
-
-            expect(names).toEqual(expect.arrayContaining(['_id_', 'deletedAt_1', 'name_lookup']))
-        })
     })
 
-    describe('transactions', () => {
+    describe('withTransaction', () => {
         it('콜백이 성공하면 커밋하고 반환값을 보존한다', async () => {
             const created = await fix.soft.withTransaction(async (session) =>
                 fix.soft.create('committed', { session })

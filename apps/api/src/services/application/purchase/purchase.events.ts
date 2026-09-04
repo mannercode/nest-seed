@@ -1,4 +1,4 @@
-import { getNatsConnectionToken, type NatsConnection } from '@mannercode/common'
+import { getNatsConnectionToken, JsonUtil, type NatsConnection } from '@mannercode/common'
 import {
     AckPolicy,
     DeliverPolicy,
@@ -65,7 +65,7 @@ export class PurchaseEvents implements OnModuleInit {
 
     async emitTicketPurchased(payload: TicketPurchasedEvent) {
         await this.initialize()
-        await this.client.publish(this.subjects.purchased, JSON.stringify(payload), {
+        await this.client.publish(this.subjects.purchased, JsonUtil.stringify(payload), {
             expect: { streamName: this.streamName },
             msgID: payload.purchaseRecordId
         })

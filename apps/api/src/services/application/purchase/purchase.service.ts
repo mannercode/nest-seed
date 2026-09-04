@@ -4,14 +4,14 @@ import {
     ensure,
     IdempotencyErrors,
     InjectCache,
-    isDuplicateKeyError
+    isDuplicateKeyError,
+    JsonUtil
 } from '@mannercode/common'
 import { ConflictException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { Interval } from '@nestjs/schedule'
 import { createHash, randomUUID } from 'node:crypto'
 import { MongoConnection } from '#config'
 import {
-    PurchaseItemType,
     PurchaseRecordsService,
     PurchaseRecordStatus,
     TicketsService,
@@ -56,9 +56,7 @@ export class PurchaseService {
         )
         if (existing) return this.replayIdempotencyOperation(existing, fingerprint)
 
-        const ticketIds = createDto.purchaseItems
-            .filter((item) => item.type === PurchaseItemType.Tickets)
-            .map((item) => item.itemId)
+        const ticketIds = createDto.purchaseItems.map((item) => item.itemId)
         const lockKey = `tickets:${ticketIds.sort().join(',')}`
 
         // 같은 티켓 묶음의 동시 결제를 직렬화해, 뒤따른 결제가 결제 기록을 만들기 전에 거절되도록 한다.
@@ -205,7 +203,7 @@ export class PurchaseService {
                 .sort((a, b) => `${a.type}:${a.itemId}`.localeCompare(`${b.type}:${b.itemId}`)),
             totalPrice: createDto.totalPrice
         }
-        return createHash('sha256').update(JSON.stringify(normalized)).digest('hex')
+        return createHash('sha256').update(JsonUtil.stringify(normalized)).digest('hex')
     }
 
     private replayIdempotencyOperation(
@@ -282,41 +280,12 @@ export class PurchaseService {
         const unresolved = await this.paymentsService.findUnresolvedBefore(before)
         for (const payment of unresolved) {
             try {
-                const directPurchaseRecordId = payment.purchaseRecordId
-                const resolution = directPurchaseRecordId
-                    ? {
-                          purchaseRecordId: directPurchaseRecordId,
-                          status: await this.purchaseRecordsService.findStatusById(
-                              directPurchaseRecordId
-                          )
-                      }
-                    : await this.purchaseRecordsService.findResolutionByPaymentId(payment.id)
-
-                if (!resolution) {
-                    // upgrade 전에는 payment가 purchase record보다 먼저 생성됐다.
-                    // paymentId 역조회도 실패한 stale 결제는 성공 구매와 연결될 수 없다.
-                    await this.paymentsService.cancel(payment.id)
-                    continue
-                }
-
-                const { purchaseRecordId, status } = resolution
+                const { purchaseRecordId } = payment
+                const status = await this.purchaseRecordsService.getStatusById(purchaseRecordId)
                 if (status === PurchaseRecordStatus.Completed) {
-                    if (directPurchaseRecordId) {
-                        await this.paymentsService.resolvePurchase(purchaseRecordId)
-                    } else {
-                        await this.paymentsService.resolveLegacyPayment(
-                            payment.id,
-                            purchaseRecordId
-                        )
-                    }
-                } else if (status === undefined || status === PurchaseRecordStatus.Cancelled) {
-                    // Payment는 purchase record 뒤에만 생성된다. 따라서 record가 없으면
-                    // 결제를 유지할 정상 구매가 없으므로 fail-safe로 취소한다.
+                    await this.paymentsService.resolvePurchase(purchaseRecordId)
+                } else if (status === PurchaseRecordStatus.Cancelled) {
                     await this.paymentsService.cancel(payment.id)
-                } else if (!directPurchaseRecordId) {
-                    // 현재 쓰기 순서에서 pending+legacy payment는 생기지 않지만,
-                    // 롤링 배포 중 발견하면 modern marker로 옮겨 terminal 상태까지 보존한다.
-                    await this.paymentsService.linkLegacyPayment(payment.id, purchaseRecordId)
                 }
             } catch (error) {
                 this.logger.error('payment resolution retry failed', {
@@ -393,7 +362,7 @@ export class PurchaseService {
             const errors: unknown[] = []
             const steps: Array<[string, () => Promise<unknown>]> = [
                 [
-                    'releaseTicketsAndClaims',
+                    'releasePurchaseClaims',
                     () =>
                         this.ticketPurchaseService.compensatePurchase(
                             purchaseRecord,
@@ -445,9 +414,7 @@ export class PurchaseService {
         purchaseRecord: PurchaseRecordDto,
         before: Temporal.Instant = DateUtil.now()
     ) {
-        const ticketIds = purchaseRecord.purchaseItems
-            .filter((item) => item.type === PurchaseItemType.Tickets)
-            .map((item) => item.itemId)
+        const ticketIds = purchaseRecord.purchaseItems.map((item) => item.itemId)
         const publicationId = randomUUID()
 
         try {

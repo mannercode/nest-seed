@@ -1,7 +1,7 @@
 import type { ConfigService } from '@nestjs/config'
 import { AppConfigService } from '../index.js'
 
-describe('AppConfigService schema', () => {
+describe('AppConfigService.schema', () => {
     const portSchema = AppConfigService.schema.pick({ API_PORT: true })
 
     it('환경 변수 숫자 문자열을 숫자로 변환한다', () => {
@@ -15,6 +15,12 @@ describe('AppConfigService schema', () => {
     it('빈 숫자 문자열을 0으로 변환하지 않는다', () => {
         expect(portSchema.safeParse({ API_PORT: '' }).success).toBe(false)
         expect(portSchema.safeParse({ API_PORT: '0x10' }).success).toBe(false)
+    })
+
+    it('누락된 환경 변수를 기본값으로 채우지 않는다', () => {
+        const schema = AppConfigService.schema.pick({ TICKET_PRICE: true })
+
+        expect(schema.safeParse({}).success).toBe(false)
     })
 
     it('false 문자열을 true로 잘못 변환하지 않는다', () => {

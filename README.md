@@ -27,7 +27,7 @@
 4. console(3100)에 개발용 admin(`admin@nest-seed.local` / `DevPass1!`)으로 로그인해 영화와 극장을 만든다. 이 계정은 Dev Container가 인프라를 초기화할 때 자동으로 다시 만든다.
 5. user-app(3200)에서 가입·로그인과 홈 화면 조합을 확인한다. 실행 가능한 API 문서는 독립된 fixture 흐름으로 상영·예매·구매 API를 실행한다.
 
-`.env.api`와 `.env.infra`는 커밋된 개발·검증 기본값이다. 포크할 때 프로젝트 식별자와 자격증명을 검토하고, 운영 secret은 저장소 밖에서 주입한다. 자세한 기준은 [환경 변수](docs/reference/environment.md)에 있다.
+`.env.api`와 `.env.infra`는 커밋된 개발·검증 값이다. 포크할 때 프로젝트 식별자와 자격증명을 검토하고, 운영 secret은 저장소 밖에서 주입한다. 자세한 기준은 [환경 변수](docs/reference/environment.md)에 있다.
 
 ## 2. 주요 명령
 
@@ -39,6 +39,7 @@
 | `pnpm run atoz`       | 포크 직후나 배포 전 실행하는 전체 회귀    |
 | `bash infra/reset.sh` | 개발 인프라와 고정 admin fixture를 재생성 |
 | `pnpm run api-docs`   | 다중 복제본의 API 문서 검증               |
+| `pnpm exec tunnel`    | console과 user-app Quick Tunnel 실행      |
 
 `infra/reset.sh`는 volume을 지운 뒤 고정 admin fixture까지 다시 만드는 개발용 복구 명령이다. Restate journal과 JetStream 데이터도 지우므로 보존할 실행이 있는 환경에서는 사용하지 않는다. 테스트별 명령과 결과 위치는 [tests/README.md](tests/README.md)에 있다.
 
@@ -123,6 +124,6 @@ bash apps/api/api-docs/run.sh showtime-creation.spec
 - [devcontainer](docs/devcontainer.md) — 단일 개발 경로, DooD 제약과 보안
 - [decisions](docs/reference/decisions.md) — 선택 이유, 대안, 보장하지 않는 것
 - [개발 규칙](docs/reference/conventions.md) — 자동화로 대신할 수 없는 규칙
-- [environment](docs/reference/environment.md) — env 소유권, 재생성, 포크와 공개 경계
+- [environment](docs/reference/environment.md) — env 소유권과 주입 시점
 
 영화 예매 도메인의 설계 배경은 블로그 연재 [백엔드 서비스 분석과 설계 1](https://mannercode.com/2025/04/01/backend-design-1.html)·[2](https://mannercode.com/2025/05/01/backend-design-2.html)·[3](https://mannercode.com/2025/06/01/backend-design-3.html)에 있다.

@@ -1,4 +1,4 @@
-import { CacheService, InjectCache } from '@mannercode/common'
+import { CacheService, InjectCache, JsonUtil } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { AppConfigService } from '#config'
 import { HoldTicketsDto } from './dtos/index.js'
@@ -256,7 +256,7 @@ export class TicketHoldingService {
         const scriptArgs = [
             userId,
             this.config.ticket.holdDurationInMs.toString(),
-            JSON.stringify(ticketIds),
+            JsonUtil.stringify(ticketIds),
             showtimeId
         ]
 
@@ -326,7 +326,7 @@ export class TicketHoldingService {
     async searchHeldTicketIds(showtimeId: string, userId: string): Promise<string[]> {
         const tickets = await this.cacheService.get(getUserKey(showtimeId, userId))
 
-        return tickets ? JSON.parse(tickets) : []
+        return tickets ? JsonUtil.parse(tickets) : []
     }
 
     private groupByShowtime(tickets: TicketReference[]): Array<[string, string[]]> {
@@ -372,8 +372,8 @@ export class TicketHoldingService {
                         purchaseOwner,
                         userId,
                         showtimeId,
-                        JSON.stringify(ticketIds),
-                        JSON.stringify(ticketExpiresAtMs),
+                        JsonUtil.stringify(ticketIds),
+                        JsonUtil.stringify(ticketExpiresAtMs),
                         userExpiresAtMs.toString()
                     ]
                 )

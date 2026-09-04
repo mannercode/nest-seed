@@ -44,21 +44,13 @@ export class PaymentsService {
         await this.repository.resolvePurchase(purchaseRecordId, session)
     }
 
-    async resolveLegacyPayment(paymentId: string, purchaseRecordId: string) {
-        await this.repository.resolveLegacyPayment(paymentId, purchaseRecordId)
-    }
-
-    async linkLegacyPayment(paymentId: string, purchaseRecordId: string) {
-        await this.repository.linkLegacyPayment(paymentId, purchaseRecordId)
-    }
-
     private toDto(payment: Payment) {
         return ensure(this.toDtos([payment])[0])
     }
 
     private toDtos(payments: Payment[]) {
-        return payments.map((payment) => ({
-            ...mapDocToDto(payment, PaymentDto, [
+        return payments.map((payment) =>
+            mapDocToDto(payment, PaymentDto, [
                 'id',
                 'purchaseRecordId',
                 'userId',
@@ -66,8 +58,7 @@ export class PaymentsService {
                 'status',
                 'createdAt',
                 'updatedAt'
-            ]),
-            purchaseRecordId: payment.purchaseRecordId ?? null
-        }))
+            ])
+        )
     }
 }

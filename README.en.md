@@ -29,7 +29,7 @@ The Dev Container is the only supported development path. You need Docker and th
 4. Sign in to the console (3100) with the development admin (`admin@nest-seed.local` / `DevPass1!`) and create movies and theaters. The Dev Container recreates this account whenever it resets the infrastructure.
 5. Use the user app (3200) to explore sign-up, login, and the composed home view. The executable API docs run showtime, booking, and purchase APIs through an independent fixture flow.
 
-`.env.api` and `.env.infra` contain committed development and verification defaults. Review project identifiers and credentials when forking, and inject production secrets outside the repository. See [Environment variables](docs/reference/environment.md).
+`.env.api` and `.env.infra` contain committed development and verification values. Review project identifiers and credentials when forking, and inject production secrets outside the repository. See [Environment variables](docs/reference/environment.md).
 
 ## 2. Main commands
 
@@ -41,6 +41,7 @@ The Dev Container is the only supported development path. You need Docker and th
 | `pnpm run atoz`       | Run the full regression after forking or before deployment      |
 | `bash infra/reset.sh` | Recreate development infrastructure and the fixed admin fixture |
 | `pnpm run api-docs`   | Check API docs across replicas                                  |
+| `pnpm exec tunnel`    | Run Quick Tunnels for the console and user app                  |
 
 `infra/reset.sh` deletes the volumes and then recreates the fixed admin fixture. It also deletes the Restate journal and JetStream data, so it must not be used where executions need to survive. Test-specific commands and output locations are in [tests/README.md](tests/README.md).
 
@@ -125,6 +126,6 @@ Korean is the source language for documentation and comments. Only this README i
 - [devcontainer](docs/devcontainer.md) — the single development path, DooD constraints, and security
 - [decisions](docs/reference/decisions.md) — choices, alternatives, and non-guarantees
 - [development rules](docs/reference/conventions.md) — rules automation cannot enforce
-- [environment](docs/reference/environment.md) — env ownership, recreation, forking, and exposure boundaries
+- [environment](docs/reference/environment.md) — env ownership and injection timing
 
 For the design background of the movie-booking domain, see the blog series [Backend Service Analysis and Design 1](https://mannercode.com/2025/04/01/backend-design-1.html), [2](https://mannercode.com/2025/05/01/backend-design-2.html), and [3](https://mannercode.com/2025/06/01/backend-design-3.html).

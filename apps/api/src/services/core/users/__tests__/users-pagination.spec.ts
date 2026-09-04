@@ -1,6 +1,6 @@
 import { UsersRepository } from '../index.js'
 
-describe('UsersRepository pagination', () => {
+describe('UsersRepository.searchPage', () => {
     it('null pagination 값을 undefined로 정규화하고 값이 있으면 유지한다', async () => {
         const repository = new UsersRepository(
             { client: {}, db: { collection: () => ({}) } } as any,

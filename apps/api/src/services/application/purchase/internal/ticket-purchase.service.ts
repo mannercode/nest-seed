@@ -6,8 +6,7 @@ import {
     ShowtimeDto,
     ShowtimesService,
     TicketHoldingService,
-    TicketsService,
-    PurchaseItemType
+    TicketsService
 } from '#core'
 import { CreatePurchaseDto } from '../dtos/index.js'
 import { PurchaseErrors } from '../errors.js'
@@ -28,9 +27,7 @@ export class TicketPurchaseService {
         userId: string,
         purchaseRecordId: string
     ): Promise<void> {
-        const ticketItems = createDto.purchaseItems.filter(
-            (item) => item.type === PurchaseItemType.Tickets
-        )
+        const ticketItems = createDto.purchaseItems
         const ticketIds = ticketItems.map((item) => item.itemId)
         const tickets = await this.ticketsService.getMany(ticketIds)
 
@@ -51,9 +48,7 @@ export class TicketPurchaseService {
         purchaseRecordId: string,
         completeDurably: (ticketIds: string[]) => Promise<T>
     ): Promise<T> {
-        const ticketItems = createDto.purchaseItems.filter(
-            (item) => item.type === PurchaseItemType.Tickets
-        )
+        const ticketItems = createDto.purchaseItems
         const ticketIds = ticketItems.map((item) => item.itemId)
         const tickets = await this.ticketsService.getMany(ticketIds)
 
@@ -84,20 +79,15 @@ export class TicketPurchaseService {
     }
 
     async compensatePurchase(createDto: CreatePurchaseDto, purchaseRecordId: string) {
-        const ticketIds = createDto.purchaseItems
-            .filter((item) => item.type === PurchaseItemType.Tickets)
-            .map((item) => item.itemId)
+        const ticketIds = createDto.purchaseItems.map((item) => item.itemId)
         const tickets = await this.ticketsService.getMany(ticketIds)
 
-        await this.ticketsService.releaseOwnedPurchaseForCompensation(ticketIds, purchaseRecordId)
         await this.ticketHoldingService.releasePurchaseClaims(purchaseRecordId, tickets)
     }
 
     async validatePurchase(createDto: CreatePurchaseDto, userId: string): Promise<void> {
         this.logger.log('validatePurchase', { userId })
-        const ticketItems = createDto.purchaseItems.filter(
-            (item) => item.type === PurchaseItemType.Tickets
-        )
+        const ticketItems = createDto.purchaseItems
         const showtimes = await this.getShowtimes(ticketItems)
 
         this.validateTicketCount(ticketItems)

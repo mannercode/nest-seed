@@ -1,6 +1,6 @@
 import { CrudDocument } from '@mannercode/common'
 
-export const PurchaseItemType = { Foods: 'foods', Tickets: 'tickets' } as const
+export const PurchaseItemType = { Tickets: 'tickets' } as const
 
 export type PurchaseItemType = (typeof PurchaseItemType)[keyof typeof PurchaseItemType]
 

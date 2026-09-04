@@ -9,7 +9,6 @@ import {
     type AppTestContext,
     createAppTestContext
 } from '../helpers/index.js'
-import { UsersRepository } from '../../services/core/users/index.js'
 import { LoginRateLimiterService } from '#gateway'
 import { JwtAuthService } from '@mannercode/common'
 
@@ -77,24 +76,6 @@ describe('UserAuthentication', () => {
                 .post('/users/login')
                 .body(credentials)
                 .ok({ accessToken: expect.any(String), refreshToken: expect.any(String) })
-        })
-
-        it('authVersion 필드가 없는 기존 사용자도 version 0 세션으로 로그인한다', async () => {
-            const repository = fix.module.get(UsersRepository)
-            await repository.collection.updateOne(
-                { email: credentials.email },
-                { $unset: { authVersion: '' } }
-            )
-
-            const { body: tokens } = await fix.httpClient
-                .post('/users/login')
-                .body(credentials)
-                .ok()
-
-            await fix.httpClient
-                .get('/users/me')
-                .headers({ Authorization: `Bearer ${tokens.accessToken}` })
-                .ok(expect.objectContaining({ email: credentials.email }))
         })
 
         it('비밀번호가 틀리면 401을 반환한다', async () => {

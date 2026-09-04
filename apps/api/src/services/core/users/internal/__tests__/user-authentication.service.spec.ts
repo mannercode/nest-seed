@@ -44,7 +44,7 @@ describe('UserAuthenticationService', () => {
     })
 
     describe('findUserByCredentials', () => {
-        it('가입된 이메일이 없으면 더미 해시로 validate를 호출하고 null을 반환한다', async () => {
+        it('가입된 이메일이 없어도 bcrypt 비교 후 null을 반환한다', async () => {
             const repo = { findByEmailWithPassword: vi.fn().mockResolvedValue(null) }
             const svc = new UserAuthenticationService(repo as any, {} as any)
             const validateSpy = vi.spyOn(svc, 'validate')
@@ -56,7 +56,6 @@ describe('UserAuthenticationService', () => {
 
             expect(result).toBeNull()
             expect(validateSpy).toHaveBeenCalledTimes(1)
-            // 가입 여부에 따른 응답 시간 차이를 없애기 위해 사용자가 없어도 bcrypt 형식 더미 해시와 비교한다.
             const [, hashArg] = ensure(validateSpy.mock.calls[0])
             expect(typeof hashArg).toBe('string')
             expect(hashArg.startsWith('$2')).toBe(true)
@@ -81,21 +80,27 @@ describe('UserAuthenticationService', () => {
     })
 
     describe('isAuthPayloadActive', () => {
-        it('authVersion이 없는 기존 토큰을 version 0으로 검증한다', async () => {
+        it('토큰의 authVersion으로 계정 상태를 검증한다', async () => {
             const repository = { isAuthVersionCurrent: vi.fn().mockResolvedValue(true) }
-            const legacyService = new UserAuthenticationService(repository as any, {} as any)
+            const service = new UserAuthenticationService(repository as any, {} as any)
 
             await expect(
-                legacyService.isAuthPayloadActive({ sub: 'user-id', email: 'user@mail.com' })
+                service.isAuthPayloadActive({
+                    authVersion: 2,
+                    sub: 'user-id',
+                    email: 'user@mail.com'
+                })
             ).resolves.toBe(true)
-            expect(repository.isAuthVersionCurrent).toHaveBeenCalledWith('user-id', 0)
+            expect(repository.isAuthVersionCurrent).toHaveBeenCalledWith('user-id', 2)
         })
 
-        it('필수 claim이 없는 토큰 payload는 거부한다', async () => {
+        it('authVersion이 없는 토큰 payload는 거부한다', async () => {
             const repository = { isAuthVersionCurrent: vi.fn() }
-            const malformedService = new UserAuthenticationService(repository as any, {} as any)
+            const service = new UserAuthenticationService(repository as any, {} as any)
 
-            await expect(malformedService.isAuthPayloadActive({})).resolves.toBe(false)
+            await expect(
+                service.isAuthPayloadActive({ sub: 'user-id', email: 'user@mail.com' })
+            ).resolves.toBe(false)
             expect(repository.isAuthVersionCurrent).not.toHaveBeenCalled()
         })
     })

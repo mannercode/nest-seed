@@ -6,7 +6,6 @@ import {
     type AppTestContext,
     createAppTestContext
 } from '../helpers/index.js'
-import { AdminsRepository } from '../../services/core/admins/index.js'
 
 const ACCOUNT_FAILURE_LIMIT = 5
 const IP_FAILURE_LIMIT = 50
@@ -40,24 +39,6 @@ describe('AdminAuthentication', () => {
                 .post('/admins/login')
                 .body(credentials)
                 .ok({ accessToken: expect.any(String), refreshToken: expect.any(String) })
-        })
-
-        it('authVersion 필드가 없는 기존 관리자도 version 0 세션으로 로그인한다', async () => {
-            const repository = fix.module.get(AdminsRepository)
-            await repository.collection.updateOne(
-                { email: credentials.email },
-                { $unset: { authVersion: '' } }
-            )
-
-            const { body: tokens } = await fix.httpClient
-                .post('/admins/login')
-                .body(credentials)
-                .ok()
-
-            await fix.httpClient
-                .get('/admins/me')
-                .headers({ Authorization: `Bearer ${tokens.accessToken}` })
-                .ok(expect.objectContaining({ email: credentials.email }))
         })
 
         it('비밀번호가 틀리면 401을 반환한다', async () => {

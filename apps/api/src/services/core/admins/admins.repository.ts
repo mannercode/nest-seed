@@ -57,7 +57,8 @@ export class AdminsRepository extends CrudRepository<Admin> {
             projection: { authVersion: 1 }
         })
 
-        return admin ? ((admin as { authVersion?: number }).authVersion ?? 0) : null
+        if (!admin) return null
+        return admin.authVersion
     }
 
     async isAuthVersionCurrent(adminId: string, authVersion: number): Promise<boolean> {

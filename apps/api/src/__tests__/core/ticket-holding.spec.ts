@@ -170,7 +170,7 @@ describe('TicketHoldingService', () => {
         })
     })
 
-    describe('purchase claim', () => {
+    describe('claimTicketsForPurchase, confirmPurchaseClaims, releasePurchaseClaims', () => {
         it('현재 hold owner를 purchase owner로 원자 전환하고 소유자 조건으로 해제한다', async () => {
             const showtimeId = oid(0x10)
             const userId = oid(0xc1)

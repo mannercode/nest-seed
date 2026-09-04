@@ -89,10 +89,7 @@ export class PaymentsRepository extends CrudRepository<Payment> {
             .find(
                 this.activeFilter({
                     createdAt: { $lte: before },
-                    $or: [
-                        { requiresPurchaseResolution: true },
-                        { requiresPurchaseResolution: { $exists: false } }
-                    ],
+                    requiresPurchaseResolution: true,
                     status: PaymentStatus.Completed
                 })
             )
@@ -115,39 +112,11 @@ export class PaymentsRepository extends CrudRepository<Payment> {
         await this.collection.updateOne(
             this.activeFilter({
                 purchaseRecordId,
-                $or: [
-                    { requiresPurchaseResolution: true },
-                    { requiresPurchaseResolution: { $exists: false } }
-                ],
+                requiresPurchaseResolution: true,
                 status: PaymentStatus.Completed
             }),
             this.timestamped({ $set: { requiresPurchaseResolution: false } }),
             { session }
-        )
-    }
-
-    async resolveLegacyPayment(paymentId: string, purchaseRecordId: string) {
-        await this.collection.updateOne(
-            this.activeFilter({
-                _id: objectId(paymentId),
-                $or: [
-                    { requiresPurchaseResolution: true },
-                    { requiresPurchaseResolution: { $exists: false } }
-                ],
-                status: PaymentStatus.Completed
-            }),
-            this.timestamped({ $set: { purchaseRecordId, requiresPurchaseResolution: false } })
-        )
-    }
-
-    async linkLegacyPayment(paymentId: string, purchaseRecordId: string) {
-        await this.collection.updateOne(
-            this.activeFilter({
-                _id: objectId(paymentId),
-                requiresPurchaseResolution: { $exists: false },
-                status: PaymentStatus.Completed
-            }),
-            this.timestamped({ $set: { purchaseRecordId, requiresPurchaseResolution: true } })
         )
     }
 }

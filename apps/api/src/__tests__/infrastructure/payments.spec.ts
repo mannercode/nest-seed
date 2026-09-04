@@ -117,28 +117,6 @@ describe('PaymentsService', () => {
     })
 
     describe('getMany', () => {
-        it('기존 문서에 purchaseRecordId가 없어도 null로 정규화한다', async () => {
-            const repository = fix.module.get(PaymentsRepository)
-            const now = new Date()
-            // native raw insert는 repository defaults를 거치지 않는다. Mongoose가 기존 문서에
-            // 만들던 base metadata는 직접 넣고, migration 대상 두 필드만 의도적으로 생략한다.
-            const { insertedId } = await repository.collection.insertOne({
-                __v: 0,
-                amount: 1,
-                createdAt: now,
-                deletedAt: null,
-                status: 'completed',
-                updatedAt: now,
-                userId: nullObjectId
-            })
-
-            const [legacy] = await paymentsService.getMany([String(insertedId)])
-
-            expect(legacy).toEqual(
-                expect.objectContaining({ id: String(insertedId), purchaseRecordId: null })
-            )
-        })
-
         it('결제 ID 목록에 해당하는 결제를 반환한다', async () => {
             const payments = await Promise.all([
                 createPayment(fix),

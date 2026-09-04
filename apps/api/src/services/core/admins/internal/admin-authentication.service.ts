@@ -63,6 +63,6 @@ export class AdminAuthenticationService {
         if (!result.success) return false
 
         const candidate = result.data
-        return this.repository.isAuthVersionCurrent(candidate.sub, candidate.authVersion ?? 0)
+        return this.repository.isAuthVersionCurrent(candidate.sub, candidate.authVersion)
     }
 }

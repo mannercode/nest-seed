@@ -1,6 +1,6 @@
 import { instant, oid, plainDate, step, withTestId } from '../index.js'
 
-describe('Temporal fixtures', () => {
+describe('instant, plainDate', () => {
     it('시각 문자열과 epoch 값을 밀리초 Instant로 만든다', () => {
         expect(instant('2025-01-02T03:04Z').toString()).toBe('2025-01-02T03:04:00Z')
         expect(instant(1).epochMilliseconds).toBe(1)

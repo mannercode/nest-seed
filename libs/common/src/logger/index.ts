@@ -1,7 +1,6 @@
 export * from './app-logger.service.js'
 export * from './create-winston-logger.js'
 export * from './exception-logger.filter.js'
-export * from './redact.js'
 export * from './request-timing.js'
 export * from './success-logger.interceptor.js'
 export * from './types.js'

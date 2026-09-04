@@ -39,11 +39,6 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
                             purchaseEventPublicationLeaseUntil: 1,
                             updatedAt: 1
                         }
-                    },
-                    {
-                        key: { paymentId: 1 },
-                        name: 'paymentId_partial_lookup',
-                        partialFilterExpression: { paymentId: { $type: 'string' } }
                     }
                 ]
             }
@@ -52,13 +47,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
 
     async findByUserId(userId: string) {
         const purchaseRecords = await this.collection
-            .find(
-                this.activeFilter({
-                    // status가 생기기 전에 저장된 기록도 완료된 구매로 취급한다.
-                    status: { $in: [PurchaseRecordStatus.Completed, null] },
-                    userId
-                })
-            )
+            .find(this.activeFilter({ status: PurchaseRecordStatus.Completed, userId }))
             .sort({ createdAt: -1 })
             .toArray()
 
@@ -175,11 +164,6 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         )
 
         return mongoToPublic<PurchaseRecord>(record)
-    }
-
-    async findByPaymentId(paymentId: string) {
-        const purchaseRecord = await this.collection.findOne(this.activeFilter({ paymentId }))
-        return mongoToPublic<PurchaseRecord>(purchaseRecord)
     }
 
     async findUnpublishedBefore(before: Temporal.Instant, now: Temporal.Instant) {

@@ -153,8 +153,9 @@ export abstract class CrudRepository<Doc extends CrudDocument> implements OnModu
             throw new BadRequestException(MongoErrors.MaxSizeExceeded(this.maxSize, size))
         }
 
+        const activeFilter = this.activeFilter(filter)
         const cursor = this.collection
-            .find(this.activeFilter(filter), { projection: this.projection, session })
+            .find(activeFilter, { projection: this.projection, session })
             .limit(size)
             .skip((page - 1) * size)
 
@@ -163,12 +164,9 @@ export abstract class CrudRepository<Doc extends CrudDocument> implements OnModu
             cursor.sort({ [name]: direction })
         }
 
-        const filterIsEmpty = Object.keys(filter).length === 0
         const [rawItems, total] = await Promise.all([
             cursor.toArray(),
-            filterIsEmpty
-                ? this.collection.estimatedDocumentCount()
-                : this.collection.countDocuments(this.activeFilter(filter), { session })
+            this.collection.countDocuments(activeFilter, { session })
         ])
 
         return {

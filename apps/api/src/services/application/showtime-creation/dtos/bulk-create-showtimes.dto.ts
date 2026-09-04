@@ -13,11 +13,10 @@ const requiredString = z
 export const BulkCreateShowtimesSchema = z.strictObject({
     durationInMinutes: positiveNumber,
     movieId: requiredString,
-    startTimes: z.array(InstantFromInputSchema).min(1).max(20),
+    startTimes: z.array(InstantFromInputSchema).min(1),
     theaterIds: z
         .array(z.string())
         .min(1)
-        .max(20)
         .refine((ids) => new Set(ids).size === ids.length, 'Duplicate theater IDs are not allowed')
 })
 

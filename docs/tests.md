@@ -4,6 +4,8 @@
 
 `tests/api/compose.yml`은 AtoZ, race와 benchmark가 공유하는 API 복제본 4개와 NGINX 환경이다. 운영 배포본과의 차이는 [API 스택 문서](api-stack.md)가 설명한다.
 
+통합 실행기는 `.env.infra`를 읽고, Compose는 API 복제본에 `.env.infra`와 `.env.api`를 주입한다. 실행 가능한 API 문서는 실행기가 읽은 고정 개발 admin을 사용한다.
+
 ## 1. api/race — 다중 복제본 경합
 
 프로세스 하나의 통합 테스트로는 서로 다른 API 복제본이 같은 자원을 동시에 건드리는 순간을 제대로 만들 수 없다. race 테스트는 다중 복제본 스택에 HTTP/SSE 요청을 동시에 보내 다음 보장을 검증한다.
