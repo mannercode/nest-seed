@@ -10,7 +10,7 @@
 
 spec이 import하는 HTTP client와 fixture helper를 둔다. 앱은 이 패키지를 dev dependency로만 받으므로 테스트 도구가 운영 의존성에 섞이지 않는다.
 
-Vitest가 소스 변환 전에 불러야 하는 실행 ID·자원 준비·정리 로직은 `tools/vitest-helpers`에 둔다. 테스트 코드가 직접 쓰는 패키지와 테스트 런타임을 부팅하는 도구를 구분하기 위한 경계다.
+Vitest가 소스 변환 전에 불러야 하는 자원 준비·정리 로직은 `tools/vitest-helpers`에 둔다. 테스트 코드가 직접 쓰는 패키지와 테스트 런타임을 부팅하는 도구를 구분하기 위한 경계다.
 
 ```text
 apps/api 운영 코드 ─→ libs/common

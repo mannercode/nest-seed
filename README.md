@@ -37,7 +37,7 @@
 | `pnpm run lint`            | 타입, 코드, format, shell, 문서 링크 검사 |
 | `pnpm run atoz`            | 포크 직후나 배포 전 실행하는 전체 회귀    |
 | `bash infra/reset.sh`      | 개발 인프라와 고정 admin fixture를 재생성 |
-| `bash tests/api/runner.sh` | 다중 복제본의 Restate 복구·API 문서 검증  |
+| `bash tests/api/runner.sh` | 다중 복제본의 API 문서 검증               |
 
 `infra/reset.sh`는 volume을 지운 뒤 고정 admin fixture까지 다시 만드는 개발용 복구 명령이다. Restate journal과 JetStream 데이터도 지우므로 보존할 실행이 있는 환경에서는 사용하지 않는다. 테스트별 명령과 결과 위치는 [tests/README.md](tests/README.md)에 있다.
 
@@ -65,6 +65,7 @@ bash apps/api/api-docs/run.sh showtime-creation.spec
 │   └── testing/         # 테스트 소비자용 client·fixture helper
 ├── tests/
 │   ├── api/             # 공용 다중 복제본 스택, race와 benchmark
+│   ├── infra/           # 인프라 자체의 복구 보장
 │   └── web/             # 브라우저 E2E
 ├── infra/               # 개발용 MongoDB·Redis·S3·NATS·Restate
 ├── tools/               # 개발·테스트 실행 도구

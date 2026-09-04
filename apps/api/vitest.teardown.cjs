@@ -34,14 +34,8 @@ module.exports = async function globalTeardown() {
 }
 
 async function cleanupJetStreamStreams() {
-    const runId = process.env.API_VITEST_RUN_ID
-    if (!/^[a-f0-9]{32}$/.test(runId ?? '')) {
-        throw new Error('API_VITEST_RUN_ID must identify one Vitest run')
-    }
-
-    const purchasedSubject = new RegExp(
-        `^project-r${runId}-[A-Za-z0-9_-]+\\.purchase\\.ticketPurchased$`
-    )
+    const purchasedSubject =
+        /^project-nest-seed-api-test-[A-Za-z0-9_-]+\.purchase\.ticketPurchased$/
     const connection = await connectNats({
         servers: [`${process.env.NATS_HOST}:${process.env.NATS_PORT}`]
     })

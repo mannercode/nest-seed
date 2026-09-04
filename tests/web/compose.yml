@@ -70,8 +70,6 @@ services:
             CI: ${CI:-}
             CONSOLE_BASE_URL: http://console:${CONSOLE_PORT:?}
             HOME: /tmp
-            MONGO_DATABASE: ${MONGO_DATABASE:?}
-            MONGO_URI: ${MONGO_URI:?}
             USER_APP_BASE_URL: http://user-app:${USER_APP_PORT:?}
         volumes:
             - ./e2e:/work/e2e:ro

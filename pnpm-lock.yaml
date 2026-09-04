@@ -383,7 +383,9 @@ importers:
         specifier: 4.1.11
         version: 4.1.11(@types/node@26.4.0)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@26.4.0)(jiti@2.7.0)(terser@5.51.1)(yaml@2.9.0))
 
-  tests/api:
+  tests/api: {}
+
+  tests/infra:
     devDependencies:
       '@restatedev/restate-sdk':
         specifier: 1.17.0
@@ -400,9 +402,6 @@ importers:
       '@types/node':
         specifier: 26.4.0
         version: 26.4.0
-      mongodb:
-        specifier: 7.6.0
-        version: 7.6.0
       typescript:
         specifier: 6.0.3
         version: 6.0.3

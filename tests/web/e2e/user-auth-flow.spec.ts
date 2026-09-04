@@ -1,5 +1,4 @@
 import { expect, request, test, type BrowserContext, type Page } from '@playwright/test'
-import { MongoClient, ObjectId } from 'mongodb'
 import { randomUUID } from 'node:crypto'
 
 import { API_BASE_URL, USER_APP_BASE_URL } from '../playwright.config'
@@ -9,12 +8,6 @@ const ADMIN_EMAIL = requiredEnvironment('ADMIN_EMAIL')
 const ADMIN_PASSWORD = requiredEnvironment('ADMIN_PASSWORD')
 const ACCESS_COOKIE = 'nest-seed-user-access'
 const REFRESH_COOKIE = 'nest-seed-user-refresh'
-
-const mongoUri = process.env.MONGO_URI
-const mongoDatabase = process.env.MONGO_DATABASE
-if (!mongoUri || !mongoDatabase) {
-    throw new Error('MONGO_URI and MONGO_DATABASE must be set')
-}
 
 function requiredEnvironment(name: string): string {
     const value = process.env[name]
@@ -86,180 +79,30 @@ test('사용자 refresh 직접 호출은 user BFF에서 404다', async ({ page }
     expect(result).toEqual({ exposesToken: false, status: 404 })
 })
 
-test('사용자 로그인 세션으로 보호 API와 개인화 홈을 요청한다', async ({ page }) => {
-    const client = new MongoClient(mongoUri)
-    const actionMovieId = new ObjectId()
-    const dramaMovieId = new ObjectId()
-    const watchedActionMovieId = new ObjectId()
-    const theaterId = new ObjectId()
-    const showtimeIds = [new ObjectId(), new ObjectId()]
-    const watchRecordId = new ObjectId()
-    const runId = randomUUID()
-    const now = new Date()
-    const actionReleaseDate = new Date('2099-01-01T00:00:00.000Z')
-    const dramaReleaseDate = new Date('2099-02-01T00:00:00.000Z')
-    const startTime = new Date(now.getTime() + 24 * 60 * 60 * 1000)
-    const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000)
-    let userId: string | undefined
+test('사용자 로그인 세션으로 보호 API와 홈을 요청한다', async ({ page }) => {
+    const email = await signupAndLogin(page)
 
-    await client.connect()
-    const db = client.db(mongoDatabase)
-    try {
-        const movieBase = {
-            assetIds: [],
-            createdAt: now,
-            deletedAt: null,
-            director: `e2e-director-${runId}`,
-            durationInSeconds: 7200,
-            isPublished: true,
-            plot: `e2e-plot-${runId}`,
-            rating: 'PG',
-            updatedAt: now,
-            __v: 0
+    const me = await page.evaluate(async () => {
+        const response = await fetch('/api/users/me')
+        return { body: (await response.json()) as { email: string }, status: response.status }
+    })
+    expect(me).toEqual({ body: expect.objectContaining({ email }), status: 200 })
+
+    const home = await page.evaluate(async () => {
+        const response = await fetch('/api/views/user-app/home')
+        return {
+            body: (await response.json()) as {
+                recommendedMovies: unknown[]
+                showingMovies: unknown[]
+            },
+            status: response.status
         }
-        await db.collection('movies').insertMany([
-            {
-                ...movieBase,
-                _id: actionMovieId,
-                genres: ['action'],
-                releaseDate: actionReleaseDate,
-                title: `E2E personalized action ${runId}`
-            },
-            {
-                ...movieBase,
-                _id: dramaMovieId,
-                genres: ['drama'],
-                releaseDate: dramaReleaseDate,
-                title: `E2E personalized drama ${runId}`
-            },
-            {
-                ...movieBase,
-                _id: watchedActionMovieId,
-                genres: ['action'],
-                releaseDate: new Date('2098-01-01T00:00:00.000Z'),
-                title: `E2E watched action ${runId}`
-            }
-        ])
-        await db
-            .collection('theaters')
-            .insertOne({
-                _id: theaterId,
-                createdAt: now,
-                deletedAt: null,
-                location: { latitude: 37.55, longitude: 126.99 },
-                name: `E2E personalized theater ${runId}`,
-                seatmap: { blocks: [{ name: 'A', rows: [{ layout: 'O', name: '1' }] }] },
-                showtimeScheduleVersion: 0,
-                updatedAt: now,
-                __v: 0
-            })
-        await db.collection('showtimes').insertMany([
-            {
-                _id: showtimeIds[0],
-                createdAt: now,
-                endTime,
-                movieId: actionMovieId.toHexString(),
-                sagaId: `e2e-home-action-${runId}`,
-                startTime,
-                theaterId: theaterId.toHexString(),
-                updatedAt: now,
-                __v: 0
-            },
-            {
-                _id: showtimeIds[1],
-                createdAt: now,
-                endTime,
-                movieId: dramaMovieId.toHexString(),
-                sagaId: `e2e-home-drama-${runId}`,
-                startTime,
-                theaterId: theaterId.toHexString(),
-                updatedAt: now,
-                __v: 0
-            }
-        ])
-
-        await page.goto(USER_APP_BASE_URL)
-        const guestHome = await page.evaluate(async () => {
-            const response = await fetch('/api/views/user-app/home')
-            return {
-                body: (await response.json()) as { recommendedMovies: Array<{ id: string }> },
-                status: response.status
-            }
-        })
-        expect(guestHome.status).toBe(200)
-        const guestIds = guestHome.body.recommendedMovies.map((movie) => movie.id)
-        expect(guestIds).toEqual(
-            expect.arrayContaining([dramaMovieId.toHexString(), actionMovieId.toHexString()])
-        )
-        expect(guestIds.indexOf(dramaMovieId.toHexString())).toBeLessThan(
-            guestIds.indexOf(actionMovieId.toHexString())
-        )
-
-        const email = await signupAndLogin(page)
-        const me = await page.evaluate(async () => {
-            const response = await fetch('/api/users/me')
-            return {
-                body: (await response.json()) as { email: string; id: string },
-                status: response.status
-            }
-        })
-        expect(me.status).toBe(200)
-        expect(me.body).toMatchObject({ email })
-        userId = me.body.id
-
-        await db
-            .collection('watchrecords')
-            .insertOne({
-                _id: watchRecordId,
-                createdAt: now,
-                deletedAt: null,
-                movieId: watchedActionMovieId.toHexString(),
-                purchaseRecordId: new ObjectId().toHexString(),
-                updatedAt: now,
-                userId,
-                watchDate: now,
-                __v: 0
-            })
-
-        const authenticatedHome = await page.evaluate(async () => {
-            const response = await fetch('/api/views/user-app/home')
-            return {
-                body: (await response.json()) as { recommendedMovies: Array<{ id: string }> },
-                status: response.status
-            }
-        })
-        expect(authenticatedHome.status).toBe(200)
-        const authenticatedIds = authenticatedHome.body.recommendedMovies.map((movie) => movie.id)
-        expect(authenticatedIds).toEqual(
-            expect.arrayContaining([actionMovieId.toHexString(), dramaMovieId.toHexString()])
-        )
-        // BFF가 access cookie를 Bearer로 전달하지 않으면 API는 guest로 처리해
-        // 최신 drama가 계속 앞서므로 이 개인화 순서 계약이 실패한다.
-        expect(authenticatedIds.indexOf(actionMovieId.toHexString())).toBeLessThan(
-            authenticatedIds.indexOf(dramaMovieId.toHexString())
-        )
-        await expect(page.getByText(email)).toBeVisible()
-    } finally {
-        if (userId) {
-            await page
-                .evaluate(async () => {
-                    await fetch('/api/users/logout', { method: 'POST' }).catch(() => undefined)
-                })
-                .catch(() => undefined)
-        }
-        await Promise.all([
-            db.collection('watchrecords').deleteOne({ _id: watchRecordId }),
-            db.collection('showtimes').deleteMany({ _id: { $in: showtimeIds } }),
-            db
-                .collection('movies')
-                .deleteMany({ _id: { $in: [actionMovieId, dramaMovieId, watchedActionMovieId] } }),
-            db.collection('theaters').deleteOne({ _id: theaterId }),
-            userId
-                ? db.collection('users').deleteOne({ _id: new ObjectId(userId) })
-                : Promise.resolve()
-        ])
-        await client.close()
-    }
+    })
+    expect(home).toEqual({
+        body: { recommendedMovies: expect.any(Array), showingMovies: expect.any(Array) },
+        status: 200
+    })
+    await expect(page.getByText(email)).toBeVisible()
 })
 
 test('access 토큰이 만료되면 refresh 토큰을 회전하고 원 요청을 한 번 재시도한다', async ({

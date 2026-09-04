@@ -39,7 +39,7 @@ The Dev Container is the only supported development path. You need Docker and th
 | `pnpm run lint`            | Check types, code, formatting, shell, and documentation links   |
 | `pnpm run atoz`            | Run the full regression after forking or before deployment      |
 | `bash infra/reset.sh`      | Recreate development infrastructure and the fixed admin fixture |
-| `bash tests/api/runner.sh` | Check Restate recovery and API docs across replicas             |
+| `bash tests/api/runner.sh` | Check API docs across replicas                                  |
 
 `infra/reset.sh` deletes the volumes and then recreates the fixed admin fixture. It also deletes the Restate journal and JetStream data, so it must not be used where executions need to survive. Test-specific commands and output locations are in [tests/README.md](tests/README.md).
 
@@ -67,6 +67,7 @@ Each `TEST` detail log records the actual response body. The spec itself shows t
 │   └── testing/         # Client and fixture helpers for test consumers
 ├── tests/
 │   ├── api/             # Shared multi-replica stack, race, and benchmark
+│   ├── infra/           # Recovery guarantees of the infrastructure itself
 │   └── web/             # Browser E2E
 ├── infra/               # Development MongoDB, Redis, S3, NATS, and Restate
 ├── tools/               # Development and test orchestration tools

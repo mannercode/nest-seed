@@ -42,8 +42,8 @@ cleanup() {
     set +e
 
     if [[ "${exit_code}" -ne 0 ]]; then
-        "${compose[@]}" ps --all >"${SCRIPT_DIR}/_output/compose-ps.txt" 2>&1
-        "${compose[@]}" logs --no-color --timestamps >"${SCRIPT_DIR}/_output/compose-logs.txt" 2>&1
+        "${compose[@]}" ps --all >&2
+        "${compose[@]}" logs --no-color --timestamps >&2
     fi
 
     "${compose[@]}" down -t 0

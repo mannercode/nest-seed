@@ -23,7 +23,7 @@
         "e2e:ui": "pnpm --filter './tests/web' --fail-if-no-match run e2e:ui",
         "e2e:report": "pnpm --filter './tests/web' --fail-if-no-match run e2e:report",
         "race": "bash tests/api/race/runner.sh",
-        "benchmark:api": "bash tests/api/benchmark/runner.sh",
+        "benchmark:api": "bash tests/api/benchmark/run.sh",
         "preatoz": "pnpm install --frozen-lockfile && bash infra/reset.sh",
         "atoz": "pnpm --recursive --workspace-concurrency=1 --if-present run atoz && pnpm run lint:root && bash tests/api/runner.sh",
         "predev": "pnpm --recursive --filter './libs/**' --fail-if-no-match run build",

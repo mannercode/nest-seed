@@ -168,7 +168,7 @@ spy를 금지하지는 않는다. 실제 인프라 경로는 유지하면서 호
 
 ### 4.1. 테스트 자원은 소유자가 드러나야 한다
 
-동시에 실행된 테스트가 DB, bucket, Redis key, NATS stream, Restate service, coverage 산출물을 공유하지 않도록 invocation·worker·test 범위의 이름을 파생한다. teardown은 현재 실행이 소유한 자원만 지우며, 소유 범위를 증명하지 못하면 넓게 정리하는 대신 실패한다. 정확한 ID 조합·lifecycle 순서·출력 경로는 테스트 설정과 helper가 소유한다.
+API와 공용 라이브러리는 서로 다른 접두사를 쓰고, 각 workspace 안에서는 worker별 DB·bucket과 테스트별 `PROJECT_ID`로 자원을 나눈다. 같은 API Vitest 명령을 동시에 두 번 실행하는 것은 지원하지 않는다. 정확한 이름과 lifecycle은 테스트 설정과 helper가 소유한다.
 
 커버리지를 수집하는 구현 workspace는 100%를 게이트로 사용한다. 이 수치의 의미·한계·예외 원칙은 [설계 결정 §6](reference/decisions.md#6-테스트-커버리지-100-게이트)에만 정의한다.
 

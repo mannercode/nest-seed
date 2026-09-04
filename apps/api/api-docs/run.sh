@@ -17,11 +17,8 @@ OUTPUT_ROOT="$(pwd)/_output"
 LOG_DIR="${OUTPUT_ROOT}/logs/${RUN_ID}"
 DOC_DIR="${OUTPUT_ROOT}/docs"
 SUMMARY_MD="${DOC_DIR}/summary.md"
-SUMMARY_JSON="${DOC_DIR}/summary.json"
-SUMMARY_JSONL="${DOC_DIR}/summary.jsonl"
 
 CURRENT_GROUP=''
-CURRENT_SPEC=''
 
 LOG_LINE() {
 	echo "$*" >>"${LOG_FILE}"
@@ -146,7 +143,6 @@ markdown_escape() {
 
 init_summary() {
 	mkdir -p "${DOC_DIR}"
-	: >"${SUMMARY_JSONL}"
 
 	{
 		printf '# API 문서\n\n'
@@ -187,34 +183,6 @@ record_summary() {
 		"${result}" \
 		"${log_path}" >>"${SUMMARY_MD}"
 
-	jq -cn \
-		--arg runId "${RUN_ID}" \
-		--arg spec "${CURRENT_SPEC}" \
-		--arg group "${group}" \
-		--arg description "${description}" \
-		--arg method "${method}" \
-		--arg endpoint "${display_endpoint}" \
-		--arg expectedStatus "${expected_status}" \
-		--arg actualStatus "${STATUS}" \
-		--arg result "${result}" \
-		--arg log "../${log_path}" \
-		'{
-			runId: $runId,
-			spec: $spec,
-			group: $group,
-			description: $description,
-			method: $method,
-			endpoint: $endpoint,
-			expectedStatus: ($expectedStatus | tonumber),
-			actualStatus: ($actualStatus | tonumber),
-			result: $result,
-			log: $log
-		}' >>"${SUMMARY_JSONL}"
-}
-
-finalize_summary() {
-	jq -s '.' "${SUMMARY_JSONL}" >"${SUMMARY_JSON}"
-	rm -f "${SUMMARY_JSONL}"
 }
 
 TEST() {
@@ -283,7 +251,6 @@ init_summary
 
 for spepath in "${specs[@]}"; do
 	LOG_FILE="${LOG_DIR}/${spepath#./}.log"
-	CURRENT_SPEC="${spepath#./}"
 	CURRENT_GROUP="$(basename "${spepath}" .spec)"
 	mkdir -p "$(dirname "${LOG_FILE}")"
 	: >"${LOG_FILE}"
@@ -294,12 +261,9 @@ for spepath in "${specs[@]}"; do
 	popd >/dev/null
 done
 
-finalize_summary
-
 echo ""
 echo -e "${BOLD}로그${RESET} : ${CYAN}${LOG_DIR}${RESET}"
 echo -e "${BOLD}문서${RESET} : ${CYAN}${SUMMARY_MD}${RESET}"
-echo -e "${BOLD}JSON${RESET} : ${CYAN}${SUMMARY_JSON}${RESET}"
 echo -e "${BOLD}성공${RESET} : ${GREEN}${PASSED_TESTS}${RESET}"
 echo -e "${BOLD}실패${RESET} : ${RED}${FAILED_TESTS}${RESET}"
 

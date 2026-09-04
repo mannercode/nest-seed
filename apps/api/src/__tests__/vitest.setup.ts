@@ -4,7 +4,6 @@ import { setupVitestLifecycle } from '@mannercode/vitest-helpers'
 import { MongoClient } from 'mongodb'
 import { createRequire } from 'node:module'
 import { createMongoDriverOptions } from '../config/mongo-driver-options.js'
-import { registerMongoClientDiagnostics } from './support/mongo-client-diagnostics.js'
 
 process.env.LOG_CONSOLE_LEVEL = 'silent'
 
@@ -31,7 +30,6 @@ setupVitestLifecycle({
             requiredEnvironment('MONGO_URI'),
             createMongoDriverOptions({ appName: sharedMongoAppName(), lifetime: 'test-file' })
         )
-        registerMongoClientDiagnostics(client, dbName, sharedMongoAppName())
         await client.connect()
         return { client, dbName }
     },

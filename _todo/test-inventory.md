@@ -1,6 +1,6 @@
 # 테스트 파일 인벤토리
 
-활성 표준 테스트 86개와 그 밖의 실행·측정 파일 24개를 경로별로 정리한다. fixture, helper와 `_todo`는 제외한다. 테스트 작성 기준은 [개발 규칙](../docs/reference/conventions.md#5-테스트-문장은-조건과-결과를-이어-읽게-쓴다)를 따른다.
+테스트와 외부 실행 파일을 경로별로 정리한다. fixture와 helper는 제외한다.
 
 ## `apps/api`
 
@@ -143,13 +143,11 @@ libs/
 ```text
 tests/
 ├── api/
-│   ├── runner.sh                               — 다중 복제본의 Restate recovery와 API 문서 요청
+│   ├── runner.sh                               — 다중 복제본에 API 문서 요청
 │   ├── benchmark/
-│   │   ├── harness-crud.js                     — CRUD 읽기·쓰기 RPS와 latency 측정
-│   │   ├── harness-refresh.js                  — refresh token 회전 경로의 Redis·Mongo 비용 측정
-│   │   ├── harness-user-filter.js              — 사용자 이름 부분 검색의 collection scan 비용 측정
-│   │   ├── mixed-runner.sh                     — 단독·혼합 부하 행렬 실행과 결과 비교
-│   │   └── runner.sh                           — API 테스트 스택 기동·seed·측정·정리
+│   │   ├── benchmark-common.js                 — k6 입력과 summary 출력 공통 함수
+│   │   ├── crud.js                             — 극장 조회·생성의 단독·혼합 부하 측정
+│   │   └── run.sh                              — API 스택 기동·seed·측정·보고서 생성·정리
 │   └── race/
 │       ├── jwt-refresh-race.js                 — 동일 refresh token 동시 회전의 단일 성공과 family 유지
 │       ├── purchase-double-spend.js            — 동일 티켓 묶음 동시 결제의 단일 구매
@@ -158,11 +156,12 @@ tests/
 │       ├── showtime-overlap-race.js            — 겹치는 상영 생성 workflow의 단일 성공
 │       ├── sse-fanout-race.js                  — 여러 replica의 SSE client에 workflow 이벤트 전달
 │       ├── ticket-holding-race.js              — 동일 좌석 동시 선점의 단일 성공
-│       ├── user-signup-race.js                 — 동일 이메일 동시 가입의 단일 생성
-│       └── probes/restate-journal-recovery.js  — Restate 재시작 후 완료 step replay와 중단 step 재실행
+│       └── user-signup-race.js                 — 동일 이메일 동시 가입의 단일 생성
+├── infra/
+│   └── restate-journal-recovery.js             — Restate 재시작 후 완료 step replay와 중단 step 재실행
 └── web/
     └── e2e/
         ├── console-auth-flow.spec.ts           — 관리자 route·역할·세션·refresh·logout 브라우저 흐름
         ├── movies-flow.spec.ts                 — 관리자의 영화·극장 관리와 사용자 삭제 브라우저 흐름
-        └── user-auth-flow.spec.ts              — 사용자 로그인·개인화 홈·refresh·logout 브라우저 흐름
+        └── user-auth-flow.spec.ts              — 사용자 가입·로그인·홈·refresh·logout 브라우저 흐름
 ```

@@ -15,11 +15,7 @@ export default defineConfig({
     outputDir: './_output/test-results',
     forbidOnly: !!process.env.CI,
     workers: 1,
-    reporter: [
-        ['list'],
-        ['junit', { outputFile: './_output/junit.xml' }],
-        ['html', { outputFolder: './_output/report', open: 'never' }]
-    ],
+    reporter: [['list'], ['html', { outputFolder: './_output/report', open: 'never' }]],
     use: { baseURL: BASE_URL, screenshot: 'only-on-failure', trace: 'retain-on-failure' },
     projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }]
 })

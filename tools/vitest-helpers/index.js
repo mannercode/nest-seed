@@ -5,41 +5,10 @@ const {
     ListBucketsCommand,
     ListObjectsV2Command
 } = require('@aws-sdk/client-s3')
-const { randomBytes, randomInt } = require('node:crypto')
+const { randomInt } = require('node:crypto')
 
 const WORKER_DB_PATTERN = /^mongo-w\d+$/
 const WORKER_BUCKET_PATTERN = /^s3bucket-w\d+$/
-const VITEST_RESOURCE_RUN_ID_PATTERN = /^[a-f0-9]{32}$/
-
-function createVitestResourceRunId() {
-    return randomBytes(16).toString('hex')
-}
-
-function createVitestResourceScope(runId) {
-    if (!VITEST_RESOURCE_RUN_ID_PATTERN.test(runId ?? '')) {
-        throw new Error('Vitest resource run ID must be 32 lowercase hexadecimal characters')
-    }
-
-    const runPrefix = `r${runId}`
-    const workerSuffix = (workerId) => {
-        const normalized = String(workerId)
-        if (!/^\d+$/.test(normalized)) {
-            throw new Error('Vitest worker ID must contain only decimal digits')
-        }
-        return `${runPrefix}-w${normalized}`
-    }
-
-    return {
-        bucketName: (workerId) => `s3bucket-${workerSuffix(workerId)}`,
-        bucketPattern: new RegExp(`^s3bucket-${runPrefix}-w\\d+$`),
-        databaseName: (workerId) => `mongo-${workerSuffix(workerId)}`,
-        databasePattern: new RegExp(`^mongo-${runPrefix}-w\\d+$`),
-        projectId: (testId) => `project-${runPrefix}-${testId}`,
-        redisKeyPattern: `*project-${runPrefix}-*`,
-        redisKeyScope: runId
-    }
-}
-
 function generateTestId() {
     const chars = 'useandom26T198340PX75pxJACKVERYMINDBUSHWOLFGQZbfghjklqvwyzrict'
     return Array.from({ length: 10 }, () => chars[randomInt(chars.length)]).join('')
@@ -308,8 +277,6 @@ module.exports = {
     cleanCollections,
     cleanupRedisMatching,
     createGlobalTeardown,
-    createVitestResourceRunId,
-    createVitestResourceScope,
     dropMatchingBuckets,
     dropMatchingDatabases,
     emptyBucket,

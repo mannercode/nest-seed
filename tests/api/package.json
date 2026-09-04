@@ -3,12 +3,8 @@
     "version": "0.0.1",
     "private": true,
     "scripts": {
-        "lint": "oxlint -c ../../oxlint.json race/ && prettier --check 'race/*.js' 'race/probes/*.js' package.json",
-        "format": "prettier --write 'race/*.js' 'race/probes/*.js' package.json",
+        "lint": "oxlint -c ../../oxlint.json race/ benchmark/ && prettier --check 'race/*.js' 'benchmark/*.js' package.json",
+        "format": "prettier --write 'race/*.js' 'benchmark/*.js' package.json",
         "atoz": "pnpm run lint"
-    },
-    "devDependencies": {
-        "@restatedev/restate-sdk": "1.17.0",
-        "@restatedev/restate-sdk-clients": "1.17.0"
     }
 }
