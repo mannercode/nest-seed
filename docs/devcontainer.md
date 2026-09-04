@@ -2,6 +2,8 @@
 
 공식 개발 경로는 Dev Container 하나다. MongoDB Replica Set·Redis Cluster·NATS·Restate 등을 같은 토폴로지로 재현해 환경 차이를 줄이기 위함이다. 로컬 직접 실행을 병행 지원하지 않는 이유는 [설계 결정 §5](reference/decisions.md#5-개발-환경-dev-container-단일-경로)에 있다.
 
+시작 시 의존성 설치가 끝난 뒤 pnpm script를 실행한다. pnpm의 자동 설치와 명시적 설치가 겹치면 같은 `node_modules`를 동시에 수정할 수 있으므로 병렬로 시작하지 않는다.
+
 ## 1. 환경 변수는 재생성해야 반영된다
 
 개발용 env 파일은 Dev Container를 **만들 때** 주입된다. 값을 바꾼 뒤 `docker restart`만 하면 이전 값이 남는다. `Rebuild Container`로 재생성해야 한다. 앱은 env 파일을 직접 읽지 않고 실행 환경이 주입한 `process.env`만 검증한다.

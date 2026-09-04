@@ -37,10 +37,7 @@
         "claude": "mkdir -p ${localEnv:HOME}/.claude && touch ${localEnv:HOME}/.claude.json",
         "github": "mkdir -p ${localEnv:HOME}/.config/gh"
     },
-    "postStartCommand": {
-        "workspace": "pnpm install --frozen-lockfile && bash infra/reset.sh",
-        "plantuml": "pnpm compose:tools up -d plantuml"
-    },
+    "postStartCommand": "pnpm install --frozen-lockfile && bash infra/reset.sh && pnpm compose:tools up -d plantuml",
     "waitFor": "postStartCommand",
     "customizations": {
         "vscode": {

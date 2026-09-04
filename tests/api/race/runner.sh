@@ -3,8 +3,8 @@ set -Eeuo pipefail
 cd -- "$(dirname -- "$0")"
 
 # API 테스트 스택 기동, admin 인증, 단일 race 시나리오 실행과 정리를 한 번에 수행한다.
-# 사용: pnpm run race -- <scenario-name>
-#  예) pnpm run race -- purchase-double-spend
+# 사용: pnpm run race <scenario-name>
+#  예) pnpm run race purchase-double-spend
 
 : "${WORKSPACE_ROOT:?}"
 
@@ -25,7 +25,7 @@ list_scenarios() {
 
 TEST_NAME="${1:-}"
 if [ -z "${TEST_NAME}" ]; then
-    echo "Usage: pnpm run race -- <scenario>"
+    echo "Usage: pnpm run race <scenario>"
     list_scenarios
     exit 0
 fi
