@@ -6,7 +6,7 @@ ENV LANG=C.UTF-8
 
 RUN set -eu; apt-get update; DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
-    ca-certificates curl git iproute2 jq openssh-client shellcheck shfmt; \
+    ca-certificates curl git iproute2 jq openssh-client shellcheck shfmt tmux tree unzip; \
     rm -rf /var/lib/apt/lists/*
 
 RUN set -eu; \
