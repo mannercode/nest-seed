@@ -3,8 +3,8 @@
     "version": "0.0.1",
     "private": true,
     "scripts": {
-        "lint": "oxlint -c ../../oxlint.json restate-journal-recovery.js && prettier --check restate-journal-recovery.js package.json",
-        "format": "prettier --write restate-journal-recovery.js package.json",
+        "lint": "oxlint -c \"${WORKSPACE_ROOT:?}/oxlint.json\" . && prettier --check .",
+        "format": "prettier --write .",
         "atoz": "pnpm run lint && node --test --test-reporter=spec restate-journal-recovery.js"
     },
     "devDependencies": {

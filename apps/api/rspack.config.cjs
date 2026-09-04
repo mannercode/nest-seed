@@ -15,10 +15,7 @@ module.exports = (options) => {
     return {
         ...options,
         context: appDir,
-        entry: {
-            'admin-create': path.resolve(dirname, 'admin-create.ts'),
-            index: path.resolve(dirname, 'main.ts')
-        },
+        entry: { index: path.resolve(dirname, 'main.ts') },
         module: {
             ...options.module,
             rules: options.module.rules.map((rule) =>

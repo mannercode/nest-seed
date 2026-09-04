@@ -1,5 +1,6 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -Eeuo pipefail
+cd -- "$(dirname -- "$0")"
 
 : "${WORKSPACE_ROOT:?}"
 : "${COMPOSE_PROJECT_NAME:?}"
@@ -11,16 +12,14 @@ set +a
 
 export COMPOSE_IGNORE_ORPHANS=True
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-COMPOSE_DIR="${WORKSPACE_ROOT}/tests/api"
 SERVER_URL="http://nginx"
 SEED_TARGET="${SEED_TARGET:-50000}"
-OUTPUT_DIR="${SCRIPT_DIR}/_output/$(date '+%Y%m%d-%H%M%S')"
+OUTPUT_DIR="_output/$(date '+%Y%m%d-%H%M%S')"
 
-mkdir -p "${SCRIPT_DIR}/_output"
+mkdir -p _output
 mkdir "${OUTPUT_DIR}"
 
-compose=(docker compose --project-directory "${COMPOSE_DIR}" -f "${COMPOSE_DIR}/compose.yml")
+compose=(docker compose -f ../compose.yml)
 
 cleanup() {
     local exit_code=$?
@@ -45,16 +44,13 @@ run_k6() {
         fi
     done
 
-    (
-        cd "${WORKSPACE_ROOT}"
-        pnpm compose:tools run \
-            --rm \
-            --no-deps \
-            --no-TTY \
-            --user "$(id -u):$(id -g)" \
-            "${environment[@]}" \
-            k6 "$@"
-    )
+    pnpm --dir "${WORKSPACE_ROOT}" compose:tools run \
+        --rm \
+        --no-deps \
+        --no-TTY \
+        --user "$(id -u):$(id -g)" \
+        "${environment[@]}" \
+        k6 "$@"
 }
 
 wait_for_api() {
@@ -102,7 +98,7 @@ seed_theaters() {
             --env "ADMIN_ACCESS_TOKEN=${ADMIN_ACCESS_TOKEN}" \
             --env "DURATION_MS=30000" \
             --env "SUMMARY_PATH=/dev/null" \
-            "${SCRIPT_DIR}/crud.js" >/dev/null
+            crud.js >/dev/null
         count=$(theater_count)
     done
 
@@ -125,7 +121,7 @@ k6_arguments=(
 )
 [[ -n "${DURATION_MS:-}" ]] && k6_arguments+=(--env "DURATION_MS=${DURATION_MS}")
 [[ -n "${WARMUP_MS:-}" ]] && k6_arguments+=(--env "WARMUP_MS=${WARMUP_MS}")
-k6_arguments+=("${SCRIPT_DIR}/crud.js")
+k6_arguments+=(crud.js)
 
 K6_WEB_DASHBOARD=true \
     K6_WEB_DASHBOARD_PORT=-1 \

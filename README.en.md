@@ -33,14 +33,14 @@ The Dev Container is the only supported development path. You need Docker and th
 
 ## 2. Main commands
 
-| Command                    | Purpose                                                         |
-| -------------------------- | --------------------------------------------------------------- |
-| `pnpm run dev`             | Run the API and both frontends in watch mode                    |
-| `pnpm run test`            | Run workspace unit, integration, and contract tests             |
-| `pnpm run lint`            | Check types, code, formatting, shell, and documentation links   |
-| `pnpm run atoz`            | Run the full regression after forking or before deployment      |
-| `bash infra/reset.sh`      | Recreate development infrastructure and the fixed admin fixture |
-| `bash tests/api/runner.sh` | Check API docs across replicas                                  |
+| Command               | Purpose                                                         |
+| --------------------- | --------------------------------------------------------------- |
+| `pnpm run dev`        | Run the API and both frontends in watch mode                    |
+| `pnpm run test`       | Run workspace unit, integration, and contract tests             |
+| `pnpm run lint`       | Check types, code, formatting, shell, and documentation links   |
+| `pnpm run atoz`       | Run the full regression after forking or before deployment      |
+| `bash infra/reset.sh` | Recreate development infrastructure and the fixed admin fixture |
+| `pnpm run api-docs`   | Check API docs across replicas                                  |
 
 `infra/reset.sh` deletes the volumes and then recreates the fixed admin fixture. It also deletes the Restate journal and JetStream data, so it must not be used where executions need to survive. Test-specific commands and output locations are in [tests/README.md](tests/README.md).
 
@@ -68,9 +68,9 @@ Each `TEST` detail log records the actual response body. The spec itself shows t
 │   └── testing/         # Client and fixture helpers for test consumers
 ├── tests/
 │   ├── api/             # Shared multi-replica stack, race, and benchmark
-│   ├── infra/           # Recovery guarantees of the infrastructure itself
 │   └── web/             # Browser E2E
-├── infra/               # Development MongoDB, Redis, S3, NATS, and Restate
+├── infra/               # Development MongoDB, Redis, S3, NATS, Restate, and their tests
+│   └── tests/           # Infrastructure recovery and consistency guarantees
 ├── tools/               # Development and test orchestration tools
 └── docs/                # Human-oriented design and operations documentation
 ```

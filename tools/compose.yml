@@ -1,7 +1,7 @@
 services:
     plantuml:
         image: plantuml/plantuml-server:latest
-        container_name: ${DEVCONTAINER_NETWORK}-plantuml
+        container_name: ${DEVCONTAINER_NETWORK:?}-plantuml
         restart: unless-stopped
 
     lychee:
@@ -9,7 +9,7 @@ services:
         image: lycheeverse/lychee:latest
         working_dir: /workspace
         volumes:
-            - ..:/workspace
+            - ${WORKSPACE_ROOT:?}:/workspace
         command: [--offline, --include-fragments, '*.md', 'docs/**/*.md', 'tests/README.md']
 
     k6:
@@ -18,9 +18,9 @@ services:
         working_dir: ${WORKSPACE_ROOT:?}
         environment:
             WORKSPACE_ROOT: ${WORKSPACE_ROOT:?}
-        volumes: ['..:${WORKSPACE_ROOT:?}']
+        volumes: ['${WORKSPACE_ROOT:?}:${WORKSPACE_ROOT:?}']
 
 networks:
     default:
-        name: ${DEVCONTAINER_NETWORK}
+        name: ${DEVCONTAINER_NETWORK:?}
         external: true

@@ -5,11 +5,11 @@ services:
     api:
         <<: *logging
         build:
-            context: ../..
+            context: ${WORKSPACE_ROOT:?}
             dockerfile: apps/api/Dockerfile
         env_file:
-            - ../../.env.infra
-            - ../../.env.api
+            - ${WORKSPACE_ROOT:?}/.env.infra
+            - ${WORKSPACE_ROOT:?}/.env.api
         environment:
             NODE_ENV: production
         healthcheck:
@@ -22,7 +22,7 @@ services:
     console:
         <<: *logging
         build:
-            context: ../..
+            context: ${WORKSPACE_ROOT:?}
             dockerfile: apps/console/Dockerfile
         environment:
             API_BASE_URL: http://api:${API_PORT:?}
@@ -47,7 +47,7 @@ services:
     user-app:
         <<: *logging
         build:
-            context: ../..
+            context: ${WORKSPACE_ROOT:?}
             dockerfile: apps/user-app/Dockerfile
         environment:
             API_BASE_URL: http://api:${API_PORT:?}

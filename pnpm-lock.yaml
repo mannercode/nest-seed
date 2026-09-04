@@ -297,6 +297,15 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
+  infra/tests:
+    devDependencies:
+      '@restatedev/restate-sdk':
+        specifier: 1.17.0
+        version: 1.17.0
+      '@restatedev/restate-sdk-clients':
+        specifier: 1.17.0
+        version: 1.17.0
+
   libs/common:
     dependencies:
       '@aws-sdk/s3-presigned-post':
@@ -384,15 +393,6 @@ importers:
         version: 4.1.11(@types/node@26.4.0)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@26.4.0)(jiti@2.7.0)(terser@5.51.1)(yaml@2.9.0))
 
   tests/api: {}
-
-  tests/infra:
-    devDependencies:
-      '@restatedev/restate-sdk':
-        specifier: 1.17.0
-        version: 1.17.0
-      '@restatedev/restate-sdk-clients':
-        specifier: 1.17.0
-        version: 1.17.0
 
   tests/web:
     devDependencies:

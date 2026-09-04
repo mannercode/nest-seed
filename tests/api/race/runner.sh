@@ -1,19 +1,22 @@
-#!/usr/bin/env bash
-# API 테스트 스택 기동, admin 인증, 단일 race 시나리오 실행과 정리를 한 번에 수행한다.
-# 사용: bash tests/api/race/runner.sh <scenario-name>
-#  예) bash tests/api/race/runner.sh purchase-double-spend
-
+#!/bin/bash
 set -Eeuo pipefail
+cd -- "$(dirname -- "$0")"
+
+# API 테스트 스택 기동, admin 인증, 단일 race 시나리오 실행과 정리를 한 번에 수행한다.
+# 사용: pnpm run race -- <scenario-name>
+#  예) pnpm run race -- purchase-double-spend
+
+: "${WORKSPACE_ROOT:?}"
 
 # infra compose와 docker network를 공유하므로 docker compose가 infra 컨테이너를 orphan으로 표시한다.
 # 의미적으로 별개의 묶음이라 경고만 끈다.
 export COMPOSE_IGNORE_ORPHANS=True
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+compose=(docker compose -f ../compose.yml)
 
 list_scenarios() {
     echo "Scenarios:"
-    for f in "${SCRIPT_DIR}"/*.js; do
+    for f in ./*.js; do
         name="$(basename "$f" .js)"
         [ "$name" = "race-common" ] && continue
         echo "  $name"
@@ -22,11 +25,11 @@ list_scenarios() {
 
 TEST_NAME="${1:-}"
 if [ -z "${TEST_NAME}" ]; then
-    echo "Usage: $0 <scenario>"
+    echo "Usage: pnpm run race -- <scenario>"
     list_scenarios
     exit 0
 fi
-TEST_SCRIPT="${SCRIPT_DIR}/${TEST_NAME}.js"
+TEST_SCRIPT="${TEST_NAME}.js"
 
 if [ ! -f "${TEST_SCRIPT}" ]; then
     echo "Error: no test script at ${TEST_SCRIPT}"
@@ -34,28 +37,24 @@ if [ ! -f "${TEST_SCRIPT}" ]; then
     exit 1
 fi
 
-: "${WORKSPACE_ROOT:?}"
 set -a
 # shellcheck source=../../../.env.infra
 . "${WORKSPACE_ROOT}/.env.infra"
 set +a
-COMPOSE_DIR="${WORKSPACE_ROOT}/tests/api"
-
-cd "${COMPOSE_DIR}"
 
 SERVER_URL="http://nginx"
 cleanup() {
     echo ""
     echo "Tearing down..."
-    docker compose down -v -t 0
+    "${compose[@]}" down -v -t 0
 }
 trap cleanup EXIT
 
 dump_diagnostics() {
     echo ""
     echo "=== container diagnostics ==="
-    docker compose ps -a || true
-    for cid in $(docker compose ps -aq 2>/dev/null); do
+    "${compose[@]}" ps -a || true
+    for cid in $("${compose[@]}" ps -aq 2>/dev/null); do
         cname=$(docker inspect --format '{{.Name}} ({{.State.Status}})' "${cid}" 2>/dev/null || echo "${cid}")
         echo "--- logs ${cname} (last 200) ---"
         docker logs --tail 200 "${cid}" 2>&1 || true
@@ -66,18 +65,18 @@ dump_diagnostics() {
 bring_up_stack() {
     echo "Building 4-replica api test stack..."
 
-    if ! docker compose up -d --build --wait; then
+    if ! "${compose[@]}" up -d --build --wait; then
         echo "[FAIL] compose up failed before ${TEST_NAME} could start"
         dump_diagnostics
         exit 1
     fi
 
     echo ""
-    docker compose ps
+    "${compose[@]}" ps
 
     # Restate는 실행 endpoint를 자동 발견하지 않는다. AtoZ/Stability는 시작 전에
     # infra를 reset하므로 최초 등록되고, 같은 코드 반복은 기존 등록을 그대로 쓴다.
-    docker compose run --rm --no-deps restate-register
+    "${compose[@]}" run --rm --no-deps restate-register
 }
 
 # admin은 infra/reset.sh가 만든 고정 개발 fixture로 로그인한다.

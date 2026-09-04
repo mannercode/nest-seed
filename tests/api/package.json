@@ -3,7 +3,10 @@
     "version": "0.0.1",
     "private": true,
     "scripts": {
-        "lint": "oxlint -c ../../oxlint.json race/ benchmark/ && prettier --check 'race/*.js' 'benchmark/*.js' package.json",
+        "api-docs": "bash runner.sh",
+        "race": "bash race/runner.sh",
+        "benchmark": "bash benchmark/run.sh",
+        "lint": "oxlint -c \"${WORKSPACE_ROOT:?}/oxlint.json\" race/ benchmark/ && prettier --check 'race/*.js' 'benchmark/*.js' package.json",
         "format": "prettier --write 'race/*.js' 'benchmark/*.js' package.json",
         "atoz": "pnpm run lint"
     }

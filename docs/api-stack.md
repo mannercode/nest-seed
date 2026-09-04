@@ -9,7 +9,7 @@ client ─→ NGINX ─┬→ API replica
 Restate ─→ NGINX HTTP/2 endpoint ─→ API replica
 ```
 
-`tests/api/compose.yml`은 race, benchmark와 AtoZ 검증이 공유한다. `bash tests/api/runner.sh`는 이 스택에서 실행 가능한 API 문서를 검증한 뒤 정리한다. Restate 자체의 재시작 복구는 `tests/infra/`가 검증한다.
+`tests/api/compose.yml`은 race, benchmark와 AtoZ 검증이 공유한다. `pnpm run api-docs`는 이 스택에서 실행 가능한 API 문서를 검증한 뒤 정리한다. Restate 자체의 재시작 복구는 `infra/tests/restate-journal-recovery.js`가 검증한다.
 
 ## 1. 왜 복제본이 여러 개인가
 

@@ -5,7 +5,7 @@
     "main": "./index.js",
     "types": "./index.d.ts",
     "scripts": {
-        "lint": "oxlint -c ../../oxlint.json index.js && prettier --check index.js index.d.ts package.json",
+        "lint": "oxlint -c \"${WORKSPACE_ROOT:?}/oxlint.json\" index.js && prettier --check index.js index.d.ts package.json",
         "format": "prettier --write index.js index.d.ts package.json",
         "atoz": "pnpm run lint"
     },

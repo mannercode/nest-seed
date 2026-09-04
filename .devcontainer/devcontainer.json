@@ -19,7 +19,8 @@
     "remoteUser": "node",
     "containerEnv": {
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}",
-        "COMPOSE_PROJECT_NAME": "${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
+        "COMPOSE_PROJECT_NAME": "${localEnv:USER:unknown}-${localWorkspaceFolderBasename}",
+        "DEVCONTAINER_NETWORK": "${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
     },
     // docker-outside-of-docker는 호스트 daemon을 사용하기 때문에 workspace를 같은 절대 경로에 마운트한다.
     "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind",

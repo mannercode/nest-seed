@@ -38,6 +38,7 @@ WORKDIR /workspace/apps/api
 COPY --from=build /workspace/deploy/api/package.json ./
 COPY --from=build /workspace/deploy/api/node_modules ./node_modules
 COPY --from=build /workspace/apps/api/_output/dist/ _output/dist/
+COPY --from=build /workspace/apps/api/scripts/admin-create.cjs scripts/admin-create.cjs
 
 USER node
 

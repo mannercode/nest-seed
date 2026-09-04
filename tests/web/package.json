@@ -9,7 +9,7 @@
         "e2e:report": "playwright show-report _output/report",
         "e2e:ui": "bash run-e2e.sh --ui --ui-host=0.0.0.0 --ui-port=9323",
         "format": "prettier --write e2e/ playwright.config.ts compose.yml",
-        "lint": "tsc --noEmit && oxlint -c ../../oxlint.json e2e/ playwright.config.ts && prettier --check e2e/ playwright.config.ts compose.yml",
+        "lint": "tsc --noEmit && oxlint -c \"${WORKSPACE_ROOT:?}/oxlint.json\" e2e/ playwright.config.ts && prettier --check e2e/ playwright.config.ts compose.yml",
         "atoz": "pnpm run lint && CI=1 pnpm run e2e"
     },
     "devDependencies": {

@@ -10,7 +10,7 @@
         "prestart": "free-port ${CONSOLE_PORT:?}",
         "start": "next start -p ${CONSOLE_PORT:?}",
         "format": "prettier --write src/",
-        "lint": "tsc --noEmit && oxlint -c ../../oxlint.json src/ && prettier --check src/",
+        "lint": "tsc --noEmit && oxlint -c \"${WORKSPACE_ROOT:?}/oxlint.json\" src/ && prettier --check src/",
         "atoz": "pnpm run lint && pnpm run build"
     },
     "dependencies": {

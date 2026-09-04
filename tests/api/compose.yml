@@ -1,7 +1,7 @@
 x-api-base: &api-base
     env_file:
-        - ../../.env.infra
-        - ../../.env.api
+        - ${WORKSPACE_ROOT:?}/.env.infra
+        - ${WORKSPACE_ROOT:?}/.env.api
     environment:
         # 실행 환경은 공용 env 파일에 두지 않고 이 테스트 스택에서 명시한다.
         # 비밀번호 암호화(bcrypt)와 파일 작업은 같은 작업 스레드를 사용한다.
@@ -20,7 +20,7 @@ services:
     api:
         <<: *api-base
         build:
-            context: ../..
+            context: ${WORKSPACE_ROOT:?}
             dockerfile: apps/api/Dockerfile
         image: nest-seed-api
         # restart 정책은 일부러 두지 않는다.
@@ -47,7 +47,7 @@ services:
         profiles: [setup]
         image: nest-seed-api
         env_file:
-            - ../../.env.infra
+            - ${WORKSPACE_ROOT:?}/.env.infra
         environment:
             RESTATE_DEPLOYMENT_URI: http://nginx:9080
         entrypoint: ['/bin/sh', '-ec']

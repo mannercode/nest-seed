@@ -19,7 +19,7 @@
 
 Dev Container가 생성될 때 API와 인프라 env가 컨테이너의 `process.env`로 주입된다. API는 `.env` 파일을 직접 읽지 않고 이 환경을 부팅 시 검증한다. 따라서 `.env.api`나 `.env.infra`를 바꾼 뒤에는 Dev Container를 재시작하는 것이 아니라 **재생성**해야 한다. reset과 외부 테스트 스크립트는 독립 실행을 위해 `.env.infra`를 직접 읽는다.
 
-`infra/reset.sh`는 `.env.infra`의 admin 값을 `pnpm run admin:create`에 넘긴다. API 런타임은 이 값을 읽지 않는다. 실제 배포에서 최초 admin이 필요하면 같은 명령에 배포 환경의 `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD`와 API 런타임 env를 주입하는 일회성 작업으로 실행한다.
+`infra/reset.sh`는 `.env.infra`의 admin 값을 `pnpm run admin:create`의 표준입력으로 넘긴다. 이 명령은 MongoDB 접속 정보만 환경에서 읽고, admin의 email, name, password는 프롬프트로 입력받아 애플리케이션을 빌드하거나 부팅하지 않고 MongoDB에 직접 생성한다. 실제 배포에서 최초 admin이 필요하면 MongoDB 접속 정보를 주입한 API 이미지를 대화형으로 실행해 각 값을 직접 입력한다.
 
 Dev Container가 사용하는 Docker `--env-file`은 shell script가 아니다. 따옴표를 붙이면 문자 그대로 값에 포함되고, 다른 변수를 `${...}`로 참조해도 보간되지 않는다.
 

@@ -11,7 +11,6 @@ const { connect } = require('@restatedev/restate-sdk-clients')
 const ADMIN_URL = requiredEnvironment('RESTATE_ADMIN_URL')
 const COMPOSE_PROJECT_NAME = requiredEnvironment('COMPOSE_PROJECT_NAME')
 const INGRESS_URL = requiredEnvironment('RESTATE_INGRESS_URL')
-const WORKSPACE_ROOT = requiredEnvironment('WORKSPACE_ROOT')
 
 test(
     'Restate SIGKILL 재시작 뒤 완료 step은 replay하고 중단 step만 다시 실행한다',
@@ -187,7 +186,7 @@ async function unregisterEndpoint(deploymentId) {
 }
 
 function findRestateContainer() {
-    const composeFile = path.join(WORKSPACE_ROOT, 'infra/compose.yml')
+    const composeFile = path.join(path.dirname(__dirname), 'compose.yml')
     const containerId = execFileSync(
         'docker',
         [

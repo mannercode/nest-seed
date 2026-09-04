@@ -11,7 +11,7 @@ const require = createRequire(import.meta.url)
 const {
     attachSharedTestMongoConnection,
     clearSharedTestMongoConnection
-} = require('../../scripts/index.cjs')
+} = require('../../scripts/shared-test-mongo-connection.cjs')
 const { initializeApiVitestWorkerEnvironment } = require('../../scripts/vitest-resource-wiring.cjs')
 
 // 테스트 파일을 평가하기 전에 실행·worker 범위 자원을 정하고, PROJECT_ID는 아래

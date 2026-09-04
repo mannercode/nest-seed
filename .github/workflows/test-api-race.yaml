@@ -30,6 +30,6 @@ jobs:
                       run=1
                       while [ "$run" -le 50 ]; do
                           echo "[Run ${run}/50]"
-                          bash tests/api/race/runner.sh ${{ matrix.scenario }}
+                          pnpm run race -- ${{ matrix.scenario }}
                           run=$((run + 1))
                       done

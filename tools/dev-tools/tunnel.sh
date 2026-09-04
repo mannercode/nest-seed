@@ -1,5 +1,6 @@
-#!/usr/bin/env bash
-set -e
+#!/bin/bash
+set -Eeuo pipefail
+cd -- "$(dirname -- "$0")"
 
 pids=()
 

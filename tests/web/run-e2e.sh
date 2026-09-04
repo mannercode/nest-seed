@@ -1,25 +1,23 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -Eeuo pipefail
+cd -- "$(dirname -- "$0")"
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-WORKSPACE_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-
+: "${WORKSPACE_ROOT:?Dev Container의 WORKSPACE_ROOT가 필요합니다}"
 : "${COMPOSE_PROJECT_NAME:?Dev Container의 COMPOSE_PROJECT_NAME이 필요합니다}"
+: "${DEVCONTAINER_NETWORK:?Dev Container의 DEVCONTAINER_NETWORK가 필요합니다}"
 
 E2E_UID="$(id -u)"
 E2E_GID="$(id -g)"
-DEVCONTAINER_NETWORK="${COMPOSE_PROJECT_NAME}"
-export E2E_UID E2E_GID DEVCONTAINER_NETWORK
+export E2E_UID E2E_GID
 
 compose=(
     docker compose
     --project-name "${COMPOSE_PROJECT_NAME}-web"
     --env-file "${WORKSPACE_ROOT}/.env.infra"
     --env-file "${WORKSPACE_ROOT}/.env.api"
-    --file "${SCRIPT_DIR}/compose.yml"
 )
 
-mkdir -p "${SCRIPT_DIR}/_output"
+mkdir -p _output
 
 list_only=false
 open_ui=false
