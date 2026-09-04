@@ -48,6 +48,7 @@ run_k6() {
         --rm \
         --no-deps \
         --no-TTY \
+        --workdir "${PWD}" \
         --user "$(id -u):$(id -g)" \
         "${environment[@]}" \
         k6 "$@"

@@ -10,6 +10,10 @@ cd -- "$(dirname -- "$0")"
 # 의미적으로 별개의 묶음이라 경고만 끄고 reap은 하지 않는다.
 export COMPOSE_IGNORE_ORPHANS=True
 
+set -a
+. "${WORKSPACE_ROOT}/.env.infra"
+set +a
+
 compose=(docker compose)
 
 cleanup() {
