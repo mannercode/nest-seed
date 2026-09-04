@@ -3,6 +3,7 @@ on:
     workflow_run:
         workflows: ['Test AtoZ']
         types: [completed]
+        branches: ['dependabot/**']
 permissions:
     contents: write
     pull-requests: write
