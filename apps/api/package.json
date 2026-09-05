@@ -23,9 +23,9 @@
         "atoz": "pnpm run lint && pnpm test"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "3.1122.0",
-        "@aws-sdk/s3-presigned-post": "3.1122.0",
-        "@aws-sdk/s3-request-presigner": "3.1122.0",
+        "@aws-sdk/client-s3": "3.1124.0",
+        "@aws-sdk/s3-presigned-post": "3.1124.0",
+        "@aws-sdk/s3-request-presigner": "3.1124.0",
         "@mannercode/common": "workspace:*",
         "@nats-io/jetstream": "3.4.0",
         "@nats-io/transport-node": "3.4.0",
