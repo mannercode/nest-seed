@@ -8,6 +8,8 @@ on:
         # UTC 기준 3시간마다 실행한다.
         - cron: '27 */3 * * *'
     workflow_dispatch:
+permissions:
+    contents: read
 jobs:
     test-atoz:
         runs-on: ubuntu-24.04-arm

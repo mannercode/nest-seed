@@ -4,6 +4,8 @@ on:
     schedule:
         # UTC 기준 6시간마다 실행한다.
         - cron: '27 */6 * * *'
+permissions:
+    contents: read
 jobs:
     stability:
         name: ${{ matrix.name }}

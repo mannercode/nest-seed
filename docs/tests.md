@@ -35,3 +35,5 @@ web 테스트는 개발 서버가 아닌 production build로 관리자·사용�
 ## 4. CI 반복 — test-stability, test-api-race
 
 한 번의 성공은 레이스와 타이밍 문제의 안전을 증명하지 못한다. Stability CI는 라이브러리·API·인프라 초기화를, API Race CI는 다중 복제본 race 시나리오를 반복해 간헐 실패를 드러낸다. 반복 횟수·스케줄·timeout은 워크플로의 운영 값이므로 문서에 복제하지 않는다.
+
+테스트 CI는 저장소·조직의 기본 token 권한이 바뀌어도 권한이 넓어지지 않도록 checkout에 필요한 저장소 읽기 권한만 명시한다.
