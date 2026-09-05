@@ -51,7 +51,7 @@
         "@testcontainers/mongodb": "12.1.0",
         "@testcontainers/nats": "12.1.0",
         "@types/express": "5.0.6",
-        "@types/node": "26.4.0",
+        "@types/node": "26.4.1",
         "@vitest/coverage-v8": "4.1.11",
         "concurrently": "10.0.5",
         "express": "5.2.1",
