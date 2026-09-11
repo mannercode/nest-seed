@@ -59,7 +59,9 @@ services:
         healthcheck: *frontend-healthcheck
 
     playwright:
-        build: .
+        build:
+            context: ${WORKSPACE_ROOT:?}
+            dockerfile: tests/web/Dockerfile
         init: true
         ipc: host
         user: ${E2E_UID:?}:${E2E_GID:?}

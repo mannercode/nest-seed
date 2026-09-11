@@ -45,7 +45,7 @@ View는 읽기 조합과 화면 정책만 담당한다. 도메인 상태 변경�
 
 특히 transaction은 Replica Set에서, 여러 Redis key를 묶는 작업은 Cluster에서만 드러나는 제약이 있다. 개발 토폴로지를 스탠드얼론으로 줄이면 운영에서만 깨지는 코드를 만들 수 있다. 단일 Dev Container 경로는 이 차이를 줄이고 문서가 OS별 설치 안내서로 불어나는 것을 막는다.
 
-Node는 네이티브 Temporal을 사용하는 런타임에 맞춰 26 계열 최신 버전을 유지한다. TypeScript는 빌드·테스트 도구가 legacy compiler API에 의존하므로 별도 지시 전까지 현재 버전을 고정하고, 일괄·자동 업데이트에서 제외한다.
+Dev Container와 앱의 Node는 네이티브 Temporal을 사용하는 런타임에 맞춰 26 계열 최신 버전을 유지한다. TypeScript는 사용처별로 검증한 버전을 고정하고, 일괄·자동 업데이트에서 제외한다. 앱과 공유 도구는 legacy compiler API에 의존하므로 별도 지시 전까지 현재 버전을 유지한다. 브라우저 E2E의 실행 환경은 [tests 문서](../tests.md#3-web--브라우저-e2e)가 소유한다.
 
 ## 6. 테스트: 커버리지 100% 게이트
 
