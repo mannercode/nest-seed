@@ -32,7 +32,7 @@
 
 web 테스트는 개발 서버가 아닌 production build로 관리자·사용자 흐름과 세션 회전을 검증한다. 운영 배포의 BFF 신뢰 경계는 [API 스택 문서](api-stack.md#3-프런트엔드-bff와-클라이언트-ip-경계)가 소유한다.
 
-패키지는 다른 workspace와 함께 pnpm으로 관리한다. 브라우저와 OS 의존성을 재현하고 추가 테스트 도구를 설치할 수 있도록 Dockerfile을 유지하며, 같은 lockfile에서 web 테스트의 의존성만 실행 이미지에 담는다. Node 타입은 Playwright 이미지의 Node에 맞추고, TypeScript는 타입 검사 CLI만 사용하므로 앱의 compiler API 호환 제약과 별도로 버전을 정한다.
+Playwright와 Chromium은 Dev Container에서 직접 실행하고, 검증 대상 앱의 production 이미지만 Compose로 띄운다. 브라우저 실행을 위해 별도 이미지와 패키지 설치 경로를 관리하지 않도록 의존성은 pnpm workspace의 lockfile로 통일한다. Node 타입은 Dev Container 런타임에 맞추고, TypeScript는 타입 검사 CLI만 사용하므로 앱의 compiler API 호환 제약과 별도로 버전을 정한다.
 
 ## 4. CI 반복 — test-stability, test-api-race
 

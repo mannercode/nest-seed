@@ -20,3 +20,10 @@ RUN set -eu; \
     rm -rf /var/lib/apt/lists/*
 
 RUN npm install -g pnpm@12.3.4
+
+# OS 의존성은 이미지에 두고, Chromium은 pnpm 설치 후 같은 Playwright 버전으로 설치한다.
+RUN --mount=type=bind,source=tests/web/package.json,target=/tmp/tests-web-package.json,ro \
+    set -eu; \
+    playwright_version="$(node -p "require('/tmp/tests-web-package.json').devDependencies['@playwright/test']")"; \
+    npm_config_cache=/tmp/npm-cache npx --yes "playwright@${playwright_version}" install-deps chromium; \
+    rm -rf /tmp/npm-cache /var/lib/apt/lists/*

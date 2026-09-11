@@ -26,6 +26,8 @@ benchmark가 만든 극장 fixture는 개발 MongoDB에 남는다. 초기화하�
 
 ## 3. 보조 명령
 
+브라우저를 다시 설치할 때는 `pnpm --filter './tests/web' exec playwright install chromium`을 실행한다. Dev Container 시작과 AtoZ는 이 설치를 자동으로 수행한다.
+
 ```bash
 pnpm run e2e:list                   # 브라우저 시나리오 목록
 pnpm run e2e:ui                     # interactive 브라우저 실행

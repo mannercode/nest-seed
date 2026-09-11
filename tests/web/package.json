@@ -6,7 +6,7 @@
     "scripts": {
         "e2e": "bash run-e2e.sh",
         "e2e:list": "bash run-e2e.sh --list --reporter=list",
-        "e2e:report": "playwright show-report _output/report",
+        "e2e:report": "playwright show-report _output/report --host=127.0.0.1",
         "e2e:ui": "bash run-e2e.sh --ui --ui-host=0.0.0.0 --ui-port=9323",
         "format": "prettier --write e2e/ playwright.config.ts compose.yml",
         "lint": "tsc --noEmit && oxlint -c \"${WORKSPACE_ROOT:?}/oxlint.config.mts\" e2e/ playwright.config.ts && prettier --check e2e/ playwright.config.ts compose.yml",
@@ -14,7 +14,7 @@
     },
     "devDependencies": {
         "@playwright/test": "1.63.0",
-        "@types/node": "24.13.4",
+        "@types/node": "26.5.1",
         "typescript": "7.0.2"
     }
 }

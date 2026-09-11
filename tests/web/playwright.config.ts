@@ -2,13 +2,13 @@ import { defineConfig, devices } from '@playwright/test'
 
 function requiredEnvironment(name: string): string {
     const value = process.env[name]
-    if (!value) throw new Error(`${name} must be set by tests/web/compose.yml`)
+    if (!value) throw new Error(`${name} must be set by the Dev Container`)
     return value
 }
 
-const BASE_URL = requiredEnvironment('CONSOLE_BASE_URL')
-export const API_BASE_URL = requiredEnvironment('API_BASE_URL')
-export const USER_APP_BASE_URL = requiredEnvironment('USER_APP_BASE_URL')
+const BASE_URL = `http://console:${requiredEnvironment('CONSOLE_PORT')}`
+export const API_BASE_URL = `http://api:${requiredEnvironment('API_PORT')}`
+export const USER_APP_BASE_URL = `http://user-app:${requiredEnvironment('USER_APP_PORT')}`
 
 export default defineConfig({
     testDir: './e2e',

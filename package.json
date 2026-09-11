@@ -26,7 +26,7 @@
         "api-docs": "pnpm --dir tests/api run api-docs",
         "race": "pnpm --dir tests/api run race",
         "benchmark": "pnpm --dir tests/api run benchmark",
-        "preatoz": "pnpm install --frozen-lockfile && bash infra/reset.sh",
+        "preatoz": "pnpm install --frozen-lockfile && pnpm --filter './tests/web' exec playwright install chromium && bash infra/reset.sh",
         "atoz": "pnpm --recursive --workspace-concurrency=1 --if-present run atoz && pnpm run lint:root && pnpm run api-docs",
         "predev": "pnpm run build:libs",
         "dev": "concurrently 'pnpm:dev:*'",

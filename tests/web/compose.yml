@@ -58,29 +58,6 @@ services:
             api: { condition: service_healthy }
         healthcheck: *frontend-healthcheck
 
-    playwright:
-        build:
-            context: ${WORKSPACE_ROOT:?}
-            dockerfile: tests/web/Dockerfile
-        init: true
-        ipc: host
-        user: ${E2E_UID:?}:${E2E_GID:?}
-        environment:
-            ADMIN_EMAIL: ${ADMIN_EMAIL:?}
-            ADMIN_PASSWORD: ${ADMIN_PASSWORD:?}
-            API_BASE_URL: http://api:${API_PORT:?}
-            CI: ${CI:-}
-            CONSOLE_BASE_URL: http://console:${CONSOLE_PORT:?}
-            HOME: /tmp
-            USER_APP_BASE_URL: http://user-app:${USER_APP_PORT:?}
-        volumes:
-            - ./e2e:/work/e2e:ro
-            - ./playwright.config.ts:/work/playwright.config.ts:ro
-            - ./tsconfig.json:/work/tsconfig.json:ro
-            - ./_output:/work/_output
-        ports:
-            - '127.0.0.1:9323:9323'
-
 networks:
     default:
         name: ${DEVCONTAINER_NETWORK:?}

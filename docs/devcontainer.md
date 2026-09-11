@@ -4,6 +4,8 @@
 
 시작 시 의존성 설치가 끝난 뒤 pnpm script를 실행한다. pnpm의 자동 설치와 명시적 설치가 겹치면 같은 `node_modules`를 동시에 수정할 수 있으므로 병렬로 시작하지 않는다.
 
+브라우저 E2E의 OS 의존성은 이미지 빌드에서 준비하고, Chromium은 pnpm 설치 후 lockfile의 Playwright로 설치해 브라우저 버전을 맞춘다. Playwright를 갱신하면 OS 의존성도 함께 반영되도록 Dev Container를 다시 빌드한다.
+
 ## 1. 환경 변수는 재생성해야 반영된다
 
 개발용 env 파일은 Dev Container를 **만들 때** 주입된다. 값을 바꾼 뒤 `docker restart`만 하면 이전 값이 남는다. `Rebuild Container`로 재생성해야 한다. 앱은 env 파일을 직접 읽지 않고 실행 환경이 주입한 `process.env`만 검증한다.
