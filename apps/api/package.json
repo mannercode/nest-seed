@@ -23,9 +23,9 @@
         "atoz": "pnpm run lint && pnpm test"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "3.1124.0",
-        "@aws-sdk/s3-presigned-post": "3.1124.0",
-        "@aws-sdk/s3-request-presigner": "3.1124.0",
+        "@aws-sdk/client-s3": "3.1130.0",
+        "@aws-sdk/s3-presigned-post": "3.1130.0",
+        "@aws-sdk/s3-request-presigner": "3.1130.0",
         "@mannercode/common": "workspace:*",
         "@nats-io/jetstream": "3.4.0",
         "@nats-io/transport-node": "3.4.0",
@@ -44,7 +44,7 @@
         "mongodb": "7.6.0",
         "reflect-metadata": "0.2.2",
         "rxjs": "7.8.2",
-        "zod": "4.5.4"
+        "zod": "4.6.2"
     },
     "devDependencies": {
         "@mannercode/dev-tools": "workspace:*",
@@ -53,17 +53,17 @@
         "@nestjs/cli": "12.0.0",
         "@nestjs/schematics": "12.0.0",
         "@nestjs/testing": "12.0.1",
-        "@rspack/core": "2.2.2",
+        "@rspack/core": "2.2.3",
         "@types/bcrypt": "6.0.0",
         "@types/compression": "1.8.1",
         "@types/express": "5.0.6",
-        "@types/node": "26.4.0",
+        "@types/node": "26.5.1",
         "fork-ts-checker-webpack-plugin": "9.1.0",
         "prettier": "3.9.6",
         "ts-loader": "9.6.2",
         "tsconfig-paths-webpack-plugin": "4.2.0",
         "typescript": "6.0.3",
-        "vitest": "4.1.11",
+        "vitest": "5.0.0",
         "webpack": "5.110.3",
         "webpack-node-externals": "3.0.0"
     }

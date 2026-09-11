@@ -2,7 +2,7 @@
     "name": "nest-seed",
     "private": true,
     "license": "MIT",
-    "packageManager": "pnpm@11.25.0",
+    "packageManager": "pnpm@12.3.4",
     "engines": {
         "node": "^26.0.0"
     },
@@ -37,9 +37,9 @@
         "dev:user-app": "pnpm --dir apps/user-app run dev"
     },
     "devDependencies": {
-        "@aws-sdk/client-s3": "3.1124.0",
-        "@aws-sdk/s3-presigned-post": "3.1124.0",
-        "@aws-sdk/s3-request-presigner": "3.1124.0",
+        "@aws-sdk/client-s3": "3.1130.0",
+        "@aws-sdk/s3-presigned-post": "3.1130.0",
+        "@aws-sdk/s3-request-presigner": "3.1130.0",
         "@commitlint/cli": "21.2.2",
         "@commitlint/config-conventional": "21.2.2",
         "@mannercode/dev-tools": "workspace:*",
@@ -51,8 +51,8 @@
         "@testcontainers/mongodb": "12.1.0",
         "@testcontainers/nats": "12.1.0",
         "@types/express": "5.0.6",
-        "@types/node": "26.4.0",
-        "@vitest/coverage-v8": "4.1.11",
+        "@types/node": "26.5.1",
+        "@vitest/coverage-v8": "5.0.0",
         "concurrently": "10.0.5",
         "eslint-import-resolver-typescript": "4.4.5",
         "eslint-plugin-allowed-dependencies": "3.1.0",
@@ -60,14 +60,14 @@
         "express": "5.2.1",
         "husky": "9.1.7",
         "ioredis": "6.0.0",
-        "lint-staged": "17.4.1",
+        "lint-staged": "17.5.1",
         "mongodb": "7.6.0",
-        "oxlint": "1.81.0",
+        "oxlint": "1.82.0",
         "prettier": "3.9.6",
         "reflect-metadata": "0.2.2",
         "rxjs": "7.8.2",
         "testcontainers": "12.1.0",
         "typescript": "6.0.3",
-        "vitest": "4.1.11"
+        "vitest": "5.0.0"
     }
 }

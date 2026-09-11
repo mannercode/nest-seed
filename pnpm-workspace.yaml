@@ -7,6 +7,11 @@ packages:
 
 saveExact: true
 
+# TypeScript는 별도 지시 전까지 현재 버전을 유지한다.
+update:
+    ignoreDeps:
+        - typescript
+
 allowBuilds:
     'bcrypt@6.0.0': true
     cpu-features: false
@@ -15,3 +20,10 @@ allowBuilds:
     protobufjs: false
     ssh2: false
     'unrs-resolver@1.12.2': true
+
+minimumReleaseAgeExclude:
+    - '@aws-sdk/client-s3@3.1130.0'
+    - '@aws-sdk/s3-presigned-post@3.1130.0'
+    - '@aws-sdk/s3-request-presigner@3.1130.0'
+    - lint-staged@17.5.1
+    - zod@4.6.2

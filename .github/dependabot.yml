@@ -18,6 +18,9 @@ updates:
             update-types:
                 - version-update:semver-minor
                 - version-update:semver-patch
+      # TypeScript는 별도 지시 전까지 patch를 포함한 모든 업데이트에서 제외한다.
+      ignore:
+          - dependency-name: typescript
       groups:
           aws-sdk-minor-patch:
               patterns: ['@aws-sdk/*']

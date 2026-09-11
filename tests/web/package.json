@@ -13,8 +13,8 @@
         "atoz": "pnpm run lint && CI=1 pnpm run e2e"
     },
     "devDependencies": {
-        "@playwright/test": "1.62.1",
-        "@types/node": "26.4.0",
+        "@playwright/test": "1.63.0",
+        "@types/node": "26.5.1",
         "typescript": "6.0.3"
     }
 }
