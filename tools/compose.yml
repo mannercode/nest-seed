@@ -1,9 +1,4 @@
 services:
-    plantuml:
-        image: plantuml/plantuml-server:latest
-        container_name: ${DEVCONTAINER_NETWORK:?}-plantuml
-        restart: unless-stopped
-
     lychee:
         profiles: [lint]
         image: lycheeverse/lychee:latest
