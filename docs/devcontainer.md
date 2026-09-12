@@ -25,6 +25,8 @@
 
 같은 호스트에서 basename이 같은 clone을 동시에 열면 Docker 프로젝트와 네트워크 이름이 충돌한다. 동시에 쓸 clone은 폴더 이름을 다르게 둔다.
 
+Codex의 세션·인덱스·SQLite 상태는 프로젝트별 홈에 함께 보관한다. 호스트의 공용 홈은 `/home/node/.codex-shared`에 마운트하고 설정·인증·스킬만 심볼릭 링크로 연결한다. 설정·인증 파일은 저장할 때 교체될 수 있어 파일 단위 bind mount를 쓰지 않는다. 이 구성은 Codex가 사용하는 상태를 분리하며, 다른 프로젝트 파일에 대한 접근을 차단하지는 않는다.
+
 ## 3. 보안 경계
 
 Dev Container는 호스트 Docker socket과 개발 도구의 자격증명을 마운트하므로 sandbox가 아니다. 신뢰하지 않는 revision은 컨테이너를 열기 **전에** `.devcontainer/`, 의존성 lifecycle script, workflow·shell 변경을 호스트에서 검토한다. 자격증명은 최소 권한·짧은 만료를 사용한다.

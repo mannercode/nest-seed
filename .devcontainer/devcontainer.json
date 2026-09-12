@@ -27,35 +27,28 @@
     "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind",
     "workspaceFolder": "${localWorkspaceFolder}",
     "mounts": [
-        "source=${localEnv:HOME}/.codex,target=/home/node/.codex,type=bind",
-        "source=${localEnv:HOME}/.codex/${localWorkspaceFolderBasename}/sessions,target=/home/node/.codex/sessions,type=bind",
-        "source=${localEnv:HOME}/.config/gh,target=/home/node/.config/gh,type=bind",
-        "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind",
-        "source=${localEnv:HOME}/.claude.json,target=/home/node/.claude.json,type=bind"
+        "source=${localEnv:HOME}/.codex/${localWorkspaceFolderBasename},target=/home/node/.codex,type=bind",
+        "source=${localEnv:HOME}/.codex,target=/home/node/.codex-shared,type=bind",
+        "source=${localEnv:HOME}/.config/gh,target=/home/node/.config/gh,type=bind"
     ],
     "initializeCommand": {
         "project-network": "n=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}; docker network inspect \"$n\" >/dev/null 2>&1 || docker network create \"$n\" >/dev/null",
-        "codex": "mkdir -p ${localEnv:HOME}/.codex/${localWorkspaceFolderBasename}/sessions ",
-        "claude": "mkdir -p ${localEnv:HOME}/.claude && touch ${localEnv:HOME}/.claude.json",
+        "codex": "mkdir -p \"${localEnv:HOME}/.codex/${localWorkspaceFolderBasename}\" \"${localEnv:HOME}/.codex/skills\"",
         "github": "mkdir -p ${localEnv:HOME}/.config/gh"
     },
-    "postStartCommand": "pnpm install --frozen-lockfile && pnpm --filter './tests/web' exec playwright install chromium && bash infra/reset.sh && pnpm compose:tools up -d plantuml",
+    "postCreateCommand": "for entry in config.toml auth.json skills; do ln -sfn \"/home/node/.codex-shared/$entry\" \"/home/node/.codex/$entry\" || exit; done",
+    "postStartCommand": "pnpm install --frozen-lockfile && pnpm --filter './tests/web' exec playwright install chromium && bash infra/reset.sh",
     "waitFor": "postStartCommand",
     "customizations": {
         "vscode": {
             "extensions": [
                 // 이름과 달리 Vitest도 자동 감지한다. 이 저장소에서는 Vitest spec의 실행·디버깅에 사용한다.
                 "firsttris.vscode-jest-runner",
-                "jebbs.plantuml",
                 "esbenp.prettier-vscode",
                 "mutantdino.resourcemonitor",
                 "mkhl.shfmt"
             ],
-            "settings": {
-                "remote.autoForwardPorts": false,
-                "plantuml.server": "http://plantuml:8080/",
-                "plantuml.render": "PlantUMLServer"
-            }
+            "settings": { "remote.autoForwardPorts": false }
         }
     }
 }
