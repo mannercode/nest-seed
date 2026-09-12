@@ -29,14 +29,11 @@
     "mounts": [
         "source=${localEnv:HOME}/.codex/${localWorkspaceFolderBasename},target=/home/node/.codex,type=bind",
         "source=${localEnv:HOME}/.codex,target=/home/node/.codex-shared,type=bind",
-        "source=${localEnv:HOME}/.config/gh,target=/home/node/.config/gh,type=bind",
-        "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind",
-        "source=${localEnv:HOME}/.claude.json,target=/home/node/.claude.json,type=bind"
+        "source=${localEnv:HOME}/.config/gh,target=/home/node/.config/gh,type=bind"
     ],
     "initializeCommand": {
         "project-network": "n=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}; docker network inspect \"$n\" >/dev/null 2>&1 || docker network create \"$n\" >/dev/null",
         "codex": "mkdir -p \"${localEnv:HOME}/.codex/${localWorkspaceFolderBasename}\" \"${localEnv:HOME}/.codex/skills\"",
-        "claude": "mkdir -p ${localEnv:HOME}/.claude && touch ${localEnv:HOME}/.claude.json",
         "github": "mkdir -p ${localEnv:HOME}/.config/gh"
     },
     "postCreateCommand": "for entry in config.toml auth.json skills; do ln -sfn \"/home/node/.codex-shared/$entry\" \"/home/node/.codex/$entry\" || exit; done",
