@@ -2,7 +2,7 @@
     "name": "nest-seed",
     "private": true,
     "license": "MIT",
-    "packageManager": "pnpm@12.3.4",
+    "packageManager": "pnpm@12.4.1",
     "engines": {
         "node": "^26.0.0"
     },
@@ -37,9 +37,9 @@
         "dev:user-app": "pnpm --dir apps/user-app run dev"
     },
     "devDependencies": {
-        "@aws-sdk/client-s3": "3.1130.0",
-        "@aws-sdk/s3-presigned-post": "3.1130.0",
-        "@aws-sdk/s3-request-presigner": "3.1130.0",
+        "@aws-sdk/client-s3": "3.1131.0",
+        "@aws-sdk/s3-presigned-post": "3.1131.0",
+        "@aws-sdk/s3-request-presigner": "3.1131.0",
         "@commitlint/cli": "21.2.2",
         "@commitlint/config-conventional": "21.2.2",
         "@mannercode/dev-tools": "workspace:*",
