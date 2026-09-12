@@ -17,7 +17,6 @@
         "--network=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
     ],
     "remoteUser": "node",
-    "forwardPorts": [9323],
     "containerEnv": {
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}",
         "COMPOSE_PROJECT_NAME": "${localEnv:USER:unknown}-${localWorkspaceFolderBasename}",
