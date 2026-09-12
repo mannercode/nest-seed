@@ -19,7 +19,7 @@ RUN set -eu; \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends cloudflared; \
     rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g pnpm@12.3.4
+RUN npm install -g pnpm@12.4.1
 
 # OS 의존성은 이미지에 두고, Chromium은 pnpm 설치 후 같은 Playwright 버전으로 설치한다.
 RUN --mount=type=bind,source=tests/web/package.json,target=/tmp/tests-web-package.json,ro \
