@@ -4,16 +4,18 @@ import {
     assignIfDefined,
     CrudRepository,
     DateUtil,
+    isDuplicateKeyError,
     MongoErrors,
     plainDateFromMongo,
     objectId,
     objectIds,
     QueryBuilder
 } from '@mannercode/common'
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { z } from 'zod'
 import { AppConfigService, MongoConnection } from '#config'
 import { CreateUserDto, SearchUsersPageDto, UpdateUserDto } from './dtos/index.js'
+import { UserErrors } from './errors.js'
 import { User } from './models/index.js'
 
 const UserWriteSchema = z.strictObject({
@@ -47,7 +49,14 @@ export class UsersRepository extends CrudRepository<User> {
         user.birthDate = createDto.birthDate
         user.password = createDto.password
         user.authVersion = 0
-        await this.insertOne(user)
+        try {
+            await this.insertOne(user)
+        } catch (error) {
+            if (isDuplicateKeyError(error)) {
+                throw new ConflictException(UserErrors.EmailAlreadyExists(createDto.email))
+            }
+            throw error
+        }
 
         return user
     }
@@ -116,15 +125,22 @@ export class UsersRepository extends CrudRepository<User> {
         const update: Document = { $set: patch }
         if (updateDto.password !== undefined) update.$inc = { authVersion: 1 }
 
-        const user = await this.collection.findOneAndUpdate(
-            this.activeFilter({ _id: objectId(userId) }),
-            this.timestamped(update),
-            { projection: this.projection, returnDocument: 'after' }
-        )
+        try {
+            const user = await this.collection.findOneAndUpdate(
+                this.activeFilter({ _id: objectId(userId) }),
+                this.timestamped(update),
+                { projection: this.projection, returnDocument: 'after' }
+            )
 
-        if (!user) throw new NotFoundException(MongoErrors.DocumentNotFound(userId))
+            if (!user) throw new NotFoundException(MongoErrors.DocumentNotFound(userId))
 
-        return this.toDomainDocument(user)
+            return this.toDomainDocument(user)
+        } catch (error) {
+            if (isDuplicateKeyError(error) && updateDto.email) {
+                throw new ConflictException(UserErrors.EmailAlreadyExists(updateDto.email))
+            }
+            throw error
+        }
     }
 
     private buildQuery(searchDto: SearchUsersPageDto, options: QueryBuilderOptions) {

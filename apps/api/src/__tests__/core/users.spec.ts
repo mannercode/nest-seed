@@ -93,7 +93,7 @@ describe('UsersService', () => {
             const service = fix.module.get(UsersService)
             const repository = fix.module.get(UsersRepository)
             const failure = new Error('storage unavailable')
-            vi.spyOn(repository, 'create').mockRejectedValueOnce(failure)
+            vi.spyOn(repository.collection, 'insertOne').mockRejectedValueOnce(failure)
 
             // "그대로 던진다"의 핵심은 409로 변환되지 않는 것이므로 예외 타입까지 확인한다.
             const promise = service.create(buildCreateUserDto())

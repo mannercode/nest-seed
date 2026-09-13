@@ -3,6 +3,7 @@ import {
     CrudRepository,
     DateUtil,
     ensure,
+    isDuplicateKeyError,
     mongoArrayToPublic,
     mongoToPublic,
     objectId
@@ -10,6 +11,7 @@ import {
 import { Injectable } from '@nestjs/common'
 import { AppConfigService, MongoConnection } from '#config'
 import { CreatePurchaseRecordDto } from './dtos/index.js'
+import { PurchaseRecordIdempotencyConflictException } from './errors.js'
 import { PurchaseEventStatus, PurchaseRecord, PurchaseRecordStatus } from './models/index.js'
 
 @Injectable()
@@ -77,7 +79,14 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
                 ? PurchaseEventStatus.Pending
                 : PurchaseEventStatus.Published
 
-        return this.insertOne(purchaseRecord)
+        try {
+            return await this.insertOne(purchaseRecord)
+        } catch (error) {
+            if (isDuplicateKeyError(error)) {
+                throw new PurchaseRecordIdempotencyConflictException()
+            }
+            throw error
+        }
     }
 
     async findByIdempotencyKey(userId: string, idempotencyKey: string) {

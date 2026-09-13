@@ -19,6 +19,13 @@ const apiDependencyOptions = {
         '^@mannercode/'
     ]
 }
+const internalImportRestrictions = [
+    {
+        regex: '(?:^|/)showtime-creation/(?:internal|worker)(?:/|$)',
+        message:
+            'showtime-creation의 internal/worker는 공개 API가 아닙니다. 외부 운영 코드는 #application을 사용하세요.'
+    }
+]
 
 export default defineConfig({
     // ESLint에서는 검사했지만 현재 Oxlint 구성으로 대체하지 못한 안전장치다.
@@ -120,15 +127,22 @@ export default defineConfig({
         {
             files: ['apps/api/src/**/*.ts'],
             excludeFiles: ['apps/api/src/**/__tests__/**/*.ts'],
+            rules: { 'no-restricted-imports': ['error', { patterns: internalImportRestrictions }] }
+        },
+        {
+            files: ['apps/api/src/services/**/*.ts'],
+            excludeFiles: ['apps/api/src/**/__tests__/**/*.ts', '**/*.repository.ts'],
             rules: {
                 'no-restricted-imports': [
                     'error',
                     {
                         patterns: [
+                            ...internalImportRestrictions,
                             {
-                                regex: '(?:^|/)showtime-creation/(?:internal|worker)(?:/|$)',
+                                group: ['@mannercode/common'],
+                                importNames: ['isDuplicateKeyError'],
                                 message:
-                                    'showtime-creation의 internal/worker는 공개 API가 아닙니다. 외부 운영 코드는 #application을 사용하세요.'
+                                    'MongoDB 오류 판별은 Repository에서 처리하고 도메인 오류로 전달하세요.'
                             }
                         ]
                     }

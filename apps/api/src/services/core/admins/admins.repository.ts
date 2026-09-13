@@ -3,14 +3,16 @@ import {
     assignIfDefined,
     CrudRepository,
     DateUtil,
+    isDuplicateKeyError,
     mongoToPublic,
     MongoErrors,
     objectId
 } from '@mannercode/common'
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { z } from 'zod'
 import { AppConfigService, MongoConnection } from '#config'
 import type { CreateAdminDto, UpdateAdminDto } from './dtos/index.js'
+import { AdminErrors } from './errors.js'
 import { Admin } from './models/index.js'
 
 const AdminWriteSchema = z.strictObject({
@@ -43,7 +45,14 @@ export class AdminsRepository extends CrudRepository<Admin> {
         admin.password = createDto.password
         admin.authVersion = 0
 
-        return this.insertOne(admin)
+        try {
+            return await this.insertOne(admin)
+        } catch (error) {
+            if (isDuplicateKeyError(error)) {
+                throw new ConflictException(AdminErrors.EmailAlreadyExists(createDto.email))
+            }
+            throw error
+        }
     }
 
     async findByEmailWithPassword(email: string) {
@@ -86,13 +95,20 @@ export class AdminsRepository extends CrudRepository<Admin> {
         const update: Document = { $set: fields }
         if (patch.password !== undefined) update.$inc = { authVersion: 1 }
 
-        const doc = await this.collection.findOneAndUpdate(
-            this.activeFilter({ _id: objectId(id) }),
-            this.timestamped(update),
-            { projection: this.projection, returnDocument: 'after' }
-        )
+        try {
+            const doc = await this.collection.findOneAndUpdate(
+                this.activeFilter({ _id: objectId(id) }),
+                this.timestamped(update),
+                { projection: this.projection, returnDocument: 'after' }
+            )
 
-        if (!doc) throw new NotFoundException(MongoErrors.DocumentNotFound(id))
-        return mongoToPublic<Admin>(doc)
+            if (!doc) throw new NotFoundException(MongoErrors.DocumentNotFound(id))
+            return mongoToPublic<Admin>(doc)
+        } catch (error) {
+            if (isDuplicateKeyError(error) && patch.email) {
+                throw new ConflictException(AdminErrors.EmailAlreadyExists(patch.email))
+            }
+            throw error
+        }
     }
 }

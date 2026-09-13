@@ -4,7 +4,6 @@ import {
     ensure,
     IdempotencyErrors,
     InjectCache,
-    isDuplicateKeyError,
     JsonUtil
 } from '@mannercode/common'
 import { ConflictException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
@@ -12,6 +11,7 @@ import { Interval } from '@nestjs/schedule'
 import { createHash, randomUUID } from 'node:crypto'
 import { MongoConnection } from '#config'
 import {
+    PurchaseRecordIdempotencyConflictException,
     PurchaseRecordsService,
     PurchaseRecordStatus,
     TicketsService,
@@ -108,7 +108,7 @@ export class PurchaseService {
                 { idempotency: { fingerprint, key: idempotencyKey }, pending: true }
             )
         } catch (error) {
-            if (!isDuplicateKeyError(error)) throw error
+            if (!(error instanceof PurchaseRecordIdempotencyConflictException)) throw error
 
             const winner = ensure(
                 await this.purchaseRecordsService.findIdempotencyOperation(userId, idempotencyKey),
