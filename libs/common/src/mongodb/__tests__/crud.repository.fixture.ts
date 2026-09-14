@@ -1,14 +1,16 @@
 import {
-    type ClientSession,
     type Document,
     type Filter,
     type IndexDescription,
     MongoClient,
     type UpdateFilter
 } from 'mongodb'
+import type { TransactionContext } from '../../index.js'
 import {
     CrudDocument,
     CrudRepository,
+    MongoConnection,
+    objectId,
     type CrudRepositoryOptions,
     type StoredDocument
 } from '../index.js'
@@ -23,25 +25,32 @@ type SampleDraft = Sample & StoredDocument<Sample>
 export class SamplesRepository extends CrudRepository<Sample> {
     constructor(client: MongoClient, collectionName: string, options: CrudRepositoryOptions = {}) {
         super(
-            client.db(requiredEnvironment('TESTLIB_MONGO_DATABASE')).collection(collectionName),
-            client,
+            new MongoConnection(
+                client,
+                client.db(requiredEnvironment('TESTLIB_MONGO_DATABASE')),
+                false
+            ),
+            collectionName,
             3,
             5,
             options
         )
     }
 
-    async create(name: string, options: { session?: ClientSession; signal?: AbortSignal } = {}) {
+    async create(
+        name: string,
+        options: { transaction?: TransactionContext; signal?: AbortSignal } = {}
+    ) {
         const doc = this.draft(name)
-        return this.insertOne(doc, options.session, options.signal)
+        return this.insertOne(doc, options.transaction, options.signal)
     }
 
     async createMany(
         names: string[],
-        options: { session?: ClientSession; signal?: AbortSignal } = {}
+        options: { transaction?: TransactionContext; signal?: AbortSignal } = {}
     ) {
         const docs = names.map((name) => this.draft(name))
-        await this.insertMany(docs, options.session, options.signal)
+        await this.insertMany(docs, options.transaction, options.signal)
         return docs
     }
 
@@ -49,8 +58,20 @@ export class SamplesRepository extends CrudRepository<Sample> {
         return Object.assign(this.newDocument(), { name })
     }
 
-    async insertDrafts(docs: SampleDraft[], session?: ClientSession, signal?: AbortSignal) {
-        await this.insertMany(docs, session, signal)
+    async insertDrafts(
+        docs: SampleDraft[],
+        transaction?: TransactionContext,
+        signal?: AbortSignal
+    ) {
+        await this.insertMany(docs, transaction, signal)
+    }
+
+    async rename(id: string, name: string, transaction: TransactionContext) {
+        await this.collection.updateOne(
+            { _id: objectId(id) },
+            { $set: { name } },
+            { session: this.getSession(transaction) }
+        )
     }
 
     toActiveFilter(filter: Filter<Document>) {

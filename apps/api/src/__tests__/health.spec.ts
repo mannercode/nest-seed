@@ -1,4 +1,4 @@
-import { MongoConnection } from '#config'
+import { MongoConnection } from '@mannercode/common'
 import { type AppTestContext, createAppTestContext } from './helpers/index.js'
 
 describe('Health', () => {

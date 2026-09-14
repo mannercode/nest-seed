@@ -1,3 +1,6 @@
+import { MongoHealthIndicator } from '../index.js'
+import { MongoConnection } from '../../mongodb/index.js'
+import type { MongoClient, Db } from 'mongodb'
 import {
     type RedisHealthIndicatorFixture,
     createRedisHealthIndicatorFixture
@@ -36,6 +39,27 @@ describe('RedisHealthIndicator', () => {
 
             const healthStatus = await fix.redisIndicator.isHealthy('key', fix.redis)
             expect(healthStatus).toEqual({ key: { reason: '[object Object]', status: 'down' } })
+        })
+    })
+})
+
+describe('MongoHealthIndicator', () => {
+    it('ping 성공 시 up을 반환한다', async () => {
+        const connection = new MongoConnection(
+            {} as MongoClient,
+            { command: vi.fn().mockResolvedValue({ ok: 1 }) } as unknown as Db
+        )
+        expect(await new MongoHealthIndicator().isHealthy('mongo', connection)).toEqual({
+            mongo: { status: 'up' }
+        })
+    })
+    it('ping 실패 원인을 down 상태에 담는다', async () => {
+        const connection = new MongoConnection(
+            {} as MongoClient,
+            { command: vi.fn().mockRejectedValue(new Error('offline')) } as unknown as Db
+        )
+        expect(await new MongoHealthIndicator().isHealthy('mongo', connection)).toEqual({
+            mongo: { status: 'down', reason: 'Error: offline' }
         })
     })
 })

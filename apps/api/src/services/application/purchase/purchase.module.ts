@@ -3,7 +3,11 @@ import { Module } from '@nestjs/common'
 import { AppConfigService, REDIS_CONNECTION_NAME } from '#config'
 import { PurchaseRecordsModule, ShowtimesModule, TicketHoldingModule, TicketsModule } from '#core'
 import { PaymentsModule } from '#infrastructure'
-import { PurchaseNotificationService, TicketPurchaseService } from './internal/index.js'
+import {
+    PurchaseNotificationService,
+    PurchaseTransactionRepository,
+    TicketPurchaseService
+} from './internal/index.js'
 import {
     DEFAULT_PURCHASE_EVENTS_MAX_BYTES,
     PURCHASE_EVENTS_MAX_BYTES,
@@ -31,6 +35,7 @@ import { PurchaseService } from './purchase.service.js'
         TicketPurchaseService,
         PurchaseEvents,
         PurchaseNotificationService,
+        PurchaseTransactionRepository,
         { provide: PURCHASE_EVENTS_MAX_BYTES, useValue: DEFAULT_PURCHASE_EVENTS_MAX_BYTES }
     ]
 })

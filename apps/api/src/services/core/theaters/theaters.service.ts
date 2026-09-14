@@ -1,5 +1,4 @@
-import type { ClientSession } from 'mongodb'
-import { ensure, mapDocToDto } from '@mannercode/common'
+import { type TransactionContext, ensure, mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import {
     CreateTheaterDto,
@@ -26,18 +25,18 @@ export class TheatersService {
 
     async acquireShowtimeScheduleGuards(
         theaterIds: string[],
-        session: ClientSession,
+        transaction: TransactionContext,
         signal: AbortSignal | undefined = undefined
     ) {
-        return this.repository.acquireShowtimeScheduleGuards(theaterIds, session, signal)
+        return this.repository.acquireShowtimeScheduleGuards(theaterIds, transaction, signal)
     }
 
     async getMany(
         theaterIds: string[],
-        session: ClientSession | undefined = undefined,
+        transaction: TransactionContext | undefined = undefined,
         signal: AbortSignal | undefined = undefined
     ) {
-        const theaters = await this.repository.getByIds(theaterIds, session, signal)
+        const theaters = await this.repository.getByIds(theaterIds, transaction, signal)
 
         const theaterDtos = this.toDtos(theaters)
         return theaterDtos

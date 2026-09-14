@@ -1,3 +1,5 @@
+import { connect, type NatsConnection } from '@nats-io/transport-node'
+import { jetstreamManager } from '@nats-io/jetstream'
 import type { MockInstance } from 'vitest'
 import { withTestId } from '@mannercode/testing'
 import {
@@ -5,7 +7,13 @@ import {
     createNatsPubSubServiceFixture
 } from './nats-pubsub.service.fixture.js'
 import { Logger as NestLogger } from '@nestjs/common'
-import { InjectNatsPubSub, NatsPubSubModule } from '../index.js'
+import {
+    InjectNatsPubSub,
+    NatsPubSubModule,
+    JetStreamChannel,
+    type DurableMessages,
+    type DurableMessage
+} from '../index.js'
 
 /**
  * 픽스처가 연결을 flush해 두므로 측정 구간에는 순수 메시지 왕복만 들어온다.
@@ -296,5 +304,91 @@ describe('NatsPubSubModule.register', () => {
         expect(dynamicModule.module).toBe(NatsPubSubModule)
         expect(dynamicModule.providers?.length).toBe(1)
         expect(dynamicModule.exports?.length).toBe(1)
+    })
+})
+
+describe('JetStreamChannel', () => {
+    let connection: NatsConnection
+    let channel: JetStreamChannel
+    let manager: Awaited<ReturnType<typeof jetstreamManager>>
+    let streamName: string
+    let messages: DurableMessages | undefined
+    let iterator: AsyncIterator<DurableMessage> | undefined
+    const consumerName = 'consumer'
+
+    beforeEach(async () => {
+        connection = await connect(JSON.parse(process.env.TESTLIB_NATS_OPTIONS!))
+        manager = await jetstreamManager(connection)
+        streamName = withTestId('durable').replaceAll(/[^a-zA-Z0-9_-]/g, '_')
+        messages = undefined
+        iterator = undefined
+        channel = new JetStreamChannel(connection, {
+            streamName,
+            consumerName,
+            subject: streamName + '.event',
+            description: 'durable test',
+            maxAgeMs: 60_000,
+            duplicateWindowMs: 10_000,
+            maxBytes: 1024 * 1024,
+            ackWaitMs: 30_000
+        })
+    })
+    afterEach(async () => {
+        const ending = iterator?.next()
+        await messages?.close()
+        await ending
+        await manager.streams.delete(streamName)
+        await connection.close()
+    })
+
+    it('동시 초기화와 중복 발행은 한 stream과 메시지로 수렴한다', async () => {
+        await Promise.all([channel.initialize(), channel.initialize()])
+        await channel.publish({ value: 'one' }, 'id')
+        await channel.publish({ value: 'one' }, 'id')
+        const info = await manager.streams.info(streamName)
+        expect(info.state.messages).toBe(1)
+        expect(info.config).toMatchObject({
+            discard: 'new',
+            retention: 'limits',
+            storage: 'file',
+            duplicate_window: 10_000_000_000,
+            max_age: 60_000_000_000,
+            max_bytes: 1024 * 1024
+        })
+    })
+
+    it('소비자가 없어도 보존한 메시지를 읽고 명시적으로 확인한다', async () => {
+        await channel.publish({ value: 'one' }, 'id')
+        messages = await channel.consume()
+        iterator = messages[Symbol.asyncIterator]()
+        const result = await iterator.next()
+        if (result.done) throw new Error('Expected a retained message')
+        expect(result.value.decode()).toEqual({ value: 'one' })
+        expect(result.value.deliveryCount).toBe(1)
+        expect(result.value.sequence).toBe(1)
+        result.value.acknowledge()
+        await connection.flush()
+        expect((await manager.consumers.info(streamName, consumerName)).num_ack_pending).toBe(0)
+        const ending = iterator.next()
+        await messages.close()
+        expect(await ending).toEqual({ done: true, value: undefined })
+    })
+
+    it('처리 실패한 메시지를 재전달하고 폐기하면 확인 대기에서 제거한다', async () => {
+        messages = await channel.consume()
+        await channel.publish({ value: 'retry' }, 'retry')
+        iterator = messages[Symbol.asyncIterator]()
+        const first = await iterator.next()
+        if (first.done) throw new Error('Expected the first delivery')
+        const retryStarted = performance.now()
+        first.value.retryAfter(100)
+        const second = await iterator.next()
+        if (second.done) throw new Error('Expected a redelivery')
+        expect(performance.now() - retryStarted).toBeGreaterThanOrEqual(90)
+        expect(second.value.sequence).toBe(first.value.sequence)
+        expect(second.value.deliveryCount).toBe(2)
+        second.value.discard('invalid event')
+        await connection.flush()
+        expect((await manager.consumers.info(streamName, consumerName)).num_ack_pending).toBe(0)
     })
 })

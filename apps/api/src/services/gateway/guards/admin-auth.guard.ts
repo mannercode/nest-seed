@@ -1,7 +1,6 @@
-import { AuthGuard } from '@mannercode/common'
+import { AuthGuard, JwtVerifier } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
-import { JwtService } from '@nestjs/jwt'
 import { AppConfigService } from '#config'
 import { AdminsService } from '#core'
 import { AuthErrors } from './errors.js'
@@ -9,12 +8,12 @@ import { AuthErrors } from './errors.js'
 @Injectable()
 export class AdminAuthGuard extends AuthGuard {
     constructor(
-        jwtService: JwtService,
+        jwtVerifier: JwtVerifier,
         reflector: Reflector,
         config: AppConfigService,
         adminsService: AdminsService
     ) {
-        super(jwtService, reflector, {
+        super(jwtVerifier, reflector, {
             bearer: {
                 audience: config.adminAuth.audience,
                 issuer: config.adminAuth.issuer,

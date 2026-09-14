@@ -1,4 +1,6 @@
-import { randomBytes } from 'crypto'
+import { randomBytes, randomUUID } from 'crypto'
+
+export const generateUuid = () => randomUUID()
 
 export function generateShortId(length: number = 15): string {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'

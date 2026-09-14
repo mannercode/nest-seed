@@ -1,4 +1,5 @@
 import {
+    type TransactionContext,
     CrudRepository,
     DateUtil,
     ensure,
@@ -6,11 +7,12 @@ import {
     mongoArrayToPublic,
     mongoToPublic,
     MongoErrors,
-    objectId
+    objectId,
+    newObjectId,
+    MongoConnection
 } from '@mannercode/common'
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { ObjectId, type ClientSession } from 'mongodb'
-import { AppConfigService, MongoConnection } from '#config'
+import { AppConfigService } from '#config'
 import { CreatePaymentDto } from './dtos/index.js'
 import { Payment, PaymentStatus } from './models/index.js'
 
@@ -18,8 +20,8 @@ import { Payment, PaymentStatus } from './models/index.js'
 export class PaymentsRepository extends CrudRepository<Payment> {
     constructor(connection: MongoConnection, config: AppConfigService) {
         super(
-            connection.db.collection('payments'),
-            connection.client,
+            connection,
+            'payments',
             config.http.paginationDefaultSize,
             config.http.paginationMaxSize,
             {
@@ -38,7 +40,7 @@ export class PaymentsRepository extends CrudRepository<Payment> {
 
     async cancel(paymentId: string) {
         // 결제는 감사 추적을 위해 행을 지우지 않고, 취소와 resolution 해소를 같은 문서 쓰기로 확정한다.
-        const payment = await this.collection.findOneAndUpdate(
+        const payment = await this.findAndUpdateDocument(
             this.activeFilter({ _id: objectId(paymentId) }),
             this.timestamped({
                 $set: { requiresPurchaseResolution: false, status: PaymentStatus.Cancelled }
@@ -53,12 +55,12 @@ export class PaymentsRepository extends CrudRepository<Payment> {
         // 같은 구매에 두 결제 행을 만들지 않는다.
         const now = DateUtil.toDate(DateUtil.now())
         try {
-            await this.collection.updateOne(
+            await this.updateDocument(
                 this.activeFilter({ purchaseRecordId: createDto.purchaseRecordId }),
                 {
                     $setOnInsert: {
                         __v: 0,
-                        _id: new ObjectId(),
+                        _id: newObjectId(),
                         amount: createDto.amount,
                         createdAt: now,
                         deletedAt: null,
@@ -77,7 +79,7 @@ export class PaymentsRepository extends CrudRepository<Payment> {
             // 그 경우 승자가 만든 행을 아래에서 읽으면 되고, 다른 DB 오류는 숨기지 않는다.
             if (!isDuplicateKeyError(error)) throw error
         }
-        const payment = await this.collection.findOne(
+        const payment = await this.findDocument(
             this.activeFilter({ purchaseRecordId: createDto.purchaseRecordId })
         )
 
@@ -85,38 +87,35 @@ export class PaymentsRepository extends CrudRepository<Payment> {
     }
 
     async findUnresolvedBefore(before: Temporal.Instant) {
-        const payments = await this.collection
-            .find(
-                this.activeFilter({
-                    createdAt: { $lte: before },
-                    requiresPurchaseResolution: true,
-                    status: PaymentStatus.Completed
-                })
-            )
-            .sort({ createdAt: 1 })
-            .limit(100)
-            .toArray()
+        const payments = await this.findDocuments(
+            this.activeFilter({
+                createdAt: { $lte: before },
+                requiresPurchaseResolution: true,
+                status: PaymentStatus.Completed
+            }),
+            { limit: 100, sort: { createdAt: 1 } }
+        )
 
         return mongoArrayToPublic<Payment>(payments)
     }
 
     async findByPurchaseRecordId(purchaseRecordId: string) {
-        const payment = await this.collection.findOne(this.activeFilter({ purchaseRecordId }))
+        const payment = await this.findDocument(this.activeFilter({ purchaseRecordId }))
         return mongoToPublic<Payment>(payment)
     }
 
     async resolvePurchase(
         purchaseRecordId: string,
-        session: ClientSession | undefined = undefined
+        transaction: TransactionContext | undefined = undefined
     ) {
-        await this.collection.updateOne(
+        await this.updateDocument(
             this.activeFilter({
                 purchaseRecordId,
                 requiresPurchaseResolution: true,
                 status: PaymentStatus.Completed
             }),
             this.timestamped({ $set: { requiresPurchaseResolution: false } }),
-            { session }
+            { transaction }
         )
     }
 }

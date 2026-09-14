@@ -1,16 +1,17 @@
-import type { Document } from 'mongodb'
 import {
+    type MongoDocument,
     assignIfDefined,
     CrudRepository,
     DateUtil,
     isDuplicateKeyError,
     mongoToPublic,
     MongoErrors,
-    objectId
+    objectId,
+    MongoConnection
 } from '@mannercode/common'
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { z } from 'zod'
-import { AppConfigService, MongoConnection } from '#config'
+import { AppConfigService } from '#config'
 import type { CreateAdminDto, UpdateAdminDto } from './dtos/index.js'
 import { AdminErrors } from './errors.js'
 import { Admin } from './models/index.js'
@@ -26,8 +27,8 @@ const AdminPatchSchema = AdminWriteSchema.partial()
 export class AdminsRepository extends CrudRepository<Admin> {
     constructor(connection: MongoConnection, config: AppConfigService) {
         super(
-            connection.db.collection('admins'),
-            connection.client,
+            connection,
+            'admins',
             config.http.paginationDefaultSize,
             config.http.paginationMaxSize,
             {
@@ -56,13 +57,13 @@ export class AdminsRepository extends CrudRepository<Admin> {
     }
 
     async findByEmailWithPassword(email: string) {
-        const admin = await this.collection.findOne(this.activeFilter({ email: { $eq: email } }))
+        const admin = await this.findDocument(this.activeFilter({ email: { $eq: email } }))
 
         return mongoToPublic<Admin>(admin)
     }
 
     async findAuthVersionById(adminId: string): Promise<number | null> {
-        const admin = await this.collection.findOne(this.activeFilter({ _id: objectId(adminId) }), {
+        const admin = await this.findDocument(this.activeFilter({ _id: objectId(adminId) }), {
             projection: { authVersion: 1 }
         })
 
@@ -76,7 +77,7 @@ export class AdminsRepository extends CrudRepository<Admin> {
     }
 
     async deleteByIdWithAuthVersion(adminId: string): Promise<void> {
-        const admin = await this.collection.findOneAndUpdate(
+        const admin = await this.findAndUpdateDocument(
             this.activeFilter({ _id: objectId(adminId) }),
             this.timestamped({ $inc: { authVersion: 1 }, $set: { deletedAt: DateUtil.now() } }),
             { returnDocument: 'before' }
@@ -92,11 +93,11 @@ export class AdminsRepository extends CrudRepository<Admin> {
         assignIfDefined(fields, patch, 'name')
         assignIfDefined(fields, patch, 'password')
 
-        const update: Document = { $set: fields }
+        const update: MongoDocument = { $set: fields }
         if (patch.password !== undefined) update.$inc = { authVersion: 1 }
 
         try {
-            const doc = await this.collection.findOneAndUpdate(
+            const doc = await this.findAndUpdateDocument(
                 this.activeFilter({ _id: objectId(id) }),
                 this.timestamped(update),
                 { projection: this.projection, returnDocument: 'after' }

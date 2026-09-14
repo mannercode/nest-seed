@@ -1,4 +1,4 @@
-import { ensure } from '@mannercode/common'
+import { ensure, PasswordHasher } from '@mannercode/common'
 import { UserAuthenticationService } from '../index.js'
 
 describe('UserAuthenticationService', () => {
@@ -44,9 +44,10 @@ describe('UserAuthenticationService', () => {
     })
 
     describe('findUserByCredentials', () => {
-        it('가입된 이메일이 없어도 bcrypt 비교 후 null을 반환한다', async () => {
+        it('가입된 이메일이 없어도 공통 해시 검증 후 null을 반환한다', async () => {
             const repo = { findByEmailWithPassword: vi.fn().mockResolvedValue(null) }
             const svc = new UserAuthenticationService(repo as any, {} as any)
+            const verifySpy = vi.spyOn(PasswordHasher, 'verify')
             const validateSpy = vi.spyOn(svc, 'validate')
 
             const result = await svc.findUserByCredentials({
@@ -56,9 +57,8 @@ describe('UserAuthenticationService', () => {
 
             expect(result).toBeNull()
             expect(validateSpy).toHaveBeenCalledTimes(1)
-            const [, hashArg] = ensure(validateSpy.mock.calls[0])
-            expect(typeof hashArg).toBe('string')
-            expect(hashArg.startsWith('$2')).toBe(true)
+            expect(validateSpy).toHaveBeenCalledWith('anything', undefined)
+            expect(verifySpy).toHaveBeenCalledWith('anything', undefined)
         })
 
         it('비밀번호가 일치하지 않으면 저장된 해시로 validate를 호출하고 null을 반환한다', async () => {

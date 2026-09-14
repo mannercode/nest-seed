@@ -4,12 +4,12 @@ import {
     ensure,
     IdempotencyErrors,
     InjectCache,
-    JsonUtil
+    JsonUtil,
+    sha256,
+    generateUuid
 } from '@mannercode/common'
 import { ConflictException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { Interval } from '@nestjs/schedule'
-import { createHash, randomUUID } from 'node:crypto'
-import { MongoConnection } from '#config'
 import {
     PurchaseRecordIdempotencyConflictException,
     PurchaseRecordsService,
@@ -21,7 +21,7 @@ import {
 import { PaymentsService } from '#infrastructure'
 import { CreatePurchaseDto } from './dtos/index.js'
 import { PurchaseErrors } from './errors.js'
-import { TicketPurchaseService } from './internal/index.js'
+import { PurchaseTransactionRepository, TicketPurchaseService } from './internal/index.js'
 import { PurchaseEvents } from './purchase.events.js'
 
 const PURCHASE_LOCK_TTL_MS = 5 * 60 * 1000
@@ -43,7 +43,7 @@ export class PurchaseService {
         private readonly ticketsService: TicketsService,
         private readonly events: PurchaseEvents,
         @InjectCache('purchase') private readonly cache: CacheService,
-        private readonly mongoConnection: MongoConnection
+        private readonly transactions: PurchaseTransactionRepository
     ) {}
 
     async processPurchase(createDto: CreatePurchaseDto, userId: string, idempotencyKey: string) {
@@ -154,7 +154,7 @@ export class PurchaseService {
                 throw stateError
             }
 
-            const activeCompletionId = randomUUID()
+            const activeCompletionId = generateUuid()
             completionId = activeCompletionId
             await this.purchaseRecordsService.claimForCompletion(
                 purchaseRecord.id,
@@ -203,7 +203,7 @@ export class PurchaseService {
                 .sort((a, b) => `${a.type}:${a.itemId}`.localeCompare(`${b.type}:${b.itemId}`)),
             totalPrice: createDto.totalPrice
         }
-        return createHash('sha256').update(JsonUtil.stringify(normalized)).digest('hex')
+        return sha256(JsonUtil.stringify(normalized), 'hex')
     }
 
     private replayIdempotencyOperation(
@@ -303,25 +303,19 @@ export class PurchaseService {
         completionId: string
     ): Promise<PurchaseRecordDto> {
         const purchaseRecordId = response.id
-        const session = this.mongoConnection.client.startSession()
-        try {
-            // 같은 transaction에서 티켓과 completion lease 문서를 모두 쓰므로, lease를
-            // 회수하는 reconciliation과 write conflict가 난다. 승자만 Sold+Completed를
-            // 함께 커밋하고 패자의 티켓 쓰기는 rollback된다.
-            return await session.withTransaction(async () => {
-                await this.ticketsService.sellForPurchase(ticketIds, purchaseRecordId, session)
-                await this.purchaseRecordsService.markCompleted(
-                    purchaseRecordId,
-                    completionId,
-                    session,
-                    response
-                )
-                await this.paymentsService.resolvePurchase(purchaseRecordId, session)
-                return response
-            })
-        } finally {
-            await session.endSession()
-        }
+        // 티켓 판매와 완료 권한 검사를 함께 커밋한다. 복구 작업에 완료 권한을 빼앗기면
+        // 티켓 판매도 롤백되어야 한다.
+        return this.transactions.run(async (transaction) => {
+            await this.ticketsService.sellForPurchase(ticketIds, purchaseRecordId, transaction)
+            await this.purchaseRecordsService.markCompleted(
+                purchaseRecordId,
+                completionId,
+                transaction,
+                response
+            )
+            await this.paymentsService.resolvePurchase(purchaseRecordId, transaction)
+            return response
+        })
     }
 
     @Interval('purchase-reconciliation', PURCHASE_RECONCILIATION_INTERVAL_MS)
@@ -339,7 +333,7 @@ export class PurchaseService {
         idempotencyError?: { response: Record<string, unknown>; status: number }
     ) {
         const now = DateUtil.now()
-        const reconciliationId = randomUUID()
+        const reconciliationId = generateUuid()
         // stale 조회 결과를 그대로 믿지 않고 Pending→Compensating CAS를 획득한 replica만
         // 보상한다. 실패/프로세스 종료 시 lease가 만료돼 다른 replica가 이어받는다.
         const purchaseRecord = await this.purchaseRecordsService.claimForReconciliation(
@@ -415,7 +409,7 @@ export class PurchaseService {
         before: Temporal.Instant = DateUtil.now()
     ) {
         const ticketIds = purchaseRecord.purchaseItems.map((item) => item.itemId)
-        const publicationId = randomUUID()
+        const publicationId = generateUuid()
 
         try {
             const now = DateUtil.now()

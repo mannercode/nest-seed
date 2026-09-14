@@ -1,15 +1,19 @@
-import type { ClientSession, Document, FindOneAndUpdateOptions, UpdateFilter } from 'mongodb'
 import {
+    type TransactionContext,
+    type MongoDocument,
+    type MongoWriteOptions,
+    type MongoUpdate,
     CrudRepository,
     DateUtil,
     ensure,
     isDuplicateKeyError,
     mongoArrayToPublic,
     mongoToPublic,
-    objectId
+    objectId,
+    MongoConnection
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { AppConfigService, MongoConnection } from '#config'
+import { AppConfigService } from '#config'
 import { CreatePurchaseRecordDto } from './dtos/index.js'
 import { PurchaseRecordIdempotencyConflictException } from './errors.js'
 import { PurchaseEventStatus, PurchaseRecord, PurchaseRecordStatus } from './models/index.js'
@@ -18,8 +22,8 @@ import { PurchaseEventStatus, PurchaseRecord, PurchaseRecordStatus } from './mod
 export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     constructor(connection: MongoConnection, config: AppConfigService) {
         super(
-            connection.db.collection('purchaserecords'),
-            connection.client,
+            connection,
+            'purchaserecords',
             config.http.paginationDefaultSize,
             config.http.paginationMaxSize,
             {
@@ -48,10 +52,10 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     }
 
     async findByUserId(userId: string) {
-        const purchaseRecords = await this.collection
-            .find(this.activeFilter({ status: PurchaseRecordStatus.Completed, userId }))
-            .sort({ createdAt: -1 })
-            .toArray()
+        const purchaseRecords = await this.findDocuments(
+            this.activeFilter({ status: PurchaseRecordStatus.Completed, userId }),
+            { sort: { createdAt: -1 } }
+        )
 
         return mongoArrayToPublic<PurchaseRecord>(purchaseRecords)
     }
@@ -90,36 +94,33 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     }
 
     async findByIdempotencyKey(userId: string, idempotencyKey: string) {
-        const record = await this.collection.findOne(this.activeFilter({ idempotencyKey, userId }))
+        const record = await this.findDocument(this.activeFilter({ idempotencyKey, userId }))
         return mongoToPublic<PurchaseRecord>(record)
     }
 
     async findPendingBefore(before: Temporal.Instant, now: Temporal.Instant) {
-        const purchaseRecords = await this.collection
-            .find(
-                this.activeFilter({
-                    $or: [
-                        { status: PurchaseRecordStatus.Pending, updatedAt: { $lte: before } },
-                        {
-                            completionLeaseUntil: { $lte: now },
-                            status: PurchaseRecordStatus.Completing
-                        },
-                        {
-                            reconciliationLeaseUntil: { $lte: now },
-                            status: PurchaseRecordStatus.Compensating
-                        }
-                    ]
-                })
-            )
-            .sort({ updatedAt: 1 })
-            .limit(100)
-            .toArray()
+        const purchaseRecords = await this.findDocuments(
+            this.activeFilter({
+                $or: [
+                    { status: PurchaseRecordStatus.Pending, updatedAt: { $lte: before } },
+                    {
+                        completionLeaseUntil: { $lte: now },
+                        status: PurchaseRecordStatus.Completing
+                    },
+                    {
+                        reconciliationLeaseUntil: { $lte: now },
+                        status: PurchaseRecordStatus.Compensating
+                    }
+                ]
+            }),
+            { limit: 100, sort: { updatedAt: 1 } }
+        )
 
         return mongoArrayToPublic<PurchaseRecord>(purchaseRecords)
     }
 
     async findPendingById(purchaseRecordId: string) {
-        const record = await this.collection.findOne(
+        const record = await this.findDocument(
             this.activeFilter({
                 _id: objectId(purchaseRecordId),
                 status: PurchaseRecordStatus.Pending
@@ -176,21 +177,18 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     }
 
     async findUnpublishedBefore(before: Temporal.Instant, now: Temporal.Instant) {
-        const purchaseRecords = await this.collection
-            .find(
-                this.activeFilter({
-                    purchaseEventStatus: PurchaseEventStatus.Pending,
-                    status: PurchaseRecordStatus.Completed,
-                    updatedAt: { $lte: before },
-                    $or: [
-                        { purchaseEventPublicationLeaseUntil: null },
-                        { purchaseEventPublicationLeaseUntil: { $lte: now } }
-                    ]
-                })
-            )
-            .sort({ updatedAt: 1 })
-            .limit(100)
-            .toArray()
+        const purchaseRecords = await this.findDocuments(
+            this.activeFilter({
+                purchaseEventStatus: PurchaseEventStatus.Pending,
+                status: PurchaseRecordStatus.Completed,
+                updatedAt: { $lte: before },
+                $or: [
+                    { purchaseEventPublicationLeaseUntil: null },
+                    { purchaseEventPublicationLeaseUntil: { $lte: now } }
+                ]
+            }),
+            { limit: 100, sort: { updatedAt: 1 } }
+        )
 
         return mongoArrayToPublic<PurchaseRecord>(purchaseRecords)
     }
@@ -257,7 +255,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     async markCompleted(
         purchaseRecordId: string,
         completionId: string,
-        session: ClientSession | undefined = undefined,
+        transaction: TransactionContext | undefined = undefined,
         idempotencyResponse: object | undefined = undefined
     ) {
         const purchaseRecord = await this.updateById(
@@ -275,7 +273,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
                     reconciliationLeaseUntil: 1
                 }
             },
-            { session }
+            { transaction }
         )
         if (!purchaseRecord) {
             throw new Error(`Purchase completion lease was lost: ${purchaseRecordId}`)
@@ -298,7 +296,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     }
 
     async markCancelled(purchaseRecordId: string, reconciliationId: string) {
-        await this.collection.updateOne(
+        await this.updateDocument(
             this.activeFilter({
                 _id: objectId(purchaseRecordId),
                 reconciliationId,
@@ -315,7 +313,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     }
 
     async releaseReconciliationClaim(purchaseRecordId: string, reconciliationId: string) {
-        await this.collection.updateOne(
+        await this.updateDocument(
             this.activeFilter({
                 _id: objectId(purchaseRecordId),
                 reconciliationId,
@@ -326,7 +324,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     }
 
     async markEventPublished(purchaseRecordId: string, publicationId: string) {
-        const result = await this.collection.updateOne(
+        const result = await this.updateDocument(
             this.activeFilter({
                 _id: objectId(purchaseRecordId),
                 purchaseEventPublicationId: publicationId,
@@ -346,7 +344,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     }
 
     async releaseEventPublicationClaim(purchaseRecordId: string, publicationId: string) {
-        await this.collection.updateOne(
+        await this.updateDocument(
             this.activeFilter({
                 _id: objectId(purchaseRecordId),
                 purchaseEventPublicationId: publicationId,
@@ -361,11 +359,11 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
 
     private updateById(
         purchaseRecordId: string,
-        filter: Document,
-        update: UpdateFilter<Document>,
-        options: FindOneAndUpdateOptions = {}
+        filter: MongoDocument,
+        update: MongoUpdate,
+        options: MongoWriteOptions = {}
     ) {
-        return this.collection.findOneAndUpdate(
+        return this.findAndUpdateDocument(
             this.activeFilter({ _id: objectId(purchaseRecordId), ...filter }),
             this.timestamped(update),
             { ...options, returnDocument: 'after' }

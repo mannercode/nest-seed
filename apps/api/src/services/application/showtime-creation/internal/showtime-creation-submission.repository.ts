@@ -5,11 +5,12 @@ import {
     isDuplicateKeyError,
     mongoToPublic,
     newObjectIdString,
-    objectId
+    objectId,
+    generateUuid,
+    MongoConnection
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { randomUUID } from 'node:crypto'
-import { AppConfigService, MongoConnection } from '#config'
+import { AppConfigService } from '#config'
 import { ShowtimeCreationSubmission } from './models/index.js'
 
 export type ShowtimeCreationSubmissionClaim =
@@ -22,8 +23,8 @@ export type ShowtimeCreationSubmissionClaim =
 export class ShowtimeCreationSubmissionRepository extends CrudRepository<ShowtimeCreationSubmission> {
     constructor(connection: MongoConnection, config: AppConfigService) {
         super(
-            connection.db.collection('showtimecreationsubmissions'),
-            connection.client,
+            connection,
+            'showtimecreationsubmissions',
             config.http.paginationDefaultSize,
             config.http.paginationMaxSize,
             {
@@ -47,7 +48,7 @@ export class ShowtimeCreationSubmissionRepository extends CrudRepository<Showtim
         now: Temporal.Instant,
         claimUntil: Temporal.Instant
     ): Promise<ShowtimeCreationSubmissionClaim> {
-        const claimId = randomUUID()
+        const claimId = generateUuid()
         const sagaId = newObjectIdString()
         const submission = this.newDocument()
         submission.acceptedAt = null
@@ -79,7 +80,7 @@ export class ShowtimeCreationSubmissionRepository extends CrudRepository<Showtim
 
         // 이전 서버가 Restate 제출 결과를 기록하기 전에 종료됐다면 같은 saga ID로 이어받는다.
         // 같은 workflow key의 재제출은 기존 invocation을 가리키므로 실행은 하나만 유지된다.
-        const claimed = await this.collection.findOneAndUpdate(
+        const claimed = await this.findAndUpdateDocument(
             this.activeFilter({
                 _id: objectId(existing.id),
                 acceptedAt: null,
@@ -102,7 +103,7 @@ export class ShowtimeCreationSubmissionRepository extends CrudRepository<Showtim
         claimId: string,
         acceptedAt: Temporal.Instant
     ) {
-        const submission = await this.collection.findOneAndUpdate(
+        const submission = await this.findAndUpdateDocument(
             this.activeFilter({ acceptedAt: null, claimId, idempotencyKey, principalId }),
             this.timestamped({ $set: { acceptedAt, claimId: null, claimUntil: null } }),
             { returnDocument: 'after' }
@@ -112,19 +113,19 @@ export class ShowtimeCreationSubmissionRepository extends CrudRepository<Showtim
     }
 
     async release(principalId: string, idempotencyKey: string, claimId: string) {
-        await this.collection.updateOne(
+        await this.updateDocument(
             this.activeFilter({ acceptedAt: null, claimId, idempotencyKey, principalId }),
             this.timestamped({ $set: { claimId: null, claimUntil: DateUtil.epoch() } })
         )
     }
 
     async findByKey(principalId: string, idempotencyKey: string) {
-        const submission = await this.collection.findOne({ idempotencyKey, principalId })
+        const submission = await this.findDocument({ idempotencyKey, principalId })
         return mongoToPublic<ShowtimeCreationSubmission>(submission)
     }
 
     async findAcceptedBySagaId(principalId: string, sagaId: string) {
-        const submission = await this.collection.findOne(
+        const submission = await this.findDocument(
             this.activeFilter({ acceptedAt: { $ne: null }, principalId, sagaId })
         )
         return mongoToPublic<ShowtimeCreationSubmission>(submission)

@@ -1,5 +1,4 @@
-import type { ClientSession } from 'mongodb'
-import { DateUtil, ensure, mapDocToDto } from '@mannercode/common'
+import { type TransactionContext, DateUtil, ensure, mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { CreatePurchaseRecordDto, PurchaseRecordDto } from './dtos/index.js'
 import { PurchaseRecord, PurchaseRecordStatus } from './models/index.js'
@@ -109,13 +108,13 @@ export class PurchaseRecordsService {
     async markCompleted(
         purchaseRecordId: string,
         completionId: string,
-        session: ClientSession | undefined = undefined,
+        transaction: TransactionContext | undefined = undefined,
         idempotencyResponse: PurchaseRecordDto | undefined = undefined
     ) {
         const purchaseRecord = await this.repository.markCompleted(
             purchaseRecordId,
             completionId,
-            session,
+            transaction,
             idempotencyResponse
         )
         return this.toDto(purchaseRecord)

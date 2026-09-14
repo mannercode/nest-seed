@@ -9,6 +9,39 @@ describe('CacheService', () => {
     })
     afterEach(() => fix.teardown())
 
+    describe('incrementWithExpiry', () => {
+        it('동시 증가가 유실되지 않고 최초 증가 때 만료를 설정한다', async () => {
+            const results = await Promise.all(
+                Array.from({ length: 20 }, () =>
+                    fix.cacheService.incrementWithExpiry('counter', 10_000)
+                )
+            )
+            expect(results.sort((a, b) => a - b)).toEqual(
+                Array.from({ length: 20 }, (_, i) => i + 1)
+            )
+            expect(await fix.cacheService.get('counter')).toBe('20')
+            const ttl = await fix.cacheService.executeScript(
+                "return redis.call('PTTL', KEYS[1])",
+                ['counter'],
+                []
+            )
+            expect(ttl).toBeGreaterThan(0)
+            expect(ttl).toBeLessThanOrEqual(10_000)
+        })
+
+        it('추가 증가가 기존 만료를 연장하지 않는다', async () => {
+            await fix.cacheService.incrementWithExpiry('counter', 10_000)
+            expect(await fix.cacheService.incrementWithExpiry('counter', 60_000)).toBe(2)
+            const ttl = await fix.cacheService.executeScript(
+                "return redis.call('PTTL', KEYS[1])",
+                ['counter'],
+                []
+            )
+            expect(ttl).toBeGreaterThan(0)
+            expect(ttl).toBeLessThanOrEqual(10_000)
+        })
+    })
+
     describe('set', () => {
         it('TTL이 없으면 값을 저장한다', async () => {
             await fix.cacheService.set('key', 'value')

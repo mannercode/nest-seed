@@ -3,7 +3,7 @@ import { S3Client } from '@aws-sdk/client-s3'
 import { setupVitestLifecycle } from '@mannercode/vitest-helpers'
 import { MongoClient } from 'mongodb'
 import { createRequire } from 'node:module'
-import { createMongoDriverOptions } from '../config/mongo-driver-options.js'
+import { createMongoDriverOptions } from '@mannercode/common'
 
 process.env.LOG_CONSOLE_LEVEL = 'silent'
 

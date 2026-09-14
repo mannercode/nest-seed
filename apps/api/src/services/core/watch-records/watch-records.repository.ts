@@ -1,6 +1,11 @@
-import { QueryBuilderOptions, CrudRepository, QueryBuilder } from '@mannercode/common'
+import {
+    QueryBuilderOptions,
+    CrudRepository,
+    QueryBuilder,
+    MongoConnection
+} from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { AppConfigService, MongoConnection } from '#config'
+import { AppConfigService } from '#config'
 import { CreateWatchRecordDto, SearchWatchRecordsPageDto } from './dtos/index.js'
 import { WatchRecord } from './models/index.js'
 
@@ -8,8 +13,8 @@ import { WatchRecord } from './models/index.js'
 export class WatchRecordsRepository extends CrudRepository<WatchRecord> {
     constructor(connection: MongoConnection, config: AppConfigService) {
         super(
-            connection.db.collection('watchrecords'),
-            connection.client,
+            connection,
+            'watchrecords',
             config.http.paginationDefaultSize,
             config.http.paginationMaxSize
         )

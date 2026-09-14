@@ -1,5 +1,6 @@
-import type { Document, ObjectId } from 'mongodb'
 import {
+    type MongoDocument,
+    type MongoObjectId,
     QueryBuilderOptions,
     assignIfDefined,
     CrudRepository,
@@ -9,11 +10,12 @@ import {
     plainDateFromMongo,
     objectId,
     objectIds,
-    QueryBuilder
+    QueryBuilder,
+    MongoConnection
 } from '@mannercode/common'
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { z } from 'zod'
-import { AppConfigService, MongoConnection } from '#config'
+import { AppConfigService } from '#config'
 import { CreateUserDto, SearchUsersPageDto, UpdateUserDto } from './dtos/index.js'
 import { UserErrors } from './errors.js'
 import { User } from './models/index.js'
@@ -30,8 +32,8 @@ const UserPatchSchema = UserWriteSchema.partial()
 export class UsersRepository extends CrudRepository<User> {
     constructor(connection: MongoConnection, config: AppConfigService) {
         super(
-            connection.db.collection('users'),
-            connection.client,
+            connection,
+            'users',
             config.http.paginationDefaultSize,
             config.http.paginationMaxSize,
             {
@@ -62,14 +64,14 @@ export class UsersRepository extends CrudRepository<User> {
     }
 
     async findByEmailWithPassword(email: string) {
-        // 인증 계층이 그대로 쓸 수 있게 ObjectId를 문자열로 변환한다.
-        const user = await this.collection.findOne(this.activeFilter({ email: { $eq: email } }))
+        // 인증 계층이 그대로 쓸 수 있게 MongoObjectId를 문자열로 변환한다.
+        const user = await this.findDocument(this.activeFilter({ email: { $eq: email } }))
 
         return user ? this.toDomainDocument(user) : null
     }
 
     async findAuthVersionById(userId: string): Promise<number | null> {
-        const user = await this.collection.findOne(this.activeFilter({ _id: objectId(userId) }), {
+        const user = await this.findDocument(this.activeFilter({ _id: objectId(userId) }), {
             projection: { authVersion: 1 }
         })
 
@@ -83,7 +85,7 @@ export class UsersRepository extends CrudRepository<User> {
     }
 
     async advanceAuthVersion(userId: string): Promise<void> {
-        const user = await this.collection.findOneAndUpdate(
+        const user = await this.findAndUpdateDocument(
             this.activeFilter({ _id: objectId(userId) }),
             this.timestamped({ $inc: { authVersion: 1 } }),
             { returnDocument: 'after' }
@@ -93,7 +95,7 @@ export class UsersRepository extends CrudRepository<User> {
     }
 
     async deleteByIdsWithAuthVersion(userIds: string[]): Promise<void> {
-        await this.collection.updateMany(
+        await this.updateDocuments(
             this.activeFilter({ _id: { $in: objectIds(userIds) } }),
             this.timestamped({ $inc: { authVersion: 1 }, $set: { deletedAt: DateUtil.now() } })
         )
@@ -122,11 +124,11 @@ export class UsersRepository extends CrudRepository<User> {
         assignIfDefined(patch, updateDto, 'birthDate')
         assignIfDefined(patch, updateDto, 'password')
 
-        const update: Document = { $set: patch }
+        const update: MongoDocument = { $set: patch }
         if (updateDto.password !== undefined) update.$inc = { authVersion: 1 }
 
         try {
-            const user = await this.collection.findOneAndUpdate(
+            const user = await this.findAndUpdateDocument(
                 this.activeFilter({ _id: objectId(userId) }),
                 this.timestamped(update),
                 { projection: this.projection, returnDocument: 'after' }
@@ -154,7 +156,7 @@ export class UsersRepository extends CrudRepository<User> {
         return query
     }
 
-    protected override toDomainDocument(doc: Document & { _id: ObjectId }): User {
+    protected override toDomainDocument(doc: MongoDocument & { _id: MongoObjectId }): User {
         const user = super.toDomainDocument(doc)
         user.birthDate = plainDateFromMongo(user.birthDate)
         return user

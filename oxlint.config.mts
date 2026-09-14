@@ -19,6 +19,25 @@ const apiDependencyOptions = {
         '^@mannercode/'
     ]
 }
+const integrationImports = [
+    'mongodb',
+    'mongodb/**',
+    'ioredis',
+    'ioredis/**',
+    'bcrypt',
+    'bcrypt/**',
+    '@nestjs/jwt',
+    '@nestjs/jwt/**',
+    '@nats-io/**',
+    '@restatedev/**',
+    '@aws-sdk/**'
+]
+const integrationImportRestrictions = [
+    {
+        group: integrationImports,
+        message: '외부 연동은 @mannercode/common의 공개 API를 사용하세요.'
+    }
+]
 const internalImportRestrictions = [
     {
         regex: '(?:^|/)showtime-creation/(?:internal|worker)(?:/|$)',
@@ -127,7 +146,12 @@ export default defineConfig({
         {
             files: ['apps/api/src/**/*.ts'],
             excludeFiles: ['apps/api/src/**/__tests__/**/*.ts'],
-            rules: { 'no-restricted-imports': ['error', { patterns: internalImportRestrictions }] }
+            rules: {
+                'no-restricted-imports': [
+                    'error',
+                    { patterns: [...internalImportRestrictions, ...integrationImportRestrictions] }
+                ]
+            }
         },
         {
             files: ['apps/api/src/services/**/*.ts'],
@@ -138,11 +162,16 @@ export default defineConfig({
                     {
                         patterns: [
                             ...internalImportRestrictions,
+                            ...integrationImportRestrictions,
                             {
                                 group: ['@mannercode/common'],
-                                importNames: ['isDuplicateKeyError'],
+                                importNames: [
+                                    'isDuplicateKeyError',
+                                    'MongoTransactionRepository',
+                                    'MongoConnection'
+                                ],
                                 message:
-                                    'MongoDB 오류 판별은 Repository에서 처리하고 도메인 오류로 전달하세요.'
+                                    'MongoDB 오류 판별과 세션 관리는 Repository에서 처리하세요.'
                             }
                         ]
                     }
@@ -167,7 +196,6 @@ export default defineConfig({
                                     '!../**/index.js',
                                     // 공개 API가 아닌 구현 단위 테스트에서만 허용하는 직접 import다.
                                     '!../booking.utils.js',
-                                    '!../temporal-json.serde.js',
                                     '!../../services/core/movies/movies.repository.js',
                                     '!../../services/core/movies/movie-pending-assets.repository.js',
                                     '!../../services/core/purchase-records/purchase-records.repository.js',

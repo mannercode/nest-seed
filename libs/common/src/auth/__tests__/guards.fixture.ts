@@ -2,14 +2,14 @@ import { createHttpTestContext, HttpTestClient } from '@mannercode/testing'
 import { Controller, Get, Injectable, UseGuards } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { JwtModule, JwtService } from '@nestjs/jwt'
-import { AuthGuard, OptionalAuth, Public } from '../index.js'
+import { AuthGuard, JwtVerifier, JwtVerifierModule, OptionalAuth, Public } from '../index.js'
 
 const TEST_SECRET = 'test-secret'
 
 @Injectable()
 class BearerOnlyGuard extends AuthGuard {
-    constructor(jwtService: JwtService, reflector: Reflector) {
-        super(jwtService, reflector, {
+    constructor(jwtVerifier: JwtVerifier, reflector: Reflector) {
+        super(jwtVerifier, reflector, {
             bearer: {
                 secret: TEST_SECRET,
                 validate: async (payload) => (payload as { userId?: string }).userId === 'user-1'
@@ -20,8 +20,8 @@ class BearerOnlyGuard extends AuthGuard {
 
 @Injectable()
 class OptionalBearerGuard extends AuthGuard {
-    constructor(jwtService: JwtService, reflector: Reflector) {
-        super(jwtService, reflector, { bearer: { secret: TEST_SECRET }, optional: true })
+    constructor(jwtVerifier: JwtVerifier, reflector: Reflector) {
+        super(jwtVerifier, reflector, { bearer: { secret: TEST_SECRET }, optional: true })
     }
 }
 
@@ -68,13 +68,14 @@ export type GuardsFixture = {
 }
 
 export async function createGuardsFixture(): Promise<GuardsFixture> {
+    const signingModule = JwtModule.register({ secret: TEST_SECRET })
     const testContext = await createHttpTestContext({
         controllers: [BearerController, OptionalController],
-        imports: [JwtModule.register({ secret: TEST_SECRET })],
+        imports: [signingModule, JwtVerifierModule],
         providers: [BearerOnlyGuard, OptionalBearerGuard]
     })
 
-    const jwtService = testContext.module.get(JwtService)
+    const jwtService = testContext.module.select(signingModule).get(JwtService, { strict: true })
 
     return { httpClient: testContext.httpClient, jwtService, teardown: testContext.close }
 }

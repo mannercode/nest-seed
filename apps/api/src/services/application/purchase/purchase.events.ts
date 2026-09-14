@@ -1,19 +1,11 @@
-import { getNatsConnectionToken, JsonUtil, type NatsConnection } from '@mannercode/common'
 import {
-    AckPolicy,
-    DeliverPolicy,
-    DiscardPolicy,
-    jetstream,
-    jetstreamManager,
-    ReplayPolicy,
-    RetentionPolicy,
-    StorageType,
-    type ConsumerMessages,
-    type JetStreamClient
-} from '@nats-io/jetstream'
-import { nanos } from '@nats-io/transport-node'
+    getNatsConnectionToken,
+    JetStreamChannel,
+    sha256,
+    type NatsConnection,
+    type DurableMessages
+} from '@mannercode/common'
 import { Inject, Injectable, type OnModuleInit } from '@nestjs/common'
-import { createHash } from 'node:crypto'
 import { z } from 'zod'
 import { AppConfigService, NATS_CONNECTION_NAME } from '#config'
 
@@ -32,80 +24,39 @@ export const ticketPurchasedEventSchema = z.object({
 
 export type TicketPurchasedEvent = z.infer<typeof ticketPurchasedEventSchema>
 
-// PROJECT_ID로 stream과 subject를 격리하고 구매 알림은 durable consumer가 담당한다.
 @Injectable()
 export class PurchaseEvents implements OnModuleInit {
-    private readonly client: JetStreamClient
-    private readonly connection: NatsConnection
-    private readonly notificationConsumerName: string
-    private readonly streamName: string
-    private initialization: Promise<void> | undefined
+    private readonly channel: JetStreamChannel
     readonly subjects: { purchased: string }
 
     constructor(
         @Inject(getNatsConnectionToken(NATS_CONNECTION_NAME)) connection: NatsConnection,
         config: AppConfigService,
-        @Inject(PURCHASE_EVENTS_MAX_BYTES) private readonly maxBytes: number
+        @Inject(PURCHASE_EVENTS_MAX_BYTES) maxBytes: number
     ) {
-        this.connection = connection
-        this.client = jetstream(connection)
-        this.subjects = { purchased: `${config.projectId}.purchase.ticketPurchased` }
-        const resourceId = createHash('sha256')
-            .update(config.projectId)
-            .digest('hex')
-            .slice(0, 24)
-            .toUpperCase()
-        this.streamName = `PURCHASE_EVENTS_${resourceId}`
-        this.notificationConsumerName = `PURCHASE_NOTIFICATION_${resourceId}`
+        this.subjects = { purchased: config.projectId + '.purchase.ticketPurchased' }
+        const resourceId = sha256(config.projectId, 'hex').slice(0, 24).toUpperCase()
+        this.channel = new JetStreamChannel(connection, {
+            streamName: 'PURCHASE_EVENTS_' + resourceId,
+            consumerName: 'PURCHASE_NOTIFICATION_' + resourceId,
+            subject: this.subjects.purchased,
+            description: 'Durable purchase completion events',
+            maxAgeMs: EVENT_MAX_AGE_MS,
+            duplicateWindowMs: EVENT_DUPLICATE_WINDOW_MS,
+            ackWaitMs: NOTIFICATION_ACK_WAIT_MS,
+            maxBytes
+        })
     }
 
     async onModuleInit() {
-        await this.initialize()
+        await this.channel.initialize()
     }
 
     async emitTicketPurchased(payload: TicketPurchasedEvent) {
-        await this.initialize()
-        await this.client.publish(this.subjects.purchased, JsonUtil.stringify(payload), {
-            expect: { streamName: this.streamName },
-            msgID: payload.purchaseRecordId
-        })
+        await this.channel.publish(payload, payload.purchaseRecordId)
     }
 
-    async consumeNotifications(): Promise<ConsumerMessages> {
-        await this.initialize()
-        const consumer = await this.client.consumers.get(
-            this.streamName,
-            this.notificationConsumerName
-        )
-        return consumer.consume({ max_messages: 1 })
-    }
-
-    private initialize() {
-        this.initialization ??= this.createResources()
-        return this.initialization
-    }
-
-    private async createResources() {
-        const manager = await jetstreamManager(this.connection)
-        await manager.streams.add({
-            description: 'Durable purchase completion events',
-            discard: DiscardPolicy.New,
-            duplicate_window: nanos(EVENT_DUPLICATE_WINDOW_MS),
-            max_age: nanos(EVENT_MAX_AGE_MS),
-            max_bytes: this.maxBytes,
-            name: this.streamName,
-            num_replicas: 1,
-            retention: RetentionPolicy.Limits,
-            storage: StorageType.File,
-            subjects: [this.subjects.purchased]
-        })
-        await manager.consumers.add(this.streamName, {
-            ack_policy: AckPolicy.Explicit,
-            ack_wait: nanos(NOTIFICATION_ACK_WAIT_MS),
-            deliver_policy: DeliverPolicy.All,
-            durable_name: this.notificationConsumerName,
-            filter_subject: this.subjects.purchased,
-            replay_policy: ReplayPolicy.Instant
-        })
+    consumeNotifications(): Promise<DurableMessages> {
+        return this.channel.consume()
     }
 }

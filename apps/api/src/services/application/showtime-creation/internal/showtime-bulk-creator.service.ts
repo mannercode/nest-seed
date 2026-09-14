@@ -1,5 +1,4 @@
-import type { ClientSession } from 'mongodb'
-import { DateUtil, Require, uniq } from '@mannercode/common'
+import { type TransactionContext, DateUtil, Require, uniq } from '@mannercode/common'
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 import {
     ShowtimeDto,
@@ -28,15 +27,20 @@ export class ShowtimeBulkCreatorService {
     async create(
         createDto: BulkCreateShowtimesDto,
         sagaId: string,
-        session: ClientSession,
+        transaction: TransactionContext,
         signal: AbortSignal | undefined
     ) {
-        const createdShowtimes = await this.bulkCreateShowtimes(createDto, sagaId, session, signal)
+        const createdShowtimes = await this.bulkCreateShowtimes(
+            createDto,
+            sagaId,
+            transaction,
+            signal
+        )
 
         const createdTicketCount = await this.bulkCreateTickets(
             createdShowtimes,
             sagaId,
-            session,
+            transaction,
             signal
         )
 
@@ -52,7 +56,7 @@ export class ShowtimeBulkCreatorService {
     private async bulkCreateShowtimes(
         createDto: BulkCreateShowtimesDto,
         sagaId: string,
-        session: ClientSession | undefined,
+        transaction: TransactionContext | undefined,
         signal: AbortSignal | undefined
     ) {
         const { durationInMinutes, movieId, startTimes, theaterIds } = createDto
@@ -67,19 +71,23 @@ export class ShowtimeBulkCreatorService {
             }))
         )
 
-        await this.showtimesService.createMany(createDtos, session, signal)
-        const showtimes = await this.showtimesService.search({ sagaIds: [sagaId] }, session, signal)
+        await this.showtimesService.createMany(createDtos, transaction, signal)
+        const showtimes = await this.showtimesService.search(
+            { sagaIds: [sagaId] },
+            transaction,
+            signal
+        )
         return showtimes
     }
 
     private async bulkCreateTickets(
         showtimes: ShowtimeDto[],
         sagaId: string,
-        session: ClientSession | undefined,
+        transaction: TransactionContext | undefined,
         signal: AbortSignal | undefined
     ) {
         const theaterIds = uniq(showtimes.map((showtime) => showtime.theaterId))
-        const theaters = await this.theatersService.getMany(theaterIds, session, signal)
+        const theaters = await this.theatersService.getMany(theaterIds, transaction, signal)
 
         const theatersById = new Map<string, TheaterDto>()
         theaters.forEach((theater) => theatersById.set(theater.id, theater))
@@ -113,7 +121,11 @@ export class ShowtimeBulkCreatorService {
             }))
         })
 
-        const { count } = await this.ticketsService.createMany(createTicketDtos, session, signal)
+        const { count } = await this.ticketsService.createMany(
+            createTicketDtos,
+            transaction,
+            signal
+        )
         return count
     }
 }

@@ -36,6 +36,8 @@ Application은 모든 요청이 통과하는 의식적인 계층이 아니다. C
 
 조합할 것이 없는데 Application을 추가하면 경계가 아니라 통과 계층만 늘어난다.
 
+트랜잭션으로 묶을 작업은 Application Service가 정하고, MongoDB 세션의 생성·종료와 드라이버 실행 옵션은 `common`의 Repository가 소유한다. 앱의 Repository는 필요한 실행 정책을 선택한다. 서비스는 `TransactionContext`를 명시적으로 전달하며, 이 식별자는 실행 콜백 안에서만 유효하다. 충돌 시 콜백이 재실행될 수 있으므로 결제 provider 호출·이벤트 발행 같은 외부 효과는 밖에서 수행한다.
+
 ### 1.2. View는 화면 전용 서비스 소비자다
 
 View는 도메인 서비스가 아니다. 프런트엔드가 여러 API를 호출해 조합할 화면 응답을 백엔드 한 곳에서 만드는 소비자 계층이다. `view/user-app/home`은 추천·영화·상영·극장을 화면 DTO로 묶는다.

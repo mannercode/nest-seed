@@ -1,4 +1,4 @@
-import { AppLoggerService } from '@mannercode/common'
+import { AppLoggerService, MongoConnection } from '@mannercode/common'
 import {
     createHttpTestContext,
     isDebuggingEnabled,
@@ -9,7 +9,7 @@ import { SchedulerRegistry } from '@nestjs/schedule'
 import compression from 'compression'
 import express from 'express'
 import { PURCHASE_EVENTS_MAX_BYTES } from '#application'
-import { AppConfigService, MongoConnection } from '#config'
+import { AppConfigService } from '#config'
 import { getSharedTestMongoConnection } from '../../../scripts/shared-test-mongo-connection.cjs'
 import { AppModule } from '../../app.module.js'
 import { configureTemporalJson } from '../../configure-temporal-json.js'

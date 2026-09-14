@@ -1,5 +1,4 @@
-import type { ClientSession } from 'mongodb'
-import { mapDocToDto } from '@mannercode/common'
+import { type TransactionContext, mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import {
     AggregateTicketSalesDto,
@@ -22,10 +21,10 @@ export class TicketsService {
 
     async createMany(
         createDtos: CreateTicketDto[],
-        session: ClientSession | undefined = undefined,
+        transaction: TransactionContext | undefined = undefined,
         signal: AbortSignal | undefined = undefined
     ): Promise<CreateTicketsResult> {
-        await this.repository.createMany(createDtos, session, signal)
+        await this.repository.createMany(createDtos, transaction, signal)
 
         return { count: createDtos.length }
     }
@@ -45,15 +44,15 @@ export class TicketsService {
     async sellForPurchase(
         ticketIds: string[],
         purchaseRecordId: string,
-        session: ClientSession | undefined = undefined
+        transaction: TransactionContext | undefined = undefined
     ) {
         // 누락된 ticketId는 `getByIds`가 404로 분리한다.
         // 판매 충돌(409)은 리포지토리가 한 트랜잭션에서 원자적으로 판정한다.
-        await this.repository.getByIds(ticketIds, session)
+        await this.repository.getByIds(ticketIds, transaction)
 
-        await this.repository.sellAvailableForPurchase(ticketIds, purchaseRecordId, session)
+        await this.repository.sellAvailableForPurchase(ticketIds, purchaseRecordId, transaction)
 
-        const tickets = await this.repository.getByIds(ticketIds, session)
+        const tickets = await this.repository.getByIds(ticketIds, transaction)
 
         return this.toDtos(tickets)
     }

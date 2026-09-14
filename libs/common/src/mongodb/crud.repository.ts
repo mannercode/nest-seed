@@ -1,7 +1,6 @@
 import { BadRequestException, NotFoundException, type OnModuleInit } from '@nestjs/common'
 import {
     ObjectId,
-    type ClientSession,
     type Collection,
     type Document,
     type Filter,
@@ -9,9 +8,13 @@ import {
     type MongoClient
 } from 'mongodb'
 import type { PaginationDto, PaginationResult } from '../pagination/index.js'
+import type { TransactionContext } from '../transaction.js'
 import type { CrudDocument, StoredDocument } from './mongo.document.js'
 import { Assume, DateUtil, defaultTo, differenceWith, Require, uniq } from '../utils/index.js'
 import { MongoErrors } from './errors.js'
+import { MongoTransactionRepository } from './mongo-transaction.repository.js'
+import type { MongoConnection } from './mongo-connection.js'
+import type { MongoReadOptions, MongoWriteOptions } from './mongo.types.js'
 import {
     mongoToPublic,
     encodeMongoDocument,
@@ -20,8 +23,7 @@ import {
     withoutPublicId
 } from './mongo.util.js'
 
-type SessionArg = ClientSession | undefined
-type WithTransactionOptions = NonNullable<Parameters<ClientSession['withTransaction']>[1]>
+type TransactionArg = TransactionContext | undefined
 const initializationByClient = new WeakMap<MongoClient, Map<string, Promise<void>>>()
 
 export type CrudRepositoryOptions = {
@@ -30,24 +32,85 @@ export type CrudRepositoryOptions = {
     projection?: Document
 }
 
-export abstract class CrudRepository<Doc extends CrudDocument> implements OnModuleInit {
+export abstract class CrudRepository<Doc extends CrudDocument>
+    extends MongoTransactionRepository
+    implements OnModuleInit
+{
+    readonly collection: Collection
     protected readonly hardDelete: boolean
     private readonly indexes: IndexDescription[]
     protected readonly projection: Document | undefined
 
     constructor(
-        readonly collection: Collection,
-        protected readonly client: MongoClient,
+        connection: MongoConnection,
+        collectionName: string,
         protected readonly defaultSize: number,
         protected readonly maxSize: number,
         options: CrudRepositoryOptions = {}
     ) {
+        super(connection)
+        this.collection = connection.db.collection(collectionName)
         this.hardDelete = options.hardDelete ?? false
         this.projection = options.projection
         this.indexes = [
             ...(this.hardDelete ? [] : [{ key: { deletedAt: 1 } }]),
             ...(options.indexes ?? [])
         ]
+    }
+
+    async findDocument(filter: Document, options: MongoReadOptions = {}) {
+        const { transaction, ...readOptions } = options
+        return this.collection.findOne(filter, {
+            ...readOptions,
+            session: this.getSession(transaction)
+        })
+    }
+
+    async findDocuments(filter: Document, options: MongoReadOptions = {}) {
+        const { transaction, ...readOptions } = options
+        return this.collection
+            .find(filter, { ...readOptions, session: this.getSession(transaction) })
+            .toArray()
+    }
+
+    async findAndUpdateDocument(
+        filter: Document,
+        update: Document,
+        options: MongoWriteOptions = {}
+    ) {
+        const { transaction, ...writeOptions } = options
+        return this.collection.findOneAndUpdate(filter, update, {
+            ...writeOptions,
+            session: this.getSession(transaction)
+        })
+    }
+
+    async updateDocument(filter: Document, update: Document, options: MongoWriteOptions = {}) {
+        const { transaction, ...writeOptions } = options
+        return this.collection.updateOne(filter, update, {
+            ...writeOptions,
+            session: this.getSession(transaction)
+        })
+    }
+
+    async updateDocuments(filter: Document, update: Document, options: MongoWriteOptions = {}) {
+        const { transaction, ...writeOptions } = options
+        return this.collection.updateMany(filter, update, {
+            ...writeOptions,
+            session: this.getSession(transaction)
+        })
+    }
+
+    async countDocuments(filter: Document) {
+        return this.collection.countDocuments(filter)
+    }
+
+    async distinctValues<T>(field: string, filter: Document) {
+        return (await this.collection.distinct(field, filter)) as T[]
+    }
+
+    async aggregateDocuments<T extends Document>(pipeline: Document[]): Promise<T[]> {
+        return this.collection.aggregate<T>(pipeline).toArray()
     }
 
     async onModuleInit() {
@@ -74,7 +137,8 @@ export abstract class CrudRepository<Doc extends CrudDocument> implements OnModu
         }
     }
 
-    async deleteById(id: string, session: SessionArg = undefined) {
+    async deleteById(id: string, transaction: TransactionArg = undefined) {
+        const session = this.getSession(transaction)
         const filter = this.activeFilter({ _id: objectId(id) })
         const result = this.hardDelete
             ? await this.collection.findOneAndDelete(filter, { session })
@@ -87,7 +151,8 @@ export abstract class CrudRepository<Doc extends CrudDocument> implements OnModu
         if (!result) throw new NotFoundException(MongoErrors.DocumentNotFound(id))
     }
 
-    async deleteByIds(ids: string[], session: SessionArg = undefined) {
+    async deleteByIds(ids: string[], transaction: TransactionArg = undefined) {
+        const session = this.getSession(transaction)
         const filter = this.activeFilter({ _id: { $in: objectIds(ids) } })
         if (this.hardDelete) {
             const { deletedCount } = await this.collection.deleteMany(filter, { session })
@@ -104,11 +169,12 @@ export abstract class CrudRepository<Doc extends CrudDocument> implements OnModu
 
     async allExist(
         ids: string[],
-        session: SessionArg = undefined,
+        transaction: TransactionArg = undefined,
         signal: AbortSignal | undefined = undefined
     ) {
         const uniqueIds = uniq(ids)
         if (uniqueIds.length === 0) return true
+        const session = this.getSession(transaction)
         const count = await this.collection.countDocuments(
             this.activeFilter({ _id: { $in: objectIds(uniqueIds) } }),
             { session, signal }
@@ -116,23 +182,23 @@ export abstract class CrudRepository<Doc extends CrudDocument> implements OnModu
         return count === uniqueIds.length
     }
 
-    async findById(id: string, session: SessionArg = undefined) {
+    async findById(id: string, transaction: TransactionArg = undefined) {
         const doc = await this.collection.findOne(this.activeFilter({ _id: objectId(id) }), {
             projection: this.projection,
-            session
+            session: this.getSession(transaction)
         })
         return doc ? this.toDomainDocument(doc) : null
     }
 
     async findByIds(
         ids: string[],
-        session: SessionArg = undefined,
+        transaction: TransactionArg = undefined,
         signal: AbortSignal | undefined = undefined
     ): Promise<Doc[]> {
         const docs = await this.collection
             .find(this.activeFilter({ _id: { $in: objectIds(ids) } }), {
                 projection: this.projection,
-                session,
+                session: this.getSession(transaction),
                 signal
             })
             .toArray()
@@ -142,9 +208,9 @@ export abstract class CrudRepository<Doc extends CrudDocument> implements OnModu
     async findWithPagination(args: {
         filter?: Filter<Document>
         pagination: PaginationDto
-        session?: SessionArg
+        transaction?: TransactionArg
     }) {
-        const { filter = {}, pagination, session } = args
+        const { filter = {}, pagination, transaction } = args
         const size = defaultTo(pagination.size, this.defaultSize)
         const page = defaultTo(pagination.page, 1)
 
@@ -154,6 +220,7 @@ export abstract class CrudRepository<Doc extends CrudDocument> implements OnModu
         }
 
         const activeFilter = this.activeFilter(filter)
+        const session = this.getSession(transaction)
         const cursor = this.collection
             .find(activeFilter, { projection: this.projection, session })
             .limit(size)
@@ -177,37 +244,25 @@ export abstract class CrudRepository<Doc extends CrudDocument> implements OnModu
         } as PaginationResult<Doc>
     }
 
-    async getById(id: string, session: SessionArg = undefined) {
-        const doc = await this.findById(id, session)
+    async getById(id: string, transaction: TransactionArg = undefined) {
+        const doc = await this.findById(id, transaction)
         if (!doc) throw new NotFoundException(MongoErrors.DocumentNotFound(id))
         return doc
     }
 
     async getByIds(
         ids: string[],
-        session: SessionArg = undefined,
+        transaction: TransactionArg = undefined,
         signal: AbortSignal | undefined = undefined
     ) {
         const uniqueIds = uniq(ids)
         Assume.equalLength(uniqueIds, ids, `Duplicate IDs detected and removed:${ids}`)
-        const docs = await this.findByIds(uniqueIds, session, signal)
+        const docs = await this.findByIds(uniqueIds, transaction, signal)
         const notFoundIds = differenceWith(uniqueIds, docs, (id, doc) => id === doc.id)
         if (notFoundIds.length > 0) {
             throw new NotFoundException(MongoErrors.MultipleDocumentsNotFound(notFoundIds))
         }
         return docs
-    }
-
-    async withTransaction<T>(
-        callback: (session: ClientSession) => Promise<T>,
-        options: WithTransactionOptions = {}
-    ): Promise<T> {
-        const session = this.client.startSession()
-        try {
-            return await session.withTransaction(callback, options)
-        } finally {
-            await session.endSession()
-        }
     }
 
     protected newDocument(): Doc & StoredDocument<Doc> {
@@ -225,25 +280,25 @@ export abstract class CrudRepository<Doc extends CrudDocument> implements OnModu
 
     protected async insertOne(
         doc: Doc & StoredDocument<Doc>,
-        session: SessionArg = undefined,
+        transaction: TransactionArg = undefined,
         signal: AbortSignal | undefined = undefined
     ): Promise<Doc> {
         signal?.throwIfAborted()
         // Driver 7.5의 공개 write option 타입에는 signal이 빠져 있지만 내부 operation은 이를
         // 소비한다. 옵션 객체로 전달해 Restate 시도 취소가 시작된 쓰기에도 이어지게 한다.
-        const options = { session, signal }
+        const options = { session: this.getSession(transaction), signal }
         await this.collection.insertOne(withoutPublicId(doc), options)
         return doc
     }
 
     protected async insertMany(
         docs: Array<Doc & StoredDocument<Doc>>,
-        session: SessionArg = undefined,
+        transaction: TransactionArg = undefined,
         signal: AbortSignal | undefined = undefined
     ): Promise<void> {
         if (docs.length === 0) return
         signal?.throwIfAborted()
-        const options = { session, signal }
+        const options = { session: this.getSession(transaction), signal }
         const result = await this.collection.insertMany(
             docs.map((doc) => withoutPublicId(doc)),
             options

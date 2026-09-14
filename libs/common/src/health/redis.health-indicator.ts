@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common'
-import { Redis } from 'ioredis'
+import type { RedisConnection } from '../redis/index.js'
 import { getByPath } from '../utils/index.js'
 
 @Injectable()
 export class RedisHealthIndicator {
-    async isHealthy(key: string, redis: Redis) {
+    async isHealthy(key: string, redis: RedisConnection) {
         try {
             await redis.ping()
 

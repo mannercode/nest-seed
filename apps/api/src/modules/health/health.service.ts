@@ -2,12 +2,14 @@ import {
     getNatsConnectionToken,
     getRedisConnectionToken,
     NatsHealthIndicator,
+    MongoHealthIndicator,
     RedisHealthIndicator,
-    type NatsConnection
+    type NatsConnection,
+    type RedisConnection,
+    MongoConnection
 } from '@mannercode/common'
 import { Inject, Injectable, ServiceUnavailableException } from '@nestjs/common'
-import { Redis } from 'ioredis'
-import { MongoConnection, NATS_CONNECTION_NAME, REDIS_CONNECTION_NAME } from '#config'
+import { NATS_CONNECTION_NAME, REDIS_CONNECTION_NAME } from '#config'
 import { RestateHealthIndicator } from './restate.health-indicator.js'
 
 type HealthState = { status: 'down' | 'up' } & Record<string, unknown>
@@ -19,9 +21,10 @@ export class HealthService {
         private readonly redisHealth: RedisHealthIndicator,
         private readonly natsHealth: NatsHealthIndicator,
         private readonly restateHealth: RestateHealthIndicator,
+        private readonly mongoHealth: MongoHealthIndicator,
         private readonly mongo: MongoConnection,
         @Inject(getRedisConnectionToken(REDIS_CONNECTION_NAME))
-        private readonly redisConnection: Redis,
+        private readonly redisConnection: RedisConnection,
         @Inject(getNatsConnectionToken(NATS_CONNECTION_NAME))
         private readonly natsConnection: NatsConnection
     ) {}
@@ -29,7 +32,7 @@ export class HealthService {
     async check() {
         // 이벤트 전달(NATS)과 사가(Restate)도 핵심 기능이므로, 끊겨 있으면 healthy로 보고하지 않는다.
         const results: HealthCheckResult[] = await Promise.all([
-            this.checkMongo(),
+            this.mongoHealth.isHealthy('mongodb', this.mongo),
             this.redisHealth.isHealthy('redis', this.redisConnection),
             this.natsHealth.isHealthy('nats', this.natsConnection),
             this.restateHealth.isHealthy('restate')
@@ -51,15 +54,5 @@ export class HealthService {
         }
 
         return { status: 'ok', ...response }
-    }
-
-    private async checkMongo(): Promise<HealthCheckResult> {
-        try {
-            await this.mongo.db.command({ ping: 1 })
-
-            return { mongodb: { status: 'up' } }
-        } catch (caught: unknown) {
-            return { mongodb: { reason: String(caught), status: 'down' } }
-        }
     }
 }

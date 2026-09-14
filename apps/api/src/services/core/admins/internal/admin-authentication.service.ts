@@ -1,6 +1,5 @@
-import { InjectJwtAuth, JwtAuthService } from '@mannercode/common'
+import { InjectJwtAuth, JwtAuthService, PasswordHasher } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { compare, hash, hashSync } from 'bcrypt'
 import { AdminsRepository } from '../admins.repository.js'
 import {
     type AdminAuthPayload,
@@ -11,9 +10,6 @@ import {
 // JwtAuthModule.register와 @InjectJwtAuth가 이 이름을 공유해야 같은 JwtAuthService 인스턴스로 묶인다.
 export const ADMIN_JWT_AUTH_NAME = 'admins'
 
-const BCRYPT_SALT_ROUNDS = 10
-const TIMING_DUMMY_HASH = hashSync('timing-equalization-only', BCRYPT_SALT_ROUNDS)
-
 @Injectable()
 export class AdminAuthenticationService {
     constructor(
@@ -23,7 +19,7 @@ export class AdminAuthenticationService {
 
     async findAdminByCredentials({ email, password }: AdminCredentialsDto) {
         const admin = await this.repository.findByEmailWithPassword(email)
-        const targetHash = admin?.password ?? TIMING_DUMMY_HASH
+        const targetHash = admin?.password
 
         const isValid = await this.validate(password, targetHash)
 
@@ -37,7 +33,7 @@ export class AdminAuthenticationService {
     }
 
     async hash(rawPassword: string) {
-        return hash(rawPassword, BCRYPT_SALT_ROUNDS)
+        return PasswordHasher.hash(rawPassword)
     }
 
     async refreshAuthTokens(refreshToken: string) {
@@ -54,8 +50,8 @@ export class AdminAuthenticationService {
         await this.jwtAuthService.revokeRefreshToken(refreshToken)
     }
 
-    async validate(rawPassword: string, hashedPassword: string) {
-        return compare(rawPassword, hashedPassword)
+    async validate(rawPassword: string, hashedPassword: string | undefined) {
+        return PasswordHasher.verify(rawPassword, hashedPassword)
     }
 
     async isAuthPayloadActive(payload: unknown): Promise<boolean> {
