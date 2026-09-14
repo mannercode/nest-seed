@@ -134,20 +134,25 @@ Self-owned resources use `/me` paths whose identity is fixed to the token subjec
 
 ## 8. Production scope
 
-`tests/api/compose.yml` exercises distributed behavior; it is not a production deployment. It does not provide TLS, secret management, backup/restore, an observability backend, a frontend edge, or zero-downtime revision rollout. Restate endpoint versioning and the BFF proxy-IP trust boundary require deployment-specific design. See [API stack](docs/api-stack.md) for the relevant hazards and guarantee limits.
+`tests/api/compose.yml` exercises distributed behavior; it is not a production deployment. It does not provide TLS, secret management, backup/restore, an observability backend, a frontend edge, or zero-downtime revision rollout. Restate endpoint versioning and the BFF proxy-IP trust boundary require deployment-specific design. See [tests](docs/tests.md) for the relevant hazards and guarantee limits.
 
 ## 9. Documentation
 
 Korean is the source language for documentation and comments. Only this README is translated.
 
+Each `docs/*.md` guide corresponds to a repository directory and explains its responsibilities and guarantees. Shared conventions, design rationale, and learning material belong in `docs/reference/`.
+
 - [apps](docs/apps.md) — SoLA layers, distributed guarantees, API and test conventions
 - [libs](docs/libs.md) — boundary between runtime shared code and test helpers
-- [tests](docs/tests.md) — why external-stack verification exists and how to interpret it
+- [tests](docs/tests.md) — API test stack, external verification, and production limits
 - [infra](docs/infra.md) — development topology and the destructive reset boundary
-- [API stack](docs/api-stack.md) — multi-replica verification and boundaries that must not be copied into production
+- [tools](docs/tools.md) — test bootstrap, development commands, and container tools
 - [devcontainer](docs/devcontainer.md) — the single development path, DooD constraints, and security
 - [decisions](docs/reference/decisions.md) — choices, alternatives, and non-guarantees
-- [development rules](docs/reference/conventions.md) — rules automation cannot enforce
+- [development rules](docs/reference/conventions.md) — naming, DTOs, types, ESM, errors, and test-writing conventions
 - [environment](docs/reference/environment.md) — env ownership and injection timing
+- [tutorial](docs/reference/tutorial.md) — from use cases to APIs, modules, distributed execution, and tests
+
+`docs_backup/` preserves the documentation from before the reduction. Use the guides above for current development instructions.
 
 For the design background of the movie-booking domain, see the blog series [Backend Service Analysis and Design 1](https://mannercode.com/2025/04/01/backend-design-1.html), [2](https://mannercode.com/2025/05/01/backend-design-2.html), and [3](https://mannercode.com/2025/06/01/backend-design-3.html).

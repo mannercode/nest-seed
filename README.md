@@ -132,20 +132,25 @@ bash apps/api/api-docs/run.sh showtime-creation.spec
 
 ## 8. 운영 적용 범위
 
-`tests/api/compose.yml`은 분산 동작을 확인하는 테스트 스택이지 운영 배포본이 아니다. TLS, secret manager, backup/restore, 관측 backend, frontend edge, 무중단 revision 전환은 포함하지 않는다. 특히 Restate endpoint versioning과 BFF proxy IP 신뢰 경계는 운영 환경에서 별도로 설계해야 한다. [API 스택 문서](docs/api-stack.md)에 필요한 위험과 보장 한계를 정리했다.
+`tests/api/compose.yml`은 분산 동작을 확인하는 테스트 스택이지 운영 배포본이 아니다. TLS, secret manager, backup/restore, 관측 backend, frontend edge, 무중단 revision 전환은 포함하지 않는다. 특히 Restate endpoint versioning과 BFF proxy IP 신뢰 경계는 운영 환경에서 별도로 설계해야 한다. [tests 문서](docs/tests.md)에 필요한 위험과 보장 한계를 정리했다.
 
 ## 9. 문서
 
 문서와 주석의 원본 언어는 한국어다. 영어는 이 README만 제공한다.
 
+`docs/*.md`는 대응하는 폴더의 역할과 보장을 설명한다. 여러 폴더가 함께 따르는 규칙·선택 이유·학습 설명은 `docs/reference/`에 둔다.
+
 - [apps](docs/apps.md) — SoLA 계층, 분산 보장, API·테스트 규칙
 - [libs](docs/libs.md) — 런타임 공용 코드와 테스트 helper의 분리 기준
-- [tests](docs/tests.md) — 외부 스택 검증이 필요한 이유와 결과 해석
+- [tests](docs/tests.md) — API 테스트 스택, 외부 검증과 운영 적용의 한계
 - [infra](docs/infra.md) — 개발 topology와 파괴적 reset의 범위
-- [API 스택](docs/api-stack.md) — 다중 복제본 검증 및 운영으로 복사하면 안 되는 경계
+- [tools](docs/tools.md) — 테스트 부팅, 개발 명령과 Compose 도구의 경계
 - [devcontainer](docs/devcontainer.md) — 단일 개발 경로, DooD 제약과 보안
 - [decisions](docs/reference/decisions.md) — 선택 이유, 대안, 보장하지 않는 것
-- [개발 규칙](docs/reference/conventions.md) — 자동화로 대신할 수 없는 규칙
+- [개발 규칙](docs/reference/conventions.md) — 이름·DTO·타입·ESM·오류·테스트 작성 규칙
 - [environment](docs/reference/environment.md) — env 소유권과 주입 시점
+- [튜토리얼](docs/reference/tutorial.md) — 유스케이스에서 API·모듈·분산 처리·테스트까지
+
+`docs_backup/`은 축소 전 원문 보관본이다. 현재 개발 지침은 위 문서를 따른다.
 
 영화 예매 도메인의 설계 배경은 블로그 연재 [백엔드 서비스 분석과 설계 1](https://mannercode.com/2025/04/01/backend-design-1.html)·[2](https://mannercode.com/2025/05/01/backend-design-2.html)·[3](https://mannercode.com/2025/06/01/backend-design-3.html)에 있다.

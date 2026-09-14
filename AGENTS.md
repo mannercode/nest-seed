@@ -8,8 +8,9 @@
 
 - `apps/`: [애플리케이션](docs/apps.md), [설계 결정](docs/reference/decisions.md)
 - `libs/`: [공유 패키지](docs/libs.md), [개발 규칙](docs/reference/conventions.md)
-- `tests/`: [외부 스택 테스트](docs/tests.md), [API 스택](docs/api-stack.md), [실행 방법](tests/README.md)
+- `tests/`: [외부 스택 테스트와 API 스택](docs/tests.md), [실행 방법](tests/README.md)
 - `infra/`: [개발 인프라](docs/infra.md), [환경 변수](docs/reference/environment.md)
+- `tools/`: [개발·테스트 실행 도구](docs/tools.md)
 - `.devcontainer/`: [개발 환경](docs/devcontainer.md)
 
 문서와 코드가 충돌하고 어느 쪽이 의도인지 판단해야 한다면 임의로 한쪽을 맞추지 말고 작업을 중단해 사용자에게 묻는다.
@@ -49,6 +50,8 @@
 테스트 파일을 임의로 추가하지 않는다. 새 테스트 파일이 필요하다고 판단하면 작성하기 전에 사용자 동의를 구한다.
 
 문서는 간결하게 작성한다. 코드·설정·파일명만으로 알 수 있는 내용, 당연한 설명과 작업 이력은 적지 않고 코드에서 드러나지 않는 목적·결정·제약만 남긴다.
+
+`docs/*.md`는 저장소의 대응 폴더와 1:1로 연결되는 안내 문서로 둔다. 여러 폴더에 걸친 규칙·설계 근거·학습 설명은 `docs/reference/`에 둔다. 문서를 줄이거나 옮길 때 보장·예외·선택 이유와 이를 이해하는 데 필요한 예시를 삭제하지 않는다. `docs_backup/`은 과거 원문 보관본이며 현재 구현 지침으로 사용하거나 내용을 갱신하지 않는다.
 
 ## 6. 변경을 검증한다
 

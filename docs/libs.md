@@ -2,6 +2,8 @@
 
 공유 코드는 **어디서 실행되는가**로 나뉜다.
 
+운영 중 앱이 호출하는 코드는 common, spec이 사용하는 client·fixture는 testing, 소스 변환 전에 테스트를 부팅하는 코드는 [tools](tools.md)에 둔다. 같은 기술을 사용한다는 이유로 도메인 모델까지 common으로 모으지 않는다. 공개 심볼의 인자·사용 예시는 JSDoc이, 도구 선택의 근거는 [설계 결정](reference/decisions.md)이 소유한다.
+
 ## 1. common — 런타임 코드
 
 앱이 운영 중 사용하는 외부 연동 구현을 소유한다. `apps/api/src`의 MongoDB 연결·드라이버 호출, Redis 명령, bcrypt·JWT, S3, NATS·JetStream, Restate 실행 서버·클라이언트는 `common`을 통해 사용한다. 앱에는 collection별 쿼리와 인덱스, 이벤트 내용, workflow의 업무 단계와 정책을 둔다. 특정 도메인에서만 쓰더라도 SDK 실행과 연결 수명 관리는 이 경계를 따른다.
@@ -14,9 +16,23 @@ NestJS·Zod·RxJS와 Express 타입·HTTP 미들웨어처럼 앱을 작성하고
 
 문서 ID는 앱의 DTO와 Repository에서 문자열로 주고받는다. `_id` 조회 조건과 쓰기에 필요한 `ObjectId` 변환은 `common`의 드라이버 경계에서 처리하며, 생성·조회·갱신한 문서에는 문자열 `id`만 반환한다. ID를 제외한 projection에는 `id`를 추가하지 않는다. 집계에서 문서 ID 조건은 첫 `$match`에서 변환한다. 이후의 `_id`는 그룹 키일 수 있으므로 이름과 조건을 유지하되 결과의 `ObjectId` 값은 문자열로 반환한다.
 
+`newDocument`가 만드는 객체도 문자열 `id`를 가지며, 저장할 때 BSON `_id`로 바뀐다. `toDomainDocument`는 native 문서가 아니라 ID와 시간 값이 변환된 문서를 받는다. `upsertedId`와 중첩 결과의 ObjectId도 문자열로 반환하지만, aggregation의 `_id` 필드명은 그룹 의미를 유지한다.
+
+```text
+앱 DTO·Repository: id 문자열
+          ↓ common의 드라이버 경계
+MongoDB 저장·조회: BSON ObjectId
+          ↓ common의 결과 변환
+앱이 받는 문서: id 문자열
+```
+
+현재 일반 쿼리는 `_id` 조건과 논리 조건 안의 `_id`를 변환한다. 다른 문자열 필드를 ID로 추측하지 않는다. 이 기능은 MongoDB 쿼리 표현을 이해하는 공통 Repository의 계약이며, 모든 DB에서 같은 filter가 실행된다는 보장은 아니다.
+
 ## 2. testing — 테스트 소비자용 코드
 
 spec이 import하는 HTTP client와 fixture helper를 둔다. 앱은 이 패키지를 dev dependency로만 받으므로 테스트 도구가 운영 의존성에 섞이지 않는다.
+
+workspace 의존 그래프에 따라 라이브러리를 소비자보다 먼저 빌드한다. common의 peer dependency는 소비하는 앱이 설치해야 할 런타임 계약이다. 앱의 `package.json`에 MongoDB·Redis SDK가 남아 있다는 사실만으로 `apps/api/src`가 이를 직접 사용하는 것은 아니다. 독립 스크립트와 패키지 설치의 요구도 함께 확인한다.
 
 Vitest가 소스 변환 전에 불러야 하는 자원 준비·정리 로직은 `tools/vitest-helpers`에 둔다. 테스트 코드가 직접 쓰는 패키지와 테스트 런타임을 부팅하는 도구를 구분하기 위한 경계다.
 

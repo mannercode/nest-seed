@@ -4,11 +4,15 @@
 
 API를 읽을 때는 `src/services/`의 다섯 경계를 먼저 본다. `gateway`는 HTTP 진입점, `view`는 화면 전용 조합, `application`은 여러 도메인의 유스케이스, `core`는 도메인 상태와 규칙, `infrastructure`는 외부 시스템 연동을 담당한다. `modules/`와 `config/`는 이 코드를 실행하기 위한 배선이지 도메인 계층이 아니다.
 
+`config/`는 주입된 환경을 검증하고, `modules/`는 공통 연결·제공자를 조립한다. 도메인 로직은 이곳에 두지 않는다. `app.module.ts`는 모듈과 전역 guard·pipe를 조립하고 `bootstrap.ts`는 HTTP 앱을 기동한다. `scripts/`는 이 앱의 소스와 별개로 실행되는 운영·개발 도구다.
+
 ## 1. SoLA 5계층
 
 SoLA의 목적은 계층 숫자를 맞추는 것이 아니라 **모듈 사이의 순환 참조를 구조적으로 막는 것**이다. 일반적인 layered architecture가 위→아래 방향을 제한한다면, 이 시드는 규칙 하나를 더한다.
 
 > 같은 계층의 모듈끼리도 직접 호출하지 않는다. 둘을 조합해야 하면 둘을 모두 부를 수 있는 위 계층에 조립 모듈을 만든다.
+
+여기서 계층은 한 기능 안의 Controller·Service·Repository 구분과 다르다. 일반적인 Service 계층에 섞이기 쉬운 두 책임, 즉 한 도메인의 규칙과 여러 도메인을 묶는 작업을 Core와 Application으로 나눈다. 예를 들어 상영이 영화를 조회하고 영화가 다시 상영을 조회하게 만들면 두 Core가 사실상 하나로 묶인다. 두 정보를 필요로 하는 상위 유스케이스가 각각의 공개 API를 호출하게 한다.
 
 ```text
 Gateway         HTTP·인증·입력 변환
@@ -35,6 +39,20 @@ Application은 모든 요청이 통과하는 의식적인 계층이 아니다. C
 - `application/showtime-creation`은 영화·극장·상영·티켓과 durable workflow를 조율한다.
 
 조합할 것이 없는데 Application을 추가하면 경계가 아니라 통과 계층만 늘어난다.
+
+같은 영화 API에서도 등록·조회는 `MoviesService`로 충분하지만, 삭제 전에 다른 도메인의 상영 참조를 검사해야 하면 `CatalogManagementService`가 조합한다. 기능의 이름이 아니라 필요한 협력으로 배치를 결정한다.
+
+```mermaid
+flowchart LR
+    User[사용자] --> Home[홈 화면 Gateway]
+    Home --> View[UserHomeViewService]
+    View --> Recommendation[Application: Recommendation]
+    View --> Catalog[Core: Movies · Showtimes · Theaters]
+    User --> Booking[Gateway → Application: Booking]
+    User --> Users[Gateway → Core: Users]
+```
+
+추천은 홈 View가 소비하는 내부 유스케이스라 별도 HTTP endpoint가 없어도 된다. 이런 모듈 경계는 배포를 나눌 때 결합을 줄이지만, 네트워크 실패·데이터 소유권·분산 transaction까지 자동으로 해결하지는 않는다.
 
 트랜잭션으로 묶을 작업은 Application Service가 정하고, MongoDB 세션의 생성·종료와 드라이버 실행 옵션은 `common`의 Repository가 소유한다. 앱의 Repository는 필요한 실행 정책을 선택한다. 서비스는 `TransactionContext`를 명시적으로 전달하며, 이 식별자는 실행 콜백 안에서만 유효하다. 충돌 시 콜백이 재실행될 수 있으므로 결제 provider 호출·이벤트 발행 같은 외부 효과는 밖에서 수행한다.
 
@@ -70,29 +88,53 @@ View는 읽기 API를 조합하고 표시 순서·개수 같은 화면 정책을
 
 반면 구매 완료 이벤트는 소비자가 중단된 동안에도 보존해야 하므로 MongoDB outbox와 JetStream을 쓴다. DB 갱신과 broker ack, 실제 부수 효과와 consumer ack를 한 transaction으로 묶을 수 없으므로 보장은 **at-least-once**다. 실제 메일·알림·외부 호출을 추가하는 소비자는 `purchaseRecordId`를 durable inbox unique key나 provider idempotency key로 써야 한다.
 
+진행 알림은 NATS → 각 API 복제본의 로컬 RxJS Subject → 그 복제본에 연결된 SSE 클라이언트로 전달된다. 서버는 saga별 구독을 만들지 않으므로 클라이언트가 payload의 `sagaId`로 자기 작업을 고른다. Core NATS의 `flush`는 서버가 이전 명령을 처리했다는 확인이며 소비자가 처리했거나 메시지가 저장됐다는 ack가 아니다.
+
+구매는 완료 문서의 `purchaseEventStatus=pending`을 outbox로 삼는다. publication lease를 얻은 복제본이 발행하고 PubAck 뒤에 `published`로 바꾼다. 알림 복제본들은 같은 durable pull consumer를 공유하고 처리 성공 뒤 ack한다. 저장 성공 후 DB 갱신을 잃거나 처리 성공 후 ack를 잃으면 재전달될 수 있다. message ID의 중복 억제 기간도 유한하다.
+
+구매 stream은 해당 subject만 보존하며 용량 한계에서는 새 발행을 거부해 outbox가 pending으로 남게 한다. 보존 기간·용량은 구매 이벤트 설정이 소유한다. 현재 알림 소비자는 실제 메일을 발송하지 않고 `dedupeKey`가 있는 로그를 남긴다.
+
 ### 2.3. 구매 상태 머신과 재조정
 
 결제 provider, Redis의 티켓 claim, MongoDB의 티켓·구매 문서는 한 transaction으로 묶을 수 없다. 구매는 외부 효과보다 먼저 durable 기록을 남기고 다음 상태로 수렴한다.
 
 ```text
 pending → completing → completed
-   └─→ compensating → cancelled
+   │          │
+   └──────────┴─→ compensating → cancelled
 ```
 
 각 전이는 owner ID와 만료 시각이 있는 lease를 CAS로 획득한 복제본만 실행한다. 프로세스가 중간에 종료되면 주기 재조정이 stale 기록을 찾아 만료된 lease를 인수한다. 결국 구매는 `completed` 또는 `cancelled`로 수렴하며, 완료 이벤트 발행 실패는 이미 완료된 구매를 되돌리지 않고 별도로 재시도한다.
+
+완료 transaction은 티켓의 `Available → Sold`, 구매 완료, 결제 resolution marker와 HTTP 응답 스냅샷을 함께 저장한다. outbox 상태가 이후 바뀌어도 같은 멱등성 키의 재시도 응답은 최초 결과를 유지한다. 보상은 해당 구매가 소유한 티켓·Redis claim만 해제하고 결제를 취소한다. 완료와 lease 회수가 경합하면 transaction write conflict와 owner CAS가 두 종결 상태 중 하나만 남긴다.
 
 ### 2.4. Saga 오케스트레이션 — Restate
 
 상영 생성은 접수와 실행을 분리한다.
 
-```text
-HTTP 202 접수 → 인증 주체+멱등성 키를 sagaId에 고정
-              ↓
-        Restate workflow(sagaId)
-              ↓
-     durable 상태 발행 → MongoDB transaction으로 검증·생성
-              ↓
-       종결 결과 저장 + SSE 알림
+```mermaid
+sequenceDiagram
+    participant C as 클라이언트
+    participant A as 접수 API
+    participant M as MongoDB
+    participant R as Restate
+    participant W as API workflow endpoint
+    participant N as NATS → SSE
+    C->>A: POST + Idempotency-Key
+    A->>M: 인증 주체·키를 sagaId에 고정, submission lease
+    A->>R: workflow submit(key=sagaId)
+    A->>M: 접수 완료 기록
+    A-->>C: 202 + sagaId
+    Note over A,W: workflow 실행은 접수 완료 응답과 병렬로 진행될 수 있음
+    R->>W: durable invocation
+    W->>N: waiting → processing
+    W->>M: operation 조회 → 극장 guard CAS → 검증·생성 transaction
+    W->>N: succeeded / failed / error
+    W-->>R: 종결 출력 보관
+    C->>A: sagaId로 상태 조회
+    A->>M: 접수한 인증 주체 확인
+    A->>R: workflow output 조회
+    A-->>C: pending 또는 종결 결과
 ```
 
 Restate journal은 완료된 step을 재사용하고 복제본 종료 후에도 실행을 이어 간다. 그러나 외부 효과의 성공과 journal 기록은 원자적이지 않으므로 durable step은 다시 호출될 수 있다. 상영·티켓·operation을 한 MongoDB transaction으로 묶고 `sagaId`의 unique operation을 저장하는 것이 최종 멱등성 경계다.
@@ -101,23 +143,23 @@ workflow key는 **같은 `sagaId`**의 중복 제출만 합친다. 서로 다른
 
 SSE는 사용자 경험을 위한 best-effort 진행 알림이다. 사용자가 종결 상태를 알아야 할 때는 `sagaId`로 상태 API를 재조회하고, 실제 생성 결과의 기준은 MongoDB다.
 
+시간 충돌은 자원을 생성하지 않은 `failed`, 생성 성공은 `succeeded`, 재시도로 해결되지 않은 시스템 오류는 `error`다. operation에는 입력 fingerprint와 결과를 함께 저장해 같은 `sagaId`의 다른 입력을 거부한다. 트랜잭션 안의 생성이 실패하면 부분 상영·티켓이 롤백되므로 별도 삭제 보상 step은 없다.
+
+상태 이벤트도 durable step으로 발행해 workflow 안의 순서를 유지하지만 중복 발행은 가능하다. step별 retry·timeout·abort와 workflow 출력의 보존 기간은 [workflow.ts](../apps/api/src/services/application/showtime-creation/worker/workflow.ts)가 정한다. 출력 보존은 유한하므로 workflow key를 영구 멱등 저장소로 취급하지 않는다.
+
 ## 3. 코드 컨벤션
 
-자동 포맷으로 해결되지 않는 프로젝트 고유의 읽기·경계 규칙만 정리한다.
+HTTP 계약과 도메인 모델에 적용하는 규칙이다. apps와 libs가 함께 지킬 이름·타입·import·테스트 문장 규칙은 [개발 규칙](reference/conventions.md)에 모은다.
 
 ### 3.1. 서비스 이름과 공개 경계
 
-Core Service는 도메인 이름, Application Service는 조합하는 유스케이스 이름을 쓴다.
+Core는 도메인, Application은 조합하는 유스케이스로 이름을 짓는다. 공개 조회·삭제 API와 Repository의 `ById` 계열을 구분하는 기준, DTO·응답 타입의 이름은 [개발 규칙 §1](reference/conventions.md#1-서비스와-메서드-이름)을 따른다.
 
-모듈 안에서는 구현 파일을 상대 경로로 가져오고, 모듈 경계 밖에서는 해당 모듈의 `index.ts`에 드러난 공개 API만 사용한다. `internal/`과 `worker/`는 기본적으로 모듈 밖에 공개하지 않는다. 예외적으로 비공개 구현을 직접 테스트해야 한다면 lint 허용 목록에 의도를 남긴다.
-
-API 운영 코드가 개발 환경에만 설치되는 패키지에 기대지 않도록 `src/`와 `scripts/`의 TypeScript 정적 import에서 외부 패키지의 의존성 분류를 검사한다. 개발용 패키지는 `src/**/__tests__/`에서만 허용하며, 상대 경로·내부 alias·workspace 패키지는 이 분류 검사에서 제외한다.
+외부 모듈은 공개 barrel만 사용하고 `internal/`·`worker/`를 직접 참조하지 않는다. ESM 확장자·별칭·개발 의존성 분류는 [Import와 공개 경계](reference/conventions.md#3-import와-공개-경계)를 따른다. SDK 연동과 Node 유틸의 경계는 [libs 문서](libs.md)가 소유한다.
 
 ### 3.2. 에러 규칙
 
-NestJS의 `HttpException`과 하위 예외를 프로젝트 전체의 공통 오류 타입으로 사용한다. 이미 정의된 오류 분류를 재사용하기 위한 선택이며, Core·Application에서도 해당 예외를 직접 던진다.
-
-예상 가능한 도메인 실패는 모듈의 `errors.ts`에 코드·사람이 읽을 메시지·문맥 필드를 가진 객체로 정의하고, 그 규칙을 소유한 코드가 적절한 공통 예외에 담아 던진다. MongoDB 오류 판별과 도메인 오류로의 변환은 Repository가 담당한다. Gateway에서 별도 오류 계층으로 번역하지 않으며, controller에서 도메인 조건을 다시 만들지 않는다.
+NestJS 공통 예외와 도메인의 `errors.ts`를 사용한다. MongoDB 오류를 도메인 오류로 바꾸는 곳은 Repository이며, controller는 도메인 조건을 다시 만들지 않는다. 오류 객체·클라이언트 코드·노출 범위는 [개발 규칙 §4](reference/conventions.md#4-에러는-소유한-경계에서-정의한다)를 따른다.
 
 ### 3.3. REST API 설계
 
@@ -138,6 +180,10 @@ NestJS의 `HttpException`과 하위 예외를 프로젝트 전체의 공통 오�
 | 키 A | 본문 Y        | 같은 키의 의미가 바뀌었으므로 `409 Conflict`                |
 | 키 B | 본문 X        | 별도 요청으로 실행하며, 키 A와의 경쟁은 DB 상태 전이가 조정 |
 
+같은 키의 최초 요청이 처리 중이면 `409 Conflict`다. 클라이언트는 새 키를 만들어 중복 작업을 시작하지 않고 같은 키로 다시 확인한다. 부수 효과 전의 입력 검증 실패와 실행을 시작한 뒤의 실패도 구분한다. 구매가 실행을 시작한 뒤 저장한 오류 응답은 보상이 끝나도 같은 키로 재현된다.
+
+구매는 인증 주체·키의 unique index와 응답 스냅샷을 구매 기록에 저장한다. 상영 생성은 같은 조합을 고정 `sagaId`로 연결한다. Restate 제출 응답을 잃어도 lease를 인수한 복제본이 같은 workflow key로 재제출한다.
+
 #### 3.3.2. ID만 받는 API는 처음부터 복수형으로 둔다
 
 조회·삭제처럼 ID만 받는 service API는 `getMany`, `deleteMany`처럼 복수형으로 만든다. 나중에 bulk 처리가 필요해져도 공개 API를 깨지 않기 위해서다. HTTP의 단일 리소스 핸들러는 ID 하나를 배열로 감싸 이 API를 사용한다.
@@ -155,6 +201,8 @@ NestJS의 `HttpException`과 하위 예외를 프로젝트 전체의 공통 오�
 #### 3.3.5. 본인 자원은 `/me`로 다룬다
 
 사용자 본인의 자원은 URL·본문의 ID가 아니라 인증 token의 subject로 식별한다. 그런 경로는 `/me`로 드러내고, 임의 ID를 받는 경로는 admin에게만 허용한다. 두 규칙을 함께 지켜야 로그인 사용자가 ID를 바꿔 다른 사용자의 자원에 접근하는 IDOR 경로가 사라진다.
+
+이 기준은 사용자·결제처럼 소유 주체가 있는 자원에 적용한다. 공개 영화·극장 조회까지 user 소유 자원으로 취급하지 않는다. `POST /purchases`도 결제자를 본문에서 받지 않고 token subject로 정한다. 같은 controller에 user·admin 핸들러가 섞이면 guard를 핸들러마다 붙인다. 클래스 guard와 메서드 guard는 함께 적용되므로 역할이 다른 guard를 중첩하지 않는다. `/me`는 `/:userId`보다 먼저 선언한다.
 
 ### 3.4. 데이터 비정규화
 
@@ -178,7 +226,28 @@ API 테스트에는 집중 실행·비활성 테스트가 남거나 같은 범�
 
 API와 공용 라이브러리는 서로 다른 접두사를 쓰고, 각 workspace 안에서는 worker별 DB·bucket과 테스트별 `PROJECT_ID`로 자원을 나눈다. 같은 API Vitest 명령을 동시에 두 번 실행하는 것은 지원하지 않는다. 정확한 이름과 lifecycle은 테스트 설정과 helper가 소유한다.
 
+API는 Dev Container 인프라를 재사용하고, common은 Testcontainers로 필요한 인프라를 준비한다. API의 DB·bucket은 `mongo-api-w<worker>`·`s3bucket-api-w<worker>` 형태다. 파일 안에서는 같은 연결을 쓰되 테스트 뒤 collection과 bucket을 비우며, Redis·NATS·workflow 이름은 테스트별 `PROJECT_ID`로 분리한다. suite 종료 후의 정리도 해당 workspace의 자원 범위에 한정한다.
+
+Nest 모듈 파일은 한 번 평가되므로 데코레이터 인자에서 테스트별 환경 값을 미리 읽어 고정하지 않는다. 제공자를 만들 때 `AppConfigService.projectId`를 받아 prefix·subject·workflow 이름을 만든다. 테스트 setup은 앱을 import하기 전에 startup 환경을 먼저 정하고, `beforeEach`에서 테스트별 값을 정한다.
+
 커버리지를 수집하는 구현 workspace는 100%를 게이트로 사용한다. 이 수치의 의미·한계·예외 원칙은 [설계 결정 §6](reference/decisions.md#6-테스트-커버리지-100-게이트)에만 정의한다.
+
+### 4.2. Fixture와 비동기 작업의 수명
+
+API 통합 테스트는 [createAppTestContext](../apps/api/src/__tests__/helpers/create-app-test-context.ts)로 실제 Nest 앱과 HTTP client를 만든다. common은 모듈별 fixture factory를 사용한다. 각 테스트는 자신이 만든 context의 `teardown()`까지 책임진다.
+
+```ts
+// API fixture의 수명만 보여 주는 예시
+let fix: AppTestContext
+beforeEach(async () => {
+    fix = await createAppTestContext()
+})
+afterEach(() => fix.teardown())
+```
+
+상영 workflow를 검증할 때는 `enableRestate: true`로 임시 endpoint를 등록한다. teardown은 제출한 workflow가 끝난 뒤 그 deployment를 제거하고 앱을 닫는다. 일반 테스트에서는 workflow 제출을 허용하지 않아 실수로 외부 실행을 시작하면 실패한다. cron은 테스트 중 자율 실행을 멈춰 시나리오가 작업 시점을 제어하게 한다.
+
+SSE는 요청 전에 구독을 준비하거나 저장된 종결 상태로 복구하는 계약을 따라야 한다. 임의의 sleep으로 완료를 추측하지 않는다. 상영·티켓을 실제로 insert한 뒤 예외를 주입하고 DB 재조회로 롤백을 확인하는 예시는 [튜토리얼](reference/tutorial.md#5-동작을-기준으로-구현하고-검증한다)에 있다.
 
 ## 5. 실행 가능한 API 문서
 
@@ -199,3 +268,15 @@ TEST "선점한 티켓 묶음을 구매한다" \
 첫 요청은 구매 조건을 만들지만 API 문서 항목은 아니다. 설명과 기대 상태가 있는 두 번째 요청만 실행 결과에 계약으로 기록된다.
 
 요청은 spec에, `TEST`의 실제 응답 본문은 상세 로그에 남긴다. 준비용 `SETUP`은 문서 항목에 포함하지 않는다. 실행 명령은 [README](../README.md#3-api-레퍼런스)가 소유한다.
+
+인증 주체는 `common.fixture`의 `login_admin`·`login_user`로 전환한다. `CURRENT_AUTH_TOKEN`이 있으면 이후 요청에 Bearer 헤더가 자동으로 붙고, spec이 직접 지정한 `Authorization`이 우선한다. 게스트 조건은 `as_guest`로 자동 주입을 끊는다. [views.spec](../apps/api/api-docs/views.spec)이 이 구분을 보여 준다.
+
+`apps/api/api-docs/_output/`의 `logs/`에서 실제 응답을, `docs/summary.md`에서 검증한 항목을 확인한다. 요약은 실행한 HTTP 시나리오의 목록이며 SSE까지 포함한 전체 라우트 인벤토리는 아니다.
+
+## 6. 빌드와 두 frontend의 범위
+
+API 배포는 Nest의 Rspack 빌드를 사용한다. [rspack.config.cjs](../apps/api/rspack.config.cjs)는 Nest 기본 변환 규칙을 `ts-loader`로 교체하고 API 코드만 번들링한다. `common`을 포함한 런타임 패키지는 external로 두며, Docker의 `pnpm deploy --prod` 결과에 해당 패키지의 빌드 산출물을 포함한다. 개발 watch는 `development.ts` 진입점을 사용하는 TSC 경로다. Restate endpoint도 API 안에서 실행하므로 별도 workflow bundle을 만들지 않는다.
+
+console은 admin 로그인과 영화·극장 관리, user-app은 가입·로그인과 홈 View 소비를 보여 준다. 상영 생성·예매·구매 전체 UI는 범위에 없으며, 실행 가능한 API 문서와 통합·race 테스트가 그 흐름을 보여 준다.
+
+두 앱의 BFF는 access·refresh token을 HttpOnly cookie에 보관하고, 만료 시 회전한 뒤 원 요청을 한 번 재시도한다. 응답을 캐시하지 않고 body 크기를 제한한다. catch-all proxy의 일부 auth 경로 차단만으로 권한을 보장하지 않으며, 최종 인가는 API guard가 담당한다. 운영에서 필요한 edge와 proxy IP 신뢰 조건은 [tests 문서](tests.md#5-프런트엔드-bff와-클라이언트-ip-경계)가 설명한다.
