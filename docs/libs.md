@@ -12,6 +12,8 @@ NestJS·Zod·RxJS와 Express 타입·HTTP 미들웨어처럼 앱을 작성하고
 
 트랜잭션은 DB 타입을 포함하지 않는 `TransactionContext`로 전달한다. MongoDB 세션과 드라이버 실행 옵션은 공통 Repository가 관리한다. 앱의 Repository는 필요한 snapshot 실행과 시간 제한을 선택한다. 이 경계는 외부 연동 구현의 소유권을 정하며, MongoDB 쿼리를 다른 DB에서도 실행할 수 있게 만드는 추상화는 아니다.
 
+문서 ID는 앱의 DTO와 Repository에서 문자열로 주고받는다. `_id` 조회 조건과 쓰기에 필요한 `ObjectId` 변환은 `common`의 드라이버 경계에서 처리하며, 생성·조회·갱신한 문서에는 문자열 `id`만 반환한다. ID를 제외한 projection에는 `id`를 추가하지 않는다. 집계에서 문서 ID 조건은 첫 `$match`에서 변환한다. 이후의 `_id`는 그룹 키일 수 있으므로 이름과 조건을 유지하되 결과의 `ObjectId` 값은 문자열로 반환한다.
+
 ## 2. testing — 테스트 소비자용 코드
 
 spec이 import하는 HTTP client와 fixture helper를 둔다. 앱은 이 패키지를 dev dependency로만 받으므로 테스트 도구가 운영 의존성에 섞이지 않는다.

@@ -36,6 +36,21 @@ const integrationImportRestrictions = [
     {
         group: integrationImports,
         message: '외부 연동은 @mannercode/common의 공개 API를 사용하세요.'
+    },
+    {
+        group: ['@mannercode/common'],
+        importNames: [
+            'MongoObjectId',
+            'StoredDocument',
+            'objectId',
+            'objectIds',
+            'newObjectId',
+            'encodeMongoFilter',
+            'encodeMongoUpdate',
+            'mongoToPublic',
+            'mongoArrayToPublic'
+        ],
+        message: '문서 ID는 문자열로 사용하고 ObjectId 변환은 common Repository에 맡기세요.'
     }
 ]
 const internalImportRestrictions = [

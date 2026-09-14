@@ -1,10 +1,4 @@
-import {
-    CrudRepository,
-    mongoArrayToPublic,
-    mongoToPublic,
-    objectId,
-    MongoConnection
-} from '@mannercode/common'
+import { CrudRepository, MongoConnection } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { AppConfigService } from '#config'
 import { CreateAssetDto } from './dtos/index.js'
@@ -30,13 +24,13 @@ export class AssetsRepository extends CrudRepository<Asset> {
         // cron은 "만료됐고 무소유"인 행만 지우므로, 이 갱신이 성공한 자산을 cron이 지우는 일은 없다.
         // 만료됐거나 이미 삭제된 행이면 null을 반환한다.
         const doc = await this.findAndUpdateDocument(
-            this.activeFilter({ _id: objectId(assetId), createdAt: { $gt: createdAfter } }),
+            this.activeFilter({ _id: assetId, createdAt: { $gt: createdAfter } }),
             this.timestamped({
                 $set: { ownerEntityId: owner.entityId, ownerService: owner.service }
             }),
             { returnDocument: 'after' }
         )
-        return mongoToPublic<Asset>(doc)
+        return doc
     }
 
     async create(createDto: CreateAssetDto) {
@@ -59,6 +53,6 @@ export class AssetsRepository extends CrudRepository<Asset> {
                 ownerService: null
             })
         )
-        return mongoArrayToPublic<Asset>(docs)
+        return docs
     }
 }

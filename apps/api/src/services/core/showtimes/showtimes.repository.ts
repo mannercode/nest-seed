@@ -3,7 +3,6 @@ import {
     QueryBuilderOptions,
     CrudRepository,
     QueryBuilder,
-    mongoArrayToPublic,
     MongoConnection
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
@@ -73,7 +72,7 @@ export class ShowtimesRepository extends CrudRepository<Showtime> {
             signal,
             sort: { startTime: 1 }
         })
-        return mongoArrayToPublic<Showtime>(showtimes)
+        return showtimes
     }
 
     async searchMovieIds(searchDto: SearchShowtimesDto) {
