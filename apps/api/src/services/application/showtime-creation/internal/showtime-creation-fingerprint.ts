@@ -1,5 +1,4 @@
-import { DateUtil, JsonUtil } from '@mannercode/common'
-import { createHash } from 'node:crypto'
+import { DateUtil, JsonUtil, sha256 } from '@mannercode/common'
 import type { BulkCreateShowtimesDto } from '../dtos/index.js'
 
 export function fingerprintShowtimeCreation(createDto: BulkCreateShowtimesDto) {
@@ -12,5 +11,5 @@ export function fingerprintShowtimeCreation(createDto: BulkCreateShowtimesDto) {
         theaterIds: [...createDto.theaterIds].sort((left, right) => left.localeCompare(right))
     }
 
-    return createHash('sha256').update(JsonUtil.stringify(normalized)).digest('hex')
+    return sha256(JsonUtil.stringify(normalized), 'hex')
 }

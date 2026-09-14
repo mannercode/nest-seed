@@ -19,6 +19,32 @@ const apiDependencyOptions = {
         '^@mannercode/'
     ]
 }
+const integrationImports = [
+    'mongodb',
+    'mongodb/**',
+    'ioredis',
+    'ioredis/**',
+    'bcrypt',
+    'bcrypt/**',
+    '@nestjs/jwt',
+    '@nestjs/jwt/**',
+    '@nats-io/**',
+    '@restatedev/**',
+    '@aws-sdk/**'
+]
+const integrationImportRestrictions = [
+    {
+        group: integrationImports,
+        message: '외부 연동은 @mannercode/common의 공개 API를 사용하세요.'
+    }
+]
+const internalImportRestrictions = [
+    {
+        regex: '(?:^|/)showtime-creation/(?:internal|worker)(?:/|$)',
+        message:
+            'showtime-creation의 internal/worker는 공개 API가 아닙니다. 외부 운영 코드는 #application을 사용하세요.'
+    }
+]
 
 export default defineConfig({
     // ESLint에서는 검사했지만 현재 Oxlint 구성으로 대체하지 못한 안전장치다.
@@ -123,12 +149,29 @@ export default defineConfig({
             rules: {
                 'no-restricted-imports': [
                     'error',
+                    { patterns: [...internalImportRestrictions, ...integrationImportRestrictions] }
+                ]
+            }
+        },
+        {
+            files: ['apps/api/src/services/**/*.ts'],
+            excludeFiles: ['apps/api/src/**/__tests__/**/*.ts', '**/*.repository.ts'],
+            rules: {
+                'no-restricted-imports': [
+                    'error',
                     {
                         patterns: [
+                            ...internalImportRestrictions,
+                            ...integrationImportRestrictions,
                             {
-                                regex: '(?:^|/)showtime-creation/(?:internal|worker)(?:/|$)',
+                                group: ['@mannercode/common'],
+                                importNames: [
+                                    'isDuplicateKeyError',
+                                    'MongoTransactionRepository',
+                                    'MongoConnection'
+                                ],
                                 message:
-                                    'showtime-creation의 internal/worker는 공개 API가 아닙니다. 외부 운영 코드는 #application을 사용하세요.'
+                                    'MongoDB 오류 판별과 세션 관리는 Repository에서 처리하세요.'
                             }
                         ]
                     }
@@ -153,7 +196,6 @@ export default defineConfig({
                                     '!../**/index.js',
                                     // 공개 API가 아닌 구현 단위 테스트에서만 허용하는 직접 import다.
                                     '!../booking.utils.js',
-                                    '!../temporal-json.serde.js',
                                     '!../../services/core/movies/movies.repository.js',
                                     '!../../services/core/movies/movie-pending-assets.repository.js',
                                     '!../../services/core/purchase-records/purchase-records.repository.js',

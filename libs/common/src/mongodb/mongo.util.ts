@@ -3,7 +3,8 @@ import { ObjectId, type Document, type Filter } from 'mongodb'
 import { Assume, DateUtil, escapeRegExp, uniq } from '../utils/index.js'
 import { MongoErrors } from './errors.js'
 
-export const newObjectIdString = () => new ObjectId().toHexString()
+export const newObjectId = () => new ObjectId()
+export const newObjectIdString = () => newObjectId().toHexString()
 
 export const objectId = (id: string | ObjectId) => {
     if (id instanceof ObjectId) return id

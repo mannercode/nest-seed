@@ -859,12 +859,12 @@ describe('PurchaseService', () => {
             })
 
             it('durable 구매 기록 생성이 실패하면 외부 효과를 만들지 않는다', async () => {
-                const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
+                const repository = fix.module.get(PurchaseRecordsRepository)
                 const paymentsService = fix.module.get(PaymentsService)
 
-                vi.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(() => {
-                    throw new Error('record creation failed')
-                })
+                vi.spyOn(repository.collection, 'insertOne').mockRejectedValueOnce(
+                    new Error('record creation failed')
+                )
                 const createPayment = vi.spyOn(paymentsService, 'create')
 
                 const createDto = buildCreatePurchaseDto(heldTickets)

@@ -1,6 +1,9 @@
-import { type NatsConnection, getNatsConnectionToken } from '@mannercode/common'
 import {
-    type ConsumerMessages,
+    type DurableMessages,
+    type NatsConnection,
+    getNatsConnectionToken
+} from '@mannercode/common'
+import {
     AckPolicy,
     DeliverPolicy,
     DiscardPolicy,
@@ -248,12 +251,12 @@ function fakeMessages(
     iterator: () => AsyncGenerator<never, void, unknown>,
     onClose: () => void = () => undefined
 ) {
-    const messages = iterator() as unknown as ConsumerMessages
+    const messages = iterator() as unknown as DurableMessages
     messages.close = vi.fn(async () => onClose())
     return messages
 }
 
-async function createNotificationService(messages: ConsumerMessages) {
+async function createNotificationService(messages: DurableMessages) {
     const fakeEvents = {
         consumeNotifications: vi.fn(async () => messages)
     } as unknown as PurchaseEvents

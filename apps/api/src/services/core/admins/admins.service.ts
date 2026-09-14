@@ -1,8 +1,7 @@
-import { isDuplicateKeyError, mapDocToDto } from '@mannercode/common'
-import { ConflictException, Injectable } from '@nestjs/common'
+import { mapDocToDto } from '@mannercode/common'
+import { Injectable } from '@nestjs/common'
 import { AdminsRepository } from './admins.repository.js'
 import { AdminCredentialsDto, AdminDto, CreateAdminDto, UpdateAdminDto } from './dtos/index.js'
-import { AdminErrors } from './errors.js'
 import { AdminAuthenticationService } from './internal/index.js'
 import { Admin } from './models/index.js'
 
@@ -16,15 +15,8 @@ export class AdminsService {
     async create(createDto: CreateAdminDto) {
         const password = await this.authenticationService.hash(createDto.password)
 
-        try {
-            const created = await this.repository.create({ ...createDto, password })
-            return this.toDto(created)
-        } catch (error) {
-            if (isDuplicateKeyError(error)) {
-                throw new ConflictException(AdminErrors.EmailAlreadyExists(createDto.email))
-            }
-            throw error
-        }
+        const created = await this.repository.create({ ...createDto, password })
+        return this.toDto(created)
     }
 
     async update(id: string, updateDto: UpdateAdminDto) {
@@ -33,19 +25,12 @@ export class AdminsService {
             patch.password = await this.authenticationService.hash(patch.password)
         }
 
-        try {
-            const updated = await this.repository.update(id, patch)
-            // 비밀번호가 바뀌면 기존 리프레시 토큰 묶음은 더 이상 신뢰할 수 없으므로 함께 회수한다.
-            if (patch.password !== undefined) {
-                await this.authenticationService.revokeAllForAdmin(id)
-            }
-            return this.toDto(updated)
-        } catch (error) {
-            if (isDuplicateKeyError(error) && updateDto.email) {
-                throw new ConflictException(AdminErrors.EmailAlreadyExists(updateDto.email))
-            }
-            throw error
+        const updated = await this.repository.update(id, patch)
+        // 비밀번호가 바뀌면 기존 리프레시 토큰 묶음은 더 이상 신뢰할 수 없으므로 함께 회수한다.
+        if (patch.password !== undefined) {
+            await this.authenticationService.revokeAllForAdmin(id)
         }
+        return this.toDto(updated)
     }
 
     async remove(id: string) {

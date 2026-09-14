@@ -1,5 +1,5 @@
-import { ensure, isDuplicateKeyError, mapDocToDto } from '@mannercode/common'
-import { ConflictException, Injectable } from '@nestjs/common'
+import { ensure, mapDocToDto } from '@mannercode/common'
+import { Injectable } from '@nestjs/common'
 import {
     CreateUserDto,
     UserCredentialsDto,
@@ -7,7 +7,6 @@ import {
     UpdateUserDto,
     UserDto
 } from './dtos/index.js'
-import { UserErrors } from './errors.js'
 import { UserAuthenticationService } from './internal/index.js'
 import { User } from './models/index.js'
 import { UsersRepository } from './users.repository.js'
@@ -22,15 +21,8 @@ export class UsersService {
     async create(createDto: CreateUserDto) {
         const password = await this.authenticationService.hash(createDto.password)
 
-        try {
-            const user = await this.repository.create({ ...createDto, password })
-            return this.toDto(user)
-        } catch (error) {
-            if (isDuplicateKeyError(error)) {
-                throw new ConflictException(UserErrors.EmailAlreadyExists(createDto.email))
-            }
-            throw error
-        }
+        const user = await this.repository.create({ ...createDto, password })
+        return this.toDto(user)
     }
 
     async deleteMany(userIds: string[]): Promise<void> {
@@ -87,19 +79,12 @@ export class UsersService {
             patch.password = await this.authenticationService.hash(patch.password)
         }
 
-        try {
-            const user = await this.repository.update(userId, patch)
-            // 비밀번호가 바뀌면 기존 리프레시 토큰 묶음은 더 이상 신뢰할 수 없으므로 함께 회수한다.
-            if (patch.password !== undefined) {
-                await this.authenticationService.revokeAllForUser(userId)
-            }
-            return this.toDto(user)
-        } catch (error) {
-            if (isDuplicateKeyError(error) && updateDto.email) {
-                throw new ConflictException(UserErrors.EmailAlreadyExists(updateDto.email))
-            }
-            throw error
+        const user = await this.repository.update(userId, patch)
+        // 비밀번호가 바뀌면 기존 리프레시 토큰 묶음은 더 이상 신뢰할 수 없으므로 함께 회수한다.
+        if (patch.password !== undefined) {
+            await this.authenticationService.revokeAllForUser(userId)
         }
+        return this.toDto(user)
     }
 
     private toDto(user: User) {

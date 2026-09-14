@@ -1,11 +1,10 @@
-import type { AppLoggerService } from '@mannercode/common'
+import type { AppLoggerService } from '../../index.js'
 import { type LoggerTransport, workflow } from '@restatedev/restate-sdk'
 import { once } from 'node:events'
 import { connect } from 'node:http2'
-import type { AppConfigService } from '#config'
-import { ShowtimeCreationRestateEndpoint, type ShowtimeCreationWorkflow } from '../index.js'
+import { RestateEndpoint } from '../index.js'
 
-describe('ShowtimeCreationRestateEndpoint', () => {
+describe('RestateEndpoint', () => {
     it('Vitest에서는 임의 포트로 열고 HTTP/2 session까지 정상 종료한다', async () => {
         const endpoint = createEndpoint()
         await endpoint.onApplicationBootstrap()
@@ -110,9 +109,7 @@ describe('ShowtimeCreationRestateEndpoint', () => {
             handlers: { run: async () => undefined },
             name: `EndpointTest-${Math.random().toString(36).slice(2)}`
         })
-        const workflowProvider = { definition } as ShowtimeCreationWorkflow
-        const config = { restate: { servicePort } } as AppConfigService
-        return new ShowtimeCreationRestateEndpoint(workflowProvider, config, logger)
+        return new RestateEndpoint([definition], servicePort, logger)
     }
 
     function createLogger() {

@@ -1,5 +1,4 @@
-import type { ClientSession } from 'mongodb'
-import { ensure, mapDocToDto, pickIds, uniq } from '@mannercode/common'
+import { type TransactionContext, ensure, mapDocToDto, pickIds, uniq } from '@mannercode/common'
 import {
     BadRequestException,
     Injectable,
@@ -113,10 +112,10 @@ export class MoviesService {
 
     async allExist(
         movieIds: string[],
-        session: ClientSession | undefined = undefined,
+        transaction: TransactionContext | undefined = undefined,
         signal: AbortSignal | undefined = undefined
     ): Promise<boolean> {
-        return this.moviesRepository.allExist(movieIds, session, signal)
+        return this.moviesRepository.allExist(movieIds, transaction, signal)
     }
 
     async finalizeUpload(movieId: string, assetId: string): Promise<void> {

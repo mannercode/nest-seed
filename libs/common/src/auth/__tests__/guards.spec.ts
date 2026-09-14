@@ -1,3 +1,4 @@
+import { PasswordHasher } from '../index.js'
 import { createGuardsFixture, type GuardsFixture } from './guards.fixture.js'
 
 describe('AuthGuard', () => {
@@ -142,5 +143,18 @@ describe('AuthGuard', () => {
         it('@Public이 붙은 라우트는 헤더 없이 접근할 수 있다', async () => {
             await fix.httpClient.get('/optional/public').ok()
         })
+    })
+})
+
+describe('PasswordHasher', () => {
+    it('해시를 만든 비밀번호만 검증에 성공한다', async () => {
+        const hashed = await PasswordHasher.hash('password')
+        expect(hashed).toMatch(/^\$2[aby]\$10\$/)
+        expect(await PasswordHasher.verify('password', hashed)).toBe(true)
+        expect(await PasswordHasher.verify('wrong', hashed)).toBe(false)
+    })
+    it('계정 해시가 없어도 해시 비교를 수행한다', async () => {
+        expect(await PasswordHasher.verify('wrong', undefined)).toBe(false)
+        expect(await PasswordHasher.verify('timing-equalization-only', undefined)).toBe(true)
     })
 })

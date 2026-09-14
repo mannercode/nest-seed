@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { Redis } from 'ioredis'
+import type { RedisConnection } from '../redis/index.js'
 import { randomUUID } from 'node:crypto'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { DateUtil, defaultTo } from '../utils/index.js'
@@ -7,7 +7,7 @@ import { DateUtil, defaultTo } from '../utils/index.js'
 @Injectable()
 export class CacheService {
     constructor(
-        private readonly redis: Redis,
+        private readonly redis: RedisConnection,
         private readonly prefix: string
     ) {}
 
@@ -17,6 +17,18 @@ export class CacheService {
 
     async delete(key: string) {
         await this.redis.del(this.getKey(key))
+    }
+
+    async incrementWithExpiry(key: string, ttlMs: number): Promise<number> {
+        const result = await this.redis.eval(
+            `local count = redis.call('INCR', KEYS[1])
+             if count == 1 then redis.call('PEXPIRE', KEYS[1], ARGV[1]) end
+             return count`,
+            1,
+            this.getKey(key),
+            ttlMs.toString()
+        )
+        return Number(result)
     }
 
     // 키에는 캐시 접두어를 붙이고 스크립트의 첫 ARGV에도 같은 접두어를 넘긴다.

@@ -1,17 +1,11 @@
-import { JwtAuthService, InjectJwtAuth } from '@mannercode/common'
+import { JwtAuthService, InjectJwtAuth, PasswordHasher } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { compare, hash, hashSync } from 'bcrypt'
 import {
     type UserAuthPayload,
     UserAuthPayloadSchema,
     type UserCredentialsDto
 } from '../dtos/index.js'
 import { UsersRepository } from '../users.repository.js'
-
-const BCRYPT_SALT_ROUNDS = 10
-
-// 없는 계정도 bcrypt 비교를 거쳐 로그인 실패 응답 시간 차이를 줄인다.
-const TIMING_DUMMY_HASH = hashSync('timing-equalization-only', BCRYPT_SALT_ROUNDS)
 
 @Injectable()
 export class UserAuthenticationService {
@@ -22,7 +16,7 @@ export class UserAuthenticationService {
 
     async findUserByCredentials({ email, password }: UserCredentialsDto) {
         const user = await this.repository.findByEmailWithPassword(email)
-        const targetHash = user?.password ?? TIMING_DUMMY_HASH
+        const targetHash = user?.password
 
         const isValid = await this.validate(password, targetHash)
 
@@ -36,7 +30,7 @@ export class UserAuthenticationService {
     }
 
     async hash(rawPassword: string) {
-        return hash(rawPassword, BCRYPT_SALT_ROUNDS)
+        return PasswordHasher.hash(rawPassword)
     }
 
     async refreshAuthTokens(refreshToken: string) {
@@ -53,8 +47,8 @@ export class UserAuthenticationService {
         await this.jwtAuthService.revokeRefreshToken(refreshToken)
     }
 
-    async validate(rawPassword: string, hashedPassword: string) {
-        return compare(rawPassword, hashedPassword)
+    async validate(rawPassword: string, hashedPassword: string | undefined) {
+        return PasswordHasher.verify(rawPassword, hashedPassword)
     }
 
     async isAuthPayloadActive(payload: unknown): Promise<boolean> {

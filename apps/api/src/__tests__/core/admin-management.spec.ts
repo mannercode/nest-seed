@@ -60,6 +60,17 @@ describe('AdminManagement', () => {
 
         it('중복 키 외의 저장 오류는 ConflictException으로 바꾸지 않고 그대로 던진다', async () => {
             const service = fix.module.get(AdminsService)
+            const repository = fix.module.get(AdminsRepository)
+            const failure = new Error('storage unavailable')
+            vi.spyOn(repository.collection, 'insertOne').mockRejectedValueOnce(failure)
+
+            await expect(service.create({ ...adminCredentials, name: 'admin' })).rejects.toBe(
+                failure
+            )
+        })
+
+        it('저장할 값이 스키마를 위반하면 검증 오류를 그대로 던진다', async () => {
+            const service = fix.module.get(AdminsService)
 
             // required 필드를 null로 보내 저장 경계 검증 오류를 유도한다.
             // 요청 스키마 검증은 컨트롤러에만 적용되므로 service를 직접 호출한다.
@@ -211,7 +222,7 @@ describe('AdminManagement', () => {
 
             const service = fix.module.get(AdminsService)
             const repo = fix.module.get(AdminsRepository)
-            vi.spyOn(repo, 'update').mockRejectedValueOnce(new Error('boom'))
+            vi.spyOn(repo.collection, 'findOneAndUpdate').mockRejectedValueOnce(new Error('boom'))
 
             await expect(service.update(created.id, { name: 'x' })).rejects.toThrow('boom')
         })

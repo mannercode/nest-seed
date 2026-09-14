@@ -1,11 +1,7 @@
-import type { AppConfigService } from '#config'
 import { RestateHealthIndicator } from '../index.js'
 
 describe('RestateHealthIndicator', () => {
-    const config = {
-        restate: { ingressUrl: 'http://restate.test:8080', servicePort: 9080 }
-    } as AppConfigService
-    const indicator = new RestateHealthIndicator(config)
+    const indicator = new RestateHealthIndicator('http://restate.test:8080')
 
     afterEach(() => vi.restoreAllMocks())
 

@@ -1,11 +1,8 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
-import { JwtService } from '@nestjs/jwt'
+import { JwtVerifier } from './jwt-verifier.js'
 import { IS_OPTIONAL_AUTH_KEY } from './optional-auth.decorator.js'
 import { IS_PUBLIC_KEY } from './public.decorator.js'
-
-// 발급 측과 함께 고정해 none/HS↔RS 알고리즘 혼동을 막는다.
-const ACCEPTED_ALGORITHMS = ['HS256'] as const
 
 export type BearerAuthOptions = {
     /** 설정하면 `aud` 클레임이 필수가 되고, 값이 다른 토큰은 거절한다. */
@@ -35,7 +32,7 @@ export type AuthGuardOptions = {
 @Injectable()
 export abstract class AuthGuard implements CanActivate {
     constructor(
-        protected readonly jwtService: JwtService,
+        protected readonly jwtVerifier: JwtVerifier,
         protected readonly reflector: Reflector,
         protected readonly options: AuthGuardOptions
     ) {}
@@ -72,8 +69,7 @@ export abstract class AuthGuard implements CanActivate {
     protected async verifyBearer(token: string, bearer: BearerAuthOptions): Promise<unknown> {
         let payload: unknown
         try {
-            payload = await this.jwtService.verifyAsync(token, {
-                algorithms: [...ACCEPTED_ALGORITHMS],
+            payload = await this.jwtVerifier.verify(token, {
                 audience: bearer.audience,
                 issuer: bearer.issuer,
                 secret: bearer.secret

@@ -518,12 +518,27 @@ importers:
       '@mannercode/vitest-helpers':
         specifier: workspace:*
         version: link:../../tools/vitest-helpers
+      '@nats-io/jetstream':
+        specifier: 3.4.0
+        version: 3.4.0
+      '@restatedev/restate-sdk':
+        specifier: 1.17.0
+        version: 1.17.0
+      '@restatedev/restate-sdk-clients':
+        specifier: 1.17.0
+        version: 1.17.0
       '@testcontainers/mongodb':
         specifier: 12.1.0
         version: 12.1.0(supports-color@10.2.2)
       '@testcontainers/nats':
         specifier: 12.1.0
         version: 12.1.0(supports-color@10.2.2)
+      '@types/bcrypt':
+        specifier: 6.0.0
+        version: 6.0.0
+      bcrypt:
+        specifier: 6.0.0
+        version: 6.0.0
       ioredis:
         specifier: 6.0.0
         version: 6.0.0(supports-color@10.2.2)

@@ -1,5 +1,5 @@
 import type { Serde } from '@restatedev/restate-sdk'
-import { JsonUtil } from '@mannercode/common'
+import { JsonUtil } from '../utils/index.js'
 
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()

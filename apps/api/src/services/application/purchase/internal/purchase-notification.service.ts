@@ -1,4 +1,4 @@
-import type { ConsumerMessages, JsMsg } from '@nats-io/jetstream'
+import type { DurableMessages, DurableMessage } from '@mannercode/common'
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { PurchaseEvents, ticketPurchasedEventSchema } from '../purchase.events.js'
 
@@ -10,7 +10,7 @@ const RETRY_DELAY_MS = 1000
 export class PurchaseNotificationService implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(PurchaseNotificationService.name)
     private consumeTask: Promise<void> | undefined
-    private messages: ConsumerMessages | undefined
+    private messages: DurableMessages | undefined
     private stopping = false
 
     constructor(private readonly events: PurchaseEvents) {}
@@ -32,7 +32,7 @@ export class PurchaseNotificationService implements OnModuleInit, OnModuleDestro
         await consumeTask
     }
 
-    private async consume(messages: ConsumerMessages) {
+    private async consume(messages: DurableMessages) {
         try {
             for await (const message of messages) {
                 await this.process(message)
@@ -47,10 +47,10 @@ export class PurchaseNotificationService implements OnModuleInit, OnModuleDestro
         }
     }
 
-    private async process(message: JsMsg) {
+    private async process(message: DurableMessage) {
         let payload: unknown
         try {
-            payload = message.json()
+            payload = message.decode()
         } catch (error) {
             this.rejectInvalid(message, error)
             return
@@ -70,22 +70,22 @@ export class PurchaseNotificationService implements OnModuleInit, OnModuleDestro
                 ticketCount: event.ticketIds.length,
                 userId: event.userId
             })
-            message.ack()
+            message.acknowledge()
         } catch (error) {
             this.logger.error('purchase notification retry scheduled', {
-                deliveryCount: message.info.deliveryCount,
+                deliveryCount: message.deliveryCount,
                 error,
                 purchaseRecordId: event.purchaseRecordId
             })
-            message.nak(RETRY_DELAY_MS)
+            message.retryAfter(RETRY_DELAY_MS)
         }
     }
 
-    private rejectInvalid(message: JsMsg, error: unknown) {
+    private rejectInvalid(message: DurableMessage, error: unknown) {
         this.logger.error('invalid purchase notification event', {
             error,
-            streamSequence: message.seq
+            streamSequence: message.sequence
         })
-        message.term('invalid purchase notification event')
+        message.discard('invalid purchase notification event')
     }
 }

@@ -1,5 +1,5 @@
-import type { ClientSession } from 'mongodb'
 import {
+    type TransactionContext,
     QueryBuilderOptions,
     assignIfDefined,
     CrudRepository,
@@ -8,10 +8,11 @@ import {
     objectId,
     objectIds,
     QueryBuilder,
-    uniq
+    uniq,
+    MongoConnection
 } from '@mannercode/common'
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { AppConfigService, MongoConnection } from '#config'
+import { AppConfigService } from '#config'
 import {
     CreateTheaterSchema,
     type CreateTheaterDto,
@@ -26,8 +27,8 @@ const TheaterPatchSchema = CreateTheaterSchema.partial()
 export class TheatersRepository extends CrudRepository<Theater> {
     constructor(connection: MongoConnection, config: AppConfigService) {
         super(
-            connection.db.collection('theaters'),
-            connection.client,
+            connection,
+            'theaters',
             config.http.paginationDefaultSize,
             config.http.paginationMaxSize,
             { projection: { showtimeScheduleVersion: 0 } }
@@ -47,14 +48,14 @@ export class TheatersRepository extends CrudRepository<Theater> {
 
     async acquireShowtimeScheduleGuards(
         theaterIds: string[],
-        session: ClientSession,
+        transaction: TransactionContext,
         signal: AbortSignal | undefined = undefined
     ) {
         // 실제 Theater 문서를 쓰기 충돌 지점으로 사용한다. 같은 극장을 포함하는 두 트랜잭션은
         // 이 갱신에서 직렬화되고, 드라이버는 TransientTransactionError를 새 snapshot으로 재시도한다.
         const ids = objectIds(uniq(theaterIds))
-        const options = { session, signal }
-        const result = await this.collection.updateMany(
+        const options = { transaction, signal }
+        const result = await this.updateDocuments(
             this.activeFilter({ _id: { $in: ids } }),
             this.timestamped({ $inc: { showtimeScheduleVersion: 1 } }),
             options
@@ -84,7 +85,7 @@ export class TheatersRepository extends CrudRepository<Theater> {
         assignIfDefined(fields, updateDto, 'name')
         assignIfDefined(fields, updateDto, 'location')
         assignIfDefined(fields, updateDto, 'seatmap')
-        const theater = await this.collection.findOneAndUpdate(
+        const theater = await this.findAndUpdateDocument(
             this.activeFilter({ _id: objectId(theaterId) }),
             this.timestamped({ $set: fields }),
             { projection: this.projection, returnDocument: 'after' }

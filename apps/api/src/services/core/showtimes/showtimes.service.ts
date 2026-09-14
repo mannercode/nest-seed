@@ -1,5 +1,4 @@
-import type { ClientSession } from 'mongodb'
-import { mapDocToDto } from '@mannercode/common'
+import { type TransactionContext, mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import {
     CreateShowtimeDto,
@@ -16,10 +15,10 @@ export class ShowtimesService {
 
     async createMany(
         createDtos: CreateShowtimeDto[],
-        session: ClientSession | undefined = undefined,
+        transaction: TransactionContext | undefined = undefined,
         signal: AbortSignal | undefined = undefined
     ): Promise<CreateShowtimesResult> {
-        await this.repository.createMany(createDtos, session, signal)
+        await this.repository.createMany(createDtos, transaction, signal)
 
         return { count: createDtos.length }
     }
@@ -44,10 +43,10 @@ export class ShowtimesService {
 
     async search(
         searchDto: SearchShowtimesDto,
-        session: ClientSession | undefined = undefined,
+        transaction: TransactionContext | undefined = undefined,
         signal: AbortSignal | undefined = undefined
     ) {
-        const showtimes = await this.repository.search(searchDto, session, signal)
+        const showtimes = await this.repository.search(searchDto, transaction, signal)
 
         return this.toDtos(showtimes)
     }

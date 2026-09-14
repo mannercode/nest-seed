@@ -7,7 +7,7 @@ import type {
     ShowtimeCreationTerminalEvent,
     ValidateAndCreateResult
 } from '../../internal/index.js'
-import { TemporalJsonSerde } from '../temporal-json.serde.js'
+import { TemporalJsonSerde } from '@mannercode/common'
 import {
     createShowtimeCreationWorkflow,
     getShowtimeCreationWorkflowName,

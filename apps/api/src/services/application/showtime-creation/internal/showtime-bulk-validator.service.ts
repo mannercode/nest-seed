@@ -1,5 +1,4 @@
-import type { ClientSession } from 'mongodb'
-import { DateTimeRange, DateUtil, Require } from '@mannercode/common'
+import { type TransactionContext, DateTimeRange, DateUtil, Require } from '@mannercode/common'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { MoviesService, ShowtimeDto, ShowtimesService } from '#core'
 import { BulkCreateShowtimesDto } from '../dtos/index.js'
@@ -22,12 +21,16 @@ export class ShowtimeBulkValidatorService {
 
     async validate(
         createDto: BulkCreateShowtimesDto,
-        session: ClientSession,
+        transaction: TransactionContext,
         signal: AbortSignal | undefined
     ) {
-        await this.verifyMovieExists(createDto.movieId, session, signal)
+        await this.verifyMovieExists(createDto.movieId, transaction, signal)
 
-        const conflictingShowtimes = await this.findConflictingShowtimes(createDto, session, signal)
+        const conflictingShowtimes = await this.findConflictingShowtimes(
+            createDto,
+            transaction,
+            signal
+        )
 
         this.logger.log('validate completed', {
             movieId: createDto.movieId,
@@ -40,12 +43,12 @@ export class ShowtimeBulkValidatorService {
 
     private async findConflictingShowtimes(
         createDto: BulkCreateShowtimesDto,
-        session: ClientSession | undefined,
+        transaction: TransactionContext | undefined,
         signal: AbortSignal | undefined
     ) {
         const { durationInMinutes, startTimes, theaterIds } = createDto
 
-        const existingByTheater = await this.fetchExistingByTheater(createDto, session, signal)
+        const existingByTheater = await this.fetchExistingByTheater(createDto, transaction, signal)
 
         // 한 기존 상영이 여러 새 시작 시각과 겹쳐도 결과에는 한 번만 들어가도록 상영 ID 기준으로 중복을 제거한다.
         const conflictsById = new Map<string, ShowtimeDto>()
@@ -73,7 +76,7 @@ export class ShowtimeBulkValidatorService {
 
     private async fetchExistingByTheater(
         createDto: BulkCreateShowtimesDto,
-        session: ClientSession | undefined,
+        transaction: TransactionContext | undefined,
         signal: AbortSignal | undefined
     ) {
         const { durationInMinutes, startTimes, theaterIds } = createDto
@@ -84,10 +87,10 @@ export class ShowtimeBulkValidatorService {
 
         // 새 상영 범위보다 일찍 시작한 기존 상영도 끝 시각이 범위 안에 들어오면 충돌이다.
         // 예를 들어 새 상영이 10:00-12:00이고 기존 상영이 09:00-11:00이면 11:00까지 시간이 겹친다.
-        // 한 transaction session에서는 병렬 Mongo 명령을 실행하지 않는다. 극장 전체를 한 번에 조회해 묶는다.
+        // 트랜잭션 안의 조회를 병렬로 나누지 않도록 극장 전체를 한 번에 조회한다.
         const fetched = await this.showtimesService.search(
             { endTimeRange: { start: startDate }, startTimeRange: { end: endDate }, theaterIds },
-            session,
+            transaction,
             signal
         )
         const existingByTheater = new Map<string, ShowtimeDto[]>(
@@ -106,10 +109,10 @@ export class ShowtimeBulkValidatorService {
 
     private async verifyMovieExists(
         movieId: string,
-        session: ClientSession | undefined,
+        transaction: TransactionContext | undefined,
         signal: AbortSignal | undefined
     ) {
-        const movieExists = await this.moviesService.allExist([movieId], session, signal)
+        const movieExists = await this.moviesService.allExist([movieId], transaction, signal)
 
         if (!movieExists) {
             throw new NotFoundException(ShowtimeCreationErrors.MovieNotFound(movieId))

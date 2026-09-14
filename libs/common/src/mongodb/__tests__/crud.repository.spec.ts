@@ -1,7 +1,8 @@
-import type { Collection, IndexDescription, MongoClient } from 'mongodb'
+import type { Collection, Db, IndexDescription, MongoClient } from 'mongodb'
 import { BadRequestException, Logger, NotFoundException } from '@nestjs/common'
+import type { TransactionContext } from '../../index.js'
 import { OrderDirection } from '../../pagination/index.js'
-import { CrudRepository, MongoErrors, objectId } from '../index.js'
+import { CrudRepository, MongoConnection, MongoErrors, objectId } from '../index.js'
 import {
     createMongoRepositoryFixture,
     type Sample,
@@ -17,6 +18,97 @@ describe('CrudRepository', () => {
 
     afterEach(async () => {
         await fix.teardown()
+    })
+
+    describe('문서 연산', () => {
+        it('조회 옵션으로 정렬·개수·필드를 제한한다', async () => {
+            await fix.soft.createMany(['a', 'b', 'c'])
+            expect(await fix.soft.findDocument({ name: 'a' })).toMatchObject({ name: 'a' })
+            expect(
+                await fix.soft.findDocument({ name: 'a' }, { projection: { _id: 0, name: 1 } })
+            ).toEqual({ name: 'a' })
+            expect(await fix.soft.findDocuments({})).toHaveLength(3)
+            expect(
+                await fix.soft.findDocuments(
+                    {},
+                    { sort: { name: -1 }, limit: 2, projection: { _id: 0, name: 1 } }
+                )
+            ).toEqual([{ name: 'c' }, { name: 'b' }])
+        })
+
+        it('수정 결과와 수정 전후 문서를 반환한다', async () => {
+            await fix.soft.createMany(['a', 'b'])
+            expect(
+                await fix.soft.findAndUpdateDocument({ name: 'a' }, { $set: { name: 'old' } })
+            ).toMatchObject({ name: 'a' })
+            expect(
+                await fix.soft.findAndUpdateDocument(
+                    { name: 'old' },
+                    { $set: { name: 'new' } },
+                    { returnDocument: 'after', projection: { _id: 0, name: 1 } }
+                )
+            ).toEqual({ name: 'new' })
+            expect(
+                await fix.soft.updateDocument({ name: 'b' }, { $set: { name: 'updated' } })
+            ).toMatchObject({ modifiedCount: 1 })
+            expect(
+                await fix.soft.updateDocuments({}, { $set: { secret: 'shared' } })
+            ).toMatchObject({ modifiedCount: 2 })
+        })
+
+        it('여러 문서 수정과 조회가 같은 트랜잭션에 참여해 함께 롤백된다', async () => {
+            await fix.soft.createMany(['a', 'b'])
+            await expect(
+                fix.soft.withTransaction(async (transaction) => {
+                    const signal = new AbortController().signal
+                    await fix.soft.updateDocument(
+                        { name: 'a' },
+                        { $set: { name: 'changed' } },
+                        { transaction, signal }
+                    )
+                    await fix.soft.updateDocuments(
+                        {},
+                        { $set: { secret: 'inside' } },
+                        { transaction, signal }
+                    )
+                    expect(
+                        await fix.soft.findDocuments({ secret: 'inside' }, { transaction, signal })
+                    ).toHaveLength(2)
+                    expect(
+                        await fix.soft.findDocument({ name: 'changed' }, { transaction, signal })
+                    ).toMatchObject({ secret: 'inside' })
+                    expect(
+                        await fix.soft.findAndUpdateDocument(
+                            { name: 'b' },
+                            { $set: { name: 'inside' } },
+                            { transaction, signal, returnDocument: 'after' }
+                        )
+                    ).toMatchObject({ name: 'inside' })
+                    throw new Error('rollback')
+                })
+            ).rejects.toThrow('rollback')
+            expect(
+                await fix.soft.findDocuments(
+                    {},
+                    { projection: { _id: 0, name: 1, secret: 1 }, sort: { name: 1 } }
+                )
+            ).toEqual([{ name: 'a' }, { name: 'b' }])
+        })
+
+        it('조건에 맞는 개수·고유 값·집계를 반환한다', async () => {
+            await fix.soft.createMany(['a', 'a', 'b'])
+            expect(await fix.soft.countDocuments({ name: 'a' })).toBe(2)
+            expect(await fix.soft.distinctValues<string>('name', {})).toEqual(['a', 'b'])
+            expect(
+                await fix.soft.aggregateDocuments([
+                    { $group: { _id: '$name', count: { $sum: 1 } } },
+                    { $sort: { _id: 1 } }
+                ])
+            ).toEqual([
+                { _id: 'a', count: 2 },
+                { _id: 'b', count: 1 }
+            ])
+        })
     })
 
     describe('onModuleInit', () => {
@@ -394,28 +486,82 @@ describe('CrudRepository', () => {
     })
 
     describe('withTransaction', () => {
-        it('콜백이 성공하면 커밋하고 반환값을 보존한다', async () => {
-            const created = await fix.soft.withTransaction(async (session) =>
-                fix.soft.create('committed', { session })
+        it('여러 Repository의 쓰기를 함께 커밋하고 세션을 종료한다', async () => {
+            const started = vi.spyOn(fix.client, 'startSession')
+            const { soft, hard, transaction } = await fix.soft.withTransaction(
+                async (transaction) => ({
+                    soft: await fix.soft.create('committed', { transaction }),
+                    hard: await fix.hard.create('also-committed', { transaction }),
+                    transaction
+                })
             )
 
-            await expect(fix.soft.findById(created.id)).resolves.toMatchObject({
-                name: 'committed'
+            await expect(fix.soft.findById(soft.id)).resolves.toMatchObject({ name: 'committed' })
+            await expect(fix.hard.findById(hard.id)).resolves.toMatchObject({
+                name: 'also-committed'
             })
+            expect(started.mock.results[0]?.value).toMatchObject({ hasEnded: true })
+            await expect(fix.soft.findById(soft.id, transaction)).rejects.toThrow(
+                'Transaction context is no longer active.'
+            )
+            await expect(fix.hard.create('late-write', { transaction })).rejects.toThrow(
+                'Transaction context is no longer active.'
+            )
         })
 
-        it('콜백이 실패하면 롤백하고 원래 오류를 던진다', async () => {
-            let createdId: string | undefined
+        it('콜백이 실패하면 여러 Repository의 쓰기를 롤백하고 세션을 종료한다', async () => {
+            const started = vi.spyOn(fix.client, 'startSession')
+            let created: { soft: Sample; hard: Sample; transaction: TransactionContext } | undefined
 
-            const transaction = fix.soft.withTransaction(async (session) => {
-                const created = await fix.soft.create('rolled-back', { session })
-                createdId = created.id
+            const result = fix.soft.withTransaction(async (transaction) => {
+                created = {
+                    soft: await fix.soft.create('rolled-back', { transaction }),
+                    hard: await fix.hard.create('also-rolled-back', { transaction }),
+                    transaction
+                }
                 throw new Error('boom')
             })
 
-            await expect(transaction).rejects.toThrow('boom')
-            if (!createdId) throw new Error('transaction should create a draft id')
-            await expect(fix.soft.findById(createdId)).resolves.toBeNull()
+            await expect(result).rejects.toThrow('boom')
+            if (!created) throw new Error('transaction should create draft documents')
+            await expect(fix.soft.findById(created.soft.id)).resolves.toBeNull()
+            await expect(fix.hard.findById(created.hard.id)).resolves.toBeNull()
+            expect(started.mock.results[0]?.value).toMatchObject({ hasEnded: true })
+            await expect(fix.hard.findById(created.hard.id, created.transaction)).rejects.toThrow(
+                'Transaction context is no longer active.'
+            )
+        })
+
+        it('동시에 실행한 트랜잭션의 커밋과 롤백은 서로 섞이지 않는다', async () => {
+            let releaseFirst!: () => void
+            const firstMayFinish = new Promise<void>((resolve) => (releaseFirst = resolve))
+            let firstWriteDone!: () => void
+            const firstWrote = new Promise<void>((resolve) => (firstWriteDone = resolve))
+            let rolledBackId: string | undefined
+            const first = fix.soft.withTransaction(async (transaction) => {
+                const created = await fix.hard.create('rolled-back', { transaction })
+                rolledBackId = created.id
+                firstWriteDone()
+                await firstMayFinish
+                throw new Error('abort first')
+            })
+            const firstRejected = expect(first).rejects.toThrow('abort first')
+            await firstWrote
+
+            try {
+                const committed = await fix.hard.withTransaction(async (transaction) =>
+                    fix.soft.create('committed', { transaction })
+                )
+                await expect(fix.soft.findById(committed.id)).resolves.toMatchObject({
+                    name: 'committed'
+                })
+            } finally {
+                releaseFirst()
+                await firstRejected
+            }
+
+            if (!rolledBackId) throw new Error('first transaction should create a draft id')
+            await expect(fix.hard.findById(rolledBackId)).resolves.toBeNull()
         })
 
         it('일시 오류가 아니면 callback을 재시도하지 않는다', async () => {
@@ -432,39 +578,32 @@ describe('CrudRepository', () => {
 
         it('WriteConflict가 나면 driver 재시도 뒤 성공한다', async () => {
             const created = await fix.soft.create('initial')
-            const _id = objectId(created.id)
             let releaseFirst!: () => void
             const firstMayFinish = new Promise<void>((resolve) => (releaseFirst = resolve))
             let firstWriteDone!: () => void
             const firstWrote = new Promise<void>((resolve) => (firstWriteDone = resolve))
 
-            const first = fix.soft.withTransaction(async (session) => {
-                await fix.soft.collection.updateOne(
-                    { _id },
-                    { $set: { name: 'first' } },
-                    { session }
-                )
+            const first = fix.soft.withTransaction(async (transaction) => {
+                await fix.soft.rename(created.id, 'first', transaction)
                 firstWriteDone()
                 await firstMayFinish
             })
             await firstWrote
 
             let attempts = 0
+            const transactions: TransactionContext[] = []
             try {
                 await fix.soft.withTransaction(
-                    async (session) => {
+                    async (transaction) => {
+                        transactions.push(transaction)
                         attempts++
                         if (attempts === 2) {
                             releaseFirst()
                             await first
                         }
-                        await fix.soft.collection.updateOne(
-                            { _id },
-                            { $set: { name: 'second' } },
-                            { session }
-                        )
+                        await fix.soft.rename(created.id, 'second', transaction)
                     },
-                    { readConcern: { level: 'snapshot' }, writeConcern: { w: 'majority' } }
+                    { snapshot: { commitTimeoutMs: 10_000, timeoutMs: 45_000 } }
                 )
             } finally {
                 releaseFirst()
@@ -472,6 +611,10 @@ describe('CrudRepository', () => {
             }
 
             expect(attempts).toBe(2)
+            expect(transactions[0]).not.toBe(transactions[1])
+            await expect(fix.soft.findById(created.id, transactions[0])).rejects.toThrow(
+                'Transaction context is no longer active.'
+            )
             await expect(fix.soft.findById(created.id)).resolves.toMatchObject({ name: 'second' })
         })
     })
@@ -483,6 +626,12 @@ class RepositoryHarness extends CrudRepository<Sample> {
         client: MongoClient,
         options: { hardDelete?: boolean; indexes?: IndexDescription[] } = {}
     ) {
-        super(collection, client, 10, 100, options)
+        super(
+            new MongoConnection(client, { collection: () => collection } as unknown as Db, false),
+            'sample',
+            10,
+            100,
+            options
+        )
     }
 }
