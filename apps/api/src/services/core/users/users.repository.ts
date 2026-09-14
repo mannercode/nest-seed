@@ -1,6 +1,5 @@
 import {
     type MongoDocument,
-    type MongoObjectId,
     QueryBuilderOptions,
     assignIfDefined,
     CrudRepository,
@@ -8,8 +7,6 @@ import {
     isDuplicateKeyError,
     MongoErrors,
     plainDateFromMongo,
-    objectId,
-    objectIds,
     QueryBuilder,
     MongoConnection
 } from '@mannercode/common'
@@ -64,14 +61,13 @@ export class UsersRepository extends CrudRepository<User> {
     }
 
     async findByEmailWithPassword(email: string) {
-        // 인증 계층이 그대로 쓸 수 있게 MongoObjectId를 문자열로 변환한다.
         const user = await this.findDocument(this.activeFilter({ email: { $eq: email } }))
 
         return user ? this.toDomainDocument(user) : null
     }
 
     async findAuthVersionById(userId: string): Promise<number | null> {
-        const user = await this.findDocument(this.activeFilter({ _id: objectId(userId) }), {
+        const user = await this.findDocument(this.activeFilter({ _id: userId }), {
             projection: { authVersion: 1 }
         })
 
@@ -86,7 +82,7 @@ export class UsersRepository extends CrudRepository<User> {
 
     async advanceAuthVersion(userId: string): Promise<void> {
         const user = await this.findAndUpdateDocument(
-            this.activeFilter({ _id: objectId(userId) }),
+            this.activeFilter({ _id: userId }),
             this.timestamped({ $inc: { authVersion: 1 } }),
             { returnDocument: 'after' }
         )
@@ -96,7 +92,7 @@ export class UsersRepository extends CrudRepository<User> {
 
     async deleteByIdsWithAuthVersion(userIds: string[]): Promise<void> {
         await this.updateDocuments(
-            this.activeFilter({ _id: { $in: objectIds(userIds) } }),
+            this.activeFilter({ _id: { $in: userIds } }),
             this.timestamped({ $inc: { authVersion: 1 }, $set: { deletedAt: DateUtil.now() } })
         )
     }
@@ -129,7 +125,7 @@ export class UsersRepository extends CrudRepository<User> {
 
         try {
             const user = await this.findAndUpdateDocument(
-                this.activeFilter({ _id: objectId(userId) }),
+                this.activeFilter({ _id: userId }),
                 this.timestamped(update),
                 { projection: this.projection, returnDocument: 'after' }
             )
@@ -156,7 +152,7 @@ export class UsersRepository extends CrudRepository<User> {
         return query
     }
 
-    protected override toDomainDocument(doc: MongoDocument & { _id: MongoObjectId }): User {
+    protected override toDomainDocument(doc: User): User {
         const user = super.toDomainDocument(doc)
         user.birthDate = plainDateFromMongo(user.birthDate)
         return user

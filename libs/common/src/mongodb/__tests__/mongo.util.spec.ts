@@ -2,6 +2,9 @@ import { BadRequestException, Logger } from '@nestjs/common'
 import { Decimal128, ObjectId } from 'mongodb'
 import {
     assignIfDefined,
+    decodeMongoValues,
+    encodeMongoFilter,
+    encodeMongoUpdate,
     encodeMongoValues,
     isDuplicateKeyError,
     mapDocToDto,
@@ -40,14 +43,15 @@ describe('newObjectIdString, objectId, objectIds', () => {
 })
 
 describe('mongoToPublic, mongoArrayToPublic, withoutPublicId, encodeMongoValues, plainDateFromMongo', () => {
-    it('ObjectId의 문자열 id를 원본 문서에 추가한다', () => {
+    it('원본을 변경하지 않고 _id를 문자열 id로 교체한다', () => {
         const _id = new ObjectId()
         const doc = { _id, name: 'sample' }
 
         const mapped = mongoToPublic<{ id: string; name: string }>(doc)
 
-        expect(mapped).toBe(doc)
-        expect(mapped).toMatchObject({ id: _id.toHexString(), name: 'sample' })
+        expect(mapped).toEqual({ id: _id.toHexString(), name: 'sample' })
+        expect(doc).toEqual({ _id, name: 'sample' })
+        expect(doc._id).toBe(_id)
     })
 
     it('null과 배열을 처리한다', () => {
@@ -55,9 +59,31 @@ describe('mongoToPublic, mongoArrayToPublic, withoutPublicId, encodeMongoValues,
 
         expect(mongoToPublic(null)).toBeNull()
         expect(mongoArrayToPublic<{ id: string }>([{ _id }, { _id: new ObjectId() }])).toEqual([
-            expect.objectContaining({ id: _id.toHexString() }),
-            expect.objectContaining({ id: expect.any(String) })
+            { id: _id.toHexString() },
+            { id: expect.any(String) }
         ])
+    })
+
+    it('projection으로 제외한 ID를 만들지 않는다', () => {
+        expect(mongoToPublic({ name: 'sample' })).toEqual({ name: 'sample' })
+    })
+
+    it('중첩된 ObjectId도 문자열로 반환하고 원본과 다른 BSON 값은 보존한다', () => {
+        const _id = new ObjectId()
+        const relatedId = new ObjectId()
+        const decimal = Decimal128.fromString('12.34')
+        const nested = Object.assign(Object.create(null), { relatedId })
+        const doc = { _id, decimal, history: [nested, null], relatedId }
+
+        expect(mongoToPublic(doc)).toEqual({
+            decimal,
+            history: [{ relatedId: relatedId.toHexString() }, null],
+            id: _id.toHexString(),
+            relatedId: relatedId.toHexString()
+        })
+        expect(doc.relatedId).toBe(relatedId)
+        expect(nested.relatedId).toBe(relatedId)
+        expect(decodeMongoValues(decimal)).toBe(decimal)
     })
 
     it('저장용 복사본에서는 public id만 제거한다', () => {
@@ -124,6 +150,68 @@ describe('mongoToPublic, mongoArrayToPublic, withoutPublicId, encodeMongoValues,
         expect(plainDateFromMongo(new Date('2025-01-01T00:00:00.000Z')).toString()).toBe(
             '2025-01-01'
         )
+    })
+})
+
+describe('MongoDB ID 조건과 쓰기 변환', () => {
+    it('논리 조건 안의 문서 ID만 변환하고 참조 ID와 원본 조건을 유지한다', () => {
+        const id = newObjectIdString()
+        const otherId = newObjectIdString()
+        const at = Temporal.Instant.from('2025-01-01T00:00:00Z')
+        const filter = {
+            $and: [
+                { _id: id },
+                { $or: [{ _id: { $in: [id] } }, { _id: { $not: { $eq: otherId } } }] },
+                { $nor: [{ _id: { $exists: false } }] }
+            ],
+            createdAt: { $gte: at },
+            userId: id
+        }
+
+        expect(encodeMongoFilter(filter)).toEqual({
+            $and: [
+                { _id: objectId(id) },
+                {
+                    $or: [
+                        { _id: { $in: [objectId(id)] } },
+                        { _id: { $not: { $eq: objectId(otherId) } } }
+                    ]
+                },
+                { $nor: [{ _id: { $exists: false } }] }
+            ],
+            createdAt: { $gte: new Date('2025-01-01T00:00:00Z') },
+            userId: id
+        })
+        expect(filter.$and[0]).toEqual({ _id: id })
+        expect(filter.$and[1]).toEqual({
+            $or: [{ _id: { $in: [id] } }, { _id: { $not: { $eq: otherId } } }]
+        })
+        expect(filter.createdAt.$gte).toBe(at)
+    })
+
+    it('native ID와 null 조건을 유지하고 잘못된 문자열 ID는 거부한다', () => {
+        const id = new ObjectId()
+
+        expect(encodeMongoFilter({ _id: id })).toEqual({ _id: id })
+        expect(encodeMongoFilter({ _id: null })).toEqual({ _id: null })
+        expect(() => encodeMongoFilter({ _id: 'invalid-id' })).toThrow(BadRequestException)
+    })
+
+    it('쓰기 복사본의 _id와 날짜만 변환하고 앱 객체는 변경하지 않는다', () => {
+        const id = newObjectIdString()
+        const at = Temporal.Instant.from('2025-01-01T00:00:00Z')
+        const update = {
+            $set: { updatedAt: at, userId: id },
+            $setOnInsert: { _id: id, createdAt: at }
+        }
+
+        expect(encodeMongoUpdate(update)).toEqual({
+            $set: { updatedAt: new Date('2025-01-01T00:00:00Z'), userId: id },
+            $setOnInsert: { _id: objectId(id), createdAt: new Date('2025-01-01T00:00:00Z') }
+        })
+        expect(update.$setOnInsert).toEqual({ _id: id, createdAt: at })
+        expect(encodeMongoUpdate({ $set: { _id: id } })).toEqual({ $set: { _id: objectId(id) } })
+        expect(encodeMongoUpdate({ $inc: { count: 1 } })).toEqual({ $inc: { count: 1 } })
     })
 })
 

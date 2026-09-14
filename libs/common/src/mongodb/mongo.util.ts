@@ -16,15 +16,18 @@ export const objectId = (id: string | ObjectId) => {
 
 export const objectIds = (ids: Array<ObjectId | string>) => ids.map((id) => objectId(id))
 
-export function mongoToPublic<T>(doc: Document & { _id: ObjectId }): T
-export function mongoToPublic<T>(doc: null | (Document & { _id: ObjectId })): null | T
-export function mongoToPublic<T>(doc: null | (Document & { _id: ObjectId })): null | T {
+export function mongoToPublic<T>(doc: Document): T
+export function mongoToPublic<T>(doc: null | Document): null | T
+export function mongoToPublic<T>(doc: null | Document): null | T {
     if (!doc) return null
-    decodeMongoDates(doc)
-    return Object.assign(doc, { id: doc._id.toHexString() }) as T
+    const { _id, ...fields } = doc
+    const result = decodeMongoValues(fields) as Document
+    // projection으로 ID를 제외한 결과에는 id를 추가하지 않는다.
+    if (_id !== undefined) result.id = _id.toHexString()
+    return result as T
 }
 
-export function mongoArrayToPublic<T>(docs: Array<Document & { _id: ObjectId }>): T[] {
+export function mongoArrayToPublic<T>(docs: Document[]): T[] {
     return docs.map((doc) => mongoToPublic<T>(doc))
 }
 
@@ -51,6 +54,45 @@ export function encodeMongoDocument(value: object): Document {
     return encodeMongoValues(value) as Document
 }
 
+/** 문서 ID 조건은 앱에서 문자열로 받고 드라이버 호출 직전에 변환한다. */
+export function encodeMongoFilter(filter: Document): Document {
+    return Object.fromEntries(
+        Object.entries(filter).map(([field, value]) => [
+            field,
+            field === '_id'
+                ? encodeIdCondition(value)
+                : ['$and', '$or', '$nor'].includes(field)
+                  ? value.map(encodeMongoFilter)
+                  : encodeMongoValues(value)
+        ])
+    )
+}
+
+function encodeIdCondition(value: unknown): unknown {
+    if (typeof value === 'string') return objectId(value)
+    if (!isPlainObject(value)) return value
+
+    return Object.fromEntries(
+        Object.entries(value).map(([operator, operand]) => [
+            operator,
+            ['$eq', '$ne', '$gt', '$gte', '$lt', '$lte', '$not'].includes(operator)
+                ? encodeIdCondition(operand)
+                : ['$in', '$nin', '$all'].includes(operator)
+                  ? operand.map(encodeIdCondition)
+                  : operand
+        ])
+    )
+}
+
+export function encodeMongoUpdate(update: Document): Document {
+    const encoded = encodeMongoDocument(update)
+    for (const operator of ['$set', '$setOnInsert']) {
+        const fields = encoded[operator]
+        if (fields?._id !== undefined) fields._id = objectId(fields._id)
+    }
+    return encoded
+}
+
 function isEncodableRecord(value: unknown): value is Record<string, unknown> {
     if (
         value === null ||
@@ -72,22 +114,18 @@ export function plainDateFromMongo(
     return DateUtil.toPlainDate(value)
 }
 
-function decodeMongoDates(value: unknown): unknown {
+export function decodeMongoValues(value: unknown): unknown {
+    if (value instanceof ObjectId) return value.toHexString()
     if (value instanceof Date) return DateUtil.fromDate(value)
-    if (Array.isArray(value)) {
-        for (let index = 0; index < value.length; index++)
-            value[index] = decodeMongoDates(value[index])
-        return value
-    }
+    if (Array.isArray(value)) return value.map(decodeMongoValues)
     if (!isPlainObject(value)) return value
 
-    for (const [key, nested] of Object.entries(value)) {
-        value[key] = decodeMongoDates(nested)
-    }
-    return value
+    return Object.fromEntries(
+        Object.entries(value).map(([key, nested]) => [key, decodeMongoValues(nested)])
+    )
 }
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
+function isPlainObject(value: unknown): value is Document {
     if (value === null || typeof value !== 'object') return false
     const prototype = Object.getPrototypeOf(value)
     return prototype === Object.prototype || prototype === null

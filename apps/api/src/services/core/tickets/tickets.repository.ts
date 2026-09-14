@@ -2,9 +2,7 @@ import {
     type TransactionContext,
     QueryBuilderOptions,
     CrudRepository,
-    objectIds,
     QueryBuilder,
-    mongoArrayToPublic,
     MongoConnection
 } from '@mannercode/common'
 import { ConflictException, Injectable } from '@nestjs/common'
@@ -81,7 +79,7 @@ export class TicketsRepository extends CrudRepository<Ticket> {
         const query = this.buildQuery(searchDto)
 
         const tickets = await this.findDocuments(this.activeFilter(query), { sort: { sagaId: 1 } })
-        return mongoArrayToPublic<Ticket>(tickets)
+        return tickets
     }
 
     async sellAvailableForPurchase(
@@ -91,7 +89,7 @@ export class TicketsRepository extends CrudRepository<Ticket> {
     ) {
         // 검사와 쓰기 사이에 다른 결제가 끼어드는 경쟁을 트랜잭션 + 상태 조건으로 차단한다.
         // 하나라도 판매 가능하지 않으면 전체를 중단해, 겹치는 티켓 묶음의 동시 결제에서도 같은 티켓이 두 번 팔리지 않는다.
-        const ids = objectIds(ticketIds)
+        const ids = ticketIds
 
         const transition = async (activeTransaction: TransactionContext) => {
             const activeFilter = this.activeFilter({
@@ -110,7 +108,7 @@ export class TicketsRepository extends CrudRepository<Ticket> {
                 const eligibleDocs = await this.findDocuments(activeFilter, {
                     projection: { _id: 1 }
                 })
-                const eligibleIds = new Set(eligibleDocs.map((doc) => String(doc._id)))
+                const eligibleIds = new Set(eligibleDocs.map((doc) => doc.id))
                 const failedIds = ticketIds.filter((ticketId) => !eligibleIds.has(ticketId))
                 throw new ConflictException(TicketErrors.StatusTransitionFailed(failedIds))
             }

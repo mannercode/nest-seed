@@ -4,9 +4,7 @@ import {
     CrudRepository,
     DateUtil,
     isDuplicateKeyError,
-    mongoToPublic,
     MongoErrors,
-    objectId,
     MongoConnection
 } from '@mannercode/common'
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
@@ -59,11 +57,11 @@ export class AdminsRepository extends CrudRepository<Admin> {
     async findByEmailWithPassword(email: string) {
         const admin = await this.findDocument(this.activeFilter({ email: { $eq: email } }))
 
-        return mongoToPublic<Admin>(admin)
+        return admin
     }
 
     async findAuthVersionById(adminId: string): Promise<number | null> {
-        const admin = await this.findDocument(this.activeFilter({ _id: objectId(adminId) }), {
+        const admin = await this.findDocument(this.activeFilter({ _id: adminId }), {
             projection: { authVersion: 1 }
         })
 
@@ -78,7 +76,7 @@ export class AdminsRepository extends CrudRepository<Admin> {
 
     async deleteByIdWithAuthVersion(adminId: string): Promise<void> {
         const admin = await this.findAndUpdateDocument(
-            this.activeFilter({ _id: objectId(adminId) }),
+            this.activeFilter({ _id: adminId }),
             this.timestamped({ $inc: { authVersion: 1 }, $set: { deletedAt: DateUtil.now() } }),
             { returnDocument: 'before' }
         )
@@ -98,13 +96,13 @@ export class AdminsRepository extends CrudRepository<Admin> {
 
         try {
             const doc = await this.findAndUpdateDocument(
-                this.activeFilter({ _id: objectId(id) }),
+                this.activeFilter({ _id: id }),
                 this.timestamped(update),
                 { projection: this.projection, returnDocument: 'after' }
             )
 
             if (!doc) throw new NotFoundException(MongoErrors.DocumentNotFound(id))
-            return mongoToPublic<Admin>(doc)
+            return doc
         } catch (error) {
             if (isDuplicateKeyError(error) && patch.email) {
                 throw new ConflictException(AdminErrors.EmailAlreadyExists(patch.email))

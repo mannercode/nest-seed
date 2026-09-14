@@ -3,9 +3,7 @@ import {
     DateUtil,
     ensure,
     isDuplicateKeyError,
-    mongoToPublic,
     newObjectIdString,
-    objectId,
     generateUuid,
     MongoConnection
 } from '@mannercode/common'
@@ -82,7 +80,7 @@ export class ShowtimeCreationSubmissionRepository extends CrudRepository<Showtim
         // 같은 workflow key의 재제출은 기존 invocation을 가리키므로 실행은 하나만 유지된다.
         const claimed = await this.findAndUpdateDocument(
             this.activeFilter({
-                _id: objectId(existing.id),
+                _id: existing.id,
                 acceptedAt: null,
                 claimUntil: { $lte: now },
                 inputHash,
@@ -109,7 +107,7 @@ export class ShowtimeCreationSubmissionRepository extends CrudRepository<Showtim
             { returnDocument: 'after' }
         )
 
-        return mongoToPublic<ShowtimeCreationSubmission>(submission)
+        return submission
     }
 
     async release(principalId: string, idempotencyKey: string, claimId: string) {
@@ -121,13 +119,13 @@ export class ShowtimeCreationSubmissionRepository extends CrudRepository<Showtim
 
     async findByKey(principalId: string, idempotencyKey: string) {
         const submission = await this.findDocument({ idempotencyKey, principalId })
-        return mongoToPublic<ShowtimeCreationSubmission>(submission)
+        return submission
     }
 
     async findAcceptedBySagaId(principalId: string, sagaId: string) {
         const submission = await this.findDocument(
             this.activeFilter({ acceptedAt: { $ne: null }, principalId, sagaId })
         )
-        return mongoToPublic<ShowtimeCreationSubmission>(submission)
+        return submission
     }
 }

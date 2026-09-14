@@ -7,9 +7,6 @@ import {
     DateUtil,
     ensure,
     isDuplicateKeyError,
-    mongoArrayToPublic,
-    mongoToPublic,
-    objectId,
     MongoConnection
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
@@ -57,7 +54,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
             { sort: { createdAt: -1 } }
         )
 
-        return mongoArrayToPublic<PurchaseRecord>(purchaseRecords)
+        return purchaseRecords
     }
 
     async create(createDto: CreatePurchaseRecordDto, status: PurchaseRecordStatus) {
@@ -95,7 +92,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
 
     async findByIdempotencyKey(userId: string, idempotencyKey: string) {
         const record = await this.findDocument(this.activeFilter({ idempotencyKey, userId }))
-        return mongoToPublic<PurchaseRecord>(record)
+        return record
     }
 
     async findPendingBefore(before: Temporal.Instant, now: Temporal.Instant) {
@@ -116,17 +113,14 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
             { limit: 100, sort: { updatedAt: 1 } }
         )
 
-        return mongoArrayToPublic<PurchaseRecord>(purchaseRecords)
+        return purchaseRecords
     }
 
     async findPendingById(purchaseRecordId: string) {
         const record = await this.findDocument(
-            this.activeFilter({
-                _id: objectId(purchaseRecordId),
-                status: PurchaseRecordStatus.Pending
-            })
+            this.activeFilter({ _id: purchaseRecordId, status: PurchaseRecordStatus.Pending })
         )
-        return mongoToPublic<PurchaseRecord>(record)
+        return record
     }
 
     async claimForReconciliation(
@@ -173,7 +167,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
             }
         )
 
-        return mongoToPublic<PurchaseRecord>(record)
+        return record
     }
 
     async findUnpublishedBefore(before: Temporal.Instant, now: Temporal.Instant) {
@@ -190,7 +184,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
             { limit: 100, sort: { updatedAt: 1 } }
         )
 
-        return mongoArrayToPublic<PurchaseRecord>(purchaseRecords)
+        return purchaseRecords
     }
 
     async claimEventPublication(
@@ -226,7 +220,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
             }
         )
 
-        return mongoToPublic<PurchaseRecord>(purchaseRecord)
+        return purchaseRecord
     }
 
     async claimForCompletion(
@@ -249,7 +243,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
             throw new Error(`Purchase record is no longer pending: ${purchaseRecordId}`)
         }
 
-        return ensure(mongoToPublic<PurchaseRecord>(purchaseRecord))
+        return ensure(purchaseRecord)
     }
 
     async markCompleted(
@@ -279,7 +273,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
             throw new Error(`Purchase completion lease was lost: ${purchaseRecordId}`)
         }
 
-        return ensure(mongoToPublic<PurchaseRecord>(purchaseRecord))
+        return ensure(purchaseRecord)
     }
 
     async setPaymentId(purchaseRecordId: string, paymentId: string) {
@@ -292,13 +286,13 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
             throw new Error(`Purchase record is no longer pending: ${purchaseRecordId}`)
         }
 
-        return ensure(mongoToPublic<PurchaseRecord>(purchaseRecord))
+        return ensure(purchaseRecord)
     }
 
     async markCancelled(purchaseRecordId: string, reconciliationId: string) {
         await this.updateDocument(
             this.activeFilter({
-                _id: objectId(purchaseRecordId),
+                _id: purchaseRecordId,
                 reconciliationId,
                 status: PurchaseRecordStatus.Compensating
             }),
@@ -315,7 +309,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     async releaseReconciliationClaim(purchaseRecordId: string, reconciliationId: string) {
         await this.updateDocument(
             this.activeFilter({
-                _id: objectId(purchaseRecordId),
+                _id: purchaseRecordId,
                 reconciliationId,
                 status: PurchaseRecordStatus.Compensating
             }),
@@ -326,7 +320,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     async markEventPublished(purchaseRecordId: string, publicationId: string) {
         const result = await this.updateDocument(
             this.activeFilter({
-                _id: objectId(purchaseRecordId),
+                _id: purchaseRecordId,
                 purchaseEventPublicationId: publicationId,
                 purchaseEventStatus: PurchaseEventStatus.Pending,
                 status: PurchaseRecordStatus.Completed
@@ -346,7 +340,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     async releaseEventPublicationClaim(purchaseRecordId: string, publicationId: string) {
         await this.updateDocument(
             this.activeFilter({
-                _id: objectId(purchaseRecordId),
+                _id: purchaseRecordId,
                 purchaseEventPublicationId: publicationId,
                 purchaseEventStatus: PurchaseEventStatus.Pending,
                 status: PurchaseRecordStatus.Completed
@@ -364,7 +358,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         options: MongoWriteOptions = {}
     ) {
         return this.findAndUpdateDocument(
-            this.activeFilter({ _id: objectId(purchaseRecordId), ...filter }),
+            this.activeFilter({ _id: purchaseRecordId, ...filter }),
             this.timestamped(update),
             { ...options, returnDocument: 'after' }
         )

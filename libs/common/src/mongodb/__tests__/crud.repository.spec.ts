@@ -2,7 +2,13 @@ import type { Collection, Db, IndexDescription, MongoClient } from 'mongodb'
 import { BadRequestException, Logger, NotFoundException } from '@nestjs/common'
 import type { TransactionContext } from '../../index.js'
 import { OrderDirection } from '../../pagination/index.js'
-import { CrudRepository, MongoConnection, MongoErrors, objectId } from '../index.js'
+import {
+    CrudRepository,
+    MongoConnection,
+    MongoErrors,
+    newObjectIdString,
+    objectId
+} from '../index.js'
 import {
     createMongoRepositoryFixture,
     type Sample,
@@ -21,6 +27,73 @@ describe('CrudRepository', () => {
     })
 
     describe('문서 연산', () => {
+        it('문자열 ID로 조회·수정하고 문서에는 id만 반환한다', async () => {
+            const created = await fix.soft.create('sample')
+            const filter = { _id: created.id }
+            const found = await fix.soft.findDocument(filter)
+            expect(found).toMatchObject({ id: created.id, name: 'sample' })
+            expect(found).not.toHaveProperty('_id')
+            expect(filter).toEqual({ _id: created.id })
+
+            expect(
+                await fix.soft.findDocuments(
+                    { $or: [{ _id: { $in: [created.id] } }] },
+                    { projection: { _id: 1 } }
+                )
+            ).toEqual([{ id: created.id }])
+            const updated = await fix.soft.findAndUpdateDocument(
+                filter,
+                { $set: { name: 'updated' } },
+                { returnDocument: 'after' }
+            )
+            expect(updated).toMatchObject({ id: created.id, name: 'updated' })
+            expect(updated).not.toHaveProperty('_id')
+            const page = await fix.soft.findWithPagination({ filter, pagination: {} })
+            expect(page.total).toBe(1)
+            expect(page.items).toEqual([updated])
+            expect(await fix.soft.getById(created.id)).toEqual(updated)
+            expect(await fix.soft.getByIds([created.id])).toEqual([updated])
+            expect(await fix.soft.countDocuments(filter)).toBe(1)
+            expect(await fix.soft.distinctValues<string>('_id', filter)).toEqual([created.id])
+        })
+
+        it.each(['updateDocument', 'updateDocuments'] as const)(
+            '%s의 upsert는 BSON ID로 저장하고 결과에는 문자열 ID를 반환한다',
+            async (method) => {
+                const id = newObjectIdString()
+                const update = { $setOnInsert: { _id: id }, $set: { name: 'upserted' } }
+                const inserted = await fix.soft[method]({ name: 'upserted' }, update, {
+                    upsert: true
+                })
+                expect(inserted).toMatchObject({ upsertedCount: 1, upsertedId: id })
+                expect(update.$setOnInsert._id).toBe(id)
+                expect(await fix.soft.collection.findOne({ _id: objectId(id) })).toMatchObject({
+                    _id: objectId(id),
+                    name: 'upserted'
+                })
+                expect(
+                    await fix.soft[method]({ _id: id }, { $set: { name: 'updated' } })
+                ).toMatchObject({ matchedCount: 1, modifiedCount: 1, upsertedId: null })
+                expect(await fix.soft.findDocument({ _id: id })).toEqual({ id, name: 'updated' })
+            }
+        )
+
+        it('집계에서 문서 ID 조회와 그룹 키 조건을 구분하고 ObjectId 결과를 문자열로 반환한다', async () => {
+            const created = await fix.soft.create('sample')
+            expect(
+                await fix.soft.aggregateDocuments([
+                    { $match: { _id: created.id } },
+                    { $group: { _id: '$_id', count: { $sum: 1 } } }
+                ])
+            ).toEqual([{ _id: created.id, count: 1 }])
+            expect(
+                await fix.soft.aggregateDocuments([
+                    { $group: { _id: '$name', count: { $sum: 1 } } },
+                    { $match: { _id: 'sample' } }
+                ])
+            ).toEqual([{ _id: 'sample', count: 1 }])
+        })
+
         it('조회 옵션으로 정렬·개수·필드를 제한한다', async () => {
             await fix.soft.createMany(['a', 'b', 'c'])
             expect(await fix.soft.findDocument({ name: 'a' })).toMatchObject({ name: 'a' })
@@ -205,6 +278,7 @@ describe('CrudRepository', () => {
                 name: 'sample',
                 updatedAt: expect.any(Temporal.Instant)
             })
+            expect(created).not.toHaveProperty('_id')
             expect(stored).toMatchObject({
                 _id: objectId(created.id),
                 createdAt: expect.any(Date),
@@ -224,6 +298,10 @@ describe('CrudRepository', () => {
             const docs = await fix.soft.createMany(['a', 'b', 'c'], { signal: controller.signal })
 
             expect(docs).toHaveLength(3)
+            for (const doc of docs) {
+                expect(doc.id).toEqual(expect.any(String))
+                expect(doc).not.toHaveProperty('_id')
+            }
             await expect(fix.soft.findByIds(docs.map(({ id }) => id))).resolves.toHaveLength(3)
             expect(insertMany).toHaveBeenCalledWith(
                 expect.any(Array),

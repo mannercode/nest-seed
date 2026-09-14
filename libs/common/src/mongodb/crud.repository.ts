@@ -1,23 +1,21 @@
 import { BadRequestException, NotFoundException, type OnModuleInit } from '@nestjs/common'
-import {
-    ObjectId,
-    type Collection,
-    type Document,
-    type Filter,
-    type IndexDescription,
-    type MongoClient
-} from 'mongodb'
+import { type Collection, type Document, type IndexDescription, type MongoClient } from 'mongodb'
 import type { PaginationDto, PaginationResult } from '../pagination/index.js'
 import type { TransactionContext } from '../transaction.js'
-import type { CrudDocument, StoredDocument } from './mongo.document.js'
+import type { CrudDocument, VersionedDocument } from './mongo.document.js'
 import { Assume, DateUtil, defaultTo, differenceWith, Require, uniq } from '../utils/index.js'
 import { MongoErrors } from './errors.js'
 import { MongoTransactionRepository } from './mongo-transaction.repository.js'
 import type { MongoConnection } from './mongo-connection.js'
-import type { MongoReadOptions, MongoWriteOptions } from './mongo.types.js'
+import type { MongoReadOptions, MongoWriteOptions, MongoWriteResult } from './mongo.types.js'
 import {
+    decodeMongoValues,
+    mongoArrayToPublic,
     mongoToPublic,
     encodeMongoDocument,
+    encodeMongoFilter,
+    encodeMongoUpdate,
+    newObjectIdString,
     objectId,
     objectIds,
     withoutPublicId
@@ -60,17 +58,22 @@ export abstract class CrudRepository<Doc extends CrudDocument>
 
     async findDocument(filter: Document, options: MongoReadOptions = {}) {
         const { transaction, ...readOptions } = options
-        return this.collection.findOne(filter, {
+        const doc = await this.collection.findOne(encodeMongoFilter(filter), {
             ...readOptions,
             session: this.getSession(transaction)
         })
+        return mongoToPublic<VersionedDocument<Doc>>(doc)
     }
 
     async findDocuments(filter: Document, options: MongoReadOptions = {}) {
         const { transaction, ...readOptions } = options
-        return this.collection
-            .find(filter, { ...readOptions, session: this.getSession(transaction) })
+        const docs = await this.collection
+            .find(encodeMongoFilter(filter), {
+                ...readOptions,
+                session: this.getSession(transaction)
+            })
             .toArray()
+        return mongoArrayToPublic<VersionedDocument<Doc>>(docs)
     }
 
     async findAndUpdateDocument(
@@ -79,38 +82,51 @@ export abstract class CrudRepository<Doc extends CrudDocument>
         options: MongoWriteOptions = {}
     ) {
         const { transaction, ...writeOptions } = options
-        return this.collection.findOneAndUpdate(filter, update, {
-            ...writeOptions,
-            session: this.getSession(transaction)
-        })
+        const doc = await this.collection.findOneAndUpdate(
+            encodeMongoFilter(filter),
+            encodeMongoUpdate(update),
+            { ...writeOptions, session: this.getSession(transaction) }
+        )
+        return mongoToPublic<VersionedDocument<Doc>>(doc)
     }
 
     async updateDocument(filter: Document, update: Document, options: MongoWriteOptions = {}) {
         const { transaction, ...writeOptions } = options
-        return this.collection.updateOne(filter, update, {
-            ...writeOptions,
-            session: this.getSession(transaction)
-        })
+        const result = await this.collection.updateOne(
+            encodeMongoFilter(filter),
+            encodeMongoUpdate(update),
+            { ...writeOptions, session: this.getSession(transaction) }
+        )
+        return decodeMongoValues(result) as MongoWriteResult
     }
 
     async updateDocuments(filter: Document, update: Document, options: MongoWriteOptions = {}) {
         const { transaction, ...writeOptions } = options
-        return this.collection.updateMany(filter, update, {
-            ...writeOptions,
-            session: this.getSession(transaction)
-        })
+        const result = await this.collection.updateMany(
+            encodeMongoFilter(filter),
+            encodeMongoUpdate(update),
+            { ...writeOptions, session: this.getSession(transaction) }
+        )
+        return decodeMongoValues(result) as MongoWriteResult
     }
 
     async countDocuments(filter: Document) {
-        return this.collection.countDocuments(filter)
+        return this.collection.countDocuments(encodeMongoFilter(filter))
     }
 
     async distinctValues<T>(field: string, filter: Document) {
-        return (await this.collection.distinct(field, filter)) as T[]
+        const values = await this.collection.distinct(field, encodeMongoFilter(filter))
+        return decodeMongoValues(values) as T[]
     }
 
     async aggregateDocuments<T extends Document>(pipeline: Document[]): Promise<T[]> {
-        return this.collection.aggregate<T>(pipeline).toArray()
+        // 첫 match 이후의 _id는 group/project에서 만든 값일 수 있다.
+        const encoded = pipeline.map((stage, index) =>
+            index === 0 && stage.$match ? { $match: encodeMongoFilter(stage.$match) } : stage
+        )
+        const docs = await this.collection.aggregate(encoded).toArray()
+        // 집계의 _id는 그룹 키이므로 이름을 유지하고 값만 변환한다.
+        return decodeMongoValues(docs) as T[]
     }
 
     async onModuleInit() {
@@ -187,7 +203,7 @@ export abstract class CrudRepository<Doc extends CrudDocument>
             projection: this.projection,
             session: this.getSession(transaction)
         })
-        return doc ? this.toDomainDocument(doc) : null
+        return doc ? this.toDomainDocument(mongoToPublic<Doc>(doc)) : null
     }
 
     async findByIds(
@@ -202,11 +218,11 @@ export abstract class CrudRepository<Doc extends CrudDocument>
                 signal
             })
             .toArray()
-        return docs.map((doc) => this.toDomainDocument(doc))
+        return docs.map((doc) => this.toDomainDocument(mongoToPublic<Doc>(doc)))
     }
 
     async findWithPagination(args: {
-        filter?: Filter<Document>
+        filter?: Document
         pagination: PaginationDto
         transaction?: TransactionArg
     }) {
@@ -219,7 +235,7 @@ export abstract class CrudRepository<Doc extends CrudDocument>
             throw new BadRequestException(MongoErrors.MaxSizeExceeded(this.maxSize, size))
         }
 
-        const activeFilter = this.activeFilter(filter)
+        const activeFilter = encodeMongoFilter(this.activeFilter(filter))
         const session = this.getSession(transaction)
         const cursor = this.collection
             .find(activeFilter, { projection: this.projection, session })
@@ -237,7 +253,7 @@ export abstract class CrudRepository<Doc extends CrudDocument>
         ])
 
         return {
-            items: rawItems.map((doc) => this.toDomainDocument(doc)),
+            items: rawItems.map((doc) => this.toDomainDocument(mongoToPublic<Doc>(doc))),
             page,
             size,
             total
@@ -265,21 +281,19 @@ export abstract class CrudRepository<Doc extends CrudDocument>
         return docs
     }
 
-    protected newDocument(): Doc & StoredDocument<Doc> {
+    protected newDocument(): VersionedDocument<Doc> {
         const now = DateUtil.now()
-        const _id = new ObjectId()
         return {
             __v: 0,
-            _id,
             ...(this.hardDelete ? {} : { deletedAt: null }),
             createdAt: now,
-            id: _id.toHexString(),
+            id: newObjectIdString(),
             updatedAt: now
-        } as unknown as Doc & StoredDocument<Doc>
+        } as VersionedDocument<Doc>
     }
 
     protected async insertOne(
-        doc: Doc & StoredDocument<Doc>,
+        doc: VersionedDocument<Doc>,
         transaction: TransactionArg = undefined,
         signal: AbortSignal | undefined = undefined
     ): Promise<Doc> {
@@ -287,12 +301,12 @@ export abstract class CrudRepository<Doc extends CrudDocument>
         // Driver 7.5의 공개 write option 타입에는 signal이 빠져 있지만 내부 operation은 이를
         // 소비한다. 옵션 객체로 전달해 Restate 시도 취소가 시작된 쓰기에도 이어지게 한다.
         const options = { session: this.getSession(transaction), signal }
-        await this.collection.insertOne(withoutPublicId(doc), options)
+        await this.collection.insertOne(withoutPublicId({ ...doc, _id: objectId(doc.id) }), options)
         return doc
     }
 
     protected async insertMany(
-        docs: Array<Doc & StoredDocument<Doc>>,
+        docs: Array<VersionedDocument<Doc>>,
         transaction: TransactionArg = undefined,
         signal: AbortSignal | undefined = undefined
     ): Promise<void> {
@@ -300,7 +314,7 @@ export abstract class CrudRepository<Doc extends CrudDocument>
         signal?.throwIfAborted()
         const options = { session: this.getSession(transaction), signal }
         const result = await this.collection.insertMany(
-            docs.map((doc) => withoutPublicId(doc)),
+            docs.map((doc) => withoutPublicId({ ...doc, _id: objectId(doc.id) })),
             options
         )
         Require.equals(
@@ -310,7 +324,7 @@ export abstract class CrudRepository<Doc extends CrudDocument>
         )
     }
 
-    protected activeFilter(filter: Filter<Document>): Filter<Document> {
+    protected activeFilter(filter: Document): Document {
         const encoded = encodeMongoDocument(filter)
         if (this.hardDelete) return encoded
         return { $and: [encoded, { deletedAt: null }] }
@@ -324,7 +338,7 @@ export abstract class CrudRepository<Doc extends CrudDocument>
         })
     }
 
-    protected toDomainDocument(doc: Document & { _id: ObjectId }): Doc {
-        return mongoToPublic<Doc>(doc)
+    protected toDomainDocument(doc: Doc): Doc {
+        return doc
     }
 }

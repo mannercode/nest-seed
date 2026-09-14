@@ -12,7 +12,7 @@ import {
     MongoConnection,
     objectId,
     type CrudRepositoryOptions,
-    type StoredDocument
+    type VersionedDocument
 } from '../index.js'
 
 export class Sample extends CrudDocument {
@@ -20,7 +20,7 @@ export class Sample extends CrudDocument {
     secret?: string
 }
 
-type SampleDraft = Sample & StoredDocument<Sample>
+type SampleDraft = VersionedDocument<Sample>
 
 export class SamplesRepository extends CrudRepository<Sample> {
     constructor(client: MongoClient, collectionName: string, options: CrudRepositoryOptions = {}) {

@@ -8,3 +8,5 @@ export abstract class CrudDocument {
 }
 
 export type StoredDocument<T> = Omit<T, 'id'> & Document & { __v: number; _id: ObjectId }
+
+export type VersionedDocument<T> = T & { __v: number }

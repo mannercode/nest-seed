@@ -3,10 +3,7 @@ import {
     QueryBuilderOptions,
     assignIfDefined,
     CrudRepository,
-    mongoToPublic,
     MongoErrors,
-    objectId,
-    objectIds,
     QueryBuilder,
     uniq,
     MongoConnection
@@ -53,7 +50,7 @@ export class TheatersRepository extends CrudRepository<Theater> {
     ) {
         // 실제 Theater 문서를 쓰기 충돌 지점으로 사용한다. 같은 극장을 포함하는 두 트랜잭션은
         // 이 갱신에서 직렬화되고, 드라이버는 TransientTransactionError를 새 snapshot으로 재시도한다.
-        const ids = objectIds(uniq(theaterIds))
+        const ids = uniq(theaterIds)
         const options = { transaction, signal }
         const result = await this.updateDocuments(
             this.activeFilter({ _id: { $in: ids } }),
@@ -86,13 +83,13 @@ export class TheatersRepository extends CrudRepository<Theater> {
         assignIfDefined(fields, updateDto, 'location')
         assignIfDefined(fields, updateDto, 'seatmap')
         const theater = await this.findAndUpdateDocument(
-            this.activeFilter({ _id: objectId(theaterId) }),
+            this.activeFilter({ _id: theaterId }),
             this.timestamped({ $set: fields }),
             { projection: this.projection, returnDocument: 'after' }
         )
 
         if (!theater) throw new NotFoundException(MongoErrors.DocumentNotFound(theaterId))
-        return mongoToPublic<Theater>(theater)
+        return theater
     }
 
     private buildQuery(searchDto: SearchTheatersPageDto, options: QueryBuilderOptions) {
