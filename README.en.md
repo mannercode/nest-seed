@@ -151,6 +151,6 @@ Each `docs/*.md` guide corresponds to a repository directory and explains its re
 - [decisions](docs/reference/decisions.md) — choices, alternatives, and non-guarantees
 - [development rules](docs/reference/conventions.md) — naming, DTOs, types, ESM, errors, and test-writing conventions
 
-[Review notes](docs/review/README.md) collect pending topics and review criteria. [Historical materials](docs/backup/README.md) preserve the documents from before the reduction, recovered originals, and earlier reviews. These materials do not replace the current development instructions above.
+[Tasks and work plans](_todo/README.md) belong in `_todo/`. [Documentation review notes](docs/review/README.md) and [historical materials](docs/backup/README.md) support future reviews; they do not replace the current development instructions above.
 
 For the design background of the movie-booking domain, see the blog series [Backend Service Analysis and Design 1](https://mannercode.com/2025/04/01/backend-design-1.html), [2](https://mannercode.com/2025/05/01/backend-design-2.html), and [3](https://mannercode.com/2025/06/01/backend-design-3.html).

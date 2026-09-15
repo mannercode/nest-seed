@@ -62,11 +62,7 @@ describe('createShowtimeCreationWorkflow', () => {
             'validate and create',
             'emit succeeded'
         ])
-        expect(fix.runStep.mock.calls[0]?.[2]).toEqual({
-            initialRetryInterval: 1_000,
-            maxRetryAttempts: 3,
-            maxRetryDuration: 35_000
-        })
+        expect(fix.runStep.mock.calls[0]?.[2]).toEqual({ maxRetryAttempts: 1 })
         expect(fix.runStep.mock.calls[2]?.[2]).toEqual({
             initialRetryInterval: 1_000,
             maxRetryAttempts: 4,
@@ -128,21 +124,63 @@ describe('createShowtimeCreationWorkflow', () => {
         expect(fix.events.map(({ status }) => status)).toEqual(['waiting', 'processing'])
     })
 
-    it('상태 이벤트 발행 한 번이 10초를 넘으면 Restate 재시도로 넘긴다', async () => {
+    it('진행 알림이 실패해도 DB 작업과 종결 결과는 유지한다', async () => {
+        const fix = createFixture({
+            emitStatusChanged: async () => {
+                throw new Error('NATS unavailable')
+            },
+            result: { kind: 'succeeded', createdShowtimeCount: 2, createdTicketCount: 20 }
+        })
+        await expect(run(fix)).resolves.toEqual({
+            sagaId: input.sagaId,
+            status: 'succeeded',
+            createdShowtimeCount: 2,
+            createdTicketCount: 20
+        })
+        expect(fix.persistence).toHaveBeenCalledOnce()
+    })
+
+    it('업무 실패를 알리는 발행 오류가 원래 실패 결과를 덮지 않는다', async () => {
+        const fix = createFixture({
+            emitStatusChanged: async () => {
+                throw new Error('NATS unavailable')
+            },
+            failure: new Error('database unavailable')
+        })
+        await expect(run(fix)).resolves.toEqual({
+            sagaId: input.sagaId,
+            status: 'error',
+            message: 'database unavailable'
+        })
+    })
+
+    it('알림 도중 workflow 취소는 다시 던진다', async () => {
+        const failure = new CancelledError()
+        const fix = createFixture({
+            emitStatusChanged: async () => {
+                throw failure
+            }
+        })
+        await expect(run(fix)).rejects.toBe(failure)
+        expect(fix.persistence).not.toHaveBeenCalled()
+    })
+
+    it('발행이 멈춰도 각 10초 제한 후 업무를 진행하고 결과를 반환한다', async () => {
         vi.useFakeTimers()
         try {
             const fix = createFixture({
                 emitStatusChanged: () => new Promise<void>(() => undefined),
                 result: { conflictingShowtimes: [], kind: 'failed' }
             })
-            const completion = run(fix).catch((error: unknown) => error)
-
-            await vi.advanceTimersByTimeAsync(10_000)
-
-            const failure = await completion
-            expect(failure).toBeInstanceOf(Error)
-            expect((failure as Error).message).toBe('Status event publish timed out after 10000ms.')
-            expect(fix.runStep).toHaveBeenCalledTimes(1)
+            const completion = run(fix)
+            await vi.advanceTimersByTimeAsync(30_000)
+            await expect(completion).resolves.toEqual({
+                sagaId: input.sagaId,
+                status: 'failed',
+                conflictingShowtimes: []
+            })
+            expect(fix.persistence).toHaveBeenCalledOnce()
+            expect(fix.runStep).toHaveBeenCalledTimes(4)
         } finally {
             vi.useRealTimers()
         }

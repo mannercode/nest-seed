@@ -3,8 +3,7 @@ import { Decimal128, ObjectId } from 'mongodb'
 import {
     assignIfDefined,
     decodeMongoValues,
-    encodeMongoFilter,
-    encodeMongoUpdate,
+    encodeMongoDocument,
     encodeMongoValues,
     isDuplicateKeyError,
     mapDocToDto,
@@ -153,65 +152,22 @@ describe('mongoToPublic, mongoArrayToPublic, withoutPublicId, encodeMongoValues,
     })
 })
 
-describe('MongoDB ID 조건과 쓰기 변환', () => {
-    it('논리 조건 안의 문서 ID만 변환하고 참조 ID와 원본 조건을 유지한다', () => {
-        const id = newObjectIdString()
-        const otherId = newObjectIdString()
-        const at = Temporal.Instant.from('2025-01-01T00:00:00Z')
-        const filter = {
-            $and: [
-                { _id: id },
-                { $or: [{ _id: { $in: [id] } }, { _id: { $not: { $eq: otherId } } }] },
-                { $nor: [{ _id: { $exists: false } }] }
-            ],
-            createdAt: { $gte: at },
-            userId: id
-        }
-
-        expect(encodeMongoFilter(filter)).toEqual({
-            $and: [
-                { _id: objectId(id) },
-                {
-                    $or: [
-                        { _id: { $in: [objectId(id)] } },
-                        { _id: { $not: { $eq: objectId(otherId) } } }
-                    ]
-                },
-                { $nor: [{ _id: { $exists: false } }] }
-            ],
-            createdAt: { $gte: new Date('2025-01-01T00:00:00Z') },
-            userId: id
-        })
-        expect(filter.$and[0]).toEqual({ _id: id })
-        expect(filter.$and[1]).toEqual({
-            $or: [{ _id: { $in: [id] } }, { _id: { $not: { $eq: otherId } } }]
-        })
-        expect(filter.createdAt.$gte).toBe(at)
-    })
-
-    it('native ID와 null 조건을 유지하고 잘못된 문자열 ID는 거부한다', () => {
-        const id = new ObjectId()
-
-        expect(encodeMongoFilter({ _id: id })).toEqual({ _id: id })
-        expect(encodeMongoFilter({ _id: null })).toEqual({ _id: null })
-        expect(() => encodeMongoFilter({ _id: 'invalid-id' })).toThrow(BadRequestException)
-    })
-
-    it('쓰기 복사본의 _id와 날짜만 변환하고 앱 객체는 변경하지 않는다', () => {
+describe('MongoDB 문서 값 변환', () => {
+    it('필드명이나 조건식에서 ID 타입을 추측하지 않는다', () => {
         const id = newObjectIdString()
         const at = Temporal.Instant.from('2025-01-01T00:00:00Z')
-        const update = {
-            $set: { updatedAt: at, userId: id },
-            $setOnInsert: { _id: id, createdAt: at }
+        const document = {
+            $and: [{ _id: id }, { _id: { $in: [id] } }],
+            $setOnInsert: { _id: id, createdAt: at },
+            userId: id
         }
-
-        expect(encodeMongoUpdate(update)).toEqual({
-            $set: { updatedAt: new Date('2025-01-01T00:00:00Z'), userId: id },
-            $setOnInsert: { _id: objectId(id), createdAt: new Date('2025-01-01T00:00:00Z') }
+        expect(encodeMongoDocument(document)).toEqual({
+            $and: [{ _id: id }, { _id: { $in: [id] } }],
+            $setOnInsert: { _id: id, createdAt: new Date('2025-01-01T00:00:00Z') },
+            userId: id
         })
-        expect(update.$setOnInsert).toEqual({ _id: id, createdAt: at })
-        expect(encodeMongoUpdate({ $set: { _id: id } })).toEqual({ $set: { _id: objectId(id) } })
-        expect(encodeMongoUpdate({ $inc: { count: 1 } })).toEqual({ $inc: { count: 1 } })
+        expect(document.$setOnInsert.createdAt).toBe(at)
+        expect(encodeMongoDocument({ _id: 'group-key' })).toEqual({ _id: 'group-key' })
     })
 })
 

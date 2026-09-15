@@ -14,7 +14,6 @@ import {
 import { LoginRateLimiterService } from '#gateway'
 import { JwtAuthService, TimeUtil } from '@mannercode/common'
 
-const ACCOUNT_FAILURE_LIMIT = 5
 const IP_FAILURE_LIMIT = 50
 const LOGIN_RATE_LIMITED_ERROR = {
     code: 'ERR_AUTH_LOGIN_RATE_LIMITED',
@@ -25,35 +24,25 @@ function trustPrivateProxy(app: INestApplication) {
     app.getHttpAdapter().getInstance().set('trust proxy', ['loopback', 'linklocal', 'uniquelocal'])
 }
 
-type TokenIssueResult = {
-    refreshTokenId: string
-    tokens: { accessToken: string; refreshToken: string }
-}
-
 type JwtAuthInternals = {
-    issueTokensInFamily(
+    createTokens(
         payload: object,
-        familyId: string,
-        userId: string | undefined
-    ): Promise<TokenIssueResult>
+        sessionId: string
+    ): Promise<{ accessToken: string; refreshToken: string }>
 }
 
 function pauseNextTokenIssue(jwtAuthService: object) {
     const internals = jwtAuthService as JwtAuthInternals
-    const issueTokens = internals.issueTokensInFamily.bind(internals)
+    const createTokens = internals.createTokens.bind(internals)
     let announceStarted!: () => void
     let release!: () => void
     const started = new Promise<void>((resolve) => (announceStarted = resolve))
     const held = new Promise<void>((resolve) => (release = resolve))
-
-    vi.spyOn(internals, 'issueTokensInFamily').mockImplementationOnce(
-        async (payload, familyId, userId) => {
-            announceStarted()
-            await held
-            return issueTokens(payload, familyId, userId)
-        }
-    )
-
+    vi.spyOn(internals, 'createTokens').mockImplementationOnce(async (payload, sessionId) => {
+        announceStarted()
+        await held
+        return createTokens(payload, sessionId)
+    })
     return { release, started }
 }
 
@@ -100,80 +89,52 @@ describe('UserAuthentication', () => {
                 .unauthorized(Errors.Auth.Unauthorized())
         })
 
-        it('정규화한 계정의 실패를 Redis에서 공유하고 6번째 요청부터 429를 반환한다', async () => {
-            const replica = await createAppTestContext({
-                configureApp: async (app) => trustPrivateProxy(app)
-            })
-
-            try {
-                for (let index = 0; index < ACCOUNT_FAILURE_LIMIT; index++) {
-                    const ctx = index % 2 === 0 ? fix : replica
-                    const email = index % 2 === 0 ? 'USER@mail.com' : 'user@MAIL.com'
-
-                    await ctx.httpClient
-                        .post('/users/login')
-                        .headers({ 'X-Forwarded-For': `198.51.100.${index + 1}` })
-                        .body({ email, password: 'wrong password' })
-                        .unauthorized(Errors.Auth.Unauthorized())
-                }
-
-                await replica.httpClient
+        it('다른 IP의 실패가 정상 계정의 로그인을 잠그지 않는다', async () => {
+            for (let index = 0; index < 6; index++) {
+                await fix.httpClient
                     .post('/users/login')
-                    .headers({ 'X-Forwarded-For': '198.51.100.6' })
+                    .headers({ 'X-Forwarded-For': `198.51.100.${index + 1}` })
                     .body({ ...credentials, password: 'wrong password' })
-                    .send(HttpStatus.TOO_MANY_REQUESTS, LOGIN_RATE_LIMITED_ERROR)
-            } finally {
-                await replica.teardown()
+                    .unauthorized(Errors.Auth.Unauthorized())
             }
+            await fix.httpClient
+                .post('/users/login')
+                .headers({ 'X-Forwarded-For': '198.51.100.7' })
+                .body(credentials)
+                .ok()
         })
 
-        it('동시 요청이 사전 검사를 함께 통과해도 증가 후 한도 초과 요청은 429로 끝낸다', async () => {
+        it('동시 실패도 IP 한도를 넘으면 429로 끝낸다', async () => {
             const rateLimiter = fix.module.get(LoginRateLimiterService)
-
             const results = await Promise.allSettled(
-                Array.from({ length: ACCOUNT_FAILURE_LIMIT + 1 }, (_, index) =>
-                    rateLimiter.recordFailure('user', credentials.email, `203.0.113.${index + 1}`)
+                Array.from({ length: IP_FAILURE_LIMIT + 1 }, () =>
+                    rateLimiter.recordFailure('203.0.113.1')
                 )
             )
             const rejected = results.filter((result) => result.status === 'rejected')
-
             expect(rejected).toHaveLength(1)
             expect(rejected[0]).toMatchObject({
                 reason: { response: LOGIN_RATE_LIMITED_ERROR, status: HttpStatus.TOO_MANY_REQUESTS }
             })
         })
 
-        it('성공하면 정규화한 계정의 실패 횟수를 초기화한다', async () => {
-            for (let index = 0; index < ACCOUNT_FAILURE_LIMIT - 1; index++) {
-                await fix.httpClient
+        it('복제본 사이에서도 같은 IP의 실패 횟수를 공유한다', async () => {
+            const replica = await createAppTestContext({
+                configureApp: async (app) => trustPrivateProxy(app)
+            })
+            try {
+                const limiter = fix.module.get(LoginRateLimiterService)
+                for (let index = 0; index < IP_FAILURE_LIMIT; index++) {
+                    await limiter.recordFailure('203.0.113.2')
+                }
+                await replica.httpClient
                     .post('/users/login')
-                    .headers({ 'X-Forwarded-For': `203.0.113.${index + 1}` })
-                    .body({
-                        email: index % 2 === 0 ? 'USER@mail.com' : 'user@MAIL.com',
-                        password: 'wrong password'
-                    })
-                    .unauthorized(Errors.Auth.Unauthorized())
+                    .headers({ 'X-Forwarded-For': '203.0.113.2' })
+                    .body(credentials)
+                    .send(HttpStatus.TOO_MANY_REQUESTS, LOGIN_RATE_LIMITED_ERROR)
+            } finally {
+                await replica.teardown()
             }
-
-            await fix.httpClient
-                .post('/users/login')
-                .headers({ 'X-Forwarded-For': '203.0.113.5' })
-                .body(credentials)
-                .ok()
-
-            for (let index = 0; index < ACCOUNT_FAILURE_LIMIT; index++) {
-                await fix.httpClient
-                    .post('/users/login')
-                    .headers({ 'X-Forwarded-For': `192.0.2.${index + 1}` })
-                    .body({ ...credentials, password: 'wrong password' })
-                    .unauthorized(Errors.Auth.Unauthorized())
-            }
-
-            await fix.httpClient
-                .post('/users/login')
-                .headers({ 'X-Forwarded-For': '192.0.2.6' })
-                .body({ ...credentials, password: 'wrong password' })
-                .send(HttpStatus.TOO_MANY_REQUESTS, LOGIN_RATE_LIMITED_ERROR)
         })
 
         it('성공해도 IP 실패 횟수는 초기화하지 않고 51번째 요청부터 429를 반환한다', async () => {

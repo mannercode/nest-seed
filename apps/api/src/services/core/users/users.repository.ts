@@ -88,7 +88,7 @@ export class UsersRepository extends CrudRepository<User> {
 
         try {
             const user = await this.findAndUpdateDocument(
-                this.activeFilter({ _id: userId }),
+                this.activeFilter(this.idFilter(userId)),
                 this.timestamped({ $set: patch }),
                 { projection: this.projection, returnDocument: 'after' }
             )

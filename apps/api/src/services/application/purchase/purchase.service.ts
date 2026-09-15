@@ -1,9 +1,7 @@
 import {
-    CacheService,
     DateUtil,
     ensure,
     IdempotencyErrors,
-    InjectCache,
     JsonUtil,
     sha256,
     generateUuid
@@ -24,8 +22,6 @@ import { PurchaseErrors } from './errors.js'
 import { PurchaseTransactionRepository, TicketPurchaseService } from './internal/index.js'
 import { PurchaseEvents } from './purchase.events.js'
 
-const PURCHASE_LOCK_TTL_MS = 5 * 60 * 1000
-const PURCHASE_LOCK_WAIT_MS = 10 * 60 * 1000
 const PURCHASE_COMPLETION_LEASE_MS = 10 * 60 * 1000
 const PURCHASE_RECONCILIATION_INTERVAL_MS = 60 * 1000
 const PURCHASE_RECONCILIATION_LEASE_MS = 60 * 1000
@@ -42,7 +38,6 @@ export class PurchaseService {
         private readonly ticketPurchaseService: TicketPurchaseService,
         private readonly ticketsService: TicketsService,
         private readonly events: PurchaseEvents,
-        @InjectCache('purchase') private readonly cache: CacheService,
         private readonly transactions: PurchaseTransactionRepository
     ) {}
 
@@ -57,47 +52,25 @@ export class PurchaseService {
         if (existing) return this.replayIdempotencyOperation(existing, fingerprint)
 
         const ticketIds = createDto.purchaseItems.map((item) => item.itemId)
-        const lockKey = `tickets:${ticketIds.sort().join(',')}`
-
-        // 같은 티켓 묶음의 동시 결제를 직렬화해, 뒤따른 결제가 결제 기록을 만들기 전에 거절되도록 한다.
-        // 단, 겹치지만 다른 묶음은 락 키가 달라 직렬화되지 않는다.
-        // 이중 판매 방지 자체는 락이 아니라 `sellForPurchase`의 원자 전이(Available→Sold)가 보장한다.
-        // 락은 불필요한 결제 생성·보상을 줄이는 최적화다.
-        return this.cache.withLockBlocking(
-            lockKey,
-            PURCHASE_LOCK_TTL_MS,
-            () =>
-                this.processPurchaseLocked(
-                    createDto,
-                    userId,
-                    ticketIds,
-                    idempotencyKey,
-                    fingerprint
-                ),
-            { waitMs: PURCHASE_LOCK_WAIT_MS }
-        )
-    }
-
-    private async processPurchaseLocked(
-        createDto: CreatePurchaseDto,
-        userId: string,
-        ticketIds: string[],
-        idempotencyKey: string,
-        fingerprint: string
-    ) {
-        const existing = await this.purchaseRecordsService.findIdempotencyOperation({
-            userId,
-            idempotencyKey
-        })
-        if (existing) return this.replayIdempotencyOperation(existing, fingerprint)
-
-        const tickets = await this.ticketsService.getMany(ticketIds)
-        const unavailable = tickets.filter((t) => t.status !== TicketStatus.Available)
-        if (unavailable.length > 0) {
-            throw new ConflictException(PurchaseErrors.AlreadySold(unavailable.map((t) => t.id)))
+        try {
+            const tickets = await this.ticketsService.getMany(ticketIds)
+            const unavailable = tickets.filter((t) => t.status !== TicketStatus.Available)
+            if (unavailable.length > 0) {
+                throw new ConflictException(
+                    PurchaseErrors.AlreadySold(unavailable.map((t) => t.id))
+                )
+            }
+            await this.ticketPurchaseService.validatePurchase(createDto, userId)
+        } catch (error) {
+            // 최초 조회 뒤 같은 키의 요청이 선점을 소비하거나 판매를 끝냈을 수 있다.
+            // 그 경우 바뀐 티켓 상태보다 먼저 접수한 요청의 결과를 반환한다.
+            const concurrent = await this.purchaseRecordsService.findIdempotencyOperation({
+                userId,
+                idempotencyKey
+            })
+            if (concurrent) return this.replayIdempotencyOperation(concurrent, fingerprint)
+            throw error
         }
-
-        await this.ticketPurchaseService.validatePurchase(createDto, userId)
 
         // 외부 효과(결제·티켓 판매)보다 먼저 pending 행을 남긴다. 프로세스가 어느 줄에서
         // 죽더라도 이 행이 reconciliation의 재시도 기준점이 된다.

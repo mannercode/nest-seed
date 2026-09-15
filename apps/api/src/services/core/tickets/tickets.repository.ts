@@ -93,7 +93,7 @@ export class TicketsRepository extends CrudRepository<Ticket> {
 
         const transition = async (activeTransaction: TransactionContext) => {
             const activeFilter = this.activeFilter({
-                _id: { $in: ids },
+                ...this.idsFilter(ids),
                 purchaseRecordId: null,
                 status: TicketStatus.Available
             })

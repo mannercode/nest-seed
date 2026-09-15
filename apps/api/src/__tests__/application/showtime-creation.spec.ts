@@ -161,34 +161,49 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('GET /showtime-creation/showtimes/:sagaId/status', () => {
-        it('SSE를 미리 구독하지 않아도 Restate에 보관된 최종 상태를 조회한다', async () => {
-            const created = await fix.httpClient
-                .post('/showtime-creation/showtimes')
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .headers({ 'Idempotency-Key': randomUUID() })
-                .body(buildCreateDto())
-                .accepted()
-            const sagaId = created.body.sagaId
-            const deadline = performance.now() + 5_000
-            let status: any
-
-            do {
-                const response = await fix.httpClient
-                    .get(`/showtime-creation/showtimes/${sagaId}/status`)
+        it.each([false, true])(
+            '알림 발행 실패=%s에도 SSE 구독 없이 최종 상태를 조회한다',
+            async (failNotification) => {
+                if (failNotification) {
+                    vi.spyOn(
+                        fix.module.get(ShowtimeCreationEvents),
+                        'emitStatusChanged'
+                    ).mockRejectedValue(new Error('NATS unavailable'))
+                }
+                const created = await fix.httpClient
+                    .post('/showtime-creation/showtimes')
                     .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                    .ok()
-                status = response.body
-                if (status.status !== 'pending') break
-                await sleep(25)
-            } while (performance.now() < deadline)
+                    .headers({ 'Idempotency-Key': randomUUID() })
+                    .body(buildCreateDto())
+                    .accepted()
+                const sagaId = created.body.sagaId
+                const deadline = performance.now() + 5_000
+                let status: any
 
-            expect(status).toEqual({
-                createdShowtimeCount: 1,
-                createdTicketCount: expect.any(Number),
-                sagaId,
-                status: 'succeeded'
-            })
-        })
+                do {
+                    const response = await fix.httpClient
+                        .get(`/showtime-creation/showtimes/${sagaId}/status`)
+                        .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                        .ok()
+                    status = response.body
+                    if (status.status !== 'pending') break
+                    await sleep(25)
+                } while (performance.now() < deadline)
+
+                expect(status).toEqual({
+                    createdShowtimeCount: 1,
+                    createdTicketCount: expect.any(Number),
+                    sagaId,
+                    status: 'succeeded'
+                })
+                await expect(showtimesService.search({ sagaIds: [sagaId] })).resolves.toHaveLength(
+                    status.createdShowtimeCount
+                )
+                await expect(ticketsService.search({ sagaIds: [sagaId] })).resolves.toHaveLength(
+                    status.createdTicketCount
+                )
+            }
+        )
 
         it('요청한 관리자의 접수 기록이 없는 saga ID는 노출하지 않는다', async () => {
             await fix.httpClient

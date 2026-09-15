@@ -2,9 +2,9 @@ import { workflow, CancelledError, TerminalError } from '@restatedev/restate-sdk
 import { TemporalJsonSerde } from './temporal-json.serde.js'
 
 export type WorkflowStepRetry = {
-    initialRetryInterval: number
+    initialRetryInterval?: number
     maxRetryAttempts: number
-    maxRetryDuration: number
+    maxRetryDuration?: number
 }
 
 export type DurableWorkflowContext = {

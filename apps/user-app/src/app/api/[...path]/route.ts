@@ -1,5 +1,4 @@
 import { createHash } from 'node:crypto'
-import { cookies } from 'next/headers'
 import { type NextRequest, NextResponse } from 'next/server'
 import {
     hasSameOrigin,
@@ -13,9 +12,9 @@ const REFRESH_COOKIE = 'nest-seed-user-refresh'
 const AUTH_PREFIX = 'users'
 const MAX_REQUEST_BODY_BYTES = 1024 * 1024
 const REFRESH_RESULT_GRACE_MS = 1000
-const REFRESH_CONCURRENT_ERROR = {
-    code: 'ERR_JWT_AUTH_REFRESH_TOKEN_CONCURRENT',
-    message: 'A refresh is already in progress'
+const REFRESH_REPLACED_ERROR = {
+    code: 'ERR_JWT_AUTH_REFRESH_TOKEN_REPLACED',
+    message: 'The refresh token has already been replaced'
 }
 const AUTH_OPERATIONS = new Set(['login', 'logout', 'refresh'])
 const TRUST_PROXY_HEADERS = process.env.BFF_TRUST_PROXY_HEADERS === 'true'
@@ -54,8 +53,7 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<NextR
     const authPath = `${AUTH_PREFIX}/`
     const isLogin = pathname === `${authPath}login`
     const isLogout = pathname === `${authPath}logout`
-    const isRefresh = pathname === `${authPath}refresh`
-    const cookieStore = await cookies()
+    const cookieStore = request.cookies
     const accessToken = cookieStore.get(ACCESS_COOKIE)?.value
     const refreshToken = cookieStore.get(REFRESH_COOKIE)?.value
     let body: ArrayBuffer | undefined
@@ -97,7 +95,7 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<NextR
         return response
     }
 
-    if (upstream.status === 401 && refreshToken && !isLogin && !isRefresh) {
+    if (upstream.status === 401 && refreshToken && !isLogin) {
         const refreshed = await refreshAuthTokens(authPath, refreshToken)
         if (refreshed.tokens) {
             const tokens = refreshed.tokens
@@ -116,7 +114,7 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<NextR
         // 다른 BFF 인스턴스가 같은 토큰을 막 회전한 경우에는 winner가 내려 준 쿠키를
         // 뒤늦은 loser 응답이 지우지 않도록 409만 전달한다.
         if (refreshed.status === 409) {
-            return jsonResponse(REFRESH_CONCURRENT_ERROR, 409)
+            return jsonResponse(REFRESH_REPLACED_ERROR, 409)
         }
         if (refreshed.status >= 500) {
             return jsonResponse({ message: 'Authentication service unavailable' }, 502)
@@ -183,14 +181,18 @@ function jsonBody(value: unknown): ArrayBuffer {
     return new TextEncoder().encode(JSON.stringify(value)).buffer
 }
 
+function apiUrl(pathname: string): URL {
+    const base = getApiBaseUrl()
+    return new URL(pathname, base.endsWith('/') ? base : `${base}/`)
+}
+
 async function callApi(
     request: NextRequest,
     pathname: string,
     accessToken: string | undefined,
     body: ArrayBuffer | undefined
 ): Promise<Response> {
-    const apiBaseUrl = getApiBaseUrl()
-    const url = new URL(pathname, apiBaseUrl.endsWith('/') ? apiBaseUrl : `${apiBaseUrl}/`)
+    const url = apiUrl(pathname)
     url.search = request.nextUrl.search
     const headers = new Headers()
     const accept = request.headers.get('accept')
@@ -222,16 +224,14 @@ async function refreshAuthTokens(authPath: string, refreshToken: string): Promis
     refreshFlights.set(key, flight)
     void flight.finally(() => {
         // 최초 보호 요청들의 401 도착 순서가 조금 어긋나도 같은 회전 결과를 공유한다.
-        setTimeout(() => {
-            if (refreshFlights.get(key) === flight) refreshFlights.delete(key)
-        }, REFRESH_RESULT_GRACE_MS)
+        setTimeout(() => refreshFlights.delete(key), REFRESH_RESULT_GRACE_MS)
     })
     return flight
 }
 
 async function performRefresh(authPath: string, refreshToken: string): Promise<RefreshResult> {
     try {
-        const response = await fetch(new URL(`${authPath}refresh`, getApiBaseUrl()), {
+        const response = await fetch(apiUrl(`${authPath}refresh`), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ refreshToken }),
@@ -254,7 +254,13 @@ async function parseTokens(response: Response): Promise<AuthTokens | null> {
     if (!value || typeof value.accessToken !== 'string' || typeof value.refreshToken !== 'string') {
         return null
     }
-    return { accessToken: value.accessToken, refreshToken: value.refreshToken }
+    try {
+        tokenExpiry(value.accessToken)
+        tokenExpiry(value.refreshToken)
+        return { accessToken: value.accessToken, refreshToken: value.refreshToken }
+    } catch {
+        return null
+    }
 }
 
 async function copyResponse(upstream: Response): Promise<NextResponse> {
@@ -273,16 +279,28 @@ function jsonResponse(body: unknown, status: number): NextResponse {
 }
 
 function setAuthCookies(response: NextResponse, tokens: AuthTokens): void {
-    response.cookies.set(ACCESS_COOKIE, tokens.accessToken, { ...COOKIE_OPTIONS, maxAge: 30 * 60 })
+    response.cookies.set(ACCESS_COOKIE, tokens.accessToken, {
+        ...COOKIE_OPTIONS,
+        expires: new Date(tokenExpiry(tokens.accessToken) * 1000)
+    })
     response.cookies.set(REFRESH_COOKIE, tokens.refreshToken, {
         ...COOKIE_OPTIONS,
-        maxAge: 7 * 24 * 60 * 60
+        expires: new Date(tokenExpiry(tokens.refreshToken) * 1000)
     })
 }
 
 function clearAuthCookies(response: NextResponse): void {
-    response.cookies.set(ACCESS_COOKIE, '', { ...COOKIE_OPTIONS, maxAge: 0 })
-    response.cookies.set(REFRESH_COOKIE, '', { ...COOKIE_OPTIONS, maxAge: 0 })
+    response.cookies.set(ACCESS_COOKIE, '', { ...COOKIE_OPTIONS, expires: new Date(0) })
+    response.cookies.set(REFRESH_COOKIE, '', { ...COOKIE_OPTIONS, expires: new Date(0) })
+}
+
+function tokenExpiry(token: string): number {
+    const payload = JSON.parse(
+        Buffer.from(token.split('.')[1] ?? '', 'base64url').toString('utf8')
+    ) as { exp?: number }
+    if (typeof payload.exp !== 'number' || !Number.isFinite(payload.exp))
+        throw new Error('Token expiry is missing')
+    return payload.exp
 }
 
 export const GET = proxy

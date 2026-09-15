@@ -11,7 +11,10 @@ services:
             - --include-fragments
             - --exclude-path
             - 'docs/backup/(before-reduction|recovered|reviews)/'
+            - --exclude-path
+            - '_todo/(repository-simplification-review|seed-project-review)\.md$'
             - '*.md'
+            - '_todo/*.md'
             - 'docs/**/*.md'
 
     k6:

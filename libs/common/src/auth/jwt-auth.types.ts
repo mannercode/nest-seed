@@ -16,35 +16,17 @@ export type EventContext = { ip?: string; userAgent?: string; source?: string }
 
 export type SecurityEvent =
     | {
-          type: 'token.issued'
-          userId?: string
-          familyId: string
-          tokenId: string
+          type: 'token.issued' | 'token.refreshed'
+          userId: string
+          sessionId: string
           at: Temporal.Instant
           context?: EventContext
       }
     | {
-          type: 'token.refreshed'
-          userId?: string
-          familyId: string
-          oldTokenId: string
-          newTokenId: string
-          at: Temporal.Instant
-          context?: EventContext
-      }
-    | {
-          type: 'token.reuse_detected'
-          userId?: string
-          familyId: string
-          presentedTokenId: string
-          at: Temporal.Instant
-          context?: EventContext
-      }
-    | {
-          type: 'family.revoked'
-          userId?: string
-          familyId: string
-          reason: 'logout' | 'reuse' | 'logout_all'
+          type: 'session.revoked'
+          userId: string
+          sessionId: string
+          reason: 'logout' | 'logout_all'
           at: Temporal.Instant
           context?: EventContext
       }

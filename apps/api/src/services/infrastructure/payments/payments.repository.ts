@@ -38,7 +38,7 @@ export class PaymentsRepository extends CrudRepository<Payment> {
     async cancel(paymentId: string) {
         // 결제는 감사 추적을 위해 행을 지우지 않고, 취소와 resolution 해소를 같은 문서 쓰기로 확정한다.
         const payment = await this.findAndUpdateDocument(
-            this.activeFilter({ _id: paymentId }),
+            this.activeFilter(this.idFilter(paymentId)),
             this.timestamped({
                 $set: { requiresPurchaseResolution: false, status: PaymentStatus.Cancelled }
             }),
@@ -57,7 +57,7 @@ export class PaymentsRepository extends CrudRepository<Payment> {
                 {
                     $setOnInsert: {
                         __v: 0,
-                        _id: newObjectIdString(),
+                        ...this.idFilter(newObjectIdString()),
                         amount: createDto.amount,
                         createdAt: now,
                         deletedAt: null,

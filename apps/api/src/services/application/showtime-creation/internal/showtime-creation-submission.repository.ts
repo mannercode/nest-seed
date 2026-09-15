@@ -80,7 +80,7 @@ export class ShowtimeCreationSubmissionRepository extends CrudRepository<Showtim
         // 같은 workflow key의 재제출은 기존 invocation을 가리키므로 실행은 하나만 유지된다.
         const claimed = await this.findAndUpdateDocument(
             this.activeFilter({
-                _id: existing.id,
+                ...this.idFilter(existing.id),
                 acceptedAt: null,
                 claimUntil: { $lte: now },
                 inputHash,

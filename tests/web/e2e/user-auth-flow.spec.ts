@@ -109,12 +109,28 @@ test('access 토큰이 만료되면 refresh 토큰을 회전하고 원 요청을
     context,
     page
 }) => {
+    const loginResponse = page.waitForResponse(
+        (response) => new URL(response.url()).pathname === '/api/users/login'
+    )
     await signupAndLogin(page)
 
     const accessCookie = await getSessionCookie(context, ACCESS_COOKIE)
     const refreshCookieBefore = await getSessionCookie(context, REFRESH_COOKIE)
     expect(accessCookie).toMatchObject({ httpOnly: true, sameSite: 'Lax' })
     expect(refreshCookieBefore).toMatchObject({ httpOnly: true, sameSite: 'Lax' })
+    const loginHeaders = await (await loginResponse).headersArray()
+    // Chromium은 Date 헤더로 시계 차이를 보정하므로 서버가 보낸 Expires 자체를 검증한다.
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie#expiresdate
+    for (const cookie of [accessCookie!, refreshCookieBefore!]) {
+        const payload = JSON.parse(
+            Buffer.from(cookie.value.split('.')[1]!, 'base64url').toString('utf8')
+        ) as { exp: number }
+        const header = loginHeaders.find(
+            ({ name, value }) =>
+                name.toLowerCase() === 'set-cookie' && value.startsWith(cookie.name + '=')
+        )
+        expect(header?.value).toContain(`Expires=${new Date(payload.exp * 1000).toUTCString()}`)
+    }
 
     await context.addCookies([{ ...accessCookie!, value: 'expired-access-token' }])
 

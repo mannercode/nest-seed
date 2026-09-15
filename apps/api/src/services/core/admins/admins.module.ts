@@ -24,8 +24,7 @@ import { ADMIN_JWT_AUTH_NAME, AdminAuthenticationService } from './internal/inde
                 },
                 onEvent: (event: SecurityEvent) => {
                     const message = `security_event:${event.type}`
-                    if (event.type === 'token.reuse_detected') logger.error(message, event)
-                    else if (event.type === 'verify.failed') logger.warn(message, event)
+                    if (event.type === 'verify.failed') logger.warn(message, event)
                     else logger.log(message, event)
                 }
             })

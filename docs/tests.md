@@ -45,12 +45,12 @@ race client는 공유 keep-alive 연결에 요청이 묶이지 않게 하고, �
 | `ticket-holding-race`   | 같은 좌석의 동시 선점은 Redis Lua의 원자 실행으로 하나만 성공                     |
 | `showtime-overlap-race` | 서로 다른 workflow key의 겹치는 상영 생성도 guard CAS·transaction으로 하나만 성공 |
 | `purchase-double-spend` | 같은 티켓 묶음의 동시 구매는 판매·결제를 하나만 남김                              |
-| `purchase-overlap-race` | 락 키가 다른 겹친 티켓 묶음도 DB 상태 전이로 이중 판매를 막고 패자를 보상         |
+| `purchase-overlap-race` | 일부 좌석이 겹치는 티켓 묶음도 DB 상태 전이로 이중 판매를 막고 패자를 보상        |
 | `sse-fanout-race`       | 한 복제본의 상태 이벤트가 다른 복제본의 SSE 연결에도 전달됨                       |
 | `jwt-refresh-race`      | 같은 refresh token의 동시 회전은 승자 하나와 충돌 결과로 구분됨                   |
 | `replica-chaos`         | 복제본 종료 중 NGINX의 우회와 서비스 가용성을 관찰                                |
 
-특히 구매 overlap은 같은 락 키의 직렬화만 검증해서는 찾을 수 없는 문제를 다룬다. `[A, B]`와 `[B, C]`가 다른 락을 얻어도 티켓 B를 둘 다 팔 수 없어야 한다. Redis 락이 없어지거나 만료해도 유지할 보장은 DB가 담당한다.
+특히 구매 overlap은 `[A, B]`와 `[B, C]`가 티켓 B를 둘 다 팔 수 없는지 확인한다. 동일한 티켓 묶음의 중복 요청만으로는 이 경합을 검증할 수 없다. 구매는 별도 Redis 락 없이 선점 claim과 DB 상태 전이로 처리한다.
 
 실행기는 스택 준비·Restate 등록·인증·시나리오·정리를 묶는다. 실패하면 정리 전에 컨테이너 로그·자원 상태와 MongoDB 복제 상태를 남긴다. 구체적인 요청 수·허용 오류율·timeout은 각 시나리오가 소유한다. 오류를 숨기려고 반복 횟수나 timeout부터 바꾸지 않고, 같은 시각의 서버 로그와 runner 자원을 함께 본다.
 

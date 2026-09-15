@@ -109,8 +109,6 @@ const CLAIM_TICKETS_SCRIPT = `
         redis.call('DEL', userKey)
     elseif userKeyTtlMs > 0 then
         redis.call('SET', userKey, cjson.encode(remainingTicketIds), 'PX', userKeyTtlMs)
-    elseif userKeyTtlMs == -1 then
-        redis.call('SET', userKey, cjson.encode(remainingTicketIds))
     end
 
     -- 뒤 showtime claim 실패 시 원 hold를 같은 만료시각 안에서 복원할 수 있도록
@@ -170,11 +168,7 @@ const ROLLBACK_PURCHASE_CLAIM_SCRIPT = `
     for i = 1, #KEYS - 1 do
         if redis.call('GET', KEYS[i]) == purchaseOwner then
             local expiresAtMs = tonumber(ticketExpiresAtMs[i])
-            if expiresAtMs == -1 then
-                redis.call('SET', KEYS[i], userId)
-                table.insert(restoredTicketIds, ticketIds[i])
-                table.insert(restoredExpiresAtMs, expiresAtMs)
-            elseif expiresAtMs > nowMs then
+            if expiresAtMs > nowMs then
                 redis.call('SET', KEYS[i], userId, 'PX', math.floor(expiresAtMs - nowMs))
                 table.insert(restoredTicketIds, ticketIds[i])
                 table.insert(restoredExpiresAtMs, expiresAtMs)
@@ -213,22 +207,15 @@ const ROLLBACK_PURCHASE_CLAIM_SCRIPT = `
 
     -- 기존 목록과 복원 ticket 중 가장 늦게 끝나는 정상 hold까지 목록을 유지한다.
     -- 복원 ticket key 자체는 위에서 캡처한 원 만료시각을 절대 넘기지 않는다.
-    local persistWithoutExpiry = userExpiresAtMs == -1 or currentUserTtlMs == -1
     local mergedExpiresAtMs = userExpiresAtMs
     if currentUserTtlMs > 0 then
         mergedExpiresAtMs = math.max(mergedExpiresAtMs, nowMs + currentUserTtlMs)
     end
     for _, expiresAtMs in ipairs(restoredExpiresAtMs) do
-        if expiresAtMs == -1 then
-            persistWithoutExpiry = true
-        else
-            mergedExpiresAtMs = math.max(mergedExpiresAtMs, expiresAtMs)
-        end
+        mergedExpiresAtMs = math.max(mergedExpiresAtMs, expiresAtMs)
     end
 
-    if persistWithoutExpiry then
-        redis.call('SET', userKey, cjson.encode(mergedTicketIds))
-    elseif mergedExpiresAtMs > nowMs then
+    if mergedExpiresAtMs > nowMs then
         redis.call(
             'SET',
             userKey,

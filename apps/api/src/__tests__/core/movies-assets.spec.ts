@@ -7,6 +7,7 @@ import {
     createMovieAsset,
     createUnpublishedMovie,
     Errors,
+    overrideConfigGetter,
     testAssets,
     uploadAndFinalizeMovieAsset,
     uploadAsset,
@@ -236,6 +237,27 @@ describe('MoviesAssets', () => {
                     .noContent()
 
                 await expect(getImageUrls()).resolves.toEqual([expect.any(String)])
+            })
+
+            it('소유 부여 뒤 영화 연결이 실패해도 만료 후 재시도로 파일을 연결한다', async () => {
+                const repository = fix.module.get(MoviesRepository)
+                const moviesService = fix.module.get(MoviesService)
+                vi.spyOn(repository, 'addAsset').mockRejectedValueOnce(
+                    new Error('movie write failed')
+                )
+                await expect(
+                    moviesService.finalizeUpload(movie.id, upload.assetId)
+                ).rejects.toThrow('movie write failed')
+                await expect(assetsService.findOwner(upload.assetId)).resolves.toEqual({
+                    entityId: movie.id,
+                    service: 'movies'
+                })
+                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
+                await fix.httpClient
+                    .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
+                    .noContent()
+                await expect(getImageUrls()).resolves.toEqual([expect.any(String)])
+                await expect(assetsService.isUploadComplete(upload.assetId)).resolves.toBe(true)
             })
 
             it('동시에 여러 번 호출해도 에셋은 한 번만 추가된다', async () => {

@@ -74,6 +74,14 @@ export class SamplesRepository extends CrudRepository<Sample> {
         )
     }
 
+    override idFilter(id: string) {
+        return super.idFilter(id)
+    }
+
+    override idsFilter(ids: string[]) {
+        return super.idsFilter(ids)
+    }
+
     toActiveFilter(filter: Filter<Document>) {
         return this.activeFilter(filter)
     }

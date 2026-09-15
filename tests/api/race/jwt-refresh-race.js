@@ -1,7 +1,7 @@
 /**
  * 같은 refresh token을 여러 복제본에서 동시에 회전시킨다.
- * 정확히 하나만 성공하고 나머지는 동시 회전 충돌이어야 하며,
- * 승자의 새 refresh token은 다시 회전돼 토큰 패밀리가 폐기되지 않았음을 증명해야 한다.
+ * 정확히 하나만 성공하고 나머지는 이미 교체된 토큰이어야 하며,
+ * 승자의 새 refresh token은 다시 회전돼 로그인 세션가 폐기되지 않았음을 증명해야 한다.
  */
 
 const { test } = require('node:test')
@@ -10,7 +10,7 @@ const { readPositiveInt, request, secureRandomHex, SERVER_URL } = require('./rac
 const USER_GROUPS = readPositiveInt('RACE_USER_GROUPS', 5)
 const CLIENTS_PER_USER = readPositiveInt('RACE_CLIENT_COUNT', 20)
 const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 30)
-const CONCURRENT_ERROR_CODE = 'ERR_JWT_AUTH_REFRESH_TOKEN_CONCURRENT'
+const REPLACED_ERROR_CODE = 'ERR_JWT_AUTH_REFRESH_TOKEN_REPLACED'
 
 async function createAndLogin(suffix) {
     const email = `race.${suffix}.${secureRandomHex()}@example.com`
@@ -57,7 +57,7 @@ async function runInner(iteration) {
         if (r.replicaId) replicaSet.add(r.replicaId)
         const g = byGroup.get(r.group) ?? { ok: [], concurrent: [], unauthorized: [], other: [] }
         if (r.status === 200) g.ok.push(r)
-        else if (r.status === 409 && r.body?.code === CONCURRENT_ERROR_CODE) {
+        else if (r.status === 409 && r.body?.code === REPLACED_ERROR_CODE) {
             g.concurrent.push(r)
         } else if (r.status === 401) g.unauthorized.push(r)
         else g.other.push(r)
@@ -76,7 +76,7 @@ async function runInner(iteration) {
         if (g.ok.length !== 1 || g.concurrent.length !== CLIENTS_PER_USER - 1) {
             throw new Error(
                 `iter ${iteration} group ${groupIdx}: expected 1 × 200 and ` +
-                    `${CLIENTS_PER_USER - 1} × 409/${CONCURRENT_ERROR_CODE}, got ` +
+                    `${CLIENTS_PER_USER - 1} × 409/${REPLACED_ERROR_CODE}, got ` +
                     `${g.ok.length} × 200, ${g.concurrent.length} × concurrent 409, ` +
                     `${g.unauthorized.length} × 401`
             )

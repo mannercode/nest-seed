@@ -10,7 +10,7 @@ describe('createMongoDriverOptions', () => {
         expect(options).toEqual({
             appName: 'application',
             maxPoolSize: 200,
-            minPoolSize: 50,
+            minPoolSize: 0,
             waitQueueTimeoutMS: 5000,
             writeConcern: { journal: true, w: 'majority', wtimeoutMS: 5000 }
         })

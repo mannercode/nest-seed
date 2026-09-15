@@ -9,7 +9,7 @@ import {
     pickIds,
     S3ObjectService
 } from '@mannercode/common'
-import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { Cron, CronExpression } from '@nestjs/schedule'
 import { AppConfigService } from '#config'
 import { AssetsRepository } from './assets.repository.js'
@@ -101,8 +101,6 @@ export class AssetsService {
     }
 
     async finalizeUpload(assetId: string, { owner }: FinalizeAssetDto) {
-        const asset = await this.repository.get({ id: assetId })
-
         // 만료 판정과 소유 부여를 조건부 원자 갱신 하나로 처리한다.
         // 시각을 먼저 검사하고 나중에 소유를 쓰면, 그 틈에 정리 cron이 같은 자산의 S3 객체를 지울 수 있다.
         const updatedAsset = await this.repository.assignOwner(
@@ -112,10 +110,11 @@ export class AssetsService {
         )
 
         if (!updatedAsset) {
-            // S3 객체를 먼저 삭제해야 DB 삭제 후 S3 삭제 실패로 고립 객체가 남는 상황을 피할 수 있다.
-            // 정리 cron은 DB를 기준으로 만료 자산을 찾는다. 이미 cron이 지웠다면 두 삭제 모두 멱등이다.
-            await this.deleteMany([assetId])
-
+            const asset = await this.repository.get({ id: assetId })
+            if (asset.ownerEntityId !== null) {
+                throw new ConflictException(AssetErrors.AlreadyOwned(assetId))
+            }
+            // 만료된 무소유 자산은 정리 cron이 처리한다. 완료 실패를 삭제 명령으로 해석하지 않는다.
             const expiresAt = this.getUploadExpiresAt(asset.createdAt)
             throw new NotFoundException(AssetErrors.UploadExpired(assetId, expiresAt))
         }

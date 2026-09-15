@@ -37,15 +37,14 @@ export class AdminsHttpController {
         @Body({ schema: AdminCredentialsSchema }) body: AdminCredentialsDto,
         @Ip() ip: string
     ) {
-        await this.loginRateLimiter.assertAllowed('admin', body.email, ip)
+        await this.loginRateLimiter.assertAllowed(ip)
 
         const result = await this.adminsService.login(body)
         if (!result) {
-            await this.loginRateLimiter.recordFailure('admin', body.email, ip)
+            await this.loginRateLimiter.recordFailure(ip)
             throw new UnauthorizedException(AuthErrors.Unauthorized())
         }
 
-        await this.loginRateLimiter.resetAccount('admin', body.email)
         return result.tokens
     }
 

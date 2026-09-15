@@ -27,8 +27,7 @@ export class TheatersRepository extends CrudRepository<Theater> {
             connection,
             'theaters',
             config.http.paginationDefaultSize,
-            config.http.paginationMaxSize,
-            { projection: { showtimeScheduleVersion: 0 } }
+            config.http.paginationMaxSize
         )
     }
 
@@ -38,7 +37,6 @@ export class TheatersRepository extends CrudRepository<Theater> {
         theater.name = createDto.name
         theater.location = createDto.location
         theater.seatmap = createDto.seatmap
-        theater.showtimeScheduleVersion = 0
 
         return this.insertOne(theater)
     }
@@ -53,8 +51,8 @@ export class TheatersRepository extends CrudRepository<Theater> {
         const ids = uniq(theaterIds)
         const options = { transaction, signal }
         const result = await this.updateDocuments(
-            this.activeFilter({ _id: { $in: ids } }),
-            this.timestamped({ $inc: { showtimeScheduleVersion: 1 } }),
+            this.activeFilter(this.idsFilter(ids)),
+            this.timestamped({}),
             options
         )
 
@@ -83,7 +81,7 @@ export class TheatersRepository extends CrudRepository<Theater> {
         assignIfDefined(fields, updateDto, 'location')
         assignIfDefined(fields, updateDto, 'seatmap')
         const theater = await this.findAndUpdateDocument(
-            this.activeFilter({ _id: theaterId }),
+            this.activeFilter(this.idFilter(theaterId)),
             this.timestamped({ $set: fields }),
             { projection: this.projection, returnDocument: 'after' }
         )

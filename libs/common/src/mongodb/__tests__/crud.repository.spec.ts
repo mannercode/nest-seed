@@ -27,17 +27,18 @@ describe('CrudRepository', () => {
     })
 
     describe('문서 연산', () => {
-        it('문자열 ID로 조회·수정하고 문서에는 id만 반환한다', async () => {
+        it('명시적인 ID 조건으로 조회·수정하고 문서에는 id만 반환한다', async () => {
             const created = await fix.soft.create('sample')
-            const filter = { _id: created.id }
+            const filter = fix.soft.idFilter(created.id)
             const found = await fix.soft.findDocument(filter)
             expect(found).toMatchObject({ id: created.id, name: 'sample' })
             expect(found).not.toHaveProperty('_id')
-            expect(filter).toEqual({ _id: created.id })
+            expect(filter).toEqual({ _id: objectId(created.id) })
+            expect(await fix.soft.findDocument({ _id: created.id })).toBeNull()
 
             expect(
                 await fix.soft.findDocuments(
-                    { $or: [{ _id: { $in: [created.id] } }] },
+                    { $or: [fix.soft.idsFilter([created.id])] },
                     { projection: { _id: 1 } }
                 )
             ).toEqual([{ id: created.id }])
@@ -61,20 +62,23 @@ describe('CrudRepository', () => {
             '%s의 upsert는 BSON ID로 저장하고 결과에는 문자열 ID를 반환한다',
             async (method) => {
                 const id = newObjectIdString()
-                const update = { $setOnInsert: { _id: id }, $set: { name: 'upserted' } }
+                const update = { $setOnInsert: fix.soft.idFilter(id), $set: { name: 'upserted' } }
                 const inserted = await fix.soft[method]({ name: 'upserted' }, update, {
                     upsert: true
                 })
                 expect(inserted).toMatchObject({ upsertedCount: 1, upsertedId: id })
-                expect(update.$setOnInsert._id).toBe(id)
+                expect(update.$setOnInsert._id).toEqual(objectId(id))
                 expect(await fix.soft.collection.findOne({ _id: objectId(id) })).toMatchObject({
                     _id: objectId(id),
                     name: 'upserted'
                 })
                 expect(
-                    await fix.soft[method]({ _id: id }, { $set: { name: 'updated' } })
+                    await fix.soft[method](fix.soft.idFilter(id), { $set: { name: 'updated' } })
                 ).toMatchObject({ matchedCount: 1, modifiedCount: 1, upsertedId: null })
-                expect(await fix.soft.findDocument({ _id: id })).toEqual({ id, name: 'updated' })
+                expect(await fix.soft.findDocument(fix.soft.idFilter(id))).toEqual({
+                    id,
+                    name: 'updated'
+                })
             }
         )
 
@@ -82,7 +86,7 @@ describe('CrudRepository', () => {
             const created = await fix.soft.create('sample')
             expect(
                 await fix.soft.aggregateDocuments([
-                    { $match: { _id: created.id } },
+                    { $match: fix.soft.idFilter(created.id) },
                     { $group: { _id: '$_id', count: { $sum: 1 } } }
                 ])
             ).toEqual([{ _id: created.id, count: 1 }])

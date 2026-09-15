@@ -13,8 +13,6 @@ import {
     mongoArrayToPublic,
     mongoToPublic,
     encodeMongoDocument,
-    encodeMongoFilter,
-    encodeMongoUpdate,
     newObjectIdString,
     objectId,
     objectIds,
@@ -58,7 +56,7 @@ export abstract class CrudRepository<Doc extends CrudDocument>
 
     async findDocument(filter: Document, options: MongoReadOptions = {}) {
         const { transaction, ...readOptions } = options
-        const doc = await this.collection.findOne(encodeMongoFilter(filter), {
+        const doc = await this.collection.findOne(encodeMongoDocument(filter), {
             ...readOptions,
             session: this.getSession(transaction)
         })
@@ -68,7 +66,7 @@ export abstract class CrudRepository<Doc extends CrudDocument>
     async findDocuments(filter: Document, options: MongoReadOptions = {}) {
         const { transaction, ...readOptions } = options
         const docs = await this.collection
-            .find(encodeMongoFilter(filter), {
+            .find(encodeMongoDocument(filter), {
                 ...readOptions,
                 session: this.getSession(transaction)
             })
@@ -83,8 +81,8 @@ export abstract class CrudRepository<Doc extends CrudDocument>
     ) {
         const { transaction, ...writeOptions } = options
         const doc = await this.collection.findOneAndUpdate(
-            encodeMongoFilter(filter),
-            encodeMongoUpdate(update),
+            encodeMongoDocument(filter),
+            encodeMongoDocument(update),
             { ...writeOptions, session: this.getSession(transaction) }
         )
         return mongoToPublic<VersionedDocument<Doc>>(doc)
@@ -93,8 +91,8 @@ export abstract class CrudRepository<Doc extends CrudDocument>
     async updateDocument(filter: Document, update: Document, options: MongoWriteOptions = {}) {
         const { transaction, ...writeOptions } = options
         const result = await this.collection.updateOne(
-            encodeMongoFilter(filter),
-            encodeMongoUpdate(update),
+            encodeMongoDocument(filter),
+            encodeMongoDocument(update),
             { ...writeOptions, session: this.getSession(transaction) }
         )
         return decodeMongoValues(result) as MongoWriteResult
@@ -103,28 +101,24 @@ export abstract class CrudRepository<Doc extends CrudDocument>
     async updateDocuments(filter: Document, update: Document, options: MongoWriteOptions = {}) {
         const { transaction, ...writeOptions } = options
         const result = await this.collection.updateMany(
-            encodeMongoFilter(filter),
-            encodeMongoUpdate(update),
+            encodeMongoDocument(filter),
+            encodeMongoDocument(update),
             { ...writeOptions, session: this.getSession(transaction) }
         )
         return decodeMongoValues(result) as MongoWriteResult
     }
 
     async countDocuments(filter: Document) {
-        return this.collection.countDocuments(encodeMongoFilter(filter))
+        return this.collection.countDocuments(encodeMongoDocument(filter))
     }
 
     async distinctValues<T>(field: string, filter: Document) {
-        const values = await this.collection.distinct(field, encodeMongoFilter(filter))
+        const values = await this.collection.distinct(field, encodeMongoDocument(filter))
         return decodeMongoValues(values) as T[]
     }
 
     async aggregateDocuments<T extends Document>(pipeline: Document[]): Promise<T[]> {
-        // 첫 match 이후의 _id는 group/project에서 만든 값일 수 있다.
-        const encoded = pipeline.map((stage, index) =>
-            index === 0 && stage.$match ? { $match: encodeMongoFilter(stage.$match) } : stage
-        )
-        const docs = await this.collection.aggregate(encoded).toArray()
+        const docs = await this.collection.aggregate(pipeline.map(encodeMongoDocument)).toArray()
         // 집계의 _id는 그룹 키이므로 이름을 유지하고 값만 변환한다.
         return decodeMongoValues(docs) as T[]
     }
@@ -239,7 +233,7 @@ export abstract class CrudRepository<Doc extends CrudDocument>
             throw new BadRequestException(MongoErrors.MaxSizeExceeded(this.maxSize, size))
         }
 
-        const activeFilter = encodeMongoFilter(this.activeFilter(filter))
+        const activeFilter = encodeMongoDocument(this.activeFilter(filter))
         const session = this.getSession(transaction)
         const cursor = this.collection
             .find(activeFilter, { projection: this.projection, session })
@@ -330,6 +324,14 @@ export abstract class CrudRepository<Doc extends CrudDocument>
             result.insertedCount,
             'The number of inserted documents should match the requested count'
         )
+    }
+
+    protected idFilter(id: string): Document {
+        return { _id: objectId(id) }
+    }
+
+    protected idsFilter(ids: string[]): Document {
+        return { _id: { $in: objectIds(ids) } }
     }
 
     protected activeFilter(filter: Document): Document {
