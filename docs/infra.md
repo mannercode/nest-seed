@@ -2,6 +2,8 @@
 
 개발 환경은 MongoDB Replica Set, Redis Cluster, S3 호환 스토리지, NATS/JetStream, Restate를 함께 띄운다. dev server, API 통합 테스트와 다중 복제본 검증 스택이 공유한다. 접속 값은 `.env.infra`, 서비스 구성은 Compose가 소유한다.
 
+이미지의 태그와 digest를 함께 고정한 참조는 둘을 함께 갱신한다. env를 통해 참조하는 이미지까지 Dockerfile 자동 갱신에 포함된다고 가정하지 않는다.
+
 ## 1. 이 토폴로지가 필요한 이유
 
 | 구성                | 개발 단계에서 드러내려는 제약                           |
@@ -26,6 +28,8 @@ setup 종료가 성공한 뒤 `.env.infra`의 고정 admin을 [독립 스크립�
 
 Dev Container·infra·테스트 스택은 같은 외부 Docker network에서 service DNS로 연결한다. MongoDB Replica Set과 Redis Cluster가 클라이언트에게 알려 주는 멤버 주소도 이 네트워크에서 해석되어야 한다. 개발 인프라는 host port를 publish하지 않는다.
 
+주소·포트를 바꿀 때는 클라이언트 env와 Compose의 서비스·healthcheck·초기화 설정을 함께 맞춘다. 특히 MongoDB·Redis는 최초 접속 뒤 서버가 알려 준 멤버 주소로 다시 연결하므로, 첫 접속 URI나 host port만 바꿔서는 멤버 탐색이 성립하지 않을 수 있다. S3의 endpoint·region도 bucket 초기화와 같은 설정을 사용해야 한다.
+
 개발용 NATS와 Restate는 각각 한 서버다. API 복제본 네 개가 있다고 broker나 workflow runtime도 네 벌인 것은 아니다. JetStream은 단일 replica와 `nats_data`, Restate는 `restate_data` volume을 사용한다. 일반 컨테이너 재시작은 이 기록을 보존하지만 reset은 지운다. Redis도 이 개발 구성에서는 데이터 복제본을 둔 HA cluster가 아니다.
 
 따라서 API 복제본 종료 후의 복구와 broker·workflow 서버 자체의 HA를 구분한다. 운영의 clustering·backup·복구 정책은 별도로 설계해야 한다. Restate의 journal·step 재시작 복구는 [`infra/tests/restate-journal-recovery.js`](../infra/tests/restate-journal-recovery.js)가 실제 서버 재시작으로 검증한다.
@@ -34,4 +38,6 @@ Dev Container·infra·테스트 스택은 같은 외부 Docker network에서 ser
 
 Restate 서버를 시작하는 것과 실행할 workflow endpoint를 등록하는 것은 별개다. `pnpm run dev`의 등록 스크립트는 개발 API의 HTTP/2 주소를 등록하고, `tests/api` 실행기는 NGINX 뒤의 복제본들을 하나의 endpoint로 등록한다.
 
-API health가 성공했다고 workflow dispatch까지 준비됐다고 판단하지 않는다. 검증 스택의 등록 URI·force 옵션은 [tests 문서](tests.md#5-restate-endpoint-등록), 운영의 revision 전환 조건은 [설계 결정](reference/decisions.md#endpoint와-revision-전환), env 주입 시점은 [환경 변수](reference/environment.md)가 소유한다.
+`PROJECT_ID`나 endpoint 설정을 바꾸면 API와 등록 스크립트가 같은 새 환경을 사용해야 한다. env 파일 수정만으로 이미 실행 중인 앱의 설정은 바뀌지 않는다([env 주입](devcontainer.md#1-환경-변수는-재생성해야-반영된다)).
+
+API health가 성공했다고 workflow dispatch까지 준비됐다고 판단하지 않는다. 검증 스택의 등록 URI·force 옵션은 [tests 문서](tests.md#5-restate-endpoint-등록), 운영의 revision 전환 조건은 [설계 결정](reference/decisions.md#endpoint와-revision-전환)이 소유한다.

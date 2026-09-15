@@ -66,7 +66,7 @@ Node 타입은 Dev Container 런타임에 맞춘다. TypeScript는 이 workspace
 
 검증 대상은 console 로그인·영화 관리와 user-app 가입·로그인·세션 회전이다. 상영 생성·구매 UI가 있다고 가정하지 않는다. 브라우저 실패의 trace·screenshot·HTML 결과는 `tests/web/_output/`에서 확인한다.
 
-web Compose는 `BFF_TRUST_PROXY_HEADERS=true`로 시작하고 테스트가 edge의 헤더를 모사한다. 내부 HTTP로 실행하므로 `BFF_COOKIE_SECURE=false`도 사용한다. 이 cookie 설정은 테스트 환경에 한정하며 운영 기본값으로 복사하지 않는다. BFF의 동작 계약은 [apps 문서](apps.md#61-bff와-클라이언트-ip-경계)를 따른다.
+web Compose에서 루트의 두 env 파일은 API에 주입하고, BFF에는 API 대상·포트와 테스트 설정을 명시적으로 전달한다. `BFF_TRUST_PROXY_HEADERS=true`로 시작해 테스트가 edge의 헤더를 모사한다. 내부 HTTP로 실행하므로 `BFF_COOKIE_SECURE=false`도 사용한다. 이 cookie 설정은 테스트 환경에 한정하며 운영 기본값으로 복사하지 않는다. BFF의 동작 계약은 [apps 문서](apps.md#61-bff와-클라이언트-ip-경계)를 따른다.
 
 이 검증은 BFF·API의 연결을 확인할 뿐 실제 public edge가 외부 헤더를 올바르게 덮어쓰는지까지 증명하지 않는다. API 내부의 인증 테스트 역시 실제 배포망의 접근 제한을 검증하는 것은 아니다.
 
@@ -81,6 +81,8 @@ fixture는 개발 MongoDB에 남는다. 측정 결과는 실행 시각별 JSON�
 ## 5. Restate endpoint 등록
 
 각 API 복제본은 일반 HTTP와 별도로 Restate HTTP/2 endpoint를 연다. 검증 스택은 개별 복제본 대신 NGINX의 안정적인 `http://nginx:9080`을 등록해 한 복제본이 종료되어도 invocation을 다른 복제본으로 보낸다.
+
+`API_PORT`나 `RESTATE_SERVICE_PORT`를 바꿔도 `tests/api/nginx.conf`의 upstream은 자동으로 갱신되지 않는다. API 내부 포트·NGINX 설정·Compose의 등록 URI를 함께 맞춘다.
 
 실행기는 API·NGINX가 healthy가 된 뒤 `restate-register` one-shot 서비스를 실행한다. 일반 HTTP `/health`는 Restate ingress의 health를 보지만 deployment 등록과 endpoint dispatch까지 보장하지 않는다. workflow가 실행되지 않으면 등록 상태와 HTTP/2 경로를 함께 확인한다.
 

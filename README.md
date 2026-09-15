@@ -47,7 +47,9 @@ Dev Container는 시작할 때 개발 인프라의 데이터를 초기화한다.
 5. console(3100)에 개발용 admin(`admin@nest-seed.local` / `DevPass1!`)으로 로그인해 영화와 극장을 만든다. 이 계정은 인프라 초기화 때 다시 만든다.
 6. user-app(3200)에서 가입·로그인과 홈 화면 조합을 확인한다. 실행 가능한 API 문서는 독립된 fixture 흐름으로 상영·예매·구매 API를 실행한다.
 
-`.env.api`와 `.env.infra`는 커밋된 개발·검증 값이다. 포크할 때 프로젝트 식별자와 자격증명을 검토하고, 운영 secret은 저장소 밖에서 주입한다. 자세한 기준은 [환경 변수](docs/reference/environment.md)에 있다.
+`.env.api`와 `.env.infra`는 커밋된 개발·검증 값이다. 포크할 때 프로젝트 식별자와 자격증명을 검토하고, 운영 secret은 저장소 밖에서 주입한다. 파일을 수정한 뒤에는 [Dev Container를 재생성](docs/devcontainer.md#1-환경-변수는-재생성해야-반영된다)해 새 값을 주입한다.
+
+포크할 때 `nest-seed`·`mannercode`를 일괄 치환하지 않는다. 프로젝트 식별자, 저자 URL과 CI의 대상 저장소는 구분해서 변경한다. 패키지 scope를 바꾸면 workspace manifest·의존성·import·별칭·lockfile도 함께 맞춘다.
 
 ## 2. 주요 명령
 
@@ -146,7 +148,6 @@ bash apps/api/api-docs/run.sh showtime-creation.spec
 - [devcontainer](docs/devcontainer.md) — 단일 개발 경로, DooD 제약과 보안
 - [decisions](docs/reference/decisions.md) — 선택 이유, 대안, 보장하지 않는 것
 - [개발 규칙](docs/reference/conventions.md) — 이름·DTO·타입·ESM·오류·테스트 작성 규칙
-- [environment](docs/reference/environment.md) — env 소유권과 주입 시점
 - [튜토리얼](docs/reference/tutorial.md) — 유스케이스에서 API·모듈·분산 처리·테스트까지
 
 `docs_backup/`은 축소 전 원문 보관본이다. 현재 개발 지침은 위 문서를 따른다.

@@ -49,7 +49,9 @@ Starting the Dev Container resets the development infrastructure data. Run the c
 5. Sign in to the console (3100) with the development admin (`admin@nest-seed.local` / `DevPass1!`) and create movies and theaters. Infrastructure resets recreate this account.
 6. Use the user app (3200) to explore sign-up, login, and the composed home view. The executable API docs run showtime, booking, and purchase APIs through an independent fixture flow.
 
-`.env.api` and `.env.infra` contain committed development and verification values. Review project identifiers and credentials when forking, and inject production secrets outside the repository. See [Environment variables](docs/reference/environment.md).
+`.env.api` and `.env.infra` contain committed development and verification values. Review project identifiers and credentials when forking, and inject production secrets outside the repository. After editing these files, [recreate the Dev Container](docs/devcontainer.md#1-환경-변수는-재생성해야-반영된다) to inject the new values.
+
+Do not globally replace `nest-seed` or `mannercode` when forking. Distinguish project identifiers, author URLs, and the repositories targeted by CI. Changing the package scope also requires updating workspace manifests, dependencies, imports, aliases, and the lockfile together.
 
 ## 2. Main commands
 
@@ -148,7 +150,6 @@ Each `docs/*.md` guide corresponds to a repository directory and explains its re
 - [devcontainer](docs/devcontainer.md) — the single development path, DooD constraints, and security
 - [decisions](docs/reference/decisions.md) — choices, alternatives, and non-guarantees
 - [development rules](docs/reference/conventions.md) — naming, DTOs, types, ESM, errors, and test-writing conventions
-- [environment](docs/reference/environment.md) — env ownership and injection timing
 - [tutorial](docs/reference/tutorial.md) — from use cases to APIs, modules, distributed execution, and tests
 
 `docs_backup/` preserves the documentation from before the reduction. Use the guides above for current development instructions.

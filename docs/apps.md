@@ -6,6 +6,8 @@ API를 읽을 때는 `src/services/`의 다섯 경계를 먼저 본다. `gateway
 
 `config/`는 주입된 환경을 검증하고, `modules/`는 공통 연결·제공자를 조립한다. 도메인 로직은 이곳에 두지 않는다. `app.module.ts`는 모듈과 전역 guard·pipe를 조립하고 `bootstrap.ts`는 HTTP 앱을 기동한다. `scripts/`는 이 앱의 소스와 별개로 실행되는 운영·개발 도구다.
 
+API의 `ConfigModule`은 `ignoreEnvFile: true`로 실행 환경이 주입한 `process.env`만 검증한다. 앱이 추가 env 파일을 찾아 읽지 않는다. 개발 환경의 주입·재생성 규칙은 [Dev Container](devcontainer.md#1-환경-변수는-재생성해야-반영된다)를 따른다.
+
 ## 1. SoLA 5계층
 
 SoLA의 목적은 계층 숫자를 맞추는 것이 아니라 **모듈 사이의 순환 참조를 구조적으로 막는 것**이다. 일반적인 layered architecture가 위→아래 방향을 제한한다면, 이 시드는 규칙 하나를 더한다.
@@ -236,7 +238,7 @@ API와 공용 라이브러리는 서로 다른 접두사를 쓰고, 각 workspac
 
 API는 Dev Container 인프라를 재사용하고, common은 Testcontainers로 필요한 인프라를 준비한다. API의 DB·bucket은 `mongo-api-w<worker>`·`s3bucket-api-w<worker>` 형태다. 파일 안에서는 같은 연결을 쓰되 테스트 뒤 collection과 bucket을 비우며, Redis·NATS·workflow 이름은 테스트별 `PROJECT_ID`로 분리한다. suite 종료 후의 정리도 해당 workspace의 자원 범위에 한정한다.
 
-Nest 모듈 파일은 한 번 평가되므로 데코레이터 인자에서 테스트별 환경 값을 미리 읽어 고정하지 않는다. 제공자를 만들 때 `AppConfigService.projectId`를 받아 prefix·subject·workflow 이름을 만든다. 테스트 setup은 앱을 import하기 전에 startup 환경을 먼저 정하고, `beforeEach`에서 테스트별 값을 정한다.
+`export const value = process.env.KEY`처럼 모듈 최상위에서 읽은 값은 import 시점에 고정된다. 이후 `ConfigModule`을 초기화하거나 테스트에서 env를 바꿔도 다시 계산되지 않는다. Nest 데코레이터에서도 테스트별 환경 값을 미리 읽지 않고, 제공자를 만들 때 `AppConfigService.projectId`를 받아 prefix·subject·workflow 이름을 만든다. 테스트 setup은 앱을 import하기 전에 startup 환경을 먼저 정하고, `beforeEach`에서 테스트별 값을 정한다.
 
 커버리지를 수집하는 구현 workspace는 100%를 게이트로 사용한다. 이 수치의 의미·한계·예외 원칙은 [설계 결정 §6](reference/decisions.md#6-테스트-커버리지-100-게이트)에만 정의한다.
 
@@ -277,6 +279,8 @@ TEST "선점한 티켓 묶음을 구매한다" \
 
 요청은 spec에, `TEST`의 실제 응답 본문은 상세 로그에 남긴다. 준비용 `SETUP`은 문서 항목에 포함하지 않는다. 실행 명령은 [README](../README.md#3-api-레퍼런스)가 소유한다.
 
+직접 실행할 대상은 `apps/api/api-docs/.env`가 정하며, 검증 스택 실행기는 `SERVER_URL`로 자기 스택을 지정한다. 대상 URL의 공개 포트와 API 컨테이너 내부 포트는 별개다.
+
 인증 주체는 `common.fixture`의 `login_admin`·`login_user`로 전환한다. `CURRENT_AUTH_TOKEN`이 있으면 이후 요청에 Bearer 헤더가 자동으로 붙고, spec이 직접 지정한 `Authorization`이 우선한다. 게스트 조건은 `as_guest`로 자동 주입을 끊는다. [views.spec](../apps/api/api-docs/views.spec)이 이 구분을 보여 준다.
 
 `apps/api/api-docs/_output/`의 `logs/`에서 실제 응답을, `docs/summary.md`에서 검증한 항목을 확인한다. 요약은 실행한 HTTP 시나리오의 목록이며 SSE까지 포함한 전체 라우트 인벤토리는 아니다.
@@ -290,6 +294,8 @@ console은 admin 로그인과 영화·극장 관리, user-app은 가입·로그�
 ### 6.1. BFF와 클라이언트 IP 경계
 
 두 앱의 BFF는 access·refresh token을 HttpOnly cookie에 보관하고, 만료 시 회전한 뒤 원 요청을 한 번 재시도한다. 응답을 캐시하지 않고 body 크기를 제한한다. catch-all proxy의 일부 auth 경로 차단만으로 권한을 보장하지 않으며, 최종 인가는 API guard가 담당한다.
+
+각 frontend의 `.env`는 API 대상과 proxy 설정을 소유한다. API의 HTTP 포트를 바꿔도 `API_BASE_URL`에 적힌 주소는 자동으로 바뀌지 않는다. frontend 포트 변경도 실행 명령·web Compose·tunnel과 개발 환경의 포트 전달을 함께 맞춰야 한다.
 
 console·user-app을 운영에 배포할 때는 두 Next.js origin을 신뢰할 수 있는 edge 뒤에 두고 브라우저의 직접 접근을 막아야 한다. edge는 외부 proxy IP 헤더를 그대로 신뢰하지 않고 실제 연결 주소를 기준으로 체인을 재구성해야 한다.
 

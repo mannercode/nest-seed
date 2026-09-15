@@ -12,9 +12,13 @@
 
 ## 1. 환경 변수는 재생성해야 반영된다
 
-개발용 env 파일은 Dev Container를 **만들 때** 주입된다. 값을 바꾼 뒤 `docker restart`만 하면 이전 값이 남는다. `Rebuild Container`로 재생성해야 한다. 앱은 env 파일을 직접 읽지 않고 실행 환경이 주입한 `process.env`만 검증한다.
+루트 `.env.infra`는 개발 인프라의 접속·이미지·포트와 고정 admin 값을, `.env.api`는 API 인증·HTTP·업무 설정을 소유한다. 두 파일은 Dev Container를 **만들 때** 주입되고, 컨테이너에서 실행한 pnpm과 앱·테스트가 이를 상속한다. 값을 바꾼 뒤 앱이나 컨테이너를 재시작해도 이전 값이 남으므로 `Rebuild Container`로 재생성해야 한다.
 
-값의 소유권과 포크 시 바꿀 대상은 [환경 변수](reference/environment.md)에 있다.
+공통 env 파일에는 `NODE_ENV`를 고정하지 않는다. 개발 진입점·검증 스택·Next.js·Vitest가 자신의 실행 모드를 정한다.
+
+Docker의 `--env-file`은 shell처럼 변수 참조와 따옴표를 해석하지 않는다. `API_URL=http://${API_HOST}:3000`은 `${API_HOST}`를, `PASSWORD="secret"`은 따옴표까지 값에 포함한다. 같은 파일을 shell 실행기와 Compose에서도 읽으므로, 파서에 따라 뜻이 달라지는 표현 대신 완성된 값을 적는다.
+
+Compose YAML의 `${...}` 보간과 서비스의 `env_file` 주입도 별개다. 실행기가 읽은 변수가 모든 서비스 컨테이너에 자동으로 전달되지는 않는다.
 
 `WORKSPACE_ROOT`는 스크립트가 사용하는 저장소 절대경로다. `COMPOSE_PROJECT_NAME`은 프로젝트 자원 이름을, `DEVCONTAINER_NETWORK`는 다른 Compose project에서도 공유할 외부 network 이름을 정한다. 둘의 초기 값은 같아도 web·tools의 project를 분리할 때 역할은 달라진다.
 
