@@ -1,13 +1,22 @@
-import { HttpExceptionLoggerFilter, HttpSuccessLoggerInterceptor } from '@mannercode/common'
+import {
+    AppLoggerService,
+    HttpExceptionLoggerFilter,
+    HttpSuccessLoggerInterceptor,
+    RestateEndpoint
+} from '@mannercode/common'
 import { Module } from '@nestjs/common'
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
 import {
     BookingModule,
     CatalogManagementModule,
     PurchaseModule,
+    PurchaseWorkflow,
+    PurchaseEventWorkflow,
     RecommendationModule,
-    ShowtimeCreationModule
+    ShowtimeCreationModule,
+    ShowtimeCreationWorkflow
 } from '#application'
+import { AppConfigService } from '#config'
 import {
     AdminsModule,
     MoviesModule,
@@ -74,6 +83,28 @@ import { AppConfigModule, GlobalModule, HealthModule } from './modules/index.js'
         AdminAuthGuard,
         LoginRateLimiterService,
         UserAuthGuard,
+        {
+            provide: RestateEndpoint,
+            inject: [
+                ShowtimeCreationWorkflow,
+                PurchaseWorkflow,
+                PurchaseEventWorkflow,
+                AppConfigService,
+                AppLoggerService
+            ],
+            useFactory: (
+                showtime: ShowtimeCreationWorkflow,
+                purchase: PurchaseWorkflow,
+                event: PurchaseEventWorkflow,
+                config: AppConfigService,
+                logger: AppLoggerService
+            ) =>
+                new RestateEndpoint(
+                    [showtime.definition, purchase.definition, event.definition],
+                    config.restate.servicePort,
+                    logger
+                )
+        },
         { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: ['/health'] },
         { provide: APP_PIPE, useClass: RequestValidationPipe },
         { provide: APP_FILTER, useClass: HttpExceptionLoggerFilter },

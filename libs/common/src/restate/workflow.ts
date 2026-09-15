@@ -3,7 +3,7 @@ import { TemporalJsonSerde } from './temporal-json.serde.js'
 
 export type WorkflowStepRetry = {
     initialRetryInterval?: number
-    maxRetryAttempts: number
+    maxRetryAttempts?: number
     maxRetryDuration?: number
 }
 
@@ -23,7 +23,7 @@ export function defineWorkflow<Input, Output>(definition: {
         abortTimeout: number
         inactivityTimeout: number
         workflowRetention: number
-        terminalError: (error: unknown) => { message: string; errorCode: number } | undefined
+        terminalError?: (error: unknown) => { message: string; errorCode: number } | undefined
     }
 }) {
     const { terminalError, ...options } = definition.options
@@ -42,12 +42,14 @@ export function defineWorkflow<Input, Output>(definition: {
         options: {
             ...options,
             serde: TemporalJsonSerde,
-            asTerminalError: (error: unknown) => {
-                const terminal = terminalError(error)
-                return terminal
-                    ? new TerminalError(terminal.message, { errorCode: terminal.errorCode })
-                    : undefined
-            }
+            asTerminalError:
+                terminalError &&
+                ((error: unknown) => {
+                    const terminal = terminalError(error)
+                    return terminal
+                        ? new TerminalError(terminal.message, { errorCode: terminal.errorCode })
+                        : undefined
+                })
         }
     })
 }

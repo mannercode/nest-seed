@@ -70,6 +70,13 @@ describe('defineWorkflow', () => {
             message: 'terminal',
             code: 409
         })
+
+        const retrying = defineWorkflow({
+            name: 'retrying-workflow',
+            run: execute,
+            options: { abortTimeout: 100, inactivityTimeout: 1000, workflowRetention: 5000 }
+        }) as unknown as { options: { asTerminalError?: unknown } }
+        expect(retrying.options.asTerminalError).toBeUndefined()
     })
 
     it('워크플로 취소 오류만 취소로 분류한다', () => {

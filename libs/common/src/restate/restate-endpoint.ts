@@ -24,8 +24,7 @@ export class RestateEndpoint implements OnApplicationBootstrap, OnApplicationShu
 
     async onApplicationBootstrap() {
         const handler = createEndpointHandler({
-            // Restate의 재시도 로그는 통합 테스트 출력량을 크게 늘리므로 테스트에서는 끈다.
-            logger: process.env.VITEST_POOL_ID ? () => undefined : this.restateLogger,
+            logger: this.restateLogger,
             services: this.services
         })
         const server = createServer(handler)
@@ -38,7 +37,7 @@ export class RestateEndpoint implements OnApplicationBootstrap, OnApplicationShu
 
         await new Promise<void>((resolve, reject) => {
             server.once('error', reject)
-            server.listen(this.testPortOrConfiguredPort(), '0.0.0.0', () => {
+            server.listen(this.servicePort, '0.0.0.0', () => {
                 server.off('error', reject)
                 resolve()
             })
@@ -64,10 +63,6 @@ export class RestateEndpoint implements OnApplicationBootstrap, OnApplicationShu
         clearTimeout(forceClose)
         this.sessions.clear()
         this.boundPort = 0
-    }
-
-    private testPortOrConfiguredPort() {
-        return process.env.VITEST_POOL_ID ? 0 : this.servicePort
     }
 
     private readonly restateLogger: LoggerTransport = (

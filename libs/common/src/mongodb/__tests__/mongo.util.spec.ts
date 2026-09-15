@@ -201,14 +201,14 @@ describe('QueryBuilder', () => {
         expect(new QueryBuilder().addId('_id').build({ allowEmpty: true })).toEqual({})
     })
 
-    it('in 조건의 중복을 제거하고 빈 입력은 생략한다', () => {
+    it('in 조건의 중복을 제거하고 빈 목록과 미지정을 구분한다', () => {
         const warn = vi.spyOn(Logger, 'warn').mockImplementation(() => undefined)
 
         expect(builder.addIn('entityId', ['a', 'a', 'b']).build()).toEqual({
             entityId: { $in: ['a', 'b'] }
         })
         expect(warn).toHaveBeenCalledWith(expect.stringContaining('Duplicate entityId'))
-        expect(new QueryBuilder().addIn('x', []).addIn('y').build({ allowEmpty: true })).toEqual({})
+        expect(new QueryBuilder().addIn('x', []).addIn('y').build()).toEqual({ x: { $in: [] } })
     })
 
     it('날짜 범위의 양끝 또는 한쪽 끝만 추가한다', () => {

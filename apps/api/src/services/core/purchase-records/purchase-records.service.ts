@@ -1,4 +1,4 @@
-import { type TransactionContext, DateUtil, ensure, mapDocToDto } from '@mannercode/common'
+import { type TransactionContext, ensure, mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { CreatePurchaseRecordDto, PurchaseRecordDto } from './dtos/index.js'
 import { PurchaseRecord, PurchaseRecordStatus } from './models/index.js'
@@ -50,107 +50,33 @@ export class PurchaseRecordsService {
         }
     }
 
-    async findPending({ id: purchaseRecordId }: { id: string }) {
-        const record = await this.repository.findPending({ id: purchaseRecordId })
-        return record ? this.toDto(record) : undefined
-    }
-
-    async getStatus({ id: purchaseRecordId }: { id: string }) {
-        const record = await this.repository.get({ id: purchaseRecordId })
-        return record.status
-    }
-
-    async findReconciliationCandidates({ before }: { before: Temporal.Instant }) {
-        const records = await this.repository.findReconciliationCandidates({
-            before,
-            now: DateUtil.now()
-        })
-        return this.toDtos(records)
-    }
-
-    async claimForReconciliation(
-        purchaseRecordId: string,
-        options: {
-            before: Temporal.Instant
-            leaseUntil: Temporal.Instant
-            now: Temporal.Instant
-            reconciliationId: string
-            completionId?: string
-            idempotencyError?: { response: Record<string, unknown>; status: number }
-        }
-    ) {
-        const record = await this.repository.claimForReconciliation(purchaseRecordId, options)
-        return record ? this.toDto(record) : undefined
-    }
-
-    async findPublicationCandidates({ before }: { before: Temporal.Instant }) {
-        const records = await this.repository.findPublicationCandidates({
-            before,
-            now: DateUtil.now()
-        })
-        return this.toDtos(records)
-    }
-
-    async claimEventPublication(
-        purchaseRecordId: string,
-        options: {
-            before: Temporal.Instant
-            leaseUntil: Temporal.Instant
-            now: Temporal.Instant
-            publicationId: string
-        }
-    ) {
-        const record = await this.repository.claimEventPublication(purchaseRecordId, options)
-        return record ? this.toDto(record) : undefined
-    }
-
-    async claimForCompletion(
-        purchaseRecordId: string,
-        completionId: string,
-        completionLeaseUntil: Temporal.Instant
-    ) {
-        const purchaseRecord = await this.repository.claimForCompletion(
-            purchaseRecordId,
-            completionId,
-            completionLeaseUntil
-        )
-        return this.toDto(purchaseRecord)
-    }
-
     async markCompleted(
         purchaseRecordId: string,
-        completionId: string,
-        transaction: TransactionContext | undefined = undefined,
-        idempotencyResponse: PurchaseRecordDto | undefined = undefined
+        response: PurchaseRecordDto,
+        transaction: TransactionContext
     ) {
-        const purchaseRecord = await this.repository.markCompleted(
-            purchaseRecordId,
-            completionId,
-            transaction,
-            idempotencyResponse
+        return this.toDto(
+            await this.repository.markCompleted(purchaseRecordId, response, transaction)
         )
-        return this.toDto(purchaseRecord)
     }
 
     async setPaymentId(purchaseRecordId: string, paymentId: string) {
-        const purchaseRecord = await this.repository.setPaymentId(purchaseRecordId, paymentId)
-        return this.toDto(purchaseRecord)
+        return this.toDto(await this.repository.setPaymentId(purchaseRecordId, paymentId))
     }
 
-    async markCancelled(purchaseRecordId: string, reconciliationId: string) {
-        await this.repository.markCancelled(purchaseRecordId, reconciliationId)
+    async beginCompensation(
+        purchaseRecordId: string,
+        error: { response: Record<string, unknown>; status: number }
+    ) {
+        return this.repository.beginCompensation(purchaseRecordId, error)
     }
 
-    async releaseReconciliationClaim(purchaseRecordId: string, reconciliationId: string) {
-        await this.repository.releaseReconciliationClaim(purchaseRecordId, reconciliationId)
+    async markCancelled(purchaseRecordId: string) {
+        await this.repository.markCancelled(purchaseRecordId)
     }
 
-    async markEventPublished(purchaseRecordId: string, publicationId: string) {
-        return this.repository.markEventPublished(purchaseRecordId, publicationId)
-    }
-
-    async releaseEventPublicationClaim(purchaseRecordId: string, publicationId: string) {
-        await this.repository.releaseEventPublicationClaim(purchaseRecordId, publicationId)
+    async markEventPublished(purchaseRecordId: string) {
+        await this.repository.markEventPublished(purchaseRecordId)
     }
 
     async findCompleted({ userId }: { userId: string }) {

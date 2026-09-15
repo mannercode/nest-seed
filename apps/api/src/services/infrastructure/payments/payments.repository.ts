@@ -1,5 +1,4 @@
 import {
-    type TransactionContext,
     CrudRepository,
     DateUtil,
     ensure,
@@ -28,20 +27,17 @@ export class PaymentsRepository extends CrudRepository<Payment> {
                         name: 'purchaseRecordId_partial_unique',
                         partialFilterExpression: { purchaseRecordId: { $type: 'string' } },
                         unique: true
-                    },
-                    { key: { requiresPurchaseResolution: 1, status: 1, createdAt: 1 } }
+                    }
                 ]
             }
         )
     }
 
     async cancel(paymentId: string) {
-        // 결제는 감사 추적을 위해 행을 지우지 않고, 취소와 resolution 해소를 같은 문서 쓰기로 확정한다.
+        // 결제 내역은 지우지 않고 취소 상태로 남긴다.
         const payment = await this.findAndUpdateDocument(
             this.activeFilter(this.idFilter(paymentId)),
-            this.timestamped({
-                $set: { requiresPurchaseResolution: false, status: PaymentStatus.Cancelled }
-            }),
+            this.timestamped({ $set: { status: PaymentStatus.Cancelled } }),
             { returnDocument: 'after' }
         )
         if (!payment) throw new NotFoundException(MongoErrors.DocumentNotFound(paymentId))
@@ -62,7 +58,6 @@ export class PaymentsRepository extends CrudRepository<Payment> {
                         createdAt: now,
                         deletedAt: null,
                         purchaseRecordId: createDto.purchaseRecordId,
-                        requiresPurchaseResolution: true,
                         status: PaymentStatus.Completed,
                         updatedAt: now,
                         userId: createDto.userId
@@ -83,36 +78,8 @@ export class PaymentsRepository extends CrudRepository<Payment> {
         return ensure(payment)
     }
 
-    async findResolutionCandidates({ before }: { before: Temporal.Instant }) {
-        const payments = await this.findDocuments(
-            this.activeFilter({
-                createdAt: { $lte: before },
-                requiresPurchaseResolution: true,
-                status: PaymentStatus.Completed
-            }),
-            { limit: 100, sort: { createdAt: 1 } }
-        )
-
-        return payments
-    }
-
     async findByPurchaseRecordId({ purchaseRecordId }: { purchaseRecordId: string }) {
         const payment = await this.findDocument(this.activeFilter({ purchaseRecordId }))
         return payment
-    }
-
-    async resolvePurchase(
-        purchaseRecordId: string,
-        transaction: TransactionContext | undefined = undefined
-    ) {
-        await this.updateDocument(
-            this.activeFilter({
-                purchaseRecordId,
-                requiresPurchaseResolution: true,
-                status: PaymentStatus.Completed
-            }),
-            this.timestamped({ $set: { requiresPurchaseResolution: false } }),
-            { transaction }
-        )
     }
 }

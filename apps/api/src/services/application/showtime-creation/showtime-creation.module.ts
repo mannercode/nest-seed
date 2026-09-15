@@ -11,12 +11,11 @@ import {
 import { ShowtimeCreationOperationRepository } from './internal/showtime-creation-operation.repository.js'
 import { ShowtimeCreationEvents } from './showtime-creation.events.js'
 import { ShowtimeCreationService } from './showtime-creation.service.js'
-import { ShowtimeCreationRestateEndpoint } from './worker/restate-endpoint.service.js'
 import { ShowtimeCreationWorkflowClient } from './worker/restate-workflow-client.service.js'
 import { ShowtimeCreationWorkflow } from './worker/workflow.js'
 
 @Module({
-    exports: [ShowtimeCreationService, ShowtimeCreationEvents],
+    exports: [ShowtimeCreationService, ShowtimeCreationEvents, ShowtimeCreationWorkflow],
     imports: [
         NatsPubSubModule.register({ natsName: NATS_CONNECTION_NAME }),
         MoviesModule,
@@ -33,8 +32,7 @@ import { ShowtimeCreationWorkflow } from './worker/workflow.js'
         ShowtimeCreationSubmissionRepository,
         ShowtimeCreationPersistenceService,
         ShowtimeCreationWorkflow,
-        ShowtimeCreationWorkflowClient,
-        ShowtimeCreationRestateEndpoint
+        ShowtimeCreationWorkflowClient
     ]
 })
 export class ShowtimeCreationModule {}

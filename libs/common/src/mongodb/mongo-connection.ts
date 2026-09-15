@@ -1,23 +1,17 @@
 import type { OnModuleDestroy } from '@nestjs/common'
 import { MongoClient, type Db, type MongoClientOptions } from 'mongodb'
 
-export type MongoConnectionOptions = {
-    uri: string
-    dbName: string
-    appName?: string
-    lifetime: 'application' | 'test-file'
-}
+export type MongoConnectionOptions = { uri: string; dbName: string; appName?: string }
 
 export function createMongoDriverOptions({
-    appName,
-    lifetime
-}: Pick<MongoConnectionOptions, 'appName' | 'lifetime'>): MongoClientOptions {
+    appName
+}: Pick<MongoConnectionOptions, 'appName'>): MongoClientOptions {
     return {
         appName,
         // 연결은 필요할 때 만들고, 요청 처리의 대기 시간만 제한한다.
         minPoolSize: 0,
         maxPoolSize: 200,
-        waitQueueTimeoutMS: lifetime === 'application' ? 5000 : 0,
+        waitQueueTimeoutMS: 5000,
         writeConcern: { journal: true, w: 'majority', wtimeoutMS: 5000 }
     }
 }

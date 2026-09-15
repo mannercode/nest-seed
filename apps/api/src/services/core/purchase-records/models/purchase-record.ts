@@ -8,7 +8,6 @@ export const PurchaseRecordStatus = {
     Cancelled: 'cancelled',
     Compensating: 'compensating',
     Completed: 'completed',
-    Completing: 'completing',
     Pending: 'pending'
 } as const
 
@@ -38,18 +37,6 @@ export class PurchaseRecord extends CrudDocument {
     userId: string
 
     paymentId: null | string
-
-    completionId: null | string
-
-    completionLeaseUntil: Temporal.Instant | null
-
-    reconciliationId: null | string
-
-    reconciliationLeaseUntil: Temporal.Instant | null
-
-    purchaseEventPublicationId: null | string
-
-    purchaseEventPublicationLeaseUntil: Temporal.Instant | null
 
     purchaseEventStatus: PurchaseEventStatus
 

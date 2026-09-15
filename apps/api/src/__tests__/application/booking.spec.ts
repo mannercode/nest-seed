@@ -54,6 +54,16 @@ describe('BookingService', () => {
             user = resources.user
         })
 
+        it('선택한 날짜에 상영이 없으면 빈 목록을 반환한다', async () => {
+            const theaterId = ensure(createdTickets[0]).theaterId
+
+            await fix.httpClient
+                .get(
+                    `/booking/movies/${movie.id}/theaters/${theaterId}/showdates/29990201/showtimes`
+                )
+                .ok([])
+        })
+
         it('극장, 상영일, 상영 시간, 티켓을 차례로 조회해 티켓을 보유한다', async () => {
             let theater: TheaterDto
             let showdate: Temporal.PlainDate

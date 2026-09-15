@@ -27,8 +27,7 @@ describe('MongoModule', () => {
     it('주입한 설정으로 연결하고 종료 시 소유한 client를 닫는다', async () => {
         const options = {
             uri: process.env.TESTLIB_MONGO_URI!,
-            dbName: process.env.TESTLIB_MONGO_DATABASE!,
-            lifetime: 'test-file' as const
+            dbName: process.env.TESTLIB_MONGO_DATABASE!
         }
         const config = Symbol('config')
         @Global()
@@ -45,6 +44,7 @@ describe('MongoModule', () => {
         try {
             await expect(connection.ping()).resolves.toBeUndefined()
             expect(connection.db.databaseName).toBe(options.dbName)
+            expect(connection.client.options.waitQueueTimeoutMS).toBe(5000)
         } finally {
             await module.close()
         }
@@ -61,11 +61,7 @@ describe('MongoConnection.connect', () => {
             const close = vi.spyOn(MongoClient.prototype, 'close')
             if (cleanupFails) close.mockRejectedValueOnce(new Error('cleanup failed'))
             await expect(
-                MongoConnection.connect({
-                    uri: 'mongodb://localhost:27017',
-                    dbName: 'unused',
-                    lifetime: 'test-file'
-                })
+                MongoConnection.connect({ uri: 'mongodb://localhost:27017', dbName: 'unused' })
             ).rejects.toBe(failure)
             expect(close).toHaveBeenCalledOnce()
         }

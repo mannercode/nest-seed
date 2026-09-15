@@ -1,4 +1,9 @@
-import { AppLoggerService, MongoConnection } from '@mannercode/common'
+import {
+    AppLoggerService,
+    MongoConnection,
+    RestateEndpoint,
+    type DurableWorkflowSubmission
+} from '@mannercode/common'
 import {
     createHttpTestContext,
     isDebuggingEnabled,
@@ -13,10 +18,11 @@ import { AppConfigService } from '#config'
 import { getSharedTestMongoConnection } from '../../../scripts/shared-test-mongo-connection.cjs'
 import { AppModule } from '../../app.module.js'
 import { configureTemporalJson } from '../../configure-temporal-json.js'
+import { ShowtimeCreationWorkflowClient } from '../../services/application/showtime-creation/worker/index.js'
 import {
-    ShowtimeCreationRestateEndpoint,
-    ShowtimeCreationWorkflowClient
-} from '../../services/application/showtime-creation/worker/index.js'
+    PurchaseWorkflowClient,
+    PurchaseEventWorkflowClient
+} from '../../services/application/purchase/worker/index.js'
 
 type AppTestOptions = ModuleMetadataEx & { enableRestate?: boolean }
 
@@ -40,17 +46,21 @@ export async function createAppTestContext({
             ? []
             : [
                   {
-                      original: ShowtimeCreationRestateEndpoint,
+                      original: RestateEndpoint,
                       replacement: { onApplicationBootstrap() {}, onApplicationShutdown() {} }
                   },
-                  {
-                      original: ShowtimeCreationWorkflowClient,
+                  ...[
+                      ShowtimeCreationWorkflowClient,
+                      PurchaseWorkflowClient,
+                      PurchaseEventWorkflowClient
+                  ].map((original) => ({
+                      original,
                       replacement: {
                           submit() {
                               throw new Error('Restate is disabled for this test context.')
                           }
                       }
-                  }
+                  }))
               ]),
         ...(metadata.overrideProviders ?? [])
     ]
@@ -76,7 +86,12 @@ export async function createAppTestContext({
     try {
         if (enableRestate) {
             restateDeploymentId = await registerRestateEndpoint(ctx)
-            trackRestateCompletions(ctx, restateCompletions)
+            trackRestateCompletions(
+                ctx.module.get(ShowtimeCreationWorkflowClient),
+                restateCompletions
+            )
+            trackRestateCompletions(ctx.module.get(PurchaseWorkflowClient), restateCompletions)
+            trackRestateCompletions(ctx.module.get(PurchaseEventWorkflowClient), restateCompletions)
         }
         await stopAllCronJobs(ctx)
     } catch (setupError) {
@@ -93,7 +108,7 @@ export async function createAppTestContext({
     const teardown = async () => {
         try {
             if (enableRestate) {
-                await Promise.all(restateCompletions)
+                while (restateCompletions.size > 0) await Promise.all(restateCompletions)
                 await unregisterRestateDeployment(restateDeploymentId)
             }
         } finally {
@@ -104,8 +119,13 @@ export async function createAppTestContext({
     return { ...ctx, teardown }
 }
 
-function trackRestateCompletions(ctx: HttpTestContext, completions: Set<Promise<void>>) {
-    const client = ctx.module.get(ShowtimeCreationWorkflowClient)
+function trackRestateCompletions<Input, Output>(
+    client: {
+        submit(input: Input, id: string): Promise<DurableWorkflowSubmission<Output>>
+        waitForCompletion(submission: DurableWorkflowSubmission<Output>): Promise<Output>
+    },
+    completions: Set<Promise<void>>
+) {
     const submit = client.submit.bind(client)
     client.submit = async (...args) => {
         const submission = await submit(...args)
@@ -125,7 +145,7 @@ function trackRestateCompletions(ctx: HttpTestContext, completions: Set<Promise<
 async function registerRestateEndpoint(ctx: HttpTestContext) {
     const adminUrl = requiredEnvironment('RESTATE_ADMIN_URL')
     const containerName = requiredEnvironment('COMPOSE_PROJECT_NAME')
-    const endpoint = ctx.module.get(ShowtimeCreationRestateEndpoint)
+    const endpoint = ctx.module.get(RestateEndpoint)
     const uri = `http://${containerName}:${endpoint.port}`
     const response = await fetch(`${adminUrl}/deployments`, {
         body: JSON.stringify({ force: false, uri, use_http_11: false }),

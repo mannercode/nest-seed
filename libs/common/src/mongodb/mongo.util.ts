@@ -113,7 +113,7 @@ export class QueryBuilder<_T> {
     }
 
     addIn(field: string, ids?: string[]): this {
-        if (ids && ids.length > 0) {
+        if (ids !== undefined) {
             const uniqueIds = uniq(ids)
             Assume.equalLength(
                 uniqueIds,

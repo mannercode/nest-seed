@@ -1,4 +1,4 @@
-import { AppLoggerService, JwtAuthModule, SecurityEvent, TimeUtil } from '@mannercode/common'
+import { JwtAuthModule, TimeUtil } from '@mannercode/common'
 import { Module } from '@nestjs/common'
 import { AppConfigService, REDIS_CONNECTION_NAME } from '#config'
 import { AdminsRepository } from './admins.repository.js'
@@ -9,11 +9,11 @@ import { ADMIN_JWT_AUTH_NAME, AdminAuthenticationService } from './internal/inde
     exports: [AdminsService],
     imports: [
         JwtAuthModule.register({
-            inject: [AppConfigService, AppLoggerService],
+            inject: [AppConfigService],
             name: ADMIN_JWT_AUTH_NAME,
             prefix: (config: AppConfigService) => `jwtauth:${config.projectId}`,
             redisName: REDIS_CONNECTION_NAME,
-            useFactory: ({ adminAuth }: AppConfigService, logger: AppLoggerService) => ({
+            useFactory: ({ adminAuth }: AppConfigService) => ({
                 auth: {
                     accessSecret: adminAuth.accessSecret,
                     accessTokenTtlMs: TimeUtil.toMs(adminAuth.accessTokenExpiration),
@@ -21,11 +21,6 @@ import { ADMIN_JWT_AUTH_NAME, AdminAuthenticationService } from './internal/inde
                     issuer: adminAuth.issuer,
                     refreshSecret: adminAuth.refreshSecret,
                     refreshTokenTtlMs: TimeUtil.toMs(adminAuth.refreshTokenExpiration)
-                },
-                onEvent: (event: SecurityEvent) => {
-                    const message = `security_event:${event.type}`
-                    if (event.type === 'verify.failed') logger.warn(message, event)
-                    else logger.log(message, event)
                 }
             })
         })

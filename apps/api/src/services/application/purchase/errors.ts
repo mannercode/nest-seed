@@ -13,6 +13,10 @@ export const PurchaseErrors = {
         code: 'ERR_PURCHASE_NOT_HELD',
         message: 'Only held items can be purchased.'
     }),
+    MultipleShowtimes: () => ({
+        code: 'ERR_PURCHASE_MULTIPLE_SHOWTIMES',
+        message: 'A purchase can only contain tickets for one showtime.'
+    }),
     TotalPriceMismatch: (expectedPrice: number, totalPrice: number) => ({
         code: 'ERR_PURCHASE_TOTAL_PRICE_MISMATCH',
         message: 'The total price does not match the server-side calculation.',

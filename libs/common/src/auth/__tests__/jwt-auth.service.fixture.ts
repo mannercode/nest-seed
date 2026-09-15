@@ -2,19 +2,12 @@ import { createTestContext, withTestId } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
 import { Redis } from 'ioredis'
 import { getRedisConnectionToken, RedisModule } from '../../redis/index.js'
-import {
-    InjectJwtAuth,
-    JwtAuthModule,
-    JwtAuthService,
-    OnSecurityEvent,
-    SecurityEvent
-} from '../index.js'
+import { InjectJwtAuth, JwtAuthModule, JwtAuthService } from '../index.js'
 
 export const TEST_AUTH_AUDIENCE = 'test-audience'
 export const TEST_AUTH_ISSUER = 'test-issuer'
 
 export type JwtAuthServiceFixture = {
-    events: SecurityEvent[]
     jwtService: JwtAuthService
     redis: Redis
     teardown: () => Promise<void>
@@ -26,11 +19,6 @@ class TestInjectJwtAuthService {
 }
 
 export async function createJwtAuthServiceFixture() {
-    const events: SecurityEvent[] = []
-    const onEvent: OnSecurityEvent = (event) => {
-        events.push(event)
-    }
-
     const { close, module } = await createTestContext({
         imports: [
             RedisModule.forRoot({ type: 'single', url: process.env.TESTLIB_REDIS_URL }),
@@ -45,8 +33,7 @@ export async function createJwtAuthServiceFixture() {
                             issuer: TEST_AUTH_ISSUER,
                             refreshSecret: 'refreshSecret',
                             refreshTokenTtlMs: 3000
-                        },
-                        onEvent
+                        }
                     }
                 }
             })
@@ -61,15 +48,10 @@ export async function createJwtAuthServiceFixture() {
         await close()
     }
 
-    return { events, jwtService, redis, teardown }
+    return { jwtService, redis, teardown }
 }
 
 export async function createJwtAuthServiceFixtureWithShortTtl() {
-    const events: SecurityEvent[] = []
-    const onEvent: OnSecurityEvent = (event) => {
-        events.push(event)
-    }
-
     const { close, module } = await createTestContext({
         imports: [
             RedisModule.forRoot({ type: 'single', url: process.env.TESTLIB_REDIS_URL }),
@@ -85,8 +67,7 @@ export async function createJwtAuthServiceFixtureWithShortTtl() {
                             issuer: TEST_AUTH_ISSUER,
                             refreshSecret: 'refreshSecret',
                             refreshTokenTtlMs: 3000
-                        },
-                        onEvent
+                        }
                     }
                 }
             })
@@ -100,5 +81,5 @@ export async function createJwtAuthServiceFixtureWithShortTtl() {
         await close()
     }
 
-    return { events, jwtService, redis, teardown }
+    return { jwtService, redis, teardown }
 }
