@@ -27,13 +27,12 @@ const VALIDATE_AND_CREATE_RETRY = {
     maxRetryAttempts: 4,
     maxRetryDuration: 195_000
 }
-const DEFAULT_RUN_TIMEOUT_MS = 60_000
+const RUN_TIMEOUT_MS = 60_000
 
 type WorkflowDependencies = {
     events: Pick<ShowtimeCreationEvents, 'emitStatusChanged'>
     persistence: Pick<ShowtimeCreationPersistenceService, 'validateAndCreate'>
     projectId: string
-    runTimeoutMs?: number
 }
 
 export function getShowtimeCreationWorkflowName(projectId: string) {
@@ -43,8 +42,7 @@ export function getShowtimeCreationWorkflowName(projectId: string) {
 export function createShowtimeCreationWorkflow({
     events,
     persistence,
-    projectId,
-    runTimeoutMs = DEFAULT_RUN_TIMEOUT_MS
+    projectId
 }: WorkflowDependencies) {
     const logger = new Logger(ShowtimeCreationWorkflow.name)
     const emit = (ctx: DurableWorkflowContext, name: string, event: ShowtimeCreationEvent) =>
@@ -82,7 +80,7 @@ export function createShowtimeCreationWorkflow({
                             const { createDto, sagaId } = input
                             const signal = AbortSignal.any([
                                 ctx.attemptSignal(),
-                                AbortSignal.timeout(runTimeoutMs)
+                                AbortSignal.timeout(RUN_TIMEOUT_MS)
                             ])
 
                             return persistence.validateAndCreate(createDto, sagaId, signal)
@@ -130,7 +128,7 @@ export function createShowtimeCreationWorkflow({
                 }
                 return undefined
             },
-            inactivityTimeout: runTimeoutMs + 5_000,
+            inactivityTimeout: RUN_TIMEOUT_MS + 5_000,
             workflowRetention: 60 * 60 * 1_000
         }
     })

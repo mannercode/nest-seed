@@ -361,6 +361,17 @@ describe('UsersService', () => {
                 .ok({ schema: paginationResultSchema(UserSchema), expected })
         })
 
+        it('정렬과 페이지 조건에 맞는 고객을 반환한다', async () => {
+            await fix.httpClient
+                .get('/users')
+                .headers(adminAuth)
+                .query({ orderby: 'email:asc', page: '2', size: '2' })
+                .ok({
+                    schema: paginationResultSchema(UserSchema),
+                    expected: { items: [userB1, userB2], page: 2, size: 2, total: 4 }
+                })
+        })
+
         it('name 부분 일치로 필터링한다', async () => {
             await fix.httpClient
                 .get('/users')

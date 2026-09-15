@@ -9,6 +9,7 @@ import {
     type TicketDto,
     type UserDto,
     TicketHoldingService,
+    TicketsService,
     TheaterSchema,
     TicketSchema
 } from '#core'
@@ -65,6 +66,23 @@ describe('BookingService', () => {
                     `/booking/movies/${movie.id}/theaters/${theaterId}/showdates/29990201/showtimes`
                 )
                 .ok({ schema: BookingShowtimeSchema.array(), expected: [] })
+        })
+
+        it('상영의 티켓 집계가 누락되면 500을 반환한다', async () => {
+            const theaterId = ensure(createdTickets[0]).theaterId
+            vi.spyOn(fix.module.get(TicketsService), 'aggregateSales').mockResolvedValueOnce([])
+
+            await fix.httpClient
+                .get(
+                    `/booking/movies/${movie.id}/theaters/${theaterId}/showdates/29990101/showtimes`
+                )
+                .send(500, {
+                    expected: {
+                        statusCode: 500,
+                        message: 'Internal server error',
+                        error: 'Internal Server Error'
+                    }
+                })
         })
 
         it('극장, 상영일, 상영 시간, 티켓을 차례로 조회해 티켓을 보유한다', async () => {

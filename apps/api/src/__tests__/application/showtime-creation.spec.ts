@@ -723,6 +723,47 @@ describe('ShowtimeCreationService', () => {
                 })
         })
 
+        it('같은 극장 ID가 중복되면 400을 반환한다', async () => {
+            await fix.httpClient
+                .post('/showtime-creation/showtimes')
+                .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                .headers({ 'Idempotency-Key': randomUUID() })
+                .body({ ...buildCreateDto(), theaterIds: [theater.id, theater.id] })
+                .badRequest({
+                    expected: Errors.RequestValidation.Failed([
+                        {
+                            constraints: { validation: 'Duplicate theater IDs are not allowed' },
+                            field: 'theaterIds'
+                        }
+                    ])
+                })
+        })
+
+        it('극장이 20개를 넘어도 전체 상영 수가 상한 이하면 생성한다', async () => {
+            const theaters = await Promise.all(Array.from({ length: 20 }, () => createTheater(fix)))
+            const completion = waitForCompletion(fix, adminAccessToken, 'succeeded')
+
+            const { body } = await fix.httpClient
+                .post('/showtime-creation/showtimes')
+                .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                .headers({ 'Idempotency-Key': randomUUID() })
+                .body({
+                    ...buildCreateDto(),
+                    theaterIds: [theater.id, ...theaters.map(({ id }) => id)]
+                })
+                .accepted({ schema: RequestShowtimeCreationResponseSchema })
+
+            await expect(completion).resolves.toEqual({
+                sagaId: body.sagaId,
+                status: 'succeeded',
+                createdShowtimeCount: 21,
+                createdTicketCount: expect.any(Number)
+            })
+            await expect(showtimesService.search({ sagaIds: [body.sagaId] })).resolves.toHaveLength(
+                21
+            )
+        })
+
         describe('트랜잭션 안에서 티켓을 저장한 뒤 실패하면', () => {
             let sagaId: string
             let createShowtimesSpy: MockInstance
