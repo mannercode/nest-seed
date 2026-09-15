@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import {
     defineWorkflow,
     isWorkflowCancellation,
@@ -11,11 +11,9 @@ import type {
     ValidateAndCreateResult
 } from '../internal/index.js'
 import type { ShowtimeCreationWorkflowInput } from './types.js'
-// 이 직접 import는 internal barrel → orchestrator → worker로 되돌아오는 Nest DI 순환을 피한다.
 import { ShowtimeCreationPersistenceService } from '../internal/showtime-creation-persistence.service.js'
 import { ShowtimeCreationEvents } from '../showtime-creation.events.js'
 
-const EVENT_RETRY = { initialRetryInterval: 1_000, maxRetryAttempts: 3, maxRetryDuration: 35_000 }
 const EVENT_ATTEMPT_TIMEOUT_MS = 10_000
 const VALIDATE_AND_CREATE_RETRY = {
     initialRetryInterval: 1_000,
@@ -41,8 +39,23 @@ export function createShowtimeCreationWorkflow({
     projectId,
     runTimeoutMs = DEFAULT_RUN_TIMEOUT_MS
 }: WorkflowDependencies) {
+    const logger = new Logger(ShowtimeCreationWorkflow.name)
     const emit = (ctx: DurableWorkflowContext, name: string, event: ShowtimeCreationEvent) =>
-        ctx.run(name, () => withEventAttemptTimeout(events.emitStatusChanged(event)), EVENT_RETRY)
+        ctx.run(
+            name,
+            async () => {
+                try {
+                    await withEventAttemptTimeout(events.emitStatusChanged(event))
+                } catch (error) {
+                    if (isWorkflowCancellation(error)) throw error
+                    logger.warn('Showtime progress notification failed', {
+                        error,
+                        sagaId: event.sagaId
+                    })
+                }
+            },
+            { maxRetryAttempts: 1 }
+        )
 
     return defineWorkflow({
         run: async (

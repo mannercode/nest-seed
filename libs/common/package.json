@@ -55,5 +55,15 @@
         "testcontainers": "12.1.0",
         "vitest": "5.0.0",
         "zod": "4.6.2"
+    },
+    "exports": {
+        ".": {
+            "types": "./_output/dist/index.d.ts",
+            "default": "./_output/dist/index.js"
+        },
+        "./bff": {
+            "types": "./_output/dist/bff/index.d.ts",
+            "default": "./_output/dist/bff/index.js"
+        }
     }
 }

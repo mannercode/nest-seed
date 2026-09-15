@@ -19,7 +19,7 @@
 | 다른 복제본이 처리하면 건너뛰어도 되는 작업 | `withLock`         | 즉시 포기                                   |
 | 경쟁 비용을 줄이려고 기다려야 하는 요청     | `withLockBlocking` | 제한된 시간 동안 기다리고 초과 시 예외 발생 |
 
-건너뛰어도 사용자에게 영향이 없는 만료 업로드 정리 cron은 `withLock`으로 한 복제본만 실행한다. 구매 흐름은 같은 티켓 묶음의 요청을 `withLockBlocking`으로 직렬화해, 경쟁에서 진 요청이 결제 생성과 보상까지 진행하는 낭비를 줄인다. 이중 판매 방지 자체는 티켓의 원자 조건부 전이(Available→Sold)가 보장한다.
+건너뛰어도 사용자에게 영향이 없는 만료 업로드 정리 cron은 `withLock`으로 한 복제본만 실행한다. 구매에는 추가 락을 두지 않는다. 티켓 묶음 전체를 키로 잡아도 일부 좌석만 겹치는 요청은 직렬화하지 못하기 때문이다. 이중 판매는 티켓의 원자 조건부 전이(Available→Sold)가 막고, 경합에서 진 요청의 결제는 기존 보상 흐름으로 정리한다. `withLockBlocking` 공용 유틸은 대기가 필요한 소비자를 위해 유지한다.
 
 ### 검토했던 대안
 
@@ -49,7 +49,7 @@ NATS를 고른 이유는 한 도구로 여러 동작을 처리할 수 있기 때
 
 ### 전달 보장의 경계
 
-Core NATS는 현재 연결된 구독자에게 전달하고, 놓친 진행 상태는 별도 상태 조회로 복구한다. `flush()`도 메시지 저장이나 소비자 처리 ack를 뜻하지 않으므로, 나중에 반드시 처리해야 할 작업 큐로 사용할 수는 없다.
+Core NATS는 현재 연결된 구독자에게 전달하고, 놓친 진행 상태는 별도 상태 조회로 복구한다. 상영 진행 알림은 발행 실패나 10초 제한 초과를 기록하고 다음 업무 단계로 진행한다. 알림 발행을 재시도하거나 그 실패를 상영 생성의 실패로 바꾸지 않으며 종결 결과는 Restate 상태 API로 조회한다. `flush()`도 메시지 저장이나 소비자 처리 ack를 뜻하지 않으므로, 나중에 반드시 처리해야 할 작업 큐로 사용할 수는 없다.
 
 구매는 MongoDB outbox와 JetStream을 함께 사용한다. DB 갱신·발행 ack, 소비자의 부수 효과·처리 ack는 원자적이지 않으므로 계약은 **at-least-once**다. broker의 중복 억제 기간도 유한하다. 실제 부수 효과를 실행하는 소비자는 `purchaseRecordId`를 durable inbox 또는 외부 provider의 idempotency key로 써야 한다.
 
@@ -83,7 +83,7 @@ Core NATS는 현재 연결된 구독자에게 전달하고, 놓친 진행 상태
 ### 트레이드오프
 
 - Journal은 완료된 step 결과를 재사용하지만 외부 효과 성공과 journal 기록 사이의 장애까지 원자적으로 묶지는 않는다. `ctx.run` 함수는 다시 호출될 수 있으므로 MongoDB operation unique key나 외부 provider idempotency key가 여전히 필요하다.
-- 상태 이벤트 step도 재시도되므로 같은 이벤트가 중복될 수 있다. Core NATS는 저장·redelivery를 제공하지 않아 SSE 연결 전 이벤트를 복구하지 않는다. 종결 상태는 보존 기간 안에 Restate workflow 출력으로 다시 읽고, MongoDB가 업무 결과의 기준이며 SSE는 진행 알림이다.
+- 상태 이벤트의 별도 발행 재시도는 없지만, 발행 성공 뒤 journal 기록 전 프로세스가 종료되면 step 재실행으로 같은 이벤트가 중복될 수 있다. Core NATS는 저장·redelivery를 제공하지 않아 SSE 연결 전 이벤트를 복구하지 않는다. 종결 상태는 보존 기간 안에 Restate workflow 출력으로 다시 읽고, MongoDB가 업무 결과의 기준이며 SSE는 진행 알림이다.
 - 모든 API 복제본이 HTTP/2 endpoint를 열고 Admin API에 배포 URI를 등록해야 한다.
 
 ### Endpoint와 revision 전환
@@ -154,7 +154,7 @@ Dev Container와 앱의 Node는 네이티브 Temporal을 사용하는 런타임�
 
 모든 테스트 코드에 선 커버리지를 강제하지는 않는다. 브라우저, 외부 HTTP race, shell 계약처럼 행동 경계가 핵심인 하네스는 실제 소비 경로의 성공으로 검증한다. 이는 구현 코드의 임계치를 피하는 예외와 다르다. 커버리지는 실행 여부만 말할 뿐 단언의 타당성, race 안전성, 요구사항 충족을 보장하지 않는다.
 
-현재 `apps/api`와 `libs/common`이 Vitest V8 coverage를 수집한다. `libs/testing`의 helper는 자체 테스트와 소비자 스펙이, 외부 HTTP/SSE 하네스는 race 시나리오가, BFF는 브라우저 E2E의 소비 경로가 검증한다. 테스트 실행 도구 자체의 검사 범위는 해당 package script를 따른다.
+현재 `apps/api`와 `libs/common`이 Vitest V8 coverage를 수집한다. 공통 BFF는 단위 테스트로 쿠키·동시 갱신·API 호출 실패 처리를 검증하고, 브라우저 E2E로 두 앱과 API의 연결을 확인한다. `libs/testing`의 helper는 자체 테스트와 소비자 스펙이, 외부 HTTP/SSE 하네스는 race 시나리오가 검증한다. 테스트 실행 도구 자체의 검사 범위는 해당 package script를 따른다.
 
 반복 CI가 coverage 수집을 끄는 것은 동일 동작의 간헐 실패를 찾기 위한 별도 실행이다. 필수 AtoZ의 100% 게이트를 대신하지 않는다.
 

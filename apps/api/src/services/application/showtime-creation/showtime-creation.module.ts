@@ -5,7 +5,6 @@ import { MoviesModule, ShowtimesModule, TheatersModule, TicketsModule } from '#c
 import {
     ShowtimeBulkCreatorService,
     ShowtimeBulkValidatorService,
-    ShowtimeCreationOrchestratorService,
     ShowtimeCreationPersistenceService,
     ShowtimeCreationSubmissionRepository
 } from './internal/index.js'
@@ -28,7 +27,6 @@ import { ShowtimeCreationWorkflow } from './worker/workflow.js'
     providers: [
         ShowtimeCreationEvents,
         ShowtimeCreationService,
-        ShowtimeCreationOrchestratorService,
         ShowtimeBulkValidatorService,
         ShowtimeBulkCreatorService,
         ShowtimeCreationOperationRepository,

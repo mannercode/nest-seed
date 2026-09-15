@@ -30,7 +30,6 @@ export class AppConfigService extends BaseConfigService {
         AUTH_ADMIN_REFRESH_TOKEN_EXPIRATION: requiredString,
         AUTH_AUDIENCE: requiredString,
         AUTH_ISSUER: requiredString,
-        AUTH_LOGIN_ACCOUNT_FAILURE_LIMIT: numberFromEnvironment.pipe(z.number().int().min(1)),
         AUTH_LOGIN_FAILURE_WINDOW: requiredString,
         AUTH_LOGIN_IP_FAILURE_LIMIT: numberFromEnvironment.pipe(z.number().int().min(1)),
         AUTH_REFRESH_SECRET: z.string().min(20),
@@ -101,7 +100,6 @@ export class AppConfigService extends BaseConfigService {
 
     get loginRateLimit() {
         return {
-            accountFailureLimit: this.getNumber('AUTH_LOGIN_ACCOUNT_FAILURE_LIMIT'),
             failureWindow: this.getString('AUTH_LOGIN_FAILURE_WINDOW'),
             ipFailureLimit: this.getNumber('AUTH_LOGIN_IP_FAILURE_LIMIT')
         }

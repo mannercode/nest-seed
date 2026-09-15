@@ -42,7 +42,7 @@ export class MoviesRepository extends CrudRepository<Movie> {
         // finalize가 동시에 두 번 들어오면 load→push→save가 같은 옛 배열을 읽어 assetId를 중복 추가한다.
         // $addToSet은 단일 문서 원자 연산이라 중복을 차단한다 — 트랜잭션·락 없이 끝난다.
         await this.updateDocument(
-            this.activeFilter({ _id: movieId }),
+            this.activeFilter(this.idFilter(movieId)),
             this.timestamped({ $addToSet: { assetIds: assetId } })
         )
     }
@@ -51,7 +51,7 @@ export class MoviesRepository extends CrudRepository<Movie> {
         // load→filter→save는 같은 movie의 다른 asset을 동시에 만지면 한쪽 변경을 덮어쓴다(lost update).
         // $pull은 항목 단위 원자 갱신이라 그 충돌이 없다. addAsset($addToSet)과 짝을 이룬다.
         await this.updateDocument(
-            this.activeFilter({ _id: movieId }),
+            this.activeFilter(this.idFilter(movieId)),
             this.timestamped({ $pull: { assetIds: assetId } })
         )
     }
@@ -110,10 +110,10 @@ export class MoviesRepository extends CrudRepository<Movie> {
     }
 
     private async updateWithCas(movieId: string, fields: Partial<Movie>) {
-        const _id = movieId
+        const idFilter = this.idFilter(movieId)
 
         for (let attempt = 0; attempt < MOVIE_CAS_ATTEMPTS; attempt++) {
-            const stored = await this.findDocument(this.activeFilter({ _id }))
+            const stored = await this.findDocument(this.activeFilter(idFilter))
             if (!stored) throw new NotFoundException(MongoErrors.DocumentNotFound(movieId))
 
             const current = this.toDomainDocument(stored)
@@ -121,7 +121,7 @@ export class MoviesRepository extends CrudRepository<Movie> {
             this.validate(next)
 
             const updated = await this.findAndUpdateDocument(
-                this.activeFilter({ _id, __v: stored.__v }),
+                this.activeFilter({ ...idFilter, __v: stored.__v }),
                 this.timestamped({ $set: fields as MongoDocument }),
                 { returnDocument: 'after' }
             )

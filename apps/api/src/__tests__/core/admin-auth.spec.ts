@@ -11,7 +11,6 @@ import {
     createAppTestContext
 } from '../helpers/index.js'
 
-const ACCOUNT_FAILURE_LIMIT = 5
 const IP_FAILURE_LIMIT = 50
 const LOGIN_RATE_LIMITED_ERROR = {
     code: 'ERR_AUTH_LOGIN_RATE_LIMITED',
@@ -65,56 +64,19 @@ describe('AdminAuthentication', () => {
                 .unauthorized(Errors.Auth.Unauthorized())
         })
 
-        it('정규화한 계정의 실패가 5회를 넘으면 429를 반환한다', async () => {
-            for (let index = 0; index < ACCOUNT_FAILURE_LIMIT; index++) {
+        it('다른 IP의 실패가 정상 계정의 로그인을 잠그지 않는다', async () => {
+            for (let index = 0; index < 6; index++) {
                 await fix.httpClient
                     .post('/admins/login')
                     .headers({ 'X-Forwarded-For': `198.51.100.${index + 1}` })
-                    .body({
-                        email: index % 2 === 0 ? 'ADMIN@mail.com' : 'admin@MAIL.com',
-                        password: 'wrong password'
-                    })
-                    .unauthorized(Errors.Auth.Unauthorized())
-            }
-
-            await fix.httpClient
-                .post('/admins/login')
-                .headers({ 'X-Forwarded-For': '198.51.100.6' })
-                .body({ ...credentials, password: 'wrong password' })
-                .send(HttpStatus.TOO_MANY_REQUESTS, LOGIN_RATE_LIMITED_ERROR)
-        })
-
-        it('성공하면 정규화한 계정의 실패 횟수를 초기화한다', async () => {
-            for (let index = 0; index < ACCOUNT_FAILURE_LIMIT - 1; index++) {
-                await fix.httpClient
-                    .post('/admins/login')
-                    .headers({ 'X-Forwarded-For': `203.0.113.${index + 1}` })
-                    .body({
-                        email: index % 2 === 0 ? 'ADMIN@mail.com' : 'admin@MAIL.com',
-                        password: 'wrong password'
-                    })
-                    .unauthorized(Errors.Auth.Unauthorized())
-            }
-
-            await fix.httpClient
-                .post('/admins/login')
-                .headers({ 'X-Forwarded-For': '203.0.113.5' })
-                .body(credentials)
-                .ok()
-
-            for (let index = 0; index < ACCOUNT_FAILURE_LIMIT; index++) {
-                await fix.httpClient
-                    .post('/admins/login')
-                    .headers({ 'X-Forwarded-For': `192.0.2.${index + 1}` })
                     .body({ ...credentials, password: 'wrong password' })
                     .unauthorized(Errors.Auth.Unauthorized())
             }
-
             await fix.httpClient
                 .post('/admins/login')
-                .headers({ 'X-Forwarded-For': '192.0.2.6' })
-                .body({ ...credentials, password: 'wrong password' })
-                .send(HttpStatus.TOO_MANY_REQUESTS, LOGIN_RATE_LIMITED_ERROR)
+                .headers({ 'X-Forwarded-For': '198.51.100.7' })
+                .body(credentials)
+                .ok()
         })
 
         it('성공해도 IP 실패 횟수는 초기화하지 않고 51번째 요청부터 429를 반환한다', async () => {

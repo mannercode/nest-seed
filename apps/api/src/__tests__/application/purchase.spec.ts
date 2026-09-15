@@ -95,68 +95,98 @@ describe('PurchaseService', () => {
                 expect(createPayment).toHaveBeenCalledTimes(1)
             })
 
-            it('동시에 도착한 같은 키와 요청도 한 구매와 한 결제로 수렴한다', async () => {
-                const ticketPurchaseService = fix.module.get(TicketPurchaseService)
-                const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
+            it('동시에 도착한 같은 키는 진행 중 충돌을 반환하고 완료 후 같은 결과를 재생한다', async () => {
+                const records = fix.module.get(PurchaseRecordsService)
+                const createRecord = records.create.bind(records)
                 const createPayment = vi.spyOn(fix.module.get(PaymentsService), 'create')
-                const validatePurchase =
-                    ticketPurchaseService.validatePurchase.bind(ticketPurchaseService)
-                let firstValidationEntered!: () => void
-                const didEnterFirstValidation = new Promise<void>((resolve) => {
-                    firstValidationEntered = resolve
+                let firstEntered!: () => void
+                const didEnterFirst = new Promise<void>((resolve) => {
+                    firstEntered = resolve
                 })
-                let continueFirstValidation!: () => void
-                const mayContinueFirstValidation = new Promise<void>((resolve) => {
-                    continueFirstValidation = resolve
+                let secondEntered!: () => void
+                const didEnterSecond = new Promise<void>((resolve) => {
+                    secondEntered = resolve
                 })
-                vi.spyOn(ticketPurchaseService, 'validatePurchase').mockImplementationOnce(
-                    async (...args) => {
-                        firstValidationEntered()
-                        await mayContinueFirstValidation
-                        return validatePurchase(...args)
+                let recordSaved!: () => void
+                const didSaveRecord = new Promise<void>((resolve) => {
+                    recordSaved = resolve
+                })
+                let releaseFirst!: () => void
+                const mayReturnFirst = new Promise<void>((resolve) => {
+                    releaseFirst = resolve
+                })
+                let calls = 0
+                vi.spyOn(records, 'create').mockImplementation(async (...args) => {
+                    calls += 1
+                    if (calls === 1) {
+                        firstEntered()
+                        await didEnterSecond
+                        const record = await createRecord(...args)
+                        recordSaved()
+                        await mayReturnFirst
+                        return record
                     }
-                )
-
-                const findOperation =
-                    purchaseRecordsService.findIdempotencyOperation.bind(purchaseRecordsService)
-                let lookupCount = 0
-                let secondOuterLookupCompleted!: () => void
-                const didCompleteSecondOuterLookup = new Promise<void>((resolve) => {
-                    secondOuterLookupCompleted = resolve
+                    secondEntered()
+                    await didSaveRecord
+                    return createRecord(...args)
                 })
-                vi.spyOn(purchaseRecordsService, 'findIdempotencyOperation').mockImplementation(
-                    async (...args) => {
-                        const operation = await findOperation(...args)
-                        lookupCount += 1
-                        if (lookupCount === 3) secondOuterLookupCompleted()
-                        return operation
-                    }
-                )
-
                 const createDto = buildCreatePurchaseDto(heldTickets)
                 const idempotencyKey = randomUUID()
-                const first = new HttpTestClient(fix.httpClient.serverUrl)
-                    .post('/purchases')
-                    .headers({
-                        Authorization: `Bearer ${accessToken}`,
-                        'Idempotency-Key': idempotencyKey
-                    })
-                    .body(createDto)
-                    .created()
-                await didEnterFirstValidation
-                const second = new HttpTestClient(fix.httpClient.serverUrl)
-                    .post('/purchases')
-                    .headers({
-                        Authorization: `Bearer ${accessToken}`,
-                        'Idempotency-Key': idempotencyKey
-                    })
-                    .body(createDto)
-                    .created()
-                await didCompleteSecondOuterLookup
-                continueFirstValidation()
+                const send = () =>
+                    new HttpTestClient(fix.httpClient.serverUrl)
+                        .post('/purchases')
+                        .headers({
+                            Authorization: `Bearer ${accessToken}`,
+                            'Idempotency-Key': idempotencyKey
+                        })
+                        .body(createDto)
+                const first = send().created()
+                await didEnterFirst
+                try {
+                    await send().conflict(Errors.Idempotency.RequestInProgress())
+                } finally {
+                    releaseFirst()
+                }
+                const completed = await first
+                const replay = await send().created()
+                expect(replay.body).toEqual(completed.body)
+                expect(createPayment).toHaveBeenCalledTimes(1)
+            })
 
-                const [firstResponse, secondResponse] = await Promise.all([first, second])
-                expect(secondResponse.body).toEqual(firstResponse.body)
+            it('최초 조회 뒤 같은 키의 구매가 완료되어도 판매 오류 대신 최초 결과를 재생한다', async () => {
+                const tickets = fix.module.get(TicketsService)
+                const getMany = tickets.getMany.bind(tickets)
+                const createPayment = vi.spyOn(fix.module.get(PaymentsService), 'create')
+                let reached!: () => void
+                const didReach = new Promise<void>((resolve) => {
+                    reached = resolve
+                })
+                let release!: () => void
+                const mayRead = new Promise<void>((resolve) => {
+                    release = resolve
+                })
+                vi.spyOn(tickets, 'getMany').mockImplementationOnce(async (...args) => {
+                    reached()
+                    await mayRead
+                    return getMany(...args)
+                })
+                const createDto = buildCreatePurchaseDto(heldTickets)
+                const key = randomUUID()
+                const send = () =>
+                    new HttpTestClient(fix.httpClient.serverUrl)
+                        .post('/purchases')
+                        .headers({ Authorization: `Bearer ${accessToken}`, 'Idempotency-Key': key })
+                        .body(createDto)
+                        .created()
+                const delayed = send()
+                await didReach
+                let completed: Awaited<ReturnType<typeof send>>
+                try {
+                    completed = await send()
+                } finally {
+                    release()
+                }
+                expect((await delayed).body).toEqual(completed.body)
                 expect(createPayment).toHaveBeenCalledTimes(1)
             })
 

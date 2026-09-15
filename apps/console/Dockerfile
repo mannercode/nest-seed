@@ -7,10 +7,17 @@ RUN npm install -g pnpm
 WORKDIR /workspace
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/console/package.json apps/console/
+COPY libs/common/package.json libs/common/
+COPY libs/testing/package.json libs/testing/
+COPY tools/vitest-helpers/package.json tools/vitest-helpers/
 COPY tools/dev-tools/package.json tools/dev-tools/free-port.js tools/dev-tools/tunnel.sh tools/dev-tools/
 
 RUN --mount=type=cache,id=nest-seed-pnpm,target=/pnpm/store,sharing=locked \
-    HUSKY=0 pnpm install --frozen-lockfile --filter './apps/console...' --store-dir /pnpm/store
+    HUSKY=0 pnpm install --frozen-lockfile --filter './apps/console...' --filter './libs/common' --store-dir /pnpm/store
+
+COPY tsconfig.json ./
+COPY libs/common/ libs/common/
+RUN pnpm --filter './libs/common' --fail-if-no-match run build
 
 COPY apps/console/ apps/console/
 RUN pnpm --filter './apps/console' --fail-if-no-match run build

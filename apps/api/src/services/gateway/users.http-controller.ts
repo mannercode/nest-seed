@@ -67,15 +67,14 @@ export class UsersHttpController {
         @Body({ schema: UserCredentialsSchema }) body: UserCredentialsDto,
         @Ip() ip: string
     ) {
-        await this.loginRateLimiter.assertAllowed('user', body.email, ip)
+        await this.loginRateLimiter.assertAllowed(ip)
 
         const result = await this.usersService.login(body)
         if (!result) {
-            await this.loginRateLimiter.recordFailure('user', body.email, ip)
+            await this.loginRateLimiter.recordFailure(ip)
             throw new UnauthorizedException(AuthErrors.Unauthorized())
         }
 
-        await this.loginRateLimiter.resetAccount('user', body.email)
         return result.tokens
     }
 

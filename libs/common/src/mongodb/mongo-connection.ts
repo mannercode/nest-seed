@@ -14,8 +14,8 @@ export function createMongoDriverOptions({
 }: Pick<MongoConnectionOptions, 'appName' | 'lifetime'>): MongoClientOptions {
     return {
         appName,
-        // 프로세스 수명의 연결만 idle capacity를 유지한다. 테스트 파일은 hook이 수명을 제한한다.
-        minPoolSize: lifetime === 'application' ? 50 : 0,
+        // 연결은 필요할 때 만들고, 요청 처리의 대기 시간만 제한한다.
+        minPoolSize: 0,
         maxPoolSize: 200,
         waitQueueTimeoutMS: lifetime === 'application' ? 5000 : 0,
         writeConcern: { journal: true, w: 'majority', wtimeoutMS: 5000 }

@@ -54,45 +54,6 @@ export function encodeMongoDocument(value: object): Document {
     return encodeMongoValues(value) as Document
 }
 
-/** 문서 ID 조건은 앱에서 문자열로 받고 드라이버 호출 직전에 변환한다. */
-export function encodeMongoFilter(filter: Document): Document {
-    return Object.fromEntries(
-        Object.entries(filter).map(([field, value]) => [
-            field,
-            field === '_id'
-                ? encodeIdCondition(value)
-                : ['$and', '$or', '$nor'].includes(field)
-                  ? value.map(encodeMongoFilter)
-                  : encodeMongoValues(value)
-        ])
-    )
-}
-
-function encodeIdCondition(value: unknown): unknown {
-    if (typeof value === 'string') return objectId(value)
-    if (!isPlainObject(value)) return value
-
-    return Object.fromEntries(
-        Object.entries(value).map(([operator, operand]) => [
-            operator,
-            ['$eq', '$ne', '$gt', '$gte', '$lt', '$lte', '$not'].includes(operator)
-                ? encodeIdCondition(operand)
-                : ['$in', '$nin', '$all'].includes(operator)
-                  ? operand.map(encodeIdCondition)
-                  : operand
-        ])
-    )
-}
-
-export function encodeMongoUpdate(update: Document): Document {
-    const encoded = encodeMongoDocument(update)
-    for (const operator of ['$set', '$setOnInsert']) {
-        const fields = encoded[operator]
-        if (fields?._id !== undefined) fields._id = objectId(fields._id)
-    }
-    return encoded
-}
-
 function isEncodableRecord(value: unknown): value is Record<string, unknown> {
     if (
         value === null ||

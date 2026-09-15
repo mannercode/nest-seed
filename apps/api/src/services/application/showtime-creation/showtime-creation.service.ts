@@ -8,10 +8,8 @@ import {
 import { MoviesService, ShowtimesService, TheatersService } from '#core'
 import { BulkCreateShowtimesDto, RequestShowtimeCreationResponse } from './dtos/index.js'
 import { ShowtimeCreationErrors } from './errors.js'
-import {
-    ShowtimeCreationOrchestratorService,
-    ShowtimeCreationSubmissionRepository
-} from './internal/index.js'
+import { ShowtimeCreationSubmissionRepository } from './internal/index.js'
+import { ShowtimeCreationWorkflowClient } from './worker/index.js'
 import { fingerprintShowtimeCreation } from './internal/showtime-creation-fingerprint.js'
 
 const SUBMISSION_CLAIM_LEASE_MS = 5 * 60 * 1000
@@ -22,7 +20,7 @@ export class ShowtimeCreationService {
         private readonly theatersService: TheatersService,
         private readonly moviesService: MoviesService,
         private readonly showtimesService: ShowtimesService,
-        private readonly orchestrator: ShowtimeCreationOrchestratorService,
+        private readonly workflow: ShowtimeCreationWorkflowClient,
         private readonly submissions: ShowtimeCreationSubmissionRepository
     ) {}
 
@@ -51,7 +49,7 @@ export class ShowtimeCreationService {
         if (claim.kind === 'accepted') return { sagaId: claim.sagaId }
 
         try {
-            await this.orchestrator.ensureShowtimeCreationJobStarted(createDto, claim.sagaId)
+            await this.workflow.submit({ createDto, sagaId: claim.sagaId }, claim.sagaId)
             const accepted = await this.submissions.markAccepted(
                 principalId,
                 idempotencyKey,
@@ -75,7 +73,7 @@ export class ShowtimeCreationService {
             throw new NotFoundException(ShowtimeCreationErrors.SagaNotFound(sagaId))
         }
 
-        return this.orchestrator.getShowtimeCreationStatus(sagaId)
+        return this.workflow.getStatus(sagaId)
     }
 
     // 검증 액티비티는 기존 상영과의 충돌만 보므로, 요청 안에서 서로 겹치는 시작 시각은

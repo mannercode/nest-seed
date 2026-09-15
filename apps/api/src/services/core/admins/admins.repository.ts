@@ -66,7 +66,7 @@ export class AdminsRepository extends CrudRepository<Admin> {
 
         try {
             const doc = await this.findAndUpdateDocument(
-                this.activeFilter({ _id: id }),
+                this.activeFilter(this.idFilter(id)),
                 this.timestamped({ $set: fields }),
                 { projection: this.projection, returnDocument: 'after' }
             )

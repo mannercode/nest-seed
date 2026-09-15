@@ -24,8 +24,7 @@ import { UsersService } from './users.service.js'
                 // 보안 이벤트는 공통 AppLogger로 보내 로그 수집 경로에 남기고, 유형별로 심각도를 나눈다.
                 onEvent: (event: SecurityEvent) => {
                     const message = `security_event:${event.type}`
-                    if (event.type === 'token.reuse_detected') logger.error(message, event)
-                    else if (event.type === 'verify.failed') logger.warn(message, event)
+                    if (event.type === 'verify.failed') logger.warn(message, event)
                     else logger.log(message, event)
                 }
             })

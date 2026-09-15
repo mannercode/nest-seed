@@ -170,29 +170,63 @@ describe('AssetsService', () => {
                 ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
             })
 
-            it('완료 처리 실패 후에는 에셋이 조회되지 않는다', async () => {
+            it('완료 처리 실패 후에도 정리 cron이 찾을 DB 행을 남긴다', async () => {
                 const finalizeDto = buildFinalizeAssetDto()
                 await expect(assetsService.finalizeUpload(assetId, finalizeDto)).rejects.toThrow()
 
+                await expect(assetsService.getMany([assetId])).resolves.toMatchObject([
+                    { id: assetId, owner: null }
+                ])
+                await assetsService.cleanupExpiredUploads()
                 await expect(assetsService.getMany([assetId])).rejects.toMatchObject({
                     status: HttpStatus.NOT_FOUND
                 })
             })
         })
 
-        it('업로드까지 마친 에셋이 만료되어 완료 처리에 실패하면 S3 객체도 함께 삭제한다', async () => {
-            // 업로드는 만료 창 안에, 완료 처리는 만료 후에 일어나도록 창을 2초로 잡는다.
-            await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 2 })
+        it('만료된 미완료 에셋의 S3 객체는 정리 cron이 삭제한다', async () => {
             const assetId = await uploadFile(fix, file)
-            await sleep(2500)
-
+            await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
             await expect(
                 assetsService.finalizeUpload(assetId, buildFinalizeAssetDto())
             ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
-
-            // DB 행이 사라지면 정리 cron이 다시 찾지 못하므로 S3 객체는 이 시점에 지워져 있어야 한다.
             const s3Service = fix.module.get<S3ObjectService>(S3ObjectService.getName())
+            await expect(s3Service.isUploadComplete({ key: assetId })).resolves.toBe(true)
+            await assetsService.cleanupExpiredUploads()
             await expect(s3Service.isUploadComplete({ key: assetId })).resolves.toBe(false)
+            await expect(assetsService.getMany([assetId])).rejects.toMatchObject({
+                status: HttpStatus.NOT_FOUND
+            })
+        })
+
+        it('이미 같은 소유자에게 완료한 에셋은 만료 후에도 재시도할 수 있다', async () => {
+            const assetId = await uploadFile(fix, file)
+            const finalizeDto = buildFinalizeAssetDto()
+            await assetsService.finalizeUpload(assetId, finalizeDto)
+            await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
+            await expect(assetsService.finalizeUpload(assetId, finalizeDto)).resolves.toMatchObject(
+                { id: assetId, owner: finalizeDto.owner }
+            )
+            await assetsService.cleanupExpiredUploads()
+            await expect(assetsService.isUploadComplete(assetId)).resolves.toBe(true)
+        })
+
+        it('다른 소유자의 완료 요청은 기존 소유권과 파일을 바꾸지 않는다', async () => {
+            const assetId = await uploadFile(fix, file)
+            const original = buildFinalizeAssetDto()
+            await assetsService.finalizeUpload(assetId, original)
+            const other = { owner: { ...original.owner, entityId: nullObjectId } }
+            await expect(assetsService.finalizeUpload(assetId, other)).rejects.toMatchObject({
+                status: HttpStatus.CONFLICT
+            })
+            await expect(assetsService.findOwner(assetId)).resolves.toEqual(original.owner)
+            await expect(assetsService.isUploadComplete(assetId)).resolves.toBe(true)
+        })
+
+        it('없는 에셋의 완료 요청은 404를 반환한다', async () => {
+            await expect(
+                assetsService.finalizeUpload(nullObjectId, buildFinalizeAssetDto())
+            ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
         })
     })
 

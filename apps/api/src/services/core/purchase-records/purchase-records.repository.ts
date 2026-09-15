@@ -130,7 +130,10 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
 
     async findPending({ id: purchaseRecordId }: { id: string }) {
         const record = await this.findDocument(
-            this.activeFilter({ _id: purchaseRecordId, status: PurchaseRecordStatus.Pending })
+            this.activeFilter({
+                ...this.idFilter(purchaseRecordId),
+                status: PurchaseRecordStatus.Pending
+            })
         )
         return record
     }
@@ -310,7 +313,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     async markCancelled(purchaseRecordId: string, reconciliationId: string) {
         await this.updateDocument(
             this.activeFilter({
-                _id: purchaseRecordId,
+                ...this.idFilter(purchaseRecordId),
                 reconciliationId,
                 status: PurchaseRecordStatus.Compensating
             }),
@@ -327,7 +330,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     async releaseReconciliationClaim(purchaseRecordId: string, reconciliationId: string) {
         await this.updateDocument(
             this.activeFilter({
-                _id: purchaseRecordId,
+                ...this.idFilter(purchaseRecordId),
                 reconciliationId,
                 status: PurchaseRecordStatus.Compensating
             }),
@@ -338,7 +341,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     async markEventPublished(purchaseRecordId: string, publicationId: string) {
         const result = await this.updateDocument(
             this.activeFilter({
-                _id: purchaseRecordId,
+                ...this.idFilter(purchaseRecordId),
                 purchaseEventPublicationId: publicationId,
                 purchaseEventStatus: PurchaseEventStatus.Pending,
                 status: PurchaseRecordStatus.Completed
@@ -358,7 +361,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     async releaseEventPublicationClaim(purchaseRecordId: string, publicationId: string) {
         await this.updateDocument(
             this.activeFilter({
-                _id: purchaseRecordId,
+                ...this.idFilter(purchaseRecordId),
                 purchaseEventPublicationId: publicationId,
                 purchaseEventStatus: PurchaseEventStatus.Pending,
                 status: PurchaseRecordStatus.Completed
@@ -381,7 +384,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         options?: MongoWriteOptions
     }) {
         return this.findAndUpdateDocument(
-            this.activeFilter({ _id: purchaseRecordId, ...filter }),
+            this.activeFilter({ ...this.idFilter(purchaseRecordId), ...filter }),
             this.timestamped(update),
             { ...options, returnDocument: 'after' }
         )
