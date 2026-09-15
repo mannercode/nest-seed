@@ -1,6 +1,6 @@
 # JSON·DTO 자동 변환의 남은 검토
 
-이 항목은 결정을 유보했으며 기존 동작을 유지한다. 로그인과 분산 실행의 현행 계약은 [apps](../apps.md), 명시적인 MongoDB ID 조건과 BFF 공통화는 [libs](../libs.md)를 따른다. [전체 검토 원문](../backup/reviews/runtime-complexity-review.md)은 반영 전 판단을 보관한다.
+이 항목은 결정을 유보했으며 기존 동작을 유지한다. 로그인과 분산 실행의 현행 계약은 [apps](../apps.md), 명시적인 MongoDB ID 조건과 공유 코드의 경계는 [libs](../libs.md)를 따른다. [전체 검토 원문](../backup/reviews/runtime-complexity-review.md)은 반영 전 판단을 보관한다.
 
 ## 확인한 동작
 

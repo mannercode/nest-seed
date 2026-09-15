@@ -16,8 +16,7 @@
     "dependencies": {
         "next": "16.3.5",
         "react": "19.3.0",
-        "react-dom": "19.3.0",
-        "@mannercode/common": "workspace:*"
+        "react-dom": "19.3.0"
     },
     "devDependencies": {
         "@mannercode/dev-tools": "workspace:*",

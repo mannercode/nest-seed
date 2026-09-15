@@ -154,7 +154,7 @@ Dev Container와 앱의 Node는 네이티브 Temporal을 사용하는 런타임�
 
 모든 테스트 코드에 선 커버리지를 강제하지는 않는다. 브라우저, 외부 HTTP race, shell 계약처럼 행동 경계가 핵심인 하네스는 실제 소비 경로의 성공으로 검증한다. 이는 구현 코드의 임계치를 피하는 예외와 다르다. 커버리지는 실행 여부만 말할 뿐 단언의 타당성, race 안전성, 요구사항 충족을 보장하지 않는다.
 
-현재 `apps/api`와 `libs/common`이 Vitest V8 coverage를 수집한다. 공통 BFF는 단위 테스트로 쿠키·동시 갱신·API 호출 실패 처리를 검증하고, 브라우저 E2E로 두 앱과 API의 연결을 확인한다. `libs/testing`의 helper는 자체 테스트와 소비자 스펙이, 외부 HTTP/SSE 하네스는 race 시나리오가 검증한다. 테스트 실행 도구 자체의 검사 범위는 해당 package script를 따른다.
+현재 `apps/api`와 `libs/common`이 Vitest V8 coverage를 수집한다. 두 frontend의 인증 프록시는 브라우저 E2E로 로그인·쿠키·갱신·로그아웃과 API 연결을 검증한다. `libs/testing`의 helper는 자체 테스트와 소비자 스펙이, 외부 HTTP/SSE 하네스는 race 시나리오가 검증한다. 테스트 실행 도구 자체의 검사 범위는 해당 package script를 따른다.
 
 반복 CI가 coverage 수집을 끄는 것은 동일 동작의 간헐 실패를 찾기 위한 별도 실행이다. 필수 AtoZ의 100% 게이트를 대신하지 않는다.
 
