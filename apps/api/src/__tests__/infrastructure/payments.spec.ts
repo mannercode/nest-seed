@@ -42,8 +42,8 @@ describe('PaymentsService', () => {
         it('purchaseRecordId로 취소하며 결제가 없어도 멱등이다', async () => {
             const payment = await createPayment(fix)
 
-            await paymentsService.cancelByPurchaseRecordId(ensure(payment.purchaseRecordId))
-            await paymentsService.cancelByPurchaseRecordId(nullObjectId)
+            await paymentsService.compensate({ purchaseRecordId: ensure(payment.purchaseRecordId) })
+            await paymentsService.compensate({ purchaseRecordId: nullObjectId })
 
             const [cancelled] = await paymentsService.getMany([payment.id])
             expect(cancelled?.status).toBe('cancelled')

@@ -68,7 +68,7 @@ export class ShowtimeCreationHttpController {
 
     @HttpCode(HttpStatus.OK)
     @Post('showtimes/search')
-    async searchShowtimesByTheaterIds(
+    async searchShowtimes(
         @Body({ schema: SearchShowtimesByTheatersBodySchema })
         body: SearchShowtimesByTheatersBodyDto
     ) {

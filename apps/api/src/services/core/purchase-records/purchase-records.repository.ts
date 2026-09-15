@@ -48,7 +48,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         )
     }
 
-    async findByUserId(userId: string) {
+    async findCompleted({ userId }: { userId: string }) {
         const purchaseRecords = await this.findDocuments(
             this.activeFilter({ status: PurchaseRecordStatus.Completed, userId }),
             { sort: { createdAt: -1 } }
@@ -90,12 +90,24 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         }
     }
 
-    async findByIdempotencyKey(userId: string, idempotencyKey: string) {
+    async findIdempotencyOperation({
+        userId,
+        idempotencyKey
+    }: {
+        userId: string
+        idempotencyKey: string
+    }) {
         const record = await this.findDocument(this.activeFilter({ idempotencyKey, userId }))
         return record
     }
 
-    async findPendingBefore(before: Temporal.Instant, now: Temporal.Instant) {
+    async findReconciliationCandidates({
+        before,
+        now
+    }: {
+        before: Temporal.Instant
+        now: Temporal.Instant
+    }) {
         const purchaseRecords = await this.findDocuments(
             this.activeFilter({
                 $or: [
@@ -116,7 +128,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         return purchaseRecords
     }
 
-    async findPendingById(purchaseRecordId: string) {
+    async findPending({ id: purchaseRecordId }: { id: string }) {
         const record = await this.findDocument(
             this.activeFilter({ _id: purchaseRecordId, status: PurchaseRecordStatus.Pending })
         )
@@ -147,10 +159,10 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
             { reconciliationLeaseUntil: { $lte: now }, status: PurchaseRecordStatus.Compensating },
             ...(completionId ? [{ completionId, status: PurchaseRecordStatus.Completing }] : [])
         ]
-        const record = await this.updateById(
-            purchaseRecordId,
-            { $or: candidates },
-            {
+        const record = await this.update({
+            id: purchaseRecordId,
+            filter: { $or: candidates },
+            update: {
                 $set: {
                     completionId: null,
                     completionLeaseUntil: null,
@@ -165,12 +177,18 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
                     status: PurchaseRecordStatus.Compensating
                 }
             }
-        )
+        })
 
         return record
     }
 
-    async findUnpublishedBefore(before: Temporal.Instant, now: Temporal.Instant) {
+    async findPublicationCandidates({
+        before,
+        now
+    }: {
+        before: Temporal.Instant
+        now: Temporal.Instant
+    }) {
         const purchaseRecords = await this.findDocuments(
             this.activeFilter({
                 purchaseEventStatus: PurchaseEventStatus.Pending,
@@ -201,9 +219,9 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
             publicationId: string
         }
     ) {
-        const purchaseRecord = await this.updateById(
-            purchaseRecordId,
-            {
+        const purchaseRecord = await this.update({
+            id: purchaseRecordId,
+            filter: {
                 purchaseEventStatus: PurchaseEventStatus.Pending,
                 status: PurchaseRecordStatus.Completed,
                 updatedAt: { $lte: before },
@@ -212,13 +230,13 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
                     { purchaseEventPublicationLeaseUntil: { $lte: now } }
                 ]
             },
-            {
+            update: {
                 $set: {
                     purchaseEventPublicationId: publicationId,
                     purchaseEventPublicationLeaseUntil: leaseUntil
                 }
             }
-        )
+        })
 
         return purchaseRecord
     }
@@ -228,17 +246,17 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         completionId: string,
         completionLeaseUntil: Temporal.Instant
     ) {
-        const purchaseRecord = await this.updateById(
-            purchaseRecordId,
-            { status: PurchaseRecordStatus.Pending },
-            {
+        const purchaseRecord = await this.update({
+            id: purchaseRecordId,
+            filter: { status: PurchaseRecordStatus.Pending },
+            update: {
                 $set: {
                     completionId,
                     completionLeaseUntil,
                     status: PurchaseRecordStatus.Completing
                 }
             }
-        )
+        })
         if (!purchaseRecord) {
             throw new Error(`Purchase record is no longer pending: ${purchaseRecordId}`)
         }
@@ -252,10 +270,10 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         transaction: TransactionContext | undefined = undefined,
         idempotencyResponse: object | undefined = undefined
     ) {
-        const purchaseRecord = await this.updateById(
-            purchaseRecordId,
-            { completionId, status: PurchaseRecordStatus.Completing },
-            {
+        const purchaseRecord = await this.update({
+            id: purchaseRecordId,
+            filter: { completionId, status: PurchaseRecordStatus.Completing },
+            update: {
                 $set: {
                     ...(idempotencyResponse ? { idempotencyResponse } : {}),
                     status: PurchaseRecordStatus.Completed
@@ -267,8 +285,8 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
                     reconciliationLeaseUntil: 1
                 }
             },
-            { transaction }
-        )
+            options: { transaction }
+        })
         if (!purchaseRecord) {
             throw new Error(`Purchase completion lease was lost: ${purchaseRecordId}`)
         }
@@ -277,11 +295,11 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
     }
 
     async setPaymentId(purchaseRecordId: string, paymentId: string) {
-        const purchaseRecord = await this.updateById(
-            purchaseRecordId,
-            { status: PurchaseRecordStatus.Pending },
-            { $set: { paymentId } }
-        )
+        const purchaseRecord = await this.update({
+            id: purchaseRecordId,
+            filter: { status: PurchaseRecordStatus.Pending },
+            update: { $set: { paymentId } }
+        })
         if (!purchaseRecord) {
             throw new Error(`Purchase record is no longer pending: ${purchaseRecordId}`)
         }
@@ -351,12 +369,17 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         )
     }
 
-    private updateById(
-        purchaseRecordId: string,
-        filter: MongoDocument,
-        update: MongoUpdate,
-        options: MongoWriteOptions = {}
-    ) {
+    private update({
+        id: purchaseRecordId,
+        filter,
+        update,
+        options = {}
+    }: {
+        id: string
+        filter: MongoDocument
+        update: MongoUpdate
+        options?: MongoWriteOptions
+    }) {
         return this.findAndUpdateDocument(
             this.activeFilter({ _id: purchaseRecordId, ...filter }),
             this.timestamped(update),

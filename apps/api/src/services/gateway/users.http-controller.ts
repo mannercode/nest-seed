@@ -117,7 +117,7 @@ export class UsersHttpController {
     @Get('me/purchases')
     @UseGuards(UserAuthGuard)
     async getMyPurchases(@Req() req: UserAuthRequest) {
-        return this.purchaseRecordsService.findByUserId(req.user.sub)
+        return this.purchaseRecordsService.findCompleted({ userId: req.user.sub })
     }
 
     @Get()

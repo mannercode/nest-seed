@@ -70,7 +70,7 @@ export class ShowtimeCreationService {
     }
 
     async getShowtimeCreationStatus(sagaId: string, principalId: string) {
-        const submission = await this.submissions.findAcceptedBySagaId(principalId, sagaId)
+        const submission = await this.submissions.findAccepted({ principalId, sagaId })
         if (!submission) {
             throw new NotFoundException(ShowtimeCreationErrors.SagaNotFound(sagaId))
         }

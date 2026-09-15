@@ -30,7 +30,7 @@ export class TicketsService {
     }
 
     async getMany(ticketIds: string[]) {
-        const tickets = await this.repository.getByIds(ticketIds)
+        const tickets = await this.repository.getMany({ ids: ticketIds })
 
         return this.toDtos(tickets)
     }
@@ -46,13 +46,13 @@ export class TicketsService {
         purchaseRecordId: string,
         transaction: TransactionContext | undefined = undefined
     ) {
-        // 누락된 ticketId는 `getByIds`가 404로 분리한다.
+        // 누락된 ticketId는 `getMany`가 404로 분리한다.
         // 판매 충돌(409)은 리포지토리가 한 트랜잭션에서 원자적으로 판정한다.
-        await this.repository.getByIds(ticketIds, transaction)
+        await this.repository.getMany({ ids: ticketIds, transaction })
 
         await this.repository.sellAvailableForPurchase(ticketIds, purchaseRecordId, transaction)
 
-        const tickets = await this.repository.getByIds(ticketIds, transaction)
+        const tickets = await this.repository.getMany({ ids: ticketIds, transaction })
 
         return this.toDtos(tickets)
     }

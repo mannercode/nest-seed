@@ -83,7 +83,7 @@ export class PaymentsRepository extends CrudRepository<Payment> {
         return ensure(payment)
     }
 
-    async findUnresolvedBefore(before: Temporal.Instant) {
+    async findResolutionCandidates({ before }: { before: Temporal.Instant }) {
         const payments = await this.findDocuments(
             this.activeFilter({
                 createdAt: { $lte: before },
@@ -96,7 +96,7 @@ export class PaymentsRepository extends CrudRepository<Payment> {
         return payments
     }
 
-    async findByPurchaseRecordId(purchaseRecordId: string) {
+    async findPayment({ purchaseRecordId }: { purchaseRecordId: string }) {
         const payment = await this.findDocument(this.activeFilter({ purchaseRecordId }))
         return payment
     }

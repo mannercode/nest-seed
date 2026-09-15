@@ -17,7 +17,7 @@ find({ email })
 findTheaters({ movieId })
 ```
 
-이는 `findById`, `findTheatersForMovie`처럼 조건별 메서드를 늘리지 않기 위한 규칙이다. 일반 유틸의 모든 단일 인자까지 객체로 감싸지는 않는다. 현재 [CrudRepository](../../libs/common/src/mongodb/crud.repository.ts)의 `ById` 계열은 이 규칙을 아직 따르지 않는 기존 API다.
+이는 `findById`, `findTheatersForMovie`처럼 조건별 메서드를 늘리지 않기 위한 규칙이다. 일반 유틸의 모든 단일 인자까지 객체로 감싸지는 않는다.
 
 서비스의 공개 메서드는 같은 이름이 같은 계약을 뜻하도록 맞춘다.
 

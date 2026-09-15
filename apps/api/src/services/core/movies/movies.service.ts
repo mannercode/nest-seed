@@ -43,7 +43,7 @@ export class MoviesService {
     }
 
     async deleteAsset(movieId: string, assetId: string): Promise<void> {
-        const movie = await this.moviesRepository.findById(movieId)
+        const movie = await this.moviesRepository.find({ id: movieId })
 
         if (!movie) {
             throw new NotFoundException(MovieErrors.NotFound(movieId))
@@ -79,12 +79,13 @@ export class MoviesService {
     }
 
     async deleteMany(movieIds: string[]): Promise<void> {
-        const movies = await this.moviesRepository.findByIds(movieIds)
+        const movies = await this.moviesRepository.findMany({ ids: movieIds })
 
         if (0 < movies.length) {
             const existingMovieIds = pickIds(movies)
-            const pendingAssetIds =
-                await this.pendingAssetsRepository.findAssetIdsByMovieIds(existingMovieIds)
+            const pendingAssetIds = await this.pendingAssetsRepository.findAssetIds({
+                movieIds: existingMovieIds
+            })
             const candidateAssetIds = uniq([
                 ...movies.flatMap((movie) => movie.assetIds),
                 ...pendingAssetIds
@@ -105,8 +106,8 @@ export class MoviesService {
                 await this.assetsService.deleteMany(assetIds)
             }
 
-            await this.pendingAssetsRepository.removeByMovieIds(existingMovieIds)
-            await this.moviesRepository.deleteByIds(existingMovieIds)
+            await this.pendingAssetsRepository.removeMany({ movieIds: existingMovieIds })
+            await this.moviesRepository.deleteMany({ ids: existingMovieIds })
         }
     }
 
@@ -119,7 +120,7 @@ export class MoviesService {
     }
 
     async finalizeUpload(movieId: string, assetId: string): Promise<void> {
-        const movie = await this.moviesRepository.findById(movieId)
+        const movie = await this.moviesRepository.find({ id: movieId })
 
         if (!movie) {
             throw new NotFoundException(MovieErrors.NotFound(movieId))
@@ -153,14 +154,14 @@ export class MoviesService {
     }
 
     async getMany(movieIds: string[]) {
-        const movies = await this.moviesRepository.getByIds(movieIds)
+        const movies = await this.moviesRepository.getMany({ ids: movieIds })
         return this.toDtos(movies)
     }
 
     // 공개 카탈로그용 단건 조회. 미공개(draft) 영화는 없는 것으로 취급한다.
     // 내부 흐름(추천·관람 기록)은 비공개 전환된 영화도 조회해야 하므로 getMany를 그대로 둔다.
     async getPublished(movieId: string) {
-        const movie = ensure((await this.moviesRepository.getByIds([movieId]))[0])
+        const movie = ensure((await this.moviesRepository.getMany({ ids: [movieId] }))[0])
 
         if (!movie.isPublished) {
             throw new NotFoundException(MovieErrors.NotFound(movieId))
@@ -171,7 +172,7 @@ export class MoviesService {
     }
 
     async publish(movieId: string) {
-        const movie = await this.moviesRepository.getById(movieId)
+        const movie = await this.moviesRepository.get({ id: movieId })
 
         const { director, durationInSeconds, genres, plot, rating, releaseDate, title } = movie
         const defaults = MovieDefaults

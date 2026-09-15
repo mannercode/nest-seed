@@ -153,7 +153,7 @@ export abstract class CrudRepository<Doc extends CrudDocument>
         }
     }
 
-    async deleteById(id: string, transaction: TransactionArg = undefined) {
+    async delete({ id, transaction }: { id: string; transaction?: TransactionArg }) {
         const session = this.getSession(transaction)
         const filter = this.activeFilter({ _id: objectId(id) })
         const result = this.hardDelete
@@ -167,7 +167,7 @@ export abstract class CrudRepository<Doc extends CrudDocument>
         if (!result) throw new NotFoundException(MongoErrors.DocumentNotFound(id))
     }
 
-    async deleteByIds(ids: string[], transaction: TransactionArg = undefined) {
+    async deleteMany({ ids, transaction }: { ids: string[]; transaction?: TransactionArg }) {
         const session = this.getSession(transaction)
         const filter = this.activeFilter({ _id: { $in: objectIds(ids) } })
         if (this.hardDelete) {
@@ -198,7 +198,7 @@ export abstract class CrudRepository<Doc extends CrudDocument>
         return count === uniqueIds.length
     }
 
-    async findById(id: string, transaction: TransactionArg = undefined) {
+    async find({ id, transaction }: { id: string; transaction?: TransactionArg }) {
         const doc = await this.collection.findOne(this.activeFilter({ _id: objectId(id) }), {
             projection: this.projection,
             session: this.getSession(transaction)
@@ -206,11 +206,15 @@ export abstract class CrudRepository<Doc extends CrudDocument>
         return doc ? this.toDomainDocument(mongoToPublic<Doc>(doc)) : null
     }
 
-    async findByIds(
-        ids: string[],
-        transaction: TransactionArg = undefined,
-        signal: AbortSignal | undefined = undefined
-    ): Promise<Doc[]> {
+    async findMany({
+        ids,
+        transaction,
+        signal
+    }: {
+        ids: string[]
+        transaction?: TransactionArg
+        signal?: AbortSignal | undefined
+    }): Promise<Doc[]> {
         const docs = await this.collection
             .find(this.activeFilter({ _id: { $in: objectIds(ids) } }), {
                 projection: this.projection,
@@ -260,20 +264,24 @@ export abstract class CrudRepository<Doc extends CrudDocument>
         } as PaginationResult<Doc>
     }
 
-    async getById(id: string, transaction: TransactionArg = undefined) {
-        const doc = await this.findById(id, transaction)
+    async get({ id, transaction }: { id: string; transaction?: TransactionArg }) {
+        const doc = await this.find({ id, transaction })
         if (!doc) throw new NotFoundException(MongoErrors.DocumentNotFound(id))
         return doc
     }
 
-    async getByIds(
-        ids: string[],
-        transaction: TransactionArg = undefined,
-        signal: AbortSignal | undefined = undefined
-    ) {
+    async getMany({
+        ids,
+        transaction,
+        signal
+    }: {
+        ids: string[]
+        transaction?: TransactionArg
+        signal?: AbortSignal | undefined
+    }) {
         const uniqueIds = uniq(ids)
         Assume.equalLength(uniqueIds, ids, `Duplicate IDs detected and removed:${ids}`)
-        const docs = await this.findByIds(uniqueIds, transaction, signal)
+        const docs = await this.findMany({ ids: uniqueIds, transaction, signal })
         const notFoundIds = differenceWith(uniqueIds, docs, (id, doc) => id === doc.id)
         if (notFoundIds.length > 0) {
             throw new NotFoundException(MongoErrors.MultipleDocumentsNotFound(notFoundIds))

@@ -10,6 +10,9 @@ import { AppConfigService } from '#config'
 import { CreateShowtimeDto, SearchShowtimesDto } from './dtos/index.js'
 import { Showtime } from './models/index.js'
 
+export type ShowtimeExistenceQuery =
+    { movieIds: string[]; theaterIds?: never } | { movieIds?: never; theaterIds: string[] }
+
 @Injectable()
 export class ShowtimesRepository extends CrudRepository<Showtime> {
     constructor(connection: MongoConnection, config: AppConfigService) {
@@ -44,19 +47,12 @@ export class ShowtimesRepository extends CrudRepository<Showtime> {
         await this.insertMany(showtimes, transaction, signal)
     }
 
-    async existsByMovieIds(movieIds: string[]): Promise<boolean> {
-        const found = await this.findDocument(
-            { movieId: { $in: movieIds } },
-            { projection: { _id: 1 } }
-        )
-        return !!found
-    }
-
-    async existsByTheaterIds(theaterIds: string[]): Promise<boolean> {
-        const found = await this.findDocument(
-            { theaterId: { $in: theaterIds } },
-            { projection: { _id: 1 } }
-        )
+    async exists(query: ShowtimeExistenceQuery): Promise<boolean> {
+        const filter =
+            query.movieIds !== undefined
+                ? { movieId: { $in: query.movieIds } }
+                : { theaterId: { $in: query.theaterIds } }
+        const found = await this.findDocument(filter, { projection: { _id: 1 } })
         return !!found
     }
 

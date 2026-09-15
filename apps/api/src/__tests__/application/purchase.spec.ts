@@ -484,7 +484,7 @@ describe('PurchaseService', () => {
                     // cancelled 구매는 감사 추적용 행으로 남지만 정상 구매 목록에는 노출되지 않는다.
 
                     const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-                    const records = await purchaseRecordsService.findByUserId(user.id)
+                    const records = await purchaseRecordsService.findCompleted({ userId: user.id })
                     expect(records).toEqual([])
                 })
 
@@ -579,14 +579,16 @@ describe('PurchaseService', () => {
                     expect(ensure((await getPayments(fix, [paymentId]))[0]).status).toBe(
                         PaymentStatus.Completed
                     )
-                    expect(await purchaseRecordsService.findByUserId(user.id)).toEqual([
-                        expect.objectContaining({ id: purchaseRecord.id })
-                    ])
+                    expect(await purchaseRecordsService.findCompleted({ userId: user.id })).toEqual(
+                        [expect.objectContaining({ id: purchaseRecord.id })]
+                    )
                 })
 
                 it('durable event를 미발행 상태로 남긴다', async () => {
                     expect(
-                        await purchaseRecordsService.findUnpublishedBefore(DateUtil.now())
+                        await purchaseRecordsService.findPublicationCandidates({
+                            before: DateUtil.now()
+                        })
                     ).toEqual([expect.objectContaining({ id: purchaseRecord.id })])
                 })
 
@@ -595,7 +597,9 @@ describe('PurchaseService', () => {
 
                     expect(emit).toHaveBeenCalledTimes(2)
                     expect(
-                        await purchaseRecordsService.findUnpublishedBefore(DateUtil.now())
+                        await purchaseRecordsService.findPublicationCandidates({
+                            before: DateUtil.now()
+                        })
                     ).toEqual([])
                 })
             })
@@ -662,10 +666,12 @@ describe('PurchaseService', () => {
                         .internalServerError()
 
                     Require.defined(purchaseRecordId)
-                    expect(await purchaseRecordsService.findByUserId(user.id)).toEqual([])
+                    expect(await purchaseRecordsService.findCompleted({ userId: user.id })).toEqual(
+                        []
+                    )
 
-                    const pendingBefore = await purchaseRecordsService.findPendingBefore(
-                        DateUtil.now()
+                    const pendingBefore = await purchaseRecordsService.findReconciliationCandidates(
+                        { before: DateUtil.now() }
                     )
                     expect(pendingBefore).toEqual([
                         expect.objectContaining({ id: purchaseRecordId })
@@ -673,9 +679,9 @@ describe('PurchaseService', () => {
 
                     await purchaseService.reconcilePendingPurchases()
 
-                    const pendingAfter = await purchaseRecordsService.findPendingBefore(
-                        DateUtil.now()
-                    )
+                    const pendingAfter = await purchaseRecordsService.findReconciliationCandidates({
+                        before: DateUtil.now()
+                    })
                     expect(pendingAfter).toEqual([])
                 })
             })
@@ -746,7 +752,9 @@ describe('PurchaseService', () => {
                 Require.defined(paymentId)
                 const payment = ensure((await getPayments(fix, [paymentId]))[0])
                 const tickets = await getTickets(fix, pickIds(heldTickets))
-                const visibleRecords = await purchaseRecordsService.findByUserId(user.id)
+                const visibleRecords = await purchaseRecordsService.findCompleted({
+                    userId: user.id
+                })
                 await releaseClaims(purchaseRecordId, heldTickets)
 
                 expect({
@@ -833,7 +841,9 @@ describe('PurchaseService', () => {
                 expect({
                     paymentStatus: payment.status,
                     ticketStatuses: tickets.map((ticket) => ticket.status),
-                    visibleRecordIds: pickIds(await purchaseRecordsService.findByUserId(user.id))
+                    visibleRecordIds: pickIds(
+                        await purchaseRecordsService.findCompleted({ userId: user.id })
+                    )
                 }).toEqual({
                     paymentStatus: PaymentStatus.Cancelled,
                     ticketStatuses: heldTickets.map(() => TicketStatus.Available),
@@ -1149,7 +1159,9 @@ describe('PurchaseService', () => {
         await purchaseService.reconcilePendingPurchases(DateUtil.add({ milliseconds: 1000 }))
 
         expect(
-            await purchaseRecordsService.findPendingBefore(DateUtil.add({ milliseconds: 1000 }))
+            await purchaseRecordsService.findReconciliationCandidates({
+                before: DateUtil.add({ milliseconds: 1000 })
+            })
         ).toEqual([expect.objectContaining({ id: pending.id })])
     })
 
@@ -1163,7 +1175,9 @@ describe('PurchaseService', () => {
             totalPrice: 1,
             userId: user.id
         })
-        vi.spyOn(purchaseRecordsService, 'findPendingBefore').mockResolvedValueOnce([completed])
+        vi.spyOn(purchaseRecordsService, 'findReconciliationCandidates').mockResolvedValueOnce([
+            completed
+        ])
         const compensate = vi.spyOn(ticketPurchaseService, 'compensatePurchase')
 
         await purchaseService.reconcilePendingPurchases()
@@ -1264,17 +1278,17 @@ describe('PurchaseService', () => {
             purchaseRecordId: purchaseRecord.id,
             userId: user.id
         })
-        const cancel = vi.spyOn(paymentsService, 'cancelByPurchaseRecordId')
+        const cancel = vi.spyOn(paymentsService, 'compensate')
         const future = DateUtil.add({ milliseconds: 1000 })
 
-        expect(await paymentsService.findUnresolvedBefore(future)).toEqual([
+        expect(await paymentsService.findResolutionCandidates({ before: future })).toEqual([
             expect.objectContaining({ id: payment.id })
         ])
 
         await purchaseService.reconcileUnresolvedPayments(future)
 
         expect(cancel).not.toHaveBeenCalled()
-        expect(await paymentsService.findUnresolvedBefore(future)).toEqual([])
+        expect(await paymentsService.findResolutionCandidates({ before: future })).toEqual([])
         expect(ensure((await getPayments(fix, [payment.id]))[0]).status).toBe(
             PaymentStatus.Completed
         )
@@ -1298,13 +1312,13 @@ describe('PurchaseService', () => {
             purchaseRecordId: purchaseRecord.id,
             userId: user.id
         })
-        const cancel = vi.spyOn(paymentsService, 'cancelByPurchaseRecordId')
+        const cancel = vi.spyOn(paymentsService, 'compensate')
         const future = DateUtil.add({ milliseconds: 1000 })
 
         await purchaseService.reconcileUnresolvedPayments(future)
 
         expect(cancel).not.toHaveBeenCalled()
-        expect(await paymentsService.findUnresolvedBefore(future)).toEqual([
+        expect(await paymentsService.findResolutionCandidates({ before: future })).toEqual([
             expect.objectContaining({ id: payment.id })
         ])
     })
@@ -1324,7 +1338,7 @@ describe('PurchaseService', () => {
         expect(ensure((await getPayments(fix, [payment.id]))[0]).status).toBe(
             PaymentStatus.Completed
         )
-        expect(await paymentsService.findUnresolvedBefore(future)).toEqual([
+        expect(await paymentsService.findResolutionCandidates({ before: future })).toEqual([
             expect.objectContaining({ id: payment.id })
         ])
     })
@@ -1365,7 +1379,7 @@ describe('PurchaseService', () => {
         // 두 replica가 lease 획득 전 같은 stale outbox 목록을 읽은 상황을 고정한다.
         // 목록 조회만으로 중복을 막는 것이 아니라 저장소의 publication CAS가 loser를
         // 실제로 거절해야 한다.
-        vi.spyOn(purchaseRecordsService, 'findUnpublishedBefore').mockResolvedValue([pending])
+        vi.spyOn(purchaseRecordsService, 'findPublicationCandidates').mockResolvedValue([pending])
 
         const firstPublisher = purchaseService.publishPendingPurchaseEvents(before)
         await didStartFirstEmit
@@ -1414,7 +1428,7 @@ describe('PurchaseService', () => {
             pending.id,
             pending.id
         ])
-        expect(await purchaseRecordsService.findUnpublishedBefore(before)).toEqual([])
+        expect(await purchaseRecordsService.findPublicationCandidates({ before })).toEqual([])
     })
 
     it('outbox publish와 publication claim 해제가 모두 실패해도 완료 구매를 되돌리지 않는다', async () => {
@@ -1449,7 +1463,7 @@ describe('PurchaseService', () => {
         ).resolves.toBeUndefined()
 
         expect(release).toHaveBeenCalledTimes(1)
-        expect(await purchaseRecordsService.findByUserId(user.id)).toEqual([
+        expect(await purchaseRecordsService.findCompleted({ userId: user.id })).toEqual([
             expect.objectContaining({ id: pending.id })
         ])
     })

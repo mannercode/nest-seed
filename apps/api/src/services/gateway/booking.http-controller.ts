@@ -20,7 +20,7 @@ export class BookingHttpController {
     constructor(private readonly bookingService: BookingService) {}
 
     @Get('showtimes/:showtimeId/tickets')
-    async getTicketsForShowtime(@Param('showtimeId') showtimeId: string) {
+    async getTickets(@Param('showtimeId') showtimeId: string) {
         return this.bookingService.getTickets(showtimeId)
     }
 

@@ -31,7 +31,7 @@ export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAss
         return 0 < count
     }
 
-    async findAssetIdsByMovieIds(movieIds: string[]): Promise<string[]> {
+    async findAssetIds({ movieIds }: { movieIds: string[] }): Promise<string[]> {
         const builder = new QueryBuilder<MoviePendingAsset>()
         builder.addIn('movieId', movieIds)
         const query = builder.build({})
@@ -39,7 +39,7 @@ export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAss
         return this.distinctValues<string>('assetId', this.activeFilter(query))
     }
 
-    async removeByMovieIds(movieIds: string[]): Promise<void> {
+    async removeMany({ movieIds }: { movieIds: string[] }): Promise<void> {
         const builder = new QueryBuilder<MoviePendingAsset>()
         builder.addIn('movieId', movieIds)
         const query = builder.build({})

@@ -97,11 +97,11 @@ export class AssetsService {
             throw ensure(failed[0]).reason
         }
 
-        await this.repository.deleteByIds(assetIds)
+        await this.repository.deleteMany({ ids: assetIds })
     }
 
     async finalizeUpload(assetId: string, { owner }: FinalizeAssetDto) {
-        const asset = await this.repository.getById(assetId)
+        const asset = await this.repository.get({ id: assetId })
 
         // 만료 판정과 소유 부여를 조건부 원자 갱신 하나로 처리한다.
         // 시각을 먼저 검사하고 나중에 소유를 쓰면, 그 틈에 정리 cron이 같은 자산의 S3 객체를 지울 수 있다.
@@ -125,14 +125,14 @@ export class AssetsService {
     }
 
     async findMany(assetIds: string[]) {
-        const assets = await this.repository.findByIds(assetIds)
+        const assets = await this.repository.findMany({ ids: assetIds })
 
         const dtos = this.toDtos(assets)
         return Promise.all(dtos.map((dto) => this.withDownloadInfo(dto)))
     }
 
     async getMany(assetIds: string[]) {
-        const assets = await this.repository.getByIds(assetIds)
+        const assets = await this.repository.getMany({ ids: assetIds })
 
         const dtos = this.toDtos(assets)
         return Promise.all(dtos.map((dto) => this.withDownloadInfo(dto)))
@@ -141,7 +141,7 @@ export class AssetsService {
     async findOwner(
         assetId: string
     ): Promise<{ entityId: string; service: string } | null | undefined> {
-        const asset = await this.repository.findById(assetId)
+        const asset = await this.repository.find({ id: assetId })
 
         if (!asset) return undefined
 
@@ -151,13 +151,13 @@ export class AssetsService {
     async findOwners(
         assetIds: string[]
     ): Promise<Map<string, { entityId: string; service: string } | null>> {
-        const assets = await this.repository.findByIds(assetIds)
+        const assets = await this.repository.findMany({ ids: assetIds })
 
         return new Map(assets.map((asset) => [asset.id, this.toOwner(asset)]))
     }
 
     async isUploadComplete(assetId: string): Promise<boolean> {
-        const { id, mimeType, size } = await this.repository.getById(assetId)
+        const { id, mimeType, size } = await this.repository.get({ id: assetId })
 
         return this.s3Service.isUploadComplete({
             contentLength: size,

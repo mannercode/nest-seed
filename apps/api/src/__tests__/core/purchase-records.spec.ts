@@ -36,14 +36,14 @@ describe('PurchaseRecordsService', () => {
         })
     })
 
-    describe('findByUserId', () => {
+    describe('findCompleted', () => {
         it('해당 userId의 구매 기록만 반환한다', async () => {
             const userId = oid(0x1)
             const mine1 = await createPurchaseRecord(fix, { userId })
             const mine2 = await createPurchaseRecord(fix, { userId })
             await createPurchaseRecord(fix, { userId: oid(0x2) })
 
-            const records = await purchaseRecordsService.findByUserId(userId)
+            const records = await purchaseRecordsService.findCompleted({ userId })
 
             expect(records).toEqual(expect.arrayContaining([mine1, mine2]))
             expect(records).toHaveLength(2)
@@ -51,7 +51,7 @@ describe('PurchaseRecordsService', () => {
         })
 
         it('구매 기록이 없으면 빈 배열을 반환한다', async () => {
-            const records = await purchaseRecordsService.findByUserId(oid(0x1))
+            const records = await purchaseRecordsService.findCompleted({ userId: oid(0x1) })
 
             expect(records).toEqual([])
         })
@@ -63,7 +63,7 @@ describe('PurchaseRecordsService', () => {
             await sleep(50)
             const second = await createPurchaseRecord(fix, { userId })
 
-            const records = await purchaseRecordsService.findByUserId(userId)
+            const records = await purchaseRecordsService.findCompleted({ userId })
 
             expect(pickIds(records)).toEqual([second.id, first.id])
         })
@@ -74,15 +74,19 @@ describe('PurchaseRecordsService', () => {
             const createDto = buildCreatePurchaseRecordDto({ paymentId: null })
             const pending = await purchaseRecordsService.create(createDto, { pending: true })
 
-            expect(await purchaseRecordsService.findByUserId(createDto.userId)).toEqual([])
-            expect(await purchaseRecordsService.findPendingById(pending.id)).toEqual(pending)
             expect(
-                await purchaseRecordsService.findPendingBefore(
-                    DateUtil.add({ milliseconds: -1000 })
-                )
+                await purchaseRecordsService.findCompleted({ userId: createDto.userId })
+            ).toEqual([])
+            expect(await purchaseRecordsService.findPending({ id: pending.id })).toEqual(pending)
+            expect(
+                await purchaseRecordsService.findReconciliationCandidates({
+                    before: DateUtil.add({ milliseconds: -1000 })
+                })
             ).toEqual([])
             expect(
-                await purchaseRecordsService.findPendingBefore(DateUtil.add({ milliseconds: 1000 }))
+                await purchaseRecordsService.findReconciliationCandidates({
+                    before: DateUtil.add({ milliseconds: 1000 })
+                })
             ).toEqual([pending])
 
             const paymentId = oid(0x99)
@@ -96,12 +100,14 @@ describe('PurchaseRecordsService', () => {
             const completed = await purchaseRecordsService.markCompleted(pending.id, completionId)
 
             expect(completed.paymentId).toBe(paymentId)
-            expect(await purchaseRecordsService.findPendingById(pending.id)).toBeUndefined()
-            expect(await purchaseRecordsService.findByUserId(createDto.userId)).toEqual([completed])
+            expect(await purchaseRecordsService.findPending({ id: pending.id })).toBeUndefined()
             expect(
-                await purchaseRecordsService.findUnpublishedBefore(
-                    DateUtil.add({ milliseconds: 1000 })
-                )
+                await purchaseRecordsService.findCompleted({ userId: createDto.userId })
+            ).toEqual([completed])
+            expect(
+                await purchaseRecordsService.findPublicationCandidates({
+                    before: DateUtil.add({ milliseconds: 1000 })
+                })
             ).toEqual([completed])
 
             const publicationId = 'publication-1'
@@ -143,9 +149,9 @@ describe('PurchaseRecordsService', () => {
             )
 
             expect(
-                await purchaseRecordsService.findUnpublishedBefore(
-                    DateUtil.add({ milliseconds: 1000 })
-                )
+                await purchaseRecordsService.findPublicationCandidates({
+                    before: DateUtil.add({ milliseconds: 1000 })
+                })
             ).toEqual([])
         })
 
@@ -182,11 +188,15 @@ describe('PurchaseRecordsService', () => {
 
             await purchaseRecordsService.markCancelled(pending.id, reconciliationId)
 
-            expect(await purchaseRecordsService.findPendingById(pending.id)).toBeUndefined()
+            expect(await purchaseRecordsService.findPending({ id: pending.id })).toBeUndefined()
             expect(
-                await purchaseRecordsService.findPendingBefore(DateUtil.add({ milliseconds: 1000 }))
+                await purchaseRecordsService.findReconciliationCandidates({
+                    before: DateUtil.add({ milliseconds: 1000 })
+                })
             ).toEqual([])
-            expect(await purchaseRecordsService.findByUserId(createDto.userId)).toEqual([])
+            expect(
+                await purchaseRecordsService.findCompleted({ userId: createDto.userId })
+            ).toEqual([])
         })
 
         it('여러 replica 중 한 곳만 보상 lease를 얻고 실패한 lease는 재시도한다', async () => {
@@ -209,7 +219,9 @@ describe('PurchaseRecordsService', () => {
             const winnerIndex = claims.findIndex(Boolean)
             expect(claims.filter(Boolean)).toHaveLength(1)
             expect(
-                await purchaseRecordsService.findPendingBefore(DateUtil.add({ milliseconds: 1000 }))
+                await purchaseRecordsService.findReconciliationCandidates({
+                    before: DateUtil.add({ milliseconds: 1000 })
+                })
             ).toEqual([])
             await expect(
                 purchaseRecordsService.markCompleted(pending.id, 'completion-loser')
@@ -231,12 +243,16 @@ describe('PurchaseRecordsService', () => {
             await purchaseRecordsService.markCancelled(pending.id, winnerId)
             await purchaseRecordsService.releaseReconciliationClaim(pending.id, winnerId)
             expect(
-                await purchaseRecordsService.findPendingBefore(DateUtil.add({ milliseconds: 1000 }))
+                await purchaseRecordsService.findReconciliationCandidates({
+                    before: DateUtil.add({ milliseconds: 1000 })
+                })
             ).toEqual([])
 
             await purchaseRecordsService.releaseReconciliationClaim(pending.id, takeoverId)
             expect(
-                await purchaseRecordsService.findPendingBefore(DateUtil.add({ milliseconds: 1000 }))
+                await purchaseRecordsService.findReconciliationCandidates({
+                    before: DateUtil.add({ milliseconds: 1000 })
+                })
             ).toEqual([expect.objectContaining({ id: pending.id })])
 
             const retryId = 'reconciliation-retry'
@@ -250,7 +266,9 @@ describe('PurchaseRecordsService', () => {
             ).toEqual(expect.objectContaining({ id: pending.id }))
             await purchaseRecordsService.markCancelled(pending.id, retryId)
             expect(
-                await purchaseRecordsService.findPendingBefore(DateUtil.add({ milliseconds: 1000 }))
+                await purchaseRecordsService.findReconciliationCandidates({
+                    before: DateUtil.add({ milliseconds: 1000 })
+                })
             ).toEqual([])
         })
 
@@ -261,7 +279,9 @@ describe('PurchaseRecordsService', () => {
             await purchaseRecordsService.claimForCompletion(pending.id, completionId, instant())
 
             expect(
-                await purchaseRecordsService.findPendingBefore(DateUtil.add({ milliseconds: 1000 }))
+                await purchaseRecordsService.findReconciliationCandidates({
+                    before: DateUtil.add({ milliseconds: 1000 })
+                })
             ).toEqual([expect.objectContaining({ id: pending.id })])
 
             const reconciliationId = 'reconciliation-recovery'
@@ -278,7 +298,9 @@ describe('PurchaseRecordsService', () => {
             ).rejects.toThrow('Purchase completion lease was lost')
 
             await purchaseRecordsService.markCancelled(pending.id, reconciliationId)
-            expect(await purchaseRecordsService.findByUserId(createDto.userId)).toEqual([])
+            expect(
+                await purchaseRecordsService.findCompleted({ userId: createDto.userId })
+            ).toEqual([])
         })
     })
 })

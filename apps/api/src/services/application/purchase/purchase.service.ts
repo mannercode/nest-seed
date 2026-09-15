@@ -50,10 +50,10 @@ export class PurchaseService {
         this.logger.log('processPurchase', { userId })
 
         const fingerprint = this.fingerprint(createDto)
-        const existing = await this.purchaseRecordsService.findIdempotencyOperation(
+        const existing = await this.purchaseRecordsService.findIdempotencyOperation({
             userId,
             idempotencyKey
-        )
+        })
         if (existing) return this.replayIdempotencyOperation(existing, fingerprint)
 
         const ticketIds = createDto.purchaseItems.map((item) => item.itemId)
@@ -85,10 +85,10 @@ export class PurchaseService {
         idempotencyKey: string,
         fingerprint: string
     ) {
-        const existing = await this.purchaseRecordsService.findIdempotencyOperation(
+        const existing = await this.purchaseRecordsService.findIdempotencyOperation({
             userId,
             idempotencyKey
-        )
+        })
         if (existing) return this.replayIdempotencyOperation(existing, fingerprint)
 
         const tickets = await this.ticketsService.getMany(ticketIds)
@@ -111,7 +111,10 @@ export class PurchaseService {
             if (!(error instanceof PurchaseRecordIdempotencyConflictException)) throw error
 
             const winner = ensure(
-                await this.purchaseRecordsService.findIdempotencyOperation(userId, idempotencyKey),
+                await this.purchaseRecordsService.findIdempotencyOperation({
+                    userId,
+                    idempotencyKey
+                }),
                 'Purchase idempotency winner is missing after a duplicate-key conflict.'
             )
             return this.replayIdempotencyOperation(winner, fingerprint)
@@ -144,7 +147,7 @@ export class PurchaseService {
                 // 빨랐을 수 있다. payment 행의 durable resolution marker를 남긴 채 여기서도
                 // 취소를 시도하고, 실패하면 주기 작업이 terminal 구매 상태와 다시 대조한다.
                 try {
-                    await this.paymentsService.cancelByPurchaseRecordId(purchaseRecord.id)
+                    await this.paymentsService.compensate({ purchaseRecordId: purchaseRecord.id })
                 } catch (cancellationError) {
                     this.logger.error('late payment cancellation deferred to durable resolution', {
                         error: cancellationError,
@@ -256,7 +259,7 @@ export class PurchaseService {
     }
 
     async reconcilePendingPurchases(before: Temporal.Instant = DateUtil.now()) {
-        const pending = await this.purchaseRecordsService.findPendingBefore(before)
+        const pending = await this.purchaseRecordsService.findReconciliationCandidates({ before })
         for (const purchaseRecord of pending) {
             try {
                 await this.reconcilePurchase(purchaseRecord.id, before)
@@ -270,18 +273,18 @@ export class PurchaseService {
     }
 
     async publishPendingPurchaseEvents(before: Temporal.Instant = DateUtil.now()) {
-        const unpublished = await this.purchaseRecordsService.findUnpublishedBefore(before)
+        const unpublished = await this.purchaseRecordsService.findPublicationCandidates({ before })
         for (const purchaseRecord of unpublished) {
             await this.publishPurchaseEvent(purchaseRecord, before)
         }
     }
 
     async reconcileUnresolvedPayments(before: Temporal.Instant) {
-        const unresolved = await this.paymentsService.findUnresolvedBefore(before)
+        const unresolved = await this.paymentsService.findResolutionCandidates({ before })
         for (const payment of unresolved) {
             try {
                 const { purchaseRecordId } = payment
-                const status = await this.purchaseRecordsService.getStatusById(purchaseRecordId)
+                const status = await this.purchaseRecordsService.getStatus({ id: purchaseRecordId })
                 if (status === PurchaseRecordStatus.Completed) {
                     await this.paymentsService.resolvePurchase(purchaseRecordId)
                 } else if (status === PurchaseRecordStatus.Cancelled) {
@@ -365,7 +368,7 @@ export class PurchaseService {
                 ],
                 [
                     'cancelPayment',
-                    () => this.paymentsService.cancelByPurchaseRecordId(purchaseRecord.id)
+                    () => this.paymentsService.compensate({ purchaseRecordId: purchaseRecord.id })
                 ]
             ]
 

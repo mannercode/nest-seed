@@ -12,8 +12,8 @@ export class PaymentsService {
         await this.repository.cancel(paymentId)
     }
 
-    async cancelByPurchaseRecordId(purchaseRecordId: string) {
-        const payment = await this.repository.findByPurchaseRecordId(purchaseRecordId)
+    async compensate({ purchaseRecordId }: { purchaseRecordId: string }) {
+        const payment = await this.repository.findPayment({ purchaseRecordId })
         if (!payment) return
 
         await this.cancel(payment.id)
@@ -25,13 +25,13 @@ export class PaymentsService {
         return this.toDto(payment)
     }
 
-    async findUnresolvedBefore(before: Temporal.Instant) {
-        const payments = await this.repository.findUnresolvedBefore(before)
+    async findResolutionCandidates({ before }: { before: Temporal.Instant }) {
+        const payments = await this.repository.findResolutionCandidates({ before })
         return this.toDtos(payments)
     }
 
     async getMany(paymentIds: string[]) {
-        const payments = await this.repository.getByIds(paymentIds)
+        const payments = await this.repository.getMany({ ids: paymentIds })
 
         return this.toDtos(payments)
     }

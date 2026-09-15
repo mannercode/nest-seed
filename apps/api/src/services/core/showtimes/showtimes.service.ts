@@ -7,7 +7,7 @@ import {
     ShowtimeDto
 } from './dtos/index.js'
 import { Showtime } from './models/index.js'
-import { ShowtimesRepository } from './showtimes.repository.js'
+import { type ShowtimeExistenceQuery, ShowtimesRepository } from './showtimes.repository.js'
 
 @Injectable()
 export class ShowtimesService {
@@ -27,16 +27,12 @@ export class ShowtimesService {
         return this.repository.allExist(showtimeIds)
     }
 
-    async existsByMovieIds(movieIds: string[]): Promise<boolean> {
-        return this.repository.existsByMovieIds(movieIds)
-    }
-
-    async existsByTheaterIds(theaterIds: string[]): Promise<boolean> {
-        return this.repository.existsByTheaterIds(theaterIds)
+    async exists(query: ShowtimeExistenceQuery): Promise<boolean> {
+        return this.repository.exists(query)
     }
 
     async getMany(showtimeIds: string[]) {
-        const showtimes = await this.repository.getByIds(showtimeIds)
+        const showtimes = await this.repository.getMany({ ids: showtimeIds })
 
         return this.toDtos(showtimes)
     }

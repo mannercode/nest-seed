@@ -60,13 +60,13 @@ export class UsersRepository extends CrudRepository<User> {
         return user
     }
 
-    async findByEmailWithPassword(email: string) {
+    async findWithPassword({ email }: { email: string }) {
         const user = await this.findDocument(this.activeFilter({ email: { $eq: email } }))
 
         return user ? this.toDomainDocument(user) : null
     }
 
-    async findAuthVersionById(userId: string): Promise<number | null> {
+    async findAuthVersion({ id: userId }: { id: string }): Promise<number | null> {
         const user = await this.findDocument(this.activeFilter({ _id: userId }), {
             projection: { authVersion: 1 }
         })
@@ -76,7 +76,7 @@ export class UsersRepository extends CrudRepository<User> {
     }
 
     async isAuthVersionCurrent(userId: string, authVersion: number): Promise<boolean> {
-        const current = await this.findAuthVersionById(userId)
+        const current = await this.findAuthVersion({ id: userId })
         return current !== null && current === authVersion
     }
 
@@ -90,7 +90,7 @@ export class UsersRepository extends CrudRepository<User> {
         if (!user) throw new NotFoundException(MongoErrors.DocumentNotFound(userId))
     }
 
-    async deleteByIdsWithAuthVersion(userIds: string[]): Promise<void> {
+    async deleteManyWithAuthVersion({ ids: userIds }: { ids: string[] }): Promise<void> {
         await this.updateDocuments(
             this.activeFilter({ _id: { $in: userIds } }),
             this.timestamped({ $inc: { authVersion: 1 }, $set: { deletedAt: DateUtil.now() } })

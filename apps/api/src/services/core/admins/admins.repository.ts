@@ -54,13 +54,13 @@ export class AdminsRepository extends CrudRepository<Admin> {
         }
     }
 
-    async findByEmailWithPassword(email: string) {
+    async findWithPassword({ email }: { email: string }) {
         const admin = await this.findDocument(this.activeFilter({ email: { $eq: email } }))
 
         return admin
     }
 
-    async findAuthVersionById(adminId: string): Promise<number | null> {
+    async findAuthVersion({ id: adminId }: { id: string }): Promise<number | null> {
         const admin = await this.findDocument(this.activeFilter({ _id: adminId }), {
             projection: { authVersion: 1 }
         })
@@ -70,11 +70,11 @@ export class AdminsRepository extends CrudRepository<Admin> {
     }
 
     async isAuthVersionCurrent(adminId: string, authVersion: number): Promise<boolean> {
-        const current = await this.findAuthVersionById(adminId)
+        const current = await this.findAuthVersion({ id: adminId })
         return current !== null && current === authVersion
     }
 
-    async deleteByIdWithAuthVersion(adminId: string): Promise<void> {
+    async deleteWithAuthVersion({ id: adminId }: { id: string }): Promise<void> {
         const admin = await this.findAndUpdateDocument(
             this.activeFilter({ _id: adminId }),
             this.timestamped({ $inc: { authVersion: 1 }, $set: { deletedAt: DateUtil.now() } }),

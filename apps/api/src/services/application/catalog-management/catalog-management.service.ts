@@ -10,14 +10,14 @@ export class CatalogManagementService {
     ) {}
 
     async deleteMovie(movieId: string) {
-        if (await this.showtimesService.existsByMovieIds([movieId])) {
+        if (await this.showtimesService.exists({ movieIds: [movieId] })) {
             throw new ConflictException(MovieErrors.DeleteBlockedByShowtimes(movieId))
         }
         await this.moviesService.deleteMany([movieId])
     }
 
     async deleteTheater(theaterId: string) {
-        if (await this.showtimesService.existsByTheaterIds([theaterId])) {
+        if (await this.showtimesService.exists({ theaterIds: [theaterId] })) {
             throw new ConflictException(TheaterErrors.DeleteBlockedByShowtimes(theaterId))
         }
         await this.theatersService.deleteMany([theaterId])

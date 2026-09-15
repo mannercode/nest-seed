@@ -43,17 +43,14 @@ describe('UserAuthenticationService', () => {
         })
     })
 
-    describe('findUserByCredentials', () => {
+    describe('authenticate', () => {
         it('가입된 이메일이 없어도 공통 해시 검증 후 null을 반환한다', async () => {
-            const repo = { findByEmailWithPassword: vi.fn().mockResolvedValue(null) }
+            const repo = { findWithPassword: vi.fn().mockResolvedValue(null) }
             const svc = new UserAuthenticationService(repo as any, {} as any)
             const verifySpy = vi.spyOn(PasswordHasher, 'verify')
             const validateSpy = vi.spyOn(svc, 'validate')
 
-            const result = await svc.findUserByCredentials({
-                email: 'noone@x.com',
-                password: 'anything'
-            })
+            const result = await svc.authenticate({ email: 'noone@x.com', password: 'anything' })
 
             expect(result).toBeNull()
             expect(validateSpy).toHaveBeenCalledTimes(1)
@@ -64,14 +61,14 @@ describe('UserAuthenticationService', () => {
         it('비밀번호가 일치하지 않으면 저장된 해시로 validate를 호출하고 null을 반환한다', async () => {
             const realHash = await service.hash('correct')
             const repo = {
-                findByEmailWithPassword: vi
+                findWithPassword: vi
                     .fn()
                     .mockResolvedValue({ id: 'u1', email: 'a@b.com', password: realHash })
             }
             const svc = new UserAuthenticationService(repo as any, {} as any)
             const validateSpy = vi.spyOn(svc, 'validate')
 
-            const result = await svc.findUserByCredentials({ email: 'a@b.com', password: 'wrong' })
+            const result = await svc.authenticate({ email: 'a@b.com', password: 'wrong' })
 
             expect(result).toBeNull()
             expect(validateSpy).toHaveBeenCalledTimes(1)

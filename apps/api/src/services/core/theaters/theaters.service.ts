@@ -20,7 +20,7 @@ export class TheatersService {
     }
 
     async deleteMany(theaterIds: string[]): Promise<void> {
-        await this.repository.deleteByIds(theaterIds)
+        await this.repository.deleteMany({ ids: theaterIds })
     }
 
     async acquireShowtimeScheduleGuards(
@@ -36,7 +36,7 @@ export class TheatersService {
         transaction: TransactionContext | undefined = undefined,
         signal: AbortSignal | undefined = undefined
     ) {
-        const theaters = await this.repository.getByIds(theaterIds, transaction, signal)
+        const theaters = await this.repository.getMany({ ids: theaterIds, transaction, signal })
 
         const theaterDtos = this.toDtos(theaters)
         return theaterDtos

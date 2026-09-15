@@ -28,8 +28,14 @@ export class PurchaseRecordsService {
         return this.toDto(purchaseRecord)
     }
 
-    async findIdempotencyOperation(userId: string, idempotencyKey: string) {
-        const record = await this.repository.findByIdempotencyKey(userId, idempotencyKey)
+    async findIdempotencyOperation({
+        userId,
+        idempotencyKey
+    }: {
+        userId: string
+        idempotencyKey: string
+    }) {
+        const record = await this.repository.findIdempotencyOperation({ userId, idempotencyKey })
         if (!record) return undefined
 
         return {
@@ -44,18 +50,21 @@ export class PurchaseRecordsService {
         }
     }
 
-    async findPendingById(purchaseRecordId: string) {
-        const record = await this.repository.findPendingById(purchaseRecordId)
+    async findPending({ id: purchaseRecordId }: { id: string }) {
+        const record = await this.repository.findPending({ id: purchaseRecordId })
         return record ? this.toDto(record) : undefined
     }
 
-    async getStatusById(purchaseRecordId: string) {
-        const record = await this.repository.getById(purchaseRecordId)
+    async getStatus({ id: purchaseRecordId }: { id: string }) {
+        const record = await this.repository.get({ id: purchaseRecordId })
         return record.status
     }
 
-    async findPendingBefore(before: Temporal.Instant) {
-        const records = await this.repository.findPendingBefore(before, DateUtil.now())
+    async findReconciliationCandidates({ before }: { before: Temporal.Instant }) {
+        const records = await this.repository.findReconciliationCandidates({
+            before,
+            now: DateUtil.now()
+        })
         return this.toDtos(records)
     }
 
@@ -74,8 +83,11 @@ export class PurchaseRecordsService {
         return record ? this.toDto(record) : undefined
     }
 
-    async findUnpublishedBefore(before: Temporal.Instant) {
-        const records = await this.repository.findUnpublishedBefore(before, DateUtil.now())
+    async findPublicationCandidates({ before }: { before: Temporal.Instant }) {
+        const records = await this.repository.findPublicationCandidates({
+            before,
+            now: DateUtil.now()
+        })
         return this.toDtos(records)
     }
 
@@ -141,8 +153,8 @@ export class PurchaseRecordsService {
         await this.repository.releaseEventPublicationClaim(purchaseRecordId, publicationId)
     }
 
-    async findByUserId(userId: string) {
-        const purchaseRecords = await this.repository.findByUserId(userId)
+    async findCompleted({ userId }: { userId: string }) {
+        const purchaseRecords = await this.repository.findCompleted({ userId })
 
         return this.toDtos(purchaseRecords)
     }

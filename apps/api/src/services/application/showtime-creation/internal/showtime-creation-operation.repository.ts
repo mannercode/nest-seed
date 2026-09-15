@@ -40,11 +40,15 @@ export class ShowtimeCreationOperationRepository extends CrudRepository<Showtime
         await this.insertOne(operation, transaction, signal)
     }
 
-    async findBySagaId(
-        sagaId: string,
-        transaction: TransactionContext,
+    async findOperation({
+        sagaId,
+        transaction,
+        signal
+    }: {
+        sagaId: string
+        transaction: TransactionContext
         signal: AbortSignal | undefined
-    ) {
+    }) {
         const operation = await this.findDocument({ sagaId }, { transaction, signal })
         return operation ? this.toDomainDocument(operation) : null
     }

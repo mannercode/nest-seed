@@ -51,8 +51,8 @@ describe('CrudRepository', () => {
             const page = await fix.soft.findWithPagination({ filter, pagination: {} })
             expect(page.total).toBe(1)
             expect(page.items).toEqual([updated])
-            expect(await fix.soft.getById(created.id)).toEqual(updated)
-            expect(await fix.soft.getByIds([created.id])).toEqual([updated])
+            expect(await fix.soft.get({ id: created.id })).toEqual(updated)
+            expect(await fix.soft.getMany({ ids: [created.id] })).toEqual([updated])
             expect(await fix.soft.countDocuments(filter)).toBe(1)
             expect(await fix.soft.distinctValues<string>('_id', filter)).toEqual([created.id])
         })
@@ -302,7 +302,9 @@ describe('CrudRepository', () => {
                 expect(doc.id).toEqual(expect.any(String))
                 expect(doc).not.toHaveProperty('_id')
             }
-            await expect(fix.soft.findByIds(docs.map(({ id }) => id))).resolves.toHaveLength(3)
+            await expect(
+                fix.soft.findMany({ ids: docs.map(({ id }) => id) })
+            ).resolves.toHaveLength(3)
             expect(insertMany).toHaveBeenCalledWith(
                 expect.any(Array),
                 expect.objectContaining({ signal: controller.signal })
@@ -351,7 +353,7 @@ describe('CrudRepository', () => {
             draft.secret = 'hidden'
             await fix.projected.insertDrafts([draft])
 
-            const found = await fix.projected.getById(draft.id)
+            const found = await fix.projected.get({ id: draft.id })
             const raw = await fix.projected.collection.findOne({ _id: objectId(draft.id) })
 
             expect(found).not.toHaveProperty('secret')
@@ -367,41 +369,41 @@ describe('CrudRepository', () => {
         })
     })
 
-    describe('findById, getById, findByIds, getByIds, allExist', () => {
+    describe('find, get, findMany, getMany, allExist', () => {
         it('find/get 단건 조회와 누락을 구분한다', async () => {
             const created = await fix.soft.create('sample')
             const missingId = objectId('000000000000000000000000').toHexString()
 
-            await expect(fix.soft.findById(created.id)).resolves.toMatchObject({
+            await expect(fix.soft.find({ id: created.id })).resolves.toMatchObject({
                 id: created.id,
                 name: 'sample'
             })
-            await expect(fix.soft.findById(missingId)).resolves.toBeNull()
-            await expect(fix.soft.getById(missingId)).rejects.toBeInstanceOf(NotFoundException)
-            await expect(fix.soft.getById(missingId)).rejects.toMatchObject({
+            await expect(fix.soft.find({ id: missingId })).resolves.toBeNull()
+            await expect(fix.soft.get({ id: missingId })).rejects.toBeInstanceOf(NotFoundException)
+            await expect(fix.soft.get({ id: missingId })).rejects.toMatchObject({
                 response: MongoErrors.DocumentNotFound(missingId)
             })
         })
 
-        it('findByIds는 없는 ID를 무시하고 getByIds는 정확한 누락 ID를 보고한다', async () => {
+        it('findMany는 없는 ID를 무시하고 getMany는 정확한 누락 ID를 보고한다', async () => {
             const [first, second] = await fix.soft.createMany(['a', 'b'])
             if (!first || !second) throw new Error('samples must exist')
             const missingId = '000000000000000000000000'
 
-            await expect(fix.soft.findByIds([first.id, missingId])).resolves.toEqual([
+            await expect(fix.soft.findMany({ ids: [first.id, missingId] })).resolves.toEqual([
                 expect.objectContaining({ id: first.id })
             ])
-            await expect(fix.soft.getByIds([first.id, missingId])).rejects.toMatchObject({
+            await expect(fix.soft.getMany({ ids: [first.id, missingId] })).rejects.toMatchObject({
                 response: MongoErrors.MultipleDocumentsNotFound([missingId])
             })
-            await expect(fix.soft.getByIds([first.id, second.id])).resolves.toHaveLength(2)
+            await expect(fix.soft.getMany({ ids: [first.id, second.id] })).resolves.toHaveLength(2)
         })
 
-        it('getByIds는 중복 ID를 경고하고 한 번만 반환한다', async () => {
+        it('getMany는 중복 ID를 경고하고 한 번만 반환한다', async () => {
             const created = await fix.soft.create('sample')
             const warn = vi.spyOn(Logger, 'warn').mockImplementation(() => undefined)
 
-            const docs = await fix.soft.getByIds([created.id, created.id])
+            const docs = await fix.soft.getMany({ ids: [created.id, created.id] })
 
             expect(docs).toHaveLength(1)
             expect(warn).toHaveBeenCalledWith(expect.stringContaining('Duplicate IDs detected'))
@@ -416,13 +418,13 @@ describe('CrudRepository', () => {
         })
     })
 
-    describe('deleteById, deleteByIds', () => {
+    describe('delete, deleteMany', () => {
         it('soft delete는 문서를 남기되 공용 조회에서 제외한다', async () => {
             const created = await fix.soft.create('soft')
 
-            await fix.soft.deleteById(created.id)
+            await fix.soft.delete({ id: created.id })
 
-            await expect(fix.soft.findById(created.id)).resolves.toBeNull()
+            await expect(fix.soft.find({ id: created.id })).resolves.toBeNull()
             const raw = await fix.soft.collection.findOne({ _id: objectId(created.id) })
             expect(raw).toMatchObject({ deletedAt: expect.any(Date), updatedAt: expect.any(Date) })
         })
@@ -430,7 +432,7 @@ describe('CrudRepository', () => {
         it('soft delete 단건은 없는 문서를 404로 처리한다', async () => {
             const missingId = '000000000000000000000000'
 
-            await expect(fix.soft.deleteById(missingId)).rejects.toMatchObject({
+            await expect(fix.soft.delete({ id: missingId })).rejects.toMatchObject({
                 response: MongoErrors.DocumentNotFound(missingId)
             })
         })
@@ -439,20 +441,24 @@ describe('CrudRepository', () => {
             const docs = await fix.soft.createMany(['a', 'b'])
             const ids = docs.map(({ id }) => id)
 
-            await expect(fix.soft.deleteByIds(ids)).resolves.toEqual({ deletedCount: 2 })
-            await expect(fix.soft.deleteByIds(ids)).resolves.toEqual({ deletedCount: 0 })
+            await expect(fix.soft.deleteMany({ ids })).resolves.toEqual({ deletedCount: 2 })
+            await expect(fix.soft.deleteMany({ ids })).resolves.toEqual({ deletedCount: 0 })
         })
 
         it('hard delete는 문서를 실제로 지우고 없는 단건은 404다', async () => {
             const [first, second] = await fix.hard.createMany(['a', 'b'])
             if (!first || !second) throw new Error('samples must exist')
 
-            await fix.hard.deleteById(first.id)
+            await fix.hard.delete({ id: first.id })
             await expect(
                 fix.hard.collection.findOne({ _id: objectId(first.id) })
             ).resolves.toBeNull()
-            await expect(fix.hard.deleteById(first.id)).rejects.toBeInstanceOf(NotFoundException)
-            await expect(fix.hard.deleteByIds([second.id])).resolves.toEqual({ deletedCount: 1 })
+            await expect(fix.hard.delete({ id: first.id })).rejects.toBeInstanceOf(
+                NotFoundException
+            )
+            await expect(fix.hard.deleteMany({ ids: [second.id] })).resolves.toEqual({
+                deletedCount: 1
+            })
         })
     })
 
@@ -499,7 +505,7 @@ describe('CrudRepository', () => {
         it('필터가 없어도 soft-deleted 문서를 total에서 제외한다', async () => {
             const [active, deleted] = await fix.soft.createMany(['active', 'deleted'])
             if (!active || !deleted) throw new Error('samples must exist')
-            await fix.soft.deleteById(deleted.id)
+            await fix.soft.delete({ id: deleted.id })
             const estimated = vi.spyOn(fix.soft.collection, 'estimatedDocumentCount')
             const count = vi.spyOn(fix.soft.collection, 'countDocuments')
 
@@ -517,7 +523,7 @@ describe('CrudRepository', () => {
         it('필터가 있으면 active filter를 포함한 정확한 count를 사용한다', async () => {
             const [active, deleted] = await fix.soft.createMany(['target', 'target'])
             if (!active || !deleted) throw new Error('samples must exist')
-            await fix.soft.deleteById(deleted.id)
+            await fix.soft.delete({ id: deleted.id })
             const estimated = vi.spyOn(fix.soft.collection, 'estimatedDocumentCount')
             const count = vi.spyOn(fix.soft.collection, 'countDocuments')
 
@@ -574,12 +580,14 @@ describe('CrudRepository', () => {
                 })
             )
 
-            await expect(fix.soft.findById(soft.id)).resolves.toMatchObject({ name: 'committed' })
-            await expect(fix.hard.findById(hard.id)).resolves.toMatchObject({
+            await expect(fix.soft.find({ id: soft.id })).resolves.toMatchObject({
+                name: 'committed'
+            })
+            await expect(fix.hard.find({ id: hard.id })).resolves.toMatchObject({
                 name: 'also-committed'
             })
             expect(started.mock.results[0]?.value).toMatchObject({ hasEnded: true })
-            await expect(fix.soft.findById(soft.id, transaction)).rejects.toThrow(
+            await expect(fix.soft.find({ id: soft.id, transaction })).rejects.toThrow(
                 'Transaction context is no longer active.'
             )
             await expect(fix.hard.create('late-write', { transaction })).rejects.toThrow(
@@ -602,12 +610,12 @@ describe('CrudRepository', () => {
 
             await expect(result).rejects.toThrow('boom')
             if (!created) throw new Error('transaction should create draft documents')
-            await expect(fix.soft.findById(created.soft.id)).resolves.toBeNull()
-            await expect(fix.hard.findById(created.hard.id)).resolves.toBeNull()
+            await expect(fix.soft.find({ id: created.soft.id })).resolves.toBeNull()
+            await expect(fix.hard.find({ id: created.hard.id })).resolves.toBeNull()
             expect(started.mock.results[0]?.value).toMatchObject({ hasEnded: true })
-            await expect(fix.hard.findById(created.hard.id, created.transaction)).rejects.toThrow(
-                'Transaction context is no longer active.'
-            )
+            await expect(
+                fix.hard.find({ id: created.hard.id, transaction: created.transaction })
+            ).rejects.toThrow('Transaction context is no longer active.')
         })
 
         it('동시에 실행한 트랜잭션의 커밋과 롤백은 서로 섞이지 않는다', async () => {
@@ -630,7 +638,7 @@ describe('CrudRepository', () => {
                 const committed = await fix.hard.withTransaction(async (transaction) =>
                     fix.soft.create('committed', { transaction })
                 )
-                await expect(fix.soft.findById(committed.id)).resolves.toMatchObject({
+                await expect(fix.soft.find({ id: committed.id })).resolves.toMatchObject({
                     name: 'committed'
                 })
             } finally {
@@ -639,7 +647,7 @@ describe('CrudRepository', () => {
             }
 
             if (!rolledBackId) throw new Error('first transaction should create a draft id')
-            await expect(fix.hard.findById(rolledBackId)).resolves.toBeNull()
+            await expect(fix.hard.find({ id: rolledBackId })).resolves.toBeNull()
         })
 
         it('일시 오류가 아니면 callback을 재시도하지 않는다', async () => {
@@ -690,10 +698,12 @@ describe('CrudRepository', () => {
 
             expect(attempts).toBe(2)
             expect(transactions[0]).not.toBe(transactions[1])
-            await expect(fix.soft.findById(created.id, transactions[0])).rejects.toThrow(
-                'Transaction context is no longer active.'
-            )
-            await expect(fix.soft.findById(created.id)).resolves.toMatchObject({ name: 'second' })
+            await expect(
+                fix.soft.find({ id: created.id, transaction: transactions[0] })
+            ).rejects.toThrow('Transaction context is no longer active.')
+            await expect(fix.soft.find({ id: created.id })).resolves.toMatchObject({
+                name: 'second'
+            })
         })
     })
 })

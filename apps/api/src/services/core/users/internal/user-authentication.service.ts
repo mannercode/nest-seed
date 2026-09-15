@@ -14,8 +14,8 @@ export class UserAuthenticationService {
         @InjectJwtAuth() private readonly jwtAuthService: JwtAuthService
     ) {}
 
-    async findUserByCredentials({ email, password }: UserCredentialsDto) {
-        const user = await this.repository.findByEmailWithPassword(email)
+    async authenticate({ email, password }: UserCredentialsDto) {
+        const user = await this.repository.findWithPassword({ email })
         const targetHash = user?.password
 
         const isValid = await this.validate(password, targetHash)

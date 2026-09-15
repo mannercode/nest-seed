@@ -17,8 +17,8 @@ export class AdminAuthenticationService {
         @InjectJwtAuth(ADMIN_JWT_AUTH_NAME) private readonly jwtAuthService: JwtAuthService
     ) {}
 
-    async findAdminByCredentials({ email, password }: AdminCredentialsDto) {
-        const admin = await this.repository.findByEmailWithPassword(email)
+    async authenticate({ email, password }: AdminCredentialsDto) {
+        const admin = await this.repository.findWithPassword({ email })
         const targetHash = admin?.password
 
         const isValid = await this.validate(password, targetHash)
