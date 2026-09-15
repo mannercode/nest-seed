@@ -86,7 +86,10 @@ services:
                         documents: [{ readyAt: new Date() }],
                         writeConcern: { w: \"majority\", wtimeout: 10000 }
                     })
-                    if (result.ok !== 1) throw new Error(JSON.stringify(result))
+                    if (result.ok !== 1 || result.n !== 1 ||
+                        result.writeErrors?.length || result.writeConcernError) {
+                        throw new Error(JSON.stringify(result))
+                    }
                     "; do
                     i=$$((i+1))
                     if [ $$i -ge 30 ]; then

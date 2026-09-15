@@ -26,6 +26,16 @@ function secureRandomHex(byteLength = 16) {
     return randomBytes(byteLength).toString('hex')
 }
 
+function isPurchaseConflict({ status, body }) {
+    return (
+        (status === 400 && body?.code === 'ERR_PURCHASE_NOT_HELD') ||
+        (status === 409 &&
+            ['ERR_PURCHASE_ALREADY_SOLD', 'ERR_TICKET_STATUS_TRANSITION_FAILED'].includes(
+                body?.code
+            ))
+    )
+}
+
 function secureRandomIndex(length) {
     if (!Number.isSafeInteger(length) || length <= 0) {
         throw new Error('length must be a positive safe integer')
@@ -409,6 +419,7 @@ module.exports = {
     createAndLoginUser,
     createPublishedMovieAndTheater,
     createShowtimeWithTickets,
+    isPurchaseConflict,
     readPositiveInt,
     request,
     secureRandomHex,

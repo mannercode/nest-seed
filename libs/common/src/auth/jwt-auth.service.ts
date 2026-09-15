@@ -8,7 +8,7 @@ import {
 import { JwtService } from '@nestjs/jwt'
 import { Redis } from 'ioredis'
 import type { AuthConfig, JwtAuthTokens } from './jwt-auth.types.js'
-import { defaultTo, generateShortId, omit, sha256 } from '../utils/index.js'
+import { defaultTo, ensure, generateShortId, omit, sha256 } from '../utils/index.js'
 
 export const JwtAuthErrors = {
     RefreshTokenReplaced: () => ({
@@ -54,7 +54,7 @@ export class JwtAuthService {
         const ttlMs = this.config.refreshTokenTtlMs
 
         // 세션과 사용자 목록은 같은 hash slot에 둬 함께 생성한다.
-        await this.redis
+        const results = await this.redis
             .multi()
             .set(
                 this.sessionKey(userId, sessionId),
@@ -65,6 +65,7 @@ export class JwtAuthService {
             .sadd(this.userSessionsKey(userId), sessionId)
             .pexpire(this.userSessionsKey(userId), ttlMs)
             .exec()
+        this.assertTransactionSucceeded(results)
         this.logger.log('token.issued', { userId, sessionId })
         return tokens
     }
@@ -100,11 +101,12 @@ export class JwtAuthService {
     async revokeRefreshToken(refreshToken: string): Promise<void> {
         const payload = await this.getAuthTokenPayload(refreshToken)
         const { userId, sessionId } = this.getSession(payload)
-        await this.redis
+        const results = await this.redis
             .multi()
             .del(this.sessionKey(userId, sessionId))
             .srem(this.userSessionsKey(userId), sessionId)
             .exec()
+        this.assertTransactionSucceeded(results)
         this.logger.log('session.revoked', { userId, sessionId })
     }
 
@@ -114,12 +116,23 @@ export class JwtAuthService {
         if (sessionIds.length === 0) return
 
         // 조회한 세션만 제거한다. 그 이후 새 로그인으로 추가된 세션의 인덱스는 보존한다.
-        await this.redis
+        const results = await this.redis
             .multi()
             .del(...sessionIds.map((sessionId) => this.sessionKey(userId, sessionId)))
             .srem(userKey, ...sessionIds)
             .exec()
+        this.assertTransactionSucceeded(results)
         this.logger.log('sessions.revoked', { userId, sessionIds })
+    }
+
+    private assertTransactionSucceeded(results: [Error | null, unknown][] | null) {
+        for (const [error] of ensure(results, 'Redis transaction was aborted')) {
+            if (error) {
+                throw new InternalServerErrorException('Internal server error', {
+                    cause: error.message
+                })
+            }
+        }
     }
 
     private async createTokens(payload: object, sessionId: string): Promise<JwtAuthTokens> {

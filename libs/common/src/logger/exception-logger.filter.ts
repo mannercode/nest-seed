@@ -53,7 +53,11 @@ export class HttpExceptionLoggerFilter extends BaseExceptionFilter {
                 statusCode: exception.getStatus()
             } as HttpErrorLog
 
-            Logger.warn('fail', errorLog)
+            if (errorLog.statusCode >= 500) {
+                Logger.error('error', errorLog)
+            } else {
+                Logger.warn('fail', errorLog)
+            }
         } else {
             const errorLog = {
                 ...httpLogBase,

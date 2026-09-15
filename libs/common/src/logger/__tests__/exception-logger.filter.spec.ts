@@ -25,8 +25,8 @@ describe('HttpExceptionLoggerFilter', () => {
                     }
                 })
 
-            expect(fix.spyWarn).toHaveBeenCalledWith(
-                'fail',
+            expect(fix.spyError).toHaveBeenCalledWith(
+                'error',
                 expect.objectContaining({
                     statusCode: 500,
                     error: {
@@ -37,7 +37,7 @@ describe('HttpExceptionLoggerFilter', () => {
             )
         })
 
-        it('HttpException이 발생하면 Logger.warn으로 로그를 남긴다', async () => {
+        it('4xx HttpException이 발생하면 Logger.warn으로 로그를 남긴다', async () => {
             await fix.httpClient
                 .get('/exception')
                 .notFound({ expected: { code: 'ERR_CODE', message: 'message' } })
