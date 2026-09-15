@@ -63,7 +63,7 @@ Dev Container는 시작할 때 개발 인프라의 데이터를 초기화한다.
 | `pnpm run api-docs`   | 다중 복제본의 API 문서 검증               |
 | `pnpm exec tunnel`    | console과 user-app Quick Tunnel 실행      |
 
-`infra/reset.sh`는 volume을 지운 뒤 고정 admin fixture까지 다시 만드는 개발용 복구 명령이다. Dev Container 시작과 루트 `atoz`의 준비 단계도 이를 실행한다. DB·S3 데이터, Restate journal과 JetStream의 미처리 이벤트를 지우므로 보존할 데이터나 실행이 있는 환경에서는 사용하지 않는다. 테스트별 명령과 결과 위치는 [tests/README.md](tests/README.md)에 있다.
+`infra/reset.sh`는 volume을 지운 뒤 고정 admin fixture까지 다시 만드는 개발용 복구 명령이다. Dev Container 시작과 루트 `atoz`의 준비 단계도 이를 실행한다. DB·S3 데이터, Restate journal과 JetStream의 미처리 이벤트를 지우므로 보존할 데이터나 실행이 있는 환경에서는 사용하지 않는다. 테스트별 명령과 결과 위치는 [테스트 실행 안내](docs/reference/test-execution.md)에 있다.
 
 ## 3. API 레퍼런스
 
@@ -149,6 +149,6 @@ bash apps/api/api-docs/run.sh showtime-creation.spec
 - [decisions](docs/reference/decisions.md) — 선택 이유, 대안, 보장하지 않는 것
 - [개발 규칙](docs/reference/conventions.md) — 이름·DTO·타입·ESM·오류·테스트 작성 규칙
 
-`docs_backup/`은 축소 전 원문 보관본이다. 현재 개발 지침은 위 문서를 따른다.
+[검토 메모](docs/review/README.md)에 미결 항목과 재검토 기준을, [과거 자료](docs/backup/README.md)에 축소 전 문서·삭제 이력에서 복구한 원문·이전 검토 기록을 모아 둔다. 이 자료들은 현재 개발 지침을 대신하지 않는다.
 
 영화 예매 도메인의 설계 배경은 블로그 연재 [백엔드 서비스 분석과 설계 1](https://mannercode.com/2025/04/01/backend-design-1.html)·[2](https://mannercode.com/2025/05/01/backend-design-2.html)·[3](https://mannercode.com/2025/06/01/backend-design-3.html)에 있다.

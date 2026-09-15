@@ -163,7 +163,7 @@ const reportPath = '/work/reports/result.md'
 | `format` | 포맷 적용                                               |
 | `atoz`   | workspace가 정한 검사·빌드·테스트 절차를 순서대로 실행  |
 
-`atoz`의 범위는 각 `package.json`이 정한다. 루트는 설치·인프라 초기화와 외부 스택 검증도 포함하지만 race와 benchmark는 별도 실행한다. 명령별 범위와 결과 위치는 [tests/README.md](../../tests/README.md)에 모은다.
+`atoz`의 범위는 각 `package.json`이 정한다. 루트는 설치·인프라 초기화와 외부 스택 검증도 포함하지만 race와 benchmark는 별도 실행한다. 명령별 범위와 결과 위치는 [테스트 실행 안내](test-execution.md)에 모은다.
 
 ## 10. 커밋은 의도를 말한다
 

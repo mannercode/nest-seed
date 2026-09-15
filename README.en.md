@@ -65,7 +65,7 @@ Do not globally replace `nest-seed` or `mannercode` when forking. Distinguish pr
 | `pnpm run api-docs`   | Check API docs across replicas                                  |
 | `pnpm exec tunnel`    | Run Quick Tunnels for the console and user app                  |
 
-`infra/reset.sh` deletes the volumes and then recreates the fixed admin fixture. Dev Container startup and the root `atoz` preparation step also run it. It deletes DB and S3 data, the Restate journal, and pending JetStream events, so it must not be used where data or executions need to survive. Test-specific commands and output locations are in [tests/README.md](tests/README.md).
+`infra/reset.sh` deletes the volumes and then recreates the fixed admin fixture. Dev Container startup and the root `atoz` preparation step also run it. It deletes DB and S3 data, the Restate journal, and pending JetStream events, so it must not be used where data or executions need to survive. Test-specific commands and output locations are in the [test execution guide](docs/reference/test-execution.md).
 
 ## 3. API reference
 
@@ -151,6 +151,6 @@ Each `docs/*.md` guide corresponds to a repository directory and explains its re
 - [decisions](docs/reference/decisions.md) — choices, alternatives, and non-guarantees
 - [development rules](docs/reference/conventions.md) — naming, DTOs, types, ESM, errors, and test-writing conventions
 
-`docs_backup/` preserves the documentation from before the reduction. Use the guides above for current development instructions.
+[Review notes](docs/review/README.md) collect pending topics and review criteria. [Historical materials](docs/backup/README.md) preserve the documents from before the reduction, recovered originals, and earlier reviews. These materials do not replace the current development instructions above.
 
 For the design background of the movie-booking domain, see the blog series [Backend Service Analysis and Design 1](https://mannercode.com/2025/04/01/backend-design-1.html), [2](https://mannercode.com/2025/05/01/backend-design-2.html), and [3](https://mannercode.com/2025/06/01/backend-design-3.html).

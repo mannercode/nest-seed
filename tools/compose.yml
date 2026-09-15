@@ -5,7 +5,14 @@ services:
         working_dir: /workspace
         volumes:
             - ${WORKSPACE_ROOT:?}:/workspace
-        command: [--offline, --include-fragments, '*.md', 'docs/**/*.md', 'tests/README.md']
+        # 과거 원문 안의 옛 링크는 보존하고, 현재 문서와 검토 안내의 링크를 검사한다.
+        command:
+            - --offline
+            - --include-fragments
+            - --exclude-path
+            - 'docs/backup/(before-reduction|recovered|reviews)/'
+            - '*.md'
+            - 'docs/**/*.md'
 
     k6:
         profiles: [benchmark]

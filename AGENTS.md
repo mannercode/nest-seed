@@ -8,7 +8,7 @@
 
 - `apps/`: [애플리케이션](docs/apps.md), [설계 결정](docs/reference/decisions.md)
 - `libs/`: [공유 패키지](docs/libs.md), [개발 규칙](docs/reference/conventions.md)
-- `tests/`: [외부 스택 테스트와 API 스택](docs/tests.md), [실행 방법](tests/README.md)
+- `tests/`: [외부 스택 테스트와 API 스택](docs/tests.md), [실행 방법](docs/reference/test-execution.md)
 - `infra/`: [개발 인프라](docs/infra.md), [개발 환경의 env 주입](docs/devcontainer.md#1-환경-변수는-재생성해야-반영된다)
 - `tools/`: [개발·테스트 실행 도구](docs/tools.md)
 - `.devcontainer/`: [개발 환경](docs/devcontainer.md)
@@ -51,7 +51,7 @@
 
 문서는 간결하게 작성한다. 코드·설정·파일명만으로 알 수 있는 내용, 당연한 설명과 작업 이력은 적지 않고 코드에서 드러나지 않는 목적·결정·제약만 남긴다.
 
-`docs/*.md`는 저장소의 대응 폴더와 1:1로 연결되는 안내 문서로 둔다. 여러 폴더에 걸친 규칙·설계 근거·학습 설명은 `docs/reference/`에 둔다. 문서를 줄이거나 옮길 때 보장·예외·선택 이유와 이를 이해하는 데 필요한 예시를 삭제하지 않는다. `docs_backup/`은 과거 원문 보관본이며 현재 구현 지침으로 사용하거나 내용을 갱신하지 않는다.
+`docs/*.md`는 저장소의 대응 폴더와 1:1로 연결되는 안내 문서로 둔다. 여러 폴더에 걸친 규칙·설계 근거·학습 설명은 `docs/reference/`에 둔다. 문서를 줄이거나 옮길 때 보장·예외·선택 이유와 이를 이해하는 데 필요한 예시를 삭제하지 않는다. `docs/review/`는 미결 검토 메모, `docs/backup/`은 과거 원문 보관본이며 현재 구현 지침으로 사용하지 않는다. 보관된 원문의 내용은 갱신하지 않는다.
 
 ## 6. 변경을 검증한다
 
