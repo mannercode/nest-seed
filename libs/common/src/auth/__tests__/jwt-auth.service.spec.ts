@@ -72,40 +72,6 @@ describe('JwtAuthService', () => {
             })
         })
 
-        it('현재 계정 검증을 통과하면 토큰을 발급한다', async () => {
-            const validatePayload = vi.fn().mockResolvedValue(true)
-            const payload = { email: 'email', sub: 'u1' }
-
-            await expect(
-                fix.jwtService.generateAuthTokens(payload, undefined, validatePayload)
-            ).resolves.toEqual({
-                accessToken: expect.any(String),
-                refreshToken: expect.any(String)
-            })
-            expect(validatePayload).toHaveBeenCalledWith(payload)
-        })
-
-        it('발급 중 계정이 철회되면 만든 token family를 폐기하고 401을 반환한다', async () => {
-            await expect(
-                fix.jwtService.generateAuthTokens(
-                    { sub: 'u1' },
-                    { source: 'login' },
-                    async () => false
-                )
-            ).rejects.toThrow('The provided refresh token is invalid')
-
-            expect(fix.events).toContainEqual(
-                expect.objectContaining({
-                    context: { source: 'login' },
-                    reason: 'account_revoked',
-                    type: 'verify.failed'
-                })
-            )
-            expect(await fix.redis.smembers(`${fix.jwtService.prefix}:user:{u1}:families`)).toEqual(
-                []
-            )
-        })
-
         it('액세스 토큰에 issuer와 audience가 포함된다', async () => {
             const tokens = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
 
@@ -181,45 +147,6 @@ describe('JwtAuthService', () => {
 
             expect(tokens.accessToken).not.toEqual(accessToken)
             expect(tokens.refreshToken).not.toEqual(refreshToken)
-        })
-
-        it('현재 계정 검증을 회전 전후 모두 통과하면 새 토큰을 반환한다', async () => {
-            const validatePayload = vi.fn().mockResolvedValue(true)
-
-            await expect(
-                fix.jwtService.refreshAuthTokens(refreshToken, undefined, validatePayload)
-            ).resolves.toEqual({
-                accessToken: expect.any(String),
-                refreshToken: expect.any(String)
-            })
-            expect(validatePayload).toHaveBeenCalledTimes(2)
-        })
-
-        it('회전 전에 계정이 철회됐으면 token family를 폐기하고 401을 반환한다', async () => {
-            const validatePayload = vi.fn().mockResolvedValue(false)
-
-            await expect(
-                fix.jwtService.refreshAuthTokens(refreshToken, undefined, validatePayload)
-            ).rejects.toThrow('The provided refresh token is invalid')
-            expect(validatePayload).toHaveBeenCalledTimes(1)
-            await expect(fix.jwtService.refreshAuthTokens(refreshToken)).rejects.toThrow(
-                'The provided refresh token is invalid'
-            )
-        })
-
-        it('토큰 소비와 재발급 사이 계정이 철회되면 새 token family를 폐기한다', async () => {
-            const validatePayload = vi
-                .fn<() => Promise<boolean>>()
-                .mockResolvedValueOnce(true)
-                .mockResolvedValueOnce(false)
-
-            await expect(
-                fix.jwtService.refreshAuthTokens(refreshToken, undefined, validatePayload)
-            ).rejects.toThrow('The provided refresh token is invalid')
-            expect(validatePayload).toHaveBeenCalledTimes(2)
-            expect(await fix.redis.smembers(`${fix.jwtService.prefix}:user:{u1}:families`)).toEqual(
-                []
-            )
         })
 
         it('토큰 소비 후 저장 전에 단일 로그아웃되면 늦은 저장으로 family가 부활하지 않는다', async () => {

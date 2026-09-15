@@ -22,8 +22,8 @@ describe('AuthGuard', () => {
                 .ok()
         })
 
-        it('서명은 유효해도 현재 계정 검증에 실패하면 401을 반환한다', async () => {
-            const token = await fix.jwtService.signAsync({ userId: 'revoked-user' })
+        it('서명은 유효해도 필요한 payload 검증에 실패하면 401을 반환한다', async () => {
+            const token = await fix.jwtService.signAsync({ userId: 123 })
 
             await fix.httpClient
                 .get('/bearer/protected')

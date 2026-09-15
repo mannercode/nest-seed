@@ -238,12 +238,9 @@ describe('UsersService', () => {
                 .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
         })
 
-        it('존재하지 않는 고객의 세션 전체 회수는 404를 던진다', async () => {
+        it('회수할 세션이 없으면 계정 존재 여부와 무관하게 완료한다', async () => {
             const service = fix.module.get(UsersService)
-
-            await expect(service.revokeAllForUser(nullObjectId)).rejects.toThrow(
-                Errors.Mongo.DocumentNotFound(nullObjectId).message
-            )
+            await expect(service.revokeAllForUser(nullObjectId)).resolves.toBeUndefined()
         })
     })
 

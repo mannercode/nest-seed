@@ -10,10 +10,7 @@ export type BearerAuthOptions = {
     /** 설정하면 `iss` 클레임이 필수가 되고, 값이 다른 토큰은 거절한다. */
     issuer?: string
     secret: string
-    /**
-     * 서명 검증 뒤 애플리케이션의 현재 계정 상태까지 확인한다.
-     * 계정 삭제나 세션 버전 변경처럼 JWT 자체만으로 알 수 없는 철회 상태에 사용한다.
-     */
+    /** 서명 검증 뒤 애플리케이션에서 요구하는 payload 형식을 확인한다. */
     validate?: (payload: unknown) => Promise<boolean>
 }
 

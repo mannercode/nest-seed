@@ -59,14 +59,11 @@ describe('CreateUserSchema, RefreshTokenBodySchema, SearchUsersPageSchema, Updat
     it('JWT 전용 부가 claim은 허용하되 필요한 claim만 반환한다', () => {
         expect(
             UserAuthPayloadSchema.parse({
-                authVersion: 0,
                 email: 'user@mail.com',
                 familyId: 'family-id',
                 sub: 'user-id'
             })
-        ).toEqual({ authVersion: 0, email: 'user@mail.com', sub: 'user-id' })
-        expect(
-            UserAuthPayloadSchema.safeParse({ email: 'user@mail.com', sub: 'user-id' }).success
-        ).toBe(false)
+        ).toEqual({ email: 'user@mail.com', sub: 'user-id' })
+        expect(UserAuthPayloadSchema.safeParse({ email: 'user@mail.com' }).success).toBe(false)
     })
 })

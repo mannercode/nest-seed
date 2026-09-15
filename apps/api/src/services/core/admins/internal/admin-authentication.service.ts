@@ -1,11 +1,7 @@
 import { InjectJwtAuth, JwtAuthService, PasswordHasher } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { AdminsRepository } from '../admins.repository.js'
-import {
-    type AdminAuthPayload,
-    AdminAuthPayloadSchema,
-    type AdminCredentialsDto
-} from '../dtos/index.js'
+import type { AdminAuthPayload, AdminCredentialsDto } from '../dtos/index.js'
 
 // JwtAuthModule.register와 @InjectJwtAuth가 이 이름을 공유해야 같은 JwtAuthService 인스턴스로 묶인다.
 export const ADMIN_JWT_AUTH_NAME = 'admins'
@@ -27,9 +23,7 @@ export class AdminAuthenticationService {
     }
 
     async generateAuthTokens(payload: AdminAuthPayload) {
-        return this.jwtAuthService.generateAuthTokens(payload, undefined, (candidate) =>
-            this.isAuthPayloadActive(candidate)
-        )
+        return this.jwtAuthService.generateAuthTokens(payload)
     }
 
     async hash(rawPassword: string) {
@@ -37,9 +31,7 @@ export class AdminAuthenticationService {
     }
 
     async refreshAuthTokens(refreshToken: string) {
-        return this.jwtAuthService.refreshAuthTokens(refreshToken, undefined, (payload) =>
-            this.isAuthPayloadActive(payload)
-        )
+        return this.jwtAuthService.refreshAuthTokens(refreshToken)
     }
 
     async revokeAllForAdmin(adminId: string): Promise<void> {
@@ -52,13 +44,5 @@ export class AdminAuthenticationService {
 
     async validate(rawPassword: string, hashedPassword: string | undefined) {
         return PasswordHasher.verify(rawPassword, hashedPassword)
-    }
-
-    async isAuthPayloadActive(payload: unknown): Promise<boolean> {
-        const result = AdminAuthPayloadSchema.safeParse(payload)
-        if (!result.success) return false
-
-        const candidate = result.data
-        return this.repository.isAuthVersionCurrent(candidate.sub, candidate.authVersion)
     }
 }

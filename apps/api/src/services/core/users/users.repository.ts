@@ -1,9 +1,7 @@
 import {
-    type MongoDocument,
     QueryBuilderOptions,
     assignIfDefined,
     CrudRepository,
-    DateUtil,
     isDuplicateKeyError,
     MongoErrors,
     plainDateFromMongo,
@@ -47,7 +45,6 @@ export class UsersRepository extends CrudRepository<User> {
         user.email = createDto.email
         user.birthDate = createDto.birthDate
         user.password = createDto.password
-        user.authVersion = 0
         try {
             await this.insertOne(user)
         } catch (error) {
@@ -64,37 +61,6 @@ export class UsersRepository extends CrudRepository<User> {
         const user = await this.findDocument(this.activeFilter({ email: { $eq: email } }))
 
         return user ? this.toDomainDocument(user) : null
-    }
-
-    async findAuthVersion({ id: userId }: { id: string }): Promise<number | null> {
-        const user = await this.findDocument(this.activeFilter({ _id: userId }), {
-            projection: { authVersion: 1 }
-        })
-
-        if (!user) return null
-        return user.authVersion
-    }
-
-    async isAuthVersionCurrent(userId: string, authVersion: number): Promise<boolean> {
-        const current = await this.findAuthVersion({ id: userId })
-        return current !== null && current === authVersion
-    }
-
-    async advanceAuthVersion(userId: string): Promise<void> {
-        const user = await this.findAndUpdateDocument(
-            this.activeFilter({ _id: userId }),
-            this.timestamped({ $inc: { authVersion: 1 } }),
-            { returnDocument: 'after' }
-        )
-
-        if (!user) throw new NotFoundException(MongoErrors.DocumentNotFound(userId))
-    }
-
-    async deleteManyWithAuthVersion({ ids: userIds }: { ids: string[] }): Promise<void> {
-        await this.updateDocuments(
-            this.activeFilter({ _id: { $in: userIds } }),
-            this.timestamped({ $inc: { authVersion: 1 }, $set: { deletedAt: DateUtil.now() } })
-        )
     }
 
     async searchPage(searchDto: SearchUsersPageDto) {
@@ -120,13 +86,10 @@ export class UsersRepository extends CrudRepository<User> {
         assignIfDefined(patch, updateDto, 'birthDate')
         assignIfDefined(patch, updateDto, 'password')
 
-        const update: MongoDocument = { $set: patch }
-        if (updateDto.password !== undefined) update.$inc = { authVersion: 1 }
-
         try {
             const user = await this.findAndUpdateDocument(
                 this.activeFilter({ _id: userId }),
-                this.timestamped(update),
+                this.timestamped({ $set: patch }),
                 { projection: this.projection, returnDocument: 'after' }
             )
 

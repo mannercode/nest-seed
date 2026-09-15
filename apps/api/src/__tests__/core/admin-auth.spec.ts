@@ -1,4 +1,8 @@
 import { HttpStatus, type INestApplication } from '@nestjs/common'
+import { JwtService } from '@nestjs/jwt'
+import { TimeUtil } from '@mannercode/common'
+import { AppConfigService } from '#config'
+import type { AdminDto } from '#core'
 import {
     createAdmin,
     Errors,
@@ -35,10 +39,16 @@ describe('AdminAuthentication', () => {
 
     describe('POST /admins/login', () => {
         it('자격 증명이 유효하면 인증 토큰을 반환한다', async () => {
-            await fix.httpClient
+            const { body } = await fix.httpClient
                 .post('/admins/login')
                 .body(credentials)
                 .ok({ accessToken: expect.any(String), refreshToken: expect.any(String) })
+
+            const { exp, iat } = new JwtService().decode<{ exp: number; iat: number }>(
+                body.accessToken
+            )
+            const { adminAuth } = fix.module.get(AppConfigService)
+            expect(exp - iat).toBe(TimeUtil.toMs(adminAuth.accessTokenExpiration) / 1000)
         })
 
         it('비밀번호가 틀리면 401을 반환한다', async () => {
@@ -160,6 +170,24 @@ describe('AdminAuthentication', () => {
                 .headers({ Authorization: 'Bearer invalid-token' })
                 .unauthorized(Errors.Auth.Unauthorized())
         })
+
+        it.each([{ email: 'admin@mail.com' }, { email: 'invalid', sub: 'admin-id' }])(
+            '서명이 유효해도 필수 claim이 올바르지 않으면 401을 반환한다: %j',
+            async (payload) => {
+                const { adminAuth } = fix.module.get(AppConfigService)
+                const token = await new JwtService().signAsync(payload, {
+                    audience: adminAuth.audience,
+                    issuer: adminAuth.issuer,
+                    secret: adminAuth.accessSecret,
+                    expiresIn: '5m'
+                })
+
+                await fix.httpClient
+                    .get('/admins/me')
+                    .headers({ Authorization: `Bearer ${token}` })
+                    .unauthorized(Errors.Auth.Unauthorized())
+            }
+        )
     })
 
     describe('POST /admins/refresh', () => {
@@ -177,23 +205,30 @@ describe('AdminAuthentication', () => {
     })
 
     describe('POST /admins/logout', () => {
+        let accessToken: string
         let refreshToken: string
+        let admin: AdminDto
 
         beforeEach(async () => {
-            ;({ refreshToken } = await loginAdmin(fix, credentials))
+            ;({ accessToken, refreshToken, admin } = await loginAdmin(fix, credentials))
         })
 
         it('로그아웃하면 204를 반환한다', async () => {
             await fix.httpClient.post('/admins/logout').body({ refreshToken }).noContent()
         })
 
-        it('로그아웃한 refresh 토큰을 다시 쓰면 401을 반환한다', async () => {
+        it('로그아웃 후 리프레시는 차단하고 액세스 토큰은 만료 전까지 허용한다', async () => {
             await fix.httpClient.post('/admins/logout').body({ refreshToken }).noContent()
 
             await fix.httpClient
                 .post('/admins/refresh')
                 .body({ refreshToken })
                 .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
+
+            await fix.httpClient
+                .get('/admins/me')
+                .headers({ Authorization: `Bearer ${accessToken}` })
+                .ok(admin)
         })
     })
 })

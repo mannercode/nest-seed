@@ -43,15 +43,8 @@ describe('AdminAuthPayloadSchema, AdminCredentialsSchema, AdminRefreshTokenBodyS
 
     it('JWT 전용 부가 claim은 허용하되 필요한 claim만 반환한다', () => {
         expect(
-            AdminAuthPayloadSchema.parse({
-                authVersion: 0,
-                email: 'admin@mail.com',
-                exp: 1,
-                sub: 'admin-id'
-            })
-        ).toEqual({ authVersion: 0, email: 'admin@mail.com', sub: 'admin-id' })
-        expect(
-            AdminAuthPayloadSchema.safeParse({ email: 'admin@mail.com', sub: 'admin-id' }).success
-        ).toBe(false)
+            AdminAuthPayloadSchema.parse({ email: 'admin@mail.com', exp: 1, sub: 'admin-id' })
+        ).toEqual({ email: 'admin@mail.com', sub: 'admin-id' })
+        expect(AdminAuthPayloadSchema.safeParse({ email: 'admin@mail.com' }).success).toBe(false)
     })
 })

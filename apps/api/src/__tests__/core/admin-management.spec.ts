@@ -176,11 +176,11 @@ describe('AdminManagement', () => {
                         .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
                 })
 
-                it('기존 액세스 토큰을 즉시 거부한다', async () => {
+                it('기존 액세스 토큰은 만료 전까지 인증을 통과한다', async () => {
                     await fix.httpClient
                         .get('/admins/me')
                         .headers({ Authorization: `Bearer ${accessToken}` })
-                        .unauthorized(Errors.Auth.Unauthorized())
+                        .ok(admin)
                 })
             })
 
@@ -202,14 +202,13 @@ describe('AdminManagement', () => {
                     .conflict()
             })
 
-            it('자기 도큐먼트가 삭제되면 기존 액세스 토큰으로 쓰기도 401을 반환한다', async () => {
+            it('삭제 후에도 인증은 통과하지만 본인 수정은 자원이 없어 404를 반환한다', async () => {
                 await fix.module.get(AdminsService).remove(admin.id)
-
                 await fix.httpClient
                     .patch('/admins/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body({ name: 'x' })
-                    .unauthorized(Errors.Auth.Unauthorized())
+                    .notFound(Errors.Mongo.DocumentNotFound(admin.id))
             })
         })
 
@@ -237,16 +236,14 @@ describe('AdminManagement', () => {
     })
 
     describe('GET /admins/me', () => {
-        it('자기 도큐먼트가 삭제되면 기존 액세스 토큰을 401로 거부한다', async () => {
+        it('삭제 후에도 인증은 통과하지만 본인 조회는 자원이 없어 404를 반환한다', async () => {
             const created = await createAdmin(fix, adminCredentials)
             const { accessToken } = await loginAdmin(fix, adminCredentials)
-
             await fix.module.get(AdminsService).remove(created.id)
-
             await fix.httpClient
                 .get('/admins/me')
                 .headers({ Authorization: `Bearer ${accessToken}` })
-                .unauthorized(Errors.Auth.Unauthorized())
+                .notFound(Errors.Mongo.MultipleDocumentsNotFound([created.id]))
         })
     })
 })

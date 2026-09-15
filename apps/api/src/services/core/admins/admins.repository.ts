@@ -1,8 +1,6 @@
 import {
-    type MongoDocument,
     assignIfDefined,
     CrudRepository,
-    DateUtil,
     isDuplicateKeyError,
     MongoErrors,
     MongoConnection
@@ -42,7 +40,6 @@ export class AdminsRepository extends CrudRepository<Admin> {
         admin.email = createDto.email
         admin.name = createDto.name
         admin.password = createDto.password
-        admin.authVersion = 0
 
         try {
             return await this.insertOne(admin)
@@ -60,30 +57,6 @@ export class AdminsRepository extends CrudRepository<Admin> {
         return admin
     }
 
-    async findAuthVersion({ id: adminId }: { id: string }): Promise<number | null> {
-        const admin = await this.findDocument(this.activeFilter({ _id: adminId }), {
-            projection: { authVersion: 1 }
-        })
-
-        if (!admin) return null
-        return admin.authVersion
-    }
-
-    async isAuthVersionCurrent(adminId: string, authVersion: number): Promise<boolean> {
-        const current = await this.findAuthVersion({ id: adminId })
-        return current !== null && current === authVersion
-    }
-
-    async deleteWithAuthVersion({ id: adminId }: { id: string }): Promise<void> {
-        const admin = await this.findAndUpdateDocument(
-            this.activeFilter({ _id: adminId }),
-            this.timestamped({ $inc: { authVersion: 1 }, $set: { deletedAt: DateUtil.now() } }),
-            { returnDocument: 'before' }
-        )
-
-        if (!admin) throw new NotFoundException(MongoErrors.DocumentNotFound(adminId))
-    }
-
     async update(id: string, patch: UpdateAdminDto) {
         AdminPatchSchema.parse(patch)
         const fields: Partial<Pick<Admin, 'email' | 'name' | 'password'>> = {}
@@ -91,13 +64,10 @@ export class AdminsRepository extends CrudRepository<Admin> {
         assignIfDefined(fields, patch, 'name')
         assignIfDefined(fields, patch, 'password')
 
-        const update: MongoDocument = { $set: fields }
-        if (patch.password !== undefined) update.$inc = { authVersion: 1 }
-
         try {
             const doc = await this.findAndUpdateDocument(
                 this.activeFilter({ _id: id }),
-                this.timestamped(update),
+                this.timestamped({ $set: fields }),
                 { projection: this.projection, returnDocument: 'after' }
             )
 

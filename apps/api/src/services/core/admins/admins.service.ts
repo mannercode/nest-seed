@@ -34,8 +34,7 @@ export class AdminsService {
     }
 
     async remove(id: string) {
-        // DB 상태를 먼저 비활성화해 Redis 회수 실패나 동시 refresh에도 기존 JWT가 즉시 거부되게 한다.
-        await this.repository.deleteWithAuthVersion({ id })
+        await this.repository.delete({ id })
         await this.authenticationService.revokeAllForAdmin(id)
     }
 
@@ -44,7 +43,6 @@ export class AdminsService {
         if (!admin) return null
 
         const tokens = await this.authenticationService.generateAuthTokens({
-            authVersion: admin.authVersion,
             email: admin.email,
             sub: admin.id
         })
@@ -54,10 +52,6 @@ export class AdminsService {
     async getMany(adminIds: string[]) {
         const admins = await this.repository.getMany({ ids: adminIds })
         return admins.map((admin) => this.toDto(admin))
-    }
-
-    async isAuthPayloadActive(payload: unknown): Promise<boolean> {
-        return this.authenticationService.isAuthPayloadActive(payload)
     }
 
     async refreshAuthTokens(refreshToken: string) {

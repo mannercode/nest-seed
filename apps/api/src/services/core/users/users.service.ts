@@ -26,8 +26,7 @@ export class UsersService {
     }
 
     async deleteMany(userIds: string[]): Promise<void> {
-        // DB 상태를 먼저 한 번에 비활성화해 Redis 회수 실패나 동시 refresh에도 기존 JWT가 즉시 거부되게 한다.
-        await this.repository.deleteManyWithAuthVersion({ ids: userIds })
+        await this.repository.deleteMany({ ids: userIds })
         await Promise.all(userIds.map((id) => this.authenticationService.revokeAllForUser(id)))
     }
 
@@ -36,7 +35,6 @@ export class UsersService {
         if (!user) return null
 
         const tokens = await this.authenticationService.generateAuthTokens({
-            authVersion: user.authVersion,
             email: user.email,
             sub: user.id
         })
@@ -49,17 +47,11 @@ export class UsersService {
         return this.toDtos(users)
     }
 
-    async isAuthPayloadActive(payload: unknown): Promise<boolean> {
-        return this.authenticationService.isAuthPayloadActive(payload)
-    }
-
     async refreshAuthTokens(refreshToken: string) {
         return this.authenticationService.refreshAuthTokens(refreshToken)
     }
 
     async revokeAllForUser(userId: string): Promise<void> {
-        // 버전을 먼저 올려 refresh 발급과 Redis 회수가 엇갈려도 그 토큰이 현재 계정과 일치하지 않게 한다.
-        await this.repository.advanceAuthVersion(userId)
         await this.authenticationService.revokeAllForUser(userId)
     }
 

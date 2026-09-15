@@ -70,7 +70,6 @@ async function createAdmin() {
         await admins.insertOne({
             __v: 0,
             _id: new ObjectId(),
-            authVersion: 0,
             createdAt: now,
             deletedAt: null,
             email: admin.email,

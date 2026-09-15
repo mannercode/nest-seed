@@ -7,8 +7,7 @@ import type {
     EventContext,
     JwtAuthTokens,
     OnSecurityEvent,
-    SecurityEvent,
-    ValidateAuthPayload
+    SecurityEvent
 } from './jwt-auth.types.js'
 import { DateUtil, defaultTo, generateShortId, getByPath, omit } from '../utils/index.js'
 
@@ -77,17 +76,10 @@ export class JwtAuthService {
         return `JwtAuthService_${defaultTo(name, 'default')}`
     }
 
-    async generateAuthTokens(
-        payload: object,
-        context?: EventContext,
-        validatePayload?: ValidateAuthPayload
-    ): Promise<JwtAuthTokens> {
+    async generateAuthTokens(payload: object, context?: EventContext): Promise<JwtAuthTokens> {
         const familyId = generateShortId(30)
         const userId = this.getUserId(payload)
         const result = await this.issueTokensInFamily(payload, familyId, userId)
-        if (validatePayload && !(await validatePayload(payload as Record<string, unknown>))) {
-            await this.rejectRevokedPayload(payload as Record<string, unknown>, familyId, context)
-        }
         await this.emit({
             type: 'token.issued',
             userId,
@@ -99,11 +91,7 @@ export class JwtAuthService {
         return result.tokens
     }
 
-    async refreshAuthTokens(
-        refreshToken: string,
-        context?: EventContext,
-        validatePayload?: ValidateAuthPayload
-    ): Promise<JwtAuthTokens> {
+    async refreshAuthTokens(refreshToken: string, context?: EventContext): Promise<JwtAuthTokens> {
         const payload = await this.getAuthTokenPayload(refreshToken, context)
         const tokenId = getByPath(payload, 'refreshTokenId') as string | undefined
         const familyId = getByPath(payload, 'familyId') as string | undefined
@@ -116,10 +104,6 @@ export class JwtAuthService {
                 context
             })
             throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
-        }
-
-        if (validatePayload && !(await validatePayload(payload))) {
-            await this.rejectRevokedPayload(payload, familyId, context)
         }
 
         const stored = await this.getStoredToken(tokenId, familyId)
@@ -150,11 +134,6 @@ export class JwtAuthService {
         const userId = this.getUserId(carryPayload)
         const result = await this.issueTokensInFamily(carryPayload, familyId, userId)
 
-        // 토큰 소비와 새 토큰 저장 사이에 계정이 철회될 수 있으므로 발급 직후 다시 확인한다.
-        // 여기서도 경합이 생길 수 있지만, 이후 access/refresh 요청은 같은 버전 검증으로 항상 차단된다.
-        if (validatePayload && !(await validatePayload(carryPayload))) {
-            await this.rejectRevokedPayload(carryPayload, familyId, context)
-        }
         await this.emit({
             type: 'token.refreshed',
             userId,
@@ -199,22 +178,6 @@ export class JwtAuthService {
             })
         }
         await this.redis.del(userKey)
-    }
-
-    private async rejectRevokedPayload(
-        payload: Record<string, unknown>,
-        familyId: string,
-        context?: EventContext
-    ): Promise<never> {
-        const userId = this.getUserId(payload)
-        await this.revokeFamily(familyId, userId)
-        await this.emit({
-            type: 'verify.failed',
-            reason: 'account_revoked',
-            at: DateUtil.now(),
-            context
-        })
-        throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
     }
 
     private async rejectConsumedOrReused(

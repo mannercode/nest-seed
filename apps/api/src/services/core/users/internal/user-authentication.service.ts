@@ -1,10 +1,6 @@
 import { JwtAuthService, InjectJwtAuth, PasswordHasher } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import {
-    type UserAuthPayload,
-    UserAuthPayloadSchema,
-    type UserCredentialsDto
-} from '../dtos/index.js'
+import type { UserAuthPayload, UserCredentialsDto } from '../dtos/index.js'
 import { UsersRepository } from '../users.repository.js'
 
 @Injectable()
@@ -24,9 +20,7 @@ export class UserAuthenticationService {
     }
 
     async generateAuthTokens(payload: UserAuthPayload) {
-        return this.jwtAuthService.generateAuthTokens(payload, undefined, (candidate) =>
-            this.isAuthPayloadActive(candidate)
-        )
+        return this.jwtAuthService.generateAuthTokens(payload)
     }
 
     async hash(rawPassword: string) {
@@ -34,9 +28,7 @@ export class UserAuthenticationService {
     }
 
     async refreshAuthTokens(refreshToken: string) {
-        return this.jwtAuthService.refreshAuthTokens(refreshToken, undefined, (payload) =>
-            this.isAuthPayloadActive(payload)
-        )
+        return this.jwtAuthService.refreshAuthTokens(refreshToken)
     }
 
     async revokeAllForUser(userId: string): Promise<void> {
@@ -49,13 +41,5 @@ export class UserAuthenticationService {
 
     async validate(rawPassword: string, hashedPassword: string | undefined) {
         return PasswordHasher.verify(rawPassword, hashedPassword)
-    }
-
-    async isAuthPayloadActive(payload: unknown): Promise<boolean> {
-        const result = UserAuthPayloadSchema.safeParse(payload)
-        if (!result.success) return false
-
-        const candidate = result.data
-        return this.repository.isAuthVersionCurrent(candidate.sub, candidate.authVersion)
     }
 }

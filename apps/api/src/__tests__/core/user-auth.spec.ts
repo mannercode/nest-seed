@@ -1,5 +1,7 @@
 import { oid } from '@mannercode/testing'
 import { HttpStatus, type INestApplication } from '@nestjs/common'
+import { JwtService } from '@nestjs/jwt'
+import { AppConfigService } from '#config'
 import { type UserDto, UsersService } from '#core'
 import {
     createPurchaseRecord,
@@ -10,7 +12,7 @@ import {
     createAppTestContext
 } from '../helpers/index.js'
 import { LoginRateLimiterService } from '#gateway'
-import { JwtAuthService } from '@mannercode/common'
+import { JwtAuthService, TimeUtil } from '@mannercode/common'
 
 const ACCOUNT_FAILURE_LIMIT = 5
 const IP_FAILURE_LIMIT = 50
@@ -72,10 +74,16 @@ describe('UserAuthentication', () => {
 
     describe('POST /users/login', () => {
         it('자격 증명이 유효하면 인증 토큰을 반환한다', async () => {
-            await fix.httpClient
+            const { body } = await fix.httpClient
                 .post('/users/login')
                 .body(credentials)
                 .ok({ accessToken: expect.any(String), refreshToken: expect.any(String) })
+
+            const { exp, iat } = new JwtService().decode<{ exp: number; iat: number }>(
+                body.accessToken
+            )
+            const { auth } = fix.module.get(AppConfigService)
+            expect(exp - iat).toBe(TimeUtil.toMs(auth.accessTokenExpiration) / 1000)
         })
 
         it('비밀번호가 틀리면 401을 반환한다', async () => {
@@ -222,6 +230,24 @@ describe('UserAuthentication', () => {
                 .unauthorized(Errors.Auth.Unauthorized())
         })
 
+        it.each([{ email: 'user@mail.com' }, { email: 'invalid', sub: 'user-id' }])(
+            '서명이 유효해도 필수 claim이 올바르지 않으면 401을 반환한다: %j',
+            async (payload) => {
+                const { auth } = fix.module.get(AppConfigService)
+                const token = await new JwtService().signAsync(payload, {
+                    audience: auth.audience,
+                    issuer: auth.issuer,
+                    secret: auth.accessSecret,
+                    expiresIn: '5m'
+                })
+
+                await fix.httpClient
+                    .get('/users/me')
+                    .headers({ Authorization: `Bearer ${token}` })
+                    .unauthorized(Errors.Auth.Unauthorized())
+            }
+        )
+
         it('리프레시 토큰을 액세스 토큰 자리에 쓰면 401을 반환한다', async () => {
             // 두 토큰은 iss/aud가 같아 secret 분리만이 방벽이다 — 이 검증이 무너지면
             // 수명이 긴 리프레시 토큰이 로그아웃으로도 회수되지 않는 액세스 토큰으로 동작한다.
@@ -237,9 +263,10 @@ describe('UserAuthentication', () => {
     describe('DELETE /users/me', () => {
         describe('로그인했을 때', () => {
             let accessToken: string
+            let user: UserDto
 
             beforeEach(async () => {
-                ;({ accessToken } = await loginUser(fix, credentials))
+                ;({ accessToken, user } = await loginUser(fix, credentials))
             })
 
             it('204를 반환한다', async () => {
@@ -249,29 +276,27 @@ describe('UserAuthentication', () => {
                     .noContent()
             })
 
-            it('삭제 후 같은 액세스 토큰은 즉시 401로 거부한다', async () => {
+            it('삭제 후에도 인증은 통과하지만 본인 조회는 자원이 없어 404를 반환한다', async () => {
                 await fix.httpClient
                     .delete('/users/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .noContent()
-
                 await fix.httpClient
                     .get('/users/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
-                    .unauthorized(Errors.Auth.Unauthorized())
+                    .notFound(Errors.Mongo.MultipleDocumentsNotFound([user.id]))
             })
 
-            it('삭제 후 같은 액세스 토큰으로 쓰기도 401로 거부한다', async () => {
+            it('삭제 후에도 인증은 통과하지만 본인 수정은 자원이 없어 404를 반환한다', async () => {
                 await fix.httpClient
                     .delete('/users/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .noContent()
-
                 await fix.httpClient
                     .patch('/users/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body({ name: 'must-not-change' })
-                    .unauthorized(Errors.Auth.Unauthorized())
+                    .notFound(Errors.Mongo.DocumentNotFound(user.id))
             })
         })
 
@@ -311,45 +336,45 @@ describe('UserAuthentication', () => {
                     .ok({ ...user, ...updateDto })
             })
 
-            it('password를 바꾸면 기존 액세스 토큰을 즉시 거부한다', async () => {
+            it('password를 바꿔도 기존 액세스 토큰은 만료 전까지 인증을 통과한다', async () => {
                 await fix.httpClient
                     .patch('/users/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body({ password: 'newPassword' })
                     .ok()
-
                 await fix.httpClient
                     .get('/users/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
-                    .unauthorized(Errors.Auth.Unauthorized())
+                    .ok(user)
             })
 
-            it('password 변경과 리프레시가 겹쳐도 구 세션의 새 토큰을 재사용할 수 없다', async () => {
+            it('리프레시 발급 전에 password가 바뀌면 회수된 세션의 재발급을 거부한다', async () => {
                 const session = await loginUser(fix, credentials)
                 const jwtAuthService = fix.module.get(JwtAuthService.getName())
                 const usersService = fix.module.get(UsersService)
                 const gate = pauseNextTokenIssue(jwtAuthService)
-
-                const refreshAttempt = usersService
-                    .refreshAuthTokens(session.refreshToken)
-                    .then((tokens) => ({ kind: 'fulfilled' as const, tokens }))
-                    .catch((error: unknown) => ({ error, kind: 'rejected' as const }))
-
+                const refreshResult = Promise.allSettled([
+                    usersService.refreshAuthTokens(session.refreshToken)
+                ])
                 await gate.started
-                await usersService.update(session.user.id, { password: 'newPassword' })
-                gate.release()
-
-                const outcome = await refreshAttempt
-                if (outcome.kind === 'fulfilled') {
-                    await expect(
-                        usersService.refreshAuthTokens(outcome.tokens.refreshToken)
-                    ).rejects.toThrow()
-
-                    await fix.httpClient
-                        .get('/users/me')
-                        .headers({ Authorization: `Bearer ${outcome.tokens.accessToken}` })
-                        .unauthorized(Errors.Auth.Unauthorized())
+                try {
+                    await usersService.update(session.user.id, { password: 'newPassword' })
+                } finally {
+                    gate.release()
                 }
+                expect(await refreshResult).toMatchObject([
+                    {
+                        status: 'rejected',
+                        reason: {
+                            status: HttpStatus.UNAUTHORIZED,
+                            response: Errors.JwtAuth.RefreshTokenInvalid()
+                        }
+                    }
+                ])
+                await fix.httpClient
+                    .get('/users/me')
+                    .headers({ Authorization: `Bearer ${session.accessToken}` })
+                    .ok(session.user)
             })
         })
 
@@ -410,23 +435,30 @@ describe('UserAuthentication', () => {
     })
 
     describe('POST /users/logout', () => {
+        let accessToken: string
         let refreshToken: string
+        let user: UserDto
 
         beforeEach(async () => {
-            ;({ refreshToken } = await loginUser(fix, credentials))
+            ;({ accessToken, refreshToken, user } = await loginUser(fix, credentials))
         })
 
         it('로그아웃하면 204를 반환한다', async () => {
             await fix.httpClient.post('/users/logout').body({ refreshToken }).noContent()
         })
 
-        it('로그아웃 후에는 같은 토큰의 리프레시를 차단한다', async () => {
+        it('로그아웃 후 리프레시는 차단하고 액세스 토큰은 만료 전까지 허용한다', async () => {
             await fix.httpClient.post('/users/logout').body({ refreshToken }).noContent()
 
             await fix.httpClient
                 .post('/users/refresh')
                 .body({ refreshToken })
                 .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
+
+            await fix.httpClient
+                .get('/users/me')
+                .headers({ Authorization: `Bearer ${accessToken}` })
+                .ok(user)
         })
 
         it('잘못된 토큰으로 로그아웃하면 401을 반환한다', async () => {
@@ -462,46 +494,45 @@ describe('UserAuthentication', () => {
             await fix.httpClient.post('/users/me/logout-all').unauthorized()
         })
 
-        it('전체 로그아웃 후 기존 액세스 토큰도 즉시 거부한다', async () => {
+        it('전체 로그아웃 후에도 기존 액세스 토큰은 만료 전까지 인증을 통과한다', async () => {
             const session = await loginUser(fix, credentials)
-
             await fix.httpClient
                 .post('/users/me/logout-all')
                 .headers({ Authorization: `Bearer ${session.accessToken}` })
                 .noContent()
-
             await fix.httpClient
                 .get('/users/me')
                 .headers({ Authorization: `Bearer ${session.accessToken}` })
-                .unauthorized(Errors.Auth.Unauthorized())
+                .ok(session.user)
         })
 
-        it('리프레시가 전체 로그아웃과 겹쳐도 성공으로 반환된 토큰은 재사용할 수 없다', async () => {
+        it('리프레시 발급 전에 전체 로그아웃하면 회수된 세션의 재발급을 거부한다', async () => {
             const session = await loginUser(fix, credentials)
             const jwtAuthService = fix.module.get(JwtAuthService.getName())
             const usersService = fix.module.get(UsersService)
             const gate = pauseNextTokenIssue(jwtAuthService)
-
-            const refreshAttempt = usersService
-                .refreshAuthTokens(session.refreshToken)
-                .then((tokens) => ({ kind: 'fulfilled' as const, tokens }))
-                .catch((error: unknown) => ({ error, kind: 'rejected' as const }))
-
+            const refreshResult = Promise.allSettled([
+                usersService.refreshAuthTokens(session.refreshToken)
+            ])
             await gate.started
-            await usersService.revokeAllForUser(session.user.id)
-            gate.release()
-
-            const outcome = await refreshAttempt
-            if (outcome.kind === 'fulfilled') {
-                await expect(
-                    usersService.refreshAuthTokens(outcome.tokens.refreshToken)
-                ).rejects.toThrow()
-
-                await fix.httpClient
-                    .get('/users/me')
-                    .headers({ Authorization: `Bearer ${outcome.tokens.accessToken}` })
-                    .unauthorized(Errors.Auth.Unauthorized())
+            try {
+                await usersService.revokeAllForUser(session.user.id)
+            } finally {
+                gate.release()
             }
+            expect(await refreshResult).toMatchObject([
+                {
+                    status: 'rejected',
+                    reason: {
+                        status: HttpStatus.UNAUTHORIZED,
+                        response: Errors.JwtAuth.RefreshTokenInvalid()
+                    }
+                }
+            ])
+            await fix.httpClient
+                .get('/users/me')
+                .headers({ Authorization: `Bearer ${session.accessToken}` })
+                .ok(session.user)
         })
     })
 })
