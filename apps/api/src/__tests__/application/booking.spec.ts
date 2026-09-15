@@ -1,4 +1,5 @@
-import { DateUtil, ensure, pickIds } from '@mannercode/common'
+import { BookingShowtimeSchema } from '#application'
+import { DateUtil, ensure, pickIds, PlainDateFromInputSchema } from '@mannercode/common'
 import { instant, nullObjectId, oid, plainDate, step } from '@mannercode/testing'
 import {
     TicketStatus,
@@ -7,7 +8,9 @@ import {
     type TheaterDto,
     type TicketDto,
     type UserDto,
-    TicketHoldingService
+    TicketHoldingService,
+    TheaterSchema,
+    TicketSchema
 } from '#core'
 import { Errors, type AppTestContext, createAppTestContext, holdTickets } from '../helpers/index.js'
 import { createAllResources } from './booking.utils.js'
@@ -61,7 +64,7 @@ describe('BookingService', () => {
                 .get(
                     `/booking/movies/${movie.id}/theaters/${theaterId}/showdates/29990201/showtimes`
                 )
-                .ok([])
+                .ok(BookingShowtimeSchema.array(), [])
         })
 
         it('극장, 상영일, 상영 시간, 티켓을 차례로 조회해 티켓을 보유한다', async () => {
@@ -75,6 +78,7 @@ describe('BookingService', () => {
                 const { body: theaters } = await fix.httpClient
                     .get(`/booking/movies/${movie.id}/theaters?latLong=${latLong}`)
                     .ok(
+                        TheaterSchema.array(),
                         [
                             { location: locations[2] }, // distance = 0.1
                             { location: locations[1] }, // distance = 0.9
@@ -84,15 +88,19 @@ describe('BookingService', () => {
                         ].map((item) => expect.objectContaining(item))
                     )
 
-                theater = theaters[0]
+                theater = ensure(theaters[0])
             })
 
             await step('2. 극장의 상영일 목록을 조회한다', async () => {
                 const { body: showdates } = await fix.httpClient
                     .get(`/booking/movies/${movie.id}/theaters/${theater.id}/showdates`)
-                    .ok([plainDate('2999-01-01'), plainDate('2999-01-02'), plainDate('2999-01-03')])
+                    .ok(PlainDateFromInputSchema.array(), [
+                        plainDate('2999-01-01'),
+                        plainDate('2999-01-02'),
+                        plainDate('2999-01-03')
+                    ])
 
-                showdate = showdates[0]
+                showdate = ensure(showdates[0])
             })
 
             await step('3. 선택한 상영일의 상영 시간 목록을 조회한다', async () => {
@@ -100,6 +108,7 @@ describe('BookingService', () => {
                 const url = `/booking/movies/${movie.id}/theaters/${theater.id}/showdates/${yymmdd}/showtimes`
 
                 const { body: showtimes } = await fix.httpClient.get(url).ok(
+                    BookingShowtimeSchema.array(),
                     [
                         { movieId: movie.id, startTime: startTimes[0], theaterId: theater.id },
                         { movieId: movie.id, startTime: startTimes[1], theaterId: theater.id }
@@ -111,7 +120,7 @@ describe('BookingService', () => {
                     )
                 )
 
-                showtime = showtimes[0]
+                showtime = ensure(showtimes[0])
             })
 
             await step('4. 상영 시간의 티켓을 조회해 가용 상태를 확인한다', async () => {
@@ -120,7 +129,7 @@ describe('BookingService', () => {
                 )
                 const { body } = await fix.httpClient
                     .get(`/booking/showtimes/${showtime.id}/tickets`)
-                    .ok(expectedTickets)
+                    .ok(TicketSchema.array(), expectedTickets)
 
                 tickets = body
 

@@ -4,7 +4,7 @@
 
 ## 남은 검토 자료
 
-- [JSON·DTO 자동 변환](runtime-complexity-review.md): 유보한 변환 정책과 기존 데이터 복원 계약. [전체 런타임 검토 원문](../backup/reviews/runtime-complexity-review.md)은 반영 전 자료다.
+- [JSON·DTO 자동 변환](runtime-complexity-review.md): DTO 스키마로 정리한 변환 정책과 후속 변경 시 확인할 복원 계약. [전체 런타임 검토 원문](../backup/reviews/runtime-complexity-review.md)은 반영 전 자료다.
 - [reference 검토](../../_todo/docs-reference-review.md): 일괄 API 강제, MongoDB 설명, 테스트 분리, 타입 작성 규칙의 5개 항목.
 - [삭제와 상영 생성의 경합](../../_todo/catalog-deletion-showtime-creation-race.md): 지원할 정합성 범위와 S3 정리 계약을 결정할 항목.
 - [할 일과 복구한 검토 기록](../../_todo/README.md): 현재 단순화 계획과 이전 검토 자료의 목록. 반영·철회된 제안은 코드에서 다시 확인한다.

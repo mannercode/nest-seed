@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { ShowtimeDto } from '#core'
+import { ShowtimeSchema } from '#core'
 
 export const ShowtimeCreationStatus = {
     Error: 'error',
@@ -12,45 +12,46 @@ export const ShowtimeCreationStatus = {
 export type ShowtimeCreationStatus =
     (typeof ShowtimeCreationStatus)[keyof typeof ShowtimeCreationStatus]
 
-const ShowtimeEventDtoSchema = z.strictObject({
-    endTime: z.instanceof(Temporal.Instant),
-    id: z.string(),
-    movieId: z.string(),
-    startTime: z.instanceof(Temporal.Instant),
-    theaterId: z.string()
-})
-
-export const ShowtimeCreationEventSchema = z.discriminatedUnion('status', [
+export const ShowtimeCreationTerminalEventSchema = z.discriminatedUnion('status', [
     z.strictObject({
         message: z.string(),
         sagaId: z.string(),
         status: z.literal(ShowtimeCreationStatus.Error)
     }),
     z.strictObject({
-        conflictingShowtimes: z.array(ShowtimeEventDtoSchema),
+        conflictingShowtimes: z.array(ShowtimeSchema),
         sagaId: z.string(),
         status: z.literal(ShowtimeCreationStatus.Failed)
     }),
-    z.strictObject({ sagaId: z.string(), status: z.literal(ShowtimeCreationStatus.Processing) }),
     z.strictObject({
         createdShowtimeCount: z.number(),
         createdTicketCount: z.number(),
         sagaId: z.string(),
         status: z.literal(ShowtimeCreationStatus.Succeeded)
-    }),
-    z.strictObject({ sagaId: z.string(), status: z.literal(ShowtimeCreationStatus.Waiting) })
+    })
 ])
 
+export type ShowtimeCreationTerminalEvent = z.infer<typeof ShowtimeCreationTerminalEventSchema>
+
+export const ShowtimeCreationEventSchema = z.discriminatedUnion('status', [
+    ...ShowtimeCreationTerminalEventSchema.options,
+    z.strictObject({ sagaId: z.string(), status: z.literal(ShowtimeCreationStatus.Processing) }),
+    z.strictObject({ sagaId: z.string(), status: z.literal(ShowtimeCreationStatus.Waiting) })
+])
 export type ShowtimeCreationEvent = z.infer<typeof ShowtimeCreationEventSchema>
 
-export type ShowtimeCreationTerminalEvent = Extract<
-    ShowtimeCreationEvent,
-    { status: 'error' | 'failed' | 'succeeded' }
->
+export const ShowtimeCreationStatusResponseSchema = z.discriminatedUnion('status', [
+    ...ShowtimeCreationTerminalEventSchema.options,
+    z.strictObject({ sagaId: z.string(), status: z.literal('pending') })
+])
+export type ShowtimeCreationStatusResponse = z.infer<typeof ShowtimeCreationStatusResponseSchema>
 
-export type ShowtimeCreationStatusResponse =
-    ShowtimeCreationTerminalEvent | { sagaId: string; status: 'pending' }
-
-export type ValidateAndCreateResult =
-    | { kind: 'failed'; conflictingShowtimes: ShowtimeDto[] }
-    | { kind: 'succeeded'; createdShowtimeCount: number; createdTicketCount: number }
+export const ValidateAndCreateResultSchema = z.discriminatedUnion('kind', [
+    z.object({ kind: z.literal('failed'), conflictingShowtimes: z.array(ShowtimeSchema) }),
+    z.object({
+        kind: z.literal('succeeded'),
+        createdShowtimeCount: z.number(),
+        createdTicketCount: z.number()
+    })
+])
+export type ValidateAndCreateResult = z.infer<typeof ValidateAndCreateResultSchema>

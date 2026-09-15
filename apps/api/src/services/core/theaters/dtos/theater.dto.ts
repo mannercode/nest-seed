@@ -1,8 +1,11 @@
-import type { Seatmap, TheaterLocation } from '../models/index.js'
+import { SeatmapSchema, TheaterLocationSchema } from '../models/index.js'
+import { z } from 'zod'
 
-export class TheaterDto {
-    id: string
-    location: TheaterLocation
-    name: string
-    seatmap: Seatmap
-}
+export const TheaterSchema = z.strictObject({
+    id: z.string(),
+    location: TheaterLocationSchema,
+    name: z.string(),
+    seatmap: SeatmapSchema
+})
+
+export type TheaterDto = z.infer<typeof TheaterSchema>

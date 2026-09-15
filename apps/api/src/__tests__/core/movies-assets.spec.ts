@@ -1,7 +1,11 @@
 import { ensure, Require } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
 import { type MovieDto, MoviesService } from '#core'
-import { type AssetPresignedUploadDto, AssetsService } from '#infrastructure'
+import {
+    type AssetPresignedUploadDto,
+    AssetsService,
+    AssetPresignedUploadSchema
+} from '#infrastructure'
 import {
     buildCreateAssetDto,
     createMovieAsset,
@@ -45,7 +49,7 @@ describe('MoviesAssets', () => {
             const { body } = await fix.httpClient
                 .post(`/movies/${movie.id}/assets`)
                 .body(createDto)
-                .created()
+                .created(AssetPresignedUploadSchema)
 
             expect(body).toEqual(
                 expect.objectContaining({
@@ -64,7 +68,7 @@ describe('MoviesAssets', () => {
             const { body: upload } = await fix.httpClient
                 .post(`/movies/${movie.id}/assets`)
                 .body(createDto)
-                .created()
+                .created(AssetPresignedUploadSchema)
 
             const response = await uploadAsset(testAssets.image.path, upload)
 

@@ -1,11 +1,15 @@
-import type { PaymentStatus } from '../models/index.js'
+import { InstantFromInputSchema } from '@mannercode/common'
+import { PaymentStatus } from '../models/index.js'
+import { z } from 'zod'
 
-export class PaymentDto {
-    amount: number
-    createdAt: Temporal.Instant
-    id: string
-    purchaseRecordId: string
-    status: PaymentStatus
-    updatedAt: Temporal.Instant
-    userId: string
-}
+export const PaymentSchema = z.strictObject({
+    amount: z.number(),
+    createdAt: InstantFromInputSchema,
+    id: z.string(),
+    purchaseRecordId: z.string(),
+    status: z.enum(PaymentStatus),
+    updatedAt: InstantFromInputSchema,
+    userId: z.string()
+})
+
+export type PaymentDto = z.infer<typeof PaymentSchema>

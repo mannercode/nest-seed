@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { WorkflowSubmission } from '@restatedev/restate-sdk-clients'
 import type * as RestateClients from '@restatedev/restate-sdk-clients'
 import type { Mock } from 'vitest'
@@ -127,7 +128,13 @@ describe('RestateWorkflowClient', () => {
         restateMocks.connect.mockReturnValue(ingress)
         const client = new RestateWorkflowClient<typeof input, TestResult>(
             definition,
-            'http://restate.test:8080'
+            'http://restate.test:8080',
+            z.object({
+                createdShowtimeCount: z.number(),
+                createdTicketCount: z.number(),
+                sagaId: z.string(),
+                status: z.literal('succeeded')
+            })
         )
 
         return { client, definition, result, workflowClient, workflowOutput, workflowSubmit }

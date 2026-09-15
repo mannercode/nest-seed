@@ -1,3 +1,8 @@
-import type { BulkCreateShowtimesDto } from '../dtos/index.js'
+import { z } from 'zod'
+import { BulkCreateShowtimesSchema } from '../dtos/index.js'
 
-export type ShowtimeCreationWorkflowInput = { createDto: BulkCreateShowtimesDto; sagaId: string }
+export const ShowtimeCreationWorkflowInputSchema = z.object({
+    createDto: BulkCreateShowtimesSchema,
+    sagaId: z.string()
+})
+export type ShowtimeCreationWorkflowInput = z.infer<typeof ShowtimeCreationWorkflowInputSchema>

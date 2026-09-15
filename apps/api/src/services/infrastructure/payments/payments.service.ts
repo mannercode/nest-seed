@@ -1,6 +1,6 @@
 import { ensure, mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { CreatePaymentDto, PaymentDto } from './dtos/index.js'
+import { CreatePaymentDto, PaymentSchema } from './dtos/index.js'
 import { Payment } from './models/index.js'
 import { PaymentsRepository } from './payments.repository.js'
 
@@ -36,16 +36,6 @@ export class PaymentsService {
     }
 
     private toDtos(payments: Payment[]) {
-        return payments.map((payment) =>
-            mapDocToDto(payment, PaymentDto, [
-                'id',
-                'purchaseRecordId',
-                'userId',
-                'amount',
-                'status',
-                'createdAt',
-                'updatedAt'
-            ])
-        )
+        return payments.map((payment) => mapDocToDto(payment, PaymentSchema))
     }
 }

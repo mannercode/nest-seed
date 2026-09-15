@@ -1,80 +1,15 @@
 import { HttpStatus } from '@nestjs/common'
 import superagent, { type Response } from 'superagent'
 
-const ISO_YEAR = '(?:[+-]\\d{6}|\\d{4})'
-const ISO_DATE = new RegExp(`^${ISO_YEAR}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,9})?Z$`)
-const ISO_PLAIN_DATE = new RegExp(`^${ISO_YEAR}-\\d{2}-\\d{2}$`)
-
-// libs/testing이 @mannercode/common을 런타임 의존성으로 갖지 않도록 인라인으로 둔다.
-// @mannercode/common의 JsonUtil.parse와 같은 역할을 한다.
-function parseJsonResponse(text: string): unknown {
-    return JSON.parse(quoteUnsafeIntegers(text), (_key, value) => {
-        if (typeof value === 'string') {
-            try {
-                if (ISO_DATE.test(value)) {
-                    return Temporal.Instant.fromEpochMilliseconds(
-                        Temporal.Instant.from(value).epochMilliseconds
-                    )
-                }
-                if (ISO_PLAIN_DATE.test(value)) return Temporal.PlainDate.from(value)
-            } catch {
-                return value
-            }
-        }
-        return value
-    })
-}
-
-// JS Number 안전 범위를 벗어난 정수만 문자열로 감싸 정밀도 손실을 막는다.
-// 테스트 클라이언트는 서버가 검증한 입력만 받으므로 int64 경계는 따로 검사하지 않는다.
-// 정규식 한 방이면 문자열 리터럴 내부의 숫자까지 건드리므로, 따옴표 구간을 통째로 건너뛴다.
-function quoteUnsafeIntegers(text: string): string {
-    const SAFE = BigInt(Number.MAX_SAFE_INTEGER)
-    let out = ''
-    let i = 0
-
-    while (i < text.length) {
-        const ch = text.charAt(i)
-
-        if (ch === '"') {
-            let j = i + 1
-            while (j < text.length) {
-                if (text.charAt(j) === '\\') {
-                    j += 2
-                    continue
-                }
-                if (text.charAt(j) === '"') break
-                j++
-            }
-            out += text.slice(i, j + 1)
-            i = j + 1
-            continue
-        }
-
-        if (ch === '-' || (ch >= '0' && ch <= '9')) {
-            let j = i
-            if (text.charAt(j) === '-') j++
-            while (j < text.length && /[\d.eE+-]/.test(text.charAt(j))) j++
-            const raw = text.slice(i, j)
-
-            if (/^-?\d+$/.test(raw)) {
-                const n = BigInt(raw)
-                out += -SAFE <= n && n <= SAFE ? raw : `"${raw}"`
-            } else {
-                out += raw
-            }
-            i = j
-            continue
-        }
-
-        out += ch
-        i++
-    }
-
-    return out
-}
-
 export type { Response }
+
+type ResponseSchema<T> = { parse: (value: unknown) => T }
+export type TypedResponse<T> = Omit<Response, 'body'> & { body: T }
+
+type StatusAssertion = {
+    <T>(schema: ResponseSchema<T>, expected?: unknown): Promise<TypedResponse<T>>
+    (expected?: unknown): Promise<Response>
+}
 
 type EventMessage = { data: string; event: string; id: number }
 
@@ -87,7 +22,7 @@ export class HttpTestClient {
         this.agent.abort()
     }
 
-    accepted = (expected?: any) => this.send(HttpStatus.ACCEPTED, expected)
+    accepted = this.status(HttpStatus.ACCEPTED)
 
     attachments(
         items: Array<{
@@ -102,16 +37,16 @@ export class HttpTestClient {
         return this
     }
 
-    badRequest = (expected?: any) => this.send(HttpStatus.BAD_REQUEST, expected)
+    badRequest = this.status(HttpStatus.BAD_REQUEST)
 
     body(body: Record<string, any>): this {
         this.agent.send(body)
         return this
     }
 
-    conflict = (expected?: any) => this.send(HttpStatus.CONFLICT, expected)
+    conflict = this.status(HttpStatus.CONFLICT)
 
-    created = (expected?: any) => this.send(HttpStatus.CREATED, expected)
+    created = this.status(HttpStatus.CREATED)
 
     delete(url: string): this {
         this.agent = superagent.delete(`${this.serverUrl}${url}`)
@@ -125,7 +60,7 @@ export class HttpTestClient {
         return this
     }
 
-    forbidden = (expected?: any) => this.send(HttpStatus.FORBIDDEN, expected)
+    forbidden = this.status(HttpStatus.FORBIDDEN)
 
     get(url: string): this {
         this.agent = superagent.get(`${this.serverUrl}${url}`)
@@ -139,18 +74,18 @@ export class HttpTestClient {
         return this
     }
 
-    internalServerError = (expected?: any) => this.send(HttpStatus.INTERNAL_SERVER_ERROR, expected)
+    internalServerError = this.status(HttpStatus.INTERNAL_SERVER_ERROR)
 
-    noContent = (expected?: any) => this.send(HttpStatus.NO_CONTENT, expected)
+    noContent = this.status(HttpStatus.NO_CONTENT)
 
-    notFound = (expected?: any) => this.send(HttpStatus.NOT_FOUND, expected)
+    notFound = this.status(HttpStatus.NOT_FOUND)
 
-    ok = (expected?: any) => this.send(HttpStatus.OK, expected)
+    ok = this.status(HttpStatus.OK)
     patch(url: string): this {
         this.agent = superagent.patch(`${this.serverUrl}${url}`)
         return this
     }
-    payloadTooLarge = (expected?: any) => this.send(HttpStatus.PAYLOAD_TOO_LARGE, expected)
+    payloadTooLarge = this.status(HttpStatus.PAYLOAD_TOO_LARGE)
     post(url: string): this {
         this.agent = superagent.post(`${this.serverUrl}${url}`)
         return this
@@ -163,7 +98,13 @@ export class HttpTestClient {
         this.agent.query(query)
         return this
     }
-    async send(status: number, expected?: any): Promise<superagent.Response> {
+    send<T>(
+        status: number,
+        schema: ResponseSchema<T>,
+        expected?: unknown
+    ): Promise<TypedResponse<T>>
+    send(status: number, expected?: unknown): Promise<Response>
+    async send(status: number, schemaOrExpected?: unknown, expected?: unknown): Promise<Response> {
         const response = await this.sendRaw()
 
         if (response.status !== status) {
@@ -171,6 +112,17 @@ export class HttpTestClient {
         }
 
         expect(response.status).toEqual(status)
+
+        if (
+            typeof schemaOrExpected === 'object' &&
+            schemaOrExpected !== null &&
+            'parse' in schemaOrExpected &&
+            typeof schemaOrExpected.parse === 'function'
+        ) {
+            response.body = schemaOrExpected.parse(response.body)
+        } else {
+            expected = schemaOrExpected
+        }
 
         if (expected !== undefined) {
             expect(response.body).toEqual(expected)
@@ -186,13 +138,7 @@ export class HttpTestClient {
     async sendRaw(): Promise<superagent.Response> {
         // `ok(() => true)`를 제외하면 superagent가 400 이상 상태에서 예외를 던진다.
         // 호출자가 직접 상태를 확인하도록 모든 상태를 OK로 표시한다.
-        const response = await this.agent.ok(() => true)
-
-        if (response.type === 'application/json') {
-            response.body = parseJsonResponse(response.text)
-        }
-
-        return response
+        return this.agent.ok(() => true)
     }
     sse(messageHandler: (data: string) => void, errorHandler: (reason: any) => void): this {
         // 이 클라이언트는 LF 빈 줄(\n\n)을 이벤트 구분자로 사용하며, TCP 청크 경계는 이벤트 경계와 무관하다.
@@ -239,10 +185,14 @@ export class HttpTestClient {
 
         return this
     }
-    unauthorized = (expected?: any) => this.send(HttpStatus.UNAUTHORIZED, expected)
-    unprocessableEntity = (expected?: any) => this.send(HttpStatus.UNPROCESSABLE_ENTITY, expected)
-    unsupportedMediaType = (expected?: any) =>
-        this.send(HttpStatus.UNSUPPORTED_MEDIA_TYPE, expected)
+    unauthorized = this.status(HttpStatus.UNAUTHORIZED)
+    unprocessableEntity = this.status(HttpStatus.UNPROCESSABLE_ENTITY)
+    unsupportedMediaType = this.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+    private status(status: number): StatusAssertion {
+        return (schemaOrExpected?: any, expected?: unknown) =>
+            this.send(status, schemaOrExpected, expected)
+    }
+
     private parseEventMessage(input: string): Partial<EventMessage> {
         const lines = input.split('\n')
         const parsedMessage: Partial<EventMessage> = {}

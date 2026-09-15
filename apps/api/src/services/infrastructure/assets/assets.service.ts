@@ -17,7 +17,8 @@ import {
     AssetPresignedUploadDto,
     CreateAssetDto,
     FinalizeAssetDto,
-    AssetDto
+    AssetDto,
+    AssetSchema
 } from './dtos/index.js'
 import { AssetErrors } from './errors.js'
 import { Asset } from './models/index.js'
@@ -182,22 +183,10 @@ export class AssetsService {
 
     private toDtos(assets: Asset[]) {
         return assets.map((asset) => {
-            const dto = mapDocToDto(asset, AssetDto, [
-                'id',
-                'originalName',
-                'mimeType',
-                'size',
-                'checksum'
-            ])
-
-            dto.download = null
-            dto.owner = null
-
-            if (asset.ownerService && asset.ownerEntityId) {
-                dto.owner = { entityId: asset.ownerEntityId, service: asset.ownerService }
-            }
-
-            return dto
+            return mapDocToDto(
+                { ...asset, download: null, owner: this.toOwner(asset) },
+                AssetSchema
+            )
         })
     }
 

@@ -11,7 +11,7 @@ export class ShowtimeCreationEvents implements OnModuleInit, OnModuleDestroy {
 
     private readonly subject = new Subject<ShowtimeCreationEvent>()
     private readonly handler = (message: string) => {
-        const event = ShowtimeCreationEventSchema.parse(JsonUtil.parse(message))
+        const event = ShowtimeCreationEventSchema.parse(JSON.parse(message))
         this.subject.next(event)
     }
 

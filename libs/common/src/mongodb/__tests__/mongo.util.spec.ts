@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import { BadRequestException, Logger } from '@nestjs/common'
 import { Decimal128, ObjectId } from 'mongodb'
 import {
@@ -267,11 +268,11 @@ describe('isDuplicateKeyError', () => {
 })
 
 describe('assignIfDefined, mapDocToDto', () => {
-    class SampleDto {
-        id: string
-        name: string
-        optional?: boolean
-    }
+    const SampleSchema = z.strictObject({
+        id: z.string(),
+        name: z.string(),
+        optional: z.boolean().optional()
+    })
 
     it('정의된 값과 null을 복사하고 undefined는 생략하며 transform을 지원한다', () => {
         const target = { email: 'old' as null | string, id: 'old', name: 'old' }
@@ -284,14 +285,12 @@ describe('assignIfDefined, mapDocToDto', () => {
         expect(target).toEqual({ email: null, id: 'obj:123', name: 'new' })
     })
 
-    it('선택한 키만 DTO 인스턴스에 매핑한다', () => {
+    it('스키마에 선언한 필드만 DTO로 매핑한다', () => {
         const dto = mapDocToDto(
             { extra: true, id: 'id', name: 'name', optional: undefined },
-            SampleDto,
-            ['id', 'name', 'optional']
+            SampleSchema
         )
 
-        expect(dto).toBeInstanceOf(SampleDto)
         expect(dto).toEqual({ id: 'id', name: 'name', optional: undefined })
         expect(dto).not.toHaveProperty('extra')
     })

@@ -4,7 +4,7 @@ import {
     CreateShowtimeDto,
     CreateShowtimesResult,
     SearchShowtimesDto,
-    ShowtimeDto
+    ShowtimeSchema
 } from './dtos/index.js'
 import { Showtime } from './models/index.js'
 import { ShowtimesRepository } from './showtimes.repository.js'
@@ -64,14 +64,6 @@ export class ShowtimesService {
     }
 
     private toDtos(showtimes: Showtime[]) {
-        return showtimes.map((showtime) =>
-            mapDocToDto(showtime, ShowtimeDto, [
-                'id',
-                'theaterId',
-                'movieId',
-                'startTime',
-                'endTime'
-            ])
-        )
+        return showtimes.map((showtime) => mapDocToDto(showtime, ShowtimeSchema))
     }
 }

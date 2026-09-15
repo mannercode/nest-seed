@@ -1,6 +1,6 @@
 import { type TransactionContext, ensure, mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { CreatePurchaseRecordDto, PurchaseRecordDto } from './dtos/index.js'
+import { CreatePurchaseRecordDto, PurchaseRecordDto, PurchaseRecordSchema } from './dtos/index.js'
 import { PurchaseRecord, PurchaseRecordStatus } from './models/index.js'
 import { PurchaseRecordsRepository } from './purchase-records.repository.js'
 
@@ -43,7 +43,7 @@ export class PurchaseRecordsService {
             errorStatus: record.idempotencyErrorStatus,
             fingerprint: record.idempotencyFingerprint,
             response: record.idempotencyResponse
-                ? (record.idempotencyResponse as unknown as PurchaseRecordDto)
+                ? PurchaseRecordSchema.parse(record.idempotencyResponse)
                 : undefined,
             purchaseRecord: this.toDto(record),
             status: record.status
@@ -91,15 +91,7 @@ export class PurchaseRecordsService {
 
     private toDtos(purchaseRecords: PurchaseRecord[]) {
         return purchaseRecords.map((purchaseRecord) =>
-            mapDocToDto(purchaseRecord, PurchaseRecordDto, [
-                'id',
-                'userId',
-                'paymentId',
-                'totalPrice',
-                'purchaseItems',
-                'createdAt',
-                'updatedAt'
-            ])
+            mapDocToDto(purchaseRecord, PurchaseRecordSchema)
         )
     }
 }

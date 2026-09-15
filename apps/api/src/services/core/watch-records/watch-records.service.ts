@@ -1,6 +1,6 @@
 import { ensure, mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { CreateWatchRecordDto, SearchWatchRecordsPageDto, WatchRecordDto } from './dtos/index.js'
+import { CreateWatchRecordDto, SearchWatchRecordsPageDto, WatchRecordSchema } from './dtos/index.js'
 import { WatchRecord } from './models/index.js'
 import { WatchRecordsRepository } from './watch-records.repository.js'
 
@@ -25,14 +25,6 @@ export class WatchRecordsService {
     }
 
     private toDtos(watchRecords: WatchRecord[]) {
-        return watchRecords.map((watchRecord) =>
-            mapDocToDto(watchRecord, WatchRecordDto, [
-                'id',
-                'userId',
-                'movieId',
-                'purchaseRecordId',
-                'watchDate'
-            ])
-        )
+        return watchRecords.map((watchRecord) => mapDocToDto(watchRecord, WatchRecordSchema))
     }
 }

@@ -1,6 +1,6 @@
-import { omit } from '@mannercode/common'
+import { omit, paginationResultSchema } from '@mannercode/common'
 import { HttpTestClient, nullObjectId, plainDate } from '@mannercode/testing'
-import { type UserDto, UsersRepository, UsersService } from '#core'
+import { type UserDto, UsersRepository, UsersService, UserSchema } from '#core'
 import {
     buildCreateUserDto,
     createAndLoginAdmin,
@@ -30,13 +30,23 @@ describe('UsersService', () => {
 
     describe('POST /users', () => {
         it('생성된 고객을 반환한다', async () => {
-            const createDto = buildCreateUserDto()
+            const createDto = buildCreateUserDto({ name: '2000-01-02' })
 
             await fix.httpClient
                 .post('/users')
                 .body(createDto)
-                .created({ ...omit(createDto, ['password']), id: expect.any(String) })
+                .created(UserSchema, { ...omit(createDto, ['password']), id: expect.any(String) })
         })
+
+        it.each([{ name: false }, { password: 1234 }])(
+            '문자열 필드의 잘못된 타입 %j는 400을 반환한다',
+            async (invalid) => {
+                await fix.httpClient
+                    .post('/users')
+                    .body({ ...buildCreateUserDto(), ...invalid })
+                    .badRequest()
+            }
+        )
 
         it('이미 존재하는 이메일이면 409를 반환한다', async () => {
             const email = 'user@mail.com'
@@ -106,7 +116,7 @@ describe('UsersService', () => {
         it('ID에 해당하는 고객을 반환한다', async () => {
             const user = await createUser(fix)
 
-            await fix.httpClient.get(`/users/${user.id}`).headers(adminAuth).ok(user)
+            await fix.httpClient.get(`/users/${user.id}`).headers(adminAuth).ok(UserSchema, user)
         })
 
         it('ID에 해당하는 고객이 없으면 404를 반환한다', async () => {
@@ -131,17 +141,29 @@ describe('UsersService', () => {
                 .patch(`/users/${user.id}`)
                 .headers(adminAuth)
                 .body(updateDto)
-                .ok({ ...user, ...updateDto })
+                .ok(UserSchema, { ...user, ...updateDto })
+        })
+
+        it('필수 필드를 null로 바꾸는 요청은 400을 반환한다', async () => {
+            await fix.httpClient
+                .patch(`/users/${user.id}`)
+                .headers(adminAuth)
+                .body({ name: null })
+                .badRequest()
         })
 
         it('수정 내용이 DB에 저장된다', async () => {
             const updateDto = { name: 'update-name' }
-            await fix.httpClient.patch(`/users/${user.id}`).headers(adminAuth).body(updateDto).ok()
+            await fix.httpClient
+                .patch(`/users/${user.id}`)
+                .headers(adminAuth)
+                .body(updateDto)
+                .ok(UserSchema)
 
             await fix.httpClient
                 .get(`/users/${user.id}`)
                 .headers(adminAuth)
-                .ok({ ...user, ...updateDto })
+                .ok(UserSchema, { ...user, ...updateDto })
         })
 
         it('ID에 해당하는 고객이 없으면 404를 반환한다', async () => {
@@ -165,7 +187,7 @@ describe('UsersService', () => {
                     .patch(`/users/${user.id}`)
                     .headers(adminAuth)
                     .body({ password: newPassword })
-                    .ok()
+                    .ok(UserSchema)
             })
 
             it('새 password로 로그인할 수 있다', async () => {
@@ -224,7 +246,10 @@ describe('UsersService', () => {
 
             await fix.httpClient.delete(`/users/${user.id}`).headers(adminAuth).noContent()
 
-            await fix.httpClient.post('/users').body(buildCreateUserDto({ email })).created()
+            await fix.httpClient
+                .post('/users')
+                .body(buildCreateUserDto({ email }))
+                .created(UserSchema)
         })
 
         it('삭제된 고객의 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
@@ -317,7 +342,10 @@ describe('UsersService', () => {
         it('쿼리가 없으면 전체 고객 페이지를 반환한다', async () => {
             const expected = buildExpectedPage([userA1, userA2, userB1, userB2])
 
-            await fix.httpClient.get('/users').headers(adminAuth).ok(expected)
+            await fix.httpClient
+                .get('/users')
+                .headers(adminAuth)
+                .ok(paginationResultSchema(UserSchema), expected)
         })
 
         it('name 부분 일치로 필터링한다', async () => {
@@ -325,7 +353,7 @@ describe('UsersService', () => {
                 .get('/users')
                 .headers(adminAuth)
                 .query({ name: 'user-a' })
-                .ok(buildExpectedPage([userA1, userA2]))
+                .ok(paginationResultSchema(UserSchema), buildExpectedPage([userA1, userA2]))
         })
 
         it('name 검색은 대소문자를 무시한 부분 문자열로 일치시킨다', async () => {
@@ -335,7 +363,7 @@ describe('UsersService', () => {
                 .get('/users')
                 .headers(adminAuth)
                 .query({ name: 'SER-A' })
-                .ok(buildExpectedPage([userA1, userA2]))
+                .ok(paginationResultSchema(UserSchema), buildExpectedPage([userA1, userA2]))
         })
 
         it('email 부분 일치로 필터링한다', async () => {
@@ -343,7 +371,7 @@ describe('UsersService', () => {
                 .get('/users')
                 .headers(adminAuth)
                 .query({ email: 'user-b' })
-                .ok(buildExpectedPage([userB1, userB2]))
+                .ok(paginationResultSchema(UserSchema), buildExpectedPage([userB1, userB2]))
         })
 
         it('알 수 없는 쿼리 파라미터는 400을 반환한다', async () => {

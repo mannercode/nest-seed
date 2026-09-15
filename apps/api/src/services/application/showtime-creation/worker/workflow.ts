@@ -5,12 +5,13 @@ import {
     type DurableWorkflowContext
 } from '@mannercode/common'
 import { AppConfigService } from '#config'
-import type {
-    ShowtimeCreationEvent,
-    ShowtimeCreationTerminalEvent,
-    ValidateAndCreateResult
+import {
+    ValidateAndCreateResultSchema,
+    type ShowtimeCreationEvent,
+    type ShowtimeCreationTerminalEvent,
+    type ValidateAndCreateResult
 } from '../internal/index.js'
-import type { ShowtimeCreationWorkflowInput } from './types.js'
+import { ShowtimeCreationWorkflowInputSchema, type ShowtimeCreationWorkflowInput } from './types.js'
 import { ShowtimeCreationPersistenceService } from '../internal/showtime-creation-persistence.service.js'
 import { ShowtimeCreationEvents } from '../showtime-creation.events.js'
 
@@ -58,6 +59,7 @@ export function createShowtimeCreationWorkflow({
         )
 
     return defineWorkflow({
+        input: ShowtimeCreationWorkflowInputSchema,
         run: async (
             ctx: DurableWorkflowContext,
             input: ShowtimeCreationWorkflowInput
@@ -67,18 +69,20 @@ export function createShowtimeCreationWorkflow({
 
             let result: ValidateAndCreateResult
             try {
-                result = await ctx.run(
-                    'validate and create',
-                    () => {
-                        const { createDto, sagaId } = input
-                        const signal = AbortSignal.any([
-                            ctx.attemptSignal(),
-                            AbortSignal.timeout(runTimeoutMs)
-                        ])
+                result = ValidateAndCreateResultSchema.parse(
+                    await ctx.run(
+                        'validate and create',
+                        () => {
+                            const { createDto, sagaId } = input
+                            const signal = AbortSignal.any([
+                                ctx.attemptSignal(),
+                                AbortSignal.timeout(runTimeoutMs)
+                            ])
 
-                        return persistence.validateAndCreate(createDto, sagaId, signal)
-                    },
-                    VALIDATE_AND_CREATE_RETRY
+                            return persistence.validateAndCreate(createDto, sagaId, signal)
+                        },
+                        VALIDATE_AND_CREATE_RETRY
+                    )
                 )
             } catch (error: unknown) {
                 if (isWorkflowCancellation(error)) throw error

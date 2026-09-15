@@ -5,7 +5,7 @@ import {
     CreateTicketDto,
     CreateTicketsResult,
     SearchTicketsDto,
-    TicketDto
+    TicketSchema
 } from './dtos/index.js'
 import { Ticket } from './models/index.js'
 import { TicketsRepository } from './tickets.repository.js'
@@ -58,15 +58,6 @@ export class TicketsService {
     }
 
     private toDtos(tickets: Ticket[]) {
-        return tickets.map((ticket) =>
-            mapDocToDto(ticket, TicketDto, [
-                'id',
-                'showtimeId',
-                'theaterId',
-                'movieId',
-                'status',
-                'seat'
-            ])
-        )
+        return tickets.map((ticket) => mapDocToDto(ticket, TicketSchema))
     }
 }

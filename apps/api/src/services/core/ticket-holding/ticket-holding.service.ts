@@ -196,6 +196,6 @@ export class TicketHoldingService {
     async searchHeldTicketIds(showtimeId: string, userId: string): Promise<string[]> {
         const tickets = await this.cacheService.get(getUserKey(showtimeId, userId))
 
-        return tickets ? JsonUtil.parse(tickets) : []
+        return tickets ? JSON.parse(tickets) : []
     }
 }

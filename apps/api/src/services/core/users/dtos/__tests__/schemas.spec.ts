@@ -8,24 +8,23 @@ import {
 } from '../index.js'
 
 describe('CreateUserSchema, RefreshTokenBodySchema, SearchUsersPageSchema, UpdateUserSchema, UserAuthPayloadSchema, UserCredentialsSchema', () => {
-    it('생년월일과 문자열 필드의 기존 암시적 변환을 유지한다', () => {
+    it('생년월일만 변환하고 일반 문자열은 그대로 유지한다', () => {
         expect(
             CreateUserSchema.parse({
                 birthDate: '2000-01-02',
                 email: 'user@mail.com',
-                name: false,
-                password: 1234
+                name: '2000-01-02',
+                password: '1234'
             })
         ).toEqual({
             birthDate: Temporal.PlainDate.from('2000-01-02'),
             email: 'user@mail.com',
-            name: 'false',
+            name: '2000-01-02',
             password: '1234'
         })
-        expect(UserCredentialsSchema.parse({ email: 'user@mail.com', password: 0 })).toEqual({
-            email: 'user@mail.com',
-            password: '0'
-        })
+        expect(
+            UserCredentialsSchema.safeParse({ email: 'user@mail.com', password: 0 }).success
+        ).toBe(false)
     })
 
     it('잘못된 생년월일과 빈 refresh token을 거부한다', () => {
@@ -40,15 +39,16 @@ describe('CreateUserSchema, RefreshTokenBodySchema, SearchUsersPageSchema, Updat
         expect(RefreshTokenBodySchema.safeParse({ refreshToken: '' }).success).toBe(false)
     })
 
-    it('수정 필드의 누락과 null을 모두 허용한다', () => {
+    it('수정 필드의 누락은 허용하고 null은 거부한다', () => {
         expect(UpdateUserSchema.parse({})).toEqual({})
         expect(
-            UpdateUserSchema.parse({ birthDate: null, email: null, name: null, password: null })
-        ).toEqual({ birthDate: null, email: null, name: null, password: null })
+            UpdateUserSchema.safeParse({ birthDate: null, email: null, name: null, password: null })
+                .success
+        ).toBe(false)
     })
 
     it('검색 쿼리를 변환하고 알 수 없는 필드를 거부한다', () => {
-        expect(SearchUsersPageSchema.parse({ email: 123, name: null, page: '2' })).toEqual({
+        expect(SearchUsersPageSchema.parse({ email: '123', name: null, page: '2' })).toEqual({
             email: '123',
             name: null,
             page: 2

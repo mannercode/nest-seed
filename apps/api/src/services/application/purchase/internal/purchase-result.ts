@@ -1,14 +1,36 @@
 import { ensure, IdempotencyErrors } from '@mannercode/common'
 import { ConflictException, HttpException } from '@nestjs/common'
-import { PurchaseRecordsService, PurchaseRecordStatus, type PurchaseRecordDto } from '#core'
+import { PurchaseRecordSchema, PurchaseRecordStatus } from '#core'
+import { z } from 'zod'
 
-export type PurchaseOperation = NonNullable<
-    Awaited<ReturnType<PurchaseRecordsService['findIdempotencyOperation']>>
->
+export const PurchaseOperationSchema = z.object({
+    errorResponse: z.record(z.string(), z.unknown()).nullable(),
+    errorStatus: z.number().nullable(),
+    fingerprint: z.string().nullable(),
+    response: PurchaseRecordSchema.optional(),
+    purchaseRecord: PurchaseRecordSchema,
+    status: z.enum(PurchaseRecordStatus)
+})
+export type PurchaseOperation = z.infer<typeof PurchaseOperationSchema>
 
-export type PurchaseFailure = { kind: 'failed'; response: Record<string, unknown>; status: number }
+export const PurchaseFailureSchema = z.object({
+    kind: z.literal('failed'),
+    response: z.record(z.string(), z.unknown()),
+    status: z.number()
+})
+export type PurchaseFailure = z.infer<typeof PurchaseFailureSchema>
 
-export type PurchaseResult = { kind: 'completed'; response: PurchaseRecordDto } | PurchaseFailure
+export const PurchaseResultSchema = z.discriminatedUnion('kind', [
+    z.object({ kind: z.literal('completed'), response: PurchaseRecordSchema }),
+    PurchaseFailureSchema
+])
+export type PurchaseResult = z.infer<typeof PurchaseResultSchema>
+
+export const purchaseStepSchema = <T extends z.ZodType>(value: T) =>
+    z.discriminatedUnion('kind', [
+        z.object({ kind: z.literal('succeeded'), value }),
+        PurchaseFailureSchema
+    ])
 
 export function purchaseResult(operation: PurchaseOperation): PurchaseResult {
     if (operation.status === PurchaseRecordStatus.Completed) {

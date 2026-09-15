@@ -17,7 +17,8 @@ export class RestateWorkflowClient<Input, Output> {
 
     constructor(
         private readonly definition: DurableWorkflowDefinition<Input, Output>,
-        ingressUrl: string
+        ingressUrl: string,
+        private readonly outputSchema: { parse: (value: unknown) => Output }
     ) {
         this.ingress = connect({
             retry: {
@@ -41,15 +42,16 @@ export class RestateWorkflowClient<Input, Output> {
     }
 
     async output(workflowId: string) {
-        return this.ingress
+        const output = await this.ingress
             .workflowClient<{ run: (context: WorkflowContext, input: Input) => Promise<Output> }>(
                 this.definition,
                 workflowId
             )
             .workflowOutput(rpc.opts({ timeout: SUBMIT_ATTEMPT_TIMEOUT_MS }))
+        return output.ready ? { ...output, result: this.outputSchema.parse(output.result) } : output
     }
 
-    waitForCompletion(submission: DurableWorkflowSubmission<Output>): Promise<Output> {
-        return this.ingress.result(submission)
+    async waitForCompletion(submission: DurableWorkflowSubmission<Output>): Promise<Output> {
+        return this.outputSchema.parse(await this.ingress.result(submission))
     }
 }

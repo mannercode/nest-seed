@@ -1,4 +1,4 @@
-import { CacheService, ensure, pickIds, Require } from '@mannercode/common'
+import { CacheService, DateUtil, ensure, pickIds, Require } from '@mannercode/common'
 import { HttpTestClient, oid } from '@mannercode/testing'
 import { randomUUID } from 'node:crypto'
 import { PurchaseEvents } from '#application'
@@ -6,12 +6,14 @@ import {
     PurchaseRecordStatus,
     PurchaseEventStatus,
     TicketStatus,
+    ShowtimesService,
     type PurchaseRecordDto,
     PurchaseRecordsService,
     type TicketDto,
     type UserDto,
     TicketHoldingService,
-    TicketsService
+    TicketsService,
+    PurchaseRecordSchema
 } from '#core'
 import { PaymentStatus, PaymentsService } from '#infrastructure'
 import {
@@ -66,6 +68,18 @@ describe('PurchaseService', () => {
                     .badRequest(Errors.Idempotency.KeyRequired())
             })
 
+            it('문자열로 전달한 결제 금액은 400을 반환한다', async () => {
+                const createDto = buildCreatePurchaseDto(heldTickets)
+                await fix.httpClient
+                    .post('/purchases')
+                    .headers({
+                        Authorization: `Bearer ${accessToken}`,
+                        'Idempotency-Key': randomUUID()
+                    })
+                    .body({ ...createDto, totalPrice: String(createDto.totalPrice) })
+                    .badRequest()
+            })
+
             it('Idempotency-Key 형식이 잘못되면 400을 반환한다', async () => {
                 await fix.httpClient
                     .post('/purchases')
@@ -94,7 +108,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(createDto)
-                    .created()
+                    .created(PurchaseRecordSchema)
                 const replay = await fix.httpClient
                     .post('/purchases')
                     .headers({
@@ -102,7 +116,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(createDto)
-                    .created()
+                    .created(PurchaseRecordSchema)
 
                 expect(replay.body).toEqual(first.body)
                 expect(createPayment).toHaveBeenCalledTimes(1)
@@ -131,7 +145,7 @@ describe('PurchaseService', () => {
                             'Idempotency-Key': idempotencyKey
                         })
                         .body(createDto)
-                const first = send().created()
+                const first = send().created(PurchaseRecordSchema)
                 await entered.promise
                 try {
                     await send().conflict(Errors.Idempotency.RequestInProgress())
@@ -139,7 +153,7 @@ describe('PurchaseService', () => {
                     release.resolve()
                 }
                 const completed = await first
-                expect((await send().created()).body).toEqual(completed.body)
+                expect((await send().created(PurchaseRecordSchema)).body).toEqual(completed.body)
                 expect(create).toHaveBeenCalledTimes(1)
                 expect(createPayment).toHaveBeenCalledTimes(1)
             })
@@ -168,7 +182,7 @@ describe('PurchaseService', () => {
                         .post('/purchases')
                         .headers({ Authorization: `Bearer ${accessToken}`, 'Idempotency-Key': key })
                         .body(createDto)
-                        .created()
+                        .created(PurchaseRecordSchema)
                 const delayed = send()
                 await didReach
                 let completed: Awaited<ReturnType<typeof send>>
@@ -222,7 +236,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(firstDto)
-                    .created()
+                    .created(PurchaseRecordSchema)
                 await didEnterFirstCreate
                 const second = new HttpTestClient(fix.httpClient.serverUrl)
                     .post('/purchases')
@@ -248,7 +262,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(createDto)
-                    .created()
+                    .created(PurchaseRecordSchema)
 
                 await fix.httpClient
                     .post('/purchases')
@@ -287,7 +301,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(createDto)
-                    .created()
+                    .created(PurchaseRecordSchema)
 
                 await didStartPayment
                 try {
@@ -330,7 +344,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(createDto)
-                    .created()
+                    .created(PurchaseRecordSchema)
             })
 
             it('생성된 구매를 반환한다', async () => {
@@ -341,7 +355,7 @@ describe('PurchaseService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .created({
+                    .created(PurchaseRecordSchema, {
                         ...createDto,
                         userId: user.id,
                         createdAt: expect.any(Temporal.Instant),
@@ -358,9 +372,9 @@ describe('PurchaseService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .created()
+                    .created(PurchaseRecordSchema)
 
-                const payments = await getPayments(fix, [purchaseRecord.paymentId])
+                const payments = await getPayments(fix, [ensure(purchaseRecord.paymentId)])
 
                 expect(ensure(payments[0]).amount).toEqual(purchaseRecord.totalPrice)
             })
@@ -372,7 +386,7 @@ describe('PurchaseService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .created()
+                    .created(PurchaseRecordSchema)
 
                 const soldTickets = await getTickets(fix, pickIds(heldTickets))
 
@@ -391,7 +405,7 @@ describe('PurchaseService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .created()
+                    .created(PurchaseRecordSchema)
 
                 expect(
                     (await getTickets(fix, pickIds(heldTickets))).every(
@@ -445,6 +459,10 @@ describe('PurchaseService', () => {
 
             it('구매 가능 시간이 종료되면 400을 반환한다', async () => {
                 const config = fix.module.get(AppConfigService)
+                const [showtime] = await fix.module
+                    .get(ShowtimesService)
+                    .getMany([ensure(heldTickets[0]).showtimeId])
+                const startTime = ensure(showtime).startTime
                 await overrideConfigGetter(fix.module, 'ticket', {
                     purchaseCutoffMinutes: config.ticket.purchaseCutoffMinutes + 2
                 })
@@ -458,9 +476,12 @@ describe('PurchaseService', () => {
                     .body(createDto)
                     .badRequest(
                         Errors.Purchase.WindowClosed(
-                            expect.any(Number),
-                            expect.any(Temporal.Instant),
-                            expect.any(Temporal.Instant)
+                            config.ticket.purchaseCutoffMinutes,
+                            DateUtil.add({
+                                base: startTime,
+                                minutes: -config.ticket.purchaseCutoffMinutes
+                            }).toString(),
+                            startTime.toString()
                         )
                     )
             })
@@ -517,7 +538,7 @@ describe('PurchaseService', () => {
                                 'Idempotency-Key': idempotencyKey
                             })
                             .body(createDto)
-                            .created()
+                            .created(PurchaseRecordSchema)
                     const { body: completed }: { body: PurchaseRecordDto } = await send()
 
                     expect((await send()).body).toEqual(completed)
@@ -559,7 +580,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': randomUUID()
                     })
                     .body(buildCreatePurchaseDto(heldTickets))
-                    .created()
+                    .created(PurchaseRecordSchema)
                 await retryEntered.promise
                 try {
                     expect(
@@ -657,7 +678,7 @@ describe('PurchaseService', () => {
                             'Idempotency-Key': idempotencyKey
                         })
                         .body(buildCreatePurchaseDto(heldTickets))
-                        .created()
+                        .created(PurchaseRecordSchema)
                 const { body: record }: { body: PurchaseRecordDto } = await send()
                 await retryEntered.promise
                 try {
@@ -694,7 +715,7 @@ describe('PurchaseService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .created()
+                    .created(PurchaseRecordSchema)
 
                 await fix.httpClient
                     .post('/purchases')
@@ -720,7 +741,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': randomUUID()
                     })
                     .body(buildCreatePurchaseDto(heldTickets))
-                    .created()
+                    .created(PurchaseRecordSchema)
                 expect(insert).toHaveBeenCalledTimes(2)
                 expect(payment).toHaveBeenCalledTimes(1)
             })

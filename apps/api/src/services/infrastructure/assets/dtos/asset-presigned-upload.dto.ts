@@ -1,7 +1,12 @@
-export class AssetPresignedUploadDto {
-    assetId: string
-    expiresAt: Temporal.Instant
-    fields: Record<string, string>
-    method: 'POST'
-    url: string
-}
+import { InstantFromInputSchema } from '@mannercode/common'
+import { z } from 'zod'
+
+export const AssetPresignedUploadSchema = z.strictObject({
+    assetId: z.string(),
+    expiresAt: InstantFromInputSchema,
+    fields: z.record(z.string(), z.string()),
+    method: z.literal('POST'),
+    url: z.string()
+})
+
+export type AssetPresignedUploadDto = z.infer<typeof AssetPresignedUploadSchema>

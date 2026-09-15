@@ -12,10 +12,10 @@ describe('HttpTestClient', () => {
     afterEach(() => fix.teardown())
 
     describe('JSON 응답 파싱', () => {
-        it('64비트 정수를 문자열로 보존해 정밀도 손실을 막는다', async () => {
+        it('큰 정수도 기본 JSON 파싱 결과를 그대로 반환한다', async () => {
             const { body } = await fix.httpClient.get('/big-int').ok()
 
-            expect(body.v).toBe('9223372036854775807')
+            expect(body.v).toBe(Number('9223372036854775807'))
         })
 
         it('문자열 리터럴 안의 숫자는 변형하지 않는다', async () => {
@@ -24,25 +24,32 @@ describe('HttpTestClient', () => {
             expect(body.note).toBe('id: 9223372036854775807')
         })
 
-        it('ISO 8601 형식의 타임스탬프를 Instant로 되살린다', async () => {
-            const { body } = await fix.httpClient.get('/timestamp').ok()
+        it('명시한 응답 스키마로 변환하고 body 타입을 추론한다', async () => {
+            const schema = {
+                parse: (value: unknown) => ({
+                    at: Temporal.Instant.from((value as { at: string }).at)
+                })
+            }
+            const { body } = await fix.httpClient
+                .get('/timestamp')
+                .ok(schema, { at: Temporal.Instant.from('2023-06-18T12:12:34.567Z') })
+            expectTypeOf(body.at).toEqualTypeOf<Temporal.Instant>()
 
             expect(body.at).toBeInstanceOf(Temporal.Instant)
             expect(body.at.toString()).toBe('2023-06-18T12:12:34.567Z')
         })
 
-        it('날짜 전용 응답을 PlainDate로 되살린다', async () => {
+        it('스키마를 주지 않으면 날짜 모양의 문자열도 그대로 둔다', async () => {
             const { body } = await fix.httpClient.get('/plain-date').ok()
 
-            expect(body.date).toBeInstanceOf(Temporal.PlainDate)
-            expect(body.date.toString()).toBe('2023-06-18')
+            expect(body.date).toBe('2023-06-18')
         })
 
-        it('확장 연도 응답도 Temporal로 되살린다', async () => {
+        it('확장 연도 문자열도 자동 변환하지 않는다', async () => {
             const { body } = await fix.httpClient.get('/expanded-temporal').ok()
 
-            expect(body.at).toEqual(Temporal.Instant.from('+010000-01-02T03:04:05Z'))
-            expect(body.date).toEqual(Temporal.PlainDate.from('-000001-12-31'))
+            expect(body.at).toBe('+010000-01-02T03:04:05Z')
+            expect(body.date).toBe('-000001-12-31')
         })
 
         it('ISO 모양이지만 잘못된 날짜 응답은 문자열로 보존한다', async () => {

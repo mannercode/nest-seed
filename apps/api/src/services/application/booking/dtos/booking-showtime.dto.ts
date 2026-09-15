@@ -1,5 +1,6 @@
-import { ShowtimeDto, type TicketSalesDto } from '#core'
+import type { z } from 'zod'
+import { ShowtimeSchema, TicketSalesSchema } from '#core'
 
-export class BookingShowtimeDto extends ShowtimeDto {
-    ticketSales: TicketSalesDto
-}
+export const BookingShowtimeSchema = ShowtimeSchema.extend({ ticketSales: TicketSalesSchema })
+
+export type BookingShowtimeDto = z.infer<typeof BookingShowtimeSchema>

@@ -4,10 +4,10 @@ import { JsonUtil } from '../utils/index.js'
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 
-/** Restate의 입력과 journal 값을 애플리케이션의 Temporal JSON 계약으로 왕복시킨다. */
+/** Temporal을 기존 JSON 형식으로 기록한다. 읽은 값의 복원은 호출 경계의 DTO 스키마가 맡는다. */
 export const TemporalJsonSerde: Serde<unknown> = {
     contentType: 'application/json',
-    deserialize: (data) => (data.length === 0 ? undefined : JsonUtil.parse(decoder.decode(data))),
+    deserialize: (data) => (data.length === 0 ? undefined : JSON.parse(decoder.decode(data))),
     serialize: (value) =>
         value === undefined ? new Uint8Array() : encoder.encode(JsonUtil.stringify(value))
 }

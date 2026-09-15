@@ -1,3 +1,4 @@
+import { UserHomeViewSchema } from '#view'
 import { DateUtil, ensure } from '@mannercode/common'
 import { plainDate } from '@mannercode/testing'
 import { MovieGenre, type MovieDto } from '#core'
@@ -64,7 +65,7 @@ describe('RecommendationService', () => {
                 const { body } = await fix.httpClient
                     .get('/views/user-app/home')
                     .headers({ Authorization: `Bearer ${accessToken}` })
-                    .ok()
+                    .ok(UserHomeViewSchema)
 
                 expect(body.recommendedMovies).toEqual([
                     actionMovie,
@@ -78,7 +79,9 @@ describe('RecommendationService', () => {
 
         describe('게스트 추천', () => {
             it('개봉일 내림차순 기본 추천을 반환한다', async () => {
-                const { body } = await fix.httpClient.get('/views/user-app/home').ok()
+                const { body } = await fix.httpClient
+                    .get('/views/user-app/home')
+                    .ok(UserHomeViewSchema)
 
                 expect(body.recommendedMovies).toEqual([
                     dramaMovie, // 2900-05-01
@@ -101,7 +104,9 @@ describe('RecommendationService', () => {
                     { movieId: nearMovie.id, theaterId: theater.id, startTime }
                 ])
 
-                const { body } = await fix.httpClient.get('/views/user-app/home').ok()
+                const { body } = await fix.httpClient
+                    .get('/views/user-app/home')
+                    .ok(UserHomeViewSchema)
 
                 expect(body.recommendedMovies).toEqual([
                     dramaMovie,

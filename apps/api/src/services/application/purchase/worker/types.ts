@@ -1,8 +1,10 @@
-import type { CreatePurchaseDto } from '../dtos/index.js'
+import { z } from 'zod'
+import { CreatePurchaseSchema } from '../dtos/index.js'
 
-export type PurchaseWorkflowInput = {
-    createDto: CreatePurchaseDto
-    fingerprint: string
-    idempotencyKey: string
-    userId: string
-}
+export const PurchaseWorkflowInputSchema = z.object({
+    createDto: CreatePurchaseSchema,
+    fingerprint: z.string(),
+    idempotencyKey: z.string(),
+    userId: z.string()
+})
+export type PurchaseWorkflowInput = z.infer<typeof PurchaseWorkflowInputSchema>

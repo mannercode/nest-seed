@@ -2,6 +2,8 @@ import type { Collection, Db, IndexDescription, MongoClient } from 'mongodb'
 import { BadRequestException, Logger, NotFoundException } from '@nestjs/common'
 import type { TransactionContext } from '../../index.js'
 import { OrderDirection } from '../../pagination/index.js'
+import { z } from 'zod'
+import { InstantFromInputSchema, JsonUtil, paginationResultSchema } from '../../index.js'
 import {
     CrudRepository,
     MongoConnection,
@@ -480,6 +482,15 @@ describe('CrudRepository', () => {
 
             expect(result).toMatchObject({ page: 2, size: 2, total: 5 })
             expect(result.items.map(({ name }) => name)).toEqual(['c', 'd'])
+
+            const ItemSchema = z.object({ name: z.string(), createdAt: InstantFromInputSchema })
+            const restored = paginationResultSchema(ItemSchema).parse(
+                JSON.parse(JsonUtil.stringify(result))
+            )
+            expect(restored).toEqual({
+                ...result,
+                items: result.items.map(({ name, createdAt }) => ({ name, createdAt }))
+            })
         })
 
         it('내림차순과 기본 page/size를 적용한다', async () => {

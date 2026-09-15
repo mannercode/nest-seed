@@ -11,10 +11,11 @@
 - **한 구매에 한 상영** — 여러 상영에 걸친 순차 claim과 rollback을 제거한다. 한 상영 안의 원자 선점, 소유권 검사, 부분 구매 후 남은 선점의 TTL은 유지한다.
 - **구매 복구를 Restate로 통일** — 자체 lease·주기 재조정·미해소 결제 검색을 workflow로 대체한다. 구매의 동기 HTTP 응답, DB transaction과 최초 응답 저장, 멱등 결제·보상, JetStream 전달은 유지한다. 알림 발행은 별도 workflow에서 복구한다.
 
-## 유지·유보
+- **JSON·DTO 변환** — 일반 JSON 파싱에서 날짜·큰 정수를 추측하지 않는다. 요청 본문의 강제 형변환을 제거하고, 응답·Restate의 객체 복원은 Zod DTO 스키마로 명시한다. HTTP 테스트도 응답 스키마로 변환한다.
+
+## 유지
 
 - **단건·다건 API는 변경하지 않는다.** `getMany`·`deleteMany` 계약과 해당 네이밍 규칙을 유지한다.
-- **JSON·DTO 자동 변환은 유보한다.** [기존 검토](../docs/review/runtime-complexity-review.md)를 기준으로 일반 JSON 파싱, 필드별 변환, Restate·메시지의 Temporal 복원 계약을 구분한 뒤 결정한다.
 - 데모의 프록시·쿠키 처리는 각 Next.js 앱이 소유한다. 기존 공용 유틸과 외부 연동 경계는 유지한다.
 
 ## 완료 확인

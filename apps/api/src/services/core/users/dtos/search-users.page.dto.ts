@@ -1,10 +1,9 @@
-import type { z } from 'zod'
+import { z } from 'zod'
 import { PaginationSchema } from '@mannercode/common'
-import { stringFromRequest } from './request-value.schema.js'
 
 export const SearchUsersPageSchema = PaginationSchema.extend({
-    email: stringFromRequest.nullish(),
-    name: stringFromRequest.nullish()
+    email: z.string().nullish(),
+    name: z.string().nullish()
 })
 
 export type SearchUsersPageDto = z.infer<typeof SearchUsersPageSchema>

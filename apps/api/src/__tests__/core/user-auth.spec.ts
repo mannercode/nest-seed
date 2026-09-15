@@ -2,7 +2,7 @@ import { oid } from '@mannercode/testing'
 import { HttpStatus, type INestApplication } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { AppConfigService } from '#config'
-import { type UserDto, UsersService } from '#core'
+import { type UserDto, UsersService, UserSchema, PurchaseRecordSchema } from '#core'
 import {
     createPurchaseRecord,
     createUser,
@@ -176,6 +176,7 @@ describe('UserAuthentication', () => {
                 .get('/users/me')
                 .headers({ Authorization: `Bearer ${authTokens.accessToken}` })
                 .ok(
+                    UserSchema,
                     expect.objectContaining({
                         id: expect.any(String),
                         email: credentials.email,
@@ -281,7 +282,7 @@ describe('UserAuthentication', () => {
                     .patch('/users/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(updateDto)
-                    .ok({ ...user, ...updateDto })
+                    .ok(UserSchema, { ...user, ...updateDto })
             })
 
             it('수정 내용이 DB에 저장된다', async () => {
@@ -289,12 +290,12 @@ describe('UserAuthentication', () => {
                     .patch('/users/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(updateDto)
-                    .ok()
+                    .ok(UserSchema)
 
                 await fix.httpClient
                     .get('/users/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
-                    .ok({ ...user, ...updateDto })
+                    .ok(UserSchema, { ...user, ...updateDto })
             })
 
             it('password를 바꿔도 기존 액세스 토큰은 만료 전까지 인증을 통과한다', async () => {
@@ -302,11 +303,11 @@ describe('UserAuthentication', () => {
                     .patch('/users/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body({ password: 'newPassword' })
-                    .ok()
+                    .ok(UserSchema)
                 await fix.httpClient
                     .get('/users/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
-                    .ok(user)
+                    .ok(UserSchema, user)
             })
 
             it('리프레시 발급 전에 password가 바뀌면 회수된 세션의 재발급을 거부한다', async () => {
@@ -335,7 +336,7 @@ describe('UserAuthentication', () => {
                 await fix.httpClient
                     .get('/users/me')
                     .headers({ Authorization: `Bearer ${session.accessToken}` })
-                    .ok(session.user)
+                    .ok(UserSchema, session.user)
             })
         })
 
@@ -356,7 +357,7 @@ describe('UserAuthentication', () => {
             const { body } = await fix.httpClient
                 .get('/users/me/purchases')
                 .headers({ Authorization: `Bearer ${accessToken}` })
-                .ok()
+                .ok(PurchaseRecordSchema.array())
 
             expect(body).toEqual(expect.arrayContaining([mine1, mine2]))
             expect(body).toHaveLength(2)
@@ -369,7 +370,7 @@ describe('UserAuthentication', () => {
             await fix.httpClient
                 .get('/users/me/purchases')
                 .headers({ Authorization: `Bearer ${accessToken}` })
-                .ok([])
+                .ok(PurchaseRecordSchema.array(), [])
         })
 
         it('인증 없이 호출하면 401을 반환한다', async () => {
@@ -419,7 +420,7 @@ describe('UserAuthentication', () => {
             await fix.httpClient
                 .get('/users/me')
                 .headers({ Authorization: `Bearer ${accessToken}` })
-                .ok(user)
+                .ok(UserSchema, user)
         })
 
         it('잘못된 토큰으로 로그아웃하면 401을 반환한다', async () => {
@@ -464,7 +465,7 @@ describe('UserAuthentication', () => {
             await fix.httpClient
                 .get('/users/me')
                 .headers({ Authorization: `Bearer ${session.accessToken}` })
-                .ok(session.user)
+                .ok(UserSchema, session.user)
         })
 
         it('리프레시 발급 전에 전체 로그아웃하면 회수된 세션의 재발급을 거부한다', async () => {
@@ -493,7 +494,7 @@ describe('UserAuthentication', () => {
             await fix.httpClient
                 .get('/users/me')
                 .headers({ Authorization: `Bearer ${session.accessToken}` })
-                .ok(session.user)
+                .ok(UserSchema, session.user)
         })
     })
 })

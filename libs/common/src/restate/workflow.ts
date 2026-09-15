@@ -18,6 +18,7 @@ export function isWorkflowCancellation(error: unknown): boolean {
 
 export function defineWorkflow<Input, Output>(definition: {
     name: string
+    input: { parse: (value: unknown) => Input }
     run: (context: DurableWorkflowContext, input: Input) => Promise<Output>
     options: {
         abortTimeout: number
@@ -36,7 +37,7 @@ export function defineWorkflow<Input, Output>(definition: {
                         run: (name, operation, retry) => context.run(name, operation, retry),
                         attemptSignal: () => context.request().attemptCompletedSignal
                     },
-                    input
+                    definition.input.parse(input)
                 )
         },
         options: {

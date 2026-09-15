@@ -1,5 +1,13 @@
+import { paginationResultSchema } from '@mannercode/common'
 import { nullObjectId, nullPlainDate } from '@mannercode/testing'
-import { MovieDefaults, MovieGenre, MovieRating, type MovieDto, MoviesService } from '#core'
+import {
+    MovieDefaults,
+    MovieGenre,
+    MovieRating,
+    type MovieDto,
+    MoviesService,
+    MovieSchema
+} from '#core'
 import {
     createMovie,
     createUnpublishedMovie,
@@ -37,13 +45,14 @@ describe('MoviesPublish', () => {
 
             beforeEach(async () => {
                 movie = await createUnpublishedMovie(fix)
-                await fix.httpClient.patch(`/movies/${movie.id}`).body(updateDto).ok()
+                await fix.httpClient.patch(`/movies/${movie.id}`).body(updateDto).ok(MovieSchema)
             })
 
             it('공개된 영화를 반환한다', async () => {
                 await fix.httpClient
                     .post(`/movies/${movie.id}/publish`)
                     .ok(
+                        MovieSchema,
                         expect.objectContaining({
                             id: expect.any(String),
                             ...updateDto,
@@ -55,12 +64,12 @@ describe('MoviesPublish', () => {
             it('공개된 영화는 검색에서 노출된다', async () => {
                 const { body: publishedMovie } = await fix.httpClient
                     .post(`/movies/${movie.id}/publish`)
-                    .ok()
+                    .ok(MovieSchema)
 
                 const { body: moviePage } = await fix.httpClient
                     .get('/movies')
                     .query({ title: 'MovieTitle' })
-                    .ok()
+                    .ok(paginationResultSchema(MovieSchema))
                 expect(moviePage.items[0]).toEqual(publishedMovie)
             })
 
@@ -68,7 +77,7 @@ describe('MoviesPublish', () => {
                 const { body: moviePage } = await fix.httpClient
                     .get('/movies')
                     .query({ title: 'MovieTitle' })
-                    .ok()
+                    .ok(paginationResultSchema(MovieSchema))
                 expect(moviePage.items).toHaveLength(0)
             })
         })
@@ -95,7 +104,7 @@ describe('MoviesPublish', () => {
                     releaseDate: nullPlainDate,
                     title: `MovieTitle`
                 })
-                .ok()
+                .ok(MovieSchema)
 
             await fix.httpClient
                 .post(`/movies/${movie.id}/publish`)
@@ -147,6 +156,7 @@ describe('MoviesPublish', () => {
         const movie = await createUnpublishedMovie(fix)
 
         for (const update of [{ genres: null }, { rating: null }, { releaseDate: null }]) {
+            // @ts-expect-error 런타임 호출이 타입 계약을 어긴 경우를 검증한다.
             await expect(moviesService.update(movie.id, update)).rejects.toThrow()
         }
     })

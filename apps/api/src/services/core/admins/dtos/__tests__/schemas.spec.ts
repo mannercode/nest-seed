@@ -7,14 +7,11 @@ import {
 } from '../index.js'
 
 describe('AdminAuthPayloadSchema, AdminCredentialsSchema, AdminRefreshTokenBodySchema, CreateAdminSchema, UpdateAdminSchema', () => {
-    it('문자열 필드의 기존 암시적 변환을 유지한다', () => {
-        expect(AdminCredentialsSchema.parse({ email: 'admin@mail.com', password: 1234 })).toEqual({
-            email: 'admin@mail.com',
-            password: '1234'
-        })
-        expect(AdminRefreshTokenBodySchema.parse({ refreshToken: true })).toEqual({
-            refreshToken: 'true'
-        })
+    it('문자열 필드에 들어온 숫자와 불리언은 거부한다', () => {
+        expect(
+            AdminCredentialsSchema.safeParse({ email: 'admin@mail.com', password: 1234 }).success
+        ).toBe(false)
+        expect(AdminRefreshTokenBodySchema.safeParse({ refreshToken: true }).success).toBe(false)
     })
 
     it('생성 필드의 빈 문자열과 알 수 없는 필드를 거부한다', () => {
@@ -32,13 +29,11 @@ describe('AdminAuthPayloadSchema, AdminCredentialsSchema, AdminRefreshTokenBodyS
         ).toBe(false)
     })
 
-    it('수정 필드의 누락과 null을 모두 허용한다', () => {
+    it('수정 필드의 누락은 허용하고 null은 거부한다', () => {
         expect(UpdateAdminSchema.parse({})).toEqual({})
-        expect(UpdateAdminSchema.parse({ email: null, name: null, password: null })).toEqual({
-            email: null,
-            name: null,
-            password: null
-        })
+        expect(
+            UpdateAdminSchema.safeParse({ email: null, name: null, password: null }).success
+        ).toBe(false)
     })
 
     it('JWT 전용 부가 claim은 허용하되 필요한 claim만 반환한다', () => {

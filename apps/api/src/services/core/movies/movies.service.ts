@@ -6,7 +6,7 @@ import {
     UnprocessableEntityException
 } from '@nestjs/common'
 import { AssetsService, CreateAssetDto } from '#infrastructure'
-import { SearchMoviesPageDto, UpsertMovieDto, MovieDto } from './dtos/index.js'
+import { SearchMoviesPageDto, UpsertMovieDto, MovieDto, MovieSchema } from './dtos/index.js'
 import { MovieErrors } from './errors.js'
 import { Movie, MovieDefaults } from './models/index.js'
 import { MoviePendingAssetsRepository } from './movie-pending-assets.repository.js'
@@ -220,20 +220,10 @@ export class MoviesService {
         }
 
         return movies.map((movie) => {
-            const dto = mapDocToDto(movie, MovieDto, [
-                'id',
-                'title',
-                'genres',
-                'releaseDate',
-                'plot',
-                'durationInSeconds',
-                'director',
-                'rating'
-            ])
-            dto.imageUrls = movie.assetIds
+            const imageUrls = movie.assetIds
                 .map((assetId) => assetUrlById.get(assetId))
                 .filter((url): url is string => url !== undefined)
-            return dto
+            return mapDocToDto({ ...movie, imageUrls }, MovieSchema)
         })
     }
 }

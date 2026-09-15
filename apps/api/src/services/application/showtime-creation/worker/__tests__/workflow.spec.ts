@@ -279,7 +279,8 @@ describe('createShowtimeCreationWorkflow', () => {
     }
 
     function run(fix: ReturnType<typeof createFixture>) {
-        return fix.definition.workflow.run(fix.context, input)
+        const wireInput = TemporalJsonSerde.deserialize(TemporalJsonSerde.serialize(input))
+        return fix.definition.workflow.run(fix.context, wireInput as ShowtimeCreationWorkflowInput)
     }
 
     type RuntimeWorkflowDefinition = ShowtimeCreationWorkflowDefinition & {
