@@ -157,12 +157,23 @@ TEST "로그아웃한 리프레시 토큰으로 재발급하면 401을 반환한
 	-H 'Content-Type: application/json' \
 	-d '{ "refreshToken": "'${USER_REFRESH_TOKEN}'" }'
 
+SETUP POST /users/login \
+	-H 'Content-Type: application/json' \
+	-d '{ "email": "'${USER_EMAIL}'", "password": "password" }'
+USER_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
+USER_REFRESH_TOKEN=$(echo "${BODY}" | jq -r '.refreshToken')
+
 TEST "사용자가 자신의 모든 세션을 로그아웃 처리한다" \
 	204 POST /users/me/logout-all \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
 
-TEST "전체 로그아웃 뒤 기존 액세스 토큰은 거부한다" \
-	401 GET /users/me \
+TEST "전체 로그아웃 뒤 리프레시 토큰은 거부한다" \
+	401 POST /users/refresh \
+	-H 'Content-Type: application/json' \
+	-d '{ "refreshToken": "'${USER_REFRESH_TOKEN}'" }'
+
+TEST "전체 로그아웃 뒤에도 만료 전 액세스 토큰은 유효하다" \
+	200 GET /users/me \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
 
 TEST "관리자가 사용자를 삭제한다" \
