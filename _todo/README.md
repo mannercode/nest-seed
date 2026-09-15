@@ -2,7 +2,7 @@
 
 앞으로 할 작업과 미결 제안은 이 폴더에 둔다. 확정된 설명은 `docs/`, 과거 자료는 `docs/backup/`에 둔다.
 
-- [단순화 작업 계획](runtime-simplification-plan.md): `apps/api`와 `libs/` 중심의 후속 작업. 아직 구현하지 않은 제안이다.
+- [단순화 작업 계획](runtime-simplification-plan.md): 승인한 범위는 구현·검증 완료. 단건·다건 API는 유지하고 JSON·DTO 자동 변환은 유보했다.
 
 ## 복구한 할 일 문서
 
