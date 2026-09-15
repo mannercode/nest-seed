@@ -57,7 +57,7 @@ export class UsersRepository extends CrudRepository<User> {
         return user
     }
 
-    async findWithPassword({ email }: { email: string }) {
+    async findForAuthentication({ email }: { email: string }) {
         const user = await this.findDocument(this.activeFilter({ email: { $eq: email } }))
 
         return user ? this.toDomainDocument(user) : null

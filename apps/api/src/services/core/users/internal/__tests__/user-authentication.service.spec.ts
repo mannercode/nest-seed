@@ -45,7 +45,7 @@ describe('UserAuthenticationService', () => {
 
     describe('authenticate', () => {
         it('가입된 이메일이 없어도 공통 해시 검증 후 null을 반환한다', async () => {
-            const repo = { findWithPassword: vi.fn().mockResolvedValue(null) }
+            const repo = { findForAuthentication: vi.fn().mockResolvedValue(null) }
             const svc = new UserAuthenticationService(repo as any, {} as any)
             const verifySpy = vi.spyOn(PasswordHasher, 'verify')
             const validateSpy = vi.spyOn(svc, 'validate')
@@ -61,7 +61,7 @@ describe('UserAuthenticationService', () => {
         it('비밀번호가 일치하지 않으면 저장된 해시로 validate를 호출하고 null을 반환한다', async () => {
             const realHash = await service.hash('correct')
             const repo = {
-                findWithPassword: vi
+                findForAuthentication: vi
                     .fn()
                     .mockResolvedValue({ id: 'u1', email: 'a@b.com', password: realHash })
             }

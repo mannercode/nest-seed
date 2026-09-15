@@ -51,7 +51,7 @@ export class AdminsRepository extends CrudRepository<Admin> {
         }
     }
 
-    async findWithPassword({ email }: { email: string }) {
+    async findForAuthentication({ email }: { email: string }) {
         const admin = await this.findDocument(this.activeFilter({ email: { $eq: email } }))
 
         return admin

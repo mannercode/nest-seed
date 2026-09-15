@@ -11,7 +11,7 @@ export class UserAuthenticationService {
     ) {}
 
     async authenticate({ email, password }: UserCredentialsDto) {
-        const user = await this.repository.findWithPassword({ email })
+        const user = await this.repository.findForAuthentication({ email })
         const targetHash = user?.password
 
         const isValid = await this.validate(password, targetHash)

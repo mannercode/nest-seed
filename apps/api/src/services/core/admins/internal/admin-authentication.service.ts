@@ -14,7 +14,7 @@ export class AdminAuthenticationService {
     ) {}
 
     async authenticate({ email, password }: AdminCredentialsDto) {
-        const admin = await this.repository.findWithPassword({ email })
+        const admin = await this.repository.findForAuthentication({ email })
         const targetHash = admin?.password
 
         const isValid = await this.validate(password, targetHash)

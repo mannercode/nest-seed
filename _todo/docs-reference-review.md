@@ -10,7 +10,7 @@
 
 > 같은 동작을 조회 조건별 메서드로 늘리지 않는다. 조건은 객체 인자로 받는다. 업무 목적·반환 결과·실패 계약이 다른 동작은 이름으로 구분한다.
 
-`findWithPassword`는 인증용 반환 데이터, `getPublished`는 미공개 영화의 404 처리를 드러낸다. `findReconciliationCandidates`는 pending뿐 아니라 lease가 만료된 진행 중 구매도 포함하는 복구 대상을 뜻한다. 이를 모두 일반 조회 하나로 합칠 이유는 없다.
+`findForAuthentication`은 인증용 계정 조회, `getPublished`는 미공개 영화의 404 처리를 드러낸다. `findReconciliationCandidates`는 pending뿐 아니라 lease가 만료된 진행 중 구매도 포함하는 복구 대상을 뜻한다. 이를 모두 일반 조회 하나로 합칠 이유는 없다.
 
 ## 2. 단건 조회·삭제까지 일괄 API로 강제할지
 
