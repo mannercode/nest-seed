@@ -4,7 +4,20 @@
 
 ## 1. 서비스와 메서드 이름
 
-Core Service는 관리하는 도메인 이름을 쓴다(`UsersService`, `MoviesService`). 여러 도메인을 묶는 Application Service는 처리하는 유스케이스 이름을 쓴다(`PurchaseService`, `ShowtimeCreationService`). 모양이 같은 데이터라도 도메인에서 뜻이 다르면 각 모듈이 자기 이름으로 정의한다. 예를 들어 극장의 좌석 배치와 티켓의 좌석 좌표를 하나의 공유 모델로 강제하지 않는다.
+Core Service는 관리하는 도메인 이름을 쓴다(`UsersService`, `MoviesService`). 여러 도메인을 묶는 Application Service는 처리하는 유스케이스 이름을 쓴다(`PurchaseService`, `ShowtimeCreationService`).
+
+서비스나 저장소를 호출해 필요한 데이터를 구하고 작업하는 역할에는 `Service`를 붙인다. 전달받은 데이터로만 계산하는 클래스는 `Validator`, `Recommender`처럼 역할로 이름 짓는다. `RecommendationService`가 데이터를 모으고 `MovieRecommender`가 추천을 계산하는 구분이다.
+
+**함수명에 전달인자나 조회 조건을 나열하지 않는다.** 조건은 객체 인자로 전달해, 조건이 달라져도 같은 동작의 이름을 유지한다.
+
+```ts
+// 조회 API의 이름을 설계하는 예시
+find({ id })
+find({ email })
+findTheaters({ movieId })
+```
+
+이는 `findById`, `findTheatersForMovie`처럼 조건별 메서드를 늘리지 않기 위한 규칙이다. 일반 유틸의 모든 단일 인자까지 객체로 감싸지는 않는다. 현재 [CrudRepository](../../libs/common/src/mongodb/crud.repository.ts)의 `ById` 계열은 이 규칙을 아직 따르지 않는 기존 API다.
 
 서비스의 공개 메서드는 같은 이름이 같은 계약을 뜻하도록 맞춘다.
 
@@ -18,7 +31,7 @@ Core Service는 관리하는 도메인 이름을 쓴다(`UsersService`, `MoviesS
 
 ID만 받는 조회·삭제 서비스 API는 처음부터 `getMany`, `deleteMany`로 둔다. 단일 ID로 시작했다가 일괄 처리가 필요할 때 공개 계약을 바꾸지 않기 위해서다. HTTP의 단일 리소스 핸들러는 ID 하나를 배열로 감싸 호출하고, 응답은 그 엔드포인트의 계약에 맞춰 반환한다. 본문을 받는 생성·수정까지 무조건 일괄 API로 만들지는 않는다.
 
-Repository의 `findById`·`findByIds`·`getById`·`getByIds`는 저장소 조회 계약이다. 이 메서드를 서비스의 공개 API로 그대로 노출하지 않는다. `find`는 없는 결과를 호출자가 처리하게 하고, `get`은 요청한 대상이 없으면 `NotFoundException`을 던진다. 단건 `find`의 `null`과 다건 `find`의 빈 배열·일부 결과를 구분한다.
+조회 이름은 결과가 없을 때의 계약도 드러낸다. `find`는 없는 결과를 호출자가 처리하고, `get`은 요청한 대상이 없으면 `NotFoundException`을 던진다. 단건 `find`의 `null`과 다건 `find`의 빈 배열·일부 결과를 구분한다. 서비스는 저장소 메서드를 그대로 노출하지 않고 위의 공개 계약으로 제공한다.
 
 요청 DTO는 `동작 + 대상 + Dto` 형식으로 짓는다.
 
@@ -29,6 +42,8 @@ SearchTheatersPageDto
 ```
 
 응답 타입은 별도 계약이 필요할 때만 만든다. 서비스 모델로 충분하면 같은 필드를 복제한 응답 타입을 추가하지 않는다.
+
+`xxxDate`는 달력상의 날짜, `xxxAt`은 특정 시점을 뜻한다. `releaseDate`는 개봉 날짜이고 `createdAt`은 생성 순간이다. 이 구분을 날짜·시점 타입과 직렬화에도 유지한다.
 
 ## 2. 타입은 계약에 맞춰 고른다
 
@@ -104,6 +119,7 @@ describe('UsersService')
 - 한 번뿐인 조건은 `it('...이면 ...한다')`에 싣고 본문에서 준비해도 된다. `'인가 경계'`처럼 주제를 묶는 `describe`는 조건문이 아니므로 조건형 규칙을 적용하지 않는다.
 - HTTP 응답은 “반환한다”, 서비스 예외는 “던진다”로 구분하고 부모에 적힌 조건을 `it`에 반복하지 않는다.
 - 여러 결과를 실행 횟수 절약을 위해 한 `it`에 숨기지 않는다. 응답과 DB 반영은 각각 실패 의미가 드러나게 나누고, DB 반영은 가능한 한 공개 조회로 확인한다. 하나의 복합 불변식을 검증하는 데 필요한 matcher 수까지 제한하지는 않는다.
+- 독립적인 입력·출력 사례는 `it.each`로 나눠 어느 입력이 실패했는지 각각 드러낸다. 앞 단계의 상태에 의존하는 시나리오를 단순 입력 목록으로 바꾸지는 않는다.
 
 시나리오의 `beforeAll`은 여러 `it`이 의도적으로 순서 있는 하나의 흐름을 이어 검증할 때만 쓴다. 그때는 `describe.sequential`처럼 순서를 명시한다. 셋업 비용만 줄이려고 사용하지 않는다. worker 단위 연결·환경 준비처럼 하네스의 수명을 관리하는 전역 hook은 별개다.
 

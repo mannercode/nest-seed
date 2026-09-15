@@ -153,7 +153,7 @@ HTTP 계약과 도메인 모델에 적용하는 규칙이다. apps와 libs가 �
 
 ### 3.1. 서비스 이름과 공개 경계
 
-Core는 도메인, Application은 조합하는 유스케이스로 이름을 짓는다. 공개 조회·삭제 API와 Repository의 `ById` 계열을 구분하는 기준, DTO·응답 타입의 이름은 [개발 규칙 §1](reference/conventions.md#1-서비스와-메서드-이름)을 따른다.
+서비스·DTO의 이름, 조건을 객체 인자로 전달하는 원칙, 조회·삭제의 공개 계약은 [개발 규칙 §1](reference/conventions.md#1-서비스와-메서드-이름)을 따른다.
 
 외부 모듈은 공개 barrel만 사용하고 `internal/`·`worker/`를 직접 참조하지 않는다. ESM 확장자·별칭·개발 의존성 분류는 [Import와 공개 경계](reference/conventions.md#3-import와-공개-경계)를 따른다. SDK 연동과 Node 유틸의 경계는 [libs 문서](libs.md)가 소유한다.
 
@@ -186,7 +186,7 @@ NestJS 공통 예외와 도메인의 `errors.ts`를 사용한다. MongoDB 오류
 
 #### 3.3.2. ID만 받는 API는 처음부터 복수형으로 둔다
 
-조회·삭제처럼 ID만 받는 service API는 `getMany`, `deleteMany`처럼 복수형으로 만든다. 나중에 bulk 처리가 필요해져도 공개 API를 깨지 않기 위해서다. HTTP의 단일 리소스 핸들러는 ID 하나를 배열로 감싸 이 API를 사용한다.
+서비스는 `getMany`, `deleteMany`로 제공하고, 단일 리소스의 HTTP 핸들러가 ID 하나를 배열로 감싸 호출한다. 이유와 생성·수정의 예외는 [개발 규칙](reference/conventions.md#1-서비스와-메서드-이름)을 따른다.
 
 #### 3.3.3. 오래 걸리는 작업은 접수와 결과를 분리한다
 
@@ -204,11 +204,15 @@ NestJS 공통 예외와 도메인의 `errors.ts`를 사용한다. MongoDB 오류
 
 이 기준은 사용자·결제처럼 소유 주체가 있는 자원에 적용한다. 공개 영화·극장 조회까지 user 소유 자원으로 취급하지 않는다. `POST /purchases`도 결제자를 본문에서 받지 않고 token subject로 정한다. 같은 controller에 user·admin 핸들러가 섞이면 guard를 핸들러마다 붙인다. 클래스 guard와 메서드 guard는 함께 적용되므로 역할이 다른 guard를 중첩하지 않는다. `/me`는 `/:userId`보다 먼저 선언한다.
 
-### 3.4. 데이터 비정규화
+### 3.4. 도메인 모델과 데이터 소유권
 
 도메인은 자기 collection을 소유하고 다른 도메인의 DB를 직접 join하지 않는다. 조회 경로를 단순하게 하고 모듈 의존을 줄일 수 있다면 ID처럼 안정적인 값을 중복 저장한다. 대신 중복 값의 갱신 책임이 생기므로, 조회 단순성이 그 비용보다 클 때만 선택한다.
 
-예를 들어 좌석은 블록·행·번호로 식별되는 값이라 별도 ID를 두지 않는다. 반면 Ticket은 자기 collection만으로 조회할 수 있도록 `movieId`, `theaterId`, `showtimeId`를 중복 저장한다. 독립적인 lifecycle이 있는 대상과 조회를 위해 복제한 값을 같은 방식으로 모델링하지 않는다.
+예제에서 극장은 좌석 배치 하나를 가진 상영 공간이다. 극장 안의 여러 상영관과 좌석 등급은 생략한다. 좌석은 독립적으로 관리하는 엔티티가 아니라 블록·행·번호로 식별되는 값이라 별도 ID를 두지 않는다.
+
+반면 Ticket은 자기 collection만으로 조회할 수 있도록 `movieId`, `theaterId`, `showtimeId`를 중복 저장한다. 극장의 좌석 배치와 티켓의 좌석 좌표처럼 모양이 같아도 도메인에서 뜻이 다르면 각자 모델을 소유한다.
+
+임시 선점은 만료 시간이 있는 Redis 상태로 `TicketHolding`이 관리한다. `Ticket.status`는 영속적인 판매 여부(`available`·`sold`)만 나타낸다. 선점된 티켓도 판매 전에는 `available`이므로 구매 가능 여부를 이 필드 하나로 판단하지 않는다.
 
 ## 4. 테스트
 
