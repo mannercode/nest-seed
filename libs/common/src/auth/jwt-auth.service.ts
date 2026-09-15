@@ -1,4 +1,10 @@
-import { ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common'
+import {
+    ConflictException,
+    Injectable,
+    InternalServerErrorException,
+    Logger,
+    UnauthorizedException
+} from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { Redis } from 'ioredis'
 import type { AuthConfig, JwtAuthTokens } from './jwt-auth.types.js'
@@ -81,7 +87,11 @@ export class JwtAuthService {
         )
         if (result === 0) throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
         if (result === 2) throw new ConflictException(JwtAuthErrors.RefreshTokenReplaced())
-        if (result !== 1) throw new Error('Refresh token rotation returned an invalid result')
+        if (result !== 1) {
+            throw new InternalServerErrorException('Internal server error', {
+                cause: 'Refresh token rotation returned an invalid result'
+            })
+        }
 
         this.logger.log('token.refreshed', { userId, sessionId })
         return tokens

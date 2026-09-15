@@ -12,7 +12,9 @@ describe('generateShowtimesForBooking', () => {
     }
 
     it('상영 시간의 ticketSales 정보가 누락되면 예외를 던진다', () => {
-        expect(() => generateShowtimesForBooking([showtime], [])).toThrow(/sh1/)
+        expect(() => generateShowtimesForBooking([showtime], [])).toThrow(
+            expect.objectContaining({ status: 500, cause: expect.stringMatching(/sh1/) })
+        )
     })
 
     it('모든 상영 시간에 ticketSales가 있으면 매핑된 결과를 반환한다', () => {

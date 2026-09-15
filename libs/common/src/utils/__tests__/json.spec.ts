@@ -1,3 +1,4 @@
+import { InternalServerErrorException } from '@nestjs/common'
 import { z } from 'zod'
 import { JsonUtil, InstantFromInputSchema, PlainDateFromInputSchema } from '../index.js'
 
@@ -35,7 +36,7 @@ describe('JsonUtil', () => {
         })
 
         it('JSON 문자열로 표현할 수 없는 root 값은 명시적으로 거부한다', () => {
-            expect(() => JsonUtil.stringify(undefined)).toThrow(TypeError)
+            expect(() => JsonUtil.stringify(undefined)).toThrow(InternalServerErrorException)
         })
     })
 })

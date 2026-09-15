@@ -3,6 +3,7 @@ import {
     BadRequestException,
     ConflictException,
     Injectable,
+    InternalServerErrorException,
     NotFoundException
 } from '@nestjs/common'
 import { MoviesService, ShowtimesService, TheatersService } from '#core'
@@ -57,7 +58,9 @@ export class ShowtimeCreationService {
                 DateUtil.now()
             )
             if (!accepted) {
-                throw new Error('Showtime creation submission claim was lost before acceptance.')
+                throw new InternalServerErrorException('Internal server error', {
+                    cause: 'Showtime creation submission claim was lost before acceptance.'
+                })
             }
         } catch (error) {
             await this.submissions.release(principalId, idempotencyKey, claim.claimId)

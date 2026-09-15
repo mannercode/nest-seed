@@ -9,6 +9,7 @@ import {
     MovieSchema
 } from '#core'
 import {
+    buildCreateMovieDto,
     createMovie,
     createUnpublishedMovie,
     Errors,
@@ -123,37 +124,23 @@ describe('MoviesPublish', () => {
         })
     })
 
-    it('공개된 영화를 빈 genres로 되돌리는 수정이면 검증 오류를 던진다', async () => {
-        const moviesService = fix.module.get(MoviesService)
+    it.each([
+        ['genres', { genres: [] }],
+        ['durationInSeconds', { durationInSeconds: 0 }],
+        ['rating', { rating: MovieRating.Unrated }],
+        ['releaseDate', { releaseDate: MovieDefaults.releaseDate }],
+        ['director', { director: '' }],
+        ['plot', { plot: '' }],
+        ['title', { title: '' }]
+    ])('공개된 영화의 %s 필수값을 비우면 422를 반환하고 저장하지 않는다', async (field, update) => {
         const movie = await createMovie(fix)
 
-        // publish()의 사전 검사와 별개로 저장소 경계가 공개 후 불변식을 지키는 최종 방어선이다.
-        const promise = moviesService.update(movie.id, { genres: [] })
+        await fix.httpClient
+            .patch(`/movies/${movie.id}`)
+            .body(update)
+            .unprocessableEntity({ expected: Errors.Movies.InvalidForPublish([field]) })
 
-        await expect(promise).rejects.toThrow('Published movies must have at least one genre')
-    })
-
-    it('공개된 영화의 필수값을 비우는 수정은 모두 저장소 경계에서 거부한다', async () => {
-        const moviesService = fix.module.get(MoviesService)
-        const movie = await createMovie(fix)
-        const invalidUpdates = [
-            [
-                { durationInSeconds: 0 },
-                'Published movies must have a duration of at least 1 second'
-            ],
-            [{ rating: MovieRating.Unrated }, 'Published movies cannot be unrated'],
-            [
-                { releaseDate: MovieDefaults.releaseDate },
-                'Published movies must have a release date'
-            ],
-            [{ director: '' }, 'Published movies must have director'],
-            [{ plot: '' }, 'Published movies must have plot'],
-            [{ title: '' }, 'Published movies must have title']
-        ] as const
-
-        for (const [update, message] of invalidUpdates) {
-            await expect(moviesService.update(movie.id, update)).rejects.toThrow(message)
-        }
+        await fix.httpClient.get(`/movies/${movie.id}`).ok({ schema: MovieSchema, expected: movie })
     })
 
     it('공개 여부와 무관하게 저장 타입을 깨뜨리는 null 수정은 거부한다', async () => {
@@ -180,15 +167,34 @@ describe('MoviesPublish', () => {
         expect(update).toHaveBeenCalledTimes(2)
     })
 
-    it('CAS가 반복해서 빗나가면 정해진 횟수 뒤 명시적으로 실패한다', async () => {
+    it('초안 수정 중 영화가 공개되면 최신 공개 조건을 다시 검증해 422를 반환한다', async () => {
         const moviesService = fix.module.get(MoviesService)
+        const repository = fix.module.get(MoviesRepository)
+        const movie = await moviesService.create(buildCreateMovieDto())
+        const save = repository.update.bind(repository)
+        vi.spyOn(repository, 'update').mockImplementationOnce(async (...args) => {
+            await moviesService.publish(movie.id)
+            return save(...args)
+        })
+
+        await fix.httpClient
+            .patch(`/movies/${movie.id}`)
+            .body({ genres: [] })
+            .unprocessableEntity({ expected: Errors.Movies.InvalidForPublish(['genres']) })
+
+        await fix.httpClient.get(`/movies/${movie.id}`).ok({ schema: MovieSchema, expected: movie })
+    })
+
+    it('CAS가 반복해서 빗나가면 정해진 횟수 뒤 409를 반환한다', async () => {
         const repository = fix.module.get(MoviesRepository)
         const movie = await createMovie(fix)
         const update = vi.spyOn(repository.collection, 'findOneAndUpdate').mockResolvedValue(null)
 
-        await expect(moviesService.update(movie.id, { title: 'never written' })).rejects.toThrow(
-            'Movie update did not converge after 5 attempts'
-        )
+        await fix.httpClient
+            .patch(`/movies/${movie.id}`)
+            .body({ title: 'never written' })
+            .conflict({ expected: Errors.Movies.UpdateConflict(movie.id) })
+
         expect(update).toHaveBeenCalledTimes(5)
     })
 })

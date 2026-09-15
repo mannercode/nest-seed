@@ -44,7 +44,11 @@ export class HttpExceptionLoggerFilter extends BaseExceptionFilter {
                     : undefined
             const errorLog = {
                 ...httpLogBase,
-                error: { ...(code === undefined ? {} : { code }), name: exception.name },
+                error: {
+                    ...(code === undefined ? {} : { code }),
+                    ...(exception.cause === undefined ? {} : { cause: exception.cause }),
+                    name: exception.name
+                },
                 stack: defaultTo(exception.stack, '').split('\n'),
                 statusCode: exception.getStatus()
             } as HttpErrorLog

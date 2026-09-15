@@ -1,6 +1,14 @@
-import { type TransactionContext, ensure, mapDocToDto, pickIds, uniq } from '@mannercode/common'
+import {
+    type TransactionContext,
+    ensure,
+    mapDocToDto,
+    pickBy,
+    pickIds,
+    uniq
+} from '@mannercode/common'
 import {
     BadRequestException,
+    ConflictException,
     Injectable,
     NotFoundException,
     UnprocessableEntityException
@@ -11,6 +19,8 @@ import { MovieErrors } from './errors.js'
 import { Movie, MovieDefaults } from './models/index.js'
 import { MoviePendingAssetsRepository } from './movie-pending-assets.repository.js'
 import { MoviesRepository } from './movies.repository.js'
+
+const MOVIE_UPDATE_ATTEMPTS = 5
 
 @Injectable()
 export class MoviesService {
@@ -172,27 +182,7 @@ export class MoviesService {
     }
 
     async publish(movieId: string) {
-        const movie = await this.moviesRepository.get({ id: movieId })
-
-        const { director, durationInSeconds, genres, plot, rating, releaseDate, title } = movie
-        const defaults = MovieDefaults
-
-        const missingFields: string[] = []
-        if (title === defaults.title) missingFields.push('title')
-        if (releaseDate.equals(defaults.releaseDate)) missingFields.push('releaseDate')
-        if (plot === defaults.plot) missingFields.push('plot')
-        if (durationInSeconds === defaults.durationInSeconds)
-            missingFields.push('durationInSeconds')
-        if (director === defaults.director) missingFields.push('director')
-        if (rating === defaults.rating) missingFields.push('rating')
-        if (genres.length === 0) missingFields.push('genres')
-
-        if (0 < missingFields.length) {
-            throw new UnprocessableEntityException(MovieErrors.InvalidForPublish(missingFields))
-        }
-
-        await this.moviesRepository.publish(movieId)
-        return this.toDto(movie)
+        return this.saveChanges(movieId, { isPublished: true })
     }
 
     async searchPage(searchDto: SearchMoviesPageDto) {
@@ -202,8 +192,41 @@ export class MoviesService {
     }
 
     async update(movieId: string, upsertDto: UpsertMovieDto) {
-        const movie = await this.moviesRepository.update(movieId, upsertDto)
-        return this.toDto(movie)
+        return this.saveChanges(movieId, upsertDto)
+    }
+
+    private async saveChanges(movieId: string, fields: Partial<Movie>) {
+        const changes = pickBy(fields, (value) => value !== undefined)
+
+        for (let attempt = 0; attempt < MOVIE_UPDATE_ATTEMPTS; attempt++) {
+            const { movie, version } = await this.moviesRepository.getForUpdate(movieId)
+            const next = { ...movie, ...changes }
+            if (next.isPublished) this.validateForPublish(next)
+
+            // 검증한 버전만 저장한다. 충돌하면 최신 상태에 변경을 적용하고 다시 검증한다.
+            const updated = await this.moviesRepository.update(next, version)
+            if (updated) return this.toDto(updated)
+        }
+
+        throw new ConflictException(MovieErrors.UpdateConflict(movieId))
+    }
+
+    private validateForPublish(movie: Movie) {
+        const { director, durationInSeconds, genres, plot, rating, releaseDate, title } = movie
+        const defaults = MovieDefaults
+
+        const missingFields: string[] = []
+        if (title === defaults.title) missingFields.push('title')
+        if (releaseDate.equals(defaults.releaseDate)) missingFields.push('releaseDate')
+        if (plot === defaults.plot) missingFields.push('plot')
+        if (durationInSeconds <= 0) missingFields.push('durationInSeconds')
+        if (director === defaults.director) missingFields.push('director')
+        if (rating === defaults.rating) missingFields.push('rating')
+        if (genres.length === 0) missingFields.push('genres')
+
+        if (0 < missingFields.length) {
+            throw new UnprocessableEntityException(MovieErrors.InvalidForPublish(missingFields))
+        }
     }
 
     private async toDto(movie: Movie): Promise<MovieDto> {

@@ -1,3 +1,4 @@
+import { InternalServerErrorException } from '@nestjs/common'
 import { DateUtil } from './date.js'
 
 export class JsonUtil {
@@ -5,7 +6,9 @@ export class JsonUtil {
     static stringify(value: unknown): string {
         const serialized: unknown = JSON.stringify(value, JsonUtil.temporalReplacer)
         if (typeof serialized !== 'string') {
-            throw new TypeError('Value cannot be represented as JSON.')
+            throw new InternalServerErrorException('Internal server error', {
+                cause: 'Value cannot be represented as JSON.'
+            })
         }
         return serialized
     }

@@ -1,3 +1,4 @@
+import { InternalServerErrorException } from '@nestjs/common'
 import { DateUtil } from '../utils/index.js'
 
 type DateTimeRangeOptions = {
@@ -24,7 +25,9 @@ export class DateTimeRange {
             }
         }
 
-        throw new Error('Invalid options provided.')
+        throw new InternalServerErrorException('Internal server error', {
+            cause: 'Invalid options provided.'
+        })
     }
 
     private static fromValues(start: Temporal.Instant, end: Temporal.Instant): DateTimeRange {

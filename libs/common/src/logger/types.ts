@@ -1,7 +1,7 @@
 export type HttpErrorLog = {
     contextType: 'http'
     duration: string
-    error: { code?: string; name: string }
+    error: { cause?: unknown; code?: string; name: string }
     request: { method: string; route: string }
     stack: string[]
     statusCode: number

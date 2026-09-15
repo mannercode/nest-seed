@@ -14,6 +14,29 @@ describe('HttpExceptionLoggerFilter', () => {
     afterEach(() => fix.teardown())
 
     describe('HTTP 컨텍스트', () => {
+        it('내부 오류는 500으로 응답하고 상세 원인은 로그에 남긴다', async () => {
+            await fix.httpClient
+                .get('/internal-error')
+                .internalServerError({
+                    expected: {
+                        statusCode: 500,
+                        message: 'Internal server error',
+                        error: 'Internal Server Error'
+                    }
+                })
+
+            expect(fix.spyWarn).toHaveBeenCalledWith(
+                'fail',
+                expect.objectContaining({
+                    statusCode: 500,
+                    error: {
+                        name: 'InternalServerErrorException',
+                        cause: 'Unexpected storage result'
+                    }
+                })
+            )
+        })
+
         it('HttpException이 발생하면 Logger.warn으로 로그를 남긴다', async () => {
             await fix.httpClient
                 .get('/exception')

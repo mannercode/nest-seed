@@ -13,7 +13,10 @@ describe('Env', () => {
 
         it('환경 변수가 없으면 예외를 던진다', () => {
             expect(() => Env.getString('TEST_STRING')).toThrow(
-                'Environment variable TEST_STRING is not defined'
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Environment variable TEST_STRING is not defined'
+                })
             )
         })
     })
@@ -31,20 +34,29 @@ describe('Env', () => {
         it('숫자가 아닌 값이면 예외를 던진다', () => {
             process.env.TEST_NUMBER = 'abc'
             expect(() => Env.getNumber('TEST_NUMBER')).toThrow(
-                'Environment variable TEST_NUMBER must be a valid number'
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Environment variable TEST_NUMBER must be a valid number'
+                })
             )
         })
 
         it('숫자로 시작하지만 뒤가 다르면 예외를 던진다', () => {
             process.env.TEST_NUMBER = '123abc'
             expect(() => Env.getNumber('TEST_NUMBER')).toThrow(
-                'Environment variable TEST_NUMBER must be a valid number'
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Environment variable TEST_NUMBER must be a valid number'
+                })
             )
         })
 
         it('환경 변수가 없으면 예외를 던진다', () => {
             expect(() => Env.getNumber('TEST_NUMBER')).toThrow(
-                'Environment variable TEST_NUMBER is not defined'
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Environment variable TEST_NUMBER is not defined'
+                })
             )
         })
     })
@@ -81,7 +93,10 @@ describe('Env', () => {
         it('빈 문자열로 설정하면 미정의로 취급해 예외를 던진다', () => {
             process.env.TEST_BOOLEAN = ''
             expect(() => Env.getBoolean('TEST_BOOLEAN')).toThrow(
-                'Environment variable TEST_BOOLEAN is not defined'
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Environment variable TEST_BOOLEAN is not defined'
+                })
             )
         })
     })

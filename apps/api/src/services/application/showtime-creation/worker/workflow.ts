@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import {
+    BadRequestException,
+    Injectable,
+    Logger,
+    NotFoundException,
+    ServiceUnavailableException
+} from '@nestjs/common'
 import {
     defineWorkflow,
     isWorkflowCancellation,
@@ -136,7 +142,9 @@ async function withEventAttemptTimeout(operation: Promise<void>) {
         timer = setTimeout(
             () =>
                 reject(
-                    new Error(`Status event publish timed out after ${EVENT_ATTEMPT_TIMEOUT_MS}ms.`)
+                    new ServiceUnavailableException('Service unavailable', {
+                        cause: `Status event publish timed out after ${EVENT_ATTEMPT_TIMEOUT_MS}ms.`
+                    })
                 ),
             EVENT_ATTEMPT_TIMEOUT_MS
         )

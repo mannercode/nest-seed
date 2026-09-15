@@ -186,7 +186,10 @@ describe('JwtAuthService', () => {
         it('Redis 원자 교체 결과가 손상되면 실패를 알리고 기존 세션을 유지한다', async () => {
             vi.spyOn(fix.redis, 'eval').mockResolvedValueOnce(null)
             await expect(fix.jwtService.refreshAuthTokens(original.refreshToken)).rejects.toThrow(
-                'invalid result'
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Refresh token rotation returned an invalid result'
+                })
             )
             await expect(
                 fix.jwtService.refreshAuthTokens(original.refreshToken)

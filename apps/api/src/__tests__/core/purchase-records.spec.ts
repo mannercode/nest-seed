@@ -125,12 +125,25 @@ describe('PurchaseRecordsService', () => {
                     .run((transaction) =>
                         purchaseRecordsService.markCompleted(pending.id, pending, transaction)
                     )
-            ).rejects.toThrow('Only a pending purchase can be completed.')
+            ).rejects.toThrow(
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Only a pending purchase can be completed.'
+                })
+            )
             await expect(
                 purchaseRecordsService.setPaymentId(pending.id, oid(0x99))
-            ).rejects.toThrow('Only a pending purchase can receive a payment.')
+            ).rejects.toThrow(
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Only a pending purchase can receive a payment.'
+                })
+            )
             await expect(purchaseRecordsService.markEventPublished(pending.id)).rejects.toThrow(
-                'Only a completed purchase can publish its event.'
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Only a completed purchase can publish its event.'
+                })
             )
             await purchaseRecordsService.markCancelled(pending.id)
             await purchaseRecordsService.markCancelled(pending.id)
@@ -153,7 +166,10 @@ describe('PurchaseRecordsService', () => {
         it('완료 상태는 취소로 바꾸지 않는다', async () => {
             const record = await createPurchaseRecord(fix)
             await expect(purchaseRecordsService.markCancelled(record.id)).rejects.toThrow(
-                'Only a compensating purchase can be cancelled.'
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Only a compensating purchase can be cancelled.'
+                })
             )
             expect(await purchaseRecordsService.findCompleted({ userId: record.userId })).toEqual([
                 record

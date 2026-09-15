@@ -1,3 +1,4 @@
+import { InternalServerErrorException } from '@nestjs/common'
 import { ensure } from './validator.js'
 
 export class TimeUtil {
@@ -40,7 +41,9 @@ export class TimeUtil {
         const validFormatRegex = /^(-?\d+(\.\d+)?)(ms|s|m|h|d)(\s*(-?\d+(\.\d+)?)(ms|s|m|h|d))*$/
 
         if (!validFormatRegex.test(timeExpression)) {
-            throw new Error(`Invalid time format(${timeExpression})`)
+            throw new InternalServerErrorException('Internal server error', {
+                cause: `Invalid time format(${timeExpression})`
+            })
         }
 
         const timeTokenRegex = /(-?\d+(?:\.\d+)?)(ms|s|m|h|d)/g

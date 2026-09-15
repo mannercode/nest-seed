@@ -77,7 +77,10 @@ describe('CacheService', () => {
 
         it('TTL이 음수이면 예외를 던진다', async () => {
             await expect(fix.cacheService.set('key', 'value', -100)).rejects.toThrow(
-                'TTL must be a non-negative integer (0 for no expiration)'
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'TTL must be a non-negative integer (0 for no expiration)'
+                })
             )
         })
     })
@@ -171,13 +174,19 @@ describe('CacheService', () => {
 
         it('TTL이 0이면 예외를 던진다', async () => {
             await expect(fix.cacheService.withLock('job', 0, async () => null)).rejects.toThrow(
-                'Lock TTL must be a positive integer (ms)'
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Lock TTL must be a positive integer (ms)'
+                })
             )
         })
 
         it('TTL이 음수이면 예외를 던진다', async () => {
             await expect(fix.cacheService.withLock('job', -100, async () => null)).rejects.toThrow(
-                'Lock TTL must be a positive integer (ms)'
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Lock TTL must be a positive integer (ms)'
+                })
             )
         })
 
@@ -258,7 +267,12 @@ describe('CacheService', () => {
                     pollMs: 10,
                     waitMs: 50
                 })
-            ).rejects.toThrow(/could not acquire 'job'/)
+            ).rejects.toThrow(
+                expect.objectContaining({
+                    status: 503,
+                    cause: expect.stringMatching(/could not acquire 'job'/)
+                })
+            )
         })
 
         it('waitMs가 경과하기 전에는 예외를 던지지 않는다', async () => {

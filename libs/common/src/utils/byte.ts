@@ -1,3 +1,4 @@
+import { InternalServerErrorException } from '@nestjs/common'
 import { ensure } from './validator.js'
 
 export class ByteUtil {
@@ -10,7 +11,9 @@ export class ByteUtil {
             /^(-?\d+(\.\d+)?)(B|KB|MB|GB|TB)(\s+(-?\d+(\.\d+)?)(B|KB|MB|GB|TB))*$/i
 
         if (!validFormatRegex.test(sizeExpression)) {
-            throw new Error(`Invalid size format(${sizeExpression})`)
+            throw new InternalServerErrorException('Internal server error', {
+                cause: `Invalid size format(${sizeExpression})`
+            })
         }
 
         const normalized = sizeExpression.toUpperCase()

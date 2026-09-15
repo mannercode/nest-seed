@@ -1,5 +1,4 @@
 import {
-    type MongoDocument,
     QueryBuilderOptions,
     assignIfDefined,
     CrudRepository,
@@ -14,7 +13,6 @@ import { AppConfigService } from '#config'
 import { SearchMoviesPageDto, UpsertMovieDto } from './dtos/index.js'
 import { Movie, MovieDefaults, MovieGenre, MovieRating } from './models/index.js'
 
-const MOVIE_CAS_ATTEMPTS = 5
 const StoredMovieSchema = z.object({
     assetIds: z.array(z.string()),
     director: z.string(),
@@ -69,12 +67,15 @@ export class MoviesRepository extends CrudRepository<Movie> {
         movie.title = MovieDefaults.title
 
         this.applyUpsertDto(movie, upsertDto)
-        this.validate(movie)
+        StoredMovieSchema.parse(movie)
         return this.insertOne(movie)
     }
 
-    async publish(movieId: string) {
-        return this.updateWithCas(movieId, { isPublished: true })
+    async getForUpdate(movieId: string) {
+        const stored = await this.findDocument(this.activeFilter(this.idFilter(movieId)))
+        if (!stored) throw new NotFoundException(MongoErrors.DocumentNotFound(movieId))
+
+        return { movie: this.toDomainDocument(stored), version: stored.__v }
     }
 
     async searchPage(searchDto: SearchMoviesPageDto) {
@@ -92,10 +93,14 @@ export class MoviesRepository extends CrudRepository<Movie> {
         return pagination
     }
 
-    async update(movieId: string, upsertDto: UpsertMovieDto) {
-        const fields: Partial<Movie> = {}
-        this.applyUpsertDto(fields as Movie, upsertDto)
-        return this.updateWithCas(movieId, fields)
+    async update(movie: Movie, version: number) {
+        const fields = StoredMovieSchema.parse(movie)
+        const updated = await this.findAndUpdateDocument(
+            this.activeFilter({ ...this.idFilter(movie.id), __v: version }),
+            this.timestamped({ $set: fields }),
+            { returnDocument: 'after' }
+        )
+        return updated ? this.toDomainDocument(updated) : null
     }
 
     private applyUpsertDto(movie: Movie, dto: UpsertMovieDto) {
@@ -107,52 +112,6 @@ export class MoviesRepository extends CrudRepository<Movie> {
         assignIfDefined(movie, dto, 'director')
         assignIfDefined(movie, dto, 'rating')
         assignIfDefined(movie, dto, 'assetIds')
-    }
-
-    private async updateWithCas(movieId: string, fields: Partial<Movie>) {
-        const idFilter = this.idFilter(movieId)
-
-        for (let attempt = 0; attempt < MOVIE_CAS_ATTEMPTS; attempt++) {
-            const stored = await this.findDocument(this.activeFilter(idFilter))
-            if (!stored) throw new NotFoundException(MongoErrors.DocumentNotFound(movieId))
-
-            const current = this.toDomainDocument(stored)
-            const next = { ...current, ...fields }
-            this.validate(next)
-
-            const updated = await this.findAndUpdateDocument(
-                this.activeFilter({ ...idFilter, __v: stored.__v }),
-                this.timestamped({ $set: fields as MongoDocument }),
-                { returnDocument: 'after' }
-            )
-            if (updated) return this.toDomainDocument(updated)
-        }
-
-        throw new Error(`Movie update did not converge after ${MOVIE_CAS_ATTEMPTS} attempts`)
-    }
-
-    private validate(movie: Movie) {
-        StoredMovieSchema.parse(movie)
-        if (!movie.isPublished) return
-        if (movie.durationInSeconds <= 0) {
-            throw new Error('Published movies must have a duration of at least 1 second')
-        }
-        if (movie.genres.length === 0) {
-            throw new Error('Published movies must have at least one genre')
-        }
-        if (movie.rating === MovieDefaults.rating) {
-            throw new Error('Published movies cannot be unrated')
-        }
-        if (movie.releaseDate.equals(MovieDefaults.releaseDate)) {
-            throw new Error('Published movies must have a release date')
-        }
-        for (const [field, value] of [
-            ['director', movie.director],
-            ['plot', movie.plot],
-            ['title', movie.title]
-        ] as const) {
-            if (!value) throw new Error(`Published movies must have ${field}`)
-        }
     }
 
     private buildQuery(searchDto: SearchMoviesPageDto, options: QueryBuilderOptions) {

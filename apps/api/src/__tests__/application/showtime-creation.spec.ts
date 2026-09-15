@@ -844,7 +844,12 @@ describe('ShowtimeCreationService', () => {
                     { ...createDto, startTimes: [instant('2100-01-01T11:00Z')] },
                     sagaId
                 )
-            ).rejects.toThrow(`Saga ID was reused with different input (sagaId=${sagaId})`)
+            ).rejects.toThrow(
+                expect.objectContaining({
+                    status: 500,
+                    cause: `Saga ID was reused with different input (sagaId=${sagaId})`
+                })
+            )
         })
 
         it('한 operation의 상영 시간 수가 안전 상한을 넘으면 transaction 전에 거부한다', async () => {

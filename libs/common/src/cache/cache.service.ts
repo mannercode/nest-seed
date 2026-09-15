@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common'
+import {
+    Injectable,
+    InternalServerErrorException,
+    ServiceUnavailableException
+} from '@nestjs/common'
 import type { RedisConnection } from '../redis/index.js'
 import { randomUUID } from 'node:crypto'
 import { setTimeout as sleep } from 'node:timers/promises'
@@ -54,7 +58,9 @@ export class CacheService {
 
     async set(key: string, value: string, ttlMs = 0) {
         if (ttlMs < 0) {
-            throw new Error('TTL must be a non-negative integer (0 for no expiration)')
+            throw new InternalServerErrorException('Internal server error', {
+                cause: 'TTL must be a non-negative integer (0 for no expiration)'
+            })
         }
 
         if (0 < ttlMs) {
@@ -73,7 +79,11 @@ export class CacheService {
         ttlMs: number,
         fn: () => Promise<T> | T
     ): Promise<{ ran: false } | { ran: true; result: T }> {
-        if (ttlMs <= 0) throw new Error('Lock TTL must be a positive integer (ms)')
+        if (ttlMs <= 0) {
+            throw new InternalServerErrorException('Internal server error', {
+                cause: 'Lock TTL must be a positive integer (ms)'
+            })
+        }
 
         const token = `${process.pid}:${DateUtil.toEpochMilliseconds(DateUtil.now())}:${randomUUID()}`
         const lockKey = this.getKey(`lock:${key}`)
@@ -121,7 +131,9 @@ export class CacheService {
             })
             if (attempt.ran) return attempt.result
             if (performance.now() >= deadline) {
-                throw new Error(`withLockBlocking: could not acquire '${key}' within ${waitMs}ms`)
+                throw new ServiceUnavailableException('Service unavailable', {
+                    cause: `withLockBlocking: could not acquire '${key}' within ${waitMs}ms`
+                })
             }
             await sleep(pollMs, undefined, { signal })
         }
