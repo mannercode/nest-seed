@@ -140,7 +140,7 @@ Payments are an example implementation that records payment state in MongoDB wit
 
 Korean is the source language for documentation and comments. Only this README is translated.
 
-Each `docs/*.md` guide corresponds to a repository directory and explains its responsibilities and guarantees. Shared conventions, design rationale, and learning material belong in `docs/reference/`.
+Each `docs/*.md` guide corresponds to a repository directory and explains its responsibilities and guarantees. Shared development conventions and design rationale belong in `docs/reference/`.
 
 - [apps](docs/apps.md) — SoLA layers, distributed guarantees, API and test conventions
 - [libs](docs/libs.md) — boundary between runtime shared code and test helpers
@@ -150,7 +150,6 @@ Each `docs/*.md` guide corresponds to a repository directory and explains its re
 - [devcontainer](docs/devcontainer.md) — the single development path, DooD constraints, and security
 - [decisions](docs/reference/decisions.md) — choices, alternatives, and non-guarantees
 - [development rules](docs/reference/conventions.md) — naming, DTOs, types, ESM, errors, and test-writing conventions
-- [tutorial](docs/reference/tutorial.md) — from use cases to APIs, modules, distributed execution, and tests
 
 `docs_backup/` preserves the documentation from before the reduction. Use the guides above for current development instructions.
 

@@ -1,6 +1,6 @@
 # 설계 결정
 
-이 문서는 시드의 핵심 결정을 **왜 그렇게 했는지** 설명한다. 분산 협력 도구 선택이 주를 이루고, 계층 구조처럼 도구가 아닌 결정도 함께 둔다. 비슷한 일을 할 수 있지만 **쓰지 않기로 한 도구**도 정리한다. 각 결정을 어디에 적용했는지(상황→도구 매핑과 사용 위치)는 [apps 문서](../apps.md)의 분산 협력 절에 있다.
+시드의 선택 이유, 대안과 보장의 한계를 설명한다. 실제 적용 흐름은 [apps 문서](../apps.md), 외부 연동의 소유권과 공개 계약은 [libs 문서](../libs.md)를 따른다.
 
 ---
 
@@ -8,27 +8,22 @@
 
 ### 결정
 
-실행을 한 복제본으로 줄이거나 경쟁 요청의 불필요한 외부 효과를 줄일 때 Redis 분산 락을 쓴다. 구현은 Redis `SET NX`와 토큰 기반 Lua `DEL`을 사용한다. 단, 락 만료·소유 프로세스 종료에도 지켜야 하는 도메인 정합성은 DB 원자 전이·CAS·트랜잭션이 보장한다. 락 사용 방식은 두 가지로 나누었다.
-
-- `withLock` — 락을 획득하지 못하면 바로 포기한다.
-- `withLockBlocking` — 락이 해제될 때까지 짧은 간격으로 기다린다. 너무 오래 기다리면 예외를 던진다.
+실행을 한 복제본으로 줄이거나 경쟁 요청의 불필요한 외부 효과를 줄일 때 Redis 분산 락을 쓴다. 락 만료·소유 프로세스 종료에도 지켜야 하는 도메인 정합성은 DB 원자 전이·CAS·트랜잭션이 보장한다.
 
 ### 두 방식의 선택 기준
 
 기준은 *다른 요청이 이미 같은 일을 처리 중일 때 이번 요청을 어떻게 다룰 것인가*이다.
 
-| 상황                                                              | 선택               |
-| ----------------------------------------------------------------- | ------------------ |
-| 한 번만 실행되면 충분함. 예: 같은 cron이 여러 컨테이너에서 실행됨 | `withLock`         |
-| 들어온 요청은 모두 처리하되, 한 번에 하나씩만 처리해야 함         | `withLockBlocking` |
+| 상황                                        | 선택               | 획득하지 못했을 때                          |
+| ------------------------------------------- | ------------------ | ------------------------------------------- |
+| 다른 복제본이 처리하면 건너뛰어도 되는 작업 | `withLock`         | 즉시 포기                                   |
+| 경쟁 비용을 줄이려고 기다려야 하는 요청     | `withLockBlocking` | 제한된 시간 동안 기다리고 초과 시 예외 발생 |
 
 건너뛰어도 사용자에게 영향이 없는 만료 업로드 정리 cron은 `withLock`으로 한 복제본만 실행한다. 구매 흐름은 같은 티켓 묶음의 요청을 `withLockBlocking`으로 직렬화해, 경쟁에서 진 요청이 결제 생성과 보상까지 진행하는 낭비를 줄인다. 이중 판매 방지 자체는 티켓의 원자 조건부 전이(Available→Sold)가 보장한다.
 
-상영 생성은 Redis 락을 쓰지 않는다. 같은 극장의 동시 작업은 극장 스케줄 guard CAS와 MongoDB 트랜잭션으로 해결한다. 같은 `sagaId`의 중복 제출은 Restate workflow key가 합치지만, 서로 다른 요청의 경쟁은 DB 경계가 처리한다.
-
 ### 검토했던 대안
 
-- **Mongo 트랜잭션이나 조건부 갱신** — 락의 대안이자 정합성이 필요한 곳의 기본이다. 티켓 판매는 원자 조건부 전이, 상영 생성은 극장 guard CAS와 트랜잭션을 쓴다. 상영 생성은 한 operation의 생성 수와 transaction 실행 시간을 제한해 긴 점유를 막는다. 정확한 상한은 persistence와 operation Repository가 소유한다.
+- **Mongo 트랜잭션이나 조건부 갱신** — 정합성이 필요한 곳의 기본이다. 상영 생성은 Redis 락 없이 guard CAS와 트랜잭션으로 처리한다. 긴 점유를 막으려면 한 operation의 쓰기 수와 실행 시간을 제한해야 한다.
 - **Redlock** — Redis 마스터 여러 대를 전제로 한 분산 락이다. 현재 Redis Cluster에 키 하나를 두는 락과는 다른 토폴로지를 요구한다. 현재 락은 경쟁 비용을 줄이는 역할에 한정하고, 만료·장애에도 유지할 정합성은 DB가 맡는다.
 - **Restate workflow key를 분산 락으로 사용** — 같은 `sagaId`의 재제출에는 맞지만 서로 다른 `sagaId`가 같은 극장 시간을 건드리는 경쟁은 합치지 않는다. workflow key는 HTTP 제출 멱등성을, MongoDB CAS·트랜잭션은 도메인 정합성을 맡는다.
 
@@ -38,11 +33,11 @@
 
 ### 결정
 
-한 프로세스에서 다른 프로세스로 이벤트를 보내야 하는 곳은 NATS를 사용한다. 저장이 필요 없는 실시간 fan-out은 NestJS 제공자로 감싼 Core NATS `NatsPubSubService`가 맡고, 소비자 중단 중에도 보존해야 하는 구매 완료 알림만 `PurchaseEvents`가 JetStream을 사용한다.
+프로세스 간 실시간 fan-out은 Core NATS를, 소비자 중단 중에도 보존해야 하는 구매 완료 알림은 JetStream을 사용한다. 모든 subject에 저장·ack를 요구하지 않고 필요한 경로에만 적용한다.
 
 ### 근거
 
-다중 복제본 검증 스택은 API를 4개 컨테이너로 실행한다. NestJS의 `EventEmitter2`는 같은 프로세스 안에서만 이벤트를 전달한다. Restate가 호출한 API endpoint에서 만든 사가 진행 이벤트를 다른 컨테이너에 붙은 SSE(Server-Sent Events) 클라이언트에게 보내려면, 컨테이너 사이 메시지 통로가 필요하다.
+NestJS의 `EventEmitter2`는 같은 프로세스 안에서만 이벤트를 전달한다. workflow endpoint와 SSE 클라이언트가 연결된 API 복제본이 다를 수 있으므로, 프로세스 간 메시지 통로가 필요하다.
 
 NATS를 고른 이유는 한 도구로 여러 동작을 처리할 수 있기 때문이다.
 
@@ -50,17 +45,15 @@ NATS를 고른 이유는 한 도구로 여러 동작을 처리할 수 있기 때
 - 큐 그룹을 붙이면 같은 그룹 안에서 한 컨테이너만 이벤트를 받는다.
 - JetStream consumer를 쓰면 선택한 이벤트만 저장·ack·재전달할 수 있다.
 
-도구 하나로 브로드캐스트와 큐를 모두 처리하면, 별도 큐 도구를 들일 때보다 선택 기준과 운영 부담이 줄어든다.
-
-운영 면에서도 NATS는 클러스터링이 단순하다. subject를 계층 구조로 만들 수 있어서 메시지 경로도 읽기 쉽다.
+도구 하나로 브로드캐스트와 큐를 모두 처리하면, 별도 큐 도구를 들일 때보다 선택 기준과 운영 부담이 줄어든다. subject를 계층 구조로 나눌 수 있어 메시지 경로도 읽기 쉽다.
 
 ### 전달 보장의 경계
 
-상영 생성의 SSE 진행 상태는 Core NATS pub/sub이다. `publish()` 후 `flush()`는 NATS 서버가 이전 명령을 처리했다는 것만 확인하며, 메시지 저장이나 소비자 처리 ack를 뜻하지 않는다. 현재 연결된 구독자에게 빠르게 보내고 다음 상태 조회로 복구할 수 있는 신호에는 맞지만, 나중에 반드시 처리해야 할 작업 큐로 간주하면 안 된다.
+Core NATS는 현재 연결된 구독자에게 전달하고, 놓친 진행 상태는 별도 상태 조회로 복구한다. `flush()`도 메시지 저장이나 소비자 처리 ack를 뜻하지 않으므로, 나중에 반드시 처리해야 할 작업 큐로 사용할 수는 없다.
 
-구매 이벤트는 완료된 구매 문서의 `purchaseEventStatus=pending`을 durable outbox로 쓴다. publication lease를 획득한 복제본이 JetStream PubAck를 받은 뒤 MongoDB를 `published`로 갱신한다. 알림 복제본들은 하나의 durable pull consumer를 공유하고 처리 성공 뒤 ack하며, 중단 중 쌓인 이벤트는 복구 후 이어서 처리한다. stream은 exact 구매 subject 하나를 파일에 최대 7일·256 MiB 보존하고 `DiscardNew`를 사용한다. 용량 한계에서는 새 PubAck가 실패하므로 Mongo outbox가 pending으로 남는다.
+구매는 MongoDB outbox와 JetStream을 함께 사용한다. DB 갱신·발행 ack, 소비자의 부수 효과·처리 ack는 원자적이지 않으므로 계약은 **at-least-once**다. broker의 중복 억제 기간도 유한하다. 실제 부수 효과를 실행하는 소비자는 `purchaseRecordId`를 durable inbox 또는 외부 provider의 idempotency key로 써야 한다.
 
-MongoDB와 JetStream 갱신은 원자적이지 않고 부수 효과와 consumer ack도 원자적이지 않다. `purchaseRecordId` message ID의 10분 중복 억제 구간 밖이거나 ack를 잃으면 같은 이벤트가 다시 전달될 수 있다. 따라서 계약은 at-least-once이고, 실제 부수 효과를 실행하는 소비자는 `purchaseRecordId`를 durable inbox 또는 외부 provider의 idempotency key로 써야 한다. JetStream은 이 선택된 알림 경로에만 사용하며 모든 NATS subject의 기본값으로 확장하지 않는다.
+발행·ack 순서와 용량 한계의 동작은 [메시지 계약](../apps.md#22-메시지--core-nats와-jetstream의-선을-그어-둔다)에, 보존·용량·중복 억제 설정은 [구매 이벤트 코드](../../apps/api/src/services/application/purchase/purchase.events.ts)에 둔다.
 
 ### 검토했던 대안
 
@@ -79,28 +72,19 @@ MongoDB와 JetStream 갱신은 원자적이지 않고 부수 효과와 consumer 
 
 ### 근거
 
-durable execution runtime 없이 showtime-creation을 만들면 재시도·상태 순서·멱등성·중단 후 재개를 애플리케이션이 각각 관리해야 한다. 사가 단계가 늘면 다음 부담이 빠르게 커진다.
+상영 생성에는 재시도·실행 순서·중단 후 재개와 조회 가능한 종결 결과가 필요하다. 메시지 ack나 메모리의 진행 상태만으로는 일부 진행된 작업을 복구할 수 없어 durable execution runtime을 사용한다.
 
-1. **상태 누락이 쉽다** — 단계마다 status를 emit해야 SSE가 이어지고, 연결 전에 빠르게 끝나면 종결 이벤트도 놓친다. SSE만 기다리는 클라이언트는 계속 대기할 수 있다.
-2. **재시도와 멱등성을 직접 챙겨야 한다** — 컨테이너가 종료되면 처리 중이던 작업이 불완전한 상태로 남을 수 있다. 메시지 ack만으로는 일부만 진행된 외부 효과를 안전하게 이어 갈 수 없다.
-3. **진행 상황을 밖에서 보기 어렵다** — 단계가 코드 안에만 있다. 운영 중 “지금 어디까지 갔나?”를 보려면 로그를 따라가야 한다.
+- workflow key별 invocation과 step 결과를 journal에 남겨, endpoint 종료 뒤 다른 복제본에서 이어받는다. retry·timeout도 step과 함께 표현한다.
+- 실행 순서와 종결 출력을 보존해 SSE를 놓쳐도 결과를 조회할 수 있다. Admin API와 query로 진행 중인 invocation도 로그 밖에서 확인한다.
+- NestJS 제공자와 같은 API 코드에 endpoint를 두므로 별도 worker bundle·결정성 sandbox를 유지하지 않는다. 개발 인프라도 별도 workflow DB·schema setup 없이 Restate 서버와 volume으로 구성한다.
 
-Restate로 옮기면 실행 기록과 애플리케이션 코드를 가깝게 두면서 부담이 줄어든다.
-
-- Restate가 workflow key별 invocation과 durable step 결과를 journal에 저장한다. endpoint 복제본이 종료되어도 다른 복제본에서 이어받는다.
-- `ctx.run`마다 retry와 timeout을 코드로 적고, `waiting → processing → 종결 상태` 순서도 journal에 남긴다.
-- workflow가 종결 값을 출력으로 반환하며, 애플리케이션 상태 API는 완료 전 `pending`과 보존된 종결 결과를 조회한다.
-- Admin API와 query를 통해 invocation과 journal 상태를 애플리케이션 로그 밖에서 조회할 수 있다.
-- 별도 worker bundle·결정성 sandbox 없이 NestJS 제공자와 같은 API 코드에서 workflow endpoint를 제공한다.
-- 개발 인프라는 Restate 단일 컨테이너와 volume만 필요하고 별도 workflow DB·schema/namespace setup이 없다.
-
-현재 `validate and create` step은 상영 시간·티켓·`sagaId` operation 기록을 MongoDB 트랜잭션 하나로 묶는다. 극장별 스케줄 guard를 읽기보다 먼저 CAS 갱신해 동시 작업을 WriteConflict로 직렬화하고, 완료된 operation은 재시도 시 결과로 재사용한다. 트랜잭션이 롤백되므로 삭제 보상 step이 없다.
+접수·실행·DB transaction의 역할과 상영 생성의 처리 순서는 [앱의 실행 계약](../apps.md#24-saga-오케스트레이션--restate)이 소유한다.
 
 ### 트레이드오프
 
 - Journal은 완료된 step 결과를 재사용하지만 외부 효과 성공과 journal 기록 사이의 장애까지 원자적으로 묶지는 않는다. `ctx.run` 함수는 다시 호출될 수 있으므로 MongoDB operation unique key나 외부 provider idempotency key가 여전히 필요하다.
 - 상태 이벤트 step도 재시도되므로 같은 이벤트가 중복될 수 있다. Core NATS는 저장·redelivery를 제공하지 않아 SSE 연결 전 이벤트를 복구하지 않는다. 종결 상태는 보존 기간 안에 Restate workflow 출력으로 다시 읽고, MongoDB가 업무 결과의 기준이며 SSE는 진행 알림이다.
-- 모든 API 복제본이 HTTP/2 endpoint(:9080)를 열고 Admin API에 배포 URI를 등록해야 한다.
+- 모든 API 복제본이 HTTP/2 endpoint를 열고 Admin API에 배포 URI를 등록해야 한다.
 
 ### Endpoint와 revision 전환
 
@@ -178,11 +162,13 @@ Dev Container와 앱의 Node는 네이티브 Temporal을 사용하는 런타임�
 
 ### 결정
 
-주 데이터베이스는 MongoDB 공식 Node.js driver로 사용한다. 연결과 드라이버 실행은 `common`이, collection·index·업무 쿼리는 각 도메인 Repository가 소유한다. 앱은 문자열 ID와 `TransactionContext`로 호출하며 Native ObjectId와 MongoDB 세션은 공통 Repository 경계 안에서 다룬다.
+주 데이터베이스는 MongoDB 공식 Node.js driver로 사용한다. 연결·드라이버 실행·ID·transaction의 공개 경계는 [libs 문서](../libs.md#1-common--런타임-코드)를 따른다.
 
 ### 근거
 
-이 시드는 도메인 사이 관계를 DB가 아니라 서비스 코드가 관리한다. 각 서비스는 자기 컬렉션만 소유하고, 다른 도메인의 데이터가 필요하면 그 서비스의 공개 메서드를 호출한다([apps 문서](../apps.md#34-도메인-모델과-데이터-소유권)). 나중에 서비스를 독립시키는 것을 염두에 둔 구조라서([apps 문서](../apps.md)의 분산 협력 절), 외래 키와 조인 같은 DB 레벨 관계는 처음부터 쓰지 않는다. 이 구조는 관계형 DB의 cross-domain 관계 모델을 적극 활용하지 않으므로, 문서 단위로 읽고 쓰는 MongoDB가 모델 모양과 그대로 맞는다. 원자성이 필요한 곳은 MongoDB 트랜잭션으로 처리한다. 트랜잭션의 일시 오류(WriteConflict) 재시도는 드라이버의 `session.withTransaction`에 위임한다 — 손수 만든 고정 횟수 재시도는 부하에서 소진돼 일시 오류가 도메인 결과(409) 대신 5xx로 샜다.
+서비스를 독립시킬 수 있도록 도메인 사이 관계는 서비스의 공개 API로 관리하고 cross-domain 외래 키와 조인을 쓰지 않는다([데이터 소유권](../apps.md#34-도메인-모델과-데이터-소유권)). 관계형 DB의 도메인 간 관계 모델을 적극 활용하지 않는 구조이므로, 문서 단위로 읽고 쓰는 MongoDB가 모델과 맞는다. 필요한 원자성은 트랜잭션으로 보장한다.
+
+트랜잭션의 일시 오류 재시도는 드라이버의 `session.withTransaction`에 위임한다. 애플리케이션의 고정 횟수 재시도는 경합 중 소진되어 일시 충돌을 서버 오류로 노출할 수 있기 때문이다.
 
 ### 검토했던 대안
 
@@ -194,15 +180,13 @@ Dev Container와 앱의 Node는 네이티브 Temporal을 사용하는 런타임�
 
 ### 결정
 
-구매는 외부 효과보다 먼저 `pending` 구매 기록을 저장하고, `pending → completing → completed` 또는 `pending/completing → compensating → cancelled`로 수렴하는 durable 상태 머신을 쓴다. 완료·보상·이벤트 발행은 각각 owner ID와 만료 시각이 있는 lease를 CAS로 획득한 복제본만 실행한다. 주기 재조정이 stale 또는 만료된 기록을 다시 처리한다.
+구매는 외부 효과보다 먼저 durable 기록을 남기고, lease 소유자가 완료·보상을 실행하는 상태 머신을 쓴다. 프로세스 종료로 멈춘 작업은 주기 재조정이 이어받는다. 상태 전이와 transaction 범위는 [구매 계약](../apps.md#23-구매-상태-머신과-재조정)을 따른다.
 
 ### 근거
 
 결제 제공자, Redis 선점 claim, MongoDB 구매·티켓 문서는 하나의 트랜잭션으로 묶이지 않는다. 프로세스가 결제 생성 직후나 티켓 판매 직전에 종료되어도 다시 찾을 durable 기준점이 필요하다. 먼저 만든 `pending` 기록이 그 기준점이다.
 
-완료 경로에서는 티켓 `Available→Sold`, 구매 `completing→completed`, 결제 resolution marker를 MongoDB 트랜잭션 하나로 묶어 일부만 커밋되지 않게 한다. 재조정이 동시에 완료 lease를 회수하려 하면 transaction write conflict와 owner CAS가 승자 하나만 남긴다. 보상 경로는 구매 기록이 소유한 티켓·claim만 멱등으로 해제하고, 구매 ID로 결제를 취소한다. 한 복제본이 보상 중 종료되어도 lease 만료 후 다른 복제본이 이어받는다.
-
-완료된 구매의 `purchaseEventStatus=pending`은 durable outbox다. 이벤트 발행 실패는 구매를 되돌리지 않고 재시도하며, 발행과 DB 갱신 사이 간격 때문에 생길 수 있는 중복은 `purchaseRecordId`를 멱등 키로 써서 소비자가 처리한다(§2의 전달 경계).
+완료와 보상은 소유권을 확인해 서로 다른 종결 결과가 남거나 다른 구매의 효과를 해제하지 않게 한다. lease는 중단된 소유자를 교체할 수 있게 하며, 이어받은 실행도 멱등해야 한다. 구매 완료와 알림 전달은 별도 실패 경계이므로, outbox 발행 실패가 이미 완료된 구매를 되돌리지는 않는다.
 
 ### 검토했던 대안
 
@@ -227,24 +211,24 @@ API 검증 스택의 Docker `json-file`은 제한된 로컬 버퍼로 회전한�
 
 ---
 
-## 10. 명시적으로 거부한 도구
+## 10. 현재 도입하지 않은 도구
 
 공통 기준은 도구가 줄여 주는 비용이 학습·운영·설정 비용보다 클 때만 추가한다는 것이다.
 
-| 도구              | 현재 도입하지 않은 이유                                                                                        |
-| ----------------- | -------------------------------------------------------------------------------------------------------------- |
-| Kafka             | NATS가 현재 fan-out·queue·선택적 durable messaging을 충족하며 운영 부담이 더 작다.                             |
-| BullMQ            | 장기 작업의 재시도·상태·보상을 수동으로 유지하는 대신 Restate workflow를 사용한다.                             |
-| OpenAPI / Swagger | 성공 흐름은 실제 요청을 보내는 curl spec으로 검증한다. 정적 카탈로그와 실제 동작의 drift를 두지 않는 선택이다. |
-| Passport          | 현재 인증 흐름은 NestJS Guard로 직접 표현하는 편이 더 작고 읽기 쉽다.                                          |
-| Nx / Turborepo    | 현재 workspace 규모에서 pnpm으로 충분하며 추가 task graph·cache 도구의 이득이 유지 비용보다 작다.              |
-| pino              | 현재 로깅 처리량은 병목이 아니며 winston 기반 구조화 로그를 교체할 이유가 없다.                                |
-| Service Mesh      | 현재 Compose 기반 시드에는 과하며 Kubernetes 운영으로 이동할 때 재검토한다.                                    |
+| 도구              | 현재 도입하지 않은 이유                                                                                                  |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Kafka             | NATS가 현재 fan-out·queue·선택적 durable messaging을 충족하며 운영 부담이 더 작다.                                       |
+| BullMQ            | 장기 작업의 재시도·상태·보상을 수동으로 유지하는 대신 Restate workflow를 사용한다.                                       |
+| OpenAPI / Swagger | 주요 성공·실패 흐름을 실제 요청을 보내는 curl spec으로 검증한다. 정적 카탈로그와 실제 동작의 drift를 두지 않는 선택이다. |
+| Passport          | 현재 인증 흐름은 NestJS Guard로 직접 표현하는 편이 더 작고 읽기 쉽다.                                                    |
+| Nx / Turborepo    | 현재 workspace 규모에서 pnpm으로 충분하며 추가 task graph·cache 도구의 이득이 유지 비용보다 작다.                        |
+| pino              | 현재 로깅 처리량은 병목이 아니며 winston 기반 구조화 로그를 교체할 이유가 없다.                                          |
+| Service Mesh      | 현재 Compose 기반 시드에는 과하며 Kubernetes 운영으로 이동할 때 재검토한다.                                              |
 
 ## 11. 외부 연동 구현의 공통 경계
 
-`apps/api/src`는 MongoDB·Redis·NATS/JetStream·S3·bcrypt·JWT·Restate의 연결과 SDK 실행을 `libs/common`을 통해 사용한다. 목적은 오류 처리·연결 수명·사용법을 한곳에서 관리하고, 앱의 업무 흐름에서 연동 세부 구현을 분리하는 것이다. 모든 도메인을 기술별 대형 라이브러리로 옮기거나 DB 교체를 자동화하는 설계는 아니다.
+런타임 SDK 연동을 `libs/common`에 모아 오류 처리·연결 수명·사용법을 한곳에서 관리한다. 앱의 업무 흐름에서 연동 세부 구현을 분리하되, 도메인의 쿼리·인덱스·이벤트·workflow 단계는 앱이 소유한다. DB 교체를 자동화하거나 도메인까지 기술별 대형 라이브러리에 모으려는 설계는 아니다.
 
-NestJS·Zod·RxJS·Express처럼 앱을 작성하는 API는 직접 사용한다. `generateUuid` 같은 유틸은 구현의 출처보다 찾기 쉬운 이름과 일관된 사용법을 위해 공통화한다. Node.js 전체를 감싸거나 런타임 교체에 대비하지 않으며, 이미 제공한 유틸은 사용처가 적다는 이유만으로 제거하지 않는다.
+`generateUuid` 같은 유틸은 구현의 출처보다 찾기 쉬운 이름과 일관된 사용법을 위해 공통화한다. Node.js 전체를 감싸거나 런타임 교체에 대비하지 않는다.
 
-앱에는 도메인의 쿼리·인덱스·이벤트·workflow 단계가 남는다. 독립 실행 스크립트는 common 빌드를 요구하지 않도록 SDK를 직접 사용한다. 정확한 범위와 ID·transaction 계약은 [libs 문서](../libs.md)가 소유한다.
+독립 실행 스크립트는 common 빌드를 요구하지 않도록 SDK를 직접 사용한다. 앱이 직접 사용하는 framework API와 기존 유틸 유지 기준을 포함한 정확한 범위는 [libs 문서](../libs.md)가 소유한다.

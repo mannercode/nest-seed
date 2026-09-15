@@ -30,6 +30,10 @@ Infrastructure  결제·스토리지 같은 외부 연동
 
 위 계층은 아래 계층의 공개 API를 사용할 수 있지만, 아래 계층은 Gateway와 View를 모른다. 컨트롤러를 Gateway로 분리해 라우팅·인증 주체 추출·요청 변환을 도메인 모듈 밖에 둔다. 오류는 계층에 관계없이 아래의 공통 에러 규칙을 따른다.
 
+예를 들어 `MoviesController`와 `MoviesService`를 `MoviesModule`에 함께 둔다고 하자. Controller가 추천을 호출하고 추천 서비스가 영화를 조회하면 `MoviesModule → RecommendationModule → MoviesModule`의 순환이 생긴다. 서비스 호출이 Recommendation → Movies의 단방향이어도 Controller를 묶은 방식 때문에 모듈이 서로 의존한다.
+
+Controller를 Gateway로 옮기면 Gateway가 Recommendation과 Movies를 사용하고, Recommendation은 하위 Movies만 참조한다. `forwardRef`로 서로 주입할 수 있게 만드는 것만으로는 이 책임의 결합이 사라지지 않는다.
+
 Oxlint의 `eslint-plugin-boundaries`가 실제 import 대상 파일을 해석해 계층 방향, 동료 모듈 참조, 모듈 외부의 공개 진입점을 검사한다. 계층 barrel은 자기 계층의 공개 API를 모으지만 도메인에서 자기 계층 barrel을 참조할 수는 없다. 여러 도메인을 조합하는 테스트는 이 검사에서 제외하며, View의 읽기 전용 책임처럼 코드의 의미에 관한 규칙은 리뷰로 확인한다.
 
 ### 1.1. Application Service는 조립이 필요할 때만 만든다
@@ -143,11 +147,13 @@ sequenceDiagram
 
 Restate journal은 완료된 step을 재사용하고 복제본 종료 후에도 실행을 이어 간다. 그러나 외부 효과의 성공과 journal 기록은 원자적이지 않으므로 durable step은 다시 호출될 수 있다. 상영·티켓·operation을 한 MongoDB transaction으로 묶고 `sagaId`의 unique operation을 저장하는 것이 최종 멱등성 경계다.
 
-workflow key는 **같은 `sagaId`**의 중복 제출만 합친다. 서로 다른 `sagaId`가 같은 극장 시간을 동시에 변경하는 경쟁은 막지 못한다. 따라서 transaction 안에서 극장별 guard를 먼저 CAS 갱신해 경쟁 transaction을 WriteConflict로 재시도시킨다. **durable workflow와 concurrency control은 다른 문제**다.
+workflow key는 **같은 `sagaId`**의 중복 제출만 합친다. 서로 다른 `sagaId`가 같은 극장 시간을 동시에 변경하는 경쟁은 막지 못한다. 두 요청이 모두 “겹치는 상영이 없다”고 읽고 삽입할 수 있으므로, transaction 안에서 극장별 guard를 **검증 조회보다 먼저** CAS 갱신한다. 경쟁 transaction은 WriteConflict로 재시도하며 변경된 상태에서 다시 검증한다. **durable workflow와 concurrency control은 다른 문제**다.
 
 SSE는 사용자 경험을 위한 best-effort 진행 알림이다. 사용자가 종결 상태를 알아야 할 때는 `sagaId`로 상태 API를 재조회하고, 실제 생성 결과의 기준은 MongoDB다.
 
 시간 충돌은 자원을 생성하지 않은 `failed`, 생성 성공은 `succeeded`, 재시도로 해결되지 않은 시스템 오류는 `error`다. operation에는 입력 fingerprint와 결과를 함께 저장해 같은 `sagaId`의 다른 입력을 거부한다. 트랜잭션 안의 생성이 실패하면 부분 상영·티켓이 롤백되므로 별도 삭제 보상 step은 없다.
+
+상영 구간은 끝 시각을 포함하지 않는다. 기존 `12:00~13:30`과 새 `12:00~12:30`은 충돌하지만, 13:30부터 시작하는 상영은 허용한다. 기존 데이터와의 충돌은 접수 뒤 `failed`로 끝나며, 요청 본문 안의 시작 시각끼리 겹치는 오류는 사가를 시작하기 전에 `400`으로 거부한다.
 
 상태 이벤트도 durable step으로 발행해 workflow 안의 순서를 유지하지만 중복 발행은 가능하다. step별 retry·timeout·abort와 workflow 출력의 보존 기간은 [workflow.ts](../apps/api/src/services/application/showtime-creation/worker/workflow.ts)가 정한다. 출력 보존은 유한하므로 workflow key를 영구 멱등 저장소로 취급하지 않는다.
 
@@ -168,6 +174,8 @@ NestJS 공통 예외와 도메인의 `errors.ts`를 사용한다. MongoDB 오류
 ### 3.3. REST API 설계
 
 경로는 행위보다 리소스를 중심으로 짓는다. 다만 여러 API 단계가 특정 유스케이스 안에서만 의미가 있다면 `booking/...`, `showtime-creation/...`처럼 namespace로 묶어 범용 리소스 API와 구분한다.
+
+범용 영화 목록에 추천순·최신순 옵션을 계속 더하면, 두 옵션을 함께 요청했을 때의 우선순위도 일반 조회가 책임져야 한다. 업무 흐름별 API는 이런 조합의 영향을 제한하며, 독립적인 영화 조회는 범용 리소스 API로 유지한다.
 
 #### 3.3.1. 중복 실행 비용이 큰 POST는 멱등성 키를 요구한다
 
@@ -198,6 +206,8 @@ NestJS 공통 예외와 도메인의 `errors.ts`를 사용한다. MongoDB 오류
 
 상영 생성에서 `극장 4,000 × 날짜 60 × 하루 8회 × 좌석 500`을 가정하면 생성 대상은 9억 건을 넘는다. 이는 현재 한 요청의 허용량이 아니라, 대량 작업을 동기 HTTP 계약으로 설계하면 안 된다는 사고 실험이다.
 
+접수와 완료를 분리해도 DB transaction의 처리량 제한은 남는다. 현재 한 operation의 생성 수와 실행 시간에는 상한을 두며, 대규모 작업의 분할·일정 관리까지 구현한 예제는 아니다. 정확한 상한은 [persistence](../apps/api/src/services/application/showtime-creation/internal/showtime-creation-persistence.service.ts)와 [operation Repository](../apps/api/src/services/application/showtime-creation/internal/showtime-creation-operation.repository.ts)가 소유한다.
+
 #### 3.3.4. 긴 검색 조건은 POST를 쓸 수 있다
 
 의미상 조회여도 대량의 ID·복합 필터가 URL 한계를 넘을 수 있으면 search 리소스에 POST를 사용한다. 이 예외는 긴 입력을 안전하게 전달하기 위한 것이며, 상태를 변경하는 의미를 숨기기 위한 것이 아니다.
@@ -212,6 +222,16 @@ admin은 콘텐츠와 임의 사용자 대상 작업을, user는 본인 자원�
 
 ### 3.4. 도메인 모델과 데이터 소유권
 
+사용자의 행동과 그 행동을 기록한 데이터를 구분해 이름 짓는다.
+
+| 용어                       | 의미                                                              |
+| -------------------------- | ----------------------------------------------------------------- |
+| 예매 `Booking`             | 상영·좌석을 선택하고 임시 선점하는 동선                           |
+| 구매 `Purchase`            | 결제와 티켓 판매를 조율해 완료하거나 실패 시 보상하는 작업        |
+| 구매 기록 `PurchaseRecord` | 구매의 진행·종결 상태를 저장해 재시도와 복구의 기준이 되는 데이터 |
+
+구매 기록은 성공한 영수증만 뜻하지 않는다. 결제 전에 만들고 실패한 구매의 상태도 남긴다.
+
 도메인은 자기 collection을 소유하고 다른 도메인의 DB를 직접 join하지 않는다. 조회 경로를 단순하게 하고 모듈 의존을 줄일 수 있다면 ID처럼 안정적인 값을 중복 저장한다. 대신 중복 값의 갱신 책임이 생기므로, 조회 단순성이 그 비용보다 클 때만 선택한다.
 
 예제에서 극장은 좌석 배치 하나를 가진 상영 공간이다. 극장 안의 여러 상영관과 좌석 등급은 생략한다. 좌석은 독립적으로 관리하는 엔티티가 아니라 블록·행·번호로 식별되는 값이라 별도 ID를 두지 않는다.
@@ -224,7 +244,7 @@ admin은 콘텐츠와 임의 사용자 대상 작업을, user는 본인 자원�
 
 인덱스, transaction, race condition, 프로토콜 경계는 mock으로 재현하기 어렵다. 그래서 도메인 통합 테스트는 실제 NestJS 모듈과 MongoDB·Redis·S3·NATS·Restate를 사용하고, mock을 최소화한다. 다중 컨테이너 스택이 필요한 race·browser·benchmark는 [tests 문서](tests.md)의 별도 계층이 담당한다.
 
-테스트의 unit은 함수 하나가 아니라 **사용자가 관찰하는 행동**이다. 내부 함수 호출 순서보다 API 응답·DB의 최종 상태·외부 계약을 검증한다. 내부 구현을 나누거나 합쳐도 행동이 같으면 테스트는 유지되어야 한다.
+테스트의 unit은 함수 하나가 아니라 **사용자가 관찰하는 행동**이다. 성공·충돌·재시도 계약을 HTTP 시나리오와 조건별 테스트로 먼저 표현하고, 이를 만족하도록 내부를 구현한다. 내부 함수 호출 순서보다 API 응답·DB의 최종 상태·외부 계약을 검증한다. 내부 구현을 나누거나 합쳐도 행동이 같으면 테스트는 유지되어야 한다. 순수 계산이 독립 계약인 경우에는 그 계산을 직접 테스트할 수 있다.
 
 spy를 금지하지는 않는다. 실제 인프라 경로는 유지하면서 호출 관찰, 장애 주입, 결정적인 동시성 barrier, 시간·환경 제어가 필요할 때 쓴다. 의존성 전체를 가짜로 바꿔 통합 계약을 사라지게 만드는 mock을 경계한다.
 
@@ -257,11 +277,31 @@ afterEach(() => fix.teardown())
 
 상영 workflow를 검증할 때는 `enableRestate: true`로 임시 endpoint를 등록한다. teardown은 제출한 workflow가 끝난 뒤 그 deployment를 제거하고 앱을 닫는다. 일반 테스트에서는 workflow 제출을 허용하지 않아 실수로 외부 실행을 시작하면 실패한다. cron은 테스트 중 자율 실행을 멈춰 시나리오가 작업 시점을 제어하게 한다.
 
-SSE는 요청 전에 구독을 준비하거나 저장된 종결 상태로 복구하는 계약을 따라야 한다. 임의의 sleep으로 완료를 추측하지 않는다. 상영·티켓을 실제로 insert한 뒤 예외를 주입하고 DB 재조회로 롤백을 확인하는 예시는 [튜토리얼](reference/tutorial.md#5-동작을-기준으로-구현하고-검증한다)에 있다.
+SSE를 검증할 때는 요청 전에 구독을 준비한다. [waitForCompletion](../apps/api/src/__tests__/application/showtime-creation.utils.ts)은 SSE 종결 이벤트를 기다리며 상태 API를 대신 조회하지 않는다. 이벤트를 놓친 클라이언트의 복구는 별도의 상태 조회 계약으로 검증한다. 임의의 sleep으로 완료를 추측하지 않는다.
+
+### 4.3. 접수·완료·롤백을 구분해 검증한다
+
+[상영 생성 통합 테스트](../apps/api/src/__tests__/application/showtime-creation.spec.ts)는 `202`와 `sagaId`를 받는 접수 성공, 상영 생성, 티켓 생성을 각각 검증한다. 뒤의 두 결과는 작업이 종결된 뒤 `sagaId`로 실제 저장 상태를 재조회한다. 응답에 적힌 생성 수나 내부 creator의 호출만으로 완료를 판단하지 않는다.
+
+롤백을 검증할 때는 spy로 실패 시점을 제어하되 실제 insert와 transaction 경로를 유지한다.
+
+```ts
+const realCreateMany = ticketsService.createMany.bind(ticketsService)
+vi.spyOn(ticketsService, 'createMany').mockImplementation(
+    async (createDtos, transaction, signal) => {
+        await realCreateMany(createDtos, transaction, signal)
+        throw new Error('ticket creation failed after insert')
+    }
+)
+```
+
+생성 요청이 `error`로 끝날 때까지 기다린 뒤 같은 `sagaId`의 상영과 티켓이 모두 없는지 조회한다. insert 자체를 가짜로 성공시켰다면 실제 부분 쓰기의 롤백을 검증할 수 없다.
+
+일시적인 쓰기 실패 뒤 재시도가 한 세트만 생성하는지, 커밋 후 완료 보고를 잃어도 operation 결과를 재사용하는지는 별도 시나리오로 확인한다. 롤백 성공과 재시도의 멱등성은 각각 검증할 보장이다.
 
 ## 5. 실행 가능한 API 문서
 
-`apps/api/api-docs/*.spec`는 bash와 curl로 작성한 주요 성공·실패 흐름의 HTTP 계약이다. 실제 요청을 보내지 못하는 정적 endpoint 카탈로그 대신, 실행해 요청·응답 예시와 브라우징 가능한 요약을 만든다. 이 선택의 이유는 [설계 결정의 거부 도구](reference/decisions.md#10-명시적으로-거부한-도구)에 있다.
+`apps/api/api-docs/*.spec`는 bash와 curl로 작성한 주요 성공·실패 흐름의 HTTP 계약이다. 실제 요청을 보내지 못하는 정적 endpoint 카탈로그 대신, 실행해 요청·응답 예시와 브라우징 가능한 요약을 만든다. 이 선택의 이유는 [도구 선택 기준](reference/decisions.md#10-현재-도입하지-않은-도구)에 있다.
 
 `TEST`는 사람이 읽을 설명과 기대 상태를 가진 문서 항목이고, `SETUP`은 시나리오를 만들기 위한 준비 요청이다. 두 의미를 섞어 준비 호출을 API 목록으로 부풀리지 않는다. 장기 연결인 SSE는 curl 카탈로그에 억지로 넣지 않고 상태 종결까지 대기하는 통합 테스트가 검증한다.
 

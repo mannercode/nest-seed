@@ -138,7 +138,7 @@ bash apps/api/api-docs/run.sh showtime-creation.spec
 
 문서와 주석의 원본 언어는 한국어다. 영어는 이 README만 제공한다.
 
-`docs/*.md`는 대응하는 폴더의 역할과 보장을 설명한다. 여러 폴더가 함께 따르는 규칙·선택 이유·학습 설명은 `docs/reference/`에 둔다.
+`docs/*.md`는 대응하는 폴더의 역할과 보장을 설명한다. 여러 폴더가 함께 따르는 개발 규칙과 설계 선택의 근거는 `docs/reference/`에 둔다.
 
 - [apps](docs/apps.md) — SoLA 계층, 분산 보장, API·테스트 규칙
 - [libs](docs/libs.md) — 런타임 공용 코드와 테스트 helper의 분리 기준
@@ -148,7 +148,6 @@ bash apps/api/api-docs/run.sh showtime-creation.spec
 - [devcontainer](docs/devcontainer.md) — 단일 개발 경로, DooD 제약과 보안
 - [decisions](docs/reference/decisions.md) — 선택 이유, 대안, 보장하지 않는 것
 - [개발 규칙](docs/reference/conventions.md) — 이름·DTO·타입·ESM·오류·테스트 작성 규칙
-- [튜토리얼](docs/reference/tutorial.md) — 유스케이스에서 API·모듈·분산 처리·테스트까지
 
 `docs_backup/`은 축소 전 원문 보관본이다. 현재 개발 지침은 위 문서를 따른다.
 
