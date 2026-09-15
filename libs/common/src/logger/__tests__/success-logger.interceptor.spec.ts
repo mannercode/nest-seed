@@ -17,7 +17,7 @@ describe('HttpSuccessLoggerInterceptor', () => {
             await fix.httpClient
                 .post('/success?token=query-secret')
                 .body({ password: 'request-secret' })
-                .created({ result: 'success' })
+                .created({ expected: { result: 'success' } })
 
             expect(fix.spyVerbose).toHaveBeenCalledTimes(1)
             expect(fix.spyVerbose).toHaveBeenCalledWith('success', {
@@ -32,7 +32,7 @@ describe('HttpSuccessLoggerInterceptor', () => {
             await fix.httpClient
                 .post('/success')
                 .body({ password: 'request-secret' })
-                .created({ result: 'success' })
+                .created({ expected: { result: 'success' } })
 
             const log = fix.spyVerbose.mock.calls[0]?.[1]
             expect(log).not.toHaveProperty('response')
@@ -62,7 +62,7 @@ describe('HttpSuccessLoggerInterceptor', () => {
             })
 
             it('로깅을 건너뛴다', async () => {
-                await fix.httpClient.get('/exclude-path').ok({ result: 'success' })
+                await fix.httpClient.get('/exclude-path').ok({ expected: { result: 'success' } })
 
                 expect(fix.spyVerbose).toHaveBeenCalledTimes(0)
             })
@@ -76,7 +76,9 @@ describe('HttpSuccessLoggerInterceptor', () => {
             })
 
             it('경로가 정확히 일치하지 않으므로 로그를 남긴다', async () => {
-                await fix.httpClient.get('/exclude-path/sub').ok({ result: 'success' })
+                await fix.httpClient
+                    .get('/exclude-path/sub')
+                    .ok({ expected: { result: 'success' } })
 
                 expect(fix.spyVerbose).toHaveBeenCalledTimes(1)
             })
@@ -90,7 +92,7 @@ describe('HttpSuccessLoggerInterceptor', () => {
             })
 
             it('어떤 경로도 제외하지 않는다', async () => {
-                await fix.httpClient.get('/exclude-path').ok({ result: 'success' })
+                await fix.httpClient.get('/exclude-path').ok({ expected: { result: 'success' } })
 
                 expect(fix.spyVerbose).toHaveBeenCalledTimes(1)
             })
@@ -107,7 +109,7 @@ describe('HttpSuccessLoggerInterceptor', () => {
             })
 
             it('경로가 정확히 일치하는 요청은 로깅을 건너뛴다', async () => {
-                await fix.httpClient.get('/exclude-path').ok({ result: 'success' })
+                await fix.httpClient.get('/exclude-path').ok({ expected: { result: 'success' } })
 
                 expect(fix.spyVerbose).toHaveBeenCalledTimes(0)
             })

@@ -66,11 +66,14 @@ describe('ShowtimeCreationService', () => {
             await fix.httpClient
                 .get('/showtime-creation/movies')
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .ok(paginationResultSchema(MovieSchema), {
-                    items: [movie],
-                    page: expect.any(Number),
-                    size: expect.any(Number),
-                    total: 1
+                .ok({
+                    schema: paginationResultSchema(MovieSchema),
+                    expected: {
+                        items: [movie],
+                        page: expect.any(Number),
+                        size: expect.any(Number),
+                        total: 1
+                    }
                 })
         })
     })
@@ -80,11 +83,14 @@ describe('ShowtimeCreationService', () => {
             await fix.httpClient
                 .get('/showtime-creation/theaters')
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .ok(paginationResultSchema(TheaterSchema), {
-                    items: [theater],
-                    page: expect.any(Number),
-                    size: expect.any(Number),
-                    total: 1
+                .ok({
+                    schema: paginationResultSchema(TheaterSchema),
+                    expected: {
+                        items: [theater],
+                        page: expect.any(Number),
+                        size: expect.any(Number),
+                        total: 1
+                    }
                 })
         })
     })
@@ -104,7 +110,7 @@ describe('ShowtimeCreationService', () => {
                 .post('/showtime-creation/showtimes/search')
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
                 .body({ theaterIds: [theater.id] })
-                .ok(ShowtimeSchema.array(), expect.arrayContaining(showtimes))
+                .ok({ schema: ShowtimeSchema.array(), expected: expect.arrayContaining(showtimes) })
 
             expect(response.text).toContain('"startTime":"2100-01-01T09:00:00.000Z"')
         })
@@ -184,7 +190,7 @@ describe('ShowtimeCreationService', () => {
                     .headers({ Authorization: `Bearer ${adminAccessToken}` })
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .body(buildCreateDto())
-                    .accepted(RequestShowtimeCreationResponseSchema)
+                    .accepted({ schema: RequestShowtimeCreationResponseSchema })
                 const sagaId = created.body.sagaId
                 const deadline = performance.now() + 5_000
                 let status: any
@@ -193,7 +199,7 @@ describe('ShowtimeCreationService', () => {
                     const response = await fix.httpClient
                         .get(`/showtime-creation/showtimes/${sagaId}/status`)
                         .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                        .ok(ShowtimeCreationStatusResponseSchema)
+                        .ok({ schema: ShowtimeCreationStatusResponseSchema })
                     status = response.body
                     if (status.status !== 'pending') break
                     await sleep(25)
@@ -218,7 +224,7 @@ describe('ShowtimeCreationService', () => {
             await fix.httpClient
                 .get(`/showtime-creation/showtimes/${nullObjectId}/status`)
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .notFound(Errors.ShowtimeCreation.SagaNotFound(nullObjectId))
+                .notFound({ expected: Errors.ShowtimeCreation.SagaNotFound(nullObjectId) })
         })
     })
 
@@ -228,7 +234,7 @@ describe('ShowtimeCreationService', () => {
                 .post('/showtime-creation/showtimes')
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
                 .body(buildCreateDto())
-                .badRequest(Errors.Idempotency.KeyRequired())
+                .badRequest({ expected: Errors.Idempotency.KeyRequired() })
         })
 
         it('Idempotency-Key 형식이 잘못되면 400을 반환한다', async () => {
@@ -237,7 +243,7 @@ describe('ShowtimeCreationService', () => {
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
                 .headers({ 'Idempotency-Key': 'short' })
                 .body(buildCreateDto())
-                .badRequest(Errors.Idempotency.KeyInvalid())
+                .badRequest({ expected: Errors.Idempotency.KeyInvalid() })
         })
 
         it('같은 키와 같은 요청은 최초 saga ID를 반환한다', async () => {
@@ -249,13 +255,13 @@ describe('ShowtimeCreationService', () => {
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
                 .headers({ 'Idempotency-Key': idempotencyKey })
                 .body(createDto)
-                .accepted(RequestShowtimeCreationResponseSchema)
+                .accepted({ schema: RequestShowtimeCreationResponseSchema })
             const replay = await fix.httpClient
                 .post('/showtime-creation/showtimes')
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
                 .headers({ 'Idempotency-Key': idempotencyKey })
                 .body(createDto)
-                .accepted(RequestShowtimeCreationResponseSchema)
+                .accepted({ schema: RequestShowtimeCreationResponseSchema })
 
             expect(replay.body).toEqual(first.body)
         })
@@ -269,14 +275,14 @@ describe('ShowtimeCreationService', () => {
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
                 .headers({ 'Idempotency-Key': idempotencyKey })
                 .body(createDto)
-                .accepted(RequestShowtimeCreationResponseSchema)
+                .accepted({ schema: RequestShowtimeCreationResponseSchema })
 
             await fix.httpClient
                 .post('/showtime-creation/showtimes')
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
                 .headers({ 'Idempotency-Key': idempotencyKey })
                 .body({ ...createDto, durationInMinutes: createDto.durationInMinutes + 1 })
-                .conflict(Errors.Idempotency.KeyReused())
+                .conflict({ expected: Errors.Idempotency.KeyReused() })
         })
 
         it('같은 키의 최초 요청을 처리 중이면 409를 반환한다', async () => {
@@ -304,7 +310,7 @@ describe('ShowtimeCreationService', () => {
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
                 .headers({ 'Idempotency-Key': idempotencyKey })
                 .body(createDto)
-                .accepted(RequestShowtimeCreationResponseSchema)
+                .accepted({ schema: RequestShowtimeCreationResponseSchema })
 
             await didEnterWorkflowStart
             try {
@@ -313,7 +319,7 @@ describe('ShowtimeCreationService', () => {
                     .headers({ Authorization: `Bearer ${adminAccessToken}` })
                     .headers({ 'Idempotency-Key': idempotencyKey })
                     .body(createDto)
-                    .conflict(Errors.Idempotency.RequestInProgress())
+                    .conflict({ expected: Errors.Idempotency.RequestInProgress() })
             } finally {
                 continueWorkflowStart()
             }
@@ -340,7 +346,7 @@ describe('ShowtimeCreationService', () => {
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
                 .headers({ 'Idempotency-Key': idempotencyKey })
                 .body(createDto)
-                .accepted(RequestShowtimeCreationResponseSchema)
+                .accepted({ schema: RequestShowtimeCreationResponseSchema })
 
             expect(submitWorkflow).toHaveBeenCalledTimes(2)
             expect(submitWorkflow.mock.calls[1]?.[1]).toBe(submitWorkflow.mock.calls[0]?.[1])
@@ -370,7 +376,7 @@ describe('ShowtimeCreationService', () => {
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
                 .headers({ 'Idempotency-Key': idempotencyKey })
                 .body(createDto)
-                .accepted(RequestShowtimeCreationResponseSchema)
+                .accepted({ schema: RequestShowtimeCreationResponseSchema })
 
             expect(markAccepted).toHaveBeenCalledTimes(2)
             expect(markAccepted.mock.calls[1]?.[1]).toBe(idempotencyKey)
@@ -403,7 +409,7 @@ describe('ShowtimeCreationService', () => {
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
                 .headers({ 'Idempotency-Key': idempotencyKey })
                 .body(createDto)
-                .accepted(RequestShowtimeCreationResponseSchema)
+                .accepted({ schema: RequestShowtimeCreationResponseSchema })
 
             expect(markAccepted).toHaveBeenCalledTimes(2)
             expect(replay.body).toEqual({ sagaId: expect.any(String) })
@@ -488,14 +494,16 @@ describe('ShowtimeCreationService', () => {
                     durationInMinutes: 90,
                     startTimes: [instant('2100-01-01T09:00Z'), instant('2100-01-01T10:00Z')]
                 })
-                .badRequest(Errors.ShowtimeCreation.OverlappingStartTimes(expect.any(Array)))
+                .badRequest({
+                    expected: Errors.ShowtimeCreation.OverlappingStartTimes(expect.any(Array))
+                })
 
             await fix.httpClient
                 .post('/showtime-creation/showtimes')
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
                 .headers({ 'Idempotency-Key': idempotencyKey })
                 .body(createDto)
-                .accepted(RequestShowtimeCreationResponseSchema)
+                .accepted({ schema: RequestShowtimeCreationResponseSchema })
         })
 
         describe('정상 요청 흐름', () => {
@@ -512,7 +520,7 @@ describe('ShowtimeCreationService', () => {
                         startTimes: [instant('2100-01-01T09:00Z')],
                         theaterIds: [theater.id]
                     })
-                    .accepted(RequestShowtimeCreationResponseSchema)
+                    .accepted({ schema: RequestShowtimeCreationResponseSchema })
             })
 
             it('사가 식별자를 반환한다', async () => {
@@ -620,7 +628,7 @@ describe('ShowtimeCreationService', () => {
                     startTimes: [instant('2100-01-01T09:00Z')],
                     theaterIds: [theater.id]
                 })
-                .accepted(RequestShowtimeCreationResponseSchema)
+                .accepted({ schema: RequestShowtimeCreationResponseSchema })
 
             await waitUntil(() =>
                 received.some(
@@ -650,7 +658,7 @@ describe('ShowtimeCreationService', () => {
                     startTimes: [instant()],
                     theaterIds: [theater.id]
                 })
-                .accepted(RequestShowtimeCreationResponseSchema)
+                .accepted({ schema: RequestShowtimeCreationResponseSchema })
 
             await expect(completionPromise).resolves.toEqual({
                 message: 'The requested movie could not be found.',
@@ -672,7 +680,7 @@ describe('ShowtimeCreationService', () => {
                     startTimes: [instant()],
                     theaterIds: [nullObjectId]
                 })
-                .accepted(RequestShowtimeCreationResponseSchema)
+                .accepted({ schema: RequestShowtimeCreationResponseSchema })
 
             await expect(completionPromise).resolves.toEqual({
                 message: 'One or more requested theaters could not be found.',
@@ -692,7 +700,9 @@ describe('ShowtimeCreationService', () => {
                     startTimes: [instant('2100-01-01T09:00Z'), instant('2100-01-01T10:00Z')],
                     theaterIds: [theater.id]
                 })
-                .badRequest(Errors.ShowtimeCreation.OverlappingStartTimes(expect.any(Array)))
+                .badRequest({
+                    expected: Errors.ShowtimeCreation.OverlappingStartTimes(expect.any(Array))
+                })
         })
 
         it('같은 시작 시각이 중복되어도 400을 반환한다', async () => {
@@ -708,7 +718,9 @@ describe('ShowtimeCreationService', () => {
                     startTimes: [start, start],
                     theaterIds: [theater.id]
                 })
-                .badRequest(Errors.ShowtimeCreation.OverlappingStartTimes(expect.any(Array)))
+                .badRequest({
+                    expected: Errors.ShowtimeCreation.OverlappingStartTimes(expect.any(Array))
+                })
         })
 
         describe('트랜잭션 안에서 티켓을 저장한 뒤 실패하면', () => {
@@ -739,7 +751,7 @@ describe('ShowtimeCreationService', () => {
                         ...buildCreateDto(),
                         startTimes: [instant('2100-01-01T09:00Z'), instant('2100-01-01T11:00Z')]
                     })
-                    .accepted(RequestShowtimeCreationResponseSchema)
+                    .accepted({ schema: RequestShowtimeCreationResponseSchema })
                 sagaId = body.sagaId
                 await completionPromise
             })
@@ -768,7 +780,7 @@ describe('ShowtimeCreationService', () => {
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
                 .headers({ 'Idempotency-Key': randomUUID() })
                 .body(buildCreateDto())
-                .accepted(RequestShowtimeCreationResponseSchema)
+                .accepted({ schema: RequestShowtimeCreationResponseSchema })
             const completion = await completionPromise
 
             const showtimes = await showtimesService.search({ sagaIds: [body.sagaId] })
@@ -794,7 +806,7 @@ describe('ShowtimeCreationService', () => {
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
                 .headers({ 'Idempotency-Key': randomUUID() })
                 .body(buildCreateDto())
-                .accepted(RequestShowtimeCreationResponseSchema)
+                .accepted({ schema: RequestShowtimeCreationResponseSchema })
             const completion = await completionPromise
 
             expect(persistenceSpy).toHaveBeenCalledTimes(2)
@@ -932,7 +944,7 @@ describe('ShowtimeCreationService', () => {
                     ],
                     theaterIds: [theater.id]
                 })
-                .accepted(RequestShowtimeCreationResponseSchema)
+                .accepted({ schema: RequestShowtimeCreationResponseSchema })
 
             // 새 12:00-12:30은 기존 12:00-13:30과 시간이 겹치므로 충돌이다.
             // 새 16:00-16:30과 기존 16:30-18:00, 새 20:00-20:30과 기존 18:30-20:00은 한 상영이 끝나는 시각에 다른 상영이 시작한다.
@@ -970,7 +982,7 @@ describe('ShowtimeCreationService', () => {
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
                 .headers({ 'Idempotency-Key': randomUUID() })
                 .body(createDto)
-                .accepted(RequestShowtimeCreationResponseSchema)
+                .accepted({ schema: RequestShowtimeCreationResponseSchema })
 
             await expect(completionPromise).resolves.toEqual({
                 conflictingShowtimes: [conflictingShowtime],
@@ -1018,7 +1030,7 @@ describe('ShowtimeCreationService', () => {
                     ],
                     theaterIds: [theater.id]
                 })
-                .accepted(RequestShowtimeCreationResponseSchema)
+                .accepted({ schema: RequestShowtimeCreationResponseSchema })
 
             await expect(completionPromise).resolves.toEqual({
                 conflictingShowtimes: [initialShowtime],
@@ -1050,7 +1062,7 @@ describe('ShowtimeCreationService', () => {
                     startTimes: [instant('2013-01-31T10:05Z')],
                     theaterIds: [theater.id]
                 })
-                .accepted(RequestShowtimeCreationResponseSchema)
+                .accepted({ schema: RequestShowtimeCreationResponseSchema })
 
             await expect(completionPromise).resolves.toEqual({
                 conflictingShowtimes: [initialShowtime],
@@ -1082,7 +1094,7 @@ describe('ShowtimeCreationService', () => {
                     startTimes: [instant('2013-01-31T10:00Z')],
                     theaterIds: [theater.id]
                 })
-                .accepted(RequestShowtimeCreationResponseSchema)
+                .accepted({ schema: RequestShowtimeCreationResponseSchema })
 
             await expect(completionPromise).resolves.toEqual({
                 conflictingShowtimes: [initialShowtime],

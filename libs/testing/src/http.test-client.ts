@@ -6,10 +6,7 @@ export type { Response }
 type ResponseSchema<T> = { parse: (value: unknown) => T }
 export type TypedResponse<T> = Omit<Response, 'body'> & { body: T }
 
-type StatusAssertion = {
-    <T>(schema: ResponseSchema<T>, expected?: unknown): Promise<TypedResponse<T>>
-    (expected?: unknown): Promise<Response>
-}
+type ResponseOptions<T> = { schema?: ResponseSchema<T>; expected?: unknown }
 
 type EventMessage = { data: string; event: string; id: number }
 
@@ -98,13 +95,10 @@ export class HttpTestClient {
         this.agent.query(query)
         return this
     }
-    send<T>(
+    async send<T = Response['body']>(
         status: number,
-        schema: ResponseSchema<T>,
-        expected?: unknown
-    ): Promise<TypedResponse<T>>
-    send(status: number, expected?: unknown): Promise<Response>
-    async send(status: number, schemaOrExpected?: unknown, expected?: unknown): Promise<Response> {
+        { schema, expected }: ResponseOptions<T> = {}
+    ): Promise<TypedResponse<T>> {
         const response = await this.sendRaw()
 
         if (response.status !== status) {
@@ -113,15 +107,8 @@ export class HttpTestClient {
 
         expect(response.status).toEqual(status)
 
-        if (
-            typeof schemaOrExpected === 'object' &&
-            schemaOrExpected !== null &&
-            'parse' in schemaOrExpected &&
-            typeof schemaOrExpected.parse === 'function'
-        ) {
-            response.body = schemaOrExpected.parse(response.body)
-        } else {
-            expected = schemaOrExpected
+        if (schema) {
+            response.body = schema.parse(response.body)
         }
 
         if (expected !== undefined) {
@@ -188,9 +175,8 @@ export class HttpTestClient {
     unauthorized = this.status(HttpStatus.UNAUTHORIZED)
     unprocessableEntity = this.status(HttpStatus.UNPROCESSABLE_ENTITY)
     unsupportedMediaType = this.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-    private status(status: number): StatusAssertion {
-        return (schemaOrExpected?: any, expected?: unknown) =>
-            this.send(status, schemaOrExpected, expected)
+    private status(status: number) {
+        return <T = Response['body']>(options?: ResponseOptions<T>) => this.send(status, options)
     }
 
     private parseEventMessage(input: string): Partial<EventMessage> {

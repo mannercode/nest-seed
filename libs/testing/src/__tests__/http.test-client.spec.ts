@@ -32,7 +32,7 @@ describe('HttpTestClient', () => {
             }
             const { body } = await fix.httpClient
                 .get('/timestamp')
-                .ok(schema, { at: Temporal.Instant.from('2023-06-18T12:12:34.567Z') })
+                .ok({ schema, expected: { at: Temporal.Instant.from('2023-06-18T12:12:34.567Z') } })
             expectTypeOf(body.at).toEqualTypeOf<Temporal.Instant>()
 
             expect(body.at).toBeInstanceOf(Temporal.Instant)

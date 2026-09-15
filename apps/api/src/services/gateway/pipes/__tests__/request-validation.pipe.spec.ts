@@ -43,11 +43,13 @@ describe('RequestValidationPipe', () => {
                 .post('/')
                 .body({ date: nullDate, sampleId: 'id', unknown: 'x' })
                 .badRequest({
-                    code: 'ERR_REQUEST_VALIDATION_FAILED',
-                    details: [
-                        { constraints: { validation: expect.any(String) }, field: 'unknown' }
-                    ],
-                    message: 'Validation failed'
+                    expected: {
+                        code: 'ERR_REQUEST_VALIDATION_FAILED',
+                        details: [
+                            { constraints: { validation: expect.any(String) }, field: 'unknown' }
+                        ],
+                        message: 'Validation failed'
+                    }
                 })
         })
 
@@ -61,11 +63,13 @@ describe('RequestValidationPipe', () => {
                 .post('/')
                 .body({ date: nullDate })
                 .badRequest({
-                    code: 'ERR_REQUEST_VALIDATION_FAILED',
-                    details: [
-                        { constraints: { validation: expect.any(String) }, field: 'sampleId' }
-                    ],
-                    message: 'Validation failed'
+                    expected: {
+                        code: 'ERR_REQUEST_VALIDATION_FAILED',
+                        details: [
+                            { constraints: { validation: expect.any(String) }, field: 'sampleId' }
+                        ],
+                        message: 'Validation failed'
+                    }
                 })
         })
     })

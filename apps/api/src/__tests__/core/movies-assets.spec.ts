@@ -49,7 +49,7 @@ describe('MoviesAssets', () => {
             const { body } = await fix.httpClient
                 .post(`/movies/${movie.id}/assets`)
                 .body(createDto)
-                .created(AssetPresignedUploadSchema)
+                .created({ schema: AssetPresignedUploadSchema })
 
             expect(body).toEqual(
                 expect.objectContaining({
@@ -68,7 +68,7 @@ describe('MoviesAssets', () => {
             const { body: upload } = await fix.httpClient
                 .post(`/movies/${movie.id}/assets`)
                 .body(createDto)
-                .created(AssetPresignedUploadSchema)
+                .created({ schema: AssetPresignedUploadSchema })
 
             const response = await uploadAsset(testAssets.image.path, upload)
 
@@ -81,7 +81,7 @@ describe('MoviesAssets', () => {
             await fix.httpClient
                 .post(`/movies/${movie.id}/assets`)
                 .body(createDto)
-                .badRequest(Errors.Movies.UnsupportedAssetType(createDto.mimeType))
+                .badRequest({ expected: Errors.Movies.UnsupportedAssetType(createDto.mimeType) })
         })
 
         it('영화가 없으면 404를 반환한다', async () => {
@@ -90,7 +90,7 @@ describe('MoviesAssets', () => {
             await fix.httpClient
                 .post(`/movies/${nullObjectId}/assets`)
                 .body(createDto)
-                .notFound(Errors.Movies.NotFound(nullObjectId))
+                .notFound({ expected: Errors.Movies.NotFound(nullObjectId) })
         })
     })
 
@@ -141,7 +141,7 @@ describe('MoviesAssets', () => {
 
             await fix.httpClient
                 .delete(`/movies/${movie.id}/assets/${assetId}`)
-                .notFound(Errors.Movies.AssetNotFound(assetId))
+                .notFound({ expected: Errors.Movies.AssetNotFound(assetId) })
 
             const [asset] = await assetsService.getMany([assetId])
             expect(asset?.owner).toEqual({ entityId: ownerMovie.id, service: 'movies' })
@@ -156,7 +156,7 @@ describe('MoviesAssets', () => {
 
             await fix.httpClient
                 .delete(`/movies/${movie.id}/assets/${assetId}`)
-                .notFound(Errors.Movies.AssetNotFound(assetId))
+                .notFound({ expected: Errors.Movies.AssetNotFound(assetId) })
 
             const [asset] = await assetsService.getMany([assetId])
             expect(asset?.owner).toEqual({ entityId: ownerMovie.id, service: 'movies' })
@@ -165,7 +165,7 @@ describe('MoviesAssets', () => {
         it('영화가 없으면 404를 반환한다', async () => {
             await fix.httpClient
                 .delete(`/movies/${nullObjectId}/assets/${nullObjectId}`)
-                .notFound(Errors.Movies.NotFound(nullObjectId))
+                .notFound({ expected: Errors.Movies.NotFound(nullObjectId) })
         })
     })
 
@@ -284,7 +284,7 @@ describe('MoviesAssets', () => {
 
             await fix.httpClient
                 .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
-                .unprocessableEntity(Errors.Movies.AssetUploadInvalid(upload.assetId))
+                .unprocessableEntity({ expected: Errors.Movies.AssetUploadInvalid(upload.assetId) })
         })
 
         it('에셋이 없으면 404를 반환한다', async () => {
@@ -292,13 +292,13 @@ describe('MoviesAssets', () => {
 
             await fix.httpClient
                 .post(`/movies/${movie.id}/assets/${nullObjectId}/finalize`)
-                .notFound(Errors.Movies.AssetNotFound(nullObjectId))
+                .notFound({ expected: Errors.Movies.AssetNotFound(nullObjectId) })
         })
 
         it('영화가 없으면 404를 반환한다', async () => {
             await fix.httpClient
                 .post(`/movies/${nullObjectId}/assets/${nullObjectId}/finalize`)
-                .notFound(Errors.Movies.NotFound(nullObjectId))
+                .notFound({ expected: Errors.Movies.NotFound(nullObjectId) })
         })
     })
 })

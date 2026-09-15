@@ -65,7 +65,7 @@ describe('PurchaseService', () => {
                     .post('/purchases')
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(buildCreatePurchaseDto(heldTickets))
-                    .badRequest(Errors.Idempotency.KeyRequired())
+                    .badRequest({ expected: Errors.Idempotency.KeyRequired() })
             })
 
             it('문자열로 전달한 결제 금액은 400을 반환한다', async () => {
@@ -85,7 +85,7 @@ describe('PurchaseService', () => {
                     .post('/purchases')
                     .headers({ Authorization: `Bearer ${accessToken}`, 'Idempotency-Key': 'short' })
                     .body(buildCreatePurchaseDto(heldTickets))
-                    .badRequest(Errors.Idempotency.KeyInvalid())
+                    .badRequest({ expected: Errors.Idempotency.KeyInvalid() })
             })
 
             it('같은 키와 같은 요청은 결제를 다시 만들지 않고 최초 구매 응답을 반환한다', async () => {
@@ -108,7 +108,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(createDto)
-                    .created(PurchaseRecordSchema)
+                    .created({ schema: PurchaseRecordSchema })
                 const replay = await fix.httpClient
                     .post('/purchases')
                     .headers({
@@ -116,7 +116,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(createDto)
-                    .created(PurchaseRecordSchema)
+                    .created({ schema: PurchaseRecordSchema })
 
                 expect(replay.body).toEqual(first.body)
                 expect(createPayment).toHaveBeenCalledTimes(1)
@@ -145,15 +145,17 @@ describe('PurchaseService', () => {
                             'Idempotency-Key': idempotencyKey
                         })
                         .body(createDto)
-                const first = send().created(PurchaseRecordSchema)
+                const first = send().created({ schema: PurchaseRecordSchema })
                 await entered.promise
                 try {
-                    await send().conflict(Errors.Idempotency.RequestInProgress())
+                    await send().conflict({ expected: Errors.Idempotency.RequestInProgress() })
                 } finally {
                     release.resolve()
                 }
                 const completed = await first
-                expect((await send().created(PurchaseRecordSchema)).body).toEqual(completed.body)
+                expect((await send().created({ schema: PurchaseRecordSchema })).body).toEqual(
+                    completed.body
+                )
                 expect(create).toHaveBeenCalledTimes(1)
                 expect(createPayment).toHaveBeenCalledTimes(1)
             })
@@ -182,7 +184,7 @@ describe('PurchaseService', () => {
                         .post('/purchases')
                         .headers({ Authorization: `Bearer ${accessToken}`, 'Idempotency-Key': key })
                         .body(createDto)
-                        .created(PurchaseRecordSchema)
+                        .created({ schema: PurchaseRecordSchema })
                 const delayed = send()
                 await didReach
                 let completed: Awaited<ReturnType<typeof send>>
@@ -236,7 +238,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(firstDto)
-                    .created(PurchaseRecordSchema)
+                    .created({ schema: PurchaseRecordSchema })
                 await didEnterFirstCreate
                 const second = new HttpTestClient(fix.httpClient.serverUrl)
                     .post('/purchases')
@@ -245,7 +247,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(secondDto)
-                    .conflict(Errors.Idempotency.KeyReused())
+                    .conflict({ expected: Errors.Idempotency.KeyReused() })
 
                 await Promise.all([first, second])
                 expect(createCallCount).toBe(2)
@@ -262,7 +264,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(createDto)
-                    .created(PurchaseRecordSchema)
+                    .created({ schema: PurchaseRecordSchema })
 
                 await fix.httpClient
                     .post('/purchases')
@@ -271,7 +273,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body({ ...createDto, totalPrice: createDto.totalPrice + 1 })
-                    .conflict(Errors.Idempotency.KeyReused())
+                    .conflict({ expected: Errors.Idempotency.KeyReused() })
             })
 
             it('같은 키의 최초 요청을 처리 중이면 409를 반환한다', async () => {
@@ -301,7 +303,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(createDto)
-                    .created(PurchaseRecordSchema)
+                    .created({ schema: PurchaseRecordSchema })
 
                 await didStartPayment
                 try {
@@ -312,7 +314,7 @@ describe('PurchaseService', () => {
                             'Idempotency-Key': idempotencyKey
                         })
                         .body(createDto)
-                        .conflict(Errors.Idempotency.RequestInProgress())
+                        .conflict({ expected: Errors.Idempotency.RequestInProgress() })
                 } finally {
                     continuePayment()
                 }
@@ -330,12 +332,12 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body({ ...createDto, totalPrice: createDto.totalPrice + 1 })
-                    .badRequest(
-                        Errors.Purchase.TotalPriceMismatch(
+                    .badRequest({
+                        expected: Errors.Purchase.TotalPriceMismatch(
                             expect.any(Number),
                             createDto.totalPrice + 1
                         )
-                    )
+                    })
 
                 await fix.httpClient
                     .post('/purchases')
@@ -344,7 +346,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(createDto)
-                    .created(PurchaseRecordSchema)
+                    .created({ schema: PurchaseRecordSchema })
             })
 
             it('생성된 구매를 반환한다', async () => {
@@ -355,13 +357,16 @@ describe('PurchaseService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .created(PurchaseRecordSchema, {
-                        ...createDto,
-                        userId: user.id,
-                        createdAt: expect.any(Temporal.Instant),
-                        id: expect.any(String),
-                        paymentId: expect.any(String),
-                        updatedAt: expect.any(Temporal.Instant)
+                    .created({
+                        schema: PurchaseRecordSchema,
+                        expected: {
+                            ...createDto,
+                            userId: user.id,
+                            createdAt: expect.any(Temporal.Instant),
+                            id: expect.any(String),
+                            paymentId: expect.any(String),
+                            updatedAt: expect.any(Temporal.Instant)
+                        }
                     })
             })
 
@@ -372,7 +377,7 @@ describe('PurchaseService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .created(PurchaseRecordSchema)
+                    .created({ schema: PurchaseRecordSchema })
 
                 const payments = await getPayments(fix, [ensure(purchaseRecord.paymentId)])
 
@@ -386,7 +391,7 @@ describe('PurchaseService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .created(PurchaseRecordSchema)
+                    .created({ schema: PurchaseRecordSchema })
 
                 const soldTickets = await getTickets(fix, pickIds(heldTickets))
 
@@ -405,7 +410,7 @@ describe('PurchaseService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .created(PurchaseRecordSchema)
+                    .created({ schema: PurchaseRecordSchema })
 
                 expect(
                     (await getTickets(fix, pickIds(heldTickets))).every(
@@ -426,7 +431,7 @@ describe('PurchaseService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .badRequest(Errors.Purchase.LimitExceeded(expect.any(Number)))
+                    .badRequest({ expected: Errors.Purchase.LimitExceeded(expect.any(Number)) })
             })
 
             it('다른 상영의 티켓을 섞으면 구매를 시작하지 않고 선점을 유지한다', async () => {
@@ -442,7 +447,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(buildCreatePurchaseDto(selected))
-                    .badRequest(Errors.Purchase.MultipleShowtimes())
+                    .badRequest({ expected: Errors.Purchase.MultipleShowtimes() })
 
                 const holding = fix.module.get(TicketHoldingService)
                 for (const ticket of selected) {
@@ -474,8 +479,8 @@ describe('PurchaseService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .badRequest(
-                        Errors.Purchase.WindowClosed(
+                    .badRequest({
+                        expected: Errors.Purchase.WindowClosed(
                             config.ticket.purchaseCutoffMinutes,
                             DateUtil.add({
                                 base: startTime,
@@ -483,7 +488,7 @@ describe('PurchaseService', () => {
                             }).toString(),
                             startTime.toString()
                         )
-                    )
+                    })
             })
 
             it('금액이 서버 계산과 다르면 400을 반환한다', async () => {
@@ -494,7 +499,9 @@ describe('PurchaseService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .badRequest(Errors.Purchase.TotalPriceMismatch(expect.any(Number), 1))
+                    .badRequest({
+                        expected: Errors.Purchase.TotalPriceMismatch(expect.any(Number), 1)
+                    })
             })
 
             it.each([
@@ -538,7 +545,7 @@ describe('PurchaseService', () => {
                                 'Idempotency-Key': idempotencyKey
                             })
                             .body(createDto)
-                            .created(PurchaseRecordSchema)
+                            .created({ schema: PurchaseRecordSchema })
                     const { body: completed }: { body: PurchaseRecordDto } = await send()
 
                     expect((await send()).body).toEqual(completed)
@@ -580,7 +587,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': randomUUID()
                     })
                     .body(buildCreatePurchaseDto(heldTickets))
-                    .created(PurchaseRecordSchema)
+                    .created({ schema: PurchaseRecordSchema })
                 await retryEntered.promise
                 try {
                     expect(
@@ -624,7 +631,7 @@ describe('PurchaseService', () => {
                             'Idempotency-Key': idempotencyKey
                         })
                         .body(buildCreatePurchaseDto(heldTickets))
-                        .badRequest(Errors.Purchase.NotHeld())
+                        .badRequest({ expected: Errors.Purchase.NotHeld() })
                 const first = await send()
                 expect((await send()).body).toEqual(first.body)
                 const records = fix.module.get(PurchaseRecordsService)
@@ -678,7 +685,7 @@ describe('PurchaseService', () => {
                             'Idempotency-Key': idempotencyKey
                         })
                         .body(buildCreatePurchaseDto(heldTickets))
-                        .created(PurchaseRecordSchema)
+                        .created({ schema: PurchaseRecordSchema })
                 const { body: record }: { body: PurchaseRecordDto } = await send()
                 await retryEntered.promise
                 try {
@@ -715,14 +722,14 @@ describe('PurchaseService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .created(PurchaseRecordSchema)
+                    .created({ schema: PurchaseRecordSchema })
 
                 await fix.httpClient
                     .post('/purchases')
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .conflict(Errors.Purchase.AlreadySold(pickIds(heldTickets)))
+                    .conflict({ expected: Errors.Purchase.AlreadySold(pickIds(heldTickets)) })
             })
 
             it('구매 예약 저장 실패는 결제 전에 재시도한다', async () => {
@@ -741,7 +748,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': randomUUID()
                     })
                     .body(buildCreatePurchaseDto(heldTickets))
-                    .created(PurchaseRecordSchema)
+                    .created({ schema: PurchaseRecordSchema })
                 expect(insert).toHaveBeenCalledTimes(2)
                 expect(payment).toHaveBeenCalledTimes(1)
             })
@@ -789,7 +796,7 @@ describe('PurchaseService', () => {
                 .headers({ 'Idempotency-Key': randomUUID() })
                 .headers({ Authorization: `Bearer ${accessToken}` })
                 .body(createDto)
-                .badRequest(Errors.Purchase.NotHeld())
+                .badRequest({ expected: Errors.Purchase.NotHeld() })
         })
 
         it('다른 사용자가 보유한 티켓을 구매하면 400을 반환한다', async () => {
@@ -804,7 +811,7 @@ describe('PurchaseService', () => {
                 .headers({ 'Idempotency-Key': randomUUID() })
                 .headers({ Authorization: `Bearer ${accessToken}` })
                 .body(createDto)
-                .badRequest(Errors.Purchase.NotHeld())
+                .badRequest({ expected: Errors.Purchase.NotHeld() })
         })
 
         it('보유 검증 뒤 다른 고객에게 넘어간 티켓을 판매하지 않는다', async () => {
@@ -840,7 +847,7 @@ describe('PurchaseService', () => {
                 .headers({ 'Idempotency-Key': randomUUID() })
                 .headers({ Authorization: `Bearer ${accessToken}` })
                 .body(buildCreatePurchaseDto(heldByFirst))
-                .badRequest(Errors.Purchase.NotHeld())
+                .badRequest({ expected: Errors.Purchase.NotHeld() })
 
             await validationDidFinish
 
@@ -905,7 +912,7 @@ describe('PurchaseService', () => {
                 .headers({ 'Idempotency-Key': randomUUID() })
                 .headers({ Authorization: `Bearer ${accessToken}` })
                 .body(buildCreatePurchaseDto(heldByFirst))
-                .badRequest(Errors.Purchase.NotHeld())
+                .badRequest({ expected: Errors.Purchase.NotHeld() })
 
             // PaymentService 진입은 pending 기록과 purchase owner claim이 모두 끝났다는 뜻이다.
             await didStartPayment

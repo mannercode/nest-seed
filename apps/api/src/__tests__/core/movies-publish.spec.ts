@@ -45,31 +45,34 @@ describe('MoviesPublish', () => {
 
             beforeEach(async () => {
                 movie = await createUnpublishedMovie(fix)
-                await fix.httpClient.patch(`/movies/${movie.id}`).body(updateDto).ok(MovieSchema)
+                await fix.httpClient
+                    .patch(`/movies/${movie.id}`)
+                    .body(updateDto)
+                    .ok({ schema: MovieSchema })
             })
 
             it('공개된 영화를 반환한다', async () => {
                 await fix.httpClient
                     .post(`/movies/${movie.id}/publish`)
-                    .ok(
-                        MovieSchema,
-                        expect.objectContaining({
+                    .ok({
+                        schema: MovieSchema,
+                        expected: expect.objectContaining({
                             id: expect.any(String),
                             ...updateDto,
                             imageUrls: expect.any(Array)
                         })
-                    )
+                    })
             })
 
             it('공개된 영화는 검색에서 노출된다', async () => {
                 const { body: publishedMovie } = await fix.httpClient
                     .post(`/movies/${movie.id}/publish`)
-                    .ok(MovieSchema)
+                    .ok({ schema: MovieSchema })
 
                 const { body: moviePage } = await fix.httpClient
                     .get('/movies')
                     .query({ title: 'MovieTitle' })
-                    .ok(paginationResultSchema(MovieSchema))
+                    .ok({ schema: paginationResultSchema(MovieSchema) })
                 expect(moviePage.items[0]).toEqual(publishedMovie)
             })
 
@@ -77,7 +80,7 @@ describe('MoviesPublish', () => {
                 const { body: moviePage } = await fix.httpClient
                     .get('/movies')
                     .query({ title: 'MovieTitle' })
-                    .ok(paginationResultSchema(MovieSchema))
+                    .ok({ schema: paginationResultSchema(MovieSchema) })
                 expect(moviePage.items).toHaveLength(0)
             })
         })
@@ -87,7 +90,9 @@ describe('MoviesPublish', () => {
 
             await fix.httpClient
                 .post(`/movies/${movie.id}/publish`)
-                .unprocessableEntity(Errors.Movies.InvalidForPublish(expect.any(Array)))
+                .unprocessableEntity({
+                    expected: Errors.Movies.InvalidForPublish(expect.any(Array))
+                })
         })
 
         it('필수 필드가 하나만 누락되어 있으면 missingFields에 그 필드만 담아 422를 반환한다', async () => {
@@ -104,17 +109,17 @@ describe('MoviesPublish', () => {
                     releaseDate: nullPlainDate,
                     title: `MovieTitle`
                 })
-                .ok(MovieSchema)
+                .ok({ schema: MovieSchema })
 
             await fix.httpClient
                 .post(`/movies/${movie.id}/publish`)
-                .unprocessableEntity(Errors.Movies.InvalidForPublish(['director']))
+                .unprocessableEntity({ expected: Errors.Movies.InvalidForPublish(['director']) })
         })
 
         it('영화가 없으면 404를 반환한다', async () => {
             await fix.httpClient
                 .post(`/movies/${nullObjectId}/publish`)
-                .notFound(Errors.Mongo.DocumentNotFound(nullObjectId))
+                .notFound({ expected: Errors.Mongo.DocumentNotFound(nullObjectId) })
         })
     })
 

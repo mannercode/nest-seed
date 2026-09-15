@@ -59,46 +59,46 @@ describe('LatLong', () => {
             await fix.httpClient
                 .get('/latLong')
                 .query({ location: '37.123,128.678' })
-                .ok({ latitude: 37.123, longitude: 128.678 })
+                .ok({ expected: { latitude: 37.123, longitude: 128.678 } })
         })
 
         it('쿼리가 없으면 400을 반환한다', async () => {
-            await fix.httpClient.get('/latLong').badRequest(LatLongErrors.Required())
+            await fix.httpClient.get('/latLong').badRequest({ expected: LatLongErrors.Required() })
         })
 
         it('쿼리에 콤마가 없으면 400을 반환한다', async () => {
             await fix.httpClient
                 .get('/latLong')
                 .query({ location: '37.123' })
-                .badRequest(LatLongErrors.InvalidFormat())
+                .badRequest({ expected: LatLongErrors.InvalidFormat() })
         })
 
         it('location이 여러 번 전달되면 400을 반환한다', async () => {
             await fix.httpClient
                 .get('/latLong')
                 .query({ location: ['37.123,128.678', '38.123,129.678'] })
-                .badRequest(LatLongErrors.InvalidFormat())
+                .badRequest({ expected: LatLongErrors.InvalidFormat() })
         })
 
         it('좌표가 세 개 이상이면 400을 반환한다', async () => {
             await fix.httpClient
                 .get('/latLong')
                 .query({ location: '37.123,128.678,999' })
-                .badRequest(LatLongErrors.InvalidFormat())
+                .badRequest({ expected: LatLongErrors.InvalidFormat() })
         })
 
         it('숫자가 아닌 값이 포함되면 400을 반환한다', async () => {
             await fix.httpClient
                 .get('/latLong')
                 .query({ location: '37abc,127xyz' })
-                .badRequest(LatLongErrors.InvalidFormat())
+                .badRequest({ expected: LatLongErrors.InvalidFormat() })
         })
 
         it('좌표가 20자리를 초과하면 400을 반환한다', async () => {
             await fix.httpClient
                 .get('/latLong')
                 .query({ location: '123456789012345678901,127' })
-                .badRequest(LatLongErrors.InvalidFormat())
+                .badRequest({ expected: LatLongErrors.InvalidFormat() })
         })
 
         it('"37."처럼 점으로 끝나는 좌표도 37로 파싱한다', async () => {
@@ -106,7 +106,7 @@ describe('LatLong', () => {
             await fix.httpClient
                 .get('/latLong')
                 .query({ location: '37.,127' })
-                .ok({ latitude: 37, longitude: 127 })
+                .ok({ expected: { latitude: 37, longitude: 127 } })
         })
 
         it('20자 좌표는 길이 검사를 통과하고 범위 검증에서 400을 반환한다', async () => {
@@ -114,7 +114,7 @@ describe('LatLong', () => {
             await fix.httpClient
                 .get('/latLong')
                 .query({ location: `${lat},127` })
-                .badRequest(LatLongErrors.OutOfRange(expect.any(Array)))
+                .badRequest({ expected: LatLongErrors.OutOfRange(expect.any(Array)) })
         })
 
         it('지수 표기법(1.23e-5)은 형식 오류로 거부한다', async () => {
@@ -122,15 +122,15 @@ describe('LatLong', () => {
             await fix.httpClient
                 .get('/latLong')
                 .query({ location: '1.23e-5,127' })
-                .badRequest(LatLongErrors.InvalidFormat())
+                .badRequest({ expected: LatLongErrors.InvalidFormat() })
         })
 
         it('범위를 벗어난 좌표는 400을 반환한다', async () => {
             await fix.httpClient
                 .get('/latLong')
                 .query({ location: '91,181' })
-                .badRequest(
-                    LatLongErrors.OutOfRange([
+                .badRequest({
+                    expected: LatLongErrors.OutOfRange([
                         {
                             constraints: { max: 'latitude must not be greater than 90' },
                             field: 'latitude'
@@ -140,15 +140,15 @@ describe('LatLong', () => {
                             field: 'longitude'
                         }
                     ])
-                )
+                })
         })
 
         it('음수 범위를 벗어난 좌표는 min 제약으로 400을 반환한다', async () => {
             await fix.httpClient
                 .get('/latLong')
                 .query({ location: '-91,-181' })
-                .badRequest(
-                    LatLongErrors.OutOfRange([
+                .badRequest({
+                    expected: LatLongErrors.OutOfRange([
                         {
                             constraints: { min: 'latitude must not be less than -90' },
                             field: 'latitude'
@@ -158,7 +158,7 @@ describe('LatLong', () => {
                             field: 'longitude'
                         }
                     ])
-                )
+                })
         })
     })
 })

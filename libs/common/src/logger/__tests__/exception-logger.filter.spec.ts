@@ -17,7 +17,7 @@ describe('HttpExceptionLoggerFilter', () => {
         it('HttpException이 발생하면 Logger.warn으로 로그를 남긴다', async () => {
             await fix.httpClient
                 .get('/exception')
-                .notFound({ code: 'ERR_CODE', message: 'message' })
+                .notFound({ expected: { code: 'ERR_CODE', message: 'message' } })
 
             expect(fix.spyWarn).toHaveBeenCalledTimes(1)
             expect(fix.spyWarn).toHaveBeenCalledWith('fail', {

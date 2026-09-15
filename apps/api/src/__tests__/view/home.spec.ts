@@ -33,7 +33,9 @@ describe('UserHomeView', () => {
 
     describe('GET /views/user-app/home', () => {
         it('상영 예정이 없으면 빈 목록을 반환한다', async () => {
-            const { body } = await fix.httpClient.get('/views/user-app/home').ok(UserHomeViewSchema)
+            const { body } = await fix.httpClient
+                .get('/views/user-app/home')
+                .ok({ schema: UserHomeViewSchema })
 
             expect(body).toEqual({ showingMovies: [], recommendedMovies: [] })
         })
@@ -41,7 +43,9 @@ describe('UserHomeView', () => {
         it('상영 예정이 없는 영화는 카드에서 제외한다', async () => {
             await createMovie(fix, { title: 'Home Only Movie' })
 
-            const { body } = await fix.httpClient.get('/views/user-app/home').ok(UserHomeViewSchema)
+            const { body } = await fix.httpClient
+                .get('/views/user-app/home')
+                .ok({ schema: UserHomeViewSchema })
 
             expect(body).toEqual({ showingMovies: [], recommendedMovies: [] })
         })
@@ -107,7 +111,7 @@ describe('UserHomeView', () => {
             it('가까운 상영을 시작 시각순으로 정렬한다', async () => {
                 const { body } = await fix.httpClient
                     .get('/views/user-app/home')
-                    .ok(UserHomeViewSchema)
+                    .ok({ schema: UserHomeViewSchema })
                 const home = body as HomeResponse
 
                 const card = ensure(home.showingMovies[0])
@@ -122,7 +126,7 @@ describe('UserHomeView', () => {
             it('영화당 상영을 최대 3개까지만 포함한다', async () => {
                 const { body } = await fix.httpClient
                     .get('/views/user-app/home')
-                    .ok(UserHomeViewSchema)
+                    .ok({ schema: UserHomeViewSchema })
                 const home = body as HomeResponse
 
                 expect(home.showingMovies).toHaveLength(1)
@@ -135,7 +139,7 @@ describe('UserHomeView', () => {
             it('이미 지난 상영은 카드에서 제외한다', async () => {
                 const { body } = await fix.httpClient
                     .get('/views/user-app/home')
-                    .ok(UserHomeViewSchema)
+                    .ok({ schema: UserHomeViewSchema })
                 const home = body as HomeResponse
 
                 const card = ensure(home.showingMovies[0])

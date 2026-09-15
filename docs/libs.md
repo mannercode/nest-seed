@@ -42,7 +42,7 @@ MongoDB 저장·조회: BSON ObjectId
 
 spec이 import하는 HTTP client와 fixture helper를 둔다. 앱은 이 패키지를 dev dependency로만 받으므로 테스트 도구가 운영 의존성에 섞이지 않는다.
 
-HTTP 응답 변환은 `.created(PurchaseRecordSchema)`처럼 스키마를 명시한다. `body`는 스키마의 출력 타입으로 추론되며 변환 실패는 테스트 실패다. `.created(PurchaseRecordSchema, expected)`는 변환된 결과도 비교한다. 스키마 없이 호출하면 일반 JSON 타입을 유지한다.
+HTTP 응답 변환은 `.created({ schema: PurchaseRecordSchema })`처럼 스키마를 명시한다. `body`는 스키마의 출력 타입으로 추론되며 변환 실패는 테스트 실패다. `{ schema, expected }`는 변환된 결과도 비교하고, `{ expected }`는 변환 없이 비교한다. 스키마 없이 호출하면 일반 JSON 타입을 유지한다.
 
 Vitest가 소스 변환 전에 불러야 하는 자원 준비·정리 로직은 `tools/vitest-helpers`에 둔다. 테스트 코드가 직접 쓰는 패키지와 테스트 런타임을 부팅하는 도구를 구분하기 위한 경계다.
 

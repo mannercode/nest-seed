@@ -65,7 +65,7 @@ describe('RecommendationService', () => {
                 const { body } = await fix.httpClient
                     .get('/views/user-app/home')
                     .headers({ Authorization: `Bearer ${accessToken}` })
-                    .ok(UserHomeViewSchema)
+                    .ok({ schema: UserHomeViewSchema })
 
                 expect(body.recommendedMovies).toEqual([
                     actionMovie,
@@ -81,7 +81,7 @@ describe('RecommendationService', () => {
             it('개봉일 내림차순 기본 추천을 반환한다', async () => {
                 const { body } = await fix.httpClient
                     .get('/views/user-app/home')
-                    .ok(UserHomeViewSchema)
+                    .ok({ schema: UserHomeViewSchema })
 
                 expect(body.recommendedMovies).toEqual([
                     dramaMovie, // 2900-05-01
@@ -106,7 +106,7 @@ describe('RecommendationService', () => {
 
                 const { body } = await fix.httpClient
                     .get('/views/user-app/home')
-                    .ok(UserHomeViewSchema)
+                    .ok({ schema: UserHomeViewSchema })
 
                 expect(body.recommendedMovies).toEqual([
                     dramaMovie,

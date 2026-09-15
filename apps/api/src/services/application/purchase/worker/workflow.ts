@@ -59,13 +59,12 @@ export class PurchaseWorkflow {
         ctx: DurableWorkflowContext,
         input: PurchaseWorkflowInput
     ): Promise<PurchaseResult> {
-        const reserved = purchaseStepSchema(PurchaseOperationSchema).parse(
-            await ctx.run(
-                'reserve purchase',
-                () => attemptPurchaseStep(() => this.reserve(input)),
-                RETRY_UNTIL_RECOVERED
-            )
+        const reservationResult = await ctx.run(
+            'reserve purchase',
+            () => attemptPurchaseStep(() => this.reserve(input)),
+            RETRY_UNTIL_RECOVERED
         )
+        const reserved = purchaseStepSchema(PurchaseOperationSchema).parse(reservationResult)
         if (reserved.kind === 'failed') return reserved
 
         // 이 단계가 journal에 확정되어야 후속 단계가 시작된다.
@@ -83,58 +82,44 @@ export class PurchaseWorkflow {
         )
         if (claimed.kind === 'failed') return this.compensate(ctx, input, record, claimed)
 
-        const payment = PaymentSchema.parse(
-            await ctx.run(
-                'create payment',
-                () =>
-                    this.payments.create({
-                        amount: createDto.totalPrice,
-                        purchaseRecordId: record.id,
-                        userId
-                    }),
-                RETRY_UNTIL_RECOVERED
-            )
+        const paymentResult = await ctx.run(
+            'create payment',
+            () =>
+                this.payments.create({
+                    amount: createDto.totalPrice,
+                    purchaseRecordId: record.id,
+                    userId
+                }),
+            RETRY_UNTIL_RECOVERED
         )
-        const response = PurchaseRecordSchema.parse(
-            await ctx.run(
-                'record payment',
-                () => this.records.setPaymentId(record.id, payment.id),
-                RETRY_UNTIL_RECOVERED
-            )
+        const payment = PaymentSchema.parse(paymentResult)
+        const recordResult = await ctx.run(
+            'record payment',
+            () => this.records.setPaymentId(record.id, payment.id),
+            RETRY_UNTIL_RECOVERED
         )
+        const response = PurchaseRecordSchema.parse(recordResult)
 
-        const completed = purchaseStepSchema(PurchaseRecordSchema).parse(
-            await ctx.run(
-                'complete purchase',
-                () =>
-                    attemptPurchaseStep(async () => {
-                        // DB 커밋 뒤 journal 응답을 잃은 재실행은 선점을 다시 요구하지 않는다.
-                        const current = ensure(await this.records.findIdempotencyOperation(input))
-                        if (current.status === PurchaseRecordStatus.Completed)
-                            return ensure(current.response)
+        const completionResult = await ctx.run(
+            'complete purchase',
+            () =>
+                attemptPurchaseStep(async () => {
+                    // DB 커밋 뒤 journal 응답을 잃은 재실행은 선점을 다시 요구하지 않는다.
+                    const current = ensure(await this.records.findIdempotencyOperation(input))
+                    if (current.status === PurchaseRecordStatus.Completed)
+                        return ensure(current.response)
 
-                        return this.ticketPurchase.completePurchase(
-                            createDto,
-                            record.id,
-                            (ticketIds) =>
-                                this.transactions.run(async (transaction) => {
-                                    await this.tickets.sellForPurchase(
-                                        ticketIds,
-                                        record.id,
-                                        transaction
-                                    )
-                                    await this.records.markCompleted(
-                                        record.id,
-                                        response,
-                                        transaction
-                                    )
-                                    return response
-                                })
-                        )
-                    }),
-                RETRY_UNTIL_RECOVERED
-            )
+                    return this.ticketPurchase.completePurchase(createDto, record.id, (ticketIds) =>
+                        this.transactions.run(async (transaction) => {
+                            await this.tickets.sellForPurchase(ticketIds, record.id, transaction)
+                            await this.records.markCompleted(record.id, response, transaction)
+                            return response
+                        })
+                    )
+                }),
+            RETRY_UNTIL_RECOVERED
         )
+        const completed = purchaseStepSchema(PurchaseRecordSchema).parse(completionResult)
         if (completed.kind === 'failed') return this.compensate(ctx, input, record, completed)
 
         return this.scheduleEvent(ctx, completed.value)
@@ -184,13 +169,12 @@ export class PurchaseWorkflow {
             RETRY_UNTIL_RECOVERED
         )
         if (!started) {
-            const operation = PurchaseOperationSchema.parse(
-                await ctx.run(
-                    'read terminal purchase',
-                    async () => ensure(await this.records.findIdempotencyOperation(input)),
-                    RETRY_UNTIL_RECOVERED
-                )
+            const operationResult = await ctx.run(
+                'read terminal purchase',
+                async () => ensure(await this.records.findIdempotencyOperation(input)),
+                RETRY_UNTIL_RECOVERED
             )
+            const operation = PurchaseOperationSchema.parse(operationResult)
             return this.scheduleEvent(ctx, ensure(operation.response))
         }
         await ctx.run(

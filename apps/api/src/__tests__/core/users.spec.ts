@@ -35,7 +35,10 @@ describe('UsersService', () => {
             await fix.httpClient
                 .post('/users')
                 .body(createDto)
-                .created(UserSchema, { ...omit(createDto, ['password']), id: expect.any(String) })
+                .created({
+                    schema: UserSchema,
+                    expected: { ...omit(createDto, ['password']), id: expect.any(String) }
+                })
         })
 
         it.each([{ name: false }, { password: 1234 }])(
@@ -57,7 +60,7 @@ describe('UsersService', () => {
             await fix.httpClient
                 .post('/users')
                 .body(createDto)
-                .conflict(Errors.Users.EmailAlreadyExists(createDto.email))
+                .conflict({ expected: Errors.Users.EmailAlreadyExists(createDto.email) })
         })
 
         it(
@@ -96,7 +99,7 @@ describe('UsersService', () => {
             await fix.httpClient
                 .post('/users')
                 .body({})
-                .badRequest(Errors.RequestValidation.Failed(expect.any(Array)))
+                .badRequest({ expected: Errors.RequestValidation.Failed(expect.any(Array)) })
         })
 
         it('중복 키가 아닌 저장 오류는 ConflictException으로 바꾸지 않고 그대로 던진다', async () => {
@@ -116,14 +119,17 @@ describe('UsersService', () => {
         it('ID에 해당하는 고객을 반환한다', async () => {
             const user = await createUser(fix)
 
-            await fix.httpClient.get(`/users/${user.id}`).headers(adminAuth).ok(UserSchema, user)
+            await fix.httpClient
+                .get(`/users/${user.id}`)
+                .headers(adminAuth)
+                .ok({ schema: UserSchema, expected: user })
         })
 
         it('ID에 해당하는 고객이 없으면 404를 반환한다', async () => {
             await fix.httpClient
                 .get(`/users/${nullObjectId}`)
                 .headers(adminAuth)
-                .notFound(Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]))
+                .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]) })
         })
     })
 
@@ -141,7 +147,7 @@ describe('UsersService', () => {
                 .patch(`/users/${user.id}`)
                 .headers(adminAuth)
                 .body(updateDto)
-                .ok(UserSchema, { ...user, ...updateDto })
+                .ok({ schema: UserSchema, expected: { ...user, ...updateDto } })
         })
 
         it('필수 필드를 null로 바꾸는 요청은 400을 반환한다', async () => {
@@ -158,12 +164,12 @@ describe('UsersService', () => {
                 .patch(`/users/${user.id}`)
                 .headers(adminAuth)
                 .body(updateDto)
-                .ok(UserSchema)
+                .ok({ schema: UserSchema })
 
             await fix.httpClient
                 .get(`/users/${user.id}`)
                 .headers(adminAuth)
-                .ok(UserSchema, { ...user, ...updateDto })
+                .ok({ schema: UserSchema, expected: { ...user, ...updateDto } })
         })
 
         it('ID에 해당하는 고객이 없으면 404를 반환한다', async () => {
@@ -171,7 +177,7 @@ describe('UsersService', () => {
                 .patch(`/users/${nullObjectId}`)
                 .headers(adminAuth)
                 .body({})
-                .notFound(Errors.Mongo.DocumentNotFound(nullObjectId))
+                .notFound({ expected: Errors.Mongo.DocumentNotFound(nullObjectId) })
         })
 
         describe('password를 변경하면', () => {
@@ -187,21 +193,26 @@ describe('UsersService', () => {
                     .patch(`/users/${user.id}`)
                     .headers(adminAuth)
                     .body({ password: newPassword })
-                    .ok(UserSchema)
+                    .ok({ schema: UserSchema })
             })
 
             it('새 password로 로그인할 수 있다', async () => {
                 await fix.httpClient
                     .post('/users/login')
                     .body({ email: user.email, password: newPassword })
-                    .ok({ accessToken: expect.any(String), refreshToken: expect.any(String) })
+                    .ok({
+                        expected: {
+                            accessToken: expect.any(String),
+                            refreshToken: expect.any(String)
+                        }
+                    })
             })
 
             it('기존 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
                 await fix.httpClient
                     .post('/users/refresh')
                     .body({ refreshToken })
-                    .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
+                    .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
             })
         })
 
@@ -214,7 +225,7 @@ describe('UsersService', () => {
                 .patch(`/users/${target.id}`)
                 .headers(adminAuth)
                 .body({ email: existingEmail })
-                .conflict(Errors.Users.EmailAlreadyExists(existingEmail))
+                .conflict({ expected: Errors.Users.EmailAlreadyExists(existingEmail) })
         })
     })
 
@@ -233,7 +244,7 @@ describe('UsersService', () => {
             await fix.httpClient
                 .get(`/users/${user.id}`)
                 .headers(adminAuth)
-                .notFound(Errors.Mongo.MultipleDocumentsNotFound([user.id]))
+                .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([user.id]) })
         })
 
         it('고객이 없어도 204를 반환한다', async () => {
@@ -249,7 +260,7 @@ describe('UsersService', () => {
             await fix.httpClient
                 .post('/users')
                 .body(buildCreateUserDto({ email }))
-                .created(UserSchema)
+                .created({ schema: UserSchema })
         })
 
         it('삭제된 고객의 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
@@ -260,7 +271,7 @@ describe('UsersService', () => {
             await fix.httpClient
                 .post('/users/refresh')
                 .body({ refreshToken })
-                .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
         })
 
         it('회수할 세션이 없으면 계정 존재 여부와 무관하게 완료한다', async () => {
@@ -283,7 +294,7 @@ describe('UsersService', () => {
             await fix.httpClient
                 .get(`/users/${target.id}`)
                 .headers(userAuth)
-                .unauthorized(Errors.Auth.Unauthorized())
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
         })
 
         it('user 토큰으로 PATCH /users/:id에 접근하면 401을 반환한다', async () => {
@@ -291,25 +302,27 @@ describe('UsersService', () => {
                 .patch(`/users/${target.id}`)
                 .headers(userAuth)
                 .body({ name: 'hacked' })
-                .unauthorized(Errors.Auth.Unauthorized())
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
         })
 
         it('user 토큰으로 DELETE /users/:id에 접근하면 401을 반환한다', async () => {
             await fix.httpClient
                 .delete(`/users/${target.id}`)
                 .headers(userAuth)
-                .unauthorized(Errors.Auth.Unauthorized())
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
         })
 
         it('user 토큰으로 GET /users 목록에 접근하면 401을 반환한다', async () => {
             await fix.httpClient
                 .get('/users')
                 .headers(userAuth)
-                .unauthorized(Errors.Auth.Unauthorized())
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
         })
 
         it('Authorization 헤더가 없으면 401을 반환한다', async () => {
-            await fix.httpClient.get(`/users/${target.id}`).unauthorized(Errors.Auth.Unauthorized())
+            await fix.httpClient
+                .get(`/users/${target.id}`)
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
         })
     })
 
@@ -345,7 +358,7 @@ describe('UsersService', () => {
             await fix.httpClient
                 .get('/users')
                 .headers(adminAuth)
-                .ok(paginationResultSchema(UserSchema), expected)
+                .ok({ schema: paginationResultSchema(UserSchema), expected })
         })
 
         it('name 부분 일치로 필터링한다', async () => {
@@ -353,7 +366,10 @@ describe('UsersService', () => {
                 .get('/users')
                 .headers(adminAuth)
                 .query({ name: 'user-a' })
-                .ok(paginationResultSchema(UserSchema), buildExpectedPage([userA1, userA2]))
+                .ok({
+                    schema: paginationResultSchema(UserSchema),
+                    expected: buildExpectedPage([userA1, userA2])
+                })
         })
 
         it('name 검색은 대소문자를 무시한 부분 문자열로 일치시킨다', async () => {
@@ -363,7 +379,10 @@ describe('UsersService', () => {
                 .get('/users')
                 .headers(adminAuth)
                 .query({ name: 'SER-A' })
-                .ok(paginationResultSchema(UserSchema), buildExpectedPage([userA1, userA2]))
+                .ok({
+                    schema: paginationResultSchema(UserSchema),
+                    expected: buildExpectedPage([userA1, userA2])
+                })
         })
 
         it('email 부분 일치로 필터링한다', async () => {
@@ -371,7 +390,10 @@ describe('UsersService', () => {
                 .get('/users')
                 .headers(adminAuth)
                 .query({ email: 'user-b' })
-                .ok(paginationResultSchema(UserSchema), buildExpectedPage([userB1, userB2]))
+                .ok({
+                    schema: paginationResultSchema(UserSchema),
+                    expected: buildExpectedPage([userB1, userB2])
+                })
         })
 
         it('알 수 없는 쿼리 파라미터는 400을 반환한다', async () => {
@@ -379,7 +401,7 @@ describe('UsersService', () => {
                 .get('/users')
                 .headers(adminAuth)
                 .query({ wrong: 'value' })
-                .badRequest(Errors.RequestValidation.Failed(expect.any(Array)))
+                .badRequest({ expected: Errors.RequestValidation.Failed(expect.any(Array)) })
         })
     })
 })
