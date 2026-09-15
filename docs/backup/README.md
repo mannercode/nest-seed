@@ -10,4 +10,6 @@
 
 [런타임 복잡성 검토 원문](reviews/runtime-complexity-review.md)은 커밋 `39260cec`의 `docs/review/runtime-complexity-review.md`다. 반영 전 진단과 선택지를 보존하며, 남은 검토는 [JSON·DTO 자동 변환](../review/runtime-complexity-review.md)에 있다.
 
+더 이전에 `_todo/`에서 삭제된 검토 문서 6개도 `reviews/`에 복구했다. [할 일 목록](../../_todo/README.md#더-이전에-삭제된-기록)에서 각 원문과 복구 출처를 확인할 수 있다.
+
 원문 안의 링크와 옛 설명도 그대로 보관한다. 내용 수정은 이 보관본이 아닌 현재 문서에서 한다.
