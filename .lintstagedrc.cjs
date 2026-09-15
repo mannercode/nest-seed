@@ -4,5 +4,5 @@ module.exports = {
     '*.sh': 'shellcheck --severity=warning -x',
     '.husky/*': 'shellcheck --severity=warning -x',
     'apps/api/api-docs/*.{fixture,spec}': () =>
-        'shellcheck --severity=warning -x apps/api/api-docs/*.spec'
+        'bash -c "shellcheck --severity=warning -x apps/api/api-docs/*.spec"'
 }
