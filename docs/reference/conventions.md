@@ -8,7 +8,7 @@ Core Service는 관리하는 도메인 이름을 쓴다(`UsersService`, `MoviesS
 
 서비스나 저장소를 호출해 필요한 데이터를 구하고 작업하는 역할에는 `Service`를 붙인다. 전달받은 데이터로만 계산하는 클래스는 `Validator`, `Recommender`처럼 역할로 이름 짓는다. `RecommendationService`가 데이터를 모으고 `MovieRecommender`가 추천을 계산하는 구분이다.
 
-**함수명에 전달인자나 조회 조건을 나열하지 않는다.** 조건은 객체 인자로 전달해, 조건이 달라져도 같은 동작의 이름을 유지한다.
+**함수명은 동작과 계약을 명확히 드러낸다.** 단순 조회는 조건을 객체 인자로 받는다. 업무 목적·반환 데이터·특수 조회 대상을 구분할 필요가 있으면 `findForAuthentication`, `findByPurchaseRecordId`처럼 이름에 드러낸다.
 
 ```ts
 // 조회 API의 이름을 설계하는 예시
@@ -17,9 +17,9 @@ find({ email })
 findTheaters({ movieId })
 ```
 
-이는 `findById`, `findTheatersForMovie`처럼 조건별 메서드를 늘리지 않기 위한 규칙이다. 일반 유틸의 모든 단일 인자까지 객체로 감싸지는 않는다.
+일반 유틸의 모든 단일 인자까지 객체로 감싸지는 않는다.
 
-단, 이름을 통일하기 위해 입력 종류를 판별하는 분기나 배타적 인자 타입을 추가하면서까지 함수를 합치지 않는다. 이 경우 `existsByMovieIds`, `existsByTheaterIds`처럼 조건별 함수를 유지하고 조회 조건을 이름에 드러내도 된다.
+이름을 통일하기 위해 입력 종류를 판별하는 분기나 배타적 인자 타입을 추가하면서까지 함수를 합치지 않는다. 이 경우 `existsByMovieIds`, `existsByTheaterIds`처럼 조건별 함수를 유지한다.
 
 서비스의 공개 메서드는 같은 이름이 같은 계약을 뜻하도록 맞춘다.
 

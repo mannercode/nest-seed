@@ -96,7 +96,7 @@ export class PaymentsRepository extends CrudRepository<Payment> {
         return payments
     }
 
-    async findPayment({ purchaseRecordId }: { purchaseRecordId: string }) {
+    async findByPurchaseRecordId({ purchaseRecordId }: { purchaseRecordId: string }) {
         const payment = await this.findDocument(this.activeFilter({ purchaseRecordId }))
         return payment
     }

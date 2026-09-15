@@ -67,7 +67,7 @@ export class ShowtimeCreationSubmissionRepository extends CrudRepository<Showtim
         // 고유 키 충돌은 같은 principal+key 행이 이미 존재한다는 뜻이다. 행이 없다면
         // 성공으로 추정하지 않고 저장소 불변식 위반으로 처리한다.
         const existing = ensure(
-            await this.findSubmission({ principalId, idempotencyKey }),
+            await this.findByIdempotencyKey({ principalId, idempotencyKey }),
             'Idempotency submission disappeared after a duplicate-key conflict.'
         )
         if (existing.inputHash !== inputHash) return { kind: 'key-reused' }
@@ -117,7 +117,7 @@ export class ShowtimeCreationSubmissionRepository extends CrudRepository<Showtim
         )
     }
 
-    async findSubmission({
+    async findByIdempotencyKey({
         principalId,
         idempotencyKey
     }: {

@@ -147,7 +147,9 @@ export class PurchaseService {
                 // 빨랐을 수 있다. payment 행의 durable resolution marker를 남긴 채 여기서도
                 // 취소를 시도하고, 실패하면 주기 작업이 terminal 구매 상태와 다시 대조한다.
                 try {
-                    await this.paymentsService.compensate({ purchaseRecordId: purchaseRecord.id })
+                    await this.paymentsService.cancelByPurchaseRecordId({
+                        purchaseRecordId: purchaseRecord.id
+                    })
                 } catch (cancellationError) {
                     this.logger.error('late payment cancellation deferred to durable resolution', {
                         error: cancellationError,
@@ -368,7 +370,10 @@ export class PurchaseService {
                 ],
                 [
                     'cancelPayment',
-                    () => this.paymentsService.compensate({ purchaseRecordId: purchaseRecord.id })
+                    () =>
+                        this.paymentsService.cancelByPurchaseRecordId({
+                            purchaseRecordId: purchaseRecord.id
+                        })
                 ]
             ]
 

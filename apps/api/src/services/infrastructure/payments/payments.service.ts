@@ -12,8 +12,8 @@ export class PaymentsService {
         await this.repository.cancel(paymentId)
     }
 
-    async compensate({ purchaseRecordId }: { purchaseRecordId: string }) {
-        const payment = await this.repository.findPayment({ purchaseRecordId })
+    async cancelByPurchaseRecordId({ purchaseRecordId }: { purchaseRecordId: string }) {
+        const payment = await this.repository.findByPurchaseRecordId({ purchaseRecordId })
         if (!payment) return
 
         await this.cancel(payment.id)

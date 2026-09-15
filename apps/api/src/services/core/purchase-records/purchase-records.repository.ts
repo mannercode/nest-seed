@@ -90,7 +90,7 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         }
     }
 
-    async findIdempotencyOperation({
+    async findByIdempotencyKey({
         userId,
         idempotencyKey
     }: {

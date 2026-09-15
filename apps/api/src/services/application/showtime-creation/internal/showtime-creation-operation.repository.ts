@@ -40,7 +40,7 @@ export class ShowtimeCreationOperationRepository extends CrudRepository<Showtime
         await this.insertOne(operation, transaction, signal)
     }
 
-    async findOperation({
+    async findBySagaId({
         sagaId,
         transaction,
         signal

@@ -35,7 +35,7 @@ export class PurchaseRecordsService {
         userId: string
         idempotencyKey: string
     }) {
-        const record = await this.repository.findIdempotencyOperation({ userId, idempotencyKey })
+        const record = await this.repository.findByIdempotencyKey({ userId, idempotencyKey })
         if (!record) return undefined
 
         return {

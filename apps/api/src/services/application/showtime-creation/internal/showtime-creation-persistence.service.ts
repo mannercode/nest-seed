@@ -34,7 +34,7 @@ export class ShowtimeCreationPersistenceService {
         const inputHash = fingerprintShowtimeCreation(createDto)
 
         return this.operations.runTransaction(async (transaction) => {
-            const completed = await this.operations.findOperation({ sagaId, transaction, signal })
+            const completed = await this.operations.findBySagaId({ sagaId, transaction, signal })
             if (completed) {
                 this.assertSameInput(sagaId, inputHash, completed.inputHash)
                 return completed.result

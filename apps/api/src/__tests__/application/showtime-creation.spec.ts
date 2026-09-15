@@ -418,7 +418,7 @@ describe('ShowtimeCreationService', () => {
             if (initial.kind !== 'acquired') throw new Error('initial claim was not acquired')
             await submissions.release(principalId, idempotencyKey, initial.claimId)
 
-            const findSubmission = submissions.findSubmission.bind(submissions)
+            const findByIdempotencyKey = submissions.findByIdempotencyKey.bind(submissions)
             let staleReadCount = 0
             let bothRead!: () => void
             const didBothRead = new Promise<void>((resolve) => {
@@ -428,8 +428,8 @@ describe('ShowtimeCreationService', () => {
             const mayContinueClaims = new Promise<void>((resolve) => {
                 continueClaims = resolve
             })
-            vi.spyOn(submissions, 'findSubmission').mockImplementation(async (...args) => {
-                const stale = await findSubmission(...args)
+            vi.spyOn(submissions, 'findByIdempotencyKey').mockImplementation(async (...args) => {
+                const stale = await findByIdempotencyKey(...args)
                 staleReadCount += 1
                 if (staleReadCount === 2) bothRead()
                 await mayContinueClaims

@@ -1278,7 +1278,7 @@ describe('PurchaseService', () => {
             purchaseRecordId: purchaseRecord.id,
             userId: user.id
         })
-        const cancel = vi.spyOn(paymentsService, 'compensate')
+        const cancel = vi.spyOn(paymentsService, 'cancelByPurchaseRecordId')
         const future = DateUtil.add({ milliseconds: 1000 })
 
         expect(await paymentsService.findResolutionCandidates({ before: future })).toEqual([
@@ -1312,7 +1312,7 @@ describe('PurchaseService', () => {
             purchaseRecordId: purchaseRecord.id,
             userId: user.id
         })
-        const cancel = vi.spyOn(paymentsService, 'compensate')
+        const cancel = vi.spyOn(paymentsService, 'cancelByPurchaseRecordId')
         const future = DateUtil.add({ milliseconds: 1000 })
 
         await purchaseService.reconcileUnresolvedPayments(future)
