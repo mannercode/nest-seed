@@ -14,7 +14,7 @@ API의 앱 context 종료와 파일이 공유하는 MongoClient 종료도 다른
 
 `free-port`는 개발 서버가 사용할 포트를 정리하고, `tunnel`은 console·user-app을 Quick Tunnel로 공개한다. 두 명령은 앱이 실행 중에 호출하는 기능이 아니라 개발자의 실행 도구다.
 
-현재 `pnpm exec tunnel`은 두 frontend의 개발 포트를 공개한다. BFF가 API로 요청을 전달하므로 frontend 화면만 공개된다고 생각해서는 안 된다. 최종 권한 검사는 API guard가 담당한다. 별도의 공개 동의 플래그나 direct API tunnel 기능은 현재 명령에 없다. 사용 후 프로세스를 끝내면 함께 시작한 tunnel도 정리된다.
+현재 `pnpm exec tunnel`은 두 frontend의 개발 포트를 공개한다. BFF가 API로 요청을 전달하므로 frontend 화면만 공개된다고 생각해서는 안 된다. 최종 권한 검사는 API guard가 담당한다. 사용 후 프로세스를 끝내면 함께 시작한 tunnel도 정리된다.
 
 독립 스크립트와 실행 도구는 `common` 빌드에 의존시키지 않는다. Node·SDK를 직접 쓰는 것이 허용되는 이 범위를 `apps/api/src`의 런타임 연동 규칙과 혼동하지 않는다.
 

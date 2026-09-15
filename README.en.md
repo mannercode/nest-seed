@@ -10,14 +10,9 @@ _This is a translation of [README.md](README.md). The Korean original is authori
 
 A NestJS monorepo used as the starting point for production projects. Follow a familiar movie-booking flow to read and run examples of module boundaries, contention across replicas, duplicate requests, partial failure, and recovery. `apps/api` is the main application; `console` and `user-app` are minimal Next.js integration demos.
 
-The seed connects examples, design decisions, and verification through one coherent flow:
-
-- **Connected examples in one domain** — movie and theater CRUD leads into seat holds, purchases, and showtime creation, introducing concurrency, idempotency, and recovery step by step. Domain features illustrate design patterns that can be reused in other projects.
-- **Module boundaries applied where needed** — SoLA (Service-oriented Layered Architecture) is a design convention that restricts dependencies between modules to lower layers and composes peer modules in a higher layer to prevent cycles. Each domain owns its collection and collaborates through IDs and public APIs. Gateway calls Core directly for CRUD that needs only one Core, avoiding an unnecessary Application service.
-- **Distributed execution within a monolith** — multiple replicas of the same API handle seat contention, duplicate requests, and events across replicas. This exposes the distributed design concerns that arise even within a single application.
-- **Guarantees and recovery suited to the problem** — Redis locks reduce contention cost, while atomic DB transitions, CAS, and transactions preserve consistency. Purchases use a state machine and lease reconciliation; showtime creation uses a Restate workflow. The examples show how recovery approaches fit different problems.
-- **A development environment for verifying changes** — the Dev Container uses real infrastructure, including MongoDB Replica Set and Redis Cluster. Integration tests, race tests across replicas, and repeated CI runs verify changes. The 100% coverage gate makes unexecuted branches visible when they are introduced.
-- **Documentation that supports execution and decisions** — executable API scenarios show actual request and response flows, while design decisions explain choices, alternatives, and limitations. Together they help you decide what to retain or change for your own project.
+- **Module boundaries** — SoLA (Service-oriented Layered Architecture) composes peer modules in a higher layer to prevent cycles. Gateway calls Core directly for CRUD within one domain.
+- **Distributed execution and recovery** — multiple replicas of the same API handle seat contention and duplicate requests. Compare the purchase state machine and lease reconciliation with the Restate workflow for showtime creation.
+- **Verification against real infrastructure** — integration tests, race tests across replicas, and executable API docs use the Dev Container's real infrastructure. The 100% coverage gate exposes unexecuted branches.
 
 ```mermaid
 flowchart TB
@@ -43,13 +38,16 @@ See [apps](docs/apps.md) for layers and distributed boundaries and [design decis
 
 ## 1. Getting started
 
-The Dev Container is the only supported development path. You need Docker and the VS Code Dev Containers extension.
+The Dev Container is the only supported development path. Open the repository on a Docker host through VS Code Remote SSH, then use the Dev Containers extension. The workspace must have the same absolute path on the host and inside the container ([development environment](docs/devcontainer.md#2-docker-outside-of-docker의-경로-계약)).
+
+Starting the Dev Container resets the development infrastructure data. Run the commands below in the container terminal.
 
 1. Open the repository in VS Code and run `Reopen in Container`. The first boot may take a while while images and development infrastructure are prepared.
-2. Run `pnpm run test`. Use `pnpm run atoz` after forking or when you need to verify every boundary.
+2. Run `pnpm run test` for the basic checks. Use `pnpm run atoz` for the full regression, including an infrastructure reset.
 3. Run `pnpm run dev`, then check the API with `curl http://localhost:3000/health`.
-4. Sign in to the console (3100) with the development admin (`admin@nest-seed.local` / `DevPass1!`) and create movies and theaters. The Dev Container recreates this account whenever it resets the infrastructure.
-5. Use the user app (3200) to explore sign-up, login, and the composed home view. The executable API docs run showtime, booking, and purchase APIs through an independent fixture flow.
+4. Forward `3100` and `3200` in the VS Code **Ports** panel and open the displayed addresses in your browser. Automatic port forwarding is disabled.
+5. Sign in to the console (3100) with the development admin (`admin@nest-seed.local` / `DevPass1!`) and create movies and theaters. Infrastructure resets recreate this account.
+6. Use the user app (3200) to explore sign-up, login, and the composed home view. The executable API docs run showtime, booking, and purchase APIs through an independent fixture flow.
 
 `.env.api` and `.env.infra` contain committed development and verification values. Review project identifiers and credentials when forking, and inject production secrets outside the repository. See [Environment variables](docs/reference/environment.md).
 
@@ -60,12 +58,12 @@ The Dev Container is the only supported development path. You need Docker and th
 | `pnpm run dev`        | Run the API and both frontends in watch mode                    |
 | `pnpm run test`       | Run workspace unit, integration, and contract tests             |
 | `pnpm run lint`       | Check types, code, formatting, shell, and documentation links   |
-| `pnpm run atoz`       | Run the full regression after forking or before deployment      |
+| `pnpm run atoz`       | Reset development infrastructure, then run the full regression  |
 | `bash infra/reset.sh` | Recreate development infrastructure and the fixed admin fixture |
 | `pnpm run api-docs`   | Check API docs across replicas                                  |
 | `pnpm exec tunnel`    | Run Quick Tunnels for the console and user app                  |
 
-`infra/reset.sh` deletes the volumes and then recreates the fixed admin fixture. It also deletes the Restate journal and JetStream data, so it must not be used where executions need to survive. Test-specific commands and output locations are in [tests/README.md](tests/README.md).
+`infra/reset.sh` deletes the volumes and then recreates the fixed admin fixture. Dev Container startup and the root `atoz` preparation step also run it. It deletes DB and S3 data, the Restate journal, and pending JetStream events, so it must not be used where data or executions need to survive. Test-specific commands and output locations are in [tests/README.md](tests/README.md).
 
 ## 3. API reference
 
@@ -124,17 +122,17 @@ Start with the simple CRUD in `core/theaters`, then read the Core composition in
 | `application/purchase`                | Idempotent responses, durable state machine, lease reconciliation, outbox |
 | `application/recommendation`          | Watch-history recommendations and pure domain logic                       |
 | `view/user-app/home`                  | Screen-specific read-model composition                                    |
-| `infrastructure/assets`, `payments`   | S3 and external-payment boundaries                                        |
+| `infrastructure/assets`, `payments`   | S3 integration and payment creation/cancellation boundaries               |
+
+Payments are an example implementation that records payment state in MongoDB without calling an external payment provider. It verifies purchase idempotency and compensation flows; real provider communication is not included.
 
 ## 7. Authorization
 
-There are two application roles. **admin** manages content and operations targeting arbitrary users, while **user** can access only its own resources. The initial admin is provisioned through an operational command rather than HTTP. Admin and user tokens use different signing secrets.
-
-Self-owned resources use `/me` paths whose identity is fixed to the token subject. Any path accepting an arbitrary user ID is admin-only. Together these rules remove IDOR paths where a user could substitute someone else's ID.
+**admin** manages content and operations targeting arbitrary users, while **user** operates on its own resources. See the [authorization rules](docs/apps.md#335-본인-자원은-me로-다룬다) for token and `/me` boundaries.
 
 ## 8. Production scope
 
-`tests/api/compose.yml` exercises distributed behavior; it is not a production deployment. It does not provide TLS, secret management, backup/restore, an observability backend, a frontend edge, or zero-downtime revision rollout. Restate endpoint versioning and the BFF proxy-IP trust boundary require deployment-specific design. See [tests](docs/tests.md) for the relevant hazards and guarantee limits.
+`tests/api/compose.yml` exercises distributed behavior; it is not a production deployment. It does not provide TLS, secret management, backup/restore, an observability backend, a frontend edge, or zero-downtime revision rollout. Before production use, review the [BFF IP trust boundary](docs/apps.md#61-bff와-클라이언트-ip-경계) and [Restate revision transition requirements](docs/reference/decisions.md#endpoint와-revision-전환).
 
 ## 9. Documentation
 
@@ -144,7 +142,7 @@ Each `docs/*.md` guide corresponds to a repository directory and explains its re
 
 - [apps](docs/apps.md) — SoLA layers, distributed guarantees, API and test conventions
 - [libs](docs/libs.md) — boundary between runtime shared code and test helpers
-- [tests](docs/tests.md) — API test stack, external verification, and production limits
+- [tests](docs/tests.md) — API test stack, scope and limits of external verification
 - [infra](docs/infra.md) — development topology and the destructive reset boundary
 - [tools](docs/tools.md) — test bootstrap, development commands, and container tools
 - [devcontainer](docs/devcontainer.md) — the single development path, DooD constraints, and security

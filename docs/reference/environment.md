@@ -60,7 +60,7 @@ Compose의 `${...}`는 YAML을 해석할 때의 보간이고, 서비스의 `env_
 
 API 테스트의 `PROJECT_ID`는 Redis key, NATS subject와 workflow 이름의 격리에도 사용된다. Nest 데코레이터에서 최초 값을 캡처하지 않고 제공자를 만들 때 같은 설정에서 파생해야 한다. DB·bucket은 worker 범위이며 같은 API Vitest 명령의 동시 실행은 지원하지 않는다([apps의 자원 수명](../apps.md#41-테스트-자원은-소유자가-드러나야-한다)).
 
-개발 endpoint는 Dev Container 주소를, 다중 복제본 검증은 NGINX 주소를 Restate에 등록한다. `PROJECT_ID`나 endpoint 관련 값을 바꾸면 앱과 등록 스크립트가 같은 새 환경을 사용해야 한다. 등록·revision 전환의 의미는 [tests](../tests.md#6-restate-endpoint-등록과-운영-전환)를 본다.
+개발 endpoint는 Dev Container 주소를, 다중 복제본 검증은 NGINX 주소를 Restate에 등록한다. `PROJECT_ID`나 endpoint 관련 값을 바꾸면 앱과 등록 스크립트가 같은 새 환경을 사용해야 한다. 검증 스택의 등록은 [tests](../tests.md#5-restate-endpoint-등록), 운영 revision 전환은 [설계 결정](decisions.md#endpoint와-revision-전환)을 따른다.
 
 ## 4. 같이 바꿔야 하는 주소와 포트
 

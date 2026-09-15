@@ -100,7 +100,17 @@ Restate로 옮기면 실행 기록과 애플리케이션 코드를 가깝게 두
 
 - Journal은 완료된 step 결과를 재사용하지만 외부 효과 성공과 journal 기록 사이의 장애까지 원자적으로 묶지는 않는다. `ctx.run` 함수는 다시 호출될 수 있으므로 MongoDB operation unique key나 외부 provider idempotency key가 여전히 필요하다.
 - 상태 이벤트 step도 재시도되므로 같은 이벤트가 중복될 수 있다. Core NATS는 저장·redelivery를 제공하지 않아 SSE 연결 전 이벤트를 복구하지 않는다. 종결 상태는 보존 기간 안에 Restate workflow 출력으로 다시 읽고, MongoDB가 업무 결과의 기준이며 SSE는 진행 알림이다.
-- 모든 API 복제본이 HTTP/2 endpoint(:9080)를 열고 Admin API에 배포 URI를 등록해야 한다. 운영에서는 revision별 endpoint와 이전 invocation drain을 설계해야 하며 검증 스택의 고정 NGINX URI만으로 무중단 versioning이 완성되지 않는다.
+- 모든 API 복제본이 HTTP/2 endpoint(:9080)를 열고 Admin API에 배포 URI를 등록해야 한다.
+
+### Endpoint와 revision 전환
+
+운영은 revision별 endpoint를 등록하고, 이전 revision의 invocation이 끝날 때까지 해당 revision을 유지한 뒤 제거해야 한다. 진행 중인 작업이 재개할 코드를 배포 도중 잃지 않기 위한 조건이다. 개발용 `force: true` 재등록과 검증용 고정 NGINX URI를 무중단 배포 절차로 복사하지 않는다.
+
+```text
+v1 실행 유지 → v2 endpoint 등록 → 새 invocation 전환 → v1 drain 확인 → v1 제거
+```
+
+검증 스택의 고정 URI·`force: false` 등록과 개발 인프라 초기화의 관계는 [tests 문서](../tests.md#5-restate-endpoint-등록)를 본다.
 
 ### 검토했던 대안
 
@@ -205,7 +215,7 @@ Dev Container와 앱의 Node는 네이티브 Temporal을 사용하는 런타임�
 
 ### 결정
 
-활성화된 API 콘솔 로그는 환경별 포맷 분기 없이 ECS JSON 한 줄을 stdout/stderr로 내보낸다. Vitest는 콘솔 로그를 끄고 tree 결과만 보여 준다. NGINX access log도 JSON 한 줄이다. 애플리케이션 컨테이너 안에는 별도 로그 파일을 만들지 않는다.
+활성화된 API 콘솔 로그는 환경별 포맷 분기 없이 ECS JSON 한 줄을 stdout/stderr로 내보낸다. Vitest는 콘솔 로그를 끄고 tree 결과만 보여 준다. NGINX access log도 JSON 한 줄이다. 요청·응답 본문과 query는 런타임 요청 로그에 기록하지 않는다. 애플리케이션 컨테이너 안에는 별도 로그 파일을 만들지 않는다.
 
 API 검증 스택의 Docker `json-file`은 제한된 로컬 버퍼로 회전한다. 정확한 크기는 해당 Compose가 소유한다. 장기 저장·검색 backend와 수집기는 배포 환경마다 다르므로 시드에 포함하지 않는다.
 

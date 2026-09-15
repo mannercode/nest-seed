@@ -66,6 +66,10 @@ Node 타입은 Dev Container 런타임에 맞춘다. TypeScript는 이 workspace
 
 검증 대상은 console 로그인·영화 관리와 user-app 가입·로그인·세션 회전이다. 상영 생성·구매 UI가 있다고 가정하지 않는다. 브라우저 실패의 trace·screenshot·HTML 결과는 `tests/web/_output/`에서 확인한다.
 
+web Compose는 `BFF_TRUST_PROXY_HEADERS=true`로 시작하고 테스트가 edge의 헤더를 모사한다. 내부 HTTP로 실행하므로 `BFF_COOKIE_SECURE=false`도 사용한다. 이 cookie 설정은 테스트 환경에 한정하며 운영 기본값으로 복사하지 않는다. BFF의 동작 계약은 [apps 문서](apps.md#61-bff와-클라이언트-ip-경계)를 따른다.
+
+이 검증은 BFF·API의 연결을 확인할 뿐 실제 public edge가 외부 헤더를 올바르게 덮어쓰는지까지 증명하지 않는다. API 내부의 인증 테스트 역시 실제 배포망의 접근 제한을 검증하는 것은 아니다.
+
 ## 4. api/benchmark — 같은 조건의 회귀 비교
 
 benchmark는 절대 성능 인증이 아니라 **같은 머신·이미지·데이터 조건의 이전 결과와 비교**하는 도구다. k6를 [tools의 Compose](tools.md#3-compose로-실행하는-도구)로 실행하고, 극장 조회·생성의 단독 부하와 혼합 부하를 비교한다. 같은 조건에서 gzip의 영향도 비교할 수 있다.
@@ -74,24 +78,7 @@ benchmark는 절대 성능 인증이 아니라 **같은 머신·이미지·데�
 
 fixture는 개발 MongoDB에 남는다. 측정 결과는 실행 시각별 JSON과 HTML로 남기며, 초기화와 결과 경로는 [실행 안내](../tests/README.md#2-결과)를 따른다. 테스트 스택이 닫혔다고 fixture까지 삭제됐다고 가정하지 않는다.
 
-## 5. 프런트엔드 BFF와 클라이언트 IP 경계
-
-API 테스트 스택에는 frontend edge가 없다. console·user-app을 운영에 배포할 때는 두 Next.js origin을 신뢰할 수 있는 edge 뒤에 두고 브라우저의 직접 접근을 막아야 한다. edge는 외부 proxy IP 헤더를 그대로 신뢰하지 않고 실제 연결 주소를 기준으로 체인을 재구성해야 한다.
-
-BFF는 기본적으로 proxy IP 헤더를 무시한다. 위 경계가 있는 배포에서만 `BFF_TRUST_PROXY_HEADERS=true`로 opt-in한다. 현재 BFF는 `X-Forwarded-For`의 오른쪽 끝 IP를 선택하므로 edge가 실제 연결 주소를 그 위치에 넣어야 한다. 이 헤더가 없을 때 쓰는 `X-Real-IP`도 edge가 덮어써야 한다. 끝값이 잘못됐다고 앞쪽 값을 신뢰하지 않는다.
-
-API도 BFF/NGINX에서만 접근할 수 있는 사설 경계에 둔다. 이 조건 없이 opt-in하면 위조 IP가 rate limit을 우회할 수 있다. 기본값에서는 API가 BFF 주소를 보므로 여러 사용자가 로그인 IP 버킷 하나를 공유할 수 있다.
-
-```text
-인터넷 → 신뢰 edge(IP 헤더 재구성) → BFF → 사설 API
-인터넷 ───────────────────────────╳→ origin 직접 접근
-```
-
-상태 변경 요청의 same-origin 판정은 브라우저의 `Origin`과 `Host`를 기준으로 한다. production cookie는 기본적으로 `Secure`다. 내부 HTTP로 실행하는 web 테스트의 `BFF_COOKIE_SECURE=false`는 그 환경에 한정하며 운영 기본값으로 복사하지 않는다.
-
-web Compose는 proxy 신뢰를 켜고 테스트가 edge의 헤더를 모사한다. 이 검증은 BFF·API의 연결을 확인할 뿐 실제 public edge가 외부 헤더를 올바르게 덮어쓰는지까지 증명하지 않는다. API 내부의 인증 테스트 역시 실제 배포망의 접근 제한을 검증하는 것은 아니다.
-
-## 6. Restate endpoint 등록과 운영 전환
+## 5. Restate endpoint 등록
 
 각 API 복제본은 일반 HTTP와 별도로 Restate HTTP/2 endpoint를 연다. 검증 스택은 개별 복제본 대신 NGINX의 안정적인 `http://nginx:9080`을 등록해 한 복제본이 종료되어도 invocation을 다른 복제본으로 보낸다.
 
@@ -99,19 +86,13 @@ web Compose는 proxy 신뢰를 켜고 테스트가 edge의 헤더를 모사한�
 
 고정 URI를 `force: false`로 등록하므로, 이미 알려진 URI 뒤의 workflow 코드나 manifest를 바꿨다고 새 정의가 발견되는 것은 아니다. 보존할 journal이 없는 개발 환경은 `infra/reset.sh`로 초기화할 수 있지만 이 명령은 실행 기록을 지운다. 단순 컨테이너 재시작과 다르며 운영 배포 방법이 아니다.
 
-운영은 revision별 endpoint를 등록하고, 이전 revision의 invocation이 끝날 때까지 해당 revision을 유지한 뒤 제거해야 한다. 개발용 `force: true` 재등록과 검증용 고정 URI를 무중단 배포 절차로 복사하지 않는다.
+운영의 revision 전환 조건은 [설계 결정](reference/decisions.md#endpoint와-revision-전환)을 따른다.
 
-```text
-v1 실행 유지 → v2 endpoint 등록 → 새 invocation 전환 → v1 drain 확인 → v1 제거
-```
+## 6. 로그와 검증 산출물
 
-## 7. 로그 계약
+API·NGINX의 stdout/stderr와 Compose 로그 회전은 [로그 계약](reference/decisions.md#9-로그-출력-구조화-stdout과-docker-회전)을 따른다. API 문서가 남기는 fixture 응답 로그는 이 런타임 로그와 별개의 검증 산출물이다.
 
-API와 NGINX는 구조화된 한 줄 로그를 stdout/stderr로 내보내고 요청·응답 본문과 query는 기록하지 않는다. 컨테이너 내부에 별도 로그 파일을 만들지 않는다. Compose의 로컬 로그 회전은 호스트 디스크를 위한 제한된 버퍼이며 backup·장기 보존이 아니다.
-
-수집·저장·검색·보존·접근 제어는 실제 배포 환경의 로그 backend가 소유한다. API 문서가 남기는 fixture 응답 로그는 이 런타임 로그와 별개의 검증 산출물이다.
-
-## 8. CI 반복 — test-stability, test-api-race
+## 7. CI 반복 — test-stability, test-api-race
 
 필수 AtoZ는 PR과 main 변경의 전체 회귀를 검증한다. Stability CI는 라이브러리·API·인프라 초기화를, API Race CI는 위 경합 시나리오를 반복해 간헐 실패를 찾는다. 한 번 통과했다고 race와 timing 문제가 없다고 결론 내리지 않는다.
 

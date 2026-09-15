@@ -34,4 +34,4 @@ Dev Container·infra·테스트 스택은 같은 외부 Docker network에서 ser
 
 Restate 서버를 시작하는 것과 실행할 workflow endpoint를 등록하는 것은 별개다. `pnpm run dev`의 등록 스크립트는 개발 API의 HTTP/2 주소를 등록하고, `tests/api` 실행기는 NGINX 뒤의 복제본들을 하나의 endpoint로 등록한다.
 
-API health가 성공했다고 workflow dispatch까지 준비됐다고 판단하지 않는다. 등록 URI·force 옵션·revision 전환의 자세한 경계는 [tests 문서](tests.md#6-restate-endpoint-등록과-운영-전환), env 주입 시점은 [환경 변수](reference/environment.md)가 소유한다.
+API health가 성공했다고 workflow dispatch까지 준비됐다고 판단하지 않는다. 검증 스택의 등록 URI·force 옵션은 [tests 문서](tests.md#5-restate-endpoint-등록), 운영의 revision 전환 조건은 [설계 결정](reference/decisions.md#endpoint와-revision-전환), env 주입 시점은 [환경 변수](reference/environment.md)가 소유한다.

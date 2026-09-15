@@ -96,7 +96,9 @@ View는 읽기 API를 조합하고 표시 순서·개수 같은 화면 정책을
 
 ### 2.3. 구매 상태 머신과 재조정
 
-결제 provider, Redis의 티켓 claim, MongoDB의 티켓·구매 문서는 한 transaction으로 묶을 수 없다. 구매는 외부 효과보다 먼저 durable 기록을 남기고 다음 상태로 수렴한다.
+현재 [PaymentsService](../apps/api/src/services/infrastructure/payments/payments.service.ts)는 외부 PG를 호출하지 않고 MongoDB에 결제 상태를 기록해 생성·취소와 중복 요청을 재현하는 예제다. 실제 PG 통신은 검증 범위에 포함하지 않는다.
+
+결제 생성·취소와 Redis의 티켓 claim은 구매 완료 transaction 밖에서 처리한다. 구매는 이 작업들보다 먼저 durable 기록을 남기고 다음 상태로 수렴한다.
 
 ```text
 pending → completing → completed
@@ -200,6 +202,8 @@ NestJS 공통 예외와 도메인의 `errors.ts`를 사용한다. MongoDB 오류
 
 #### 3.3.5. 본인 자원은 `/me`로 다룬다
 
+admin은 콘텐츠와 임의 사용자 대상 작업을, user는 본인 자원을 다룬다. 최초 admin은 HTTP가 아닌 독립 운영 스크립트로 만들고, 두 역할의 token은 서로 다른 secret으로 서명한다.
+
 사용자 본인의 자원은 URL·본문의 ID가 아니라 인증 token의 subject로 식별한다. 그런 경로는 `/me`로 드러내고, 임의 ID를 받는 경로는 admin에게만 허용한다. 두 규칙을 함께 지켜야 로그인 사용자가 ID를 바꿔 다른 사용자의 자원에 접근하는 IDOR 경로가 사라진다.
 
 이 기준은 사용자·결제처럼 소유 주체가 있는 자원에 적용한다. 공개 영화·극장 조회까지 user 소유 자원으로 취급하지 않는다. `POST /purchases`도 결제자를 본문에서 받지 않고 token subject로 정한다. 같은 controller에 user·admin 핸들러가 섞이면 guard를 핸들러마다 붙인다. 클래스 guard와 메서드 guard는 함께 적용되므로 역할이 다른 guard를 중첩하지 않는다. `/me`는 `/:userId`보다 먼저 선언한다.
@@ -283,4 +287,19 @@ API 배포는 Nest의 Rspack 빌드를 사용한다. [rspack.config.cjs](../apps
 
 console은 admin 로그인과 영화·극장 관리, user-app은 가입·로그인과 홈 View 소비를 보여 준다. 상영 생성·예매·구매 전체 UI는 범위에 없으며, 실행 가능한 API 문서와 통합·race 테스트가 그 흐름을 보여 준다.
 
-두 앱의 BFF는 access·refresh token을 HttpOnly cookie에 보관하고, 만료 시 회전한 뒤 원 요청을 한 번 재시도한다. 응답을 캐시하지 않고 body 크기를 제한한다. catch-all proxy의 일부 auth 경로 차단만으로 권한을 보장하지 않으며, 최종 인가는 API guard가 담당한다. 운영에서 필요한 edge와 proxy IP 신뢰 조건은 [tests 문서](tests.md#5-프런트엔드-bff와-클라이언트-ip-경계)가 설명한다.
+### 6.1. BFF와 클라이언트 IP 경계
+
+두 앱의 BFF는 access·refresh token을 HttpOnly cookie에 보관하고, 만료 시 회전한 뒤 원 요청을 한 번 재시도한다. 응답을 캐시하지 않고 body 크기를 제한한다. catch-all proxy의 일부 auth 경로 차단만으로 권한을 보장하지 않으며, 최종 인가는 API guard가 담당한다.
+
+console·user-app을 운영에 배포할 때는 두 Next.js origin을 신뢰할 수 있는 edge 뒤에 두고 브라우저의 직접 접근을 막아야 한다. edge는 외부 proxy IP 헤더를 그대로 신뢰하지 않고 실제 연결 주소를 기준으로 체인을 재구성해야 한다.
+
+BFF는 기본적으로 proxy IP 헤더를 무시한다. 위 경계가 있는 배포에서만 `BFF_TRUST_PROXY_HEADERS=true`로 opt-in한다. 현재 BFF는 `X-Forwarded-For`의 오른쪽 끝 IP를 선택하므로 edge가 실제 연결 주소를 그 위치에 넣어야 한다. 이 헤더가 없을 때 쓰는 `X-Real-IP`도 edge가 덮어써야 한다. 끝값이 잘못됐다고 앞쪽 값을 신뢰하지 않는다.
+
+API도 BFF/NGINX에서만 접근할 수 있는 사설 경계에 둔다. 이 조건 없이 opt-in하면 위조 IP가 rate limit을 우회할 수 있다. 기본값에서는 API가 BFF 주소를 보므로 여러 사용자가 로그인 IP 버킷 하나를 공유할 수 있다.
+
+```text
+인터넷 → 신뢰 edge(IP 헤더 재구성) → BFF → 사설 API
+인터넷 ───────────────────────────╳→ origin 직접 접근
+```
+
+상태 변경 요청의 same-origin 판정은 브라우저의 `Origin`과 `Host`를 기준으로 한다. production cookie는 기본적으로 `Secure`다. 이 경계를 모사하는 web 테스트의 설정과 검증 한계는 [tests 문서](tests.md#3-web--브라우저-e2e)를 본다.

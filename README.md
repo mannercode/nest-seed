@@ -8,14 +8,9 @@
 
 실무 프로젝트의 출발점으로 사용하는 NestJS 모노레포다. 영화 예매라는 익숙한 흐름을 따라 모듈 경계부터 다중 복제본의 경합, 중복 요청, 부분 실패와 복구까지 읽고 실행할 수 있다. `apps/api`가 본체이고 `console`과 `user-app`은 Next.js 연결을 보여 주는 최소 데모다.
 
-이 시드의 특징은 예제·설계·검증을 하나의 흐름으로 연결한 구성에 있다.
-
-- **하나의 도메인으로 이어지는 예제** — 영화·극장 CRUD에서 좌석 선점, 구매, 상영 생성으로 이어지며 동시성·멱등성·복구를 단계적으로 보여 준다. 도메인 기능은 다른 프로젝트에서도 재사용할 설계 패턴을 설명하는 예제로 구성한다.
-- **필요한 만큼 적용하는 모듈 경계** — SoLA(Service-oriented Layered Architecture)는 모듈 간 참조를 하위 계층으로 제한하고, 같은 계층의 협력을 상위에서 조합해 순환 참조를 예방하는 설계 규약이다. 각 도메인은 자기 collection을 소유하고 ID·공개 API로 협력한다. Core 하나로 끝나는 CRUD는 Gateway가 직접 호출해 불필요한 Application을 만들지 않는다.
-- **모놀리스에서 다루는 분산 실행** — 같은 API를 여러 복제본으로 실행하며 좌석 경쟁, 중복 요청, 복제본 사이의 이벤트 전달을 다룬다. 하나의 애플리케이션에서도 필요한 분산 설계를 확인할 수 있다.
-- **문제에 맞춘 보장과 복구 방식** — Redis 락은 경합 비용을 줄이고, DB 원자 전이·CAS·transaction이 정합성을 지킨다. 구매에는 상태 머신과 lease 재조정을, 상영 생성에는 Restate workflow를 적용해 문제에 따른 복구 방식을 비교할 수 있다.
-- **변경을 검증할 수 있는 개발 환경** — Dev Container에서 실제 MongoDB Replica Set·Redis Cluster 등을 사용하고, 통합 테스트·다중 복제본 race test·반복 CI로 변경을 검증한다. 커버리지 100%는 실행되지 않은 분기를 변경 시점에 드러내는 개발 제약이다.
-- **실행과 판단에 연결되는 문서** — 실행 가능한 API 시나리오로 실제 요청·응답 흐름을 확인하고, 설계 결정 문서에서 선택 이유와 대안·한계를 읽는다. 자신의 프로젝트에 맞춰 무엇을 유지하고 바꿀지 판단할 근거를 제공한다.
+- **모듈 경계** — SoLA(Service-oriented Layered Architecture)는 같은 계층의 협력을 상위에서 조합해 순환 참조를 막는다. 단일 도메인의 CRUD는 Gateway가 Core를 직접 호출한다.
+- **분산 실행과 복구** — 같은 API의 여러 복제본이 좌석 경쟁과 중복 요청을 처리한다. 구매의 상태 머신·lease 재조정과 상영 생성의 Restate workflow를 비교할 수 있다.
+- **실제 환경에서 검증** — Dev Container의 실제 인프라를 사용해 통합 테스트·다중 복제본 race·실행 가능한 API 문서를 검증한다. 커버리지 100%는 실행되지 않은 분기를 드러내는 개발 제약이다.
 
 ```mermaid
 flowchart TB
@@ -41,13 +36,16 @@ flowchart TB
 
 ## 1. 시작하기
 
-공식 개발 경로는 Dev Container 하나다. Docker와 VS Code Dev Containers 확장이 필요하다.
+공식 개발 경로는 Dev Container 하나다. Docker가 있는 호스트의 저장소를 VS Code Remote SSH로 열고 Dev Containers 확장을 사용한다. workspace는 호스트와 컨테이너에서 같은 절대경로여야 한다([개발 환경](docs/devcontainer.md#2-docker-outside-of-docker의-경로-계약)).
+
+Dev Container는 시작할 때 개발 인프라의 데이터를 초기화한다. 아래 명령은 컨테이너 터미널에서 실행한다.
 
 1. VS Code에서 저장소를 열고 `Reopen in Container`를 실행한다. 첫 부팅은 이미지와 개발 인프라를 준비하므로 시간이 걸릴 수 있다.
-2. `pnpm run test`로 기본 검증을 실행한다. 포크 직후 전체 경계를 확인하려면 `pnpm run atoz`를 실행한다.
+2. `pnpm run test`로 기본 검증을 실행한다. 인프라 초기화를 포함한 전체 회귀는 `pnpm run atoz`로 실행한다.
 3. `pnpm run dev`를 실행하고 `curl http://localhost:3000/health`로 API를 확인한다.
-4. console(3100)에 개발용 admin(`admin@nest-seed.local` / `DevPass1!`)으로 로그인해 영화와 극장을 만든다. 이 계정은 Dev Container가 인프라를 초기화할 때 자동으로 다시 만든다.
-5. user-app(3200)에서 가입·로그인과 홈 화면 조합을 확인한다. 실행 가능한 API 문서는 독립된 fixture 흐름으로 상영·예매·구매 API를 실행한다.
+4. VS Code의 **포트(Ports)** 패널에서 `3100`과 `3200`을 전달하고 표시된 주소를 브라우저로 연다. 자동 포트 전달은 꺼져 있다.
+5. console(3100)에 개발용 admin(`admin@nest-seed.local` / `DevPass1!`)으로 로그인해 영화와 극장을 만든다. 이 계정은 인프라 초기화 때 다시 만든다.
+6. user-app(3200)에서 가입·로그인과 홈 화면 조합을 확인한다. 실행 가능한 API 문서는 독립된 fixture 흐름으로 상영·예매·구매 API를 실행한다.
 
 `.env.api`와 `.env.infra`는 커밋된 개발·검증 값이다. 포크할 때 프로젝트 식별자와 자격증명을 검토하고, 운영 secret은 저장소 밖에서 주입한다. 자세한 기준은 [환경 변수](docs/reference/environment.md)에 있다.
 
@@ -58,12 +56,12 @@ flowchart TB
 | `pnpm run dev`        | API와 두 frontend를 watch mode로 실행     |
 | `pnpm run test`       | workspace의 단위·통합·계약 테스트         |
 | `pnpm run lint`       | 타입, 코드, format, shell, 문서 링크 검사 |
-| `pnpm run atoz`       | 포크 직후나 배포 전 실행하는 전체 회귀    |
+| `pnpm run atoz`       | 개발 인프라 초기화 후 전체 회귀           |
 | `bash infra/reset.sh` | 개발 인프라와 고정 admin fixture를 재생성 |
 | `pnpm run api-docs`   | 다중 복제본의 API 문서 검증               |
 | `pnpm exec tunnel`    | console과 user-app Quick Tunnel 실행      |
 
-`infra/reset.sh`는 volume을 지운 뒤 고정 admin fixture까지 다시 만드는 개발용 복구 명령이다. Restate journal과 JetStream 데이터도 지우므로 보존할 실행이 있는 환경에서는 사용하지 않는다. 테스트별 명령과 결과 위치는 [tests/README.md](tests/README.md)에 있다.
+`infra/reset.sh`는 volume을 지운 뒤 고정 admin fixture까지 다시 만드는 개발용 복구 명령이다. Dev Container 시작과 루트 `atoz`의 준비 단계도 이를 실행한다. DB·S3 데이터, Restate journal과 JetStream의 미처리 이벤트를 지우므로 보존할 데이터나 실행이 있는 환경에서는 사용하지 않는다. 테스트별 명령과 결과 위치는 [tests/README.md](tests/README.md)에 있다.
 
 ## 3. API 레퍼런스
 
@@ -122,17 +120,17 @@ bash apps/api/api-docs/run.sh showtime-creation.spec
 | `application/purchase`                | 멱등 응답, durable 상태 머신, lease 재조정, outbox    |
 | `application/recommendation`          | 관람 기록 기반 추천과 순수 도메인 로직                |
 | `view/user-app/home`                  | 화면에 맞춘 읽기 응답 조합                            |
-| `infrastructure/assets`, `payments`   | S3와 외부 결제의 경계                                 |
+| `infrastructure/assets`, `payments`   | S3 연동과 결제 생성·취소의 경계                       |
+
+결제는 외부 PG 호출 없이 MongoDB에 결제 상태를 기록하는 예제다. 구매의 멱등성·보상 흐름을 검증하며 실제 PG 통신은 포함하지 않는다.
 
 ## 7. 인가
 
-애플리케이션 역할은 두 가지다. **admin**은 콘텐츠와 임의 사용자 대상 작업을, **user**는 본인 자원만 다룬다. 최초 admin은 HTTP가 아닌 운영 명령으로 준비하며, admin과 user token은 서로 다른 secret으로 서명한다.
-
-본인 자원은 URL의 ID가 아니라 token subject로 고정한 `/me` 경로를 사용하고, 임의 ID를 받는 경로는 admin에게만 허용한다. 두 규칙을 함께 적용해 user가 ID를 바꿔 다른 사용자의 자원에 접근하는 IDOR 경로를 제거한다.
+**admin**은 콘텐츠 관리와 임의 사용자 대상 작업을, **user**는 본인 자원 작업을 수행한다. token과 `/me`의 경계는 [인가 규칙](docs/apps.md#335-본인-자원은-me로-다룬다)을 따른다.
 
 ## 8. 운영 적용 범위
 
-`tests/api/compose.yml`은 분산 동작을 확인하는 테스트 스택이지 운영 배포본이 아니다. TLS, secret manager, backup/restore, 관측 backend, frontend edge, 무중단 revision 전환은 포함하지 않는다. 특히 Restate endpoint versioning과 BFF proxy IP 신뢰 경계는 운영 환경에서 별도로 설계해야 한다. [tests 문서](docs/tests.md)에 필요한 위험과 보장 한계를 정리했다.
+`tests/api/compose.yml`은 분산 동작을 확인하는 테스트 스택이지 운영 배포본이 아니다. TLS, secret manager, backup/restore, 관측 backend, frontend edge, 무중단 revision 전환은 포함하지 않는다. 운영에 적용할 때는 [BFF의 IP 신뢰 경계](docs/apps.md#61-bff와-클라이언트-ip-경계)와 [Restate의 revision 전환](docs/reference/decisions.md#endpoint와-revision-전환) 조건을 함께 확인한다.
 
 ## 9. 문서
 
@@ -142,7 +140,7 @@ bash apps/api/api-docs/run.sh showtime-creation.spec
 
 - [apps](docs/apps.md) — SoLA 계층, 분산 보장, API·테스트 규칙
 - [libs](docs/libs.md) — 런타임 공용 코드와 테스트 helper의 분리 기준
-- [tests](docs/tests.md) — API 테스트 스택, 외부 검증과 운영 적용의 한계
+- [tests](docs/tests.md) — API 테스트 스택, 외부 검증의 범위와 한계
 - [infra](docs/infra.md) — 개발 topology와 파괴적 reset의 범위
 - [tools](docs/tools.md) — 테스트 부팅, 개발 명령과 Compose 도구의 경계
 - [devcontainer](docs/devcontainer.md) — 단일 개발 경로, DooD 제약과 보안

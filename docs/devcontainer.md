@@ -33,6 +33,8 @@
 
 Dev Container는 생성될 때 이미 network가 필요하므로 호스트의 `initializeCommand`가 먼저 만든다. `runArgs --network`와 Compose의 `external` network가 같은 이름을 참조한다. 컨테이너가 뜬 뒤 수동으로 연결하는 절차에 의존하지 않는다. 도구용 Compose의 project 분리는 [tools 문서](tools.md#3-compose로-실행하는-도구)가 설명한다.
 
+VS Code의 자동 포트 전달은 꺼져 있다. 로컬 브라우저에서 개발 앱을 열려면 포트 패널에서 console의 `3100`, user-app의 `3200`을 전달한다. 컨테이너 터미널의 `localhost`는 컨테이너 자신을 가리키므로 내부 API 확인에는 이 전달이 필요하지 않다.
+
 Codex의 세션·인덱스·SQLite 상태는 프로젝트별 홈에 함께 보관한다. 호스트의 공용 홈은 `/home/node/.codex-shared`에 마운트하고 설정·인증·스킬만 심볼릭 링크로 연결한다. 설정·인증 파일은 저장할 때 교체될 수 있어 파일 단위 bind mount를 쓰지 않는다. 이 구성은 Codex가 사용하는 상태를 분리하며, 다른 프로젝트 파일에 대한 접근을 차단하지는 않는다.
 
 ## 3. 보안 경계

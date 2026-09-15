@@ -5,7 +5,7 @@
 ## 1. 범위
 
 - `pnpm run test` — workspace의 단위·통합 테스트. 브라우저 E2E·실제 race·benchmark는 포함하지 않는다.
-- `pnpm run atoz` — 정적 검사, build, 기본 테스트, 브라우저 E2E, 다중 복제본 검증을 포함한 전체 회귀.
+- `pnpm run atoz` — 개발 인프라를 초기화한 뒤 정적 검사, build, 기본 테스트, 브라우저 E2E와 다중 복제본의 API 문서를 검증한다. race와 benchmark는 별도 명령으로 실행한다.
 - `pnpm run e2e` — production build의 console·user-app 브라우저 흐름.
 - `pnpm run race <scenario>` — 다중 API 복제본의 경합·fan-out·장애 복구.
 - `pnpm run benchmark` — 같은 머신의 이전 실행과 비교하는 API 성능 측정.
