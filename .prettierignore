@@ -3,9 +3,6 @@ pnpm-lock.yaml
 /docs/backup/before-reduction/
 /docs/backup/recovered/
 /docs/backup/reviews/
-# _todo로 복구한 이전 검토 원문도 그대로 보존한다.
-/_todo/repository-simplification-review.md
-/_todo/seed-project-review.md
 # `next dev`가 실행될 때마다 include 항목을 추가·재배치한다. CI에서 stale check를 끄기 위해 ignore한다.
 apps/console/tsconfig.json
 apps/user-app/tsconfig.json

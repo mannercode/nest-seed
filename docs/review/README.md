@@ -1,13 +1,13 @@
 # 코드와 문서 재검토
 
-현재 지침은 [폴더별 문서](../../README.md#9-문서)와 `docs/reference/`에 있다. 이곳의 메모는 미결 제안이며, [과거 자료](../backup/README.md)와 함께 나중에 코드·테스트를 대조해 문서를 다시 작성하기 위한 입력이다.
+현재 지침은 [폴더별 문서](../../README.md#9-문서)와 `docs/reference/`에 있다. 진행할 작업과 제안의 상태는 [_todo](../../_todo/README.md)에서 관리한다. 이곳과 [과거 자료](../backup/README.md)는 재검토의 참고 자료이며, 보관된 제안이 모두 미결 작업인 것은 아니다.
 
-## 남은 검토 자료
+## 검토 자료
 
 - [JSON·DTO 자동 변환](runtime-complexity-review.md): DTO 스키마로 정리한 변환 정책과 후속 변경 시 확인할 복원 계약. [전체 런타임 검토 원문](../backup/reviews/runtime-complexity-review.md)은 반영 전 자료다.
-- [reference 검토](../../_todo/docs-reference-review.md): 일괄 API 강제, MongoDB 설명, 테스트 분리, 타입 작성 규칙의 5개 항목.
-- [삭제와 상영 생성의 경합](../../_todo/catalog-deletion-showtime-creation-race.md): 지원할 정합성 범위와 S3 정리 계약을 결정할 항목.
-- [할 일과 복구한 검토 기록](../../_todo/README.md): 현재 단순화 계획과 이전 검토 자료의 목록. 반영·철회된 제안은 코드에서 다시 확인한다.
+- [문서의 남은 검토 항목](../../_todo/docs-reference-review.md): env 주입·MongoDB·검증 범위와 개발 규칙의 표현을 맞출 작업.
+- [삭제와 상영 생성의 옛 경합 분석](../backup/reviews/catalog-deletion-showtime-creation-race.md): 삭제·생성 동시성은 이번 시드 작업에서 제외했다. 구현 대기 목록으로 사용하지 않는다.
+- [할 일과 검토 결과](../../_todo/README.md): 완료·유지·제외한 항목과 별도 요구가 있을 때 검토할 제안을 구분한다.
 
 ## 과한 장치를 찾는 기준
 

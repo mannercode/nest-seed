@@ -1,33 +1,21 @@
-# docs/reference 검토
+# 문서의 남은 검토 항목
 
-`conventions.md`의 개발 약속과 `decisions.md`의 선택 이유·보장 한계를 나눈 구성은 유지할 가치가 있다. 외부 연동의 공통 경계, DB 정합성과 Redis 락의 역할, 메시지 중복과 구매 복구의 한계도 필요한 내용이다. 아래는 기술적 오류와 적용 범위를 재검토할 제안이며, 현행 지침을 대체하지 않는다.
+`cef0a18c` 기준으로 확인했다. 아래는 코드 정리 후 반영할 문서 작업이며 현행 개발 규칙을 대신하지 않는다. [이전 reference 검토 원문](../docs/backup/reviews/docs-reference-review.md)은 보존했다.
 
-## 1. 단건 조회·삭제까지 일괄 API로 강제할지
+## 현재 코드와 설명을 맞출 항목
 
-[개발 규칙 §1](../docs/reference/conventions.md#1-서비스와-메서드-이름)은 미래의 일괄 처리를 위해 조회·삭제를 처음부터 `getMany`·`deleteMany`로 제공하도록 한다. 프로젝트의 선택으로는 가능하지만, 항상 더 좋은 설계라는 근거는 부족하다.
+- [ ] **env 주입 방식:** [Dev Container의 환경 변수 설명](../docs/devcontainer.md#1-환경-변수는-재생성해야-반영된다)은 shell 실행기가 같은 파일을 읽는다고 설명한다. 현재는 Dev Container가 주입한 환경을 상속하고, API·web Compose의 서비스 env는 `format: raw`로 읽는다. `.env`를 Bash로 실행한다는 설명을 지우고 파일 변경 후 컨테이너 재생성이 필요하다는 계약은 유지한다.
+- [ ] **MongoDB 트랜잭션 지원 범위:** [설계 결정 §5](../docs/reference/decisions.md#5-개발-환경-dev-container-단일-경로)의 “Replica Set에서만 동작”을 고친다. MongoDB는 Replica Set과 sharded cluster에서 다중 문서 트랜잭션을 지원한다. 프로젝트가 Replica Set을 선택했다는 설명이면 충분하다. [공식 문서](https://www.mongodb.com/docs/manual/core/transactions-production-consideration/)
+- [ ] **외부 테스트가 직접 확인하는 범위:** [tests 문서](../docs/tests.md)의 복제본 관측 설명을 좁힌다. `user-signup-race`·구매 race 일부는 전체 요청의 복제본 수를 검사하므로 같은 자원 그룹의 요청이 서로 다른 복제본에 갔다고 단정할 수 없다. `x-replica-id`도 HTTP 응답 복제본이며 Restate worker의 증거는 아니다. 가입 트래픽의 API kill/start와 별도 counter workflow의 Restate 서버 재시작을 구분해 적고, 구매·상영 실행 도중 API 종료까지 검증한 것으로 읽히지 않게 한다. 테스트·관측 장치를 추가하는 작업은 포함하지 않는다.
 
-단건과 다건은 누락 대상 처리·반환 순서·부분 성공의 계약이 다르다. 실제 일괄 처리가 필요할 때 도입하는 쪽을 권하며, 이 제안만으로 현재 API 계약을 바꾸지는 않는다.
+## 규칙과 선택 이유의 표현을 다듬을 항목
 
-## 2. MongoDB 트랜잭션 지원 범위
+- [ ] **MongoDB 선택 이유:** [설계 결정 §7](../docs/reference/decisions.md#7-주-데이터베이스-mongodb)의 “cross-domain 외래 키·조인을 쓰지 않으므로 MongoDB가 맞는다”는 연결을 완화한다. 관계형 DB에서도 같은 서비스 경계는 가능하다. 현재 문서의 RDB 장점 설명은 유지하고, 이 시드의 문서 단위 모델과 공식 driver 사용을 프로젝트의 선택으로 설명한다. DB 교체나 비교 실험을 할 일로 만들지 않는다.
+- [ ] **테스트 분리 기준:** [개발 규칙 §5](../docs/reference/conventions.md#5-테스트-문장은-조건과-결과를-이어-읽게-쓴다)의 응답·DB 반영 분리를 예외 없이 적용하는 규칙처럼 읽히지 않게 한다. 한 행동의 응답과 저장 결과를 함께 검증할 수 있고, 서로 독립적인 시나리오를 나눠야 한다는 취지로 다듬는다. 기존 테스트를 일괄 합치거나 나누지는 않는다.
+- [ ] **type과 interface:** [개발 규칙 §2](../docs/reference/conventions.md#2-타입은-계약에-맞춰-고른다)는 언어 제약과 프로젝트 스타일을 구분한다. 객체 형태의 type alias도 클래스가 `implements`할 수 있음을 현재 TypeScript 6.0.3으로 다시 확인했다. `type`을 기본으로 쓰되 클래스 구현 계약에는 `interface`를 사용하기로 한 선택이라고 표현한다.
 
-[설계 결정 §5](../docs/reference/decisions.md#5-개발-환경-dev-container-단일-경로)의 “Replica Set에서만 동작”은 부정확하다. 다중 문서 트랜잭션은 Replica Set과 sharded cluster에서 지원하며 standalone에서는 지원하지 않는다.
+## 추가 작업으로 남기지 않는 내용
 
-“이 프로젝트는 트랜잭션을 위해 Replica Set으로 구성한다”로 수정할 수 있다. [MongoDB 공식 문서](https://www.mongodb.com/docs/manual/core/transactions-production-consideration/)
+`getMany`·`deleteMany` 정책을 바꾸자는 이전 1번은 사용자 결정에 따라 제외한다. DTO 변환·인증 간소화는 현행 문서에 반영돼 있으며, 삭제·생성 동시성이나 Restate 결과 만료 처리를 문서 정리에 끼워 구현하지 않는다.
 
-## 3. MongoDB 선택의 근거
-
-[설계 결정 §7](../docs/reference/decisions.md#7-주-데이터베이스-mongodb)에서 도메인 간 외래 키·조인을 사용하지 않는다는 결정만으로 MongoDB의 적합성이 입증되지는 않는다. 관계형 DB도 같은 서비스 경계를 유지할 수 있다.
-
-현재 문서도 관계형 DB의 제약·트랜잭션·인덱스 장점은 인정한다. 그 설명은 유지하고, MongoDB 선택의 근거를 실제 문서 단위 저장·조회 모델에 맞춰 보완한다.
-
-## 4. 응답과 저장 결과의 테스트 분리
-
-[개발 규칙 §5](../docs/reference/conventions.md#5-테스트-문장은-조건과-결과를-이어-읽게-쓴다)의 응답과 DB 반영 분리를 기계적으로 강제하면 하나의 행동을 불필요하게 여러 번 실행하게 된다.
-
-“생성이 성공하고 실제로 저장된다”는 하나의 계약을 같은 테스트에서 검증할 수 있다. 이미 명시한 복합 불변식 예외를 더 분명히 하고, 서로 독립적인 실패 의미를 가진 행동인지에 따라 분리하도록 다듬는다.
-
-## 5. type과 interface는 스타일 선택임을 명시
-
-[개발 규칙 §2](../docs/reference/conventions.md#2-타입은-계약에-맞춰-고른다)의 `type` 우선 사용은 유효한 스타일이다. 다만 객체 형태의 type alias도 클래스가 `implements`할 수 있으며, 저장소의 TypeScript 6.0.3으로 확인했다.
-
-“클래스 구현 계약에는 interface를 사용하기로 한다”라고 표현하면 언어의 필수 제약으로 오해하지 않는다.
+실행 가능한 API 문서는 상태 코드와 실제 응답 예시를 제공하고, 상세한 본문·저장 결과는 기존 통합테스트가 검증한다. 이를 이유로 shell spec에 모든 단언을 중복 추가하지 않는다. README 시작 안내와 존재하지 않는 `clean` 보장 문장은 이미 정리됐다.
