@@ -8,8 +8,10 @@ services:
             context: ${WORKSPACE_ROOT:?}
             dockerfile: apps/api/Dockerfile
         env_file:
-            - ${WORKSPACE_ROOT:?}/.env.infra
-            - ${WORKSPACE_ROOT:?}/.env.api
+            - path: ${WORKSPACE_ROOT:?}/.env.infra
+              format: raw
+            - path: ${WORKSPACE_ROOT:?}/.env.api
+              format: raw
         environment:
             NODE_ENV: production
         healthcheck:

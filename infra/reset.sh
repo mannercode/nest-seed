@@ -5,10 +5,6 @@ cd -- "$(dirname -- "$0")"
 : "${WORKSPACE_ROOT:?}"
 compose=(docker compose)
 
-set -a
-. "${WORKSPACE_ROOT}/.env.infra"
-set +a
-
 diagnose_and_exit() {
     local exit_code="$1"
 

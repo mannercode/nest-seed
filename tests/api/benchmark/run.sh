@@ -5,11 +5,6 @@ cd -- "$(dirname -- "$0")"
 : "${WORKSPACE_ROOT:?}"
 : "${COMPOSE_PROJECT_NAME:?}"
 
-set -a
-# shellcheck source=../../../.env.infra
-. "${WORKSPACE_ROOT}/.env.infra"
-set +a
-
 export COMPOSE_IGNORE_ORPHANS=True
 
 SERVER_URL="http://nginx"

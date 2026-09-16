@@ -37,11 +37,6 @@ if [ ! -f "${TEST_SCRIPT}" ]; then
     exit 1
 fi
 
-set -a
-# shellcheck source=../../../.env.infra
-. "${WORKSPACE_ROOT}/.env.infra"
-set +a
-
 SERVER_URL="http://nginx"
 cleanup() {
     echo ""
