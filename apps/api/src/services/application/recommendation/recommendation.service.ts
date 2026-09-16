@@ -24,7 +24,9 @@ export class RecommendationService {
             startTimeRange: { start: startTime }
         })
 
-        const showingMovies = await this.moviesService.getMany(showingMovieIds)
+        const showingMovies = await this.moviesService.searchPublished({
+            movieIds: showingMovieIds
+        })
         let watchedMovies: MovieDto[] = []
 
         if (userId) {

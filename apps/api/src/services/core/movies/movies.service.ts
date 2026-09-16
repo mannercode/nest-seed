@@ -169,7 +169,7 @@ export class MoviesService {
     }
 
     // 공개 카탈로그용 단건 조회. 미공개(draft) 영화는 없는 것으로 취급한다.
-    // 내부 흐름(추천·관람 기록)은 비공개 전환된 영화도 조회해야 하므로 getMany를 그대로 둔다.
+    // 관람 기록 조회는 미공개 영화도 필요하므로 getMany를 그대로 둔다.
     async getPublished(movieId: string) {
         const movie = ensure((await this.moviesRepository.getMany({ ids: [movieId] }))[0])
 
@@ -189,6 +189,11 @@ export class MoviesService {
         const { items, ...pagination } = await this.moviesRepository.searchPage(searchDto)
 
         return { ...pagination, items: await this.toDtos(items) }
+    }
+
+    async searchPublished({ movieIds }: { movieIds: string[] }) {
+        const movies = await this.moviesRepository.findMany({ ids: movieIds })
+        return this.toDtos(movies.filter((movie) => movie.isPublished))
     }
 
     async update(movieId: string, upsertDto: UpsertMovieDto) {

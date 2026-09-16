@@ -4,6 +4,7 @@ import {
     createMovie,
     createShowtimes,
     createTheater,
+    createUnpublishedMovie,
     type AppTestContext,
     createAppTestContext
 } from '../helpers/index.js'
@@ -48,6 +49,29 @@ describe('UserHomeView', () => {
                 .ok({ schema: UserHomeViewSchema })
 
             expect(body).toEqual({ showingMovies: [], recommendedMovies: [] })
+        })
+
+        it('상영 예정이 있어도 미공개 영화는 카드와 추천에서 제외한다', async () => {
+            const published = await createMovie(fix)
+            const unpublished = await createUnpublishedMovie(fix)
+            const theater = await createTheater(fix)
+            const startTime = DateUtil.add({ days: 1 })
+
+            await createShowtimes(fix, [
+                { movieId: published.id, theaterId: theater.id, startTime },
+                {
+                    movieId: unpublished.id,
+                    theaterId: theater.id,
+                    startTime: DateUtil.add({ days: 2 })
+                }
+            ])
+
+            const { body } = await fix.httpClient
+                .get('/views/user-app/home')
+                .ok({ schema: UserHomeViewSchema })
+
+            expect(body.showingMovies.map(({ movie }) => movie.id)).toEqual([published.id])
+            expect(body.recommendedMovies.map((movie) => movie.id)).toEqual([published.id])
         })
 
         describe('가까운 상영이 여러 개 있을 때', () => {
