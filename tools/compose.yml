@@ -5,12 +5,12 @@ services:
         working_dir: /workspace
         volumes:
             - ${WORKSPACE_ROOT:?}:/workspace
-        # 과거 원문 안의 옛 링크는 보존하고, 현재 문서와 검토 안내의 링크를 검사한다.
+        # 과거 가이드 원문의 옛 링크는 보존하고, 현재 안내와 할 일 문서의 링크를 검사한다.
         command:
             - --offline
             - --include-fragments
             - --exclude-path
-            - 'docs/backup/(before-reduction|recovered|reviews)/'
+            - 'docs/backup/(before-reduction/|recovered/2026-)'
             - '*.md'
             - '_todo/*.md'
             - 'docs/**/*.md'

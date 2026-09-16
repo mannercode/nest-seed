@@ -1,8 +1,7 @@
 pnpm-lock.yaml
-# 과거 원문은 복구한 내용과 형식을 보존한다.
+# 과거 가이드 원문은 복구한 내용과 형식을 보존한다.
 /docs/backup/before-reduction/
-/docs/backup/recovered/
-/docs/backup/reviews/
+/docs/backup/recovered/2026-*/
 # `next dev`가 실행될 때마다 include 항목을 추가·재배치한다. CI에서 stale check를 끄기 위해 ignore한다.
 apps/console/tsconfig.json
 apps/user-app/tsconfig.json

@@ -149,6 +149,6 @@ bash apps/api/api-docs/run.sh showtime-creation.spec
 - [decisions](docs/reference/decisions.md) — 선택 이유, 대안, 보장하지 않는 것
 - [개발 규칙](docs/reference/conventions.md) — 이름·DTO·타입·ESM·오류·테스트 작성 규칙
 
-[할 일과 작업 계획](_todo/README.md)은 `_todo/`에 둔다. [문서 검토 메모](docs/review/README.md)와 [과거 자료](docs/backup/README.md)는 재검토를 위한 자료이며 현재 개발 지침을 대신하지 않는다.
+[할 일과 작업 계획](_todo/README.md)은 `_todo/`에 둔다. `docs/`에는 프로젝트 가이드만 두며, [과거 가이드](docs/backup/README.md)는 현재 개발 지침과 구분해 보관한다.
 
 영화 예매 도메인의 설계 배경은 블로그 연재 [백엔드 서비스 분석과 설계 1](https://mannercode.com/2025/04/01/backend-design-1.html)·[2](https://mannercode.com/2025/05/01/backend-design-2.html)·[3](https://mannercode.com/2025/06/01/backend-design-3.html)에 있다.
