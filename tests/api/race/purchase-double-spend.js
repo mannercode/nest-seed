@@ -151,6 +151,24 @@ test('같은 티켓 묶음의 동시 결제는 하나만 성공하고 영속화�
     const spacingMs = 3 * 60 * 60 * 1000
 
     for (let i = 1; i <= INNER_ITERATIONS; i++) {
+        // 전체 반복은 토큰 수명을 넘을 수 있으므로 경합 전에 인증 fixture를 갱신한다.
+        const admin = await request('POST', '/admins/login', {
+            body: { email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD }
+        })
+        if (admin.status !== 200) throw new Error(`iter ${i}: admin login ${admin.status}`)
+        process.env.ADMIN_ACCESS_TOKEN = admin.body.accessToken
+        await Promise.all(
+            users.map(async (user, group) => {
+                const refreshed = await request('POST', '/users/refresh', {
+                    body: { refreshToken: user.refreshToken }
+                })
+                if (refreshed.status !== 200) {
+                    throw new Error(`iter ${i} group ${group}: user refresh ${refreshed.status}`)
+                }
+                user.accessToken = refreshed.body.accessToken
+                user.refreshToken = refreshed.body.refreshToken
+            })
+        )
         const result = await runInner(i, movieId, theaterId, users, i * spacingMs)
         console.log(
             `[purchase] iter ${i}/${INNER_ITERATIONS} OK — ${result.total} reqs, ${result.replicas} replicas`

@@ -366,8 +366,15 @@ describe('JetStreamChannel', () => {
         expect(result.value.decode()).toEqual({ value: 'one' })
         expect(result.value.deliveryCount).toBe(1)
         expect(result.value.sequence).toBe(1)
+        const acknowledgments = connection.subscribe(
+            `$JS.EVENT.METRIC.CONSUMER.ACK.${streamName}.${consumerName}`,
+            { max: 1 }
+        )
+        await manager.consumers.update(streamName, consumerName, { sample_freq: '100' })
         result.value.acknowledge()
-        await connection.flush()
+        // flush는 ACK 전송만 확인한다. 서버가 ACK를 처리했다는 이벤트 뒤에 상태를 읽는다.
+        const acknowledgment = await acknowledgments[Symbol.asyncIterator]().next()
+        expect(acknowledgment.value?.json()).toMatchObject({ stream_seq: result.value.sequence })
         expect((await manager.consumers.info(streamName, consumerName)).num_ack_pending).toBe(0)
         const ending = iterator.next()
         await messages.close()
@@ -387,8 +394,17 @@ describe('JetStreamChannel', () => {
         expect(performance.now() - retryStarted).toBeGreaterThanOrEqual(90)
         expect(second.value.sequence).toBe(first.value.sequence)
         expect(second.value.deliveryCount).toBe(2)
-        second.value.discard('invalid event')
+        const terminations = connection.subscribe(
+            `$JS.EVENT.ADVISORY.CONSUMER.MSG_TERMINATED.${streamName}.${consumerName}`,
+            { max: 1 }
+        )
         await connection.flush()
+        second.value.discard('invalid event')
+        const termination = await terminations[Symbol.asyncIterator]().next()
+        expect(termination.value?.json()).toMatchObject({
+            stream_seq: second.value.sequence,
+            reason: 'invalid event'
+        })
         expect((await manager.consumers.info(streamName, consumerName)).num_ack_pending).toBe(0)
     })
 })
