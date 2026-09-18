@@ -1,103 +1,72 @@
-# tests/ — 외부 스택 테스트
+# tests/ — 실행 스택 밖에서 하는 검증
 
-앱·라이브러리의 단위·통합 테스트는 각 workspace에 둔다. `tests/`는 여러 프로세스·컨테이너를 밖에서 검증해야 의미가 있는 테스트를 모은다. 실행 명령과 산출물 위치는 [테스트 실행 안내](reference/test-execution.md)가 소유한다.
+API와 라이브러리의 동작은 각 workspace의 통합 테스트가 먼저 검증한다. `tests/`는 여러 API 프로세스 사이의 경쟁, 브라우저와 production build의 연결, 같은 조건의 성능 비교를 담당한다. 데모 화면마다 unit suite를 만들거나 API 통합 테스트의 모든 실패 조건을 다시 복제하는 위치가 아니다. 명령과 결과 위치는 [실행 안내](reference/test-execution.md)에 있다.
 
-## 1. api — 다중 복제본 검증 스택
+## API 스택과 수명
 
-`tests/api/compose.yml`은 실행 가능한 API 문서, race와 benchmark가 공유하는 API 복제본 4개와 NGINX 환경이다. 이미 실행 중인 개발 인프라에 연결한다. **운영 배포본은 아니다.** TLS, secret 관리, backup/restore, 관측 backend, frontend 배포, 무중단 revision 전환은 포함하지 않는다.
-
-```mermaid
-flowchart LR
-    Client[HTTP client] --> NGINX
-    NGINX --> A[API 1]
-    NGINX --> B[API 2]
-    NGINX --> C[API 3]
-    NGINX --> D[API 4]
-    A & B & C & D --> Infra[MongoDB · Redis · NATS · S3]
-    A & B & C & D --> Restate
-    Restate -->|durable invocation: HTTP/2| NGINX
-```
-
-복제본 수는 프로세스 경계를 넘는 정확성을 검증하기 위한 정책이다. NATS fan-out, 분산 락, lease owner CAS, MongoDB write conflict, 원자 상태 전이는 복제본 하나만으로는 실제 프로세스 간 경쟁을 만들지 못한다. 복제본 수를 줄이면 테스트의 의미도 바뀐다.
-
-실행기는 `.env.infra`의 고정 개발 admin을 사용하고, Compose는 API에 `.env.infra`와 `.env.api`를 주입한다. admin이 없으면 준비되지 않은 환경으로 실패하며 테스트가 임의의 계정으로 대체하지 않는다. 인프라와 같은 네트워크를 쓰되 스택 종료는 API·NGINX를 정리하는 범위다. 개발 인프라의 데이터 초기화는 별도 [infra reset](infra.md#2-시작과-reset의-범위)이다.
-
-API 컨테이너에 자동 재시작 정책을 두지 않는다. 복제본 종료가 자동 복구에 가려지지 않게 하고, chaos 시나리오가 직접 kill·start를 제어하기 위해서다. 일반 HTTP health 통과와 Restate endpoint 등록 완료는 별개다.
-
-### `x-replica-id`의 의미
-
-API 응답의 `x-replica-id`는 처리한 컨테이너의 hostname이다. 문자열 형식은 외부 API 계약이 아니며, 테스트는 동시 요청에서 서로 다른 값이 관측됐는지 확인한다.
+[API Compose](../../tests/api/compose.yml)는 API 문서·race·benchmark가 공유하는 복제본 4개와 NGINX를 띄우고 기존 개발 인프라에 연결한다. 프로세스가 나뉘어야 로컬 메모리만으로 경쟁을 처리한 구현과 Redis·DB·NATS의 경계를 사용하는 구현을 구분할 수 있다. 복제본 수는 이 검증을 위한 선택이다.
 
 ```text
-요청 A → api-1, 요청 B → api-1 : 프로세스 간 경쟁을 증명하지 못함
-요청 A → api-1, 요청 B → api-2 : 프로세스 간 경쟁을 검증할 조건을 충족
+HTTP/SSE client → NGINX → API 복제본 4개 → 개발 인프라
+Restate         → NGINX의 HTTP/2 endpoint → API 복제본 4개
 ```
 
-race client는 공유 keep-alive 연결에 요청이 묶이지 않게 하고, 헤더 관찰로 실제 분산도 확인한다. 이 조건이 없으면 한 프로세스에만 요청이 간 거짓 성공이 될 수 있다.
+이 스택은 운영 배포 예제가 아니다. TLS, secret 관리, backup/restore, 관측 backend, frontend 배포와 무중단 revision 전환은 제공하지 않는다.
 
-## 2. api/race — 동시 요청과 장애
+Compose는 커밋된 개발 env 두 파일을 raw 형식으로 API에 주입한다. 실행기는 Dev Container에 주입된 고정 개발 admin으로 로그인하며 준비되지 않은 계정을 임의로 대체하지 않는다. 스택 종료는 API·NGINX의 정리이며, DB·bucket·journal 초기화는 별도 [infra reset](infra.md)이다. benchmark가 만든 데이터도 스택 종료로 사라지지 않는다.
 
-앱 내부 클래스를 호출하지 않고 HTTP/SSE로 요청을 보내 보장을 관찰한다. 각 시나리오가 어떤 실패 경계를 다루는지 구분해서 읽는다.
+API 컨테이너는 자동 재시작하지 않는다. 종료가 restart 정책에 가려지지 않아야 하며, chaos가 kill·start를 직접 제어한다.
 
-| 시나리오                | 검증하는 보장                                                                     |
+## Race의 관측 범위
+
+race는 내부 클래스를 호출하지 않고 HTTP/SSE로 결과를 관측한다. 구매·상영의 보상 및 재시도는 API 통합 테스트도 함께 읽어야 한다.
+
+| 시나리오                | 직접 확인하는 결과                                                                |
 | ----------------------- | --------------------------------------------------------------------------------- |
-| `user-signup-race`      | 같은 이메일의 동시 가입은 unique index가 승자 하나만 남김                         |
-| `ticket-holding-race`   | 같은 좌석의 동시 선점은 Redis Lua의 원자 실행으로 하나만 성공                     |
-| `showtime-overlap-race` | 서로 다른 workflow key의 겹치는 상영 생성도 guard CAS·transaction으로 하나만 성공 |
-| `purchase-double-spend` | 같은 티켓 묶음의 동시 구매는 판매·결제를 하나만 남김                              |
-| `purchase-overlap-race` | 일부 좌석이 겹치는 티켓 묶음도 DB 상태 전이로 이중 판매를 막고 패자를 보상        |
-| `sse-fanout-race`       | 한 복제본의 상태 이벤트가 다른 복제본의 SSE 연결에도 전달됨                       |
-| `jwt-refresh-race`      | 같은 refresh token의 동시 회전은 승자 하나와 충돌 결과로 구분됨                   |
-| `replica-chaos`         | 복제본 종료 중 NGINX의 우회와 서비스 가용성을 관찰                                |
+| `user-signup-race`      | 동일 이메일의 동시 가입은 성공 하나와 충돌 응답으로 끝남                          |
+| `ticket-holding-race`   | 동일 좌석 묶음의 동시 선점은 사용자 하나만 성공함                                 |
+| `showtime-overlap-race` | 겹치는 상영 생성 요청의 종결 이벤트에서 성공 하나와 업무상 충돌을 관측함          |
+| `purchase-double-spend` | 동일 묶음의 구매는 하나만 성공하며 그 구매를 이력에서 다시 읽을 수 있음           |
+| `purchase-overlap-race` | `[A, B]`와 `[B, C]` 구매 중 하나만 성공하고 승자의 티켓만 판매 상태로 남음        |
+| `sse-fanout-race`       | 여러 복제본에 연결된 SSE client가 접수한 모든 saga의 완료 이벤트를 받음           |
+| `jwt-refresh-race`      | 같은 refresh token의 동시 회전에서 하나만 성공하며 새 토큰으로 세션을 계속 사용함 |
+| `replica-chaos`         | 가입 트래픽 중 복제본을 kill·start하고 오류율 및 복구 후 응답 복제본을 확인함     |
 
-특히 구매 overlap은 `[A, B]`와 `[B, C]`가 티켓 B를 둘 다 팔 수 없는지 확인한다. 동일한 티켓 묶음의 중복 요청만으로는 이 경합을 검증할 수 없다. 구매는 별도 Redis 락 없이 선점 claim과 DB 상태 전이로 처리한다.
+구매 overlap은 같은 묶음의 중복 요청만으로 드러나지 않는 부분 중복을 검증한다. 패자는 결제 전 선점 claim에서도 거절될 수 있으므로 이 시나리오의 성공만으로 결제 취소를 검증했다고 해석하지 않는다. 결제 후 실패와 보상은 API의 구매 통합 테스트가 다룬다.
 
-실행기는 스택 준비·Restate 등록·인증·시나리오·정리를 묶는다. 실패하면 정리 전에 컨테이너 로그·자원 상태와 MongoDB 복제 상태를 남긴다. 구체적인 요청 수·허용 오류율·timeout은 각 시나리오가 소유한다. 오류를 숨기려고 반복 횟수나 timeout부터 바꾸지 않고, 같은 시각의 서버 로그와 runner 자원을 함께 본다.
+`x-replica-id`는 응답한 API의 hostname이다. 문자열 형식은 API 계약이 아니다. HTTP client는 keep-alive 연결에 요청이 고정되지 않도록 하고, 가입·선점·구매·refresh 시나리오는 한 반복 전체에서 2개 이상 복제본 응답을 확인한다. 각 충돌 키가 여러 복제본에 분산되었다는 뜻은 아니다.
 
-이 계층의 HTTP 경합·fan-out과 Restate 서버 자체의 journal 복구는 다른 보장이다. 후자는 [`infra/tests/restate-journal-recovery.js`](../infra/tests/restate-journal-recovery.js)가 검증한다.
+```text
+같은 반복에서 api-1, api-2 관측  → 스택에 요청이 분산됨
+같은 좌석 경쟁에서 api-1, api-2 관측 → 그 경쟁의 프로세스 간 분산을 확인함
+```
 
-## 3. web — 브라우저 E2E
+SSE는 구독한 복제본들의 분산과 이벤트 전달을 확인한다. 상영 overlap은 4개 복제본 스택에서 실행하되 요청별 복제본 헤더를 별도로 단언하지 않는다. 이 차이를 무시하고 모든 테스트가 동일한 분산 보장을 검증한다고 쓰지 않는다.
 
-web 테스트는 개발 서버가 아닌 production build로 관리자·사용자 흐름과 세션 회전을 검증한다. 실행기는 API·console·user-app의 이미지를 빌드하고 healthy가 된 뒤 브라우저를 실행한다. 종료할 때는 `${COMPOSE_PROJECT_NAME}-web` project의 앱만 정리한다.
+`replica-chaos`의 가입 가용성, API 통합 테스트의 업무 단계 재시도, [Restate journal 복구](../../infra/tests/restate-journal-recovery.js)는 서로 다른 검증이다. 각각이 다른 검증을 대신하거나 운영 장애 전체를 증명하지는 않는다.
 
-Playwright와 Chromium은 Dev Container에서 직접 실행한다. 검증 대상 앱만 Compose로 띄워 브라우저용 별도 이미지·패키지 설치 경로를 유지하지 않는다. 의존성은 pnpm workspace의 lockfile로 통일한다. 브라우저는 Docker service DNS로 앱에 접근하므로 일반 E2E를 위해 host port를 publish하지 않는다.
+실패하면 runner가 스택을 정리하기 전에 컨테이너 로그·상태·자원과 MongoDB 복제 상태를 수집한다. 먼저 같은 시각의 실패 응답과 로그를 본다. 기대하지 않은 오류를 정상 경쟁으로 분류하거나 timeout·반복 횟수를 바꿔 실패를 숨기지 않는다.
 
-Node 타입은 Dev Container 런타임에 맞춘다. TypeScript는 이 workspace에서 타입 검사 CLI로만 쓰므로 앱의 compiler API 호환 제약과 별도로 버전을 정한다. Playwright 변경 시 browser binary와 OS 의존성을 맞추는 절차는 [Dev Container](devcontainer.md)가 설명한다.
+## Restate 등록과 포트
 
-검증 대상은 console 로그인·영화 관리와 user-app 가입·로그인·세션 회전이다. 상영 생성·구매 UI가 있다고 가정하지 않는다. 브라우저 실패의 trace·screenshot·HTML 결과는 `tests/web/_output/`에서 확인한다.
+HTTP `/health` 통과와 Restate의 workflow 등록은 별개다. runner는 API와 NGINX가 healthy가 된 후 `restate-register`를 실행한다. 개별 복제본 대신 안정적인 `http://nginx:9080`을 등록해 invocation을 API 복제본에 전달한다.
 
-web Compose에서 루트의 두 env 파일은 API에 주입하고, BFF에는 API 대상·포트와 테스트 설정을 명시적으로 전달한다. `BFF_TRUST_PROXY_HEADERS=true`로 시작해 테스트가 edge의 헤더를 모사한다. 내부 HTTP로 실행하므로 `BFF_COOKIE_SECURE=false`도 사용한다. 이 cookie 설정은 테스트 환경에 한정하며 운영 기본값으로 복사하지 않는다. BFF의 동작 계약은 [apps 문서](apps.md#61-bff와-클라이언트-ip-경계)를 따른다.
+API의 HTTP 및 Restate 내부 포트를 바꾸면 [NGINX upstream](../../tests/api/nginx.conf)과 Compose의 등록 URI도 함께 맞춘다. env 값만 바꿔도 NGINX 파일이 자동으로 갱신되는 구조는 아니다.
 
-이 검증은 BFF·API의 연결을 확인할 뿐 실제 public edge가 외부 헤더를 올바르게 덮어쓰는지까지 증명하지 않는다. API 내부의 인증 테스트 역시 실제 배포망의 접근 제한을 검증하는 것은 아니다.
+등록은 `force: false`다. 같은 URI 뒤의 코드·manifest를 바꾼 것만으로 기존 deployment 정의가 교체되지 않는다. 보존할 실행이 없는 개발 환경은 infra reset으로 초기화할 수 있지만, journal도 삭제하므로 운영 revision 전환에 사용하지 않는다. 배포 시 필요한 조건은 [설계 결정](reference/decisions.md)에서 다룬다.
 
-## 4. api/benchmark — 같은 조건의 회귀 비교
+## 브라우저 E2E와 데모
 
-benchmark는 절대 성능 인증이 아니라 **같은 머신·이미지·데이터 조건의 이전 결과와 비교**하는 도구다. k6를 [tools의 Compose](tools.md#3-compose로-실행하는-도구)로 실행하고, 극장 조회·생성의 단독 부하와 혼합 부하를 비교한다. 같은 조건에서 gzip의 영향도 비교할 수 있다.
+web 테스트는 production build의 console·user-app과 API를 Compose로 실행하고, Dev Container의 Playwright·Chromium이 접근한다. 브라우저 설치는 workspace lockfile 및 Dev Container 준비 과정이 소유한다. 일반 E2E에는 host port를 공개하지 않고 Docker service DNS를 사용한다.
 
-먼저 응답 상태를 확인한다. 연결 실패·5xx가 섞인 지연 시간은 정상 처리 경로의 성능이 아니다. 그다음 단독 실행과 혼합 실행의 처리량·p95·p99를 비교해 읽기와 쓰기가 서로 방해하는 정도를 본다. 서로 다른 머신이나 fixture 수의 결과를 직접 비교하지 않는다.
+검증 범위는 console의 로그인·영화/극장/사용자 관리와 user-app의 가입·로그인·홈 조회, 쿠키 전달·갱신·로그아웃이다. 예매·구매 전체 UI를 가정하지 않는다. 같은 행위를 API 내부와 브라우저에서 확인하더라도 후자는 BFF·cookie·실제 화면 연결이라는 다른 경계를 본다.
 
-fixture는 개발 MongoDB에 남는다. 측정 결과는 실행 시각별 JSON과 HTML로 남기며, 초기화와 결과 경로는 [실행 안내](reference/test-execution.md#2-결과)를 따른다. 테스트 스택이 닫혔다고 fixture까지 삭제됐다고 가정하지 않는다.
+web Compose는 내부 HTTP를 사용하므로 cookie의 Secure를 끄고, 테스트가 신뢰 edge를 모사하도록 proxy header 신뢰를 켠다. 이 설정을 운영 기본값으로 복사하지 않는다. 테스트가 IP 헤더를 전달했다고 실제 public edge의 헤더 재구성이나 origin 접근 차단을 검증한 것은 아니다. 실제 신뢰 경계는 [apps 가이드](apps.md)가 설명한다.
 
-## 5. Restate endpoint 등록
+web runner는 `${COMPOSE_PROJECT_NAME}-web`의 앱만 종료한다. 브라우저 실패의 trace·screenshot·HTML 보고서는 `_output/`에서 확인한다.
 
-각 API 복제본은 일반 HTTP와 별도로 Restate HTTP/2 endpoint를 연다. 검증 스택은 개별 복제본 대신 NGINX의 안정적인 `http://nginx:9080`을 등록해 한 복제본이 종료되어도 invocation을 다른 복제본으로 보낸다.
+## Benchmark와 반복 CI
 
-`API_PORT`나 `RESTATE_SERVICE_PORT`를 바꿔도 `tests/api/nginx.conf`의 upstream은 자동으로 갱신되지 않는다. API 내부 포트·NGINX 설정·Compose의 등록 URI를 함께 맞춘다.
+benchmark는 같은 머신·이미지·데이터 조건의 이전 실행과 비교한다. 극장 읽기·쓰기와 혼합 부하, gzip 유무를 비교하며 절대 성능이나 운영 SLA를 보장하지 않는다. 먼저 정상 상태 코드만 나왔는지 확인하고 처리량·p95·p99를 비교한다. 오류 응답의 짧은 지연 시간을 개선으로 해석하지 않는다.
 
-실행기는 API·NGINX가 healthy가 된 뒤 `restate-register` one-shot 서비스를 실행한다. 일반 HTTP `/health`는 Restate ingress의 health를 보지만 deployment 등록과 endpoint dispatch까지 보장하지 않는다. workflow가 실행되지 않으면 등록 상태와 HTTP/2 경로를 함께 확인한다.
-
-고정 URI를 `force: false`로 등록하므로, 이미 알려진 URI 뒤의 workflow 코드나 manifest를 바꿨다고 새 정의가 발견되는 것은 아니다. 보존할 journal이 없는 개발 환경은 `infra/reset.sh`로 초기화할 수 있지만 이 명령은 실행 기록을 지운다. 단순 컨테이너 재시작과 다르며 운영 배포 방법이 아니다.
-
-운영의 revision 전환 조건은 [설계 결정](reference/decisions.md#endpoint와-revision-전환)을 따른다.
-
-## 6. 로그와 검증 산출물
-
-API·NGINX의 stdout/stderr와 Compose 로그 회전은 [로그 계약](reference/decisions.md#9-로그-출력-구조화-stdout과-docker-회전)을 따른다. API 문서가 남기는 fixture 응답 로그는 이 런타임 로그와 별개의 검증 산출물이다.
-
-## 7. CI 반복 — test-stability, test-api-race
-
-필수 AtoZ는 PR과 main 변경의 전체 회귀를 검증한다. Stability CI는 라이브러리·API·인프라 초기화를, API Race CI는 위 경합 시나리오를 반복해 간헐 실패를 찾는다. 한 번 통과했다고 race와 timing 문제가 없다고 결론 내리지 않는다.
-
-Stability의 coverage 비활성 실행은 반복 동작을 관찰하기 위한 것이며 필수 AtoZ의 100% 게이트를 대신하지 않는다. 반복 횟수·스케줄·timeout은 [워크플로](../.github/workflows/)가 소유한다. 실패 회차는 `[Run i/N]`에서 찾고 정리 전 진단과 같은 시각의 runner 자원을 함께 확인한다.
-
-테스트 CI는 checkout에 필요한 저장소 읽기 권한만 명시한다. 저장소·조직의 기본 token 권한이 바뀌어도 검증 작업의 권한이 따라 넓어지지 않게 하기 위한 것이다.
+필수 AtoZ는 기본 회귀를 실행하고, Stability와 API Race CI는 간헐적인 실패를 찾기 위해 별도로 반복한다. Stability의 coverage 비활성 반복은 AtoZ의 100% 게이트를 대신하지 않는다. 횟수·스케줄은 [CI 파일](../../.github/workflows/)이 소유한다. 단발 통과도 반복 통과도 모든 경쟁·장애가 사라졌다는 증명은 아니다.

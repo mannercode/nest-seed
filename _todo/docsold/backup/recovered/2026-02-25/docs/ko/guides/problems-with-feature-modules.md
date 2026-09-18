@@ -1,6 +1,6 @@
 # Problems with Feature Modules
 
-Nest에서는 Controller, Service, Repository를 하나의 모듈 안에 배치하는 구조를 `Feature Module`이라고 합니다. [Nest 공식 문서](<https://docs.nestjs.com/modules#feature-modules>)에서는 이 구조에 대해 다음과 같이 설명합니다.
+Nest에서는 Controller, Service, Repository를 하나의 모듈 안에 배치하는 구조를 `Feature Module`이라고 합니다. [Nest 공식 문서](https://docs.nestjs.com/modules#feature-modules)에서는 이 구조에 대해 다음과 같이 설명합니다.
 
 > CatsController와 CatsService는 동일한 애플리케이션 도메인에 속합니다.\
 > 서로 밀접하게 연관되어 있으므로 기능 모듈로 이동하는 것이 좋습니다.\

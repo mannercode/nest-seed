@@ -233,21 +233,12 @@ export const MulterConfigServiceErrors = {
 }
 
 export const MulterExceptionFilterErrors = {
-    MaxCountExceeded: {
-        code: 'ERR_FILE_UPLOAD_MAX_COUNT_EXCEEDED',
-        message: 'Too many files'
-    },
-    MaxSizeExceeded: {
-        code: 'ERR_FILE_UPLOAD_MAX_SIZE_EXCEEDED',
-        message: 'File too large'
-    }
+    MaxCountExceeded: { code: 'ERR_FILE_UPLOAD_MAX_COUNT_EXCEEDED', message: 'Too many files' },
+    MaxSizeExceeded: { code: 'ERR_FILE_UPLOAD_MAX_SIZE_EXCEEDED', message: 'File too large' }
 }
 
 export const GatewayErrors = {
-    FileUpload: {
-        ...MulterExceptionFilterErrors,
-        ...MulterConfigServiceErrors
-    }
+    FileUpload: { ...MulterExceptionFilterErrors, ...MulterConfigServiceErrors }
 }
 ```
 
