@@ -65,7 +65,7 @@ Do not globally replace `nest-seed` or `mannercode` when forking. Distinguish pr
 | `pnpm run api-docs`   | Check API docs across replicas                                  |
 | `pnpm exec tunnel`    | Run Quick Tunnels for the console and user app                  |
 
-`infra/reset.sh` deletes the volumes and then recreates the fixed admin fixture. Dev Container startup and the root `atoz` preparation step also run it. It deletes DB and S3 data, the Restate journal, and pending JetStream events, so it must not be used where data or executions need to survive. Test-specific commands and output locations are in the [test execution guide](docs/reference/test-execution.md).
+`infra/reset.sh` deletes the volumes and then recreates the fixed admin fixture. Dev Container startup and the root `atoz` preparation step also run it. It deletes DB and S3 data, the Restate journal, and pending JetStream events, so it must not be used where data or executions need to survive. Test-specific commands and output locations are in the [Korean README](README.md#실행과-검증).
 
 ## 3. API reference
 
@@ -76,7 +76,7 @@ bash apps/api/api-docs/run.sh
 bash apps/api/api-docs/run.sh showtime-creation.spec
 ```
 
-Each `TEST` detail log records the actual response body. The spec itself shows the request, while preparation-only `SETUP` calls are not documentation entries. Long-lived SSE and infrastructure failure paths are covered by integration tests. See [Executable API docs](docs/apps.md#5-실행-가능한-api-문서) for the detailed conventions.
+Each `TEST` detail log records the actual response body. The spec itself shows the request, while preparation-only `SETUP` calls are not documentation entries. Long-lived SSE and infrastructure failure paths are covered by integration tests. See [Executable API docs](docs/apps.md#통합-테스트와-실행-가능한-api-문서) for the detailed conventions.
 
 ## 4. Project structure
 
@@ -130,11 +130,11 @@ Payments are an example implementation that records payment state in MongoDB wit
 
 ## 7. Authorization
 
-**admin** manages content and operations targeting arbitrary users, while **user** operates on its own resources. See the [authorization rules](docs/apps.md#335-본인-자원은-me로-다룬다) for token and `/me` boundaries.
+**admin** manages content and operations targeting arbitrary users, while **user** operates on its own resources. See the [authorization rules](docs/apps.md#http와-인증-계약) for token and `/me` boundaries.
 
 ## 8. Production scope
 
-`tests/api/compose.yml` exercises distributed behavior; it is not a production deployment. It does not provide TLS, secret management, backup/restore, an observability backend, a frontend edge, or zero-downtime revision rollout. Before production use, review the [BFF IP trust boundary](docs/apps.md#61-bff와-클라이언트-ip-경계) and [Restate revision transition requirements](docs/reference/decisions.md#endpoint와-revision-전환).
+`tests/api/compose.yml` exercises distributed behavior; it is not a production deployment. It does not provide TLS, secret management, backup/restore, an observability backend, a frontend edge, or zero-downtime revision rollout. Before production use, review the [BFF IP trust boundary](docs/apps.md#데모와-bff) and [Restate revision transition requirements](docs/reference/decisions.md#배포-revision).
 
 ## 9. Documentation
 
@@ -151,6 +151,6 @@ Each `docs/*.md` guide corresponds to a repository directory and explains its re
 - [decisions](docs/reference/decisions.md) — choices, alternatives, and non-guarantees
 - [development rules](docs/reference/conventions.md) — naming, DTOs, types, ESM, errors, and test-writing conventions
 
-[Tasks and work plans](_todo/README.md) belong in `_todo/`. `docs/` contains project guides only; [historical guides](docs/backup/README.md) are archived separately from the current development instructions.
+[Tasks and work plans](_todo/README.md) belong in `_todo/`. `docs/` contains project guides only; [historical guides](_todo/docsold/backup/README.md) are archived separately from the current development instructions.
 
 For the design background of the movie-booking domain, see the blog series [Backend Service Analysis and Design 1](https://mannercode.com/2025/04/01/backend-design-1.html), [2](https://mannercode.com/2025/05/01/backend-design-2.html), and [3](https://mannercode.com/2025/06/01/backend-design-3.html).

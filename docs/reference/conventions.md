@@ -105,6 +105,6 @@ describe('POST /users')
 
 ## 실행과 커밋
 
-루트 package script가 사람과 CI의 진입점이다. workspace는 지원하는 `dev`, `build`, `test`, `lint`, `format`, `atoz` 동사를 같은 뜻으로 제공한다. 검사 범위는 각 package script가 소유하며 명령별 안내는 [테스트 실행](test-execution.md)에 둔다.
+루트 package script가 사람과 CI의 진입점이다. workspace는 지원하는 `dev`, `build`, `test`, `lint`, `format`, `atoz` 동사를 같은 뜻으로 제공한다. 검사 범위는 각 package script가 소유하며 명령별 안내는 [README의 실행 안내](../../README.md#실행과-검증)에 둔다.
 
 커밋은 Conventional Commits의 `type(scope): subject`를 사용해 변경 의도를 쓴다. 허용 type과 hook 동작은 commitlint·lint-staged 설정이 소유한다.

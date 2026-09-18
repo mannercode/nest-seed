@@ -1,10 +1,10 @@
 # tests/ — 실행 스택 밖에서 하는 검증
 
-API와 라이브러리의 동작은 각 workspace의 통합 테스트가 먼저 검증한다. `tests/`는 여러 API 프로세스 사이의 경쟁, 브라우저와 production build의 연결, 같은 조건의 성능 비교를 담당한다. 데모 화면마다 unit suite를 만들거나 API 통합 테스트의 모든 실패 조건을 다시 복제하는 위치가 아니다. 명령과 결과 위치는 [실행 안내](reference/test-execution.md)에 있다.
+API와 라이브러리의 동작은 각 workspace의 통합 테스트가 먼저 검증한다. `tests/`는 여러 API 프로세스 사이의 경쟁, 브라우저와 production build의 연결, 같은 조건의 성능 비교를 담당한다. 데모 화면마다 unit suite를 만들거나 API 통합 테스트의 모든 실패 조건을 다시 복제하는 위치가 아니다. 명령과 결과 위치는 [README의 실행 안내](../README.md#실행과-검증)에 있다.
 
 ## API 스택과 수명
 
-[API Compose](../../tests/api/compose.yml)는 API 문서·race·benchmark가 공유하는 복제본 4개와 NGINX를 띄우고 기존 개발 인프라에 연결한다. 프로세스가 나뉘어야 로컬 메모리만으로 경쟁을 처리한 구현과 Redis·DB·NATS의 경계를 사용하는 구현을 구분할 수 있다. 복제본 수는 이 검증을 위한 선택이다.
+[API Compose](../tests/api/compose.yml)는 API 문서·race·benchmark가 공유하는 복제본 4개와 NGINX를 띄우고 기존 개발 인프라에 연결한다. 프로세스가 나뉘어야 로컬 메모리만으로 경쟁을 처리한 구현과 Redis·DB·NATS의 경계를 사용하는 구현을 구분할 수 있다. 복제본 수는 이 검증을 위한 선택이다.
 
 ```text
 HTTP/SSE client → NGINX → API 복제본 4개 → 개발 인프라
@@ -43,7 +43,7 @@ race는 내부 클래스를 호출하지 않고 HTTP/SSE로 결과를 관측한�
 
 SSE는 구독한 복제본들의 분산과 이벤트 전달을 확인한다. 상영 overlap은 4개 복제본 스택에서 실행하되 요청별 복제본 헤더를 별도로 단언하지 않는다. 이 차이를 무시하고 모든 테스트가 동일한 분산 보장을 검증한다고 쓰지 않는다.
 
-`replica-chaos`의 가입 가용성, API 통합 테스트의 업무 단계 재시도, [Restate journal 복구](../../infra/tests/restate-journal-recovery.js)는 서로 다른 검증이다. 각각이 다른 검증을 대신하거나 운영 장애 전체를 증명하지는 않는다.
+`replica-chaos`의 가입 가용성, API 통합 테스트의 업무 단계 재시도, [Restate journal 복구](../infra/tests/restate-journal-recovery.js)는 서로 다른 검증이다. 각각이 다른 검증을 대신하거나 운영 장애 전체를 증명하지는 않는다.
 
 실패하면 runner가 스택을 정리하기 전에 컨테이너 로그·상태·자원과 MongoDB 복제 상태를 수집한다. 먼저 같은 시각의 실패 응답과 로그를 본다. 기대하지 않은 오류를 정상 경쟁으로 분류하거나 timeout·반복 횟수를 바꿔 실패를 숨기지 않는다.
 
@@ -51,7 +51,7 @@ SSE는 구독한 복제본들의 분산과 이벤트 전달을 확인한다. 상
 
 HTTP `/health` 통과와 Restate의 workflow 등록은 별개다. runner는 API와 NGINX가 healthy가 된 후 `restate-register`를 실행한다. 개별 복제본 대신 안정적인 `http://nginx:9080`을 등록해 invocation을 API 복제본에 전달한다.
 
-API의 HTTP 및 Restate 내부 포트를 바꾸면 [NGINX upstream](../../tests/api/nginx.conf)과 Compose의 등록 URI도 함께 맞춘다. env 값만 바꿔도 NGINX 파일이 자동으로 갱신되는 구조는 아니다.
+API의 HTTP 및 Restate 내부 포트를 바꾸면 [NGINX upstream](../tests/api/nginx.conf)과 Compose의 등록 URI도 함께 맞춘다. env 값만 바꿔도 NGINX 파일이 자동으로 갱신되는 구조는 아니다.
 
 등록은 `force: false`다. 같은 URI 뒤의 코드·manifest를 바꾼 것만으로 기존 deployment 정의가 교체되지 않는다. 보존할 실행이 없는 개발 환경은 infra reset으로 초기화할 수 있지만, journal도 삭제하므로 운영 revision 전환에 사용하지 않는다. 배포 시 필요한 조건은 [설계 결정](reference/decisions.md)에서 다룬다.
 
@@ -69,4 +69,4 @@ web runner는 `${COMPOSE_PROJECT_NAME}-web`의 앱만 종료한다. 브라우저
 
 benchmark는 같은 머신·이미지·데이터 조건의 이전 실행과 비교한다. 극장 읽기·쓰기와 혼합 부하, gzip 유무를 비교하며 절대 성능이나 운영 SLA를 보장하지 않는다. 먼저 정상 상태 코드만 나왔는지 확인하고 처리량·p95·p99를 비교한다. 오류 응답의 짧은 지연 시간을 개선으로 해석하지 않는다.
 
-필수 AtoZ는 기본 회귀를 실행하고, Stability와 API Race CI는 간헐적인 실패를 찾기 위해 별도로 반복한다. Stability의 coverage 비활성 반복은 AtoZ의 100% 게이트를 대신하지 않는다. 횟수·스케줄은 [CI 파일](../../.github/workflows/)이 소유한다. 단발 통과도 반복 통과도 모든 경쟁·장애가 사라졌다는 증명은 아니다.
+필수 AtoZ는 기본 회귀를 실행하고, Stability와 API Race CI는 간헐적인 실패를 찾기 위해 별도로 반복한다. Stability의 coverage 비활성 반복은 AtoZ의 100% 게이트를 대신하지 않는다. 횟수·스케줄은 [CI 파일](../.github/workflows/)이 소유한다. 단발 통과도 반복 통과도 모든 경쟁·장애가 사라졌다는 증명은 아니다.
