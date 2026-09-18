@@ -2,5 +2,6 @@
 
 `apps/api`와 `libs/`를 중심으로 시드에 필요한 미완료 작업을 관리한다.
 
-- [ ] **CI에서 빠진 스크립트의 lint를 연결한다.** [루트](../package.json)의 `lint:root`는 형식·링크·shell만 검사한다. `vitest.config.base.mjs`, `tools/dev-tools/free-port.js`, `libs/common/vitest.global.cjs`·`vitest.teardown.cjs`는 workspace의 Oxlint 대상에서도 빠져 있다. 기존 Oxlint 설정과 `lint`·`atoz` 진입점에 포함하면 된다. 새 도구·규칙·테스트는 필요 없다.
-- [ ] **[문서의 남은 불일치와 표현](docs-reference-review.md)을 정리한다.** env 주입 방식, MongoDB 설명, 실제 테스트가 확인하는 범위와 개발 규칙의 표현을 맞춘다. 코드 변경을 마친 뒤 진행할 문서 작업이다.
+[전체 검토와 작업 우선순위](project-review/README.md)에 확실한 문제·단순화 후보·계약 결정이 필요한 항목을 구분했다. 기존 CI lint 누락도 여기에 포함한다.
+
+[기존 문서 검토 항목](docs-reference-review.md)은 [새 가이드](../docs/new/README.md)에 반영했으며, 현행 가이드 교체 전 대조 기준으로 남긴다. 과거 가이드 원문은 `docs/backup/`에서 보존하고 미결 검토를 그곳으로 옮기지 않는다.
