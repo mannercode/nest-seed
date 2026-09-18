@@ -47,6 +47,8 @@ SSE는 구독한 복제본들의 분산과 이벤트 전달을 확인한다. 상
 
 실패하면 runner가 스택을 정리하기 전에 컨테이너 로그·상태·자원과 MongoDB 복제 상태를 수집한다. 먼저 같은 시각의 실패 응답과 로그를 본다. 기대하지 않은 오류를 정상 경쟁으로 분류하거나 timeout·반복 횟수를 바꿔 실패를 숨기지 않는다.
 
+중복 결제 반복은 access token 수명보다 길 수 있어 매 회차의 경합 전에 관리자·사용자 인증을 갱신한다. 경합 중 발생한 인증 실패는 그대로 실패로 처리한다.
+
 ## Restate 등록과 포트
 
 HTTP `/health` 통과와 Restate의 workflow 등록은 별개다. runner는 API와 NGINX가 healthy가 된 후 `restate-register`를 실행한다. 개별 복제본 대신 안정적인 `http://nginx:9080`을 등록해 invocation을 API 복제본에 전달한다.

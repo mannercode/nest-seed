@@ -24,32 +24,40 @@ describe('MongoConnection', () => {
 })
 
 describe('MongoModule', () => {
-    it('주입한 설정으로 연결하고 종료 시 소유한 client를 닫는다', async () => {
-        const options = {
-            uri: process.env.TESTLIB_MONGO_URI!,
-            dbName: process.env.TESTLIB_MONGO_DATABASE!
+    it.each([undefined, 50])(
+        '주입한 최소 풀 크기(%s)로 연결하고 소유한 client를 닫는다',
+        async (minPoolSize) => {
+            const options = {
+                uri: process.env.TESTLIB_MONGO_URI!,
+                dbName: process.env.TESTLIB_MONGO_DATABASE!,
+                minPoolSize
+            }
+            const config = Symbol('config')
+            @Global()
+            @Module({ providers: [{ provide: config, useValue: options }], exports: [config] })
+            class Configuration {}
+            const module = await Test.createTestingModule({
+                imports: [
+                    Configuration,
+                    MongoModule.forRootAsync({
+                        inject: [config],
+                        useFactory: async (value) => value
+                    })
+                ]
+            }).compile()
+            const connection = module.get(MongoConnection)
+            const close = vi.spyOn(connection.client, 'close')
+            try {
+                await expect(connection.ping()).resolves.toBeUndefined()
+                expect(connection.db.databaseName).toBe(options.dbName)
+                expect(connection.client.options.minPoolSize).toBe(minPoolSize ?? 0)
+                expect(connection.client.options.waitQueueTimeoutMS).toBe(5000)
+            } finally {
+                await module.close()
+            }
+            expect(close).toHaveBeenCalledOnce()
         }
-        const config = Symbol('config')
-        @Global()
-        @Module({ providers: [{ provide: config, useValue: options }], exports: [config] })
-        class Configuration {}
-        const module = await Test.createTestingModule({
-            imports: [
-                Configuration,
-                MongoModule.forRootAsync({ inject: [config], useFactory: async (value) => value })
-            ]
-        }).compile()
-        const connection = module.get(MongoConnection)
-        const close = vi.spyOn(connection.client, 'close')
-        try {
-            await expect(connection.ping()).resolves.toBeUndefined()
-            expect(connection.db.databaseName).toBe(options.dbName)
-            expect(connection.client.options.waitQueueTimeoutMS).toBe(5000)
-        } finally {
-            await module.close()
-        }
-        expect(close).toHaveBeenCalledOnce()
-    })
+    )
 })
 
 describe('MongoConnection.connect', () => {
