@@ -4,7 +4,7 @@
 
 ## 1. 환경 변수는 재생성해야 반영된다
 
-루트 [.env.infra](../../.env.infra)는 인프라 접속·이미지·포트와 개발 admin을, [.env.api](../../.env.api)는 인증·HTTP·업무 설정을 소유한다. 두 파일은 Dev Container를 **만들 때** 주입되고 pnpm·앱·테스트가 상속한다. 수정한 뒤 앱이나 컨테이너를 재시작하는 것만으로는 주입 값이 바뀌지 않는다. **Rebuild Container로 재생성한다.**
+루트 [.env.infra](../.env.infra)는 인프라 접속·이미지·포트와 개발 admin을, [.env.api](../.env.api)는 인증·HTTP·업무 설정을 소유한다. 두 파일은 Dev Container를 **만들 때** 주입되고 pnpm·앱·테스트가 상속한다. 수정한 뒤 앱이나 컨테이너를 재시작하는 것만으로는 주입 값이 바뀌지 않는다. **Rebuild Container로 재생성한다.**
 
 API는 별도 env 파일을 찾지 않고 주입된 값을 검증한다. reset·API 테스트 실행기 역시 루트 env 파일을 shell로 다시 읽지 않는다. API/web Compose가 새 앱 컨테이너에 전달할 때는 `env_file`의 `format: raw`를 사용한다.
 
@@ -47,4 +47,4 @@ PASSWORD=secret
 
 Codex의 세션·인덱스·SQLite 상태는 프로젝트별 홈에 두고 설정·인증·스킬만 호스트의 공용 홈에서 링크한다. 교체 저장되는 설정·인증 파일을 개별 bind mount하지 않고 디렉터리를 마운트한다. 이는 상태 분리이며 파일 접근을 차단하는 sandbox는 아니다.
 
-Docker socket과 개발 도구 자격증명을 마운트하므로 신뢰하지 않는 revision을 실행하기 전에는 `.devcontainer/`, 설치 script, workflow·shell 변경을 확인한다. 의존성 설치 script의 허용 목록은 [pnpm-workspace.yaml](../../pnpm-workspace.yaml)이 소유한다. 갱신 시 script 내용과 lockfile integrity를 확인하고, 현재 OS에서 실행되지 않는다는 이유만으로 다른 OS용 항목을 지우지 않는다.
+Docker socket과 개발 도구 자격증명을 마운트하므로 신뢰하지 않는 revision을 실행하기 전에는 `.devcontainer/`, 설치 script, workflow·shell 변경을 확인한다. 의존성 설치 script의 허용 목록은 [pnpm-workspace.yaml](../pnpm-workspace.yaml)이 소유한다. 갱신 시 script 내용과 lockfile integrity를 확인하고, 현재 OS에서 실행되지 않는다는 이유만으로 다른 OS용 항목을 지우지 않는다.

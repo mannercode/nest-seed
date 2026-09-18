@@ -8,7 +8,7 @@ Vitest 설정·global setup·teardown은 앱 소스가 변환되기 전에도 �
 
 연결과 자원 이름은 소비 workspace가 정하고 helper는 worker별 MongoDB·S3 준비와 정리 순서를 맡는다. API는 개발 인프라를 공유하므로 자기 접두사의 자원만 정리한다. 실행 전용 Testcontainers Redis의 전체 정리는 호출자가 명시한 경우에만 허용한다.
 
-API 앱 context와 테스트 파일이 공유하는 MongoClient는 수명이 다르다. 테스트 하나가 공유 연결을 닫아 다음 테스트를 깨뜨리지 않도록 소유자를 유지한다. 배선은 [API setup](../../apps/api/src/__tests__/vitest.setup.ts)과 [자원 설정](../../apps/api/scripts/vitest-resource-wiring.cjs)을 본다.
+API 앱 context와 테스트 파일이 공유하는 MongoClient는 수명이 다르다. 테스트 하나가 공유 연결을 닫아 다음 테스트를 깨뜨리지 않도록 소유자를 유지한다. 배선은 [API setup](../apps/api/src/__tests__/vitest.setup.ts)과 [자원 설정](../apps/api/scripts/vitest-resource-wiring.cjs)을 본다.
 
 ## 2. dev-tools — 명시적으로 실행하는 개발 도구
 
@@ -20,7 +20,7 @@ frontend의 BFF가 API로 요청을 전달하므로 tunnel은 화면의 정적 �
 
 ## 3. Compose로 실행하는 도구
 
-lychee와 k6는 [tools/compose.yml](../../tools/compose.yml)의 일회성 컨테이너로 실행한다. 루트 `pnpm compose:tools`가 `${COMPOSE_PROJECT_NAME}-tools` project를 사용하며, 기존 `DEVCONTAINER_NETWORK`에 연결한다. 개발 인프라의 수명과 도구 실행·종료를 분리하기 위해서다.
+lychee와 k6는 [tools/compose.yml](../tools/compose.yml)의 일회성 컨테이너로 실행한다. 루트 `pnpm compose:tools`가 `${COMPOSE_PROJECT_NAME}-tools` project를 사용하며, 기존 `DEVCONTAINER_NETWORK`에 연결한다. 개발 인프라의 수명과 도구 실행·종료를 분리하기 위해서다.
 
 lychee는 `lint:root`에서 내부 문서 링크와 fragment를 확인한다. 외부 사이트 가용성 때문에 lint가 흔들리지 않도록 offline 검사하며 과거 가이드 원문의 옛 링크는 제외한다. k6는 benchmark 실행기가 API 스택과 연결해 실행하고 Dev Container 사용자 권한으로 결과를 남긴다.
 

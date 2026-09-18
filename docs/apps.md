@@ -100,7 +100,7 @@ sequenceDiagram
 
 구간의 끝은 포함하지 않는다. 기존 상영이 13:30에 끝나면 13:30부터 새 상영을 시작할 수 있다. 요청 내부의 겹치는 시작 시각은 접수 전에 400, 기존 상영과의 충돌은 실행 결과 `failed`, 생성 완료는 `succeeded`, 해결되지 않은 시스템 실패는 `error`다. 부분 쓰기는 transaction으로 롤백하며 별도 삭제 보상 step을 만들지 않는다.
 
-한 operation의 상영·티켓 수와 실행 시간에는 상한을 둔다. 정확한 값은 [persistence](../../apps/api/src/services/application/showtime-creation/internal/showtime-creation-persistence.service.ts), [creator](../../apps/api/src/services/application/showtime-creation/internal/showtime-bulk-creator.service.ts), [workflow](../../apps/api/src/services/application/showtime-creation/worker/workflow.ts)가 소유한다. 대규모 배치 분할과 작업 관리 제품을 구현한 예제는 아니다.
+한 operation의 상영·티켓 수와 실행 시간에는 상한을 둔다. 정확한 값은 [persistence](../apps/api/src/services/application/showtime-creation/internal/showtime-creation-persistence.service.ts), [creator](../apps/api/src/services/application/showtime-creation/internal/showtime-bulk-creator.service.ts), [workflow](../apps/api/src/services/application/showtime-creation/worker/workflow.ts)가 소유한다. 대규모 배치 분할과 작업 관리 제품을 구현한 예제는 아니다.
 
 ### 메시지가 보장하는 것
 
@@ -110,7 +110,7 @@ SSE 발행 실패·기한 초과는 기록하고 업무 실행을 계속한다. 
 
 구매 완료 알림은 JetStream에 보존한다. DB·PubAck·소비자의 외부 효과·ack 사이를 한 transaction으로 묶지 못하므로 at-least-once이고 중복은 가능하다. 실제 발송을 추가할 소비자는 구매 ID를 provider 멱등성 키 또는 durable inbox 키로 사용해야 한다. 현재 소비자는 발송할 내용을 로그로 남기는 예제다.
 
-stream은 용량을 넘으면 새 발행을 거부하고 workflow가 재시도한다. 보존·중복 억제 기간과 크기는 [purchase.events.ts](../../apps/api/src/services/application/purchase/purchase.events.ts)가 소유한다. 상세 원리와 도구 선택은 [설계 결정](reference/decisions.md)에 둔다.
+stream은 용량을 넘으면 새 발행을 거부하고 workflow가 재시도한다. 보존·중복 억제 기간과 크기는 [purchase.events.ts](../apps/api/src/services/application/purchase/purchase.events.ts)가 소유한다. 상세 원리와 도구 선택은 [설계 결정](reference/decisions.md)에 둔다.
 
 ## HTTP와 인증 계약
 
