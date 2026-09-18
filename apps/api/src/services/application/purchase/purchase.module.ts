@@ -12,9 +12,13 @@ import {
     PurchaseEvents
 } from './purchase.events.js'
 import { PurchaseService } from './purchase.service.js'
+import { PurchaseWorkflow } from './worker/workflow.js'
+import { PurchaseWorkflowClient } from './worker/workflow-client.js'
+import { PurchaseEventWorkflow } from './worker/event-workflow.js'
+import { PurchaseEventWorkflowClient } from './worker/event-workflow-client.js'
 
 @Module({
-    exports: [PurchaseService],
+    exports: [PurchaseService, PurchaseWorkflow, PurchaseEventWorkflow],
     imports: [
         TicketsModule,
         TicketHoldingModule,
@@ -24,6 +28,10 @@ import { PurchaseService } from './purchase.service.js'
     ],
     providers: [
         PurchaseService,
+        PurchaseWorkflow,
+        PurchaseWorkflowClient,
+        PurchaseEventWorkflow,
+        PurchaseEventWorkflowClient,
         TicketPurchaseService,
         PurchaseEvents,
         PurchaseNotificationService,

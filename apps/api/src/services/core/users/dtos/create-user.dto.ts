@@ -1,15 +1,11 @@
+import { PlainDateFromInputSchema } from '@mannercode/common'
 import { z } from 'zod'
-import {
-    dateFromRequest,
-    nonEmptyStringFromRequest,
-    stringFromRequest
-} from './request-value.schema.js'
 
 export const CreateUserSchema = z.strictObject({
-    birthDate: dateFromRequest,
-    email: stringFromRequest.pipe(z.email()),
-    name: nonEmptyStringFromRequest,
-    password: nonEmptyStringFromRequest
+    birthDate: PlainDateFromInputSchema,
+    email: z.email(),
+    name: z.string().min(1),
+    password: z.string().min(1)
 })
 
 export type CreateUserDto = z.infer<typeof CreateUserSchema>

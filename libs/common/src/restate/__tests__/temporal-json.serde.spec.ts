@@ -1,9 +1,10 @@
+import { z } from 'zod'
 import { CancelledError, TerminalError, type WorkflowContext } from '@restatedev/restate-sdk'
 import { instant, plainDate } from '@mannercode/testing'
 import { TemporalJsonSerde, defineWorkflow, isWorkflowCancellation } from '../index.js'
 
 describe('TemporalJsonSerde', () => {
-    it('Restate wire와 journal에서 Instant와 PlainDate를 원래 의미로 왕복한다', () => {
+    it('Temporal을 기존 wire 형식으로 직렬화하고 역직렬화는 JSON 타입을 유지한다', () => {
         const value = { date: plainDate('2025-01-02'), timestamp: instant('2025-01-02T03:04:00Z') }
 
         const serialized = TemporalJsonSerde.serialize(value)
@@ -11,7 +12,10 @@ describe('TemporalJsonSerde', () => {
         expect(new TextDecoder().decode(serialized)).toBe(
             '{"date":"2025-01-02","timestamp":"2025-01-02T03:04:00.000Z"}'
         )
-        expect(TemporalJsonSerde.deserialize(serialized)).toEqual(value)
+        expect(TemporalJsonSerde.deserialize(serialized)).toEqual({
+            date: '2025-01-02',
+            timestamp: '2025-01-02T03:04:00.000Z'
+        })
     })
 
     it('void handler와 ctx.run 결과는 빈 payload로 왕복한다', () => {
@@ -30,6 +34,7 @@ describe('defineWorkflow', () => {
         const execute = vi.fn(async () => 'result')
         const defined = defineWorkflow({
             name: 'adapter-test',
+            input: z.string(),
             run: async (context, input: string) => {
                 expect(input).toBe('input')
                 expect(context.attemptSignal()).toBe(signal)
@@ -70,6 +75,14 @@ describe('defineWorkflow', () => {
             message: 'terminal',
             code: 409
         })
+
+        const retrying = defineWorkflow({
+            name: 'retrying-workflow',
+            input: z.void(),
+            run: execute,
+            options: { abortTimeout: 100, inactivityTimeout: 1000, workflowRetention: 5000 }
+        }) as unknown as { options: { asTerminalError?: unknown } }
+        expect(retrying.options.asTerminalError).toBeUndefined()
     })
 
     it('워크플로 취소 오류만 취소로 분류한다', () => {

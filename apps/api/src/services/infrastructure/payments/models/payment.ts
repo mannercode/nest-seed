@@ -9,10 +9,6 @@ export class Payment extends CrudDocument {
 
     purchaseRecordId: string
 
-    // 결제 생성과 구매 완료 사이에서 프로세스가 종료돼도 후속 작업이 결제 결과를
-    // 구매 상태와 다시 대조할 수 있게 하는 durable resolution marker다.
-    requiresPurchaseResolution: boolean
-
     status: PaymentStatus
 
     userId: string

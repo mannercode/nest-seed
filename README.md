@@ -9,7 +9,7 @@
 실무 프로젝트의 출발점으로 사용하는 NestJS 모노레포다. 영화 예매라는 익숙한 흐름을 따라 모듈 경계부터 다중 복제본의 경합, 중복 요청, 부분 실패와 복구까지 읽고 실행할 수 있다. `apps/api`가 본체이고 `console`과 `user-app`은 Next.js 연결을 보여 주는 최소 데모다.
 
 - **모듈 경계** — SoLA(Service-oriented Layered Architecture)는 같은 계층의 협력을 상위에서 조합해 순환 참조를 막는다. 단일 도메인의 CRUD는 Gateway가 Core를 직접 호출한다.
-- **분산 실행과 복구** — 같은 API의 여러 복제본이 좌석 경쟁과 중복 요청을 처리한다. 구매의 상태 머신·lease 재조정과 상영 생성의 Restate workflow를 비교할 수 있다.
+- **분산 실행과 복구** — 같은 API의 여러 복제본이 좌석 경쟁과 중복 요청을 처리한다. 구매와 상영 생성은 Restate workflow로 중단 후 실행을 이어 간다.
 - **실제 환경에서 검증** — Dev Container의 실제 인프라를 사용해 통합 테스트·다중 복제본 race·실행 가능한 API 문서를 검증한다. 커버리지 100%는 실행되지 않은 분기를 드러내는 개발 제약이다.
 
 ```mermaid
@@ -119,7 +119,7 @@ bash apps/api/api-docs/run.sh showtime-creation.spec
 | `core/tickets`, `core/ticket-holding` | 원자 상태 전이와 Redis Lua 기반 좌석 선점             |
 | `application/booking`                 | 여러 Core를 조합하는 사용자 동선                      |
 | `application/showtime-creation`       | 202, Restate workflow, 상태 조회·SSE, transaction·CAS |
-| `application/purchase`                | 멱등 응답, durable 상태 머신, lease 재조정, outbox    |
+| `application/purchase`                | 동기 응답, Restate 복구·보상, 멱등 결제, JetStream    |
 | `application/recommendation`          | 관람 기록 기반 추천과 순수 도메인 로직                |
 | `view/user-app/home`                  | 화면에 맞춘 읽기 응답 조합                            |
 | `infrastructure/assets`, `payments`   | S3 연동과 결제 생성·취소의 경계                       |
@@ -149,6 +149,6 @@ bash apps/api/api-docs/run.sh showtime-creation.spec
 - [decisions](docs/reference/decisions.md) — 선택 이유, 대안, 보장하지 않는 것
 - [개발 규칙](docs/reference/conventions.md) — 이름·DTO·타입·ESM·오류·테스트 작성 규칙
 
-[할 일과 작업 계획](_todo/README.md)은 `_todo/`에 둔다. [문서 검토 메모](docs/review/README.md)와 [과거 자료](docs/backup/README.md)는 재검토를 위한 자료이며 현재 개발 지침을 대신하지 않는다.
+[할 일과 작업 계획](_todo/README.md)은 `_todo/`에 둔다. `docs/`에는 프로젝트 가이드만 두며, [과거 가이드](docs/backup/README.md)는 현재 개발 지침과 구분해 보관한다.
 
 영화 예매 도메인의 설계 배경은 블로그 연재 [백엔드 서비스 분석과 설계 1](https://mannercode.com/2025/04/01/backend-design-1.html)·[2](https://mannercode.com/2025/05/01/backend-design-2.html)·[3](https://mannercode.com/2025/06/01/backend-design-3.html)에 있다.

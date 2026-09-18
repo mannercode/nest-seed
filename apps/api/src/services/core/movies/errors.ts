@@ -24,6 +24,11 @@ export const MovieErrors = {
         message: 'The movie does not exist.',
         notFoundMovieId
     }),
+    UpdateConflict: (movieId: string) => ({
+        code: 'ERR_MOVIE_UPDATE_CONFLICT',
+        message: 'The movie changed while it was being updated.',
+        movieId
+    }),
     UnsupportedAssetType: (mimeType: string) => ({
         code: 'ERR_MOVIE_ASSET_TYPE_NOT_ALLOWED',
         message: 'Only image uploads are supported.',

@@ -50,12 +50,17 @@ async function emptyBucket(s3Client, bucket) {
         )
 
         if (listed.Contents?.length) {
-            await s3Client.send(
+            const response = await s3Client.send(
                 new DeleteObjectsCommand({
                     Bucket: bucket,
                     Delete: { Objects: listed.Contents.map((o) => ({ Key: o.Key })) }
                 })
             )
+            if (response.Errors?.length) {
+                throw new Error(
+                    `S3 cleanup failed for bucket ${bucket}: ${JSON.stringify(response.Errors)}`
+                )
+            }
         }
 
         continuationToken = listed.IsTruncated ? listed.NextContinuationToken : undefined

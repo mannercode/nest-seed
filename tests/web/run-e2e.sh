@@ -6,12 +6,7 @@ cd -- "$(dirname -- "$0")"
 : "${COMPOSE_PROJECT_NAME:?Dev Container의 COMPOSE_PROJECT_NAME이 필요합니다}"
 : "${DEVCONTAINER_NETWORK:?Dev Container의 DEVCONTAINER_NETWORK가 필요합니다}"
 
-compose=(
-    docker compose
-    --project-name "${COMPOSE_PROJECT_NAME}-web"
-    --env-file "${WORKSPACE_ROOT}/.env.infra"
-    --env-file "${WORKSPACE_ROOT}/.env.api"
-)
+compose=(docker compose --project-name "${COMPOSE_PROJECT_NAME}-web")
 
 mkdir -p _output
 

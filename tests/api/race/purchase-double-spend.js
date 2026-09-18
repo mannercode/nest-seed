@@ -8,6 +8,7 @@ const {
     createAndLoginUser,
     createPublishedMovieAndTheater,
     createShowtimeWithTickets,
+    isPurchaseConflict,
     readPositiveInt,
     request,
     secureRandomHex,
@@ -67,8 +68,8 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
     const replicaSet = new Set()
     for (const r of results) {
         const slot = byGroup[r.group]
-        if (r.status >= 200 && r.status < 300) slot.ok++
-        else if (r.status >= 400 && r.status < 500) slot.rejected++
+        if (r.status === 201) slot.ok++
+        else if (isPurchaseConflict(r)) slot.rejected++
         else slot.other.push(r)
         if (r.replicaId) replicaSet.add(r.replicaId)
     }
@@ -79,9 +80,7 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
             console.error(
                 `[purchase] iter=${iteration} group=${g}: expected 1 × success, got ${slot.ok}`
             )
-            for (const r of results.filter(
-                (x) => x.group === g && x.status >= 200 && x.status < 300
-            )) {
+            for (const r of results.filter((x) => x.group === g && x.status === 201)) {
                 console.error(
                     `  - ${r.status} replica=${r.replicaId} body=${JSON.stringify(r.body)}`
                 )
@@ -97,7 +96,7 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
             throw new Error(`iter ${iteration} group ${g}: ${slot.other.length} unexpected`)
         }
 
-        const winner = results.find((r) => r.group === g && r.status >= 200 && r.status < 300)
+        const winner = results.find((r) => r.group === g && r.status === 201)
         if (!winner.body || !winner.body.id) {
             throw new Error(`iter ${iteration} group ${g}: success response has no purchase id`)
         }

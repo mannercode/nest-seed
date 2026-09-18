@@ -1,8 +1,10 @@
+import { UserHomeViewSchema } from '#view'
 import { DateUtil, ensure } from '@mannercode/common'
 import {
     createMovie,
     createShowtimes,
     createTheater,
+    createUnpublishedMovie,
     type AppTestContext,
     createAppTestContext
 } from '../helpers/index.js'
@@ -32,7 +34,9 @@ describe('UserHomeView', () => {
 
     describe('GET /views/user-app/home', () => {
         it('상영 예정이 없으면 빈 목록을 반환한다', async () => {
-            const { body } = await fix.httpClient.get('/views/user-app/home').ok()
+            const { body } = await fix.httpClient
+                .get('/views/user-app/home')
+                .ok({ schema: UserHomeViewSchema })
 
             expect(body).toEqual({ showingMovies: [], recommendedMovies: [] })
         })
@@ -40,9 +44,34 @@ describe('UserHomeView', () => {
         it('상영 예정이 없는 영화는 카드에서 제외한다', async () => {
             await createMovie(fix, { title: 'Home Only Movie' })
 
-            const { body } = await fix.httpClient.get('/views/user-app/home').ok()
+            const { body } = await fix.httpClient
+                .get('/views/user-app/home')
+                .ok({ schema: UserHomeViewSchema })
 
             expect(body).toEqual({ showingMovies: [], recommendedMovies: [] })
+        })
+
+        it('상영 예정이 있어도 미공개 영화는 카드와 추천에서 제외한다', async () => {
+            const published = await createMovie(fix)
+            const unpublished = await createUnpublishedMovie(fix)
+            const theater = await createTheater(fix)
+            const startTime = DateUtil.add({ days: 1 })
+
+            await createShowtimes(fix, [
+                { movieId: published.id, theaterId: theater.id, startTime },
+                {
+                    movieId: unpublished.id,
+                    theaterId: theater.id,
+                    startTime: DateUtil.add({ days: 2 })
+                }
+            ])
+
+            const { body } = await fix.httpClient
+                .get('/views/user-app/home')
+                .ok({ schema: UserHomeViewSchema })
+
+            expect(body.showingMovies.map(({ movie }) => movie.id)).toEqual([published.id])
+            expect(body.recommendedMovies.map((movie) => movie.id)).toEqual([published.id])
         })
 
         describe('가까운 상영이 여러 개 있을 때', () => {
@@ -104,7 +133,9 @@ describe('UserHomeView', () => {
             })
 
             it('가까운 상영을 시작 시각순으로 정렬한다', async () => {
-                const { body } = await fix.httpClient.get('/views/user-app/home').ok()
+                const { body } = await fix.httpClient
+                    .get('/views/user-app/home')
+                    .ok({ schema: UserHomeViewSchema })
                 const home = body as HomeResponse
 
                 const card = ensure(home.showingMovies[0])
@@ -117,7 +148,9 @@ describe('UserHomeView', () => {
             })
 
             it('영화당 상영을 최대 3개까지만 포함한다', async () => {
-                const { body } = await fix.httpClient.get('/views/user-app/home').ok()
+                const { body } = await fix.httpClient
+                    .get('/views/user-app/home')
+                    .ok({ schema: UserHomeViewSchema })
                 const home = body as HomeResponse
 
                 expect(home.showingMovies).toHaveLength(1)
@@ -128,7 +161,9 @@ describe('UserHomeView', () => {
             })
 
             it('이미 지난 상영은 카드에서 제외한다', async () => {
-                const { body } = await fix.httpClient.get('/views/user-app/home').ok()
+                const { body } = await fix.httpClient
+                    .get('/views/user-app/home')
+                    .ok({ schema: UserHomeViewSchema })
                 const home = body as HomeResponse
 
                 const card = ensure(home.showingMovies[0])

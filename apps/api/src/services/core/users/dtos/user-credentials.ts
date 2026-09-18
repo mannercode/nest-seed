@@ -1,9 +1,5 @@
 import { z } from 'zod'
-import { stringFromRequest } from './request-value.schema.js'
 
-export const UserCredentialsSchema = z.strictObject({
-    email: stringFromRequest.pipe(z.email()),
-    password: stringFromRequest
-})
+export const UserCredentialsSchema = z.strictObject({ email: z.email(), password: z.string() })
 
 export type UserCredentialsDto = z.infer<typeof UserCredentialsSchema>

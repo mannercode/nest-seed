@@ -76,12 +76,7 @@ export const PaginationSchema = z.strictObject({
 
 export type PaginationDto = z.infer<typeof PaginationSchema>
 
-export class PaginationResult<E> {
-    items: E[]
+export const paginationResultSchema = <Item extends z.ZodType>(item: Item) =>
+    z.object({ items: z.array(item), page: z.number(), size: z.number(), total: z.number() })
 
-    page: number
-
-    size: number
-
-    total: number
-}
+export type PaginationResult<E> = z.infer<ReturnType<typeof paginationResultSchema<z.ZodType<E>>>>

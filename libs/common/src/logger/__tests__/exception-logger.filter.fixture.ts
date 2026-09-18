@@ -6,6 +6,7 @@ import {
     Get,
     HttpException,
     HttpStatus,
+    InternalServerErrorException,
     NotFoundException,
     Post,
     UnauthorizedException,
@@ -25,6 +26,13 @@ export type ExceptionLoggerFilterFixture = {
 
 @Controller()
 class TestController {
+    @Get('internal-error')
+    getInternalError() {
+        throw new InternalServerErrorException('Internal server error', {
+            cause: 'Unexpected storage result'
+        })
+    }
+
     @Get('error')
     getHttpError() {
         throw new Error('error message')

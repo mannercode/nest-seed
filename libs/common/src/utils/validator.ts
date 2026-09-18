@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common'
+import { InternalServerErrorException, Logger } from '@nestjs/common'
 import { isEqual } from './lodash.js'
 
 export class Assume {
@@ -18,7 +18,7 @@ export class Require {
         message = 'Value must exist.'
     ): asserts value is NonNullable<T> {
         if (value == null) {
-            throw new Error(message)
+            throw new InternalServerErrorException('Internal server error', { cause: message })
         }
     }
 
@@ -27,20 +27,24 @@ export class Require {
         const bLen = Array.isArray(b) ? b.length : undefined
 
         if (aLen === undefined || bLen === undefined || aLen !== bLen) {
-            throw new Error(`${message} first: ${aLen}, second: ${bLen}`)
+            throw new InternalServerErrorException('Internal server error', {
+                cause: `${message} first: ${aLen}, second: ${bLen}`
+            })
         }
     }
 
     static equals<T>(a: T, b: T, message: string) {
         if (!isEqual(a, b)) {
-            throw new Error(`${JSON.stringify(a)} !== ${JSON.stringify(b)}, ${message}`)
+            throw new InternalServerErrorException('Internal server error', {
+                cause: `${JSON.stringify(a)} !== ${JSON.stringify(b)}, ${message}`
+            })
         }
     }
 }
 
 export function ensure<T>(value: null | T | undefined, message = 'Value must exist.'): T {
     if (value == null) {
-        throw new Error(message)
+        throw new InternalServerErrorException('Internal server error', { cause: message })
     }
 
     return value

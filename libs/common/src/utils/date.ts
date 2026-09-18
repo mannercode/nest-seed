@@ -1,3 +1,5 @@
+import { InternalServerErrorException } from '@nestjs/common'
+
 export type DateAddOptions = {
     base?: Temporal.Instant
     days?: number
@@ -33,7 +35,11 @@ export class DateUtil {
     }
 
     static earliest(instants: readonly Temporal.Instant[]): Temporal.Instant {
-        if (instants.length === 0) throw new RangeError('At least one instant is required.')
+        if (instants.length === 0) {
+            throw new InternalServerErrorException('Internal server error', {
+                cause: 'At least one instant is required.'
+            })
+        }
         return instants.reduce((earliest, instant) =>
             this.isBefore(instant, earliest) ? instant : earliest
         )
@@ -49,7 +55,9 @@ export class DateUtil {
 
     static fromISOString(value: string): Temporal.Instant {
         if (!ISO_UTC_INSTANT.test(value)) {
-            throw new RangeError('Expected an ISO 8601 UTC instant.')
+            throw new InternalServerErrorException('Internal server error', {
+                cause: 'Expected an ISO 8601 UTC instant.'
+            })
         }
         return this.toMillisecondPrecision(Temporal.Instant.from(value))
     }
@@ -62,7 +70,9 @@ export class DateUtil {
 
     static fromYMD(dateString: string): Temporal.PlainDate {
         if (!/^\d{8}$/.test(dateString)) {
-            throw new Error('Invalid date string format. Expected YYYYMMDD.')
+            throw new InternalServerErrorException('Internal server error', {
+                cause: 'Invalid date string format. Expected YYYYMMDD.'
+            })
         }
 
         const year = Number(dateString.slice(0, 4))
@@ -73,7 +83,9 @@ export class DateUtil {
 
     static fromYMDHM(dateString: string): Temporal.PlainDateTime {
         if (!/^\d{12}$/.test(dateString)) {
-            throw new Error('Invalid date string format. Expected YYYYMMDDHHmm.')
+            throw new InternalServerErrorException('Internal server error', {
+                cause: 'Invalid date string format. Expected YYYYMMDDHHmm.'
+            })
         }
 
         const year = Number(dateString.slice(0, 4))
@@ -100,7 +112,11 @@ export class DateUtil {
     }
 
     static latest(instants: readonly Temporal.Instant[]): Temporal.Instant {
-        if (instants.length === 0) throw new RangeError('At least one instant is required.')
+        if (instants.length === 0) {
+            throw new InternalServerErrorException('Internal server error', {
+                cause: 'At least one instant is required.'
+            })
+        }
         return instants.reduce((latest, instant) =>
             this.isAfter(instant, latest) ? instant : latest
         )
@@ -157,14 +173,18 @@ export class DateUtil {
         if (value instanceof Temporal.PlainDate) return value
         if (value instanceof Date) return this.toPlainDate(value)
         if (!ISO_PLAIN_DATE.test(value)) {
-            throw new RangeError('Expected an ISO calendar date.')
+            throw new InternalServerErrorException('Internal server error', {
+                cause: 'Expected an ISO calendar date.'
+            })
         }
         return Temporal.PlainDate.from(value)
     }
 
     static toYMD(date: Temporal.PlainDate | Temporal.PlainDateTime): string {
         if (date.year < 0 || date.year > 9999) {
-            throw new RangeError('YYYYMMDD only supports years from 0000 through 9999.')
+            throw new InternalServerErrorException('Internal server error', {
+                cause: 'YYYYMMDD only supports years from 0000 through 9999.'
+            })
         }
         return `${date.year.toString().padStart(4, '0')}${date.month
             .toString()

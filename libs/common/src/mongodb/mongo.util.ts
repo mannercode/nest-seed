@@ -1,3 +1,4 @@
+import type { z } from 'zod'
 import { BadRequestException } from '@nestjs/common'
 import { ObjectId, type Document, type Filter } from 'mongodb'
 import { Assume, DateUtil, escapeRegExp, uniq } from '../utils/index.js'
@@ -113,7 +114,7 @@ export class QueryBuilder<_T> {
     }
 
     addIn(field: string, ids?: string[]): this {
-        if (ids && ids.length > 0) {
+        if (ids !== undefined) {
             const uniqueIds = uniq(ids)
             Assume.equalLength(
                 uniqueIds,
@@ -167,13 +168,7 @@ export function assignIfDefined<
     target[key] = transform ? transform(value) : value
 }
 
-export function mapDocToDto<Doc extends object, Dto extends object, K extends keyof Dto>(
-    doc: Doc,
-    dtoClass: new () => Dto,
-    keys: K[]
-): Dto {
-    const dto = new dtoClass()
-    const record = doc as Record<string, unknown>
-    for (const key of keys) dto[key] = record[key as string] as Dto[K]
-    return dto
+/** DTO 스키마에 선언한 필드만 선택하고 변환한다. */
+export function mapDocToDto<Shape extends z.ZodRawShape>(doc: object, schema: z.ZodObject<Shape>) {
+    return schema.strip().parse(doc)
 }

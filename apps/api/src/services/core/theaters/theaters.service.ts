@@ -4,7 +4,7 @@ import {
     CreateTheaterDto,
     SearchTheatersPageDto,
     UpdateTheaterDto,
-    TheaterDto
+    TheaterSchema
 } from './dtos/index.js'
 import { Theater } from './models/index.js'
 import { TheatersRepository } from './theaters.repository.js'
@@ -59,8 +59,6 @@ export class TheatersService {
     }
 
     private toDtos(theaters: Theater[]) {
-        return theaters.map((theater) =>
-            mapDocToDto(theater, TheaterDto, ['id', 'name', 'location', 'seatmap'])
-        )
+        return theaters.map((theater) => mapDocToDto(theater, TheaterSchema))
     }
 }

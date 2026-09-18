@@ -1,12 +1,14 @@
-import { DateUtil, ensure, pickIds, sleep } from '@mannercode/common'
-import { instant, oid } from '@mannercode/testing'
-import { PurchaseRecordsService } from '#core'
+import { ensure, pickIds, sleep } from '@mannercode/common'
+import { oid } from '@mannercode/testing'
+import { PurchaseRecordsService, PurchaseRecordStatus } from '#core'
 import {
     buildCreatePurchaseRecordDto,
     createPurchaseRecord,
     type AppTestContext,
     createAppTestContext
 } from '../helpers/index.js'
+
+import { PurchaseTransactionRepository } from '../../services/application/purchase/internal/index.js'
 
 describe('PurchaseRecordsService', () => {
     let fix: AppTestContext
@@ -70,237 +72,108 @@ describe('PurchaseRecordsService', () => {
     })
 
     describe('PurchaseRecordStatus', () => {
-        it('pending은 고객 이력에서 숨기고 완료 전이 뒤 durable event로 조회한다', async () => {
+        it('pending은 이력에서 숨기고 완료 후 발행 상태가 바뀌어도 최초 응답은 유지한다', async () => {
             const createDto = buildCreatePurchaseRecordDto({ paymentId: null })
-            const pending = await purchaseRecordsService.create(createDto, { pending: true })
-
-            expect(
-                await purchaseRecordsService.findCompleted({ userId: createDto.userId })
-            ).toEqual([])
-            expect(await purchaseRecordsService.findPending({ id: pending.id })).toEqual(pending)
-            expect(
-                await purchaseRecordsService.findReconciliationCandidates({
-                    before: DateUtil.add({ milliseconds: -1000 })
-                })
-            ).toEqual([])
-            expect(
-                await purchaseRecordsService.findReconciliationCandidates({
-                    before: DateUtil.add({ milliseconds: 1000 })
-                })
-            ).toEqual([pending])
-
-            const paymentId = oid(0x99)
-            await purchaseRecordsService.setPaymentId(pending.id, paymentId)
-            const completionId = 'completion-1'
-            await purchaseRecordsService.claimForCompletion(
-                pending.id,
-                completionId,
-                DateUtil.add({ minutes: 1 })
-            )
-            const completed = await purchaseRecordsService.markCompleted(pending.id, completionId)
-
-            expect(completed.paymentId).toBe(paymentId)
-            expect(await purchaseRecordsService.findPending({ id: pending.id })).toBeUndefined()
-            expect(
-                await purchaseRecordsService.findCompleted({ userId: createDto.userId })
-            ).toEqual([completed])
-            expect(
-                await purchaseRecordsService.findPublicationCandidates({
-                    before: DateUtil.add({ milliseconds: 1000 })
-                })
-            ).toEqual([completed])
-
-            const publicationId = 'publication-1'
-            const publicationNow = DateUtil.now()
-            const publicationLeaseUntil = DateUtil.add({ base: publicationNow, minutes: 1 })
-            const publicationBefore = DateUtil.add({ milliseconds: 1000 })
-            expect(
-                await purchaseRecordsService.claimEventPublication(pending.id, {
-                    before: publicationBefore,
-                    leaseUntil: publicationLeaseUntil,
-                    now: publicationNow,
-                    publicationId
-                })
-            ).toEqual(expect.objectContaining({ id: pending.id }))
-            expect(
-                await purchaseRecordsService.claimEventPublication(pending.id, {
-                    before: publicationBefore,
-                    leaseUntil: publicationLeaseUntil,
-                    now: publicationNow,
-                    publicationId: 'publication-loser'
-                })
-            ).toBeUndefined()
-
-            const takeoverId = 'publication-after-lease'
-            const takeoverNow = DateUtil.add({ base: publicationLeaseUntil, milliseconds: 1 })
-            expect(
-                await purchaseRecordsService.claimEventPublication(pending.id, {
-                    before: publicationBefore,
-                    leaseUntil: DateUtil.add({ base: takeoverNow, minutes: 1 }),
-                    now: takeoverNow,
-                    publicationId: takeoverId
-                })
-            ).toEqual(expect.objectContaining({ id: pending.id }))
-            expect(await purchaseRecordsService.markEventPublished(pending.id, publicationId)).toBe(
-                false
-            )
-            expect(await purchaseRecordsService.markEventPublished(pending.id, takeoverId)).toBe(
-                true
-            )
-
-            expect(
-                await purchaseRecordsService.findPublicationCandidates({
-                    before: DateUtil.add({ milliseconds: 1000 })
-                })
-            ).toEqual([])
-        })
-
-        it('completion lease는 pending 상태에서 한 번만 획득한다', async () => {
-            const pending = await purchaseRecordsService.create(
-                buildCreatePurchaseRecordDto({ paymentId: null }),
-                { pending: true }
-            )
-            await purchaseRecordsService.claimForCompletion(
-                pending.id,
-                'completion-winner',
-                DateUtil.add({ minutes: 1 })
-            )
-
-            await expect(
-                purchaseRecordsService.claimForCompletion(
-                    pending.id,
-                    'completion-loser',
-                    DateUtil.add({ minutes: 1 })
-                )
-            ).rejects.toThrow(`Purchase record is no longer pending: ${pending.id}`)
-        })
-
-        it('보상 완료 상태는 pending 재시도와 고객 구매 이력에서 제외한다', async () => {
-            const createDto = buildCreatePurchaseRecordDto({ paymentId: null })
-            const pending = await purchaseRecordsService.create(createDto, { pending: true })
-            const reconciliationId = 'reconciliation-1'
-            await purchaseRecordsService.claimForReconciliation(pending.id, {
-                before: DateUtil.add({ milliseconds: 1000 }),
-                leaseUntil: DateUtil.add({ minutes: 1 }),
-                now: DateUtil.now(),
-                reconciliationId
+            const idempotency = { fingerprint: 'fingerprint', key: 'purchase-key' }
+            const pending = await purchaseRecordsService.create(createDto, {
+                idempotency,
+                pending: true
             })
-
-            await purchaseRecordsService.markCancelled(pending.id, reconciliationId)
-
-            expect(await purchaseRecordsService.findPending({ id: pending.id })).toBeUndefined()
-            expect(
-                await purchaseRecordsService.findReconciliationCandidates({
-                    before: DateUtil.add({ milliseconds: 1000 })
-                })
-            ).toEqual([])
             expect(
                 await purchaseRecordsService.findCompleted({ userId: createDto.userId })
             ).toEqual([])
-        })
-
-        it('여러 replica 중 한 곳만 보상 lease를 얻고 실패한 lease는 재시도한다', async () => {
-            const createDto = buildCreatePurchaseRecordDto({ paymentId: null })
-            const pending = await purchaseRecordsService.create(createDto, { pending: true })
-            const now = DateUtil.now()
-            const before = DateUtil.add({ base: now, milliseconds: 1000 })
-            const leaseUntil = DateUtil.add({ base: now, minutes: 1 })
-
-            const claims = await Promise.all(
-                ['reconciliation-1', 'reconciliation-2'].map((reconciliationId) =>
-                    purchaseRecordsService.claimForReconciliation(pending.id, {
-                        before,
-                        leaseUntil,
-                        now,
-                        reconciliationId
-                    })
-                )
+            const response = await purchaseRecordsService.setPaymentId(pending.id, oid(0x99))
+            const transactions = fix.module.get(PurchaseTransactionRepository)
+            const completed = await transactions.run((transaction) =>
+                purchaseRecordsService.markCompleted(pending.id, response, transaction)
             )
-            const winnerIndex = claims.findIndex(Boolean)
-            expect(claims.filter(Boolean)).toHaveLength(1)
             expect(
-                await purchaseRecordsService.findReconciliationCandidates({
-                    before: DateUtil.add({ milliseconds: 1000 })
-                })
-            ).toEqual([])
-            await expect(
-                purchaseRecordsService.markCompleted(pending.id, 'completion-loser')
-            ).rejects.toThrow('Purchase completion lease was lost')
+                await purchaseRecordsService.findCompleted({ userId: createDto.userId })
+            ).toEqual([completed])
 
-            const winnerId = ensure(['reconciliation-1', 'reconciliation-2'][winnerIndex])
-            const takeoverNow = DateUtil.add({ base: leaseUntil, milliseconds: 1 })
-            const takeoverId = 'reconciliation-after-crash'
-            expect(
-                await purchaseRecordsService.claimForReconciliation(pending.id, {
-                    before,
-                    leaseUntil: DateUtil.add({ base: takeoverNow, minutes: 1 }),
-                    now: takeoverNow,
-                    reconciliationId: takeoverId
+            await purchaseRecordsService.markEventPublished(pending.id)
+            await purchaseRecordsService.markEventPublished(pending.id)
+            const operation = ensure(
+                await purchaseRecordsService.findIdempotencyOperation({
+                    userId: createDto.userId,
+                    idempotencyKey: idempotency.key
                 })
-            ).toEqual(expect.objectContaining({ id: pending.id }))
-
-            // 만료된 이전 owner는 새 lease의 상태를 완료하거나 해제할 수 없다.
-            await purchaseRecordsService.markCancelled(pending.id, winnerId)
-            await purchaseRecordsService.releaseReconciliationClaim(pending.id, winnerId)
+            )
+            expect(operation.response).toEqual(response)
+            expect(operation.status).toBe(PurchaseRecordStatus.Completed)
             expect(
-                await purchaseRecordsService.findReconciliationCandidates({
-                    before: DateUtil.add({ milliseconds: 1000 })
+                await purchaseRecordsService.beginCompensation(pending.id, {
+                    response: { message: 'late failure' },
+                    status: 400
                 })
-            ).toEqual([])
-
-            await purchaseRecordsService.releaseReconciliationClaim(pending.id, takeoverId)
-            expect(
-                await purchaseRecordsService.findReconciliationCandidates({
-                    before: DateUtil.add({ milliseconds: 1000 })
-                })
-            ).toEqual([expect.objectContaining({ id: pending.id })])
-
-            const retryId = 'reconciliation-retry'
-            expect(
-                await purchaseRecordsService.claimForReconciliation(pending.id, {
-                    before,
-                    leaseUntil,
-                    now: DateUtil.now(),
-                    reconciliationId: retryId
-                })
-            ).toEqual(expect.objectContaining({ id: pending.id }))
-            await purchaseRecordsService.markCancelled(pending.id, retryId)
-            expect(
-                await purchaseRecordsService.findReconciliationCandidates({
-                    before: DateUtil.add({ milliseconds: 1000 })
-                })
-            ).toEqual([])
+            ).toBe(false)
         })
 
-        it('프로세스가 죽어 만료된 completion lease를 보상 replica가 회수한다', async () => {
+        it('보상 시작 뒤 늦은 완료를 거절하고 보상·취소의 재시도는 허용한다', async () => {
             const createDto = buildCreatePurchaseRecordDto({ paymentId: null })
-            const pending = await purchaseRecordsService.create(createDto, { pending: true })
-            const completionId = 'completion-crashed'
-            await purchaseRecordsService.claimForCompletion(pending.id, completionId, instant())
-
-            expect(
-                await purchaseRecordsService.findReconciliationCandidates({
-                    before: DateUtil.add({ milliseconds: 1000 })
-                })
-            ).toEqual([expect.objectContaining({ id: pending.id })])
-
-            const reconciliationId = 'reconciliation-recovery'
-            expect(
-                await purchaseRecordsService.claimForReconciliation(pending.id, {
-                    before: DateUtil.add({ milliseconds: 1000 }),
-                    leaseUntil: DateUtil.add({ minutes: 1 }),
-                    now: DateUtil.now(),
-                    reconciliationId
-                })
-            ).toEqual(expect.objectContaining({ id: pending.id }))
+            const idempotency = { fingerprint: 'fingerprint', key: 'purchase-key' }
+            const pending = await purchaseRecordsService.create(createDto, {
+                idempotency,
+                pending: true
+            })
+            const error = { response: { message: 'purchase rejected' }, status: 400 }
+            expect(await purchaseRecordsService.beginCompensation(pending.id, error)).toBe(true)
+            expect(await purchaseRecordsService.beginCompensation(pending.id, error)).toBe(true)
             await expect(
-                purchaseRecordsService.markCompleted(pending.id, completionId)
-            ).rejects.toThrow('Purchase completion lease was lost')
-
-            await purchaseRecordsService.markCancelled(pending.id, reconciliationId)
+                fix.module
+                    .get(PurchaseTransactionRepository)
+                    .run((transaction) =>
+                        purchaseRecordsService.markCompleted(pending.id, pending, transaction)
+                    )
+            ).rejects.toThrow(
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Only a pending purchase can be completed.'
+                })
+            )
+            await expect(
+                purchaseRecordsService.setPaymentId(pending.id, oid(0x99))
+            ).rejects.toThrow(
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Only a pending purchase can receive a payment.'
+                })
+            )
+            await expect(purchaseRecordsService.markEventPublished(pending.id)).rejects.toThrow(
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Only a completed purchase can publish its event.'
+                })
+            )
+            await purchaseRecordsService.markCancelled(pending.id)
+            await purchaseRecordsService.markCancelled(pending.id)
             expect(
                 await purchaseRecordsService.findCompleted({ userId: createDto.userId })
             ).toEqual([])
+            const operation = ensure(
+                await purchaseRecordsService.findIdempotencyOperation({
+                    userId: createDto.userId,
+                    idempotencyKey: idempotency.key
+                })
+            )
+            expect(operation).toMatchObject({
+                errorResponse: error.response,
+                errorStatus: error.status,
+                status: PurchaseRecordStatus.Cancelled
+            })
+        })
+
+        it('완료 상태는 취소로 바꾸지 않는다', async () => {
+            const record = await createPurchaseRecord(fix)
+            await expect(purchaseRecordsService.markCancelled(record.id)).rejects.toThrow(
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Only a compensating purchase can be cancelled.'
+                })
+            )
+            expect(await purchaseRecordsService.findCompleted({ userId: record.userId })).toEqual([
+                record
+            ])
         })
     })
 })

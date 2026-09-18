@@ -1,10 +1,13 @@
-import type { SeatPosition, TicketStatus } from '../models/index.js'
+import { TicketStatus } from '../models/index.js'
+import { z } from 'zod'
 
-export class TicketDto {
-    id: string
-    movieId: string
-    seat: SeatPosition
-    showtimeId: string
-    status: TicketStatus
-    theaterId: string
-}
+export const TicketSchema = z.strictObject({
+    id: z.string(),
+    movieId: z.string(),
+    seat: z.strictObject({ block: z.string(), row: z.string(), seatNumber: z.number() }),
+    showtimeId: z.string(),
+    status: z.enum(TicketStatus),
+    theaterId: z.string()
+})
+
+export type TicketDto = z.infer<typeof TicketSchema>

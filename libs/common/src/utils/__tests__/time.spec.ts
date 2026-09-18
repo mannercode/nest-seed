@@ -27,7 +27,7 @@ describe('TimeUtil', () => {
         })
 
         it('유효하지 않은 형식이면 예외를 던진다', () => {
-            expect(() => TimeUtil.toMs('2z')).toThrow(Error)
+            expect(() => TimeUtil.toMs('2z')).toThrow(InternalServerErrorException)
         })
     })
 
@@ -53,3 +53,4 @@ describe('TimeUtil', () => {
         })
     })
 })
+import { InternalServerErrorException } from '@nestjs/common'

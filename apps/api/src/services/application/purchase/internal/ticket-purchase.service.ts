@@ -1,4 +1,4 @@
-import { DateUtil, uniq } from '@mannercode/common'
+import { DateUtil, ensure } from '@mannercode/common'
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 import { AppConfigService } from '#config'
 import {
@@ -6,6 +6,7 @@ import {
     ShowtimeDto,
     ShowtimesService,
     TicketHoldingService,
+    TicketDto,
     TicketsService
 } from '#core'
 import { CreatePurchaseDto } from '../dtos/index.js'
@@ -34,10 +35,11 @@ export class TicketPurchaseService {
         this.logger.log('claimPurchase', { userId, ticketCount: ticketIds.length })
 
         // 사전 hold 검증 이후 TTL이 만료될 수 있으므로 결제 전에 실제 ticket 키 owner를
-        // purchaseRecordId로 claim한다. showtime별 Lua 원자성은 TicketHoldingService가 보장한다.
+        // purchaseRecordId로 claim한다. 한 상영의 티켓 전체를 같은 Lua에서 처리한다.
         const claimed = await this.ticketHoldingService.claimTicketsForPurchase({
             purchaseRecordId,
-            tickets,
+            showtimeId: this.getShowtimeId(tickets),
+            ticketIds,
             userId
         })
         if (!claimed) throw new BadRequestException(PurchaseErrors.NotHeld())
@@ -56,10 +58,8 @@ export class TicketPurchaseService {
 
         // 결제가 진행되는 동안 claim TTL이 만료됐을 수 있다. 판매 직전 owner를 Lua에서
         // 확인하면서 TTL을 연장해, 다른 고객의 새 hold를 Mongo sale이 빼앗지 않게 한다.
-        const confirmed = await this.ticketHoldingService.confirmPurchaseClaims(
-            purchaseRecordId,
-            tickets
-        )
+        const claim = { purchaseRecordId, showtimeId: this.getShowtimeId(tickets), ticketIds }
+        const confirmed = await this.ticketHoldingService.confirmPurchaseClaims(claim)
         if (!confirmed) throw new BadRequestException(PurchaseErrors.NotHeld())
 
         // 티켓 판매와 구매 상태 CAS는 호출자가 같은 Mongo 트랜잭션으로 묶는다.
@@ -68,7 +68,7 @@ export class TicketPurchaseService {
         const completed = await completeDurably(ticketIds)
 
         try {
-            await this.ticketHoldingService.releasePurchaseClaims(purchaseRecordId, tickets)
+            await this.ticketHoldingService.releasePurchaseClaims(claim)
         } catch (error) {
             // 판매 소유권은 MongoDB에 확정됐다. Redis claim은 TTL로 사라지므로 구매 전체를
             // 되돌리지 않고 진단만 남긴다.
@@ -82,41 +82,50 @@ export class TicketPurchaseService {
         const ticketIds = createDto.purchaseItems.map((item) => item.itemId)
         const tickets = await this.ticketsService.getMany(ticketIds)
 
-        await this.ticketHoldingService.releasePurchaseClaims(purchaseRecordId, tickets)
+        await this.ticketHoldingService.releasePurchaseClaims({
+            purchaseRecordId,
+            showtimeId: this.getShowtimeId(tickets),
+            ticketIds
+        })
     }
 
     async validatePurchase(createDto: CreatePurchaseDto, userId: string): Promise<void> {
         this.logger.log('validatePurchase', { userId })
         const ticketItems = createDto.purchaseItems
-        const showtimes = await this.getShowtimes(ticketItems)
+        const showtime = await this.getShowtime(ticketItems)
 
         this.validateTicketCount(ticketItems)
         this.validateTotalPrice(createDto, ticketItems)
-        this.validatePurchaseTime(showtimes)
-        await this.validateHeldTickets(userId, showtimes, ticketItems)
+        this.validatePurchaseTime(showtime)
+        await this.validateHeldTickets(userId, showtime.id, ticketItems)
     }
 
-    private async getShowtimes(ticketItems: PurchaseItemDto[]) {
+    private async getShowtime(ticketItems: PurchaseItemDto[]) {
         const ticketIds = ticketItems.map((item) => item.itemId)
         const tickets = await this.ticketsService.getMany(ticketIds)
-        const showtimeIds = tickets.map((ticket) => ticket.showtimeId)
-        const uniqueShowtimeIds = uniq(showtimeIds)
-        const showtimes = await this.showtimesService.getMany(uniqueShowtimeIds)
+        const showtimeId = this.getShowtimeId(tickets)
+        const showtimes = await this.showtimesService.getMany([showtimeId])
 
-        return showtimes
+        return ensure(showtimes[0])
+    }
+
+    private getShowtimeId(tickets: TicketDto[]) {
+        const { showtimeId } = ensure(tickets[0])
+        if (tickets.some((ticket) => ticket.showtimeId !== showtimeId)) {
+            throw new BadRequestException(PurchaseErrors.MultipleShowtimes())
+        }
+        return showtimeId
     }
 
     private async validateHeldTickets(
         userId: string,
-        showtimes: ShowtimeDto[],
+        showtimeId: string,
         ticketItems: PurchaseItemDto[]
     ) {
-        const heldByShowtime = await Promise.all(
-            showtimes.map((showtime) =>
-                this.ticketHoldingService.searchHeldTicketIds(showtime.id, userId)
-            )
+        const heldTicketIds = await this.ticketHoldingService.searchHeldTicketIds(
+            showtimeId,
+            userId
         )
-        const heldTicketIds = heldByShowtime.flat()
 
         const areAllTicketsHeld = ticketItems.every((ticketItem) =>
             heldTicketIds.includes(ticketItem.itemId)
@@ -127,24 +136,19 @@ export class TicketPurchaseService {
         }
     }
 
-    private validatePurchaseTime(showtimes: ShowtimeDto[]) {
+    private validatePurchaseTime({ startTime }: ShowtimeDto) {
         const cutoffMinutes = this.config.ticket.purchaseCutoffMinutes
 
-        for (const { startTime } of showtimes) {
-            const purchaseWindowCloseTime = DateUtil.add({
-                base: startTime,
-                minutes: -cutoffMinutes
-            })
+        const purchaseWindowCloseTime = DateUtil.add({ base: startTime, minutes: -cutoffMinutes })
 
-            if (DateUtil.isBefore(purchaseWindowCloseTime, DateUtil.now())) {
-                throw new BadRequestException(
-                    PurchaseErrors.WindowClosed(
-                        cutoffMinutes,
-                        purchaseWindowCloseTime.toString(),
-                        startTime.toString()
-                    )
+        if (DateUtil.isBefore(purchaseWindowCloseTime, DateUtil.now())) {
+            throw new BadRequestException(
+                PurchaseErrors.WindowClosed(
+                    cutoffMinutes,
+                    purchaseWindowCloseTime.toString(),
+                    startTime.toString()
                 )
-            }
+            )
         }
     }
 

@@ -32,12 +32,14 @@ describe('DateTimeRange', () => {
         })
 
         it('인자가 비어 있으면 예외를 던진다', () => {
-            expect(() => DateTimeRange.create({})).toThrow('Invalid options provided.')
+            expect(() => DateTimeRange.create({})).toThrow(
+                expect.objectContaining({ status: 500, cause: 'Invalid options provided.' })
+            )
         })
 
         it('start만 주어지면 예외를 던진다', () => {
             expect(() => DateTimeRange.create({ start: instant('2023-01-01T00:00:00Z') })).toThrow(
-                'Invalid options provided.'
+                expect.objectContaining({ status: 500, cause: 'Invalid options provided.' })
             )
         })
 
@@ -59,7 +61,7 @@ describe('DateTimeRange', () => {
 
         it('end만 주어지면 예외를 던진다', () => {
             expect(() => DateTimeRange.create({ end: instant('2023-01-01T00:00:00Z') })).toThrow(
-                'Invalid options provided.'
+                expect.objectContaining({ status: 500, cause: 'Invalid options provided.' })
             )
         })
     })

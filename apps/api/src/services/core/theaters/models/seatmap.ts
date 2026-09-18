@@ -1,12 +1,7 @@
 import { z } from 'zod'
 import type { Seat } from './seat.js'
 
-const requiredString = z
-    .union([z.string(), z.number(), z.boolean()])
-    .transform(String)
-    .pipe(z.string().min(1))
-
-export const SeatRowSchema = z.strictObject({ layout: requiredString, name: requiredString })
+export const SeatRowSchema = z.strictObject({ layout: z.string().min(1), name: z.string().min(1) })
 
 export class SeatRow {
     name: string
@@ -15,7 +10,7 @@ export class SeatRow {
 }
 
 export const SeatBlockSchema = z.strictObject({
-    name: requiredString,
+    name: z.string().min(1),
     rows: z.array(SeatRowSchema)
 })
 

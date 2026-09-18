@@ -123,6 +123,12 @@ test('트래픽 중 복제본을 재시작해도 오류율과 복구 조건을 �
         for (const r of Object.keys(b.replicas)) allReplicas.add(r)
     }
     const total = Object.values(allByStatus).reduce((a, b) => a + b, 0)
+    const unexpected = Object.entries(allByStatus).filter(
+        ([s]) => s !== '201' && s !== 'err' && !/^5\d\d$/.test(s)
+    )
+    if (unexpected.length > 0) {
+        throw new Error(`unexpected signup responses: ${JSON.stringify(unexpected)}`)
+    }
     const errs = Object.entries(allByStatus)
         .filter(([s]) => s === 'err' || (typeof s === 'string' && /^5\d\d$/.test(s)))
         .reduce((a, [, c]) => a + c, 0)

@@ -1,9 +1,10 @@
 import { RestateWorkflowClient, type DurableWorkflowSubmission } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { AppConfigService } from '#config'
-import type {
-    ShowtimeCreationStatusResponse,
-    ShowtimeCreationTerminalEvent
+import {
+    ShowtimeCreationTerminalEventSchema,
+    type ShowtimeCreationStatusResponse,
+    type ShowtimeCreationTerminalEvent
 } from '../internal/index.js'
 import type { ShowtimeCreationWorkflowInput } from './types.js'
 import { ShowtimeCreationWorkflow } from './workflow.js'
@@ -16,7 +17,11 @@ export class ShowtimeCreationWorkflowClient {
     >
 
     constructor(workflow: ShowtimeCreationWorkflow, config: AppConfigService) {
-        this.client = new RestateWorkflowClient(workflow.definition, config.restate.ingressUrl)
+        this.client = new RestateWorkflowClient(
+            workflow.definition,
+            config.restate.ingressUrl,
+            ShowtimeCreationTerminalEventSchema
+        )
     }
 
     submit(

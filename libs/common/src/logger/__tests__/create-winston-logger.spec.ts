@@ -1,5 +1,5 @@
 import type winston from 'winston'
-import { createWinstonLogger } from '../index.js'
+import { AppLoggerService, createWinstonLogger } from '../index.js'
 
 const MESSAGE = Symbol.for('message')
 
@@ -33,12 +33,20 @@ describe('createWinstonLogger', () => {
         }
     })
 
-    it('모든 환경의 콘솔 로그를 ECS JSON 한 줄로 출력한다', () => {
-        const consoleLogger = createTestLogger('info')
+    it.each([
+        ['log', 'info'],
+        ['warn', 'warn'],
+        ['error', 'error'],
+        ['fatal', 'error'],
+        ['debug', 'debug'],
+        ['verbose', 'verbose']
+    ] as const)('AppLoggerService.%s는 %s 레벨의 ECS JSON 한 줄을 출력한다', (method, level) => {
+        const consoleLogger = createTestLogger('debug')
+        const appLogger = new AppLoggerService(consoleLogger)
         const consoleSpy = spyConsoleTransport(consoleLogger)
 
         try {
-            consoleLogger.info('structured message', {
+            appLogger[method]('structured message', {
                 contextType: 'service',
                 nested: { value: 1 }
             })
@@ -49,7 +57,7 @@ describe('createWinstonLogger', () => {
                 '@timestamp': expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
                 'ecs.version': expect.any(String),
                 'event.dataset': 'test-api',
-                'log.level': 'info',
+                'log.level': level,
                 'service.environment': 'test',
                 'service.name': 'test-api',
                 'service.node.name': 'test-node',
@@ -58,7 +66,7 @@ describe('createWinstonLogger', () => {
                 nested: { value: 1 }
             })
         } finally {
-            consoleLogger.close()
+            appLogger.onModuleDestroy()
         }
     })
 })

@@ -8,6 +8,7 @@ const {
     createAndLoginUser,
     createPublishedMovieAndTheater,
     createShowtimeWithTickets,
+    isPurchaseConflict,
     readPositiveInt,
     request,
     secureRandomHex,
@@ -26,15 +27,13 @@ function toPurchaseBody(ticketIds) {
 }
 
 async function verifyGroup(iteration, g, cust, triple, responses, showtimeId) {
-    const ok = responses.filter((r) => r.status >= 200 && r.status < 300)
-    const rejected = responses.filter((r) => r.status >= 400 && r.status < 500)
-    const other = responses.filter(
-        (r) => r.status < 200 || (r.status >= 300 && r.status < 400) || r.status >= 500
-    )
+    const ok = responses.filter((r) => r.status === 201)
+    const rejected = responses.filter(isPurchaseConflict)
+    const other = responses.filter((r) => r.status !== 201 && !isPurchaseConflict(r))
 
     if (ok.length !== 1 || other.length > 0) {
         console.error(
-            `[overlap] iter=${iteration} group=${g}: expected 1 × success + 1 × 4xx, ` +
+            `[overlap] iter=${iteration} group=${g}: expected 1 × success + 1 × purchase conflict, ` +
                 `got ok=${ok.length} rejected=${rejected.length} other=${other.length}`
         )
         for (const r of responses) {

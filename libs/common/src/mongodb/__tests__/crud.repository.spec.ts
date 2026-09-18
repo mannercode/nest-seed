@@ -2,6 +2,8 @@ import type { Collection, Db, IndexDescription, MongoClient } from 'mongodb'
 import { BadRequestException, Logger, NotFoundException } from '@nestjs/common'
 import type { TransactionContext } from '../../index.js'
 import { OrderDirection } from '../../pagination/index.js'
+import { z } from 'zod'
+import { InstantFromInputSchema, JsonUtil, paginationResultSchema } from '../../index.js'
 import {
     CrudRepository,
     MongoConnection,
@@ -349,7 +351,9 @@ describe('CrudRepository', () => {
 
             await expect(
                 fix.soft.insertDrafts([fix.soft.draft('a'), fix.soft.draft('b')])
-            ).rejects.toThrow(/!==/)
+            ).rejects.toThrow(
+                expect.objectContaining({ status: 500, cause: expect.stringMatching(/!==/) })
+            )
         })
 
         it('projection을 공용 조회에 적용한다', async () => {
@@ -480,6 +484,15 @@ describe('CrudRepository', () => {
 
             expect(result).toMatchObject({ page: 2, size: 2, total: 5 })
             expect(result.items.map(({ name }) => name)).toEqual(['c', 'd'])
+
+            const ItemSchema = z.object({ name: z.string(), createdAt: InstantFromInputSchema })
+            const restored = paginationResultSchema(ItemSchema).parse(
+                JSON.parse(JsonUtil.stringify(result))
+            )
+            expect(restored).toEqual({
+                ...result,
+                items: result.items.map(({ name, createdAt }) => ({ name, createdAt }))
+            })
         })
 
         it('내림차순과 기본 page/size를 적용한다', async () => {
@@ -592,10 +605,16 @@ describe('CrudRepository', () => {
             })
             expect(started.mock.results[0]?.value).toMatchObject({ hasEnded: true })
             await expect(fix.soft.find({ id: soft.id, transaction })).rejects.toThrow(
-                'Transaction context is no longer active.'
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Transaction context is no longer active.'
+                })
             )
             await expect(fix.hard.create('late-write', { transaction })).rejects.toThrow(
-                'Transaction context is no longer active.'
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Transaction context is no longer active.'
+                })
             )
         })
 
@@ -619,7 +638,12 @@ describe('CrudRepository', () => {
             expect(started.mock.results[0]?.value).toMatchObject({ hasEnded: true })
             await expect(
                 fix.hard.find({ id: created.hard.id, transaction: created.transaction })
-            ).rejects.toThrow('Transaction context is no longer active.')
+            ).rejects.toThrow(
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Transaction context is no longer active.'
+                })
+            )
         })
 
         it('동시에 실행한 트랜잭션의 커밋과 롤백은 서로 섞이지 않는다', async () => {
@@ -704,7 +728,12 @@ describe('CrudRepository', () => {
             expect(transactions[0]).not.toBe(transactions[1])
             await expect(
                 fix.soft.find({ id: created.id, transaction: transactions[0] })
-            ).rejects.toThrow('Transaction context is no longer active.')
+            ).rejects.toThrow(
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Transaction context is no longer active.'
+                })
+            )
             await expect(fix.soft.find({ id: created.id })).resolves.toMatchObject({
                 name: 'second'
             })

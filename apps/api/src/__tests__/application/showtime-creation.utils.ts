@@ -1,4 +1,4 @@
-import { JsonUtil } from '@mannercode/common'
+import { ShowtimeCreationEventSchema } from '../../services/application/showtime-creation/internal/index.js'
 import { HttpTestClient } from '@mannercode/testing'
 import type { AppTestContext } from '../helpers/index.js'
 
@@ -13,7 +13,7 @@ export function waitForCompletion(ctx: AppTestContext, accessToken: string, stat
             .headers({ Authorization: `Bearer ${accessToken}` })
             .sse((data) => {
                 try {
-                    const statusUpdate = JsonUtil.parse(data)
+                    const statusUpdate = ShowtimeCreationEventSchema.parse(JSON.parse(data))
 
                     if (!['error', 'failed', 'succeeded'].includes(statusUpdate.status)) return
 

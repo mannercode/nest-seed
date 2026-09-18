@@ -1,5 +1,6 @@
+import { paginationResultSchema } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
-import { type TheaterDto, TheatersService } from '#core'
+import { type TheaterDto, TheatersService, TheaterSchema } from '#core'
 import {
     buildCreateTheaterDto,
     createShowtimes,
@@ -29,14 +30,17 @@ describe('TheatersService', () => {
             await fix.httpClient
                 .post('/theaters')
                 .body(createDto)
-                .created({ ...createDto, id: expect.any(String) })
+                .created({
+                    schema: TheaterSchema,
+                    expected: { ...createDto, id: expect.any(String) }
+                })
         })
 
         it('필수 필드가 누락되면 400을 반환한다', async () => {
             await fix.httpClient
                 .post('/theaters')
                 .body({})
-                .badRequest(Errors.RequestValidation.Failed(expect.any(Array)))
+                .badRequest({ expected: Errors.RequestValidation.Failed(expect.any(Array)) })
         })
     })
 
@@ -44,13 +48,15 @@ describe('TheatersService', () => {
         it('ID에 해당하는 극장을 반환한다', async () => {
             const theater = await createTheater(fix)
 
-            await fix.httpClient.get(`/theaters/${theater.id}`).ok(theater)
+            await fix.httpClient
+                .get(`/theaters/${theater.id}`)
+                .ok({ schema: TheaterSchema, expected: theater })
         })
 
         it('ID에 해당하는 극장이 없으면 404를 반환한다', async () => {
             await fix.httpClient
                 .get(`/theaters/${nullObjectId}`)
-                .notFound(Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]))
+                .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]) })
         })
     })
 
@@ -70,28 +76,36 @@ describe('TheatersService', () => {
             await fix.httpClient
                 .patch(`/theaters/${theater.id}`)
                 .body(updateDto)
-                .ok({ ...theater, ...updateDto })
+                .ok({ schema: TheaterSchema, expected: { ...theater, ...updateDto } })
         })
 
         it('수정 내용이 DB에 저장된다', async () => {
             const updateDto = { name: 'update-name' }
-            await fix.httpClient.patch(`/theaters/${theater.id}`).body(updateDto).ok()
+            await fix.httpClient
+                .patch(`/theaters/${theater.id}`)
+                .body(updateDto)
+                .ok({ schema: TheaterSchema })
 
-            await fix.httpClient.get(`/theaters/${theater.id}`).ok({ ...theater, ...updateDto })
+            await fix.httpClient
+                .get(`/theaters/${theater.id}`)
+                .ok({ schema: TheaterSchema, expected: { ...theater, ...updateDto } })
         })
 
         it('ID에 해당하는 극장이 없으면 404를 반환한다', async () => {
             await fix.httpClient
                 .patch(`/theaters/${nullObjectId}`)
                 .body({})
-                .notFound(Errors.Mongo.DocumentNotFound(nullObjectId))
+                .notFound({ expected: Errors.Mongo.DocumentNotFound(nullObjectId) })
         })
 
         it('필수 필드를 null로 바꾸는 직접 호출은 저장 전에 거부한다', async () => {
             const theatersService = fix.module.get(TheatersService)
 
+            // @ts-expect-error 런타임 호출이 타입 계약을 어긴 경우를 검증한다.
             await expect(theatersService.update(theater.id, { name: null })).rejects.toThrow()
-            await fix.httpClient.get(`/theaters/${theater.id}`).ok(theater)
+            await fix.httpClient
+                .get(`/theaters/${theater.id}`)
+                .ok({ schema: TheaterSchema, expected: theater })
         })
     })
 
@@ -109,7 +123,7 @@ describe('TheatersService', () => {
 
             await fix.httpClient
                 .get(`/theaters/${theater.id}`)
-                .notFound(Errors.Mongo.MultipleDocumentsNotFound([theater.id]))
+                .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([theater.id]) })
         })
 
         it('상영이 참조하는 극장은 삭제할 수 없다', async () => {
@@ -118,7 +132,7 @@ describe('TheatersService', () => {
 
             await fix.httpClient
                 .delete(`/theaters/${theater.id}`)
-                .conflict(Errors.Theaters.DeleteBlockedByShowtimes(theater.id))
+                .conflict({ expected: Errors.Theaters.DeleteBlockedByShowtimes(theater.id) })
         })
 
         it('극장이 없어도 204를 반환한다', async () => {
@@ -155,21 +169,26 @@ describe('TheatersService', () => {
         it('쿼리가 없으면 전체 극장 페이지를 반환한다', async () => {
             const expected = buildExpectedPage([theaterA1, theaterA2, theaterB1, theaterB2])
 
-            await fix.httpClient.get('/theaters').ok(expected)
+            await fix.httpClient
+                .get('/theaters')
+                .ok({ schema: paginationResultSchema(TheaterSchema), expected })
         })
 
         it('name 부분 일치로 필터링한다', async () => {
             await fix.httpClient
                 .get('/theaters')
                 .query({ name: 'theater-a' })
-                .ok(buildExpectedPage([theaterA1, theaterA2]))
+                .ok({
+                    schema: paginationResultSchema(TheaterSchema),
+                    expected: buildExpectedPage([theaterA1, theaterA2])
+                })
         })
 
         it('알 수 없는 쿼리 파라미터는 400을 반환한다', async () => {
             await fix.httpClient
                 .get('/theaters')
                 .query({ wrong: 'value' })
-                .badRequest(Errors.RequestValidation.Failed(expect.any(Array)))
+                .badRequest({ expected: Errors.RequestValidation.Failed(expect.any(Array)) })
         })
     })
 })

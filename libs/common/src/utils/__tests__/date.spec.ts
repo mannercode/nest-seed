@@ -1,3 +1,4 @@
+import { InternalServerErrorException } from '@nestjs/common'
 import { DateUtil } from '../index.js'
 
 describe('DateUtil', () => {
@@ -31,10 +32,10 @@ describe('DateUtil', () => {
 
         it('YYYYMMDD로 표현할 수 없는 확장 연도는 거부한다', () => {
             expect(() => DateUtil.toYMD(Temporal.PlainDate.from('-000001-01-02'))).toThrow(
-                RangeError
+                InternalServerErrorException
             )
             expect(() => DateUtil.toYMD(Temporal.PlainDate.from('+010000-01-02'))).toThrow(
-                RangeError
+                InternalServerErrorException
             )
         })
     })
@@ -51,8 +52,8 @@ describe('DateUtil', () => {
         })
 
         it('빈 배열이면 잘못된 시각 대신 명시적으로 예외를 던진다', () => {
-            expect(() => DateUtil.earliest([])).toThrow(RangeError)
-            expect(() => DateUtil.latest([])).toThrow(RangeError)
+            expect(() => DateUtil.earliest([])).toThrow(InternalServerErrorException)
+            expect(() => DateUtil.latest([])).toThrow(InternalServerErrorException)
         })
     })
 

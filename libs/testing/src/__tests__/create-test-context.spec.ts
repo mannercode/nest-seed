@@ -14,6 +14,6 @@ describe('createTestContext', () => {
     })
 
     it('테스트 컨텍스트의 httpClient로 GET 요청을 보내면 라우팅된 응답을 반환한다', async () => {
-        await fix.httpClient.get('/message/value').ok({ received: 'value' })
+        await fix.httpClient.get('/message/value').ok({ expected: { received: 'value' } })
     })
 })

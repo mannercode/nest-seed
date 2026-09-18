@@ -5,11 +5,15 @@ import { Assume, ensure, Require } from '../index.js'
 describe('Require', () => {
     describe('defined', () => {
         it('값이 null이면 예외를 던진다', () => {
-            expect(() => Require.defined(null)).toThrow('Value must exist.')
+            expect(() => Require.defined(null)).toThrow(
+                expect.objectContaining({ status: 500, cause: 'Value must exist.' })
+            )
         })
 
         it('값이 undefined이면 예외를 던진다', () => {
-            expect(() => Require.defined(undefined)).toThrow('Value must exist.')
+            expect(() => Require.defined(undefined)).toThrow(
+                expect.objectContaining({ status: 500, cause: 'Value must exist.' })
+            )
         })
 
         it('값이 존재하면 통과한다', () => {
@@ -20,19 +24,25 @@ describe('Require', () => {
     describe('equalLength', () => {
         it('두 배열의 길이가 다르면 예외를 던진다', () => {
             expect(() => Require.equalLength([1], [1, 2], 'mismatch')).toThrow(
-                'mismatch first: 1, second: 2'
+                expect.objectContaining({ status: 500, cause: 'mismatch first: 1, second: 2' })
             )
         })
 
         it('첫 번째 배열이 undefined이면 예외를 던진다', () => {
             expect(() => Require.equalLength(undefined, [1], 'mismatch')).toThrow(
-                /mismatch first: undefined, second: 1/
+                expect.objectContaining({
+                    status: 500,
+                    cause: expect.stringMatching(/mismatch first: undefined, second: 1/)
+                })
             )
         })
 
         it('두 번째 배열이 undefined이면 예외를 던진다', () => {
             expect(() => Require.equalLength([1], undefined, 'mismatch')).toThrow(
-                /mismatch first: 1, second: undefined/
+                expect.objectContaining({
+                    status: 500,
+                    cause: expect.stringMatching(/mismatch first: 1, second: undefined/)
+                })
             )
         })
 
@@ -43,7 +53,12 @@ describe('Require', () => {
 
     describe('equals', () => {
         it('값이 다르면 예외를 던진다', () => {
-            expect(() => Require.equals(1, 2, 'not equal')).toThrow(/1 !== 2, not equal/)
+            expect(() => Require.equals(1, 2, 'not equal')).toThrow(
+                expect.objectContaining({
+                    status: 500,
+                    cause: expect.stringMatching(/1 !== 2, not equal/)
+                })
+            )
         })
 
         it('값이 같으면 통과한다', () => {
@@ -88,7 +103,9 @@ describe('Assume', () => {
 
 describe('ensure', () => {
     it('값이 null이면 예외를 던진다', () => {
-        expect(() => ensure(null)).toThrow('Value must exist.')
+        expect(() => ensure(null)).toThrow(
+            expect.objectContaining({ status: 500, cause: 'Value must exist.' })
+        )
     })
 
     it('값이 존재하면 그대로 반환한다', () => {
@@ -100,7 +117,11 @@ describe('ensure', () => {
         expect(ensure(false)).toBe(false)
         expect(ensure('')).toBe('')
 
-        expect(() => ensure(null)).toThrow('Value must exist.')
-        expect(() => ensure(undefined)).toThrow('Value must exist.')
+        expect(() => ensure(null)).toThrow(
+            expect.objectContaining({ status: 500, cause: 'Value must exist.' })
+        )
+        expect(() => ensure(undefined)).toThrow(
+            expect.objectContaining({ status: 500, cause: 'Value must exist.' })
+        )
     })
 })

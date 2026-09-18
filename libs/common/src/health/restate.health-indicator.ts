@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, ServiceUnavailableException } from '@nestjs/common'
 
 @Injectable()
 export class RestateHealthIndicator {
@@ -11,7 +11,7 @@ export class RestateHealthIndicator {
             })
 
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`)
+                throw new ServiceUnavailableException(`HTTP ${response.status}`)
             }
 
             return { [key]: { status: 'up' as const } }

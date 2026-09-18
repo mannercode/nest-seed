@@ -28,13 +28,17 @@ describe('BaseConfigService', () => {
         it('환경변수가 정의되어 있지 않으면 예외를 던진다', () => {
             const service = createServiceWithConfig({})
 
-            expect(() => service.getString('SOME_KEY')).toThrow("Key 'SOME_KEY' is not defined")
+            expect(() => service.getString('SOME_KEY')).toThrow(
+                expect.objectContaining({ status: 500, cause: "Key 'SOME_KEY' is not defined" })
+            )
         })
 
         it('환경변수 값이 빈 문자열이면 예외를 던진다', () => {
             const service = createServiceWithConfig({ SOME_KEY: '' })
 
-            expect(() => service.getString('SOME_KEY')).toThrow("Key 'SOME_KEY' is not defined")
+            expect(() => service.getString('SOME_KEY')).toThrow(
+                expect.objectContaining({ status: 500, cause: "Key 'SOME_KEY' is not defined" })
+            )
         })
     })
 
@@ -51,7 +55,10 @@ describe('BaseConfigService', () => {
 
         it('키가 없으면 예외를 던진다', () => {
             expect(() => fix.appConfigService.getNumber('not-exists-key')).toThrow(
-                "Key 'not-exists-key' is not defined"
+                expect.objectContaining({
+                    status: 500,
+                    cause: "Key 'not-exists-key' is not defined"
+                })
             )
         })
 
@@ -62,12 +69,22 @@ describe('BaseConfigService', () => {
 
         it('숫자가 아닌 문자열이면 finite-number 메시지로 예외를 던진다', () => {
             const service = createServiceWithConfig({ N: 'abc' })
-            expect(() => service.getNumber('N')).toThrow("Key 'N' is not a finite number: 'abc'")
+            expect(() => service.getNumber('N')).toThrow(
+                expect.objectContaining({
+                    status: 500,
+                    cause: "Key 'N' is not a finite number: 'abc'"
+                })
+            )
         })
 
         it('빈 문자열은 0으로 통과하지 않고 예외를 던진다', () => {
             const service = createServiceWithConfig({ N: '' })
-            expect(() => service.getNumber('N')).toThrow("Key 'N' is not a finite number: ''")
+            expect(() => service.getNumber('N')).toThrow(
+                expect.objectContaining({
+                    status: 500,
+                    cause: "Key 'N' is not a finite number: ''"
+                })
+            )
         })
     })
 
@@ -84,7 +101,10 @@ describe('BaseConfigService', () => {
 
         it('키가 없으면 예외를 던진다', () => {
             expect(() => fix.appConfigService.getBoolean('not-exists-key')).toThrow(
-                "Key 'not-exists-key' is not defined"
+                expect.objectContaining({
+                    status: 500,
+                    cause: "Key 'not-exists-key' is not defined"
+                })
             )
         })
 
@@ -102,7 +122,9 @@ describe('BaseConfigService', () => {
 
         it('"true"나 "false"가 아닌 문자열이면 boolean 메시지로 예외를 던진다', () => {
             const service = createServiceWithConfig({ B: 'maybe' })
-            expect(() => service.getBoolean('B')).toThrow("Key 'B' is not a boolean: 'maybe'")
+            expect(() => service.getBoolean('B')).toThrow(
+                expect.objectContaining({ status: 500, cause: "Key 'B' is not a boolean: 'maybe'" })
+            )
         })
     })
 })

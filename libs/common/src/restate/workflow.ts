@@ -3,7 +3,7 @@ import { TemporalJsonSerde } from './temporal-json.serde.js'
 
 export type WorkflowStepRetry = {
     initialRetryInterval?: number
-    maxRetryAttempts: number
+    maxRetryAttempts?: number
     maxRetryDuration?: number
 }
 
@@ -18,12 +18,13 @@ export function isWorkflowCancellation(error: unknown): boolean {
 
 export function defineWorkflow<Input, Output>(definition: {
     name: string
+    input: { parse: (value: unknown) => Input }
     run: (context: DurableWorkflowContext, input: Input) => Promise<Output>
     options: {
         abortTimeout: number
         inactivityTimeout: number
         workflowRetention: number
-        terminalError: (error: unknown) => { message: string; errorCode: number } | undefined
+        terminalError?: (error: unknown) => { message: string; errorCode: number } | undefined
     }
 }) {
     const { terminalError, ...options } = definition.options
@@ -36,18 +37,20 @@ export function defineWorkflow<Input, Output>(definition: {
                         run: (name, operation, retry) => context.run(name, operation, retry),
                         attemptSignal: () => context.request().attemptCompletedSignal
                     },
-                    input
+                    definition.input.parse(input)
                 )
         },
         options: {
             ...options,
             serde: TemporalJsonSerde,
-            asTerminalError: (error: unknown) => {
-                const terminal = terminalError(error)
-                return terminal
-                    ? new TerminalError(terminal.message, { errorCode: terminal.errorCode })
-                    : undefined
-            }
+            asTerminalError:
+                terminalError &&
+                ((error: unknown) => {
+                    const terminal = terminalError(error)
+                    return terminal
+                        ? new TerminalError(terminal.message, { errorCode: terminal.errorCode })
+                        : undefined
+                })
         }
     })
 }

@@ -5,7 +5,7 @@ import {
     UserCredentialsDto,
     SearchUsersPageDto,
     UpdateUserDto,
-    UserDto
+    UserSchema
 } from './dtos/index.js'
 import { UserAuthenticationService } from './internal/index.js'
 import { User } from './models/index.js'
@@ -84,6 +84,6 @@ export class UsersService {
     }
 
     private toDtos(users: User[]) {
-        return users.map((user) => mapDocToDto(user, UserDto, ['id', 'name', 'email', 'birthDate']))
+        return users.map((user) => mapDocToDto(user, UserSchema))
     }
 }

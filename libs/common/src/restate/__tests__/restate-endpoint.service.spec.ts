@@ -5,7 +5,7 @@ import { connect } from 'node:http2'
 import { RestateEndpoint } from '../index.js'
 
 describe('RestateEndpoint', () => {
-    it('Vitest에서는 임의 포트로 열고 HTTP/2 session까지 정상 종료한다', async () => {
+    it('포트 0을 지정하면 임의 포트로 열고 HTTP/2 session까지 정상 종료한다', async () => {
         const endpoint = createEndpoint()
         await endpoint.onApplicationBootstrap()
         expect(endpoint.port).toBeGreaterThan(0)
@@ -23,9 +23,7 @@ describe('RestateEndpoint', () => {
         await expect(createEndpoint().onApplicationShutdown()).resolves.toBeUndefined()
     })
 
-    it('Vitest 밖에서는 설정 포트를 사용한다', async () => {
-        const workerId = process.env.VITEST_POOL_ID
-        delete process.env.VITEST_POOL_ID
+    it('시작 시 Restate 로그를 주입한 로거에 기록한다', async () => {
         const logger = createLogger()
         const endpoint = createEndpoint(0, logger)
 
@@ -41,7 +39,6 @@ describe('RestateEndpoint', () => {
             )
         } finally {
             await endpoint.onApplicationShutdown()
-            process.env.VITEST_POOL_ID = workerId
         }
     })
 
@@ -104,7 +101,7 @@ describe('RestateEndpoint', () => {
         }
     })
 
-    function createEndpoint(servicePort = 9080, logger = createLogger()) {
+    function createEndpoint(servicePort = 0, logger = createLogger()) {
         const definition = workflow({
             handlers: { run: async () => undefined },
             name: `EndpointTest-${Math.random().toString(36).slice(2)}`

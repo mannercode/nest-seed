@@ -1,4 +1,5 @@
-import { DateUtil, ensure, pickIds } from '@mannercode/common'
+import { BookingShowtimeSchema } from '#application'
+import { DateUtil, ensure, pickIds, PlainDateFromInputSchema } from '@mannercode/common'
 import { instant, nullObjectId, oid, plainDate, step } from '@mannercode/testing'
 import {
     TicketStatus,
@@ -7,7 +8,10 @@ import {
     type TheaterDto,
     type TicketDto,
     type UserDto,
-    TicketHoldingService
+    TicketHoldingService,
+    TicketsService,
+    TheaterSchema,
+    TicketSchema
 } from '#core'
 import { Errors, type AppTestContext, createAppTestContext, holdTickets } from '../helpers/index.js'
 import { createAllResources } from './booking.utils.js'
@@ -54,6 +58,33 @@ describe('BookingService', () => {
             user = resources.user
         })
 
+        it('선택한 날짜에 상영이 없으면 빈 목록을 반환한다', async () => {
+            const theaterId = ensure(createdTickets[0]).theaterId
+
+            await fix.httpClient
+                .get(
+                    `/booking/movies/${movie.id}/theaters/${theaterId}/showdates/29990201/showtimes`
+                )
+                .ok({ schema: BookingShowtimeSchema.array(), expected: [] })
+        })
+
+        it('상영의 티켓 집계가 누락되면 500을 반환한다', async () => {
+            const theaterId = ensure(createdTickets[0]).theaterId
+            vi.spyOn(fix.module.get(TicketsService), 'aggregateSales').mockResolvedValueOnce([])
+
+            await fix.httpClient
+                .get(
+                    `/booking/movies/${movie.id}/theaters/${theaterId}/showdates/29990101/showtimes`
+                )
+                .send(500, {
+                    expected: {
+                        statusCode: 500,
+                        message: 'Internal server error',
+                        error: 'Internal Server Error'
+                    }
+                })
+        })
+
         it('극장, 상영일, 상영 시간, 티켓을 차례로 조회해 티켓을 보유한다', async () => {
             let theater: TheaterDto
             let showdate: Temporal.PlainDate
@@ -64,33 +95,42 @@ describe('BookingService', () => {
                 const latLong = '31.9,131.9'
                 const { body: theaters } = await fix.httpClient
                     .get(`/booking/movies/${movie.id}/theaters?latLong=${latLong}`)
-                    .ok(
-                        [
+                    .ok({
+                        schema: TheaterSchema.array(),
+                        expected: [
                             { location: locations[2] }, // distance = 0.1
                             { location: locations[1] }, // distance = 0.9
                             { location: locations[3] }, // distance = 1.1
                             { location: locations[0] }, // distance = 1.9
                             { location: locations[4] } // distance = 2.1
                         ].map((item) => expect.objectContaining(item))
-                    )
+                    })
 
-                theater = theaters[0]
+                theater = ensure(theaters[0])
             })
 
             await step('2. 극장의 상영일 목록을 조회한다', async () => {
                 const { body: showdates } = await fix.httpClient
                     .get(`/booking/movies/${movie.id}/theaters/${theater.id}/showdates`)
-                    .ok([plainDate('2999-01-01'), plainDate('2999-01-02'), plainDate('2999-01-03')])
+                    .ok({
+                        schema: PlainDateFromInputSchema.array(),
+                        expected: [
+                            plainDate('2999-01-01'),
+                            plainDate('2999-01-02'),
+                            plainDate('2999-01-03')
+                        ]
+                    })
 
-                showdate = showdates[0]
+                showdate = ensure(showdates[0])
             })
 
             await step('3. 선택한 상영일의 상영 시간 목록을 조회한다', async () => {
                 const yymmdd = DateUtil.toYMD(showdate)
                 const url = `/booking/movies/${movie.id}/theaters/${theater.id}/showdates/${yymmdd}/showtimes`
 
-                const { body: showtimes } = await fix.httpClient.get(url).ok(
-                    [
+                const { body: showtimes } = await fix.httpClient.get(url).ok({
+                    schema: BookingShowtimeSchema.array(),
+                    expected: [
                         { movieId: movie.id, startTime: startTimes[0], theaterId: theater.id },
                         { movieId: movie.id, startTime: startTimes[1], theaterId: theater.id }
                     ].map((item) =>
@@ -99,9 +139,9 @@ describe('BookingService', () => {
                             ticketSales: { available: 8, sold: 0, total: 8 }
                         })
                     )
-                )
+                })
 
-                showtime = showtimes[0]
+                showtime = ensure(showtimes[0])
             })
 
             await step('4. 상영 시간의 티켓을 조회해 가용 상태를 확인한다', async () => {
@@ -110,7 +150,7 @@ describe('BookingService', () => {
                 )
                 const { body } = await fix.httpClient
                     .get(`/booking/showtimes/${showtime.id}/tickets`)
-                    .ok(expectedTickets)
+                    .ok({ schema: TicketSchema.array(), expected: expectedTickets })
 
                 tickets = body
 
@@ -145,7 +185,7 @@ describe('BookingService', () => {
             await fix.httpClient
                 .post(`/booking/showtimes/${nullObjectId}/tickets/hold`)
                 .body({ ticketIds: [nullObjectId] })
-                .unauthorized(Errors.Auth.Unauthorized())
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
         })
 
         describe('가용 티켓을 선택했을 때', () => {
@@ -198,7 +238,7 @@ describe('BookingService', () => {
                 .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
                 .headers({ Authorization: `Bearer ${accessToken}` })
                 .body({ ticketIds })
-                .conflict(Errors.Booking.TicketsAlreadyHeld())
+                .conflict({ expected: Errors.Booking.TicketsAlreadyHeld() })
         })
 
         it('존재하지 않는 티켓이 섞여 있으면 404를 반환한다', async () => {
@@ -210,7 +250,7 @@ describe('BookingService', () => {
                 .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
                 .headers({ Authorization: `Bearer ${resources.accessToken}` })
                 .body({ ticketIds })
-                .notFound(Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]))
+                .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]) })
         })
 
         it('다른 상영의 티켓이 섞여 있으면 400을 반환한다', async () => {
@@ -226,7 +266,9 @@ describe('BookingService', () => {
                 .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
                 .headers({ Authorization: `Bearer ${resources.accessToken}` })
                 .body({ ticketIds: [ownTicket.id, otherTicket.id] })
-                .badRequest(Errors.Booking.TicketsNotInShowtime([otherTicket.id], showtimeId))
+                .badRequest({
+                    expected: Errors.Booking.TicketsNotInShowtime([otherTicket.id], showtimeId)
+                })
         })
 
         it('한 번에 보유할 수 있는 수량을 넘으면 400을 반환한다', async () => {
@@ -240,7 +282,7 @@ describe('BookingService', () => {
                 .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
                 .headers({ Authorization: `Bearer ${resources.accessToken}` })
                 .body({ ticketIds })
-                .badRequest(Errors.Booking.HoldLimitExceeded(max))
+                .badRequest({ expected: Errors.Booking.HoldLimitExceeded(max) })
         })
     })
 
@@ -248,7 +290,7 @@ describe('BookingService', () => {
         it('상영 시간이 없으면 404를 반환한다', async () => {
             await fix.httpClient
                 .get(`/booking/showtimes/${nullObjectId}/tickets`)
-                .notFound(Errors.Booking.ShowtimeNotFound(nullObjectId))
+                .notFound({ expected: Errors.Booking.ShowtimeNotFound(nullObjectId) })
         })
     })
 
@@ -261,9 +303,11 @@ describe('BookingService', () => {
             await fix.httpClient
                 .get(`/booking/movies/${movieId}/theaters/${theaterId}/showdates/abc/showtimes`)
                 .badRequest({
-                    code: 'ERR_BOOKING_SHOWDATE_INVALID',
-                    message: 'showdate must be in YYYYMMDD format',
-                    showdate: 'abc'
+                    expected: {
+                        code: 'ERR_BOOKING_SHOWDATE_INVALID',
+                        message: 'showdate must be in YYYYMMDD format',
+                        showdate: 'abc'
+                    }
                 })
         })
 
@@ -274,9 +318,11 @@ describe('BookingService', () => {
                     `/booking/movies/${movieId}/theaters/${theaterId}/showdates/20240230/showtimes`
                 )
                 .badRequest({
-                    code: 'ERR_BOOKING_SHOWDATE_INVALID',
-                    message: 'showdate must be a valid calendar date',
-                    showdate: '20240230'
+                    expected: {
+                        code: 'ERR_BOOKING_SHOWDATE_INVALID',
+                        message: 'showdate must be a valid calendar date',
+                        showdate: '20240230'
+                    }
                 })
         })
     })

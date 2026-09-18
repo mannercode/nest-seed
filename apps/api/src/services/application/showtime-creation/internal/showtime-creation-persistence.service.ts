@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import {
+    BadRequestException,
+    Injectable,
+    InternalServerErrorException,
+    NotFoundException
+} from '@nestjs/common'
 import { TheatersService } from '#core'
 import type { BulkCreateShowtimesDto } from '../dtos/index.js'
 import type { ValidateAndCreateResult } from './types.js'
@@ -71,7 +76,9 @@ export class ShowtimeCreationPersistenceService {
 
     private assertSameInput(sagaId: string, expectedHash: string, actualHash: string) {
         if (expectedHash !== actualHash) {
-            throw new Error(`Saga ID was reused with different input (sagaId=${sagaId})`)
+            throw new InternalServerErrorException('Internal server error', {
+                cause: `Saga ID was reused with different input (sagaId=${sagaId})`
+            })
         }
     }
 }

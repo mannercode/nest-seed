@@ -1,6 +1,5 @@
 import { z } from 'zod'
-import { nonEmptyStringFromRequest } from './request-value.schema.js'
 
-export const RefreshTokenBodySchema = z.strictObject({ refreshToken: nonEmptyStringFromRequest })
+export const RefreshTokenBodySchema = z.strictObject({ refreshToken: z.string().min(1) })
 
 export type RefreshTokenBodyDto = z.infer<typeof RefreshTokenBodySchema>

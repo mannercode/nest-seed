@@ -81,6 +81,26 @@ describe('JwtAuthService', () => {
             }
         })
 
+        it('Redis 명령 일부가 실패하면 토큰을 반환하지 않고 500을 던진다', async () => {
+            await fix.redis.set(`${fix.jwtService.prefix}:{u1}:sessions`, 'wrong-type')
+
+            await expect(fix.jwtService.generateAuthTokens({ sub: 'u1' })).rejects.toMatchObject({
+                status: 500,
+                cause: expect.stringContaining('WRONGTYPE')
+            })
+        })
+
+        it('Redis transaction이 중단되면 토큰을 반환하지 않고 500을 던진다', async () => {
+            const index = `${fix.jwtService.prefix}:{u1}:sessions`
+            await fix.redis.watch(index)
+            await fix.redis.sadd(index, 'changed-session')
+
+            await expect(fix.jwtService.generateAuthTokens({ sub: 'u1' })).rejects.toMatchObject({
+                status: 500,
+                cause: 'Redis transaction was aborted'
+            })
+        })
+
         it('액세스 토큰 TTL이 1초 미만이면 발급 즉시 만료된다', async () => {
             const short = await createJwtAuthServiceFixtureWithShortTtl()
             try {
@@ -132,7 +152,6 @@ describe('JwtAuthService', () => {
             await expect(
                 fix.jwtService.refreshAuthTokens(second.refreshToken)
             ).resolves.toMatchObject({ refreshToken: expect.any(String) })
-            expect(fix.events.some((event) => event.type === 'session.revoked')).toBe(false)
         })
 
         it('동시 갱신은 하나만 성공하고 승자의 새 토큰을 유지한다', async () => {
@@ -187,7 +206,10 @@ describe('JwtAuthService', () => {
         it('Redis 원자 교체 결과가 손상되면 실패를 알리고 기존 세션을 유지한다', async () => {
             vi.spyOn(fix.redis, 'eval').mockResolvedValueOnce(null)
             await expect(fix.jwtService.refreshAuthTokens(original.refreshToken)).rejects.toThrow(
-                'invalid result'
+                expect.objectContaining({
+                    status: 500,
+                    cause: 'Refresh token rotation returned an invalid result'
+                })
             )
             await expect(
                 fix.jwtService.refreshAuthTokens(original.refreshToken)
@@ -209,6 +231,31 @@ describe('JwtAuthService', () => {
     })
 
     describe('로그아웃', () => {
+        it('세션 삭제 뒤 인덱스 정리가 실패하면 500을 던진다', async () => {
+            const { refreshToken } = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
+            await fix.redis.set(`${fix.jwtService.prefix}:{u1}:sessions`, 'wrong-type')
+
+            await expect(fix.jwtService.revokeRefreshToken(refreshToken)).rejects.toMatchObject({
+                status: 500,
+                cause: expect.stringContaining('WRONGTYPE')
+            })
+        })
+
+        it('전체 로그아웃의 Redis 명령 일부가 실패하면 500을 던진다', async () => {
+            await fix.jwtService.generateAuthTokens({ sub: 'u1' })
+            const read = fix.redis.smembers.bind(fix.redis)
+            vi.spyOn(fix.redis, 'smembers').mockImplementationOnce(async (key) => {
+                const ids = await read(key)
+                await fix.redis.set(key, 'wrong-type')
+                return ids
+            })
+
+            await expect(fix.jwtService.revokeAllForUser('u1')).rejects.toMatchObject({
+                status: 500,
+                cause: expect.stringContaining('WRONGTYPE')
+            })
+        })
+
         it('한 세션만 폐기하고 같은 사용자의 다른 로그인은 유지한다', async () => {
             const first = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
             const second = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
@@ -279,7 +326,10 @@ describe('JwtAuthService', () => {
                     { sub: 'u1', sessionId: 's1' },
                     { expiresIn: '-1s' }
                 )
-                await expect(fix.jwtService[operation](token)).rejects.toThrow('token expired')
+                await expect(fix.jwtService[operation](token)).rejects.toMatchObject({
+                    status: 401,
+                    response: JwtAuthErrors.RefreshTokenInvalid()
+                })
             }
         )
 
@@ -301,55 +351,5 @@ describe('JwtAuthService', () => {
                 ).rejects.toMatchObject({ status: 401 })
             }
         )
-    })
-
-    describe('이벤트', () => {
-        it('발급·회전·로그아웃을 같은 세션 식별자로 기록한다', async () => {
-            const context = { ip: '1.2.3.4', source: 'login' }
-            const tokens = await fix.jwtService.generateAuthTokens({ sub: 'u1' }, context)
-            const rotated = await fix.jwtService.refreshAuthTokens(tokens.refreshToken, context)
-            await fix.jwtService.revokeRefreshToken(rotated.refreshToken, context)
-            expect(fix.events.map((event) => event.type)).toEqual([
-                'token.issued',
-                'token.refreshed',
-                'session.revoked'
-            ])
-            for (const event of fix.events)
-                expect(event).toMatchObject({
-                    userId: 'u1',
-                    sessionId: decode(tokens.refreshToken).sessionId,
-                    context
-                })
-        })
-
-        it('전체 로그아웃은 대상 세션마다 기록한다', async () => {
-            await fix.jwtService.generateAuthTokens({ sub: 'u1' })
-            await fix.jwtService.generateAuthTokens({ sub: 'u1' })
-            await fix.jwtService.revokeAllForUser('u1')
-            expect(fix.events.filter((event) => event.type === 'session.revoked')).toEqual([
-                expect.objectContaining({ reason: 'logout_all' }),
-                expect.objectContaining({ reason: 'logout_all' })
-            ])
-        })
-
-        it('검증 실패를 기록하되 로그아웃의 잘못된 토큰은 중복 기록하지 않는다', async () => {
-            await expect(fix.jwtService.refreshAuthTokens('garbage')).rejects.toThrow()
-            const count = fix.events.length
-            await expect(fix.jwtService.revokeRefreshToken('garbage')).rejects.toThrow()
-            expect(fix.events).toHaveLength(count)
-            expect(fix.events.at(-1)).toMatchObject({
-                type: 'verify.failed',
-                reason: expect.any(String)
-            })
-        })
-
-        it('이벤트 처리 실패를 숨기지 않는다', async () => {
-            vi.spyOn(fix.events, 'push').mockImplementationOnce(() => {
-                throw new Error('hook failure')
-            })
-            await expect(fix.jwtService.generateAuthTokens({ sub: 'u1' })).rejects.toThrow(
-                'hook failure'
-            )
-        })
     })
 })

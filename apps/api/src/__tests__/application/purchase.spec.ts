@@ -1,17 +1,19 @@
-import type { MockInstance } from 'vitest'
-import { CacheService, DateUtil, ensure, objectId, pickIds, Require } from '@mannercode/common'
+import { CacheService, DateUtil, ensure, pickIds, Require } from '@mannercode/common'
 import { HttpTestClient, oid } from '@mannercode/testing'
-import { createHash, randomUUID } from 'node:crypto'
-import { PurchaseService, PurchaseEvents } from '#application'
+import { randomUUID } from 'node:crypto'
+import { PurchaseEvents } from '#application'
 import {
-    PurchaseItemType,
+    PurchaseRecordStatus,
+    PurchaseEventStatus,
     TicketStatus,
+    ShowtimesService,
     type PurchaseRecordDto,
     PurchaseRecordsService,
     type TicketDto,
     type UserDto,
     TicketHoldingService,
-    TicketsService
+    TicketsService,
+    PurchaseRecordSchema
 } from '#core'
 import { PaymentStatus, PaymentsService } from '#infrastructure'
 import {
@@ -26,7 +28,12 @@ import {
 import { buildCreatePurchaseDto, createShowtimeAndTickets, holdTickets } from './purchase.utils.js'
 import { TicketPurchaseService } from '../../services/application/purchase/internal/index.js'
 import { AppConfigService } from '#config'
-import { Logger, HttpException } from '@nestjs/common'
+import { BadRequestException, HttpException } from '@nestjs/common'
+import { PaymentsRepository } from '../../services/infrastructure/payments/payments.repository.js'
+import {
+    PurchaseEventWorkflowClient,
+    PurchaseWorkflowClient
+} from '../../services/application/purchase/worker/index.js'
 import { PurchaseRecordsRepository } from '../../services/core/purchase-records/purchase-records.repository.js'
 
 describe('PurchaseService', () => {
@@ -38,7 +45,7 @@ describe('PurchaseService', () => {
     beforeEach(async () => {
         teardown = undefined
 
-        fix = await createAppTestContext()
+        fix = await createAppTestContext({ enableRestate: true })
         teardown = fix.teardown
         ;({ user, accessToken } = await createAndLoginUser(fix))
     })
@@ -58,7 +65,19 @@ describe('PurchaseService', () => {
                     .post('/purchases')
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(buildCreatePurchaseDto(heldTickets))
-                    .badRequest(Errors.Idempotency.KeyRequired())
+                    .badRequest({ expected: Errors.Idempotency.KeyRequired() })
+            })
+
+            it('문자열로 전달한 결제 금액은 400을 반환한다', async () => {
+                const createDto = buildCreatePurchaseDto(heldTickets)
+                await fix.httpClient
+                    .post('/purchases')
+                    .headers({
+                        Authorization: `Bearer ${accessToken}`,
+                        'Idempotency-Key': randomUUID()
+                    })
+                    .body({ ...createDto, totalPrice: String(createDto.totalPrice) })
+                    .badRequest()
             })
 
             it('Idempotency-Key 형식이 잘못되면 400을 반환한다', async () => {
@@ -66,11 +85,19 @@ describe('PurchaseService', () => {
                     .post('/purchases')
                     .headers({ Authorization: `Bearer ${accessToken}`, 'Idempotency-Key': 'short' })
                     .body(buildCreatePurchaseDto(heldTickets))
-                    .badRequest(Errors.Idempotency.KeyInvalid())
+                    .badRequest({ expected: Errors.Idempotency.KeyInvalid() })
             })
 
             it('같은 키와 같은 요청은 결제를 다시 만들지 않고 최초 구매 응답을 반환한다', async () => {
                 const createPayment = vi.spyOn(fix.module.get(PaymentsService), 'create')
+                const client = fix.module.get(PurchaseWorkflowClient)
+                const submit = client.submit.bind(client)
+                vi.spyOn(client, 'submit').mockImplementationOnce(async (...args) => {
+                    const accepted = await submit(...args)
+                    await client.waitForCompletion(accepted)
+                    // 최초 접수 응답 유실로 SDK가 같은 요청을 다시 제출한 상황이다.
+                    return submit(...args)
+                })
                 const createDto = buildCreatePurchaseDto(heldTickets)
                 const idempotencyKey = randomUUID()
 
@@ -81,7 +108,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(createDto)
-                    .created()
+                    .created({ schema: PurchaseRecordSchema })
                 const replay = await fix.httpClient
                     .post('/purchases')
                     .headers({
@@ -89,47 +116,25 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(createDto)
-                    .created()
+                    .created({ schema: PurchaseRecordSchema })
 
                 expect(replay.body).toEqual(first.body)
                 expect(createPayment).toHaveBeenCalledTimes(1)
             })
 
-            it('동시에 도착한 같은 키는 진행 중 충돌을 반환하고 완료 후 같은 결과를 재생한다', async () => {
+            it('DB 예약 전 같은 키를 다시 제출해도 workflow를 중복 실행하지 않는다', async () => {
                 const records = fix.module.get(PurchaseRecordsService)
                 const createRecord = records.create.bind(records)
+                const entered = Promise.withResolvers<void>()
+                const release = Promise.withResolvers<void>()
+                const create = vi
+                    .spyOn(records, 'create')
+                    .mockImplementationOnce(async (...args) => {
+                        entered.resolve()
+                        await release.promise
+                        return createRecord(...args)
+                    })
                 const createPayment = vi.spyOn(fix.module.get(PaymentsService), 'create')
-                let firstEntered!: () => void
-                const didEnterFirst = new Promise<void>((resolve) => {
-                    firstEntered = resolve
-                })
-                let secondEntered!: () => void
-                const didEnterSecond = new Promise<void>((resolve) => {
-                    secondEntered = resolve
-                })
-                let recordSaved!: () => void
-                const didSaveRecord = new Promise<void>((resolve) => {
-                    recordSaved = resolve
-                })
-                let releaseFirst!: () => void
-                const mayReturnFirst = new Promise<void>((resolve) => {
-                    releaseFirst = resolve
-                })
-                let calls = 0
-                vi.spyOn(records, 'create').mockImplementation(async (...args) => {
-                    calls += 1
-                    if (calls === 1) {
-                        firstEntered()
-                        await didEnterSecond
-                        const record = await createRecord(...args)
-                        recordSaved()
-                        await mayReturnFirst
-                        return record
-                    }
-                    secondEntered()
-                    await didSaveRecord
-                    return createRecord(...args)
-                })
                 const createDto = buildCreatePurchaseDto(heldTickets)
                 const idempotencyKey = randomUUID()
                 const send = () =>
@@ -140,16 +145,18 @@ describe('PurchaseService', () => {
                             'Idempotency-Key': idempotencyKey
                         })
                         .body(createDto)
-                const first = send().created()
-                await didEnterFirst
+                const first = send().created({ schema: PurchaseRecordSchema })
+                await entered.promise
                 try {
-                    await send().conflict(Errors.Idempotency.RequestInProgress())
+                    await send().conflict({ expected: Errors.Idempotency.RequestInProgress() })
                 } finally {
-                    releaseFirst()
+                    release.resolve()
                 }
                 const completed = await first
-                const replay = await send().created()
-                expect(replay.body).toEqual(completed.body)
+                expect((await send().created({ schema: PurchaseRecordSchema })).body).toEqual(
+                    completed.body
+                )
+                expect(create).toHaveBeenCalledTimes(1)
                 expect(createPayment).toHaveBeenCalledTimes(1)
             })
 
@@ -177,7 +184,7 @@ describe('PurchaseService', () => {
                         .post('/purchases')
                         .headers({ Authorization: `Bearer ${accessToken}`, 'Idempotency-Key': key })
                         .body(createDto)
-                        .created()
+                        .created({ schema: PurchaseRecordSchema })
                 const delayed = send()
                 await didReach
                 let completed: Awaited<ReturnType<typeof send>>
@@ -231,7 +238,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(firstDto)
-                    .created()
+                    .created({ schema: PurchaseRecordSchema })
                 await didEnterFirstCreate
                 const second = new HttpTestClient(fix.httpClient.serverUrl)
                     .post('/purchases')
@@ -240,7 +247,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(secondDto)
-                    .conflict(Errors.Idempotency.KeyReused())
+                    .conflict({ expected: Errors.Idempotency.KeyReused() })
 
                 await Promise.all([first, second])
                 expect(createCallCount).toBe(2)
@@ -257,7 +264,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(createDto)
-                    .created()
+                    .created({ schema: PurchaseRecordSchema })
 
                 await fix.httpClient
                     .post('/purchases')
@@ -266,7 +273,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body({ ...createDto, totalPrice: createDto.totalPrice + 1 })
-                    .conflict(Errors.Idempotency.KeyReused())
+                    .conflict({ expected: Errors.Idempotency.KeyReused() })
             })
 
             it('같은 키의 최초 요청을 처리 중이면 409를 반환한다', async () => {
@@ -296,7 +303,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(createDto)
-                    .created()
+                    .created({ schema: PurchaseRecordSchema })
 
                 await didStartPayment
                 try {
@@ -307,7 +314,7 @@ describe('PurchaseService', () => {
                             'Idempotency-Key': idempotencyKey
                         })
                         .body(createDto)
-                        .conflict(Errors.Idempotency.RequestInProgress())
+                        .conflict({ expected: Errors.Idempotency.RequestInProgress() })
                 } finally {
                     continuePayment()
                 }
@@ -325,12 +332,12 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body({ ...createDto, totalPrice: createDto.totalPrice + 1 })
-                    .badRequest(
-                        Errors.Purchase.TotalPriceMismatch(
+                    .badRequest({
+                        expected: Errors.Purchase.TotalPriceMismatch(
                             expect.any(Number),
                             createDto.totalPrice + 1
                         )
-                    )
+                    })
 
                 await fix.httpClient
                     .post('/purchases')
@@ -339,7 +346,7 @@ describe('PurchaseService', () => {
                         'Idempotency-Key': idempotencyKey
                     })
                     .body(createDto)
-                    .created()
+                    .created({ schema: PurchaseRecordSchema })
             })
 
             it('생성된 구매를 반환한다', async () => {
@@ -351,12 +358,15 @@ describe('PurchaseService', () => {
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
                     .created({
-                        ...createDto,
-                        userId: user.id,
-                        createdAt: expect.any(Temporal.Instant),
-                        id: expect.any(String),
-                        paymentId: expect.any(String),
-                        updatedAt: expect.any(Temporal.Instant)
+                        schema: PurchaseRecordSchema,
+                        expected: {
+                            ...createDto,
+                            userId: user.id,
+                            createdAt: expect.any(Temporal.Instant),
+                            id: expect.any(String),
+                            paymentId: expect.any(String),
+                            updatedAt: expect.any(Temporal.Instant)
+                        }
                     })
             })
 
@@ -367,9 +377,9 @@ describe('PurchaseService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .created()
+                    .created({ schema: PurchaseRecordSchema })
 
-                const payments = await getPayments(fix, [purchaseRecord.paymentId])
+                const payments = await getPayments(fix, [ensure(purchaseRecord.paymentId)])
 
                 expect(ensure(payments[0]).amount).toEqual(purchaseRecord.totalPrice)
             })
@@ -381,7 +391,7 @@ describe('PurchaseService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .created()
+                    .created({ schema: PurchaseRecordSchema })
 
                 const soldTickets = await getTickets(fix, pickIds(heldTickets))
 
@@ -400,7 +410,7 @@ describe('PurchaseService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .created()
+                    .created({ schema: PurchaseRecordSchema })
 
                 expect(
                     (await getTickets(fix, pickIds(heldTickets))).every(
@@ -421,11 +431,43 @@ describe('PurchaseService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .badRequest(Errors.Purchase.LimitExceeded(expect.any(Number)))
+                    .badRequest({ expected: Errors.Purchase.LimitExceeded(expect.any(Number)) })
+            })
+
+            it('다른 상영의 티켓을 섞으면 구매를 시작하지 않고 선점을 유지한다', async () => {
+                const otherTickets = await createShowtimeAndTickets(fix)
+                const otherHeldTickets = await holdTickets(fix, user.id, otherTickets)
+                const selected = [ensure(heldTickets[0]), ensure(otherHeldTickets[0])]
+                const idempotencyKey = randomUUID()
+
+                await fix.httpClient
+                    .post('/purchases')
+                    .headers({
+                        Authorization: `Bearer ${accessToken}`,
+                        'Idempotency-Key': idempotencyKey
+                    })
+                    .body(buildCreatePurchaseDto(selected))
+                    .badRequest({ expected: Errors.Purchase.MultipleShowtimes() })
+
+                const holding = fix.module.get(TicketHoldingService)
+                for (const ticket of selected) {
+                    expect(await holding.searchHeldTicketIds(ticket.showtimeId, user.id)).toContain(
+                        ticket.id
+                    )
+                }
+                expect(
+                    await fix.module
+                        .get(PurchaseRecordsService)
+                        .findIdempotencyOperation({ userId: user.id, idempotencyKey })
+                ).toBeUndefined()
             })
 
             it('구매 가능 시간이 종료되면 400을 반환한다', async () => {
                 const config = fix.module.get(AppConfigService)
+                const [showtime] = await fix.module
+                    .get(ShowtimesService)
+                    .getMany([ensure(heldTickets[0]).showtimeId])
+                const startTime = ensure(showtime).startTime
                 await overrideConfigGetter(fix.module, 'ticket', {
                     purchaseCutoffMinutes: config.ticket.purchaseCutoffMinutes + 2
                 })
@@ -437,13 +479,16 @@ describe('PurchaseService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .badRequest(
-                        Errors.Purchase.WindowClosed(
-                            expect.any(Number),
-                            expect.any(Temporal.Instant),
-                            expect.any(Temporal.Instant)
+                    .badRequest({
+                        expected: Errors.Purchase.WindowClosed(
+                            config.ticket.purchaseCutoffMinutes,
+                            DateUtil.add({
+                                base: startTime,
+                                minutes: -config.ticket.purchaseCutoffMinutes
+                            }).toString(),
+                            startTime.toString()
                         )
-                    )
+                    })
             })
 
             it('금액이 서버 계산과 다르면 400을 반환한다', async () => {
@@ -454,431 +499,220 @@ describe('PurchaseService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .badRequest(Errors.Purchase.TotalPriceMismatch(expect.any(Number), 1))
+                    .badRequest({
+                        expected: Errors.Purchase.TotalPriceMismatch(expect.any(Number), 1)
+                    })
             })
 
-            describe('completePurchase 중 내부 오류가 날 때', () => {
-                // `completePurchase`가 처음 기록하는 로그를 기준으로 예외를 던진다.
-                // 그러면 `PurchaseService`의 catch 블록이 실행되어 결제와 pending 구매를 보상한다.
-                // 티켓은 아직 전이 전이므로 되돌릴 것이 없다.
-                // 특정 메서드 호출을 직접 가로채지 않고 관측 가능한 로그를 기준으로 삼아, 테스트가 구현 세부에 지나치게 묶이지 않게 한다.
-                beforeEach(async () => {
-                    vi.spyOn(Logger.prototype, 'log').mockImplementation((message: unknown) => {
-                        if (message === 'completePurchase') {
-                            throw new Error('purchase error')
+            it.each([
+                { label: '커밋 응답 유실', failure: new Error('commit response lost') },
+                {
+                    label: '늦은 시도의 업무상 거절',
+                    failure: new BadRequestException(Errors.Purchase.NotHeld())
+                }
+            ])(
+                '선점·결제 재시도와 $label 뒤에도 최초 완료 결과를 유지한다',
+                async ({ failure }) => {
+                    const holding = fix.module.get(TicketHoldingService)
+                    const claim = holding.claimTicketsForPurchase.bind(holding)
+                    vi.spyOn(holding, 'claimTicketsForPurchase').mockImplementationOnce(
+                        async (input) => {
+                            expect(await claim(input)).toBe(true)
+                            throw new HttpException('claim response lost', 503)
                         }
-                    })
-                })
-
-                it('티켓이 판매 상태로 바뀌지 않고 구매 가능 상태로 남는다', async () => {
-                    const createDto = buildCreatePurchaseDto(heldTickets)
-
-                    await fix.httpClient
-                        .post('/purchases')
-                        .headers({ 'Idempotency-Key': randomUUID() })
-                        .headers({ Authorization: `Bearer ${accessToken}` })
-                        .body(createDto)
-                        .internalServerError()
-
-                    const ticketsService = fix.module.get(TicketsService)
-                    const tickets = await ticketsService.getMany(pickIds(heldTickets))
-                    expect(tickets.every((t) => t.status === TicketStatus.Available)).toBe(true)
-                })
-
-                it('결제를 취소하고 구매 기록을 비노출 상태로 확정한다', async () => {
-                    const paymentsService = fix.module.get(PaymentsService)
-
-                    // 보상으로 결제가 취소될 뿐 행은 남으므로, 생성된 결제 id를 가로채 상태를 확인한다.
-                    let paymentId: string | undefined
-                    const createPayment = paymentsService.create.bind(paymentsService)
-                    vi.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
-                        const payment = await createPayment(dto)
-                        paymentId = payment.id
-                        return payment
-                    })
-
-                    const createDto = buildCreatePurchaseDto(heldTickets)
-
-                    await fix.httpClient
-                        .post('/purchases')
-                        .headers({ 'Idempotency-Key': randomUUID() })
-                        .headers({ Authorization: `Bearer ${accessToken}` })
-                        .body(createDto)
-                        .internalServerError()
-
-                    Require.defined(paymentId)
-
-                    const payments = await getPayments(fix, [paymentId])
-                    expect(ensure(payments[0]).status).toBe(PaymentStatus.Cancelled)
-
-                    // cancelled 구매는 감사 추적용 행으로 남지만 정상 구매 목록에는 노출되지 않는다.
-
-                    const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-                    const records = await purchaseRecordsService.findCompleted({ userId: user.id })
-                    expect(records).toEqual([])
-                })
-
-                it('같은 키를 재시도하면 최초 오류 응답을 그대로 반환한다', async () => {
-                    const createDto = buildCreatePurchaseDto(heldTickets)
-                    const idempotencyKey = randomUUID()
-
-                    const first = await fix.httpClient
-                        .post('/purchases')
-                        .headers({
-                            Authorization: `Bearer ${accessToken}`,
-                            'Idempotency-Key': idempotencyKey
-                        })
-                        .body(createDto)
-                        .internalServerError()
-                    const replay = await fix.httpClient
-                        .post('/purchases')
-                        .headers({
-                            Authorization: `Bearer ${accessToken}`,
-                            'Idempotency-Key': idempotencyKey
-                        })
-                        .body(createDto)
-                        .internalServerError()
-
-                    expect(replay.body).toEqual(first.body)
-                })
-            })
-
-            describe('티켓 판매와 구매 완료를 묶은 transaction이 실패할 때', () => {
-                let emit: MockInstance
-
-                // 티켓 판매 뒤 같은 transaction의 구매 완료를 실패시켜 전체 rollback을 검증한다.
-                beforeEach(async () => {
-                    const events = fix.module.get(PurchaseEvents)
-                    const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-                    emit = vi.spyOn(events, 'emitTicketPurchased')
-                    vi.spyOn(purchaseRecordsService, 'markCompleted').mockRejectedValueOnce(
-                        new Error('commit failed')
                     )
-
+                    const payments = fix.module.get(PaymentsService)
+                    const createPayment = payments.create.bind(payments)
+                    vi.spyOn(payments, 'create').mockImplementationOnce(async (input) => {
+                        await createPayment(input)
+                        throw new Error('payment response lost')
+                    })
+                    const ticketPurchase = fix.module.get(TicketPurchaseService)
+                    const complete = ticketPurchase.completePurchase.bind(ticketPurchase)
+                    vi.spyOn(ticketPurchase, 'completePurchase').mockImplementationOnce(
+                        async (...args) => {
+                            await complete(...args)
+                            throw failure
+                        }
+                    )
+                    const idempotencyKey = randomUUID()
                     const createDto = buildCreatePurchaseDto(heldTickets)
-                    await fix.httpClient
-                        .post('/purchases')
-                        .headers({ 'Idempotency-Key': randomUUID() })
-                        .headers({ Authorization: `Bearer ${accessToken}` })
-                        .body(createDto)
-                        .internalServerError()
-                })
+                    const send = () =>
+                        new HttpTestClient(fix.httpClient.serverUrl)
+                            .post('/purchases')
+                            .headers({
+                                Authorization: `Bearer ${accessToken}`,
+                                'Idempotency-Key': idempotencyKey
+                            })
+                            .body(createDto)
+                            .created({ schema: PurchaseRecordSchema })
+                    const { body: completed }: { body: PurchaseRecordDto } = await send()
 
-                it('티켓 판매를 rollback한다', async () => {
-                    const ticketsService = fix.module.get(TicketsService)
-                    const tickets = await ticketsService.getMany(pickIds(heldTickets))
-                    expect(tickets.every((t) => t.status === TicketStatus.Available)).toBe(true)
-                })
+                    expect((await send()).body).toEqual(completed)
+                    expect(
+                        await fix.module
+                            .get(PaymentsRepository)
+                            .collection.countDocuments({ purchaseRecordId: completed.id })
+                    ).toBe(1)
+                    expect(await getTickets(fix, pickIds(heldTickets))).toEqual(
+                        heldTickets.map((ticket) =>
+                            expect.objectContaining({ id: ticket.id, status: TicketStatus.Sold })
+                        )
+                    )
+                    expect(
+                        (await fix.module.get(PurchaseRecordsRepository).get({ id: completed.id }))
+                            .status
+                    ).toBe(PurchaseRecordStatus.Completed)
+                }
+            )
 
-                it('구매 완료 이벤트를 발행하지 않는다', () => {
+            it('완료 transaction의 일시 실패는 판매를 rollback하고 같은 결제로 재시도한다', async () => {
+                const records = fix.module.get(PurchaseRecordsService)
+                const complete = records.markCompleted.bind(records)
+                const retryEntered = Promise.withResolvers<void>()
+                const release = Promise.withResolvers<void>()
+                vi.spyOn(records, 'markCompleted')
+                    .mockRejectedValueOnce(new Error('transaction failed'))
+                    .mockImplementationOnce(async (...args) => {
+                        retryEntered.resolve()
+                        await release.promise
+                        return complete(...args)
+                    })
+                const emit = vi.spyOn(fix.module.get(PurchaseEvents), 'emitTicketPurchased')
+                const payment = vi.spyOn(fix.module.get(PaymentsService), 'create')
+                const request = fix.httpClient
+                    .post('/purchases')
+                    .headers({
+                        Authorization: `Bearer ${accessToken}`,
+                        'Idempotency-Key': randomUUID()
+                    })
+                    .body(buildCreatePurchaseDto(heldTickets))
+                    .created({ schema: PurchaseRecordSchema })
+                await retryEntered.promise
+                try {
+                    expect(
+                        (await getTickets(fix, pickIds(heldTickets))).every(
+                            (ticket) => ticket.status === TicketStatus.Available
+                        )
+                    ).toBe(true)
+                    expect(await records.findCompleted({ userId: user.id })).toEqual([])
                     expect(emit).not.toHaveBeenCalled()
-                })
+                } finally {
+                    release.resolve()
+                }
+                await request
+                expect(payment).toHaveBeenCalledTimes(1)
+                expect(
+                    (await getTickets(fix, pickIds(heldTickets))).every(
+                        (ticket) => ticket.status === TicketStatus.Sold
+                    )
+                ).toBe(true)
             })
 
-            describe('구매 완료 커밋 뒤 이벤트 발행이 실패할 때', () => {
-                let emit: MockInstance
-                let purchaseRecord: PurchaseRecordDto
-                let purchaseRecordsService: PurchaseRecordsService
-                let purchaseService: PurchaseService
-
-                beforeEach(async () => {
-                    const events = fix.module.get(PurchaseEvents)
-                    purchaseService = fix.module.get(PurchaseService)
-                    purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-                    emit = vi
-                        .spyOn(events, 'emitTicketPurchased')
-                        .mockRejectedValueOnce(new Error('publish failed'))
-
-                    const createDto = buildCreatePurchaseDto(heldTickets)
-                    ;({ body: purchaseRecord } = await fix.httpClient
+            it('업무상 거절은 보상을 끝까지 재시도하고 최초 오류 응답을 재생한다', async () => {
+                const ticketPurchase = fix.module.get(TicketPurchaseService)
+                vi.spyOn(ticketPurchase, 'completePurchase').mockRejectedValueOnce(
+                    new BadRequestException(Errors.Purchase.NotHeld())
+                )
+                const payments = fix.module.get(PaymentsService)
+                const cancel = payments.cancelByPurchaseRecordId.bind(payments)
+                vi.spyOn(payments, 'cancelByPurchaseRecordId').mockImplementationOnce(
+                    async (input) => {
+                        await cancel(input)
+                        throw new Error('cancellation response lost')
+                    }
+                )
+                const idempotencyKey = randomUUID()
+                const send = () =>
+                    new HttpTestClient(fix.httpClient.serverUrl)
                         .post('/purchases')
-                        .headers({ 'Idempotency-Key': randomUUID() })
-                        .headers({ Authorization: `Bearer ${accessToken}` })
-                        .body(createDto)
-                        .created())
-                })
+                        .headers({
+                            Authorization: `Bearer ${accessToken}`,
+                            'Idempotency-Key': idempotencyKey
+                        })
+                        .body(buildCreatePurchaseDto(heldTickets))
+                        .badRequest({ expected: Errors.Purchase.NotHeld() })
+                const first = await send()
+                expect((await send()).body).toEqual(first.body)
+                const records = fix.module.get(PurchaseRecordsService)
+                const operation = ensure(
+                    await records.findIdempotencyOperation({ userId: user.id, idempotencyKey })
+                )
+                expect(operation.status).toBe(PurchaseRecordStatus.Cancelled)
+                expect(await records.findCompleted({ userId: user.id })).toEqual([])
+                const payment = ensure(
+                    await fix.module
+                        .get(PaymentsRepository)
+                        .findByPurchaseRecordId({ purchaseRecordId: operation.purchaseRecord.id })
+                )
+                expect(payment.status).toBe(PaymentStatus.Cancelled)
+                expect(
+                    (await getTickets(fix, pickIds(heldTickets))).every(
+                        (ticket) => ticket.status === TicketStatus.Available
+                    )
+                ).toBe(true)
+                const cache = fix.module.get<CacheService>(CacheService.getName('ticket-holding'))
+                for (const ticket of heldTickets) {
+                    expect(await cache.get(`Ticket:{${ticket.showtimeId}}:${ticket.id}`)).toBeNull()
+                }
+            })
 
-                it('티켓·결제·구매 기록을 완료 상태로 유지한다', async () => {
+            it('알림 장애는 구매 응답을 막지 않고 별도 workflow에서 복구한다', async () => {
+                const events = fix.module.get(PurchaseEvents)
+                const publish = events.emitTicketPurchased.bind(events)
+                const retryEntered = Promise.withResolvers<void>()
+                const release = Promise.withResolvers<void>()
+                const emit = vi
+                    .spyOn(events, 'emitTicketPurchased')
+                    .mockRejectedValueOnce(new Error('broker unavailable'))
+                    .mockImplementationOnce(async (event) => {
+                        retryEntered.resolve()
+                        await release.promise
+                        return publish(event)
+                    })
+                const records = fix.module.get(PurchaseRecordsService)
+                const markPublished = records.markEventPublished.bind(records)
+                vi.spyOn(records, 'markEventPublished').mockImplementationOnce(async (id) => {
+                    await markPublished(id)
+                    throw new Error('delivery acknowledgement lost')
+                })
+                const idempotencyKey = randomUUID()
+                const send = () =>
+                    new HttpTestClient(fix.httpClient.serverUrl)
+                        .post('/purchases')
+                        .headers({
+                            Authorization: `Bearer ${accessToken}`,
+                            'Idempotency-Key': idempotencyKey
+                        })
+                        .body(buildCreatePurchaseDto(heldTickets))
+                        .created({ schema: PurchaseRecordSchema })
+                const { body: record }: { body: PurchaseRecordDto } = await send()
+                await retryEntered.promise
+                try {
+                    expect(
+                        (await fix.module.get(PurchaseRecordsRepository).get({ id: record.id }))
+                            .purchaseEventStatus
+                    ).toBe(PurchaseEventStatus.Pending)
                     expect(
                         (await getTickets(fix, pickIds(heldTickets))).every(
                             (ticket) => ticket.status === TicketStatus.Sold
                         )
                     ).toBe(true)
-
-                    const paymentId = ensure(purchaseRecord.paymentId)
-                    expect(ensure((await getPayments(fix, [paymentId]))[0]).status).toBe(
-                        PaymentStatus.Completed
-                    )
-                    expect(await purchaseRecordsService.findCompleted({ userId: user.id })).toEqual(
-                        [expect.objectContaining({ id: purchaseRecord.id })]
-                    )
-                })
-
-                it('durable event를 미발행 상태로 남긴다', async () => {
                     expect(
-                        await purchaseRecordsService.findPublicationCandidates({
-                            before: DateUtil.now()
-                        })
-                    ).toEqual([expect.objectContaining({ id: purchaseRecord.id })])
-                })
-
-                it('후속 발행에서 이벤트를 재발행하고 미발행 상태를 해제한다', async () => {
-                    await purchaseService.publishPendingPurchaseEvents()
-
-                    expect(emit).toHaveBeenCalledTimes(2)
-                    expect(
-                        await purchaseRecordsService.findPublicationCandidates({
-                            before: DateUtil.now()
-                        })
-                    ).toEqual([])
-                })
-            })
-
-            describe('보상 단계가 실패해도', () => {
-                // 보상 체인은 best-effort라 한 단계가 실패해도 다음 단계를 계속 시도해야 한다.
-                // 완료 커밋 실패로 보상을 촉발하고 마지막 상태 전이를 실패시켜 durable pending을 남긴다.
-                beforeEach(async () => {
-                    const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-                    vi.spyOn(purchaseRecordsService, 'markCompleted').mockRejectedValueOnce(
-                        new Error('commit failed')
-                    )
-                    vi.spyOn(purchaseRecordsService, 'markCancelled').mockRejectedValueOnce(
-                        new Error('state transition failed')
-                    )
-                })
-
-                it('나머지 보상 단계는 계속 수행한다', async () => {
-                    const paymentsService = fix.module.get(PaymentsService)
-
-                    // 보상으로 결제가 취소될 뿐 행은 남으므로, 생성된 결제 id를 가로채 상태를 확인한다.
-                    let paymentId: string | undefined
-                    const createPayment = paymentsService.create.bind(paymentsService)
-                    vi.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
-                        const payment = await createPayment(dto)
-                        paymentId = payment.id
-                        return payment
-                    })
-
-                    const createDto = buildCreatePurchaseDto(heldTickets)
-
-                    await fix.httpClient
-                        .post('/purchases')
-                        .headers({ 'Idempotency-Key': randomUUID() })
-                        .headers({ Authorization: `Bearer ${accessToken}` })
-                        .body(createDto)
-                        .internalServerError()
-
-                    Require.defined(paymentId)
-                    const payments = await getPayments(fix, [paymentId])
-                    expect(ensure(payments[0]).status).toBe(PaymentStatus.Cancelled)
-                })
-
-                it('남은 구매 상태를 후속 reconciliation으로 정리할 수 있다', async () => {
-                    const purchaseService = fix.module.get(PurchaseService)
-                    const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-
-                    let purchaseRecordId: string | undefined
-                    const createRecord = purchaseRecordsService.create.bind(purchaseRecordsService)
-                    vi.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(
-                        async (...args) => {
-                            const record = await createRecord(...args)
-                            purchaseRecordId = record.id
-                            return record
-                        }
-                    )
-
-                    const createDto = buildCreatePurchaseDto(heldTickets)
-                    await fix.httpClient
-                        .post('/purchases')
-                        .headers({ 'Idempotency-Key': randomUUID() })
-                        .headers({ Authorization: `Bearer ${accessToken}` })
-                        .body(createDto)
-                        .internalServerError()
-
-                    Require.defined(purchaseRecordId)
-                    expect(await purchaseRecordsService.findCompleted({ userId: user.id })).toEqual(
-                        []
-                    )
-
-                    const pendingBefore = await purchaseRecordsService.findReconciliationCandidates(
-                        { before: DateUtil.now() }
-                    )
-                    expect(pendingBefore).toEqual([
-                        expect.objectContaining({ id: purchaseRecordId })
-                    ])
-
-                    await purchaseService.reconcilePendingPurchases()
-
-                    const pendingAfter = await purchaseRecordsService.findReconciliationCandidates({
-                        before: DateUtil.now()
-                    })
-                    expect(pendingAfter).toEqual([])
-                })
-            })
-
-            it('active 완료와 reconciliation이 경쟁해도 한쪽 상태만 원자적으로 확정한다', async () => {
-                const purchaseService = fix.module.get(PurchaseService)
-                const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-                const ticketHoldingService = fix.module.get(TicketHoldingService)
-                const paymentsService = fix.module.get(PaymentsService)
-
-                let purchaseRecordId: string | undefined
-                const createRecord = purchaseRecordsService.create.bind(purchaseRecordsService)
-                vi.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(
-                    async (...args) => {
-                        const record = await createRecord(...args)
-                        purchaseRecordId = record.id
-                        return record
-                    }
-                )
-
-                let paymentId: string | undefined
-                let paymentCreated!: () => void
-                const didCreatePayment = new Promise<void>((resolve) => {
-                    paymentCreated = resolve
-                })
-                let continuePayment!: () => void
-                const mayReturnPayment = new Promise<void>((resolve) => {
-                    continuePayment = resolve
-                })
-                const createPayment = paymentsService.create.bind(paymentsService)
-                vi.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
-                    const payment = await createPayment(dto)
-                    paymentId = payment.id
-                    paymentCreated()
-                    await mayReturnPayment
-                    return payment
-                })
-
-                const releaseClaims =
-                    ticketHoldingService.releasePurchaseClaims.bind(ticketHoldingService)
-                vi.spyOn(ticketHoldingService, 'releasePurchaseClaims').mockImplementationOnce(
-                    async () => {
-                        // 보상 완료 후에도 live 경로가 Redis confirm을 통과하도록 첫 claim
-                        // 해제만 의도적으로 no-op 처리한다. 상태 fence가 없다면 그 뒤 Sold와
-                        // Completed가 cancelled payment 위에 기록되는 결정적 interleaving이다.
-                    }
-                )
-
-                const purchasePromise = fix.httpClient
-                    .post('/purchases')
-                    .headers({ 'Idempotency-Key': randomUUID() })
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body(buildCreatePurchaseDto(heldTickets))
-                    .internalServerError()
-                await didCreatePayment
-                Require.defined(purchaseRecordId)
-
-                await purchaseService.reconcilePendingPurchases(
-                    DateUtil.add({ milliseconds: 1000 })
-                )
-
-                continuePayment()
-                const purchaseError = await purchasePromise.then(
-                    () => undefined,
-                    (error: unknown) => error
-                )
-
-                Require.defined(paymentId)
-                const payment = ensure((await getPayments(fix, [paymentId]))[0])
-                const tickets = await getTickets(fix, pickIds(heldTickets))
-                const visibleRecords = await purchaseRecordsService.findCompleted({
-                    userId: user.id
-                })
-                await releaseClaims(purchaseRecordId, heldTickets)
-
-                expect({
-                    httpExpectationError: purchaseError,
-                    paymentStatus: payment.status,
-                    ticketStatuses: tickets.map((ticket) => ticket.status),
-                    visibleRecordIds: pickIds(visibleRecords)
-                }).toEqual({
-                    httpExpectationError: undefined,
-                    paymentStatus: PaymentStatus.Cancelled,
-                    ticketStatuses: heldTickets.map(() => TicketStatus.Available),
-                    visibleRecordIds: []
-                })
-            })
-
-            it('만료된 completion lease를 보상한 뒤 active worker가 늦게 티켓을 판매하지 않는다', async () => {
-                const purchaseService = fix.module.get(PurchaseService)
-                const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-                const purchaseRecordsRepository = fix.module.get(PurchaseRecordsRepository)
-                const ticketsService = fix.module.get(TicketsService)
-                const paymentsService = fix.module.get(PaymentsService)
-
-                let purchaseRecordId: string | undefined
-                const createRecord = purchaseRecordsService.create.bind(purchaseRecordsService)
-                vi.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(
-                    async (...args) => {
-                        const record = await createRecord(...args)
-                        purchaseRecordId = record.id
-                        return record
-                    }
-                )
-
-                let paymentId: string | undefined
-                const createPayment = paymentsService.create.bind(paymentsService)
-                vi.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
-                    const payment = await createPayment(dto)
-                    paymentId = payment.id
-                    return payment
-                })
-
-                let saleStarted!: () => void
-                const didStartSale = new Promise<void>((resolve) => {
-                    saleStarted = resolve
-                })
-                let continueSale!: () => void
-                const mayContinueSale = new Promise<void>((resolve) => {
-                    continueSale = resolve
-                })
-                const sellForPurchase = ticketsService.sellForPurchase.bind(ticketsService)
-                vi.spyOn(ticketsService, 'sellForPurchase').mockImplementationOnce(
-                    async (...args) => {
-                        // Redis owner 확인과 Completing CAS는 이미 끝난 시점이다.
-                        // Mongo 판매만 멈춰 lease 회수 후의 late effect를 결정적으로 만든다.
-                        saleStarted()
-                        await mayContinueSale
-                        return sellForPurchase(...args)
-                    }
-                )
-
-                const purchasePromise = fix.httpClient
-                    .post('/purchases')
-                    .headers({ 'Idempotency-Key': randomUUID() })
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body(buildCreatePurchaseDto(heldTickets))
-                    .internalServerError()
-                await didStartSale
-                Require.defined(purchaseRecordId)
-
-                await purchaseRecordsRepository.collection.updateOne(
-                    { _id: objectId(purchaseRecordId), deletedAt: null },
-                    { $set: { completionLeaseUntil: new Date(0), updatedAt: new Date() } }
-                )
-                await purchaseService.reconcilePendingPurchases(
-                    DateUtil.add({ milliseconds: 1000 })
-                )
-
-                continueSale()
-                await purchasePromise
-
-                Require.defined(paymentId)
-                const payment = ensure((await getPayments(fix, [paymentId]))[0])
-                const tickets = await getTickets(fix, pickIds(heldTickets))
-
-                expect({
-                    paymentStatus: payment.status,
-                    ticketStatuses: tickets.map((ticket) => ticket.status),
-                    visibleRecordIds: pickIds(
-                        await purchaseRecordsService.findCompleted({ userId: user.id })
-                    )
-                }).toEqual({
-                    paymentStatus: PaymentStatus.Cancelled,
-                    ticketStatuses: heldTickets.map(() => TicketStatus.Available),
-                    visibleRecordIds: []
-                })
+                        ensure((await getPayments(fix, [ensure(record.paymentId)]))[0]).status
+                    ).toBe(PaymentStatus.Completed)
+                    expect((await send()).body).toEqual(record)
+                } finally {
+                    release.resolve()
+                }
+                const client = fix.module.get(PurchaseEventWorkflowClient)
+                await client.waitForCompletion(await client.submit(record, record.id))
+                expect(
+                    (await fix.module.get(PurchaseRecordsRepository).get({ id: record.id }))
+                        .purchaseEventStatus
+                ).toBe(PurchaseEventStatus.Published)
+                expect(emit).toHaveBeenCalledTimes(2)
+                expect((await send()).body).toEqual(record)
             })
 
             it('이미 판매된 티켓을 다시 구매하려 하면 409를 반환한다', async () => {
@@ -888,70 +722,35 @@ describe('PurchaseService', () => {
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .created()
+                    .created({ schema: PurchaseRecordSchema })
 
                 await fix.httpClient
                     .post('/purchases')
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body(createDto)
-                    .conflict(Errors.Purchase.AlreadySold(pickIds(heldTickets)))
+                    .conflict({ expected: Errors.Purchase.AlreadySold(pickIds(heldTickets)) })
             })
 
-            it('durable 구매 기록 생성이 실패하면 외부 효과를 만들지 않는다', async () => {
+            it('구매 예약 저장 실패는 결제 전에 재시도한다', async () => {
                 const repository = fix.module.get(PurchaseRecordsRepository)
-                const paymentsService = fix.module.get(PaymentsService)
-
-                vi.spyOn(repository.collection, 'insertOne').mockRejectedValueOnce(
-                    new Error('record creation failed')
-                )
-                const createPayment = vi.spyOn(paymentsService, 'create')
-
-                const createDto = buildCreatePurchaseDto(heldTickets)
-
-                await fix.httpClient
-                    .post('/purchases')
-                    .headers({ 'Idempotency-Key': randomUUID() })
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body(createDto)
-                    .internalServerError()
-
-                expect(createPayment).not.toHaveBeenCalled()
-            })
-
-            it('응답 저장 전 종료된 구매는 보상 후 명시적인 operation 실패로 응답한다', async () => {
-                const purchaseService = fix.module.get(PurchaseService)
-                const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-                const createDto = buildCreatePurchaseDto(heldTickets)
-                const idempotencyKey = randomUUID()
-                const fingerprint = createHash('sha256')
-                    .update(
-                        JSON.stringify({
-                            purchaseItems: [...createDto.purchaseItems]
-                                .map(({ itemId, type }) => ({ itemId, type }))
-                                .sort((a, b) =>
-                                    `${a.type}:${a.itemId}`.localeCompare(`${b.type}:${b.itemId}`)
-                                ),
-                            totalPrice: createDto.totalPrice
-                        })
-                    )
-                    .digest('hex')
-                await purchaseRecordsService.create(
-                    { ...createDto, paymentId: null, userId: user.id },
-                    { idempotency: { fingerprint, key: idempotencyKey }, pending: true }
-                )
-                await purchaseService.reconcilePendingPurchases(
-                    DateUtil.add({ milliseconds: 1000 })
-                )
-
+                const payment = vi.spyOn(fix.module.get(PaymentsService), 'create')
+                const insert = vi
+                    .spyOn(repository.collection, 'insertOne')
+                    .mockImplementationOnce(async () => {
+                        expect(payment).not.toHaveBeenCalled()
+                        throw new Error('record creation failed')
+                    })
                 await fix.httpClient
                     .post('/purchases')
                     .headers({
                         Authorization: `Bearer ${accessToken}`,
-                        'Idempotency-Key': idempotencyKey
+                        'Idempotency-Key': randomUUID()
                     })
-                    .body(createDto)
-                    .conflict(Errors.Idempotency.OperationFailed())
+                    .body(buildCreatePurchaseDto(heldTickets))
+                    .created({ schema: PurchaseRecordSchema })
+                expect(insert).toHaveBeenCalledTimes(2)
+                expect(payment).toHaveBeenCalledTimes(1)
             })
 
             it('문자열 HttpException도 같은 키 재시도에서 같은 상태와 본문을 반환한다', async () => {
@@ -997,7 +796,7 @@ describe('PurchaseService', () => {
                 .headers({ 'Idempotency-Key': randomUUID() })
                 .headers({ Authorization: `Bearer ${accessToken}` })
                 .body(createDto)
-                .badRequest(Errors.Purchase.NotHeld())
+                .badRequest({ expected: Errors.Purchase.NotHeld() })
         })
 
         it('다른 사용자가 보유한 티켓을 구매하면 400을 반환한다', async () => {
@@ -1012,7 +811,7 @@ describe('PurchaseService', () => {
                 .headers({ 'Idempotency-Key': randomUUID() })
                 .headers({ Authorization: `Bearer ${accessToken}` })
                 .body(createDto)
-                .badRequest(Errors.Purchase.NotHeld())
+                .badRequest({ expected: Errors.Purchase.NotHeld() })
         })
 
         it('보유 검증 뒤 다른 고객에게 넘어간 티켓을 판매하지 않는다', async () => {
@@ -1048,7 +847,7 @@ describe('PurchaseService', () => {
                 .headers({ 'Idempotency-Key': randomUUID() })
                 .headers({ Authorization: `Bearer ${accessToken}` })
                 .body(buildCreatePurchaseDto(heldByFirst))
-                .badRequest(Errors.Purchase.NotHeld())
+                .badRequest({ expected: Errors.Purchase.NotHeld() })
 
             await validationDidFinish
 
@@ -1113,7 +912,7 @@ describe('PurchaseService', () => {
                 .headers({ 'Idempotency-Key': randomUUID() })
                 .headers({ Authorization: `Bearer ${accessToken}` })
                 .body(buildCreatePurchaseDto(heldByFirst))
-                .badRequest(Errors.Purchase.NotHeld())
+                .badRequest({ expected: Errors.Purchase.NotHeld() })
 
             // PaymentService 진입은 pending 기록과 purchase owner claim이 모두 끝났다는 뜻이다.
             await didStartPayment
@@ -1147,380 +946,5 @@ describe('PurchaseService', () => {
                 )
             ).toBe(true)
         })
-    })
-
-    it('주기 reconciliation은 stale 구매·결제 보상과 durable event 발행을 함께 실행한다', async () => {
-        const purchaseService = fix.module.get(PurchaseService)
-        const reconcile = vi
-            .spyOn(purchaseService, 'reconcilePendingPurchases')
-            .mockResolvedValueOnce()
-        const resolvePayments = vi
-            .spyOn(purchaseService, 'reconcileUnresolvedPayments')
-            .mockResolvedValueOnce()
-        const publish = vi
-            .spyOn(purchaseService, 'publishPendingPurchaseEvents')
-            .mockResolvedValueOnce()
-
-        const startedAt = DateUtil.toEpochMilliseconds(DateUtil.now())
-        await purchaseService.reconcileStalePurchases()
-        const finishedAt = DateUtil.toEpochMilliseconds(DateUtil.now())
-
-        expect(reconcile).toHaveBeenCalledWith(expect.any(Temporal.Instant))
-        const staleBefore = ensure(reconcile.mock.calls[0]?.[0]).epochMilliseconds
-        expect(staleBefore).toBeGreaterThanOrEqual(startedAt - 10 * 60 * 1000)
-        expect(staleBefore).toBeLessThanOrEqual(finishedAt - 10 * 60 * 1000)
-        expect(resolvePayments).toHaveBeenCalledWith(reconcile.mock.calls[0]?.[0])
-        expect(publish).toHaveBeenCalledWith()
-    })
-
-    it('후속 reconciliation 실패는 lease를 풀어 다음 주기에 재시도한다', async () => {
-        const purchaseService = fix.module.get(PurchaseService)
-        const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-        const pending = await purchaseRecordsService.create(
-            {
-                paymentId: null,
-                purchaseItems: [{ itemId: oid(0xfe), type: PurchaseItemType.Tickets }],
-                totalPrice: 1,
-                userId: user.id
-            },
-            { pending: true }
-        )
-
-        await purchaseService.reconcilePendingPurchases(DateUtil.add({ milliseconds: 1000 }))
-
-        expect(
-            await purchaseRecordsService.findReconciliationCandidates({
-                before: DateUtil.add({ milliseconds: 1000 })
-            })
-        ).toEqual([expect.objectContaining({ id: pending.id })])
-    })
-
-    it('pending 조회 직후 완료된 구매는 보상하지 않는다', async () => {
-        const purchaseService = fix.module.get(PurchaseService)
-        const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-        const ticketPurchaseService = fix.module.get(TicketPurchaseService)
-        const completed = await purchaseRecordsService.create({
-            paymentId: oid(0xfd),
-            purchaseItems: [{ itemId: oid(0xfe), type: PurchaseItemType.Tickets }],
-            totalPrice: 1,
-            userId: user.id
-        })
-        vi.spyOn(purchaseRecordsService, 'findReconciliationCandidates').mockResolvedValueOnce([
-            completed
-        ])
-        const compensate = vi.spyOn(ticketPurchaseService, 'compensatePurchase')
-
-        await purchaseService.reconcilePendingPurchases()
-
-        expect(compensate).not.toHaveBeenCalled()
-    })
-
-    it('Cancelled 확정 뒤 생성된 결제의 즉시 취소가 실패해도 주기 작업이 다시 취소한다', async () => {
-        const purchaseService = fix.module.get(PurchaseService)
-        const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-        const paymentsService = fix.module.get(PaymentsService)
-        const heldTickets = await holdTickets(fix, user.id, await createShowtimeAndTickets(fix))
-
-        let purchaseRecordId: string | undefined
-        const createRecord = purchaseRecordsService.create.bind(purchaseRecordsService)
-        vi.spyOn(purchaseRecordsService, 'create').mockImplementationOnce(async (...args) => {
-            const record = await createRecord(...args)
-            purchaseRecordId = record.id
-            return record
-        })
-
-        let paymentCreationStarted!: () => void
-        const didStartPaymentCreation = new Promise<void>((resolve) => {
-            paymentCreationStarted = resolve
-        })
-        let continuePaymentCreation!: () => void
-        const mayCreatePayment = new Promise<void>((resolve) => {
-            continuePaymentCreation = resolve
-        })
-        let paymentId: string | undefined
-        const createPayment = paymentsService.create.bind(paymentsService)
-        vi.spyOn(paymentsService, 'create').mockImplementationOnce(async (dto) => {
-            paymentCreationStarted()
-            await mayCreatePayment
-            const payment = await createPayment(dto)
-            paymentId = payment.id
-            return payment
-        })
-
-        const cancelPayment = paymentsService.cancel.bind(paymentsService)
-        let failLateCancellation = false
-        vi.spyOn(paymentsService, 'cancel').mockImplementation(async (activePaymentId) => {
-            if (failLateCancellation) {
-                failLateCancellation = false
-                throw new Error('late cancellation failed')
-            }
-            await cancelPayment(activePaymentId)
-        })
-
-        const purchasePromise = fix.httpClient
-            .post('/purchases')
-            .headers({ 'Idempotency-Key': randomUUID() })
-            .headers({ Authorization: `Bearer ${accessToken}` })
-            .body(buildCreatePurchaseDto(heldTickets))
-            .internalServerError()
-        await didStartPaymentCreation
-        Require.defined(purchaseRecordId)
-
-        const markCancelled = vi.spyOn(purchaseRecordsService, 'markCancelled')
-        await purchaseService.reconcilePendingPurchases(DateUtil.add({ milliseconds: 1000 }))
-        expect(markCancelled).toHaveBeenCalledWith(purchaseRecordId, expect.any(String))
-
-        failLateCancellation = true
-        continuePaymentCreation()
-        await purchasePromise
-
-        Require.defined(paymentId)
-        expect(ensure((await getPayments(fix, [paymentId]))[0]).status).toBe(
-            PaymentStatus.Completed
-        )
-
-        vi.spyOn(Temporal.Now, 'instant').mockReturnValue(DateUtil.add({ minutes: 11 }))
-        failLateCancellation = true
-        await purchaseService.reconcileStalePurchases()
-        expect(ensure((await getPayments(fix, [paymentId]))[0]).status).toBe(
-            PaymentStatus.Completed
-        )
-
-        await purchaseService.reconcileStalePurchases()
-
-        expect(ensure((await getPayments(fix, [paymentId]))[0]).status).toBe(
-            PaymentStatus.Cancelled
-        )
-    })
-
-    it('미해소 결제의 구매가 완료 상태면 취소하지 않고 resolution만 마친다', async () => {
-        const purchaseService = fix.module.get(PurchaseService)
-        const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-        const paymentsService = fix.module.get(PaymentsService)
-        const purchaseRecord = await purchaseRecordsService.create({
-            paymentId: null,
-            purchaseItems: [{ itemId: oid(0xfb), type: PurchaseItemType.Tickets }],
-            totalPrice: 1,
-            userId: user.id
-        })
-        const payment = await paymentsService.create({
-            amount: 1,
-            purchaseRecordId: purchaseRecord.id,
-            userId: user.id
-        })
-        const cancel = vi.spyOn(paymentsService, 'cancelByPurchaseRecordId')
-        const future = DateUtil.add({ milliseconds: 1000 })
-
-        expect(await paymentsService.findResolutionCandidates({ before: future })).toEqual([
-            expect.objectContaining({ id: payment.id })
-        ])
-
-        await purchaseService.reconcileUnresolvedPayments(future)
-
-        expect(cancel).not.toHaveBeenCalled()
-        expect(await paymentsService.findResolutionCandidates({ before: future })).toEqual([])
-        expect(ensure((await getPayments(fix, [payment.id]))[0]).status).toBe(
-            PaymentStatus.Completed
-        )
-    })
-
-    it('미해소 결제의 구매가 아직 진행 중이면 terminal 상태가 될 때까지 보류한다', async () => {
-        const purchaseService = fix.module.get(PurchaseService)
-        const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-        const paymentsService = fix.module.get(PaymentsService)
-        const purchaseRecord = await purchaseRecordsService.create(
-            {
-                paymentId: null,
-                purchaseItems: [{ itemId: oid(0xfa), type: PurchaseItemType.Tickets }],
-                totalPrice: 1,
-                userId: user.id
-            },
-            { pending: true }
-        )
-        const payment = await paymentsService.create({
-            amount: 1,
-            purchaseRecordId: purchaseRecord.id,
-            userId: user.id
-        })
-        const cancel = vi.spyOn(paymentsService, 'cancelByPurchaseRecordId')
-        const future = DateUtil.add({ milliseconds: 1000 })
-
-        await purchaseService.reconcileUnresolvedPayments(future)
-
-        expect(cancel).not.toHaveBeenCalled()
-        expect(await paymentsService.findResolutionCandidates({ before: future })).toEqual([
-            expect.objectContaining({ id: payment.id })
-        ])
-    })
-
-    it('미해소 결제의 구매 기록이 없으면 결제를 변경하지 않는다', async () => {
-        const purchaseService = fix.module.get(PurchaseService)
-        const paymentsService = fix.module.get(PaymentsService)
-        const payment = await paymentsService.create({
-            amount: 1,
-            purchaseRecordId: oid(0xf9),
-            userId: user.id
-        })
-        const future = DateUtil.add({ milliseconds: 1000 })
-
-        await purchaseService.reconcileUnresolvedPayments(future)
-
-        expect(ensure((await getPayments(fix, [payment.id]))[0]).status).toBe(
-            PaymentStatus.Completed
-        )
-        expect(await paymentsService.findResolutionCandidates({ before: future })).toEqual([
-            expect.objectContaining({ id: payment.id })
-        ])
-    })
-
-    it('두 outbox publisher가 경쟁해도 publication lease 소유자만 한 번 emit한다', async () => {
-        const events = fix.module.get(PurchaseEvents)
-        const purchaseService = fix.module.get(PurchaseService)
-        const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-        const pending = await purchaseRecordsService.create(
-            {
-                paymentId: null,
-                purchaseItems: [{ itemId: oid(0xf7), type: PurchaseItemType.Tickets }],
-                totalPrice: 1,
-                userId: user.id
-            },
-            { pending: true }
-        )
-        const completionId = 'outbox-completion'
-        await purchaseRecordsService.claimForCompletion(
-            pending.id,
-            completionId,
-            DateUtil.add({ minutes: 1 })
-        )
-        await purchaseRecordsService.markCompleted(pending.id, completionId)
-        const before = DateUtil.add({ milliseconds: 1000 })
-        let firstEmitStarted!: () => void
-        const didStartFirstEmit = new Promise<void>((resolve) => {
-            firstEmitStarted = resolve
-        })
-        let finishFirstEmit!: () => void
-        const mayFinishFirstEmit = new Promise<void>((resolve) => {
-            finishFirstEmit = resolve
-        })
-        const emit = vi.spyOn(events, 'emitTicketPurchased').mockImplementationOnce(async () => {
-            firstEmitStarted()
-            await mayFinishFirstEmit
-        })
-        // 두 replica가 lease 획득 전 같은 stale outbox 목록을 읽은 상황을 고정한다.
-        // 목록 조회만으로 중복을 막는 것이 아니라 저장소의 publication CAS가 loser를
-        // 실제로 거절해야 한다.
-        vi.spyOn(purchaseRecordsService, 'findPublicationCandidates').mockResolvedValue([pending])
-
-        const firstPublisher = purchaseService.publishPendingPurchaseEvents(before)
-        await didStartFirstEmit
-        let callsDuringOverlap = 0
-        try {
-            await purchaseService.publishPendingPurchaseEvents(before)
-            callsDuringOverlap = emit.mock.calls.length
-        } finally {
-            finishFirstEmit()
-            await firstPublisher
-        }
-
-        expect(callsDuringOverlap).toBe(1)
-        expect(emit).toHaveBeenCalledTimes(1)
-    })
-
-    it('emit 성공 후 outbox ack가 실패하면 안정 key로 at-least-once 재발행한다', async () => {
-        const events = fix.module.get(PurchaseEvents)
-        const purchaseService = fix.module.get(PurchaseService)
-        const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-        const pending = await purchaseRecordsService.create(
-            {
-                paymentId: null,
-                purchaseItems: [{ itemId: oid(0xf6), type: PurchaseItemType.Tickets }],
-                totalPrice: 1,
-                userId: user.id
-            },
-            { pending: true }
-        )
-        const completionId = 'outbox-ack-failure'
-        await purchaseRecordsService.claimForCompletion(
-            pending.id,
-            completionId,
-            DateUtil.add({ minutes: 1 })
-        )
-        await purchaseRecordsService.markCompleted(pending.id, completionId)
-        const emit = vi.spyOn(events, 'emitTicketPurchased').mockResolvedValue()
-        vi.spyOn(purchaseRecordsService, 'markEventPublished').mockResolvedValueOnce(false)
-        const before = DateUtil.add({ milliseconds: 1000 })
-
-        await purchaseService.publishPendingPurchaseEvents(before)
-        await purchaseService.publishPendingPurchaseEvents(before)
-
-        expect(emit).toHaveBeenCalledTimes(2)
-        expect(emit.mock.calls.map(([event]) => event.purchaseRecordId)).toEqual([
-            pending.id,
-            pending.id
-        ])
-        expect(await purchaseRecordsService.findPublicationCandidates({ before })).toEqual([])
-    })
-
-    it('outbox publish와 publication claim 해제가 모두 실패해도 완료 구매를 되돌리지 않는다', async () => {
-        const events = fix.module.get(PurchaseEvents)
-        const purchaseService = fix.module.get(PurchaseService)
-        const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-        const pending = await purchaseRecordsService.create(
-            {
-                paymentId: null,
-                purchaseItems: [{ itemId: oid(0xf5), type: PurchaseItemType.Tickets }],
-                totalPrice: 1,
-                userId: user.id
-            },
-            { pending: true }
-        )
-        const completionId = 'outbox-release-failure'
-        await purchaseRecordsService.claimForCompletion(
-            pending.id,
-            completionId,
-            DateUtil.add({ minutes: 1 })
-        )
-        await purchaseRecordsService.markCompleted(pending.id, completionId)
-        vi.spyOn(events, 'emitTicketPurchased').mockRejectedValueOnce(
-            new Error('broker unavailable')
-        )
-        const release = vi
-            .spyOn(purchaseRecordsService, 'releaseEventPublicationClaim')
-            .mockRejectedValueOnce(new Error('claim release unavailable'))
-
-        await expect(
-            purchaseService.publishPendingPurchaseEvents(DateUtil.add({ milliseconds: 1000 }))
-        ).resolves.toBeUndefined()
-
-        expect(release).toHaveBeenCalledTimes(1)
-        expect(await purchaseRecordsService.findCompleted({ userId: user.id })).toEqual([
-            expect.objectContaining({ id: pending.id })
-        ])
-    })
-
-    it('보상과 lease 해제가 함께 실패해도 주기 reconciliation 호출자는 실패하지 않는다', async () => {
-        const purchaseService = fix.module.get(PurchaseService)
-        const purchaseRecordsService = fix.module.get(PurchaseRecordsService)
-        const ticketPurchaseService = fix.module.get(TicketPurchaseService)
-        await purchaseRecordsService.create(
-            {
-                paymentId: null,
-                purchaseItems: [{ itemId: oid(0xfc), type: PurchaseItemType.Tickets }],
-                totalPrice: 1,
-                userId: user.id
-            },
-            { pending: true }
-        )
-        vi.spyOn(ticketPurchaseService, 'compensatePurchase').mockRejectedValueOnce(
-            new Error('ticket compensation failed')
-        )
-        const release = vi
-            .spyOn(purchaseRecordsService, 'releaseReconciliationClaim')
-            .mockRejectedValueOnce(new Error('lease release failed'))
-
-        await expect(
-            purchaseService.reconcilePendingPurchases(DateUtil.add({ milliseconds: 1000 }))
-        ).resolves.toBeUndefined()
-        expect(release).toHaveBeenCalledTimes(1)
     })
 })

@@ -115,7 +115,7 @@ describe('AdminManagement', () => {
             await fix.httpClient
                 .post('/admins/refresh')
                 .body({ refreshToken })
-                .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
         })
     })
 
@@ -135,7 +135,7 @@ describe('AdminManagement', () => {
                     .patch('/admins/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body({ name: 'renamed' })
-                    .ok({ ...admin, name: 'renamed' })
+                    .ok({ expected: { ...admin, name: 'renamed' } })
             })
 
             it('수정 내용이 DB에 저장된다', async () => {
@@ -148,7 +148,7 @@ describe('AdminManagement', () => {
                 await fix.httpClient
                     .get('/admins/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
-                    .ok({ ...admin, name: 'renamed' })
+                    .ok({ expected: { ...admin, name: 'renamed' } })
             })
 
             describe('password를 변경하면', () => {
@@ -166,21 +166,26 @@ describe('AdminManagement', () => {
                     await fix.httpClient
                         .post('/admins/login')
                         .body({ email: adminCredentials.email, password: newPassword })
-                        .ok({ accessToken: expect.any(String), refreshToken: expect.any(String) })
+                        .ok({
+                            expected: {
+                                accessToken: expect.any(String),
+                                refreshToken: expect.any(String)
+                            }
+                        })
                 })
 
                 it('기존 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
                     await fix.httpClient
                         .post('/admins/refresh')
                         .body({ refreshToken })
-                        .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
+                        .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
                 })
 
                 it('기존 액세스 토큰은 만료 전까지 인증을 통과한다', async () => {
                     await fix.httpClient
                         .get('/admins/me')
                         .headers({ Authorization: `Bearer ${accessToken}` })
-                        .ok(admin)
+                        .ok({ expected: admin })
                 })
             })
 
@@ -189,7 +194,7 @@ describe('AdminManagement', () => {
                     .patch('/admins/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body({ email: 'renamed@mail.com' })
-                    .ok({ ...admin, email: 'renamed@mail.com' })
+                    .ok({ expected: { ...admin, email: 'renamed@mail.com' } })
             })
 
             it('다른 admin과 같은 email로 바꾸려 하면 409를 반환한다', async () => {
@@ -208,7 +213,7 @@ describe('AdminManagement', () => {
                     .patch('/admins/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .body({ name: 'x' })
-                    .notFound(Errors.Mongo.DocumentNotFound(admin.id))
+                    .notFound({ expected: Errors.Mongo.DocumentNotFound(admin.id) })
             })
         })
 
@@ -243,7 +248,7 @@ describe('AdminManagement', () => {
             await fix.httpClient
                 .get('/admins/me')
                 .headers({ Authorization: `Bearer ${accessToken}` })
-                .notFound(Errors.Mongo.MultipleDocumentsNotFound([created.id]))
+                .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([created.id]) })
         })
     })
 })

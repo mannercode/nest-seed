@@ -6,7 +6,7 @@ import { AppConfigService } from '#config'
     imports: [
         MongoModule.forRootAsync({
             inject: [AppConfigService],
-            useFactory: (config: AppConfigService) => ({ ...config.mongo, lifetime: 'application' })
+            useFactory: (config: AppConfigService) => config.mongo
         })
     ]
 })

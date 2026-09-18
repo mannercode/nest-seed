@@ -1,16 +1,23 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import {
+    BadRequestException,
+    Injectable,
+    Logger,
+    NotFoundException,
+    ServiceUnavailableException
+} from '@nestjs/common'
 import {
     defineWorkflow,
     isWorkflowCancellation,
     type DurableWorkflowContext
 } from '@mannercode/common'
 import { AppConfigService } from '#config'
-import type {
-    ShowtimeCreationEvent,
-    ShowtimeCreationTerminalEvent,
-    ValidateAndCreateResult
+import {
+    ValidateAndCreateResultSchema,
+    type ShowtimeCreationEvent,
+    type ShowtimeCreationTerminalEvent,
+    type ValidateAndCreateResult
 } from '../internal/index.js'
-import type { ShowtimeCreationWorkflowInput } from './types.js'
+import { ShowtimeCreationWorkflowInputSchema, type ShowtimeCreationWorkflowInput } from './types.js'
 import { ShowtimeCreationPersistenceService } from '../internal/showtime-creation-persistence.service.js'
 import { ShowtimeCreationEvents } from '../showtime-creation.events.js'
 
@@ -20,13 +27,12 @@ const VALIDATE_AND_CREATE_RETRY = {
     maxRetryAttempts: 4,
     maxRetryDuration: 195_000
 }
-const DEFAULT_RUN_TIMEOUT_MS = 60_000
+const RUN_TIMEOUT_MS = 60_000
 
 type WorkflowDependencies = {
     events: Pick<ShowtimeCreationEvents, 'emitStatusChanged'>
     persistence: Pick<ShowtimeCreationPersistenceService, 'validateAndCreate'>
     projectId: string
-    runTimeoutMs?: number
 }
 
 export function getShowtimeCreationWorkflowName(projectId: string) {
@@ -36,8 +42,7 @@ export function getShowtimeCreationWorkflowName(projectId: string) {
 export function createShowtimeCreationWorkflow({
     events,
     persistence,
-    projectId,
-    runTimeoutMs = DEFAULT_RUN_TIMEOUT_MS
+    projectId
 }: WorkflowDependencies) {
     const logger = new Logger(ShowtimeCreationWorkflow.name)
     const emit = (ctx: DurableWorkflowContext, name: string, event: ShowtimeCreationEvent) =>
@@ -58,6 +63,7 @@ export function createShowtimeCreationWorkflow({
         )
 
     return defineWorkflow({
+        input: ShowtimeCreationWorkflowInputSchema,
         run: async (
             ctx: DurableWorkflowContext,
             input: ShowtimeCreationWorkflowInput
@@ -67,18 +73,20 @@ export function createShowtimeCreationWorkflow({
 
             let result: ValidateAndCreateResult
             try {
-                result = await ctx.run(
-                    'validate and create',
-                    () => {
-                        const { createDto, sagaId } = input
-                        const signal = AbortSignal.any([
-                            ctx.attemptSignal(),
-                            AbortSignal.timeout(runTimeoutMs)
-                        ])
+                result = ValidateAndCreateResultSchema.parse(
+                    await ctx.run(
+                        'validate and create',
+                        () => {
+                            const { createDto, sagaId } = input
+                            const signal = AbortSignal.any([
+                                ctx.attemptSignal(),
+                                AbortSignal.timeout(RUN_TIMEOUT_MS)
+                            ])
 
-                        return persistence.validateAndCreate(createDto, sagaId, signal)
-                    },
-                    VALIDATE_AND_CREATE_RETRY
+                            return persistence.validateAndCreate(createDto, sagaId, signal)
+                        },
+                        VALIDATE_AND_CREATE_RETRY
+                    )
                 )
             } catch (error: unknown) {
                 if (isWorkflowCancellation(error)) throw error
@@ -120,7 +128,7 @@ export function createShowtimeCreationWorkflow({
                 }
                 return undefined
             },
-            inactivityTimeout: runTimeoutMs + 5_000,
+            inactivityTimeout: RUN_TIMEOUT_MS + 5_000,
             workflowRetention: 60 * 60 * 1_000
         }
     })
@@ -132,7 +140,9 @@ async function withEventAttemptTimeout(operation: Promise<void>) {
         timer = setTimeout(
             () =>
                 reject(
-                    new Error(`Status event publish timed out after ${EVENT_ATTEMPT_TIMEOUT_MS}ms.`)
+                    new ServiceUnavailableException('Service unavailable', {
+                        cause: `Status event publish timed out after ${EVENT_ATTEMPT_TIMEOUT_MS}ms.`
+                    })
                 ),
             EVENT_ATTEMPT_TIMEOUT_MS
         )

@@ -41,7 +41,9 @@ describe('AdminAuthentication', () => {
             const { body } = await fix.httpClient
                 .post('/admins/login')
                 .body(credentials)
-                .ok({ accessToken: expect.any(String), refreshToken: expect.any(String) })
+                .ok({
+                    expected: { accessToken: expect.any(String), refreshToken: expect.any(String) }
+                })
 
             const { exp, iat } = new JwtService().decode<{ exp: number; iat: number }>(
                 body.accessToken
@@ -54,14 +56,14 @@ describe('AdminAuthentication', () => {
             await fix.httpClient
                 .post('/admins/login')
                 .body({ ...credentials, password: 'wrong password' })
-                .unauthorized(Errors.Auth.Unauthorized())
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
         })
 
         it('등록되지 않은 이메일이면 401을 반환한다', async () => {
             await fix.httpClient
                 .post('/admins/login')
                 .body({ ...credentials, email: 'unknown@mail.com' })
-                .unauthorized(Errors.Auth.Unauthorized())
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
         })
 
         it('다른 IP의 실패가 정상 계정의 로그인을 잠그지 않는다', async () => {
@@ -70,7 +72,7 @@ describe('AdminAuthentication', () => {
                     .post('/admins/login')
                     .headers({ 'X-Forwarded-For': `198.51.100.${index + 1}` })
                     .body({ ...credentials, password: 'wrong password' })
-                    .unauthorized(Errors.Auth.Unauthorized())
+                    .unauthorized({ expected: Errors.Auth.Unauthorized() })
             }
             await fix.httpClient
                 .post('/admins/login')
@@ -87,7 +89,7 @@ describe('AdminAuthentication', () => {
                     .post('/admins/login')
                     .headers({ 'X-Forwarded-For': ip })
                     .body({ email: `unknown-${index}@mail.com`, password: 'wrong password' })
-                    .unauthorized(Errors.Auth.Unauthorized())
+                    .unauthorized({ expected: Errors.Auth.Unauthorized() })
             }
 
             await fix.httpClient
@@ -100,13 +102,13 @@ describe('AdminAuthentication', () => {
                 .post('/admins/login')
                 .headers({ 'X-Forwarded-For': ip })
                 .body({ email: 'unknown-50@mail.com', password: 'wrong password' })
-                .unauthorized(Errors.Auth.Unauthorized())
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
 
             await fix.httpClient
                 .post('/admins/login')
                 .headers({ 'X-Forwarded-For': ip })
                 .body({ email: 'unknown-51@mail.com', password: 'wrong password' })
-                .send(HttpStatus.TOO_MANY_REQUESTS, LOGIN_RATE_LIMITED_ERROR)
+                .send(HttpStatus.TOO_MANY_REQUESTS, { expected: LOGIN_RATE_LIMITED_ERROR })
         })
     })
 
@@ -117,20 +119,20 @@ describe('AdminAuthentication', () => {
             await fix.httpClient
                 .get('/admins/me')
                 .headers({ Authorization: `Bearer ${tokens.accessToken}` })
-                .ok(
-                    expect.objectContaining({
+                .ok({
+                    expected: expect.objectContaining({
                         id: expect.any(String),
                         email: credentials.email,
                         name: expect.any(String)
                     })
-                )
+                })
         })
 
         it('액세스 토큰이 검증되지 않으면 401을 반환한다', async () => {
             await fix.httpClient
                 .get('/admins/me')
                 .headers({ Authorization: 'Bearer invalid-token' })
-                .unauthorized(Errors.Auth.Unauthorized())
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
         })
 
         it.each([{ email: 'admin@mail.com' }, { email: 'invalid', sub: 'admin-id' }])(
@@ -147,7 +149,7 @@ describe('AdminAuthentication', () => {
                 await fix.httpClient
                     .get('/admins/me')
                     .headers({ Authorization: `Bearer ${token}` })
-                    .unauthorized(Errors.Auth.Unauthorized())
+                    .unauthorized({ expected: Errors.Auth.Unauthorized() })
             }
         )
     })
@@ -185,12 +187,12 @@ describe('AdminAuthentication', () => {
             await fix.httpClient
                 .post('/admins/refresh')
                 .body({ refreshToken })
-                .unauthorized(Errors.JwtAuth.RefreshTokenInvalid())
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
 
             await fix.httpClient
                 .get('/admins/me')
                 .headers({ Authorization: `Bearer ${accessToken}` })
-                .ok(admin)
+                .ok({ expected: admin })
         })
     })
 })

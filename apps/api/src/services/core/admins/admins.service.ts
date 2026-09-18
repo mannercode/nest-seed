@@ -1,7 +1,13 @@
 import { mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { AdminsRepository } from './admins.repository.js'
-import { AdminCredentialsDto, AdminDto, CreateAdminDto, UpdateAdminDto } from './dtos/index.js'
+import {
+    AdminCredentialsDto,
+    AdminDto,
+    CreateAdminDto,
+    UpdateAdminDto,
+    AdminSchema
+} from './dtos/index.js'
 import { AdminAuthenticationService } from './internal/index.js'
 import { Admin } from './models/index.js'
 
@@ -63,6 +69,6 @@ export class AdminsService {
     }
 
     private toDto(admin: Admin): AdminDto {
-        return mapDocToDto(admin, AdminDto, ['id', 'email', 'name'])
+        return mapDocToDto(admin, AdminSchema)
     }
 }

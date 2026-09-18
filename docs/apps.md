@@ -72,13 +72,13 @@ View는 읽기 API를 조합하고 표시 순서·개수 같은 화면 정책을
 
 코드는 모놀리스지만 검증 스택은 API를 여러 프로세스로 실행한다. 중요한 것은 도구 목록이 아니라 각 문제의 **최종 보장 경계**다.
 
-| 문제                             | 선택                       | 최종 보장                         |
-| -------------------------------- | -------------------------- | --------------------------------- |
-| 중복 작업·불필요한 경쟁 축소     | Redis 분산 락              | 락이 아니라 DB 상태 전이·CAS      |
-| 연결된 구독자에게 실시간 fan-out | Core NATS                  | 손실 시 상태 재조회               |
-| 중단 후에도 이어야 하는 작업     | Restate durable workflow   | journal + 멱등한 외부 효과        |
-| 나중에도 처리해야 하는 이벤트    | MongoDB outbox + JetStream | at-least-once + 소비자 멱등성     |
-| 여러 시스템에 걸친 결제·보상     | durable 상태 머신 + lease  | 주기 재조정을 통한 종료 상태 수렴 |
+| 문제                             | 선택                     | 최종 보장                       |
+| -------------------------------- | ------------------------ | ------------------------------- |
+| 중복 작업·불필요한 경쟁 축소     | Redis 분산 락            | 락이 아니라 DB 상태 전이·CAS    |
+| 연결된 구독자에게 실시간 fan-out | Core NATS                | 손실 시 상태 재조회             |
+| 중단 후에도 이어야 하는 작업     | Restate durable workflow | journal + 멱등한 외부 효과      |
+| 나중에도 처리해야 하는 이벤트    | Restate + JetStream      | at-least-once + 소비자 멱등성   |
+| 여러 시스템에 걸친 결제·보상     | Restate durable workflow | 단계 재시도 + DB 원자 상태 전이 |
 
 구체적인 도구 선택 이유와 거부한 대안은 [설계 결정](reference/decisions.md)이 소유한다.
 
@@ -92,29 +92,30 @@ View는 읽기 API를 조합하고 표시 순서·개수 같은 화면 정책을
 
 상영 생성의 SSE 진행 알림은 현재 연결된 사용자에게 빠르게 전달하면 되고 최종 상태를 다시 조회할 수 있으므로 Core NATS를 쓴다. 연결 전 이벤트를 replay하지 않고 중복도 가능하다. SSE를 최종 상태의 저장소로 취급하지 않는다.
 
-반면 구매 완료 이벤트는 소비자가 중단된 동안에도 보존해야 하므로 MongoDB outbox와 JetStream을 쓴다. DB 갱신과 broker ack, 실제 부수 효과와 consumer ack를 한 transaction으로 묶을 수 없으므로 보장은 **at-least-once**다. 실제 메일·알림·외부 호출을 추가하는 소비자는 `purchaseRecordId`를 durable inbox unique key나 provider idempotency key로 써야 한다.
+반면 구매 완료 이벤트는 소비자가 중단된 동안에도 보존해야 하므로 Restate 발행 workflow와 JetStream을 쓴다. DB 갱신과 broker ack, 실제 부수 효과와 consumer ack를 한 transaction으로 묶을 수 없으므로 보장은 **at-least-once**다. 실제 메일·알림·외부 호출을 추가하는 소비자는 `purchaseRecordId`를 durable inbox unique key나 provider idempotency key로 써야 한다.
 
 진행 알림은 NATS → 각 API 복제본의 로컬 RxJS Subject → 그 복제본에 연결된 SSE 클라이언트로 전달된다. 서버는 saga별 구독을 만들지 않으므로 클라이언트가 payload의 `sagaId`로 자기 작업을 고른다. Core NATS의 `flush`는 서버가 이전 명령을 처리했다는 확인이며 소비자가 처리했거나 메시지가 저장됐다는 ack가 아니다.
 
-구매는 완료 문서의 `purchaseEventStatus=pending`을 outbox로 삼는다. publication lease를 얻은 복제본이 발행하고 PubAck 뒤에 `published`로 바꾼다. 알림 복제본들은 같은 durable pull consumer를 공유하고 처리 성공 뒤 ack한다. 저장 성공 후 DB 갱신을 잃거나 처리 성공 후 ack를 잃으면 재전달될 수 있다. message ID의 중복 억제 기간도 유한하다.
+구매 workflow는 완료 transaction 뒤에 구매 ID를 키로 알림 workflow를 제출한다. 알림 workflow는 JetStream 발행을 재시도하고 PubAck 뒤에 구매 문서의 `purchaseEventStatus`를 `published`로 바꾼다. 구매 HTTP 응답은 알림 작업의 접수까지만 기다리므로 broker 장애 때문에 완료된 구매를 취소하거나 응답을 지연하지 않는다. 알림 복제본들은 같은 durable pull consumer를 공유하고 처리 성공 뒤 ack한다. 저장 성공 후 DB 갱신을 잃거나 처리 성공 후 ack를 잃으면 재전달될 수 있다. message ID의 중복 억제 기간도 유한하다.
 
-구매 stream은 해당 subject만 보존하며 용량 한계에서는 새 발행을 거부해 outbox가 pending으로 남게 한다. 보존 기간·용량은 구매 이벤트 설정이 소유한다. 현재 알림 소비자는 실제 메일을 발송하지 않고 `dedupeKey`가 있는 로그를 남긴다.
+구매 stream은 해당 subject만 보존하며 용량 한계에서는 새 발행을 거부하며 발행 workflow가 재시도한다. 보존 기간·용량은 구매 이벤트 설정이 소유한다. 현재 알림 소비자는 실제 메일을 발송하지 않고 `dedupeKey`가 있는 로그를 남긴다.
 
-### 2.3. 구매 상태 머신과 재조정
+### 2.3. 구매 workflow와 보상
 
-현재 [PaymentsService](../apps/api/src/services/infrastructure/payments/payments.service.ts)는 외부 PG를 호출하지 않고 MongoDB에 결제 상태를 기록해 생성·취소와 중복 요청을 재현하는 예제다. 실제 PG 통신은 검증 범위에 포함하지 않는다.
+한 구매에는 **한 상영의 티켓만** 담는다. 한 상영의 Redis 키가 같은 hash slot에 있으므로 티켓 묶음의 claim을 한 Lua 호출로 처리한다. 다른 상영을 섞은 요청은 결제·구매 기록을 만들기 전에 거부한다.
 
-결제 생성·취소와 Redis의 티켓 claim은 구매 완료 transaction 밖에서 처리한다. 구매는 이 작업들보다 먼저 durable 기록을 남기고 다음 상태로 수렴한다.
+구매는 Restate 접수가 durable 시작점이다. workflow는 구매 기록을 예약한 뒤 선점 claim, 결제, 판매를 실행하며 HTTP 요청은 그 결과를 기다린다. 프로세스가 종료되어도 journal에 기록된 단계부터 이어 간다. 같은 사용자·멱등성 키·본문은 같은 workflow로 제출하고, 다른 본문이 같은 키로 경합하면 MongoDB unique index가 외부 효과 전에 한 요청만 허용한다.
 
 ```text
-pending → completing → completed
-   │          │
-   └──────────┴─→ compensating → cancelled
+pending → completed
+   └────→ compensating → cancelled
 ```
 
-각 전이는 owner ID와 만료 시각이 있는 lease를 CAS로 획득한 복제본만 실행한다. 프로세스가 중간에 종료되면 주기 재조정이 stale 기록을 찾아 만료된 lease를 인수한다. 결국 구매는 `completed` 또는 `cancelled`로 수렴하며, 완료 이벤트 발행 실패는 이미 완료된 구매를 되돌리지 않고 별도로 재시도한다.
+결제·Redis·DB의 결과가 불명확한 실패는 Restate가 같은 작업을 재시도한다. 선점 만료나 판매 충돌처럼 확정된 업무상 거절은 오류 응답을 저장하고 claim 해제·결제 취소를 수행한다. 보상도 완료될 때까지 재시도한다. 인프라 장애가 지속되면 요청은 처리 중으로 남고, 같은 키의 중복 요청에는 `409`를 반환한다.
 
-완료 transaction은 티켓의 `Available → Sold`, 구매 완료, 결제 resolution marker와 HTTP 응답 스냅샷을 함께 저장한다. outbox 상태가 이후 바뀌어도 같은 멱등성 키의 재시도 응답은 최초 결과를 유지한다. 보상은 해당 구매가 소유한 티켓·Redis claim만 해제하고 결제를 취소한다. 완료와 lease 회수가 경합하면 transaction write conflict와 owner CAS가 두 종결 상태 중 하나만 남긴다.
+완료 transaction은 티켓의 `Available → Sold`, 구매의 `pending → completed`, 최초 HTTP 응답을 함께 저장한다. 보상 시작 이후의 늦은 완료는 상태 조건으로 거부한다. journal 기록 전에 DB 응답을 잃어도 저장된 완료 결과를 재사용하며, 알림 상태가 바뀌어도 멱등성 재시도의 응답은 변하지 않는다. Restate의 재실행 가능성에 대비해 Redis claim은 같은 구매 소유자를 허용하고 결제 생성은 구매 ID로 중복을 막는다.
+
+[PaymentsService](../apps/api/src/services/infrastructure/payments/payments.service.ts)는 외부 PG 없이 MongoDB에 결제 상태를 기록하는 예제다. 실제 PG로 교체할 때도 구매 ID를 멱등성 키로 사용하고, 응답 유실 시 결제 결과를 확인하는 계약이 필요하다.
 
 ### 2.4. Saga 오케스트레이션 — Restate
 
@@ -194,7 +195,7 @@ NestJS 공통 예외와 도메인의 `errors.ts`를 사용한다. MongoDB 오류
 
 같은 키의 최초 요청이 처리 중이면 `409 Conflict`다. 클라이언트는 새 키를 만들어 중복 작업을 시작하지 않고 같은 키로 다시 확인한다. 부수 효과 전의 입력 검증 실패와 실행을 시작한 뒤의 실패도 구분한다. 구매가 실행을 시작한 뒤 저장한 오류 응답은 보상이 끝나도 같은 키로 재현된다.
 
-구매는 인증 주체·키의 unique index와 응답 스냅샷을 구매 기록에 저장한다. 상영 생성은 같은 조합을 고정 `sagaId`로 연결한다. Restate 제출 응답을 잃어도 lease를 인수한 복제본이 같은 workflow key로 재제출한다.
+구매는 인증 주체·키의 unique index와 응답 스냅샷을 구매 기록에 저장한다. 상영 생성은 같은 조합을 고정 `sagaId`로 연결한다. 상영 생성의 Restate 제출 응답을 잃으면 submission lease를 인수한 복제본이 같은 workflow key로 재제출한다.
 
 #### 3.3.2. ID만 받는 API는 처음부터 복수형으로 둔다
 
@@ -244,7 +245,7 @@ admin은 콘텐츠와 임의 사용자 대상 작업을, user는 본인 자원�
 
 반면 Ticket은 자기 collection만으로 조회할 수 있도록 `movieId`, `theaterId`, `showtimeId`를 중복 저장한다. 극장의 좌석 배치와 티켓의 좌석 좌표처럼 모양이 같아도 도메인에서 뜻이 다르면 각자 모델을 소유한다.
 
-임시 선점은 만료 시간이 있는 Redis 상태로 `TicketHolding`이 관리한다. 구매 claim 실패로 복원할 때도 원래 만료 시각을 넘기지 않으며 무기한 선점은 지원하지 않는다. `Ticket.status`는 영속적인 판매 여부(`available`·`sold`)만 나타낸다. 선점된 티켓도 판매 전에는 `available`이므로 구매 가능 여부를 이 필드 하나로 판단하지 않는다.
+임시 선점은 만료 시간이 있는 Redis 상태로 `TicketHolding`이 관리한다. 부분 구매 뒤 남은 사용자 선점은 원래 TTL을 유지하며 무기한 선점은 지원하지 않는다. `Ticket.status`는 영속적인 판매 여부(`available`·`sold`)만 나타낸다. 선점된 티켓도 판매 전에는 `available`이므로 구매 가능 여부를 이 필드 하나로 판단하지 않는다.
 
 파일 완료는 같은 소유자의 재시도를 허용한다. 소유권 지정 후 영화 연결이 실패했더라도 업로드 만료를 이유로 파일을 지우지 않는다. 다른 소유자의 완료 요청은 거부하며, 만료 정리는 소유자가 없는 업로드만 cron에서 처리한다.
 
@@ -283,7 +284,7 @@ beforeEach(async () => {
 afterEach(() => fix.teardown())
 ```
 
-상영 workflow를 검증할 때는 `enableRestate: true`로 임시 endpoint를 등록한다. teardown은 제출한 workflow가 끝난 뒤 그 deployment를 제거하고 앱을 닫는다. 일반 테스트에서는 workflow 제출을 허용하지 않아 실수로 외부 실행을 시작하면 실패한다. cron은 테스트 중 자율 실행을 멈춰 시나리오가 작업 시점을 제어하게 한다.
+구매·상영 workflow를 검증할 때는 `enableRestate: true`로 임시 endpoint를 등록한다. teardown은 제출한 workflow가 끝난 뒤 그 deployment를 제거하고 앱을 닫는다. 일반 테스트에서는 workflow 제출을 허용하지 않아 실수로 외부 실행을 시작하면 실패한다. cron은 테스트 중 자율 실행을 멈춰 시나리오가 작업 시점을 제어하게 한다.
 
 SSE를 검증할 때는 요청 전에 구독을 준비한다. [waitForCompletion](../apps/api/src/__tests__/application/showtime-creation.utils.ts)은 SSE 종결 이벤트를 기다리며 상태 API를 대신 조회하지 않는다. 이벤트를 놓친 클라이언트의 복구는 별도의 상태 조회 계약으로 검증한다. 임의의 sleep으로 완료를 추측하지 않는다.
 

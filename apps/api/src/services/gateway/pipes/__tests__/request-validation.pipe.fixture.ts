@@ -1,3 +1,4 @@
+import { InstantFromInputSchema } from '@mannercode/common'
 import { createHttpTestContext, type HttpTestContext } from '@mannercode/testing'
 import { Body, Controller, Post } from '@nestjs/common'
 import { APP_PIPE } from '@nestjs/core'
@@ -6,13 +7,7 @@ import { RequestValidationPipe } from '../index.js'
 
 export type RequestValidationPipeFixture = HttpTestContext & { teardown: () => Promise<void> }
 
-const SampleSchema = z.strictObject({
-    date: z.union([z.date(), z.string(), z.number(), z.boolean()]).pipe(z.coerce.date()),
-    sampleId: z
-        .union([z.string(), z.number(), z.boolean()])
-        .transform(String)
-        .pipe(z.string().min(1))
-})
+const SampleSchema = z.strictObject({ date: InstantFromInputSchema, sampleId: z.string().min(1) })
 type SampleDto = z.infer<typeof SampleSchema>
 
 @Controller()

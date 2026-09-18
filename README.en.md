@@ -11,7 +11,7 @@ _This is a translation of [README.md](README.md). The Korean original is authori
 A NestJS monorepo used as the starting point for production projects. Follow a familiar movie-booking flow to read and run examples of module boundaries, contention across replicas, duplicate requests, partial failure, and recovery. `apps/api` is the main application; `console` and `user-app` are minimal Next.js integration demos.
 
 - **Module boundaries** — SoLA (Service-oriented Layered Architecture) composes peer modules in a higher layer to prevent cycles. Gateway calls Core directly for CRUD within one domain.
-- **Distributed execution and recovery** — multiple replicas of the same API handle seat contention and duplicate requests. Compare the purchase state machine and lease reconciliation with the Restate workflow for showtime creation.
+- **Distributed execution and recovery** — multiple replicas of the same API handle seat contention and duplicate requests. Purchases and showtime creation resume interrupted work through Restate workflows.
 - **Verification against real infrastructure** — integration tests, race tests across replicas, and executable API docs use the Dev Container's real infrastructure. The 100% coverage gate exposes unexecuted branches.
 
 ```mermaid
@@ -114,17 +114,17 @@ These tools own different failure boundaries; they are not included merely as a 
 
 Start with the simple CRUD in `core/theaters`, then read the Core composition in `application/booking`, followed by the durable workflow in `application/showtime-creation`. Read each implementation beside its integration test of the same name.
 
-| Area                                  | Concept demonstrated                                                      |
-| ------------------------------------- | ------------------------------------------------------------------------- |
-| `core/movies`, `core/theaters`        | Basic domain structure, publish state, file association                   |
-| `core/users`, `core/admins`           | Role-specific auth, token rotation, soft delete and unique indexes        |
-| `core/tickets`, `core/ticket-holding` | Atomic state transitions and Redis Lua seat holds                         |
-| `application/booking`                 | A user journey composed from several Core services                        |
-| `application/showtime-creation`       | 202, Restate workflow, status/SSE, transactions and CAS                   |
-| `application/purchase`                | Idempotent responses, durable state machine, lease reconciliation, outbox |
-| `application/recommendation`          | Watch-history recommendations and pure domain logic                       |
-| `view/user-app/home`                  | Screen-specific read-model composition                                    |
-| `infrastructure/assets`, `payments`   | S3 integration and payment creation/cancellation boundaries               |
+| Area                                  | Concept demonstrated                                                                     |
+| ------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `core/movies`, `core/theaters`        | Basic domain structure, publish state, file association                                  |
+| `core/users`, `core/admins`           | Role-specific auth, token rotation, soft delete and unique indexes                       |
+| `core/tickets`, `core/ticket-holding` | Atomic state transitions and Redis Lua seat holds                                        |
+| `application/booking`                 | A user journey composed from several Core services                                       |
+| `application/showtime-creation`       | 202, Restate workflow, status/SSE, transactions and CAS                                  |
+| `application/purchase`                | Synchronous responses, Restate recovery and compensation, idempotent payments, JetStream |
+| `application/recommendation`          | Watch-history recommendations and pure domain logic                                      |
+| `view/user-app/home`                  | Screen-specific read-model composition                                                   |
+| `infrastructure/assets`, `payments`   | S3 integration and payment creation/cancellation boundaries                              |
 
 Payments are an example implementation that records payment state in MongoDB without calling an external payment provider. It verifies purchase idempotency and compensation flows; real provider communication is not included.
 
@@ -151,6 +151,6 @@ Each `docs/*.md` guide corresponds to a repository directory and explains its re
 - [decisions](docs/reference/decisions.md) — choices, alternatives, and non-guarantees
 - [development rules](docs/reference/conventions.md) — naming, DTOs, types, ESM, errors, and test-writing conventions
 
-[Tasks and work plans](_todo/README.md) belong in `_todo/`. [Documentation review notes](docs/review/README.md) and [historical materials](docs/backup/README.md) support future reviews; they do not replace the current development instructions above.
+[Tasks and work plans](_todo/README.md) belong in `_todo/`. `docs/` contains project guides only; [historical guides](docs/backup/README.md) are archived separately from the current development instructions.
 
 For the design background of the movie-booking domain, see the blog series [Backend Service Analysis and Design 1](https://mannercode.com/2025/04/01/backend-design-1.html), [2](https://mannercode.com/2025/05/01/backend-design-2.html), and [3](https://mannercode.com/2025/06/01/backend-design-3.html).

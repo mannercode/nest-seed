@@ -20,42 +20,42 @@ describe('PaginationDto', () => {
                 response: { size, orderby: { direction: 'asc', name: 'name' }, page }
             }
 
-            await fix.httpClient.get('/pagination').query(query).ok(expectedResponse)
+            await fix.httpClient.get('/pagination').query(query).ok({ expected: expectedResponse })
         })
 
         it('orderby name="0"처럼 비어 있지 않은 문자열도 그대로 파싱한다', async () => {
             await fix.httpClient
                 .get('/pagination')
                 .query({ orderby: '0:asc' })
-                .ok({ response: { orderby: { direction: 'asc', name: '0' } } })
+                .ok({ expected: { response: { orderby: { direction: 'asc', name: '0' } } } })
         })
 
         it('orderby 형식이 잘못되면 400을 반환한다', async () => {
             await fix.httpClient
                 .get('/pagination')
                 .query({ orderby: 'wrong' })
-                .badRequest(CommonErrors.Pagination.FormatInvalid())
+                .badRequest({ expected: CommonErrors.Pagination.FormatInvalid() })
         })
 
         it('정렬 방향이 유효하지 않으면 400을 반환한다', async () => {
             await fix.httpClient
                 .get('/pagination')
                 .query({ orderby: 'name:wrong' })
-                .badRequest(CommonErrors.Pagination.DirectionInvalid())
+                .badRequest({ expected: CommonErrors.Pagination.DirectionInvalid() })
         })
 
         it('direction이 대문자(ASC/DESC)이면 400을 반환한다', async () => {
             await fix.httpClient
                 .get('/pagination')
                 .query({ orderby: 'name:ASC' })
-                .badRequest(CommonErrors.Pagination.DirectionInvalid())
+                .badRequest({ expected: CommonErrors.Pagination.DirectionInvalid() })
         })
 
         it('field와 direction 양옆의 공백은 잘라낸 뒤 파싱한다', async () => {
             await fix.httpClient
                 .get('/pagination')
                 .query({ orderby: '  name  :  asc  ' })
-                .ok({ response: { orderby: { direction: 'asc', name: 'name' } } })
+                .ok({ expected: { response: { orderby: { direction: 'asc', name: 'name' } } } })
         })
 
         it('page가 0이면 400을 반환한다', async () => {

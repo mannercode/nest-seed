@@ -6,6 +6,7 @@ import { createRequire } from 'node:module'
 import { createMongoDriverOptions } from '@mannercode/common'
 
 process.env.LOG_CONSOLE_LEVEL = 'silent'
+process.env.RESTATE_SERVICE_PORT = '0'
 
 const require = createRequire(import.meta.url)
 const {
@@ -28,7 +29,7 @@ setupVitestLifecycle({
 
         const client = new MongoClient(
             requiredEnvironment('MONGO_URI'),
-            createMongoDriverOptions({ appName: sharedMongoAppName(), lifetime: 'test-file' })
+            createMongoDriverOptions({ appName: sharedMongoAppName() })
         )
         await client.connect()
         return { client, dbName }
