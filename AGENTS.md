@@ -8,7 +8,7 @@
 
 - `apps/`: [애플리케이션](docs/apps.md), [설계 결정](docs/reference/decisions.md)
 - `libs/`: [공유 패키지](docs/libs.md), [개발 규칙](docs/reference/conventions.md)
-- `tests/`: [외부 스택 테스트와 API 스택](docs/tests.md), [실행 방법](docs/reference/test-execution.md)
+- `tests/`: [외부 스택 테스트와 API 스택](docs/tests.md), [실행 방법](README.md#실행과-검증)
 - `infra/`: [개발 인프라](docs/infra.md), [개발 환경의 env 주입](docs/devcontainer.md#1-환경-변수는-재생성해야-반영된다)
 - `tools/`: [개발·테스트 실행 도구](docs/tools.md)
 - `.devcontainer/`: [개발 환경](docs/devcontainer.md)

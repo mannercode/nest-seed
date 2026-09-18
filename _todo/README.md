@@ -4,4 +4,4 @@
 
 [전체 검토와 작업 우선순위](project-review/README.md)에 확실한 문제·단순화 후보·계약 결정이 필요한 항목을 구분했다. 기존 CI lint 누락도 여기에 포함한다.
 
-[기존 문서 검토 항목](docs-reference-review.md)은 [새 가이드](../docs/new/README.md)에 반영했으며, 현행 가이드 교체 전 대조 기준으로 남긴다. 과거 가이드 원문은 `docs/backup/`에서 보존하고 미결 검토를 그곳으로 옮기지 않는다.
+[기존 문서 검토 항목](docs-reference-review.md)은 [현행 가이드](../README.md)에 반영했으며, 이전 가이드와의 대조 기준으로 남긴다. 과거 가이드는 `docsold/`에서 보존하고 미결 검토를 그곳으로 옮기지 않는다.
