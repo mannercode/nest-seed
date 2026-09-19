@@ -9,6 +9,7 @@ import {
 } from '../helpers/index.js'
 
 import { PurchaseTransactionRepository } from '../../services/application/purchase/internal/index.js'
+import { PurchaseRecordsRepository } from '../../services/core/purchase-records/purchase-records.repository.js'
 
 describe('PurchaseRecordsService', () => {
     let fix: AppTestContext
@@ -36,6 +37,42 @@ describe('PurchaseRecordsService', () => {
                 ...createDto
             })
         })
+    })
+
+    describe('findIdempotencyOperation', () => {
+        it.each(['key-255', 'missing-key'])(
+            '구매 기록이 누적되어도 %s 조회는 대상 문서만 읽는다',
+            async (idempotencyKey) => {
+                const userId = oid(0x1)
+                const records = await Promise.all(
+                    Array.from({ length: 256 }, (_, index) =>
+                        purchaseRecordsService.create(buildCreatePurchaseRecordDto({ userId }), {
+                            idempotency: { fingerprint: 'fingerprint', key: `key-${index}` },
+                            pending: true
+                        })
+                    )
+                )
+                const repository = fix.module.get(PurchaseRecordsRepository)
+                const findOne = vi.spyOn(repository.collection, 'findOne')
+
+                const operation = await purchaseRecordsService.findIdempotencyOperation({
+                    userId,
+                    idempotencyKey
+                })
+
+                expect(operation?.purchaseRecord).toEqual(
+                    idempotencyKey === 'key-255' ? records[255] : undefined
+                )
+                // 실제 서비스가 보낸 조회를 explain해 데이터 증가에 따른 전체 순회를 막는다.
+                const [filter] = ensure(findOne.mock.calls[0])
+                const { executionStats } = await repository.collection
+                    .find(filter)
+                    .limit(1)
+                    .explain('executionStats')
+                expect(executionStats.totalDocsExamined).toBeLessThanOrEqual(1)
+                expect(executionStats.totalKeysExamined).toBeLessThanOrEqual(1)
+            }
+        )
     })
 
     describe('findCompleted', () => {

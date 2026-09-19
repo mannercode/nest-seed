@@ -78,7 +78,10 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         userId: string
         idempotencyKey: string
     }) {
-        const record = await this.findDocument(this.activeFilter({ idempotencyKey, userId }))
+        // 문자열 equality만으로는 partial index의 $type 조건을 추론하지 못한다.
+        const record = await this.findDocument(
+            this.activeFilter({ idempotencyKey: { $eq: idempotencyKey, $type: 'string' }, userId })
+        )
         return record
     }
 
