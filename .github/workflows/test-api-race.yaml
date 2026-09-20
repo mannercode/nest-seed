@@ -29,8 +29,11 @@ jobs:
               id: runner_diagnostics
               run: |
                   command -v vmstat
+                  date --utc --iso-8601=seconds > "${RUNNER_TEMP}/api-race-started-at"
                   vmstat -w -t 1 > "${RUNNER_TEMP}/api-race-vmstat.log" 2>&1 &
                   echo "$!" > "${RUNNER_TEMP}/api-race-vmstat.pid"
+                  vmstat -d -t 1 > "${RUNNER_TEMP}/api-race-disks.log" 2>&1 &
+                  echo "$!" > "${RUNNER_TEMP}/api-race-disks.pid"
             - name: Run in devcontainer
               id: race
               uses: devcontainers/ci@v0.3.1900000450
@@ -52,6 +55,10 @@ jobs:
                       echo "=== runner resources $(date --utc --iso-8601=seconds) ==="
                       head -n 3 "${RUNNER_TEMP}/api-race-vmstat.log"
                       tail -n 180 "${RUNNER_TEMP}/api-race-vmstat.log"
+                      echo "--- disk I/O ---"
+                      head -n 3 "${RUNNER_TEMP}/api-race-disks.log"
+                      tail -n 600 "${RUNNER_TEMP}/api-race-disks.log"
+                      lsblk -o NAME,TYPE,SIZE,FSTYPE,MOUNTPOINTS
                       free -m
                       df -h
                       df -i
@@ -59,5 +66,10 @@ jobs:
                           echo "--- ${resource} pressure ---"
                           cat "/proc/pressure/${resource}"
                       done
+                      # DB 복제 지연과 호스트의 장치 오류·백그라운드 작업을 대조한다.
+                      echo "--- runner system journal ---"
+                      sudo journalctl --since "$(cat "${RUNNER_TEMP}/api-race-started-at")" \
+                          --no-pager --output short-iso -n 300
                   fi
-                  kill "$(cat "${RUNNER_TEMP}/api-race-vmstat.pid")"
+                  kill "$(cat "${RUNNER_TEMP}/api-race-vmstat.pid")" \
+                      "$(cat "${RUNNER_TEMP}/api-race-disks.pid")"
