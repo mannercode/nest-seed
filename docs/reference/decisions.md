@@ -24,6 +24,8 @@ DTO는 요청 검증과 응답·workflow·테스트의 JSON 복원에 같은 런
 
 여러 쓰기가 함께 성공해야 하면 transaction을 사용한다. 현재 개발 topology는 Replica Set이다. MongoDB의 다중 문서 transaction은 [Replica Set과 sharded cluster](https://www.mongodb.com/docs/manual/core/transactions-production-consideration/)에서 지원되고 standalone은 지원하지 않는다.
 
+과반수·저널 쓰기 확인에는 일시적인 복제·디스크 지연을 허용하되 무한 대기는 막는 기한을 둔다. `wtimeout`은 이미 반영된 쓰기를 취소하지 않으므로, 기한을 넘긴 결과를 성공이나 rollback으로 추측하지 않고 오류를 전달한다.
+
 동시 요청의 무결성은 DB unique index·조건부 전이·transaction이 맡는다. transaction callback의 일시 오류 재시도는 driver에 위임한다. 상영의 검증·생성은 극장 문서 갱신을 먼저 수행해 서로 충돌하도록 하고, 재시도에서 새로운 snapshot을 읽는다. 단순히 transaction을 썼다는 사실만으로 두 요청의 “없음” 조회 후 삽입 경쟁이 해결되지는 않는다.
 
 RDB로 옮기면 transaction·제약·조회 기능을 활용할 수 있다. 이 경우 저장소 구현뿐 아니라 동시성 제어·조회 계약도 함께 검증해야 한다. 지금 포크할 가능성만으로 두 DB 구현을 유지하지 않는다.

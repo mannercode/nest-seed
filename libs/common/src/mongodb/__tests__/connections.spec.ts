@@ -52,6 +52,11 @@ describe('MongoModule', () => {
                 expect(connection.db.databaseName).toBe(options.dbName)
                 expect(connection.client.options.minPoolSize).toBe(minPoolSize ?? 0)
                 expect(connection.client.options.waitQueueTimeoutMS).toBe(5000)
+                expect(connection.client.options.writeConcern).toMatchObject({
+                    j: true,
+                    w: 'majority',
+                    wtimeoutMS: 10000
+                })
             } finally {
                 await module.close()
             }
