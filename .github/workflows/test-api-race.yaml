@@ -21,7 +21,7 @@ jobs:
                     - purchase-overlap-race
                     - replica-chaos
                     - jwt-refresh-race
-        runs-on: ubuntu-24.04-arm
+        runs-on: ubuntu-24.04
         steps:
             - uses: actions/checkout@v7.0.1
             # 호스트 지표는 Dev Container 밖에서 기록해야 runner 자원 경합을 볼 수 있다.
