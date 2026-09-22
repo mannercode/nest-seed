@@ -2,6 +2,11 @@
     "name": "@mannercode/dev-tools",
     "version": "0.0.1",
     "private": true,
+    "scripts": {
+        "lint": "oxlint -c \"${WORKSPACE_ROOT:?}/oxlint.config.mts\" free-port.js && prettier --check free-port.js package.json",
+        "format": "prettier --write free-port.js package.json",
+        "atoz": "pnpm run lint"
+    },
     "bin": {
         "free-port": "./free-port.js",
         "tunnel": "./tunnel.sh"

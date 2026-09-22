@@ -15,6 +15,8 @@ Restate         → NGINX의 HTTP/2 endpoint → API 복제본 4개
 
 Compose는 커밋된 개발 env 두 파일을 raw 형식으로 API에 주입한다. 실행기는 Dev Container에 주입된 고정 개발 admin으로 로그인하며 준비되지 않은 계정을 임의로 대체하지 않는다. 스택 종료는 API·NGINX의 정리이며, DB·bucket·journal 초기화는 별도 [infra reset](infra.md)이다. benchmark가 만든 데이터도 스택 종료로 사라지지 않는다.
 
+API 문서·benchmark·web 실행기는 본 검증의 실패 코드를 보존한다. 검증이 성공해도 스택 정리에 실패하면 실행 전체를 실패로 처리한다.
+
 API 컨테이너는 자동 재시작하지 않는다. 종료가 restart 정책에 가려지지 않아야 하며, chaos가 kill·start를 직접 제어한다.
 
 ## Race의 관측 범위

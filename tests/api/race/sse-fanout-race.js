@@ -61,73 +61,76 @@ async function setupFixture() {
 
 async function runInner(movieId, theaterId, iteration, baseOffsetMs) {
     const clients = Array.from({ length: SSE_CLIENT_COUNT }, (_, i) => openStrictSseClient(i))
-    await Promise.all(clients.map((c) => c.connected))
+    try {
+        await Promise.all(clients.map((c) => c.connected))
 
-    const replicaSet = new Set(clients.map((c) => c.getReplicaId()).filter(Boolean))
-    if (replicaSet.size < 2) {
-        await Promise.all(clients.map((c) => c.close().catch(() => {})))
-        throw new Error(
-            `iter ${iteration}: only 1 replica served SSE (got ${[...replicaSet]}) — cross-replica unverified`
-        )
-    }
+        const replicaSet = new Set(clients.map((c) => c.getReplicaId()).filter(Boolean))
+        if (replicaSet.size < 2) {
+            throw new Error(
+                `iter ${iteration}: only 1 replica served SSE (got ${[...replicaSet]}) — cross-replica unverified`
+            )
+        }
 
-    // validator가 거부하지 않도록 각각 서로 겹치지 않는 startTime을 사용한다.
-    const sagaSpacingMs = 3 * 60 * 60 * 1000
-    const sagaPromises = Array.from({ length: SAGAS_PER_INNER }, (_, i) => {
-        const startTime = Temporal.Now.instant()
-            .add({ hours: 24, milliseconds: baseOffsetMs + i * sagaSpacingMs })
-            .round({ roundingMode: 'floor', smallestUnit: 'second' })
-            .toString({ smallestUnit: 'millisecond' })
-        return request('POST', '/showtime-creation/showtimes', {
-            body: {
-                movieId,
-                theaterIds: [theaterId],
-                durationInMinutes: 120,
-                startTimes: [startTime]
-            },
-            headers: { 'idempotency-key': secureRandomHex() }
+        // validator가 거부하지 않도록 각각 서로 겹치지 않는 startTime을 사용한다.
+        const sagaSpacingMs = 3 * 60 * 60 * 1000
+        const sagaPromises = Array.from({ length: SAGAS_PER_INNER }, (_, i) => {
+            const startTime = Temporal.Now.instant()
+                .add({ hours: 24, milliseconds: baseOffsetMs + i * sagaSpacingMs })
+                .round({ roundingMode: 'floor', smallestUnit: 'second' })
+                .toString({ smallestUnit: 'millisecond' })
+            return request('POST', '/showtime-creation/showtimes', {
+                body: {
+                    movieId,
+                    theaterIds: [theaterId],
+                    durationInMinutes: 120,
+                    startTimes: [startTime]
+                },
+                headers: { 'idempotency-key': secureRandomHex() }
+            })
         })
-    })
 
-    const postResults = await Promise.all(sagaPromises)
-    const sagaIds = postResults.map((r) => {
-        if (r.status !== 202) throw new Error(`iter ${iteration}: saga POST status ${r.status}`)
-        return r.body.sagaId
-    })
+        const postResults = await Promise.all(sagaPromises)
+        const sagaIds = postResults.map((r) => {
+            if (r.status !== 202) throw new Error(`iter ${iteration}: saga POST status ${r.status}`)
+            return r.body.sagaId
+        })
 
-    const ok = await waitUntil(
-        () =>
-            clients.every((c) =>
-                sagaIds.every((id) =>
-                    c.events.some((e) => e && e.sagaId === id && e.status === 'succeeded')
-                )
-            ),
-        { timeoutMs: DEADLINE_MS }
-    )
+        const ok = await waitUntil(
+            () =>
+                clients.every((c) =>
+                    sagaIds.every((id) =>
+                        c.events.some((e) => e && e.sagaId === id && e.status === 'succeeded')
+                    )
+                ),
+            { timeoutMs: DEADLINE_MS }
+        )
 
-    await Promise.all(clients.map((c) => c.close().catch(() => {})))
-
-    if (!ok) {
-        const missing = []
-        for (const [clientId, c] of clients.entries()) {
-            for (const sagaId of sagaIds) {
-                if (!c.events.some((e) => e && e.sagaId === sagaId && e.status === 'succeeded')) {
-                    missing.push({ client: clientId, sagaId, replicaId: c.getReplicaId() })
+        if (!ok) {
+            const missing = []
+            for (const [clientId, c] of clients.entries()) {
+                for (const sagaId of sagaIds) {
+                    if (
+                        !c.events.some((e) => e && e.sagaId === sagaId && e.status === 'succeeded')
+                    ) {
+                        missing.push({ client: clientId, sagaId, replicaId: c.getReplicaId() })
+                    }
                 }
             }
+            console.error(
+                `[sse] iter=${iteration} ${missing.length} client×saga pairs missed succeeded`
+            )
+            for (const m of missing.slice(0, 20)) {
+                console.error(`  - client ${m.client} saga ${m.sagaId} replica=${m.replicaId}`)
+            }
+            if (missing.length > 20) console.error(`  ... ${missing.length - 20} more`)
+            throw new Error(`iter ${iteration}: ${missing.length} missing events`)
         }
-        console.error(
-            `[sse] iter=${iteration} ${missing.length} client×saga pairs missed succeeded`
-        )
-        for (const m of missing.slice(0, 20)) {
-            console.error(`  - client ${m.client} saga ${m.sagaId} replica=${m.replicaId}`)
-        }
-        if (missing.length > 20) console.error(`  ... ${missing.length - 20} more`)
-        throw new Error(`iter ${iteration}: ${missing.length} missing events`)
-    }
 
-    const totalEvents = SSE_CLIENT_COUNT * SAGAS_PER_INNER
-    return { events: totalEvents, replicas: replicaSet.size }
+        const totalEvents = SSE_CLIENT_COUNT * SAGAS_PER_INNER
+        return { events: totalEvents, replicas: replicaSet.size }
+    } finally {
+        await Promise.all(clients.map((c) => c.close()))
+    }
 }
 
 test('모든 SSE client는 여러 복제본에서 완료된 모든 saga event를 받는다', async () => {

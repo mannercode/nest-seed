@@ -1,10 +1,12 @@
 # 실행 환경·설정·독립 스크립트·API 문서 검토
 
-검토 기준: 2026-09-18. 설정·의존성·컨테이너를 변경하지 않고 검토했다. 전체 CI와 새 가이드 검증은 [통합 목록](README.md)에 둔다. 대상 목록 106개 중 텍스트 104개를 끝까지 읽었다. lockfile은 구조와 manifest 대응을 검사했고, PNG는 크기·checksum을 검사했다. 이 결과는 프로젝트 전체 감사의 일부다.
+최초 검토 기준: 2026-09-18. 당시 설정·의존성·컨테이너를 변경하지 않고 검토했다. 대상 목록 106개 중 텍스트 104개를 끝까지 읽었다. lockfile은 구조와 manifest 대응을 검사했고, PNG는 크기·checksum을 검사했다. 아래 근거는 최초 검토 당시 상태이며, 현재 반영·검증 결과는 [통합 목록](README.md)에 둔다.
 
 ## 우선 정리할 확실한 문제
 
 ### R1. 전체 CI lint에도 빠지는 실행 코드가 있다
+
+상태: 완료. 루트 설정, common의 Vitest 준비·정리, frontend 설정, dev-tools를 기존 Oxlint·format 검사와 AtoZ에 포함했고 전체 lint가 통과했다.
 
 - 근거: 루트 `package.json:17`의 `lint:root`는 Prettier·문서 링크·ShellCheck만 실행한다. `tools/dev-tools/package.json`에는 lint/atoz가 없고 `libs/common/package.json:15`는 `vitest.global.cjs`·`vitest.teardown.cjs`를 대상으로 넣지 않는다. 두 frontend의 `next.config.mjs`·`postcss.config.mjs`도 해당 workspace lint에서 빠진다. 루트 `vitest.config.base.mjs`, `oxlint.config.mts`, `commitlint.config.js`, `.lintstagedrc.cjs`도 CI의 Oxlint 대상으로 전달되지 않는다.
 - 영향: hook의 lint-staged가 실행된 커밋만 우연히 검사된다. 설정 변경이 평소 소스와 같은 CI 정적 검사를 받는다고 볼 수 없다.
@@ -12,11 +14,15 @@
 
 ### R2. 실행기 정리 실패가 전체 성공으로 끝날 수 있다
 
+상태: 완료. 세 실행기 모두 본 작업 실패를 보존하며, 본 작업 성공 후 Compose down 실패도 실패로 반환한다. 실제 cleanup 함수를 격리 실행해 성공·정리 실패·본 작업 실패·동시 실패의 종료 코드를 확인했다.
+
 - 근거: `tests/api/runner.sh:15`, `tests/api/benchmark/run.sh:19`, `tests/web/run-e2e.sh:25`의 EXIT cleanup은 원래 exit code를 저장하고 `set +e`로 Compose down을 실행한 뒤 원래 code로 종료한다.
 - 영향: 테스트가 성공하고 정리만 실패한 경우에도 exit 0이다. 다음 실행에 자원이 남는 원인을 이번 실행의 실패로 드러내지 않는다.
 - 최소 개선: 본 작업이 실패했으면 그 code를 유지하고, 본 작업이 성공했으면 정리 실패 code를 반환한다. 새로운 retry·복구 절차·테스트 framework를 만들 일이 아니다. 현재 판정은 소스 제어 흐름으로 확인했으며 Docker 장애를 실제 주입하지 않았다.
 
 ### R3. 현재 env 문서 한 문장이 구현 이전 상태다
+
+상태: 완료. [현행 Dev Container 가이드](../../docs/devcontainer.md#1-환경-변수는-재생성해야-반영된다)에 반영됐으며 아래 근거는 최초 검토 당시 설명이다.
 
 - 근거: `docs/devcontainer.md:19` 부근은 루트 env 파일을 shell 실행기도 읽는다고 설명한다. 현재 reset/API/race/benchmark/web 실행기는 Dev Container 환경을 상속하며, API/web Compose는 `format: raw`로 전달한다.
 - 개선: 새 가이드에는 생성 시 주입·변경 후 rebuild·raw literal 규칙을 설명한다. `apps/api/api-docs/.env`는 별도의 shell 설정이며 루트 두 파일과 혼동하지 않게 한 문장으로 구분한다. Docker 공식 문서상 `format: raw`는 Compose 2.30.0 이상이다: https://docs.docker.com/reference/compose-file/services/#format

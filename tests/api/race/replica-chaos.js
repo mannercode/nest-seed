@@ -77,39 +77,41 @@ test('트래픽 중 복제본을 재시작해도 오류율과 복구 조건을 �
     const state = { stop: false, phase: 'warmup', byPhase: {} }
     const workers = Array.from({ length: PARALLELISM }, (_, i) => trafficWorker(i, state))
 
-    await sleep(KILL_AT_MS)
+    try {
+        await sleep(KILL_AT_MS)
 
-    state.phase = 'after-kill'
-    console.log(`[chaos] t=${KILL_AT_MS}ms killing ${target.slice(0, 12)}`)
-    execSync(`docker kill ${target}`)
-    await sleep(RESTART_AFTER_MS)
+        state.phase = 'after-kill'
+        console.log(`[chaos] t=${KILL_AT_MS}ms killing ${target.slice(0, 12)}`)
+        execSync(`docker kill ${target}`)
+        await sleep(RESTART_AFTER_MS)
 
-    state.phase = 'after-restart'
-    console.log(`[chaos] t=${KILL_AT_MS + RESTART_AFTER_MS}ms restarting ${target.slice(0, 12)}`)
-    execSync(`docker start ${target}`)
+        state.phase = 'after-restart'
+        console.log(
+            `[chaos] t=${KILL_AT_MS + RESTART_AFTER_MS}ms restarting ${target.slice(0, 12)}`
+        )
+        execSync(`docker start ${target}`)
 
-    const healStart = performance.now()
-    const healDeadline = healStart + HEALTH_TIMEOUT_MS
-    let healthyAt = null
-    while (performance.now() < healDeadline) {
-        if (inspectHealth(target) === 'healthy') {
-            healthyAt = performance.now()
-            break
+        const healStart = performance.now()
+        const healDeadline = healStart + HEALTH_TIMEOUT_MS
+        let healthyAt = null
+        while (performance.now() < healDeadline) {
+            if (inspectHealth(target) === 'healthy') {
+                healthyAt = performance.now()
+                break
+            }
+            await sleep(1000)
         }
-        await sleep(1000)
-    }
-    if (healthyAt === null) {
+        if (healthyAt === null) {
+            throw new Error(`replica did not become healthy within ${HEALTH_TIMEOUT_MS}ms`)
+        }
+        console.log(`[chaos] healthy after ${Math.round((healthyAt - healStart) / 1000)}s`)
+
+        state.phase = 'recovered'
+        await sleep(POST_RECOVERY_MS)
+    } finally {
         state.stop = true
         await Promise.all(workers)
-        throw new Error(`replica did not become healthy within ${HEALTH_TIMEOUT_MS}ms`)
     }
-    console.log(`[chaos] healthy after ${Math.round((healthyAt - healStart) / 1000)}s`)
-
-    state.phase = 'recovered'
-    await sleep(POST_RECOVERY_MS)
-
-    state.stop = true
-    await Promise.all(workers)
 
     const phases = ['warmup', 'after-kill', 'after-restart', 'recovered']
     for (const p of phases) console.log(`[chaos] ${summarize(p, state.byPhase[p])}`)

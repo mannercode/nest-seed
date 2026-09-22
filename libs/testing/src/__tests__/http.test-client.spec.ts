@@ -2,6 +2,7 @@ import {
     type HttpTestClientFixture,
     createHttpTestClientFixture
 } from './http.test-client.fixture.js'
+import { HttpTestClient } from '../index.js'
 
 describe('HttpTestClient', () => {
     let fix: HttpTestClientFixture
@@ -84,6 +85,29 @@ describe('HttpTestClient', () => {
     })
 
     describe('SSE', () => {
+        it('첫 이벤트 없이도 수신 준비를 알리고 이후 요청의 이벤트를 받는다', async () => {
+            const ready = Promise.withResolvers<void>()
+            const received = Promise.withResolvers<string>()
+            const reject = (reason: unknown) => {
+                ready.reject(reason)
+                received.reject(reason)
+            }
+
+            fix.httpClient.get('/events-after-ready').sse(received.resolve, reject, ready.resolve)
+
+            try {
+                const [data] = await Promise.all([
+                    received.promise,
+                    ready.promise.then(() =>
+                        new HttpTestClient(fix.httpClient.serverUrl).post('/emit-event').created()
+                    )
+                ])
+                expect(JSON.parse(data)).toEqual({ status: 'succeeded' })
+            } finally {
+                fix.httpClient.abort()
+            }
+        })
+
         it('한 청크로 도착한 여러 이벤트를 모두 전달한다', async () => {
             const events = await new Promise<string[]>((resolve, reject) => {
                 const received: string[] = []

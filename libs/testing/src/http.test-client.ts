@@ -127,7 +127,11 @@ export class HttpTestClient {
         // 호출자가 직접 상태를 확인하도록 모든 상태를 OK로 표시한다.
         return this.agent.ok(() => true)
     }
-    sse(messageHandler: (data: string) => void, errorHandler: (reason: any) => void): this {
+    sse(
+        messageHandler: (data: string) => void,
+        errorHandler: (reason: any) => void,
+        readyHandler?: () => void
+    ): this {
         // 이 클라이언트는 LF 빈 줄(\n\n)을 이벤트 구분자로 사용하며, TCP 청크 경계는 이벤트 경계와 무관하다.
         // 청크를 버퍼에 모아 완성된 이벤트만 하나씩 전달한다. 한 청크에 이벤트 여러 개가 와도 모두 처리된다.
         const dispatch = (rawEvent: string) => {
@@ -165,6 +169,8 @@ export class HttpTestClient {
                     const rest = buffer.trim()
                     if (0 < rest.length) dispatch(rest)
                 })
+                // 첫 이벤트가 없어도 응답 스트림의 수신 준비를 알린다.
+                readyHandler?.()
             })
             .end((requestError) => {
                 if (requestError) errorHandler(requestError)

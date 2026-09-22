@@ -344,13 +344,11 @@ describe('AssetsService', () => {
     })
 
     describe('cleanupExpiredUploads', () => {
-        let fireOnTick: () => Promise<void>
         let assetId: string
 
         beforeEach(async () => {
             await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 1 })
-            const cronJob = scheduler.getCronJob('assets.cleanupExpiredUploads')
-            fireOnTick = cronJob.fireOnTick
+            expect(scheduler.doesExist('cron', 'assets.cleanupExpiredUploads')).toBe(true)
 
             const createDto = buildCreateAssetDto(file)
             const createdAsset = await assetsService.create(createDto)
@@ -358,8 +356,7 @@ describe('AssetsService', () => {
         })
 
         it('업로드가 만료되지 않은 에셋은 유지한다', async () => {
-            await fireOnTick()
-            await sleep(1000)
+            await assetsService.cleanupExpiredUploads()
 
             await expect(assetsService.getMany([assetId])).resolves.toHaveLength(1)
         })
@@ -368,8 +365,7 @@ describe('AssetsService', () => {
             const config = fix.module.get(AppConfigService)
             await sleep(config.asset.uploadExpiresInSec * 1000 + 500)
 
-            await fireOnTick()
-            await sleep(1000)
+            await assetsService.cleanupExpiredUploads()
 
             await expect(assetsService.getMany([assetId])).rejects.toMatchObject({
                 status: HttpStatus.NOT_FOUND
@@ -382,8 +378,7 @@ describe('AssetsService', () => {
             const finalizedAsset = await uploadAndFinalizeAsset(fix, file)
 
             await sleep(2500)
-            await fireOnTick()
-            await sleep(1000)
+            await assetsService.cleanupExpiredUploads()
 
             await expect(assetsService.getMany([finalizedAsset.id])).resolves.toHaveLength(1)
         })

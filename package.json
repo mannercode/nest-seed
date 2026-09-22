@@ -14,7 +14,7 @@
         "compose:tools": "docker compose --project-name \"${COMPOSE_PROJECT_NAME}-tools\" -f tools/compose.yml",
         "prelint": "pnpm run build:libs",
         "lint": "pnpm --recursive --if-present run lint && pnpm run lint:root",
-        "lint:root": "prettier --check . && pnpm compose:tools run --rm lychee && pnpm run lint:shell",
+        "lint:root": "oxlint -c oxlint.config.mts vitest.config.base.mjs oxlint.config.mts commitlint.config.js .lintstagedrc.cjs && prettier --check . && pnpm compose:tools run --rm lychee && pnpm run lint:shell",
         "lint:shell": "git ls-files -z '*.sh' 'apps/api/api-docs/*.spec' '.husky/*' | xargs -0 shellcheck --severity=warning -x",
         "format": "prettier --write .",
         "pretest": "pnpm run build:libs",

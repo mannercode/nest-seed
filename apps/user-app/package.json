@@ -9,8 +9,8 @@
         "build": "next build",
         "prestart": "free-port ${USER_APP_PORT:?}",
         "start": "next start -p ${USER_APP_PORT:?}",
-        "format": "prettier --write src/",
-        "lint": "tsc --noEmit && oxlint -c \"${WORKSPACE_ROOT:?}/oxlint.config.mts\" src/ && prettier --check src/",
+        "format": "prettier --write src/ next.config.mjs postcss.config.mjs",
+        "lint": "tsc --noEmit && oxlint -c \"${WORKSPACE_ROOT:?}/oxlint.config.mts\" src/ next.config.mjs postcss.config.mjs && prettier --check src/ next.config.mjs postcss.config.mjs",
         "atoz": "pnpm run lint && pnpm run build"
     },
     "dependencies": {

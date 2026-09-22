@@ -849,25 +849,34 @@ describe('PurchaseService', () => {
                 .body(buildCreatePurchaseDto(heldByFirst))
                 .badRequest({ expected: Errors.Purchase.NotHeld() })
 
-            await validationDidFinish
-
-            const cache = fix.module.get<CacheService>(CacheService.getName('ticket-holding'))
-            await Promise.all([
-                ...heldByFirst.map((ticket) => cache.delete(`Ticket:{${showtimeId}}:${ticket.id}`)),
-                cache.delete(`User:{${showtimeId}}:${user.id}`)
-            ])
-
             const ticketHoldingService = fix.module.get(TicketHoldingService)
-            expect(
-                await ticketHoldingService.holdTickets({
-                    showtimeId,
-                    ticketIds: pickIds(heldByFirst),
-                    userId: secondUserId
-                })
-            ).toBe(true)
+            try {
+                await Promise.race([
+                    validationDidFinish,
+                    purchasePromise.then(() => {
+                        throw new Error('보유 검증 barrier에 도달하기 전에 구매 요청이 종료됐다.')
+                    })
+                ])
 
-            continuePurchase()
-            await purchasePromise
+                const cache = fix.module.get<CacheService>(CacheService.getName('ticket-holding'))
+                await Promise.all([
+                    ...heldByFirst.map((ticket) =>
+                        cache.delete(`Ticket:{${showtimeId}}:${ticket.id}`)
+                    ),
+                    cache.delete(`User:{${showtimeId}}:${user.id}`)
+                ])
+
+                expect(
+                    await ticketHoldingService.holdTickets({
+                        showtimeId,
+                        ticketIds: pickIds(heldByFirst),
+                        userId: secondUserId
+                    })
+                ).toBe(true)
+            } finally {
+                continuePurchase()
+                await purchasePromise
+            }
 
             // 결제 전에 hold owner를 purchase record로 claim해야 한다. 검증 뒤 다른 고객이
             // 다시 선점했다면 결제를 만들었다가 취소하는 외부 효과조차 없어야 한다.
@@ -914,24 +923,31 @@ describe('PurchaseService', () => {
                 .body(buildCreatePurchaseDto(heldByFirst))
                 .badRequest({ expected: Errors.Purchase.NotHeld() })
 
-            // PaymentService 진입은 pending 기록과 purchase owner claim이 모두 끝났다는 뜻이다.
-            await didStartPayment
-            const cache = fix.module.get<CacheService>(CacheService.getName('ticket-holding'))
-            await Promise.all(
-                heldByFirst.map((ticket) => cache.delete(`Ticket:{${showtimeId}}:${ticket.id}`))
-            )
-
             const ticketHoldingService = fix.module.get(TicketHoldingService)
-            expect(
-                await ticketHoldingService.holdTickets({
-                    showtimeId,
-                    ticketIds: pickIds(heldByFirst),
-                    userId: secondUserId
-                })
-            ).toBe(true)
+            try {
+                // PaymentService 진입은 pending 기록과 purchase owner claim이 모두 끝났다는 뜻이다.
+                await Promise.race([
+                    didStartPayment,
+                    purchasePromise.then(() => {
+                        throw new Error('결제 barrier에 도달하기 전에 구매 요청이 종료됐다.')
+                    })
+                ])
+                const cache = fix.module.get<CacheService>(CacheService.getName('ticket-holding'))
+                await Promise.all(
+                    heldByFirst.map((ticket) => cache.delete(`Ticket:{${showtimeId}}:${ticket.id}`))
+                )
 
-            continuePayment()
-            await purchasePromise
+                expect(
+                    await ticketHoldingService.holdTickets({
+                        showtimeId,
+                        ticketIds: pickIds(heldByFirst),
+                        userId: secondUserId
+                    })
+                ).toBe(true)
+            } finally {
+                continuePayment()
+                await purchasePromise
+            }
 
             Require.defined(paymentId)
             expect(ensure((await getPayments(fix, [paymentId]))[0]).status).toBe(
