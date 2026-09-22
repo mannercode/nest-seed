@@ -79,7 +79,7 @@ benchmark는 `DURATION_MS=35000`으로 7개 부하 조건을 5분 27초 동안 �
 - 갱신된 Nest의 peer 해석을 정리하고 루트 테스트 HTTP adapter도 API 버전과 맞췄다. root·API·common·testing이 같은 Nest core 인스턴스를 읽는 것을 확인했다.
 - 임시 runner의 DNS 별칭·Docker 소켓 설정을 바로잡은 뒤 실패 단계부터 다시 실행했다. 최초 동시 설치의 종료 대기는 원인을 확정하지 못했으며 이후 단독 설치·frozen install은 정상 종료했다.
 
-이번 추가 변경은 아직 push하지 않았으므로 이 결과는 로컬 검증이다. 반복 CI·전체 race·benchmark를 이번 버전 조합에서 새로 실행했다고 주장하지 않는다.
+위 목록은 로컬 검증 결과이며 원격 CI 결과는 해당 PR의 검사를 따른다. 반복 CI·전체 race·benchmark를 이번 버전 조합에서 새로 실행했다고 주장하지 않는다.
 
 ## 최초 검토 당시의 검증
 
