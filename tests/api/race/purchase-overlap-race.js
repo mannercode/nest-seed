@@ -1,6 +1,6 @@
 /**
- * 락 키가 다른 {t1,t2}/{t2,t3} 구매를 동시에 보내 원자 전이와 패자 보상을 검증한다.
- * 그룹마다 구매 기록 한 건과 Sold 티켓 두 장만 남아야 한다.
+ * {t1,t2}/{t2,t3} 구매를 동시에 보내 그룹마다 승자의 완료 구매 이력 한 건과 Sold 티켓 두 장을 확인한다.
+ * 패자는 결제 전 claim에서 거절될 수 있으므로 결제 취소는 이 시나리오의 검증 범위가 아니다.
  */
 
 const { test } = require('node:test')
@@ -147,6 +147,7 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
         await verifyGroup(iteration, g, users[g], triples[g], responses, showtimeId)
     }
 
+    // 복제본 분산은 충돌 키별이 아니라 이번 회차 전체의 응답에서 확인한다.
     if (replicaSet.size < 2) {
         throw new Error(
             `iter ${iteration}: only 1 replica (got ${[...replicaSet]}) — cross-replica unverified`
@@ -156,7 +157,7 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
     return { total: results.length, replicas: replicaSet.size }
 }
 
-test('겹치는 티켓 묶음의 동시 구매는 원자 전이와 패자 보상을 유지한다', async () => {
+test('겹치는 티켓 묶음의 동시 구매는 하나만 성공하고 승자의 티켓만 판매된다', async () => {
     console.log(`[overlap] server=${SERVER_URL} groups=${USER_GROUPS} inner=${INNER_ITERATIONS}`)
 
     const { movieId, theaterId } = await createPublishedMovieAndTheater({

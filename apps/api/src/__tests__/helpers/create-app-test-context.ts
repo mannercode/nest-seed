@@ -8,7 +8,7 @@ import {
     createHttpTestContext,
     isDebuggingEnabled,
     type HttpTestContext,
-    type ModuleMetadataEx
+    type TestModuleOptions
 } from '@mannercode/testing'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import compression from 'compression'
@@ -24,7 +24,7 @@ import {
     PurchaseEventWorkflowClient
 } from '../../services/application/purchase/worker/index.js'
 
-type AppTestOptions = ModuleMetadataEx & { enableRestate?: boolean }
+type AppTestOptions = TestModuleOptions & { enableRestate?: boolean }
 
 const TEST_PURCHASE_EVENTS_MAX_BYTES = 1024 * 1024
 

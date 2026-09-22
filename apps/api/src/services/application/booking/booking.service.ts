@@ -14,7 +14,7 @@ import {
     TicketHoldingService,
     TicketsService
 } from '#core'
-import { generateShowtimesForBooking, sortTheatersByDistance } from './booking.utils.js'
+import { toBookingShowtimes, sortTheatersByDistance } from './booking.utils.js'
 import {
     BookingSearchShowdatesDto,
     BookingSearchShowtimesDto,
@@ -96,7 +96,7 @@ export class BookingService {
         const showtimeIds = pickIds(showtimes)
         const ticketSalesForShowtimes = await this.ticketsService.aggregateSales({ showtimeIds })
 
-        const showtimesForBooking = generateShowtimesForBooking(showtimes, ticketSalesForShowtimes)
+        const showtimesForBooking = toBookingShowtimes(showtimes, ticketSalesForShowtimes)
 
         return showtimesForBooking
     }

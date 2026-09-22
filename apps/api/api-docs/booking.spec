@@ -20,7 +20,7 @@ TEST "상영 날짜의 상영 시간을 조회한다" \
 
 SHOWTIME_ID=$(echo "${BODY}" | jq -r '.[0].id')
 
-wait_for_tickets
+get_created_tickets
 
 TEST "상영 시간의 좌석 티켓을 조회한다" \
 	200 GET /booking/showtimes/${SHOWTIME_ID}/tickets

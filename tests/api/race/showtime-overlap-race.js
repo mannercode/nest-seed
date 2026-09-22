@@ -1,4 +1,5 @@
-// 모든 쌍이 겹치는 상영 생성 사가를 동시에 보내 분산 락이 정확히 한 건만 성공시키는지 검증한다.
+// 모든 쌍이 겹치는 상영 생성 사가를 동시에 보내 SSE 종결 결과에서 성공 하나와 업무 충돌을 확인한다.
+// 복제본 스택에서 실행하지만 요청별 복제본 분산을 별도로 단언하지는 않는다.
 
 const { test } = require('node:test')
 const {
@@ -122,7 +123,7 @@ async function runInner(iteration, movieId, theaterId, sse, baseOffsetMs) {
     return { succeeded, failed }
 }
 
-test('서로 겹치는 상영 생성 사가는 여러 복제본에서도 정확히 하나만 성공한다', async () => {
+test('서로 겹치는 상영 생성 사가의 종결 결과는 성공 하나와 나머지 업무 충돌이다', async () => {
     console.log(`[overlap] server=${SERVER_URL} overlap=${OVERLAP_COUNT} inner=${INNER_ITERATIONS}`)
 
     const { movieId, theaterId } = await setupFixture()

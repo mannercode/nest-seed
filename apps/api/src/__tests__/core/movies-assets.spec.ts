@@ -104,11 +104,7 @@ describe('MoviesAssets', () => {
                 assetId = await uploadAndFinalizeMovieAsset(fix, movie.id)
             })
 
-            it('204를 반환한다', async () => {
-                await fix.httpClient.delete(`/movies/${movie.id}/assets/${assetId}`).noContent()
-            })
-
-            it('에셋 URL이 무효화된다', async () => {
+            it('204를 반환하고 에셋 URL을 무효화한다', async () => {
                 const asset = ensure((await assetsService.getMany([assetId]))[0])
                 Require.defined(asset.download)
 
@@ -210,12 +206,6 @@ describe('MoviesAssets', () => {
                 expect(uploadResponse.ok).toBe(true)
             })
 
-            it('204를 반환한다', async () => {
-                await fix.httpClient
-                    .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
-                    .noContent()
-            })
-
             // 공개 GET은 draft를 404로 숨기므로, draft 상태의 결과 확인은 서비스로 조회한다.
             const getImageUrls = async () => {
                 const moviesService = fix.module.get(MoviesService)
@@ -223,7 +213,7 @@ describe('MoviesAssets', () => {
                 return found?.imageUrls
             }
 
-            it('영화의 imageUrls에 에셋이 추가된다', async () => {
+            it('204를 반환하고 영화의 imageUrls에 에셋을 추가한다', async () => {
                 await fix.httpClient
                     .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
                     .noContent()

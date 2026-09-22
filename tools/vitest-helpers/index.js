@@ -89,21 +89,18 @@ async function dropMatchingBuckets(s3Client, pattern) {
  * @param {(workerId: string) => string} options.bucketName
  * @param {(client: MongoClient, dbName: string) => void | Promise<void>} [options.afterMongoConnect]
  * @param {(testId: string) => void | Promise<void>} [options.onBeforeEach]
- * @param {(testId: string) => void | Promise<void>} [options.onAfterEach]
  */
 function setupVitestLifecycle({
     connectMongo,
     createS3Client,
     bucketName,
     afterMongoConnect,
-    onBeforeEach,
-    onAfterEach
+    onBeforeEach
 }) {
     let mongoClient
     let s3Client
     let dbName
     let bucket
-    let currentTestId
 
     beforeAll(async () => {
         const workerId = process.env.VITEST_POOL_ID ?? '1'
@@ -127,20 +124,18 @@ function setupVitestLifecycle({
     })
 
     beforeEach(async () => {
-        currentTestId = generateTestId()
+        const currentTestId = generateTestId()
         process.env.TEST_ID = currentTestId
         if (onBeforeEach) await onBeforeEach(currentTestId)
     })
 
     afterEach(async () => {
-        const tasks = [cleanCollections(mongoClient, dbName), emptyBucket(s3Client, bucket)]
-        if (onAfterEach) tasks.push(onAfterEach(currentTestId))
-        await Promise.all(tasks)
+        await Promise.all([cleanCollections(mongoClient, dbName), emptyBucket(s3Client, bucket)])
     })
 }
 
 /**
- * 워커 풀이 끝난 뒤 공용 인프라와 워크스페이스별 추가 자원을 함께 정리한다.
+ * 워커 풀이 끝난 뒤 해당 워크스페이스의 MongoDB·S3·Redis 자원을 정리한다.
  *
  * @param {object} options
  * @param {boolean} [options.allowRedisFlushAll=false]
@@ -151,7 +146,6 @@ function setupVitestLifecycle({
  * @param {RegExp} [options.bucketPattern]
  * @param {string} [options.redisKeyPattern]
  * @param {string} [options.redisKeyScope]
- * @param {() => Promise<void>} [options.extra]
  */
 function createGlobalTeardown({
     allowRedisFlushAll = false,
@@ -161,8 +155,7 @@ function createGlobalTeardown({
     databasePattern = WORKER_DB_PATTERN,
     bucketPattern = WORKER_BUCKET_PATTERN,
     redisKeyPattern,
-    redisKeyScope,
-    extra
+    redisKeyScope
 }) {
     if (redisKeyPattern !== undefined && allowRedisFlushAll) {
         throw new Error(
@@ -179,15 +172,13 @@ function createGlobalTeardown({
     }
 
     return async function globalTeardown() {
-        const tasks = [
+        await Promise.all([
             cleanupMongoMatching(connectMongo, databasePattern),
             cleanupS3Matching(createS3Client, bucketPattern),
             redisKeyPattern === undefined
                 ? cleanupRedisAll(connectRedis)
                 : cleanupRedisMatching(connectRedis, redisKeyPattern, redisKeyScope)
-        ]
-        if (extra) tasks.push(extra())
-        await Promise.all(tasks)
+        ])
     }
 }
 

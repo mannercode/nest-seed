@@ -110,13 +110,7 @@ describe('TheatersService', () => {
     })
 
     describe('DELETE /theaters/:id', () => {
-        it('극장이 존재하면 204를 반환한다', async () => {
-            const theater = await createTheater(fix)
-
-            await fix.httpClient.delete(`/theaters/${theater.id}`).noContent()
-        })
-
-        it('삭제한 뒤 조회하면 404를 반환한다', async () => {
+        it('204를 반환하고 삭제 후 조회에는 404를 반환한다', async () => {
             const theater = await createTheater(fix)
 
             await fix.httpClient.delete(`/theaters/${theater.id}`).noContent()

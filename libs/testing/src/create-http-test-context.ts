@@ -1,5 +1,5 @@
 import {
-    type ModuleMetadataEx,
+    type TestModuleOptions,
     type TestContext,
     createTestContext
 } from './create-test-context.js'
@@ -7,7 +7,7 @@ import { HttpTestClient } from './http.test-client.js'
 
 export type HttpTestContext = TestContext & { httpClient: HttpTestClient }
 
-export async function createHttpTestContext(metadata: ModuleMetadataEx): Promise<HttpTestContext> {
+export async function createHttpTestContext(metadata: TestModuleOptions): Promise<HttpTestContext> {
     const ctx = await createTestContext(metadata)
 
     try {

@@ -245,10 +245,16 @@ export abstract class CrudRepository<Doc extends CrudDocument>
             cursor.sort({ [name]: direction })
         }
 
-        const [rawItems, total] = await Promise.all([
-            cursor.toArray(),
-            this.collection.countDocuments(activeFilter, { session })
-        ])
+        // MongoDB는 같은 트랜잭션 안에서 병렬 연산을 지원하지 않는다.
+        const [rawItems, total] = session
+            ? [
+                  await cursor.toArray(),
+                  await this.collection.countDocuments(activeFilter, { session })
+              ]
+            : await Promise.all([
+                  cursor.toArray(),
+                  this.collection.countDocuments(activeFilter, { session })
+              ])
 
         return {
             items: rawItems.map((doc) => this.toDomainDocument(mongoToPublic<Doc>(doc))),

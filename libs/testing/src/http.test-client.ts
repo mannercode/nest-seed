@@ -11,12 +11,12 @@ type ResponseOptions<T> = { schema?: ResponseSchema<T>; expected?: unknown }
 type EventMessage = { data: string; event: string; id: number }
 
 export class HttpTestClient {
-    private agent: superagent.Request
+    private currentRequest: superagent.Request
 
     constructor(readonly serverUrl: string) {}
 
     abort() {
-        this.agent.abort()
+        this.currentRequest.abort()
     }
 
     accepted = this.status(HttpStatus.ACCEPTED)
@@ -29,7 +29,7 @@ export class HttpTestClient {
         }>
     ): this {
         items.forEach(({ file, name, options }) => {
-            this.agent.attach(name, file, options)
+            this.currentRequest.attach(name, file, options)
         })
         return this
     }
@@ -37,7 +37,7 @@ export class HttpTestClient {
     badRequest = this.status(HttpStatus.BAD_REQUEST)
 
     body(body: Record<string, any>): this {
-        this.agent.send(body)
+        this.currentRequest.send(body)
         return this
     }
 
@@ -46,13 +46,13 @@ export class HttpTestClient {
     created = this.status(HttpStatus.CREATED)
 
     delete(url: string): this {
-        this.agent = superagent.delete(`${this.serverUrl}${url}`)
+        this.currentRequest = superagent.delete(`${this.serverUrl}${url}`)
         return this
     }
 
     fields(fields: Array<{ name: string; value: string }>): this {
         fields.forEach(({ name, value }) => {
-            this.agent.field(name, value)
+            this.currentRequest.field(name, value)
         })
         return this
     }
@@ -60,13 +60,13 @@ export class HttpTestClient {
     forbidden = this.status(HttpStatus.FORBIDDEN)
 
     get(url: string): this {
-        this.agent = superagent.get(`${this.serverUrl}${url}`)
+        this.currentRequest = superagent.get(`${this.serverUrl}${url}`)
         return this
     }
 
     headers(headers: Record<string, string>): this {
         Object.entries(headers).forEach(([key, value]) => {
-            this.agent.set(key, value)
+            this.currentRequest.set(key, value)
         })
         return this
     }
@@ -79,20 +79,20 @@ export class HttpTestClient {
 
     ok = this.status(HttpStatus.OK)
     patch(url: string): this {
-        this.agent = superagent.patch(`${this.serverUrl}${url}`)
+        this.currentRequest = superagent.patch(`${this.serverUrl}${url}`)
         return this
     }
     payloadTooLarge = this.status(HttpStatus.PAYLOAD_TOO_LARGE)
     post(url: string): this {
-        this.agent = superagent.post(`${this.serverUrl}${url}`)
+        this.currentRequest = superagent.post(`${this.serverUrl}${url}`)
         return this
     }
     put(url: string): this {
-        this.agent = superagent.put(`${this.serverUrl}${url}`)
+        this.currentRequest = superagent.put(`${this.serverUrl}${url}`)
         return this
     }
     query(query: Record<string, any>): this {
-        this.agent.query(query)
+        this.currentRequest.query(query)
         return this
     }
     async send<T = Response['body']>(
@@ -125,7 +125,7 @@ export class HttpTestClient {
     async sendRaw(): Promise<superagent.Response> {
         // `ok(() => true)`를 제외하면 superagent가 400 이상 상태에서 예외를 던진다.
         // 호출자가 직접 상태를 확인하도록 모든 상태를 OK로 표시한다.
-        return this.agent.ok(() => true)
+        return this.currentRequest.ok(() => true)
     }
     sse(
         messageHandler: (data: string) => void,
@@ -147,7 +147,7 @@ export class HttpTestClient {
             }
         }
 
-        this.agent
+        this.currentRequest
             .set('Accept', 'text/event-stream')
             .buffer(true)
             .parse((response, _unused) => {

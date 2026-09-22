@@ -124,7 +124,7 @@ export class TicketsRepository extends CrudRepository<Ticket> {
     private buildQuery(searchDto: SearchTicketsDto, options: QueryBuilderOptions = {}) {
         const { movieIds, sagaIds, showtimeIds, theaterIds } = searchDto
 
-        const builder = new QueryBuilder<Ticket>()
+        const builder = new QueryBuilder()
         builder.addIn('sagaId', sagaIds)
         builder.addIn('movieId', movieIds)
         builder.addIn('theaterId', theaterIds)

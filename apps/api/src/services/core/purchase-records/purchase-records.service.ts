@@ -1,4 +1,4 @@
-import { type TransactionContext, ensure, mapDocToDto } from '@mannercode/common'
+import { type TransactionContext, mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { CreatePurchaseRecordDto, PurchaseRecordDto, PurchaseRecordSchema } from './dtos/index.js'
 import { PurchaseRecord, PurchaseRecordStatus } from './models/index.js'
@@ -82,12 +82,10 @@ export class PurchaseRecordsService {
     }
 
     private toDto(purchaseRecord: PurchaseRecord) {
-        return ensure(this.toDtos([purchaseRecord])[0])
+        return mapDocToDto(purchaseRecord, PurchaseRecordSchema)
     }
 
     private toDtos(purchaseRecords: PurchaseRecord[]) {
-        return purchaseRecords.map((purchaseRecord) =>
-            mapDocToDto(purchaseRecord, PurchaseRecordSchema)
-        )
+        return purchaseRecords.map((purchaseRecord) => this.toDto(purchaseRecord))
     }
 }

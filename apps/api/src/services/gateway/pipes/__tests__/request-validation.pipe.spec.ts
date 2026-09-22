@@ -5,7 +5,7 @@ import {
     type RequestValidationPipeFixture
 } from './request-validation.pipe.fixture.js'
 
-describe('RequestValidationPipe', () => {
+describe('RequestValidationPipe HTTP 및 오류 변환', () => {
     let fix: RequestValidationPipeFixture
 
     beforeEach(async () => {

@@ -1,13 +1,12 @@
+import { assignIfDefined, mapDocToDto } from '../../utils/index.js'
 import { z } from 'zod'
 import { BadRequestException, Logger } from '@nestjs/common'
 import { Decimal128, ObjectId } from 'mongodb'
 import {
-    assignIfDefined,
     decodeMongoValues,
     encodeMongoDocument,
     encodeMongoValues,
     isDuplicateKeyError,
-    mapDocToDto,
     mongoArrayToPublic,
     mongoToPublic,
     newObjectIdString,
@@ -173,17 +172,10 @@ describe('MongoDB 문서 값 변환', () => {
 })
 
 describe('QueryBuilder', () => {
-    type TestDocument = {
-        _id: ObjectId
-        createdAt: Temporal.Instant
-        entityId: string
-        name: string
-    }
-
-    let builder: QueryBuilder<TestDocument>
+    let builder: QueryBuilder
 
     beforeEach(() => {
-        builder = new QueryBuilder<TestDocument>()
+        builder = new QueryBuilder()
     })
 
     it('equals는 nullish만 생략하고 falsy 값은 유지한다', () => {

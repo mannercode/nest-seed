@@ -1,4 +1,4 @@
-import { ensure, mapDocToDto } from '@mannercode/common'
+import { mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import {
     CreateUserDto,
@@ -80,10 +80,10 @@ export class UsersService {
     }
 
     private toDto(user: User) {
-        return ensure(this.toDtos([user])[0])
+        return mapDocToDto(user, UserSchema)
     }
 
     private toDtos(users: User[]) {
-        return users.map((user) => mapDocToDto(user, UserSchema))
+        return users.map((user) => this.toDto(user))
     }
 }

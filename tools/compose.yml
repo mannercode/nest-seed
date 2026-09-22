@@ -1,7 +1,7 @@
 services:
     lychee:
         profiles: [lint]
-        image: lycheeverse/lychee:latest
+        image: lycheeverse/lychee:0.24.2@sha256:e2d19e57cf6ab037026f20b8e449a1f30d9d7f81eef4194763aab2eab20bd28d
         working_dir: /workspace
         volumes:
             - ${WORKSPACE_ROOT:?}:/workspace

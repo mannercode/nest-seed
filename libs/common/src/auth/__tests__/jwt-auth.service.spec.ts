@@ -182,7 +182,7 @@ describe('JwtAuthService', () => {
                 await pause.reached
                 if (operation === 'logout')
                     await fix.jwtService.revokeRefreshToken(original.refreshToken)
-                else await fix.jwtService.revokeAllForUser('u1')
+                else await fix.jwtService.revokeAllSessions('u1')
                 pause.release()
                 await rejected
                 expect(await fix.redis.get(sessionKey(fix, original.refreshToken))).toBeNull()
@@ -250,7 +250,7 @@ describe('JwtAuthService', () => {
                 return ids
             })
 
-            await expect(fix.jwtService.revokeAllForUser('u1')).rejects.toMatchObject({
+            await expect(fix.jwtService.revokeAllSessions('u1')).rejects.toMatchObject({
                 status: 500,
                 cause: expect.stringContaining('WRONGTYPE')
             })
@@ -273,7 +273,7 @@ describe('JwtAuthService', () => {
             const rotated = await fix.jwtService.refreshAuthTokens(first.refreshToken)
             const second = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
             const other = await fix.jwtService.generateAuthTokens({ sub: 'u2' })
-            await fix.jwtService.revokeAllForUser('u1')
+            await fix.jwtService.revokeAllSessions('u1')
             for (const token of [rotated.refreshToken, second.refreshToken]) {
                 await expect(fix.jwtService.refreshAuthTokens(token)).rejects.toMatchObject({
                     status: 401
@@ -293,19 +293,19 @@ describe('JwtAuthService', () => {
                 added = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
                 return ids
             })
-            await fix.jwtService.revokeAllForUser('u1')
+            await fix.jwtService.revokeAllSessions('u1')
             await expect(fix.jwtService.refreshAuthTokens(old.refreshToken)).rejects.toMatchObject({
                 status: 401
             })
             const rotated = await fix.jwtService.refreshAuthTokens(added.refreshToken)
-            await fix.jwtService.revokeAllForUser('u1')
+            await fix.jwtService.revokeAllSessions('u1')
             await expect(
                 fix.jwtService.refreshAuthTokens(rotated.refreshToken)
             ).rejects.toMatchObject({ status: 401 })
         })
 
         it('활성 세션이 없는 사용자의 전체 로그아웃은 멱등이다', async () => {
-            await expect(fix.jwtService.revokeAllForUser('missing')).resolves.toBeUndefined()
+            await expect(fix.jwtService.revokeAllSessions('missing')).resolves.toBeUndefined()
         })
     })
 

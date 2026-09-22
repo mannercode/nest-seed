@@ -433,7 +433,7 @@ describe('ShowtimeCreationService', () => {
             expect(submitWorkflow).not.toHaveBeenCalled()
         })
 
-        it('만료된 submission을 두 replica가 회수해도 하나만 claim을 얻는다', async () => {
+        it('만료된 submission의 동시 회수 요청 중 하나만 claim을 얻는다', async () => {
             const submissions = fix.module.get(ShowtimeCreationSubmissionRepository)
             const principalId = randomUUID()
             const idempotencyKey = randomUUID()

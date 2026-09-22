@@ -32,7 +32,7 @@ wait_for_showtime_creation
 TEST "상영 생성의 영속 최종 상태를 조회한다" \
 	200 GET /showtime-creation/showtimes/${SAGA_ID}/status
 
-wait_for_showtime
+get_created_showtime
 
 TEST "극장별 상영 시간을 검색한다" \
 	200 POST /showtime-creation/showtimes/search \

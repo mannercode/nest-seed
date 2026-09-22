@@ -1,6 +1,6 @@
 /**
- * 같은 티켓 묶음을 여러 복제본에서 동시에 결제해 그룹마다 한 건만 성공하는지 검증한다.
- * 성공 응답은 구매 목록에서 다시 읽어 phantom 성공도 함께 막는다.
+ * 복제본 스택에 같은 티켓 묶음의 구매를 동시에 보내 그룹마다 한 건만 성공하는지 검증한다.
+ * 성공한 구매와 paymentId를 구매 목록에서 다시 읽는다. 결제 collection의 개수를 세지는 않는다.
  */
 
 const { test } = require('node:test')
@@ -126,6 +126,7 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
         }
     }
 
+    // 복제본 분산은 충돌 키별이 아니라 이번 회차 전체의 응답에서 확인한다.
     if (replicaSet.size < 2) {
         throw new Error(
             `iter ${iteration}: only 1 replica (got ${[...replicaSet]}) — cross-replica unverified`
@@ -135,7 +136,7 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
     return { total: results.length, replicas: replicaSet.size }
 }
 
-test('같은 티켓 묶음의 동시 결제는 하나만 성공하고 영속화된다', async () => {
+test('같은 티켓 묶음의 동시 구매는 하나만 성공하고 그 결과를 이력에서 다시 읽는다', async () => {
     console.log(
         `[purchase] server=${SERVER_URL} groups=${USER_GROUPS} purchases/group=${PURCHASES_PER_GROUP} inner=${INNER_ITERATIONS}`
     )

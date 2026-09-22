@@ -51,7 +51,4 @@ export async function uploadObject(s3Service: S3ObjectService, key: string, body
     expect(response.ok).toBe(true)
 }
 
-export const testBuffer = Buffer.alloc(
-    10 * 1024 * 1024,
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZ가나다라마바사아자차카타파하~!@#$%^&*()_+'
-)
+export const testBuffer = Buffer.from(Array.from({ length: 256 }, (_, index) => index))

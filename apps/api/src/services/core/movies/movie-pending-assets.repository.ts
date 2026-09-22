@@ -22,7 +22,7 @@ export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAss
     }
 
     async hasPendingAsset(movieId: string, assetId: string): Promise<boolean> {
-        const builder = new QueryBuilder<MoviePendingAsset>()
+        const builder = new QueryBuilder()
         builder.addEquals('movieId', movieId)
         builder.addEquals('assetId', assetId)
         const query = builder.build({})
@@ -32,7 +32,7 @@ export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAss
     }
 
     async findAssetIds({ movieIds }: { movieIds: string[] }): Promise<string[]> {
-        const builder = new QueryBuilder<MoviePendingAsset>()
+        const builder = new QueryBuilder()
         builder.addIn('movieId', movieIds)
         const query = builder.build({})
 
@@ -40,7 +40,7 @@ export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAss
     }
 
     async removeMany({ movieIds }: { movieIds: string[] }): Promise<void> {
-        const builder = new QueryBuilder<MoviePendingAsset>()
+        const builder = new QueryBuilder()
         builder.addIn('movieId', movieIds)
         const query = builder.build({})
 
@@ -51,7 +51,7 @@ export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAss
     }
 
     async removePendingAsset(movieId: string, assetId: string): Promise<void> {
-        const builder = new QueryBuilder<MoviePendingAsset>()
+        const builder = new QueryBuilder()
         builder.addEquals('movieId', movieId)
         builder.addEquals('assetId', assetId)
         const query = builder.build({})

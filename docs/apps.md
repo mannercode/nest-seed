@@ -187,6 +187,8 @@ console은 관리자 로그인·영화·극장·사용자 관리, user-app은 �
 
 access·refresh token은 HttpOnly cookie에 보관하고 각 JWT exp로 만료한다. access 인증 실패 시 refresh 후 원 요청을 한 번 재시도한다. 같은 프로세스의 동시 갱신은 합치고 결과를 짧게 공유한다. 다른 프로세스에서 회전한 토큰의 409 때문에 쿠키를 지우지 않으며, 원 요청 재시도가 실패해도 이미 발급받은 새 쿠키는 보관한다.
 
+최초 요청과 회전 후 재시도에서 upstream 응답을 받기 전 fetch가 실패하면 `502` JSON 오류로 반환한다. 브라우저가 같은 오류 응답 형식으로 실패를 표시할 수 있게 하는 계약이다.
+
 현재 BFF는 body 제한·상태 변경 요청의 Origin/Host 확인을 수행한다. 최종 인가는 API guard의 책임이다. frontend의 API_BASE_URL은 API_PORT와 자동 연동되지 않고, frontend 포트 변경도 Compose·tunnel·포트 전달 설정을 함께 맞춰야 한다.
 
 BFF는 기본적으로 전달된 IP 헤더를 신뢰하지 않는다. 이때 API에는 BFF 주소가 보여 여러 사용자가 같은 로그인 제한 버킷을 공유할 수 있다. 운영에서 `BFF_TRUST_PROXY_HEADERS=true`를 선택하려면 다음 경계를 갖춰야 한다.

@@ -110,19 +110,19 @@ export class JwtAuthService {
         this.logger.log('session.revoked', { userId, sessionId })
     }
 
-    async revokeAllForUser(userId: string): Promise<void> {
-        const userKey = this.userSessionsKey(userId)
+    async revokeAllSessions(subjectId: string): Promise<void> {
+        const userKey = this.userSessionsKey(subjectId)
         const sessionIds = await this.redis.smembers(userKey)
         if (sessionIds.length === 0) return
 
         // 조회한 세션만 제거한다. 그 이후 새 로그인으로 추가된 세션의 인덱스는 보존한다.
         const results = await this.redis
             .multi()
-            .del(...sessionIds.map((sessionId) => this.sessionKey(userId, sessionId)))
+            .del(...sessionIds.map((sessionId) => this.sessionKey(subjectId, sessionId)))
             .srem(userKey, ...sessionIds)
             .exec()
         this.assertTransactionSucceeded(results)
-        this.logger.log('sessions.revoked', { userId, sessionIds })
+        this.logger.log('sessions.revoked', { userId: subjectId, sessionIds })
     }
 
     private assertTransactionSucceeded(results: [Error | null, unknown][] | null) {

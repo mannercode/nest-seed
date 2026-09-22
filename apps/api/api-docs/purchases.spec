@@ -5,7 +5,7 @@ login_admin
 setup_showtime_resources
 
 create_and_login_user
-wait_for_tickets
+get_created_tickets
 
 PURCHASE_IDEMPOTENCY_KEY=$(new_idempotency_key)
 

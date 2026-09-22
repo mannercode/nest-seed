@@ -348,10 +348,10 @@ describe('PurchaseService', () => {
                     .created({ schema: PurchaseRecordSchema })
             })
 
-            it('생성된 구매를 반환한다', async () => {
+            it('구매를 반환하고 결제 기록과 티켓 판매 상태를 저장한다', async () => {
                 const createDto = buildCreatePurchaseDto(heldTickets)
 
-                await fix.httpClient
+                const { body: purchaseRecord } = await fix.httpClient
                     .post('/purchases')
                     .headers({ 'Idempotency-Key': randomUUID() })
                     .headers({ Authorization: `Bearer ${accessToken}` })
@@ -367,30 +367,9 @@ describe('PurchaseService', () => {
                             updatedAt: expect.any(Temporal.Instant)
                         }
                     })
-            })
-
-            it('결제 기록을 생성한다', async () => {
-                const createDto = buildCreatePurchaseDto(heldTickets)
-                const { body: purchaseRecord } = await fix.httpClient
-                    .post('/purchases')
-                    .headers({ 'Idempotency-Key': randomUUID() })
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body(createDto)
-                    .created({ schema: PurchaseRecordSchema })
-
                 const payments = await getPayments(fix, [ensure(purchaseRecord.paymentId)])
 
                 expect(ensure(payments[0]).amount).toEqual(purchaseRecord.totalPrice)
-            })
-
-            it('티켓 상태를 판매 완료로 바꾼다', async () => {
-                const createDto = buildCreatePurchaseDto(heldTickets)
-                await fix.httpClient
-                    .post('/purchases')
-                    .headers({ 'Idempotency-Key': randomUUID() })
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body(createDto)
-                    .created({ schema: PurchaseRecordSchema })
 
                 const soldTickets = await getTickets(fix, pickIds(heldTickets))
 

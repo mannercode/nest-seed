@@ -30,7 +30,7 @@
 
 ### T3. 비동기 자원 정리와 cron 완료를 명시적으로 기다려야 한다
 
-상태: 완료. SSE stream·chaos worker·구매 barrier는 `finally`에서 정리한다. 에셋 정리는 서비스 작업을 직접 await하고 cron 등록도 확인한다. 관련 API 테스트 121개가 통과했으며, race 원본을 격리 실행해 handshake·POST·응답 검사·종결 대기·Docker kill/start 명령 실패 시 정리도 확인했다. 실제 SSE fan-out·복제본 재시작 실행 결과는 [통합 목록](README.md#완료된-검증-보완)에 둔다.
+상태: 완료. SSE stream·chaos worker·구매 barrier는 `finally`에서 정리한다. 에셋 정리는 서비스 작업을 직접 await하고 cron 등록도 확인한다. 관련 API 테스트 121개가 통과했으며, race 원본을 격리 실행해 handshake·POST·응답 검사·종결 대기·Docker kill/start 명령 실패 시 정리도 확인했다. 실제 SSE fan-out·복제본 재시작 실행 결과는 [통합 목록](README.md#이전-변경의-완료된-검증-보완)에 둔다.
 
 - `tests/api/race/sse-fanout-race.js:63`: 100개 stream을 열고 handshake·POST·응답 검사 중 실패하면 `:108`의 close까지 도달하지 않는다. 기존 작업 전체에 `try/finally`를 적용해 열린 stream을 정리한다.
 - `tests/api/race/replica-chaos.js:78`: traffic worker를 시작한 뒤 `docker kill/start`가 실패하면 `state.stop`을 설정하지 못한다. 이 worker가 Node 프로세스를 계속 유지해 shell의 정리·진단도 늦어질 수 있다. worker 종료를 finally에서 보장한다. 새로운 장애 복구 기능을 추가할 필요는 없다.
@@ -48,6 +48,8 @@
 - access TTL을 늘려 숨기지 않는다. benchmark 단계별 인증과 긴 실행의 token 갱신 책임을 test client에서 명시적으로 처리하는 최소 변경이 필요하다. 보안 기능이나 일반 로그인 프레임워크를 만들 일은 아니다. 짧은 시나리오까지 새 추상화에 강제 편입하지 않는다.
 
 ## 제목·문서가 실제로 검증한 것보다 강한 부분
+
+상태: 반영 완료. 아래 항목의 제목·주석을 실제 관측 범위로 맞췄다. per-key 분산, 실제 시간 만료, 결제 취소, 영구 exactly-once를 새로 검증했다고 주장하지 않는다.
 
 이 항목들은 새 테스트를 의무적으로 늘리라는 뜻이 아니다. 현재 보장을 정확히 설명하는 것이 우선이다.
 
@@ -67,6 +69,8 @@
 `waitFor()`의 짧은 polling은 NATS 처리 완료라는 관측 가능한 조건을 기다리므로 무조건 제거할 sleep 꼼수로 보지 않는다. 단, count가 처음 1이 되는 순간을 보았다고 이후 중복 전달까지 불가능하다는 결론은 내릴 수 없다.
 
 ## 합치거나 줄일 수 있지만 일괄 수정하지 않을 부분
+
+상태: 검토·반영 완료. 동일 요청의 응답·저장 검증을 한 시나리오로 합치고 home의 중복 응답 타입을 제거했다. console 관리 spec은 실제 범위에 맞게 개명했다. 서로 다른 필드의 부분 수정 테스트는 생략 필드 보존을 확인하므로 유지한다. RequestValidationPipe는 unit 폴더가 아닌 pipe 옆 HTTP fixture와 함께 있어 이동하지 않고 suite 이름을 정확히 했다. 순수 계산·workflow 분류·알림 lifecycle·BFF 정책 검증은 각각의 독립 계약을 유지한다.
 
 1. **응답 전용과 저장 결과 전용 정상 테스트.** 극장·영화·사용자 update/delete, booking hold, asset finalize/delete, purchase 성공은 같은 fixture와 행위를 반복한다. 한 시나리오에서 HTTP 응답과 DB/스토리지 결과를 함께 단언하면 보장 손실 없이 줄일 수 있다. 실패 조건이 다른 테스트까지 하나의 거대한 테스트로 합치지는 않는다.
 2. **API 내부 unit 위치.** 추천 정렬·Seatmap은 작은 순수 계산의 독립 계약이므로 직접 테스트가 적절하다. RequestValidationPipe spec은 HTTP 앱을 띄우므로 단순한 unit이 아니다. API 공통 통합 폴더로 이동할 수 있지만 위치만 바꾸는 것은 우선순위가 낮다. config schema는 env 없이 변환 규칙을 명확히 확인하므로 억지로 전체 앱 통합 테스트에 합칠 이익이 적다.

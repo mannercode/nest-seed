@@ -17,7 +17,4 @@ export type JwtAuthModuleOptions = {
     useFactory: (...args: any[]) => JwtAuthFactoryOptions | Promise<JwtAuthFactoryOptions>
 }
 
-export class JwtAuthTokens {
-    accessToken: string
-    refreshToken: string
-}
+export type JwtAuthTokens = { accessToken: string; refreshToken: string }

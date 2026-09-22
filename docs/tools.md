@@ -14,6 +14,8 @@ API 앱 context와 테스트 파일이 공유하는 MongoClient는 수명이 다
 
 `free-port`는 개발 서버가 사용할 포트의 리스너를 종료해 포트를 비운다. `tunnel`은 console·user-app을 Quick Tunnel로 공개하고 종료 시 함께 시작한 tunnel 프로세스를 정리한다. 앱이 요청을 처리하면서 호출하는 기능은 아니다.
 
+`free-port`의 명령·권한 오류는 즉시 실패한다. 조회 직후 사라진 프로세스만 무시하고, listen 재확인은 포트 사용 중일 때만 수행해 환경 오류가 단순한 포트 점유로 가려지지 않게 한다.
+
 frontend의 BFF가 API로 요청을 전달하므로 tunnel은 화면의 정적 파일만 공개하는 기능이 아니다. 최종 권한 검사는 API guard가 맡는다. BFF의 쿠키·요청 전달 경계는 [apps 가이드](apps.md)에 있다.
 
 독립 스크립트와 개발 도구는 common 빌드에 의존시키지 않는다. 여기서 Node·SDK를 직접 사용하는 것은 `apps/api/src`의 연동 구현을 common에 두는 규칙과 다른 실행 경계다.

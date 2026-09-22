@@ -7,7 +7,7 @@
  *   node tools/dev-tools/free-port.js 3000
  */
 const net = require('net')
-const { execSync } = require('child_process')
+const { execFileSync } = require('child_process')
 
 const port = Number(process.argv[2])
 if (!port) {
@@ -16,23 +16,22 @@ if (!port) {
 }
 
 function probe(p) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         const srv = net.createServer()
-        srv.once('error', () => resolve(false))
+        srv.once('error', (error) => {
+            if (error.code === 'EADDRINUSE') resolve(false)
+            else reject(error)
+        })
         srv.once('listening', () => srv.close(() => resolve(true)))
         srv.listen(p)
     })
 }
 
 function findHolders(p) {
-    let out = ''
-    try {
-        out = execSync(`ss -ltnpH 'sport = :${p}'`, {
-            stdio: ['ignore', 'pipe', 'ignore']
-        }).toString()
-    } catch {
-        return []
-    }
+    const out = execFileSync('ss', ['-ltnpH', `sport = :${p}`], {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe']
+    })
     // ss가 출력하는 예: `users:(("node",pid=12345,fd=20))`
     const pids = new Set()
     for (const match of out.matchAll(/pid=(\d+)/g)) {
@@ -45,8 +44,9 @@ function killHolders(p) {
     for (const pid of findHolders(p)) {
         try {
             process.kill(pid, 'SIGKILL')
-        } catch {
+        } catch (error) {
             // 조회 직후 프로세스가 종료된 경우는 무시한다.
+            if (error.code !== 'ESRCH') throw error
         }
     }
 }
@@ -61,4 +61,7 @@ function killHolders(p) {
     }
     console.error(`free-port: :${port} still busy after retries`)
     process.exit(1)
-})()
+})().catch((error) => {
+    console.error(`free-port: ${error.message}`)
+    process.exit(1)
+})
