@@ -12,7 +12,7 @@ import { Injectable } from '@nestjs/common'
 import { AppConfigService } from '#config'
 import { CreatePurchaseRecordDto } from './dtos/index.js'
 import { PurchaseRecordIdempotencyConflictException } from './errors.js'
-import { PurchaseEventStatus, PurchaseRecord, PurchaseRecordStatus } from './models/index.js'
+import { PurchaseRecord, PurchaseRecordStatus } from './models/index.js'
 
 @Injectable()
 export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
@@ -56,10 +56,6 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
         purchaseRecord.totalPrice = createDto.totalPrice
         purchaseRecord.purchaseItems = createDto.purchaseItems
         purchaseRecord.status = status
-        purchaseRecord.purchaseEventStatus =
-            status === PurchaseRecordStatus.Pending
-                ? PurchaseEventStatus.Pending
-                : PurchaseEventStatus.Published
 
         try {
             return await this.insertOne(purchaseRecord)
@@ -144,17 +140,6 @@ export class PurchaseRecordsRepository extends CrudRepository<PurchaseRecord> {
                 update: { $set: { status: PurchaseRecordStatus.Cancelled } }
             }),
             'Only a compensating purchase can be cancelled.'
-        )
-    }
-
-    async markEventPublished(purchaseRecordId: string) {
-        return ensure(
-            await this.update({
-                id: purchaseRecordId,
-                filter: { status: PurchaseRecordStatus.Completed },
-                update: { $set: { purchaseEventStatus: PurchaseEventStatus.Published } }
-            }),
-            'Only a completed purchase can publish its event.'
         )
     }
 

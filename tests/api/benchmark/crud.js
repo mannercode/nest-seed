@@ -1,5 +1,6 @@
 import http from 'k6/http'
 import exec from 'k6/execution'
+import encoding from 'k6/encoding'
 import { check } from 'k6'
 import { Counter, Rate, Trend } from 'k6/metrics'
 
@@ -17,6 +18,8 @@ if (MODE !== 'seed' && MODE !== 'benchmark') {
 }
 if (!SERVER_URL) throw new Error('SERVER_URL must be set')
 if (!ADMIN_ACCESS_TOKEN) throw new Error('ADMIN_ACCESS_TOKEN must be set')
+if (!__ENV.ADMIN_EMAIL || !__ENV.ADMIN_PASSWORD)
+    throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be set')
 
 const CASES = [
     { name: 'read_identity_200', readVus: 200, writeVus: 0, acceptEncoding: 'identity' },
@@ -117,6 +120,38 @@ const headers = {
     authorization: `Bearer ${ADMIN_ACCESS_TOKEN}`,
     'content-type': 'application/json'
 }
+let accessExpiresAt = tokenExpiresAt(ADMIN_ACCESS_TOKEN)
+
+function tokenExpiresAt(token) {
+    const { exp } = JSON.parse(encoding.b64decode(token.split('.')[1], 'rawurl', 's'))
+    if (!Number.isFinite(exp)) throw new Error('Admin access token has no valid expiry')
+    return exp * 1000
+}
+
+function authenticatedHeaders() {
+    // k6의 기본 요청 제한 60초 안에 만료될 토큰은 요청 전에 갱신한다.
+    // 인증 요청은 극장 응답의 개수·지연 지표에 넣지 않는다.
+    if (Date.now() >= accessExpiresAt - 60_000) {
+        try {
+            const response = http.post(
+                `${SERVER_URL}/admins/login`,
+                JSON.stringify({ email: __ENV.ADMIN_EMAIL, password: __ENV.ADMIN_PASSWORD }),
+                {
+                    headers: { 'content-type': 'application/json' },
+                    responseType: 'text',
+                    tags: { name: 'admin authentication' }
+                }
+            )
+            if (response.status !== 200) throw new Error(`HTTP ${response.status}`)
+            const token = response.json('accessToken')
+            accessExpiresAt = tokenExpiresAt(token)
+            headers.authorization = `Bearer ${token}`
+        } catch (error) {
+            exec.test.abort(`Admin authentication failed: ${error.message}`)
+        }
+    }
+    return headers
+}
 
 function createTheater(acceptEncoding = 'gzip') {
     return http.post(
@@ -136,7 +171,7 @@ function createTheater(acceptEncoding = 'gzip') {
                 ]
             }
         }),
-        { headers: { ...headers, 'Accept-Encoding': acceptEncoding } }
+        { headers: { ...authenticatedHeaders(), 'Accept-Encoding': acceptEncoding } }
     )
 }
 
@@ -148,7 +183,7 @@ export function seed() {
 export function read() {
     const metric = currentMetric()
     const response = http.get(`${SERVER_URL}/theaters?page=1&size=50`, {
-        headers: { ...headers, 'Accept-Encoding': metric.acceptEncoding }
+        headers: { ...authenticatedHeaders(), 'Accept-Encoding': metric.acceptEncoding }
     })
     record(response, 200, metric)
 }

@@ -51,6 +51,13 @@ describe('TimeUtil', () => {
         it('음수 값도 변환한다', () => {
             expect(TimeUtil.fromMs(-30 * 1000)).toEqual('-30s')
         })
+
+        it('음수 복합 시간도 표시한 뒤 파싱하면 원래 밀리초가 된다', () => {
+            expect(TimeUtil.fromMs(-5_400_000)).toBe('-1h-30m')
+            for (const value of [-5_400_000, -93_784_005, -0.5, 93_784_005]) {
+                expect(TimeUtil.toMs(TimeUtil.fromMs(value))).toBe(value)
+            }
+        })
     })
 })
 import { InternalServerErrorException } from '@nestjs/common'

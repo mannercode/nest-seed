@@ -153,8 +153,8 @@ describe('PasswordHasher', () => {
         expect(await PasswordHasher.verify('password', hashed)).toBe(true)
         expect(await PasswordHasher.verify('wrong', hashed)).toBe(false)
     })
-    it('계정 해시가 없어도 해시 비교를 수행한다', async () => {
+    it('계정 해시가 없으면 dummy 비밀번호도 검증에 실패한다', async () => {
         expect(await PasswordHasher.verify('wrong', undefined)).toBe(false)
-        expect(await PasswordHasher.verify('timing-equalization-only', undefined)).toBe(true)
+        expect(await PasswordHasher.verify('timing-equalization-only', undefined)).toBe(false)
     })
 })

@@ -1,14 +1,14 @@
 import { defineWorkflow } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { AppConfigService } from '#config'
-import { PurchaseRecordsService, PurchaseRecordSchema, type PurchaseRecordDto } from '#core'
+import { PurchaseRecordSchema, type PurchaseRecordDto } from '#core'
 import { PurchaseEvents } from '../purchase.events.js'
 
 @Injectable()
 export class PurchaseEventWorkflow {
     readonly definition
 
-    constructor(events: PurchaseEvents, records: PurchaseRecordsService, config: AppConfigService) {
+    constructor(events: PurchaseEvents, config: AppConfigService) {
         this.definition = defineWorkflow({
             name: `PurchaseEvent-${config.projectId}`,
             input: PurchaseRecordSchema,
@@ -21,11 +21,6 @@ export class PurchaseEventWorkflow {
                             ticketIds: record.purchaseItems.map((item) => item.itemId),
                             userId: record.userId
                         }),
-                    { initialRetryInterval: 1_000 }
-                )
-                await ctx.run(
-                    'record event delivery',
-                    () => records.markEventPublished(record.id),
                     { initialRetryInterval: 1_000 }
                 )
             },

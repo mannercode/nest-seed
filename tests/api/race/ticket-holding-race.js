@@ -6,6 +6,8 @@ const {
     createPublishedMovieAndTheater,
     createShowtimeWithTickets,
     readPositiveInt,
+    refreshAdminAccessToken,
+    refreshUserAccessTokens,
     request,
     SERVER_URL
 } = require('./race-common')
@@ -96,16 +98,18 @@ test('같은 티켓 묶음의 동시 선점은 여러 복제본에서도 한 사
         label: 'hold-race',
         seatCount: 20
     })
-    const tokens = await Promise.all(
-        Array.from({ length: TOTAL_USERS }, async (_, index) => {
-            const user = await createAndLoginUser({ prefix: 'hold', index })
-            return user.accessToken
-        })
+    const users = await Promise.all(
+        Array.from({ length: TOTAL_USERS }, (_, index) =>
+            createAndLoginUser({ prefix: 'hold', index })
+        )
     )
 
     const spacingMs = 3 * 60 * 60 * 1000
 
     for (let i = 1; i <= INNER_ITERATIONS; i++) {
+        await refreshAdminAccessToken()
+        await refreshUserAccessTokens(users)
+        const tokens = users.map((user) => user.accessToken)
         const result = await runInner(i, movieId, theaterId, tokens, i * spacingMs)
         console.log(
             `[hold] iter ${i}/${INNER_ITERATIONS} OK — ${result.total} reqs, ${result.replicas} replicas`

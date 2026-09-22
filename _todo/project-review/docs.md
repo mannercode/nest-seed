@@ -1,5 +1,7 @@
 # 과거 가이드 검토와 현행 문서 반영 판단
 
+이 문서는 최초 검토 당시의 판단 기록이다. 아래 원문 경로는 `1510689e`의 `docs/backup/` 기준이며 현재 작업 트리에는 없다. 반영된 가이드는 [README](../../README.md), 현재 진행 상태는 [통합 목록](README.md)을 따른다.
+
 검토 범위: `docs/backup`의 과거 원문 29개(이미지 2개 포함), 보관 안내 2개, manifest, `README.en.md` 총 33개. 텍스트는 분할해 전체를 읽었고 그림은 직접 확인했다. 2026-02-27 implementation guide는 앞 날짜 원문과 byte 단위 동일하며 naming guide는 표 공백만 달라, 앞 날짜 전체와 전체 diff를 검토했다. 미검토 파일은 없다. manifest 19개 모두 실제 파일의 Git blob hash와 byte 수가 일치한다. 저장소 원문은 변경하지 않았다.
 
 ## 판단

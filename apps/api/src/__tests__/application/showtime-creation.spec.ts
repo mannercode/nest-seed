@@ -1,6 +1,6 @@
 import type { MockInstance } from 'vitest'
 import { DateUtil, newObjectIdString, sleep, paginationResultSchema } from '@mannercode/common'
-import { HttpTestClient, instant, nullObjectId, type Response } from '@mannercode/testing'
+import { HttpTestClient, instant, nullObjectId } from '@mannercode/testing'
 import { randomUUID } from 'node:crypto'
 import {
     type MovieDto,
@@ -25,7 +25,7 @@ import {
     type AppTestContext,
     createAppTestContext
 } from '../helpers/index.js'
-import { waitForCompletion } from './showtime-creation.utils.js'
+import { submitAndWaitForCompletion } from './showtime-creation.utils.js'
 import { ShowtimeCreationEvents, RequestShowtimeCreationResponseSchema } from '#application'
 import { ShowtimeCreationWorkflowClient } from '../../services/application/showtime-creation/worker/index.js'
 
@@ -507,160 +507,92 @@ describe('ShowtimeCreationService', () => {
         })
 
         describe('정상 요청 흐름', () => {
-            let createPromise: Promise<Response>
+            const create = () =>
+                submitAndWaitForCompletion(fix, adminAccessToken, 'succeeded', () =>
+                    fix.httpClient
+                        .post('/showtime-creation/showtimes')
+                        .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                        .headers({ 'Idempotency-Key': randomUUID() })
+                        .body(buildCreateDto())
+                        .accepted({ schema: RequestShowtimeCreationResponseSchema })
+                )
+            let result: Awaited<ReturnType<typeof create>>
 
             beforeEach(async () => {
-                createPromise = fix.httpClient
-                    .post('/showtime-creation/showtimes')
-                    .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                    .headers({ 'Idempotency-Key': randomUUID() })
-                    .body({
-                        durationInMinutes: 1,
-                        movieId: movie.id,
-                        startTimes: [instant('2100-01-01T09:00Z')],
-                        theaterIds: [theater.id]
+                result = await create()
+            })
+
+            it('사가 식별자를 반환한다', () => {
+                expect(result.response.body).toEqual(
+                    expect.objectContaining({ sagaId: expect.any(String) })
+                )
+            })
+
+            it('SSE로 사가 상태 변화를 스트리밍한다', () => {
+                expect(result.completion).toEqual(
+                    expect.objectContaining({
+                        sagaId: result.response.body.sagaId,
+                        status: 'succeeded'
                     })
-                    .accepted({ schema: RequestShowtimeCreationResponseSchema })
-            })
-
-            it('사가 식별자를 반환한다', async () => {
-                const { body } = await createPromise
-                expect(body).toEqual(expect.objectContaining({ sagaId: expect.any(String) }))
-            })
-
-            it('SSE로 사가 상태 변화를 스트리밍한다', async () => {
-                const eventPromise = new Promise((resolve, reject) => {
-                    fix.httpClient
-                        .get('/showtime-creation/event-stream')
-                        .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                        .sse((data) => {
-                            const statusUpdate = JSON.parse(data)
-
-                            if (['error', 'failed', 'succeeded'].includes(statusUpdate.status)) {
-                                fix.httpClient.abort()
-
-                                if ('succeeded' === statusUpdate.status) {
-                                    resolve(statusUpdate)
-                                } else {
-                                    reject(
-                                        new Error(`unexpected status: ${statusUpdate.status}`, {
-                                            cause: statusUpdate
-                                        })
-                                    )
-                                }
-                            }
-                        }, reject)
-                })
-
-                const { body } = await createPromise
-
-                await expect(eventPromise).resolves.toEqual(
-                    expect.objectContaining({ sagaId: body.sagaId, status: 'succeeded' })
                 )
             })
 
             it('상영 시간을 생성한다', async () => {
-                const { body } = await createPromise
-                const { createdShowtimeCount } = await waitForCompletion(
-                    fix,
-                    adminAccessToken,
-                    'succeeded'
-                )
-
-                const createdShowtimes = await showtimesService.search({ sagaIds: [body.sagaId] })
-                expect(createdShowtimes).toHaveLength(createdShowtimeCount)
+                const createdShowtimes = await showtimesService.search({
+                    sagaIds: [result.response.body.sagaId]
+                })
+                expect(result.completion.createdShowtimeCount).toBe(1)
+                expect(createdShowtimes).toHaveLength(1)
             })
 
             it('티켓을 생성한다', async () => {
-                const { body } = await createPromise
-                const { createdTicketCount } = await waitForCompletion(
-                    fix,
-                    adminAccessToken,
-                    'succeeded'
-                )
-
-                const createdTickets = await ticketsService.search({ sagaIds: [body.sagaId] })
-                expect(createdTickets).toHaveLength(createdTicketCount)
+                const createdTickets = await ticketsService.search({
+                    sagaIds: [result.response.body.sagaId]
+                })
+                // 기본 극장의 OOOOXXOOOO 배치는 판매 좌석이 8개다.
+                expect(result.completion.createdTicketCount).toBe(8)
+                expect(createdTickets).toHaveLength(8)
             })
         })
 
         it('사가 상태를 waiting → processing → succeeded 순서로 발행한다', async () => {
-            const events = fix.module.get(ShowtimeCreationEvents)
-
-            // 공유 httpClient는 뒤의 POST가 abort 대상을 바꾸므로 스트림 전용 클라이언트로 수신한다.
-            const sseClient = new HttpTestClient(fix.httpClient.serverUrl)
-            const received: { sagaId: string; status: string }[] = []
-            let streamError: Error | undefined
-            sseClient
-                .get('/showtime-creation/event-stream')
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .sse(
-                    (data) => received.push(JSON.parse(data)),
-                    (reason) =>
-                        (streamError = reason instanceof Error ? reason : new Error(String(reason)))
-                )
-
-            const waitUntil = async (
-                predicate: () => boolean,
-                beforeRetry?: () => Promise<void>
-            ) => {
-                while (!predicate()) {
-                    if (streamError) throw streamError
-                    await beforeRetry?.()
-                    await sleep(50)
-                }
-            }
-
-            // 스트림은 지난 이벤트를 재전송하지 않아, 구독 성립 전에 발행된 waiting은 사라진다.
-            // 프로브가 수신될 때까지 반복 발행해 구독 성립을 확정한 뒤에야 POST한다.
-            await waitUntil(
-                () => received.some((event) => event.sagaId === nullObjectId),
-                () => events.emitStatusChanged({ sagaId: nullObjectId, status: 'waiting' })
+            const {
+                response: { body },
+                events
+            } = await submitAndWaitForCompletion(fix, adminAccessToken, 'succeeded', () =>
+                fix.httpClient
+                    .post('/showtime-creation/showtimes')
+                    .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                    .headers({ 'Idempotency-Key': randomUUID() })
+                    .body(buildCreateDto())
+                    .accepted({ schema: RequestShowtimeCreationResponseSchema })
             )
 
-            const { body } = await fix.httpClient
-                .post('/showtime-creation/showtimes')
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .headers({ 'Idempotency-Key': randomUUID() })
-                .body({
-                    durationInMinutes: 1,
-                    movieId: movie.id,
-                    startTimes: [instant('2100-01-01T09:00Z')],
-                    theaterIds: [theater.id]
-                })
-                .accepted({ schema: RequestShowtimeCreationResponseSchema })
-
-            await waitUntil(() =>
-                received.some(
-                    (event) =>
-                        event.sagaId === body.sagaId &&
-                        ['error', 'failed', 'succeeded'].includes(event.status)
-                )
-            )
-            sseClient.abort()
-
-            const statuses = received
+            const statuses = events
                 .filter((event) => event.sagaId === body.sagaId)
                 .map((event) => event.status)
             expect(statuses).toEqual(['waiting', 'processing', 'succeeded'])
         })
 
         it('영화가 없으면 오류 상태를 전송한다', async () => {
-            const completionPromise = waitForCompletion(fix, adminAccessToken, 'error')
+            const {
+                response: { body },
+                completion
+            } = await submitAndWaitForCompletion(fix, adminAccessToken, 'error', () =>
+                fix.httpClient
+                    .post('/showtime-creation/showtimes')
+                    .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                    .headers({ 'Idempotency-Key': randomUUID() })
+                    .body({
+                        durationInMinutes: 1,
+                        movieId: nullObjectId,
+                        startTimes: [instant()],
+                        theaterIds: [theater.id]
+                    })
+                    .accepted({ schema: RequestShowtimeCreationResponseSchema })
+            )
 
-            const { body } = await fix.httpClient
-                .post('/showtime-creation/showtimes')
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .headers({ 'Idempotency-Key': randomUUID() })
-                .body({
-                    durationInMinutes: 1,
-                    movieId: nullObjectId,
-                    startTimes: [instant()],
-                    theaterIds: [theater.id]
-                })
-                .accepted({ schema: RequestShowtimeCreationResponseSchema })
-
-            await expect(completionPromise).resolves.toEqual({
+            expect(completion).toEqual({
                 message: 'The requested movie could not be found.',
                 sagaId: body.sagaId,
                 status: 'error'
@@ -668,21 +600,24 @@ describe('ShowtimeCreationService', () => {
         })
 
         it('극장이 없으면 오류 상태를 전송한다', async () => {
-            const completionPromise = waitForCompletion(fix, adminAccessToken, 'error')
+            const {
+                response: { body },
+                completion
+            } = await submitAndWaitForCompletion(fix, adminAccessToken, 'error', () =>
+                fix.httpClient
+                    .post('/showtime-creation/showtimes')
+                    .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                    .headers({ 'Idempotency-Key': randomUUID() })
+                    .body({
+                        durationInMinutes: 1,
+                        movieId: movie.id,
+                        startTimes: [instant()],
+                        theaterIds: [nullObjectId]
+                    })
+                    .accepted({ schema: RequestShowtimeCreationResponseSchema })
+            )
 
-            const { body } = await fix.httpClient
-                .post('/showtime-creation/showtimes')
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .headers({ 'Idempotency-Key': randomUUID() })
-                .body({
-                    durationInMinutes: 1,
-                    movieId: movie.id,
-                    startTimes: [instant()],
-                    theaterIds: [nullObjectId]
-                })
-                .accepted({ schema: RequestShowtimeCreationResponseSchema })
-
-            await expect(completionPromise).resolves.toEqual({
+            expect(completion).toEqual({
                 message: 'One or more requested theaters could not be found.',
                 sagaId: body.sagaId,
                 status: 'error'
@@ -741,19 +676,23 @@ describe('ShowtimeCreationService', () => {
 
         it('극장이 20개를 넘어도 전체 상영 수가 상한 이하면 생성한다', async () => {
             const theaters = await Promise.all(Array.from({ length: 20 }, () => createTheater(fix)))
-            const completion = waitForCompletion(fix, adminAccessToken, 'succeeded')
 
-            const { body } = await fix.httpClient
-                .post('/showtime-creation/showtimes')
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .headers({ 'Idempotency-Key': randomUUID() })
-                .body({
-                    ...buildCreateDto(),
-                    theaterIds: [theater.id, ...theaters.map(({ id }) => id)]
-                })
-                .accepted({ schema: RequestShowtimeCreationResponseSchema })
+            const {
+                response: { body },
+                completion
+            } = await submitAndWaitForCompletion(fix, adminAccessToken, 'succeeded', () =>
+                fix.httpClient
+                    .post('/showtime-creation/showtimes')
+                    .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                    .headers({ 'Idempotency-Key': randomUUID() })
+                    .body({
+                        ...buildCreateDto(),
+                        theaterIds: [theater.id, ...theaters.map(({ id }) => id)]
+                    })
+                    .accepted({ schema: RequestShowtimeCreationResponseSchema })
+            )
 
-            await expect(completion).resolves.toEqual({
+            expect(completion).toEqual({
                 sagaId: body.sagaId,
                 status: 'succeeded',
                 createdShowtimeCount: 21,
@@ -783,18 +722,20 @@ describe('ShowtimeCreationService', () => {
                     }
                 )
 
-                const completionPromise = waitForCompletion(fix, adminAccessToken, 'error')
-                const { body } = await fix.httpClient
-                    .post('/showtime-creation/showtimes')
-                    .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                    .headers({ 'Idempotency-Key': randomUUID() })
-                    .body({
-                        ...buildCreateDto(),
-                        startTimes: [instant('2100-01-01T09:00Z'), instant('2100-01-01T11:00Z')]
-                    })
-                    .accepted({ schema: RequestShowtimeCreationResponseSchema })
+                const {
+                    response: { body }
+                } = await submitAndWaitForCompletion(fix, adminAccessToken, 'error', () =>
+                    fix.httpClient
+                        .post('/showtime-creation/showtimes')
+                        .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                        .headers({ 'Idempotency-Key': randomUUID() })
+                        .body({
+                            ...buildCreateDto(),
+                            startTimes: [instant('2100-01-01T09:00Z'), instant('2100-01-01T11:00Z')]
+                        })
+                        .accepted({ schema: RequestShowtimeCreationResponseSchema })
+                )
                 sagaId = body.sagaId
-                await completionPromise
             })
 
             it('Restate durable step 재시도마다 생성 쓰기까지 실제로 실행한다', () => {
@@ -815,14 +756,17 @@ describe('ShowtimeCreationService', () => {
                 new Error('transient ticket write failure')
             )
 
-            const completionPromise = waitForCompletion(fix, adminAccessToken, 'succeeded')
-            const { body } = await fix.httpClient
-                .post('/showtime-creation/showtimes')
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .headers({ 'Idempotency-Key': randomUUID() })
-                .body(buildCreateDto())
-                .accepted({ schema: RequestShowtimeCreationResponseSchema })
-            const completion = await completionPromise
+            const {
+                response: { body },
+                completion
+            } = await submitAndWaitForCompletion(fix, adminAccessToken, 'succeeded', () =>
+                fix.httpClient
+                    .post('/showtime-creation/showtimes')
+                    .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                    .headers({ 'Idempotency-Key': randomUUID() })
+                    .body(buildCreateDto())
+                    .accepted({ schema: RequestShowtimeCreationResponseSchema })
+            )
 
             const showtimes = await showtimesService.search({ sagaIds: [body.sagaId] })
             const tickets = await ticketsService.search({ sagaIds: [body.sagaId] })
@@ -841,14 +785,17 @@ describe('ShowtimeCreationService', () => {
                 })
             const createShowtimesSpy = vi.spyOn(showtimesService, 'createMany')
 
-            const completionPromise = waitForCompletion(fix, adminAccessToken, 'succeeded')
-            const { body } = await fix.httpClient
-                .post('/showtime-creation/showtimes')
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .headers({ 'Idempotency-Key': randomUUID() })
-                .body(buildCreateDto())
-                .accepted({ schema: RequestShowtimeCreationResponseSchema })
-            const completion = await completionPromise
+            const {
+                response: { body },
+                completion
+            } = await submitAndWaitForCompletion(fix, adminAccessToken, 'succeeded', () =>
+                fix.httpClient
+                    .post('/showtime-creation/showtimes')
+                    .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                    .headers({ 'Idempotency-Key': randomUUID() })
+                    .body(buildCreateDto())
+                    .accepted({ schema: RequestShowtimeCreationResponseSchema })
+            )
 
             expect(persistenceSpy).toHaveBeenCalledTimes(2)
             expect(createShowtimesSpy).toHaveBeenCalledTimes(1)
@@ -937,6 +884,7 @@ describe('ShowtimeCreationService', () => {
                 persistence.validateAndCreate(createDto, sagaId)
             ])
 
+            expect(first.kind).toBe('succeeded')
             expect(second).toEqual(first)
             const showtimes = await showtimesService.search({ sagaIds: [sagaId] })
             const tickets = await ticketsService.search({ sagaIds: [sagaId] })
@@ -974,30 +922,34 @@ describe('ShowtimeCreationService', () => {
                 }))
             )
 
-            const completionPromise = waitForCompletion(fix, adminAccessToken, 'failed')
-
-            await fix.httpClient
-                .post('/showtime-creation/showtimes')
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .headers({ 'Idempotency-Key': randomUUID() })
-                .body({
-                    durationInMinutes: 30,
-                    movieId: movie.id,
-                    startTimes: [
-                        instant('2013-01-31T12:00Z'),
-                        instant('2013-01-31T16:00Z'),
-                        instant('2013-01-31T20:00Z')
-                    ],
-                    theaterIds: [theater.id]
-                })
-                .accepted({ schema: RequestShowtimeCreationResponseSchema })
+            const { completion } = await submitAndWaitForCompletion(
+                fix,
+                adminAccessToken,
+                'failed',
+                () =>
+                    fix.httpClient
+                        .post('/showtime-creation/showtimes')
+                        .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                        .headers({ 'Idempotency-Key': randomUUID() })
+                        .body({
+                            durationInMinutes: 30,
+                            movieId: movie.id,
+                            startTimes: [
+                                instant('2013-01-31T12:00Z'),
+                                instant('2013-01-31T16:00Z'),
+                                instant('2013-01-31T20:00Z')
+                            ],
+                            theaterIds: [theater.id]
+                        })
+                        .accepted({ schema: RequestShowtimeCreationResponseSchema })
+            )
 
             // 새 12:00-12:30은 기존 12:00-13:30과 시간이 겹치므로 충돌이다.
             // 새 16:00-16:30과 기존 16:30-18:00, 새 20:00-20:30과 기존 18:30-20:00은 한 상영이 끝나는 시각에 다른 상영이 시작한다.
             // 끝 시각을 포함하지 않는 정책이라 충돌로 보지 않는다.
             const conflictingShowtimes = [initialShowtimes[0]]
 
-            await expect(completionPromise).resolves.toEqual({
+            expect(completion).toEqual({
                 conflictingShowtimes,
                 sagaId: expect.any(String),
                 status: 'failed'
@@ -1015,22 +967,25 @@ describe('ShowtimeCreationService', () => {
                 }
             ])
 
-            const completionPromise = waitForCompletion(fix, adminAccessToken, 'failed')
-
             const createDto = {
                 durationInMinutes: 90,
                 movieId: movie.id,
                 startTimes: [instant('2013-01-31T12:00Z')],
                 theaterIds: [theater.id, theaterB.id]
             }
-            const { body } = await fix.httpClient
-                .post('/showtime-creation/showtimes')
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .headers({ 'Idempotency-Key': randomUUID() })
-                .body(createDto)
-                .accepted({ schema: RequestShowtimeCreationResponseSchema })
+            const {
+                response: { body },
+                completion
+            } = await submitAndWaitForCompletion(fix, adminAccessToken, 'failed', () =>
+                fix.httpClient
+                    .post('/showtime-creation/showtimes')
+                    .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                    .headers({ 'Idempotency-Key': randomUUID() })
+                    .body(createDto)
+                    .accepted({ schema: RequestShowtimeCreationResponseSchema })
+            )
 
-            await expect(completionPromise).resolves.toEqual({
+            expect(completion).toEqual({
                 conflictingShowtimes: [conflictingShowtime],
                 sagaId: body.sagaId,
                 status: 'failed'
@@ -1060,25 +1015,29 @@ describe('ShowtimeCreationService', () => {
                 }
             ])
 
-            const completionPromise = waitForCompletion(fix, adminAccessToken, 'failed')
+            const { completion } = await submitAndWaitForCompletion(
+                fix,
+                adminAccessToken,
+                'failed',
+                () =>
+                    fix.httpClient
+                        .post('/showtime-creation/showtimes')
+                        .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                        .headers({ 'Idempotency-Key': randomUUID() })
+                        .body({
+                            durationInMinutes: 10,
+                            movieId: movie.id,
+                            startTimes: [
+                                instant('2013-01-31T12:00Z'),
+                                instant('2013-01-31T12:30Z'),
+                                instant('2013-01-31T13:00Z')
+                            ],
+                            theaterIds: [theater.id]
+                        })
+                        .accepted({ schema: RequestShowtimeCreationResponseSchema })
+            )
 
-            await fix.httpClient
-                .post('/showtime-creation/showtimes')
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .headers({ 'Idempotency-Key': randomUUID() })
-                .body({
-                    durationInMinutes: 10,
-                    movieId: movie.id,
-                    startTimes: [
-                        instant('2013-01-31T12:00Z'),
-                        instant('2013-01-31T12:30Z'),
-                        instant('2013-01-31T13:00Z')
-                    ],
-                    theaterIds: [theater.id]
-                })
-                .accepted({ schema: RequestShowtimeCreationResponseSchema })
-
-            await expect(completionPromise).resolves.toEqual({
+            expect(completion).toEqual({
                 conflictingShowtimes: [initialShowtime],
                 sagaId: expect.any(String),
                 status: 'failed'
@@ -1096,21 +1055,25 @@ describe('ShowtimeCreationService', () => {
                 }
             ])
 
-            const completionPromise = waitForCompletion(fix, adminAccessToken, 'failed')
+            const { completion } = await submitAndWaitForCompletion(
+                fix,
+                adminAccessToken,
+                'failed',
+                () =>
+                    fix.httpClient
+                        .post('/showtime-creation/showtimes')
+                        .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                        .headers({ 'Idempotency-Key': randomUUID() })
+                        .body({
+                            durationInMinutes: 60,
+                            movieId: movie.id,
+                            startTimes: [instant('2013-01-31T10:05Z')],
+                            theaterIds: [theater.id]
+                        })
+                        .accepted({ schema: RequestShowtimeCreationResponseSchema })
+            )
 
-            await fix.httpClient
-                .post('/showtime-creation/showtimes')
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .headers({ 'Idempotency-Key': randomUUID() })
-                .body({
-                    durationInMinutes: 60,
-                    movieId: movie.id,
-                    startTimes: [instant('2013-01-31T10:05Z')],
-                    theaterIds: [theater.id]
-                })
-                .accepted({ schema: RequestShowtimeCreationResponseSchema })
-
-            await expect(completionPromise).resolves.toEqual({
+            expect(completion).toEqual({
                 conflictingShowtimes: [initialShowtime],
                 sagaId: expect.any(String),
                 status: 'failed'
@@ -1128,21 +1091,25 @@ describe('ShowtimeCreationService', () => {
                 }
             ])
 
-            const completionPromise = waitForCompletion(fix, adminAccessToken, 'failed')
+            const { completion } = await submitAndWaitForCompletion(
+                fix,
+                adminAccessToken,
+                'failed',
+                () =>
+                    fix.httpClient
+                        .post('/showtime-creation/showtimes')
+                        .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                        .headers({ 'Idempotency-Key': randomUUID() })
+                        .body({
+                            durationInMinutes: 120,
+                            movieId: movie.id,
+                            startTimes: [instant('2013-01-31T10:00Z')],
+                            theaterIds: [theater.id]
+                        })
+                        .accepted({ schema: RequestShowtimeCreationResponseSchema })
+            )
 
-            await fix.httpClient
-                .post('/showtime-creation/showtimes')
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .headers({ 'Idempotency-Key': randomUUID() })
-                .body({
-                    durationInMinutes: 120,
-                    movieId: movie.id,
-                    startTimes: [instant('2013-01-31T10:00Z')],
-                    theaterIds: [theater.id]
-                })
-                .accepted({ schema: RequestShowtimeCreationResponseSchema })
-
-            await expect(completionPromise).resolves.toEqual({
+            expect(completion).toEqual({
                 conflictingShowtimes: [initialShowtime],
                 sagaId: expect.any(String),
                 status: 'failed'

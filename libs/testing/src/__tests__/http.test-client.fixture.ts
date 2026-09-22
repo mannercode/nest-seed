@@ -11,13 +11,25 @@ import {
     Res,
     Sse
 } from '@nestjs/common'
-import { Observable } from 'rxjs'
+import { Observable, Subject } from 'rxjs'
 import { createHttpTestContext, HttpTestClient } from '../index.js'
 
 export type HttpTestClientFixture = { httpClient: HttpTestClient; teardown: () => Promise<void> }
 
 @Controller()
 class HttpTestClientController {
+    private readonly pendingEvents = new Subject<{ data: { status: string } }>()
+
+    @Sse('events-after-ready')
+    eventsAfterReady() {
+        return this.pendingEvents.asObservable()
+    }
+
+    @Post('emit-event')
+    emitEvent() {
+        this.pendingEvents.next({ data: { status: 'succeeded' } })
+    }
+
     // 64비트 정수가 원본 JSON으로 그대로 전달되도록 직접 응답을 작성한다.
     // note는 문자열 리터럴 안의 숫자가 변형되지 않는지 검증하는 용도다.
     @Get('big-int')

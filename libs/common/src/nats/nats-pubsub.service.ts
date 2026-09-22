@@ -8,6 +8,7 @@ type Subscription = ReturnType<NatsConnection['subscribe']>
 
 type SubscriptionState = {
     handlers: Set<MessageHandler>
+    ready: Promise<void>
     queue: string | undefined
     sub: Subscription
     subject: string
@@ -51,14 +52,26 @@ export class NatsPubSubService implements OnModuleDestroy {
         let state = this.subscriptions.get(key)
         if (!state) {
             const sub = this.connection.subscribe(subject, { queue: options.queue })
-            state = { handlers: new Set(), queue: options.queue, sub, subject }
+            state = {
+                handlers: new Set(),
+                ready: this.connection.flush(),
+                queue: options.queue,
+                sub,
+                subject
+            }
             this.subscriptions.set(key, state)
             this.startConsumeLoop(state)
-            // 서버가 SUB를 받기 전에 직후 발행한 메시지가 누락되지 않게 한다.
-            await this.connection.flush()
         }
 
         state.handlers.add(handler)
+        try {
+            // 동시 등록도 같은 SUB의 서버 처리 확인을 기다린다.
+            await state.ready
+        } catch (error) {
+            state.sub.unsubscribe()
+            if (this.subscriptions.get(key) === state) this.subscriptions.delete(key)
+            throw error
+        }
     }
 
     async unsubscribe(subject: string, handler: MessageHandler): Promise<void> {

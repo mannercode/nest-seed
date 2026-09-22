@@ -12,8 +12,8 @@
         "build": "tsc -p tsconfig.build.json",
         "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
         "test": "vitest run --coverage",
-        "lint": "tsc --noEmit -p tsconfig.build.json && tsc --noEmit -p tsconfig.test.json && oxlint -c \"${WORKSPACE_ROOT:?}/oxlint.config.mts\" src/ vitest.config.mjs && prettier --check src/ vitest.config.mjs",
-        "format": "prettier --write src/ vitest.config.mjs",
+        "lint": "tsc --noEmit -p tsconfig.build.json && tsc --noEmit -p tsconfig.test.json && oxlint -c \"${WORKSPACE_ROOT:?}/oxlint.config.mts\" src/ vitest.config.mjs vitest.global.cjs vitest.teardown.cjs && prettier --check src/ vitest.config.mjs vitest.global.cjs vitest.teardown.cjs",
+        "format": "prettier --write src/ vitest.config.mjs vitest.global.cjs vitest.teardown.cjs",
         "atoz": "pnpm run build && pnpm run lint && pnpm test"
     },
     "dependencies": {

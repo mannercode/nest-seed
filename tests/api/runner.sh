@@ -23,6 +23,10 @@ cleanup() {
     fi
 
     "${compose[@]}" down -v -t 0
+    local cleanup_exit_code=$?
+    if [[ "${exit_code}" -eq 0 ]]; then
+        exit_code=${cleanup_exit_code}
+    fi
     exit "${exit_code}"
 }
 trap cleanup EXIT

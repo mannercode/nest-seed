@@ -13,10 +13,6 @@ export const PurchaseRecordStatus = {
 
 export type PurchaseRecordStatus = (typeof PurchaseRecordStatus)[keyof typeof PurchaseRecordStatus]
 
-export const PurchaseEventStatus = { Pending: 'pending', Published: 'published' } as const
-
-export type PurchaseEventStatus = (typeof PurchaseEventStatus)[keyof typeof PurchaseEventStatus]
-
 export class PurchaseItem {
     itemId: string
 
@@ -37,8 +33,6 @@ export class PurchaseRecord extends CrudDocument {
     userId: string
 
     paymentId: null | string
-
-    purchaseEventStatus: PurchaseEventStatus
 
     purchaseItems: PurchaseItem[]
 

@@ -329,8 +329,7 @@ async function createPublishedMovieAndTheater({ label, seatCount }) {
             plot: 'plot',
             durationInSeconds: 7200,
             director: 'director',
-            rating: 'PG',
-            assetIds: []
+            rating: 'PG'
         }
     })
     if (movie.status !== 201) throw new Error(`movie: ${movie.status}`)
@@ -414,6 +413,29 @@ async function createAndLoginUser({ prefix, index }) {
     }
 }
 
+// 인증 갱신은 경합을 시작하기 전에 끝낸다. 경합 중 401을 재시도로 숨기지 않는다.
+async function refreshAdminAccessToken() {
+    const response = await request('POST', '/admins/login', {
+        body: { email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD }
+    })
+    if (response.status !== 200) throw new Error(`admin login: ${response.status}`)
+    process.env.ADMIN_ACCESS_TOKEN = response.body.accessToken
+}
+
+async function refreshUserAccessTokens(users) {
+    await Promise.all(
+        users.map(async (user) => {
+            const response = await request('POST', '/users/refresh', {
+                body: { refreshToken: user.refreshToken }
+            })
+            if (response.status !== 200)
+                throw new Error(`user refresh ${user.userId}: ${response.status}`)
+            user.accessToken = response.body.accessToken
+            user.refreshToken = response.body.refreshToken
+        })
+    )
+}
+
 module.exports = {
     SERVER_URL,
     createAndLoginUser,
@@ -421,6 +443,8 @@ module.exports = {
     createShowtimeWithTickets,
     isPurchaseConflict,
     readPositiveInt,
+    refreshAdminAccessToken,
+    refreshUserAccessTokens,
     request,
     secureRandomHex,
     secureRandomIndex,

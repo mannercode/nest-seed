@@ -109,7 +109,7 @@ describe('PurchaseRecordsService', () => {
     })
 
     describe('PurchaseRecordStatus', () => {
-        it('pending은 이력에서 숨기고 완료 후 발행 상태가 바뀌어도 최초 응답은 유지한다', async () => {
+        it('pending은 이력에서 숨기고 완료 후 최초 응답을 유지하며 늦은 보상을 거절한다', async () => {
             const createDto = buildCreatePurchaseRecordDto({ paymentId: null })
             const idempotency = { fingerprint: 'fingerprint', key: 'purchase-key' }
             const pending = await purchaseRecordsService.create(createDto, {
@@ -128,8 +128,6 @@ describe('PurchaseRecordsService', () => {
                 await purchaseRecordsService.findCompleted({ userId: createDto.userId })
             ).toEqual([completed])
 
-            await purchaseRecordsService.markEventPublished(pending.id)
-            await purchaseRecordsService.markEventPublished(pending.id)
             const operation = ensure(
                 await purchaseRecordsService.findIdempotencyOperation({
                     userId: createDto.userId,
@@ -174,12 +172,6 @@ describe('PurchaseRecordsService', () => {
                 expect.objectContaining({
                     status: 500,
                     cause: 'Only a pending purchase can receive a payment.'
-                })
-            )
-            await expect(purchaseRecordsService.markEventPublished(pending.id)).rejects.toThrow(
-                expect.objectContaining({
-                    status: 500,
-                    cause: 'Only a completed purchase can publish its event.'
                 })
             )
             await purchaseRecordsService.markCancelled(pending.id)

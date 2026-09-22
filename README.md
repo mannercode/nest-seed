@@ -94,6 +94,6 @@ MongoDB는 주 데이터와 transaction, Redis는 선점·리프레시 세션, N
 | `tools/`         | [개발·테스트 실행 도구](docs/tools.md)                   |
 | `.devcontainer/` | [개발 환경과 env 주입](docs/devcontainer.md)             |
 
-공통 작성 규칙은 [네이밍·타입·오류·테스트 규칙](docs/reference/conventions.md)에 둔다. [과거 가이드 원문](_todo/docsold/backup/README.md)은 현재 구현 지침으로 사용하지 않고, 할 일과 미결 검토는 루트 [_todo](_todo/README.md)에서 관리한다.
+공통 작성 규칙은 [네이밍·타입·오류·테스트 규칙](docs/reference/conventions.md)에 둔다. 할 일과 미결 검토는 루트 [_todo](_todo/README.md)에서 관리한다.
 
 포크할 때 프로젝트 식별자와 작성자 URL을 일괄 치환하지 않는다. 패키지 scope를 바꾸면 manifest·의존성·import·별칭·lockfile을 함께 맞춘다. 개발용 스택을 운영에 적용하려면 [BFF 신뢰 경계](docs/apps.md#데모와-bff)와 [Restate revision 전환](docs/reference/decisions.md#restate와-외부-효과)의 조건을 검토한다. TLS·backup·운영 관측·무중단 배포는 이 시드의 제공 범위에 없다.

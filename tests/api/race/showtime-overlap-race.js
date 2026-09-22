@@ -3,6 +3,7 @@
 const { test } = require('node:test')
 const {
     readPositiveInt,
+    refreshAdminAccessToken,
     request,
     secureRandomHex,
     SERVER_URL,
@@ -29,8 +30,7 @@ async function setupFixture() {
             plot: 'overlap plot',
             durationInSeconds: 7200,
             director: 'overlap',
-            rating: 'PG',
-            assetIds: []
+            rating: 'PG'
         }
     })
     if (movie.status !== 201) throw new Error(`movie: ${movie.status}`)
@@ -135,6 +135,7 @@ test('서로 겹치는 상영 생성 사가는 여러 복제본에서도 정확�
 
     try {
         for (let i = 1; i <= INNER_ITERATIONS; i++) {
+            await refreshAdminAccessToken()
             const result = await runInner(i, movieId, theaterId, sse, i * spacingMs)
             console.log(
                 `[overlap] iter ${i}/${INNER_ITERATIONS} OK — 1 succeeded, ${result.failed} failed`

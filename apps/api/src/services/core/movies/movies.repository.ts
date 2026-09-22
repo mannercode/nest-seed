@@ -111,7 +111,6 @@ export class MoviesRepository extends CrudRepository<Movie> {
         assignIfDefined(movie, dto, 'durationInSeconds')
         assignIfDefined(movie, dto, 'director')
         assignIfDefined(movie, dto, 'rating')
-        assignIfDefined(movie, dto, 'assetIds')
     }
 
     private buildQuery(searchDto: SearchMoviesPageDto, options: QueryBuilderOptions) {

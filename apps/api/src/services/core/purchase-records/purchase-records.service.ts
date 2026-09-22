@@ -75,10 +75,6 @@ export class PurchaseRecordsService {
         await this.repository.markCancelled(purchaseRecordId)
     }
 
-    async markEventPublished(purchaseRecordId: string) {
-        await this.repository.markEventPublished(purchaseRecordId)
-    }
-
     async findCompleted({ userId }: { userId: string }) {
         const purchaseRecords = await this.repository.findCompleted({ userId })
 

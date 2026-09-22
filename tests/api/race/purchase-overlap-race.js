@@ -10,6 +10,8 @@ const {
     createShowtimeWithTickets,
     isPurchaseConflict,
     readPositiveInt,
+    refreshAdminAccessToken,
+    refreshUserAccessTokens,
     request,
     secureRandomHex,
     SERVER_URL
@@ -170,6 +172,8 @@ test('겹치는 티켓 묶음의 동시 구매는 원자 전이와 패자 보상
     const spacingMs = 3 * 60 * 60 * 1000
 
     for (let i = 1; i <= INNER_ITERATIONS; i++) {
+        await refreshAdminAccessToken()
+        await refreshUserAccessTokens(users)
         const result = await runInner(i, movieId, theaterId, users, i * spacingMs)
         console.log(
             `[overlap] iter ${i}/${INNER_ITERATIONS} OK — ${result.total} reqs, ${result.replicas} replicas`

@@ -1,6 +1,6 @@
 # API 소스 검토
 
-`1510689e`의 `apps/api/src` 실행 소스 254개를 모두 읽었다. DTO·barrel·설정·모듈·모델까지 포함하고, 테스트 54개 파일은 [테스트 검토](tests.md)가 다룬다. 이름은 파일·클래스·메서드·인자·지역 변수의 실제 역할과 함께 검토했다. 이 문서는 미결 개선 후보이며 구현 지침을 바꾸거나 코드 수정을 승인한 기록이 아니다.
+최초 검토는 `1510689e`의 `apps/api/src` 실행 소스 254개를 대상으로 했다. DTO·barrel·설정·모듈·모델까지 포함하고, 테스트 54개 파일은 [테스트 검토](tests.md)가 다룬다. 아래 근거는 당시 상태이며, 후속 사용자 결정과 반영 상태를 항목별로 표시한다.
 
 ## 판단
 
@@ -12,6 +12,8 @@ SoLA 경계와 common 연동 분리는 대체로 맞다. 새로운 계층·Repos
 
 ### A1. 영화 assetIds 직접 입력이 업로드 완료 경로를 우회한다
 
+상태: 완료. 사용자 결정에 따라 create/update의 assetIds 입력을 제거했다. 업로드·finalize로만 연결하며 직접 입력은 400이다. 기존 이미지 조회 fixture·race·API 문서도 같은 경로를 사용한다.
+
 [UpsertMovieSchema](../../apps/api/src/services/core/movies/dtos/upsert-movie.dto.ts)는 임의 assetIds를 받고 [MoviesRepository](../../apps/api/src/services/core/movies/movies.repository.ts)는 그대로 저장한다. [finalizeUpload](../../apps/api/src/services/core/movies/movies.service.ts)는 그 ID가 영화 배열에 있으면 pending을 제거하고 바로 성공한다. 해당 asset의 업로드·owner를 확인하고 부여하는 아래 경로를 지나지 않는다.
 
 따라서 자기 pending asset을 PATCH의 assetIds에 먼저 넣으면 정상 완료 응답을 받아도 owner가 비어 있을 수 있다. 다른 영화의 asset도 연결할 수 있는 반면 삭제는 실제 owner를 다시 확인한다. 입력 경로와 삭제·완료의 판단 기준이 다르다. 코드 경로로 확인했으며 새 API 호출로 재현한 결과는 아니다.
@@ -22,11 +24,15 @@ SoLA 경계와 common 연동 분리는 대체로 맞다. 새로운 계층·Repos
 
 ### A2. 구매 알림의 DB 발행 상태는 실행에 사용하지 않는다
 
+상태: 완료. 사용자 결정에 따라 필드·mark 메서드·DB 기록 step을 제거했다. Restate의 발행 재시도와 JetStream 중복 억제를 유지하며, 발행 전 장애와 발행 후 응답 유실에서도 구매 응답이 유지됨을 검증한다. 기존 DB 문서의 필드를 일괄 삭제하는 데이터 마이그레이션은 포함하지 않는다. 진행 중인 이전 journal은 [기존 revision에서 끝내는 조건](../../docs/reference/decisions.md#배포-revision)을 따른다.
+
 [purchaseEventStatus](../../apps/api/src/services/core/purchase-records/models/purchase-record.ts)는 production에서 초기값과 발행 후 쓰기만 있고 이를 읽어 재시도를 결정하는 코드는 없다. [알림 workflow](../../apps/api/src/services/application/purchase/worker/event-workflow.ts)는 Restate의 발행 step을 완료한 뒤 별도 step에서 `markEventPublished`를 호출한다. 복구의 주체는 이 DB 필드가 아니라 Restate다.
 
 필드·mark 메서드·두 번째 step을 제거하는 것이 시드에 더 작다. JetStream 발행 재시도, 판매·보상, 최초 응답 재생에는 이 표시가 필요하지 않다. 다만 DB에서 보는 발행 흔적과 이 갱신에 따른 updatedAt 변화는 사라지므로 “동작이 전혀 바뀌지 않는다”고 표현하면 안 된다. 기존 테스트·문서와 보존된 workflow journal의 코드 변경 조건도 함께 처리해야 한다. 대체 관측 장치는 추가하지 않는다.
 
 ### A3. 상영 접수 lease는 접수 중 409 계약의 비용이다
+
+상태: 유지로 결정. 사용자가 기존 접수 중 409 응답과 lease 유지를 선택했다. 현재 구현과 검증을 유지하며 제거 작업으로 남기지 않는다.
 
 [SubmissionRepository](../../apps/api/src/services/application/showtime-creation/internal/showtime-creation-submission.repository.ts)의 principal+key, inputHash, sagaId, accepted 기록은 서로 다른 책임이 있다. 키 재사용 거절, 작업 ID 고정, 인증 주체별 상태 조회를 담당하므로 Restate key 하나로 모두 대체할 수 없다.
 

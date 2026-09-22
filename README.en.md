@@ -151,6 +151,6 @@ Each `docs/*.md` guide corresponds to a repository directory and explains its re
 - [decisions](docs/reference/decisions.md) — choices, alternatives, and non-guarantees
 - [development rules](docs/reference/conventions.md) — naming, DTOs, types, ESM, errors, and test-writing conventions
 
-[Tasks and work plans](_todo/README.md) belong in `_todo/`. `docs/` contains project guides only; [historical guides](_todo/docsold/backup/README.md) are archived separately from the current development instructions.
+[Tasks and work plans](_todo/README.md) belong in `_todo/`. `docs/` contains project guides only.
 
 For the design background of the movie-booking domain, see the blog series [Backend Service Analysis and Design 1](https://mannercode.com/2025/04/01/backend-design-1.html), [2](https://mannercode.com/2025/05/01/backend-design-2.html), and [3](https://mannercode.com/2025/06/01/backend-design-3.html).

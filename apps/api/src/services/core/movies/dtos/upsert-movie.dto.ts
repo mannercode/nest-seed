@@ -3,7 +3,6 @@ import { z } from 'zod'
 import { MovieGenre, MovieRating } from '../models/index.js'
 
 export const UpsertMovieSchema = z.strictObject({
-    assetIds: z.array(z.string()).optional(),
     director: z.string().optional(),
     durationInSeconds: z.number().int().optional(),
     genres: z.array(z.enum(MovieGenre)).optional(),

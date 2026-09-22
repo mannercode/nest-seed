@@ -1,6 +1,6 @@
 # 테스트 검토
 
-검토 대상은 추적된 `tests/` 25파일과 `apps/api/src/**/__tests__/` 54파일이다. 텍스트 77파일을 본문까지 읽었고 이미지·작은 업로드 fixture 2개는 크기와 signature를 확인했다. 이 검토에서는 실패 주입 재현이나 테스트 코드 수정을 하지 않았다. 기준 코드의 전체 CI 결과는 [통합 목록](README.md)에 둔다. 아래 실행 문제는 코드 경로에서 확인한 것이며 실제 실패 재현 결과와 구분한다.
+최초 검토 대상은 추적된 `tests/` 25파일과 `apps/api/src/**/__tests__/` 54파일이다. 텍스트 77파일을 본문까지 읽었고 이미지·작은 업로드 fixture 2개는 크기와 signature를 확인했다. 아래 근거는 당시 코드 경로를 읽은 결과다. 현재 반영·검증 결과는 각 항목의 상태와 [통합 목록](README.md)에 둔다.
 
 ## 판단
 
@@ -12,6 +12,8 @@
 
 ### T1. 상영 완료 SSE 구독이 요청보다 늦게 시작한다
 
+상태: 완료. `HttpTestClient.sse`에 수신 준비 콜백을 추가하고 상영 helper가 준비 후 POST·종결 수신·스트림 정리를 책임지도록 바꿨다. 첫 이벤트가 없는 실제 HTTP 스트림의 준비와 이후 이벤트 수신도 기존 spec에서 검증한다.
+
 - 근거: `apps/api/src/__tests__/application/showtime-creation.spec.ts:509`의 정상 흐름 `beforeEach`가 POST를 시작한다. `:562`, `:574`의 DB 검증은 202를 받은 뒤 `waitForCompletion()`을 호출한다. 앞의 SSE 검증도 POST가 시작된 뒤 구독한다.
 - `showtime-creation.utils.ts:5`는 `.sse()`를 호출할 뿐 구독 성립을 기다리지 않는다. `libs/testing/src/http.test-client.ts:130`의 반환값은 연결 완료 Promise가 아니라 client 자신이다. `showtime-creation.events.ts:12`의 일반 Subject에는 replay가 없다.
 - 따라서 빠른 workflow의 완료가 구독 전에 발행되면 정상 동작도 테스트 timeout으로 끝날 수 있다. 코드를 오래 실행하게 하거나 timeout을 늘리는 해결은 부적절하다.
@@ -20,11 +22,15 @@
 
 ### T2. 성공한 모양만 보고 실패를 놓치는 기존 단언이 있다
 
+상태: 완료. finalize 응답은 204 또는 예상한 AssetNotFound만 허용하며 성공 응답도 요구한다. 동일 saga 재실행은 성공을 먼저 단언하고, 정상 fixture는 상영 1개·티켓 8개를 독립 기대값으로 확인한다.
+
 - `apps/api/src/__tests__/core/movies-assets.spec.ts:267`: 동시 finalize 8개를 `sendRaw()`로 보내고 응답을 버린다. 500이 섞여도 `imageUrls` 하나만 남으면 통과한다. 현재 허용하는 정상/충돌 응답을 구분해 검사하고 예상하지 못한 응답을 실패로 해야 한다. 새로운 경우의 수를 늘릴 작업이 아니다.
 - `apps/api/src/__tests__/application/showtime-creation.spec.ts:931`: 같은 saga 동시 재실행 테스트는 `first.kind === 'succeeded'`일 때만 생성 개수 검증을 수행한다. 두 호출이 똑같이 `failed`를 반환해도 통과할 수 있다. 이 fixture의 기대 결과인 `succeeded`를 먼저 단언한다.
 - 같은 파일 `:574`의 티켓 생성 검증은 실제 길이를 구현이 보고한 `createdTicketCount`와만 비교한다. 생성도 보고도 0이면 통과할 수 있다. 이 정상 fixture의 알려진 좌석 수와 결과를 확인하는 것이 더 직접적이다. 현재 여러 다른 시나리오도 count를 응답에서 가져오므로 기본 정상 시나리오 한 곳의 독립 기대값이 유용하다.
 
 ### T3. 비동기 자원 정리와 cron 완료를 명시적으로 기다려야 한다
+
+상태: 완료. SSE stream·chaos worker·구매 barrier는 `finally`에서 정리한다. 에셋 정리는 서비스 작업을 직접 await하고 cron 등록도 확인한다. 관련 API 테스트 121개가 통과했으며, race 원본을 격리 실행해 handshake·POST·응답 검사·종결 대기·Docker kill/start 명령 실패 시 정리도 확인했다. 실제 SSE fan-out·복제본 재시작 실행 결과는 [통합 목록](README.md#완료된-검증-보완)에 둔다.
 
 - `tests/api/race/sse-fanout-race.js:63`: 100개 stream을 열고 handshake·POST·응답 검사 중 실패하면 `:108`의 close까지 도달하지 않는다. 기존 작업 전체에 `try/finally`를 적용해 열린 stream을 정리한다.
 - `tests/api/race/replica-chaos.js:78`: traffic worker를 시작한 뒤 `docker kill/start`가 실패하면 `state.stop`을 설정하지 못한다. 이 worker가 Node 프로세스를 계속 유지해 shell의 정리·진단도 늦어질 수 있다. worker 종료를 finally에서 보장한다. 새로운 장애 복구 기능을 추가할 필요는 없다.
@@ -34,9 +40,11 @@
 
 ### T4. 긴 외부 테스트가 5분 access token을 끝까지 재사용한다
 
+상태: 완료. 인증을 사용하는 장시간 race는 매 반복 전 관리자 로그인·사용자 refresh를 공유 helper로 수행한다. benchmark는 seed 회차·측정 전에 로그인하고 VU가 만료 전에 갱신한다. 인증 실패는 실행 전체를 실패시키며 업무 401을 재시도하지 않는다. 5분을 넘긴 실제 benchmark와 변경한 race 5개를 검증했으며 상세 조건은 [통합 목록](README.md)에 둔다. 아래 근거는 최초 검토 당시 상태다.
+
 - `.env.api:9`, `:13`은 사용자·관리자 access token을 5분으로 정한다.
 - benchmark는 `tests/api/benchmark/run.sh:108`에서 한 번 로그인하고 seed한 다음 같은 token을 k6에 넘긴다. 기본 seed 한 회는 30초이고, `crud.js:21`의 7개 시나리오는 마지막 종료까지 약 291초가 걸린다. 새 환경에서 seed가 한 회만 있어도 전체가 5분을 넘는다. 마지막 쓰기는 성능 문제가 아니라 인증 만료로 실패할 수 있다.
-- race도 `race/runner.sh:150`의 admin token을 시나리오 전체에 사용한다. holding/purchase는 사용자 token도 준비 단계에서만 얻는다. 실행이 5분을 넘으면 역시 시나리오 목적과 무관한 401을 받는다. 실제 소요 시간은 실행으로 확인해야 한다.
+- `purchase-double-spend`를 제외한 race는 runner의 admin token을 시나리오 전체에 사용한다. holding/purchase-overlap은 사용자 token도 준비 단계에서만 얻는다. 실행이 5분을 넘으면 시나리오 목적과 무관한 401을 받는다. 실제 소요 시간은 실행으로 확인해야 한다.
 - access TTL을 늘려 숨기지 않는다. benchmark 단계별 인증과 긴 실행의 token 갱신 책임을 test client에서 명시적으로 처리하는 최소 변경이 필요하다. 보안 기능이나 일반 로그인 프레임워크를 만들 일은 아니다. 짧은 시나리오까지 새 추상화에 강제 편입하지 않는다.
 
 ## 제목·문서가 실제로 검증한 것보다 강한 부분
@@ -76,6 +84,6 @@
 - per-key 복제본 분산 보장, 실제 업무 소유 프로세스 종료 후 복구, 모든 잘못된 DTO 조합, 데모 모든 네트워크 실패 case는 이번 필수 테스트 목록으로 늘리지 않는다.
 - 구매 보상과 workflow 재시도는 API 통합 테스트에서 실제 DB 경계와 함께 검증한다. `replica-chaos`는 가입 트래픽 가용성을 볼 뿐 구매/상영 workflow의 실행 소유 프로세스 종료를 시험하지 않는다. 인프라 Restate journal 복구 테스트와도 보장을 구분한다.
 
-## 검증 한계
+## 최초 검토의 한계
 
-이 검토에서는 테스트 실행, 실패 주입 재현, 이미지 fixture의 시각적 적절성 검사를 하지 않았다. 변경할 때는 새 파일을 추가하기보다 기존 spec의 단언·수명을 먼저 고치고 관련 검사를 실행해야 한다. 외부 스택 시나리오를 더 만드는 것은 별도 결정이다.
+최초 검토에서는 테스트 실행, 실패 주입 재현, 이미지 fixture의 시각적 적절성 검사를 하지 않았다. 이후 수정·실행 결과는 위 상태에 별도로 표시했다. 외부 스택 시나리오를 더 만드는 것은 별도 결정이다.

@@ -26,6 +26,10 @@ cleanup() {
         "${compose[@]}" logs --no-color --timestamps >&2
     fi
     "${compose[@]}" down -v -t 0
+    local cleanup_exit_code=$?
+    if [[ "${exit_code}" -eq 0 ]]; then
+        exit_code=${cleanup_exit_code}
+    fi
     exit "${exit_code}"
 }
 trap cleanup EXIT
@@ -88,10 +92,13 @@ seed_theaters() {
         fi
 
         echo "Seeding theaters: ${count}/${SEED_TARGET}"
+        login_admin
         run_k6 run --quiet \
             --env "MODE=seed" \
             --env "SERVER_URL=${SERVER_URL}" \
             --env "ADMIN_ACCESS_TOKEN=${ADMIN_ACCESS_TOKEN}" \
+            --env "ADMIN_EMAIL=${ADMIN_EMAIL}" \
+            --env "ADMIN_PASSWORD=${ADMIN_PASSWORD}" \
             --env "DURATION_MS=30000" \
             --env "SUMMARY_PATH=/dev/null" \
             crud.js >/dev/null
@@ -107,12 +114,15 @@ echo "Building API benchmark stack"
 wait_for_api
 login_admin
 seed_theaters
+login_admin
 
 k6_arguments=(
     run
     --env "MODE=benchmark"
     --env "SERVER_URL=${SERVER_URL}"
     --env "ADMIN_ACCESS_TOKEN=${ADMIN_ACCESS_TOKEN}"
+    --env "ADMIN_EMAIL=${ADMIN_EMAIL}"
+    --env "ADMIN_PASSWORD=${ADMIN_PASSWORD}"
     --env "SUMMARY_PATH=${OUTPUT_DIR}/summary.json"
 )
 [[ -n "${DURATION_MS:-}" ]] && k6_arguments+=(--env "DURATION_MS=${DURATION_MS}")
