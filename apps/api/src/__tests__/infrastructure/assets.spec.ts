@@ -123,7 +123,7 @@ describe('AssetsService', () => {
                 assetId = await uploadFile(fix, file)
             })
 
-            it('다운로드 정보가 포함된 에셋을 반환한다', async () => {
+            it('다운로드 정보를 반환하고 내려받은 파일은 원본 체크섬과 일치한다', async () => {
                 const finalizeDto = buildFinalizeAssetDto()
 
                 const asset = await assetsService.finalizeUpload(assetId, finalizeDto)
@@ -137,12 +137,6 @@ describe('AssetsService', () => {
                         }
                     })
                 )
-            })
-
-            it('반환된 다운로드 URL로 받은 파일이 원본과 체크섬이 일치한다', async () => {
-                const finalizeDto = buildFinalizeAssetDto()
-                const asset = await assetsService.finalizeUpload(assetId, finalizeDto)
-
                 const buffer = await downloadAsset(asset)
 
                 const checksum = Checksum.fromBuffer(buffer)
@@ -163,17 +157,11 @@ describe('AssetsService', () => {
                 await sleep(1500)
             })
 
-            it('완료 처리 시 404를 던진다', async () => {
+            it('404를 던지고 정리 cron이 찾을 DB 행을 남긴다', async () => {
                 const finalizeDto = buildFinalizeAssetDto()
                 await expect(
                     assetsService.finalizeUpload(assetId, finalizeDto)
                 ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
-            })
-
-            it('완료 처리 실패 후에도 정리 cron이 찾을 DB 행을 남긴다', async () => {
-                const finalizeDto = buildFinalizeAssetDto()
-                await expect(assetsService.finalizeUpload(assetId, finalizeDto)).rejects.toThrow()
-
                 await expect(assetsService.getMany([assetId])).resolves.toMatchObject([
                     { id: assetId, owner: null }
                 ])
@@ -242,7 +230,7 @@ describe('AssetsService', () => {
                 ])
             })
 
-            it('에셋 ID 목록에 해당하는 에셋과 다운로드 정보를 반환한다', async () => {
+            it('에셋과 다운로드 정보를 반환하고 내려받은 파일은 원본 체크섬과 일치한다', async () => {
                 const fetchedAssets = await assetsService.getMany(pickIds(assets))
 
                 expect(fetchedAssets).toEqual(
@@ -256,13 +244,7 @@ describe('AssetsService', () => {
                         }))
                     )
                 )
-            })
-
-            it('반환된 다운로드 URL로 받은 파일이 원본과 체크섬이 일치한다', async () => {
-                const fetchedAssets = await assetsService.getMany([ensure(assets[0]).id])
-                const fetchedAsset = ensure(fetchedAssets[0])
-
-                const buffer = await downloadAsset(fetchedAsset)
+                const buffer = await downloadAsset(ensure(fetchedAssets[0]))
 
                 const checksum = Checksum.fromBuffer(buffer)
                 expect(file.checksum).toEqual(checksum)
@@ -288,26 +270,19 @@ describe('AssetsService', () => {
                 ])
             })
 
-            it('성공 시 반환값이 없다', async () => {
+            it('반환값 없이 삭제하고 DB 조회와 다운로드는 404를 반환한다', async () => {
                 await expect(assetsService.deleteMany(pickIds(assets))).resolves.toBeUndefined()
-            })
 
-            it('삭제 후에는 조회 시 404를 던진다', async () => {
-                await assetsService.deleteMany([ensure(assets[0]).id])
+                for (const asset of assets) {
+                    await expect(assetsService.getMany([asset.id])).rejects.toMatchObject({
+                        status: HttpStatus.NOT_FOUND
+                    })
+                    const { download } = asset
+                    if (null === download) throw new Error('download must have value')
 
-                await expect(assetsService.getMany([ensure(assets[0]).id])).rejects.toMatchObject({
-                    status: HttpStatus.NOT_FOUND
-                })
-            })
-
-            it('삭제하면 다운로드 URL이 무효화된다', async () => {
-                await assetsService.deleteMany([ensure(assets[0]).id])
-
-                const { download } = ensure(assets[0])
-                if (null === download) throw new Error('download must have value')
-
-                const response = await fetch(download.url)
-                expect(response.status).toBe(404)
+                    const response = await fetch(download.url)
+                    expect(response.status).toBe(404)
+                }
             })
         })
 

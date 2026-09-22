@@ -9,14 +9,6 @@ import {
     createAppTestContext
 } from '../helpers/index.js'
 
-type HomeResponse = {
-    showingMovies: {
-        movie: { id: string; title: string }
-        upcomingShowtimes: { id: string; theater: { id: string; name: string } }[]
-    }[]
-    recommendedMovies: { id: string }[]
-}
-
 type ShowtimeFixture = NonNullable<Awaited<ReturnType<typeof createShowtimes>>[number]>
 
 describe('UserHomeView', () => {
@@ -136,9 +128,7 @@ describe('UserHomeView', () => {
                 const { body } = await fix.httpClient
                     .get('/views/user-app/home')
                     .ok({ schema: UserHomeViewSchema })
-                const home = body as HomeResponse
-
-                const card = ensure(home.showingMovies[0])
+                const card = ensure(body.showingMovies[0])
                 expect(card.upcomingShowtimes.map((s) => s.id)).toEqual([s1.id, s2.id, s3.id])
                 expect(card.upcomingShowtimes.map((s) => s.theater.name)).toEqual([
                     theaterA.name,
@@ -151,10 +141,8 @@ describe('UserHomeView', () => {
                 const { body } = await fix.httpClient
                     .get('/views/user-app/home')
                     .ok({ schema: UserHomeViewSchema })
-                const home = body as HomeResponse
-
-                expect(home.showingMovies).toHaveLength(1)
-                const card = ensure(home.showingMovies[0])
+                expect(body.showingMovies).toHaveLength(1)
+                const card = ensure(body.showingMovies[0])
                 expect(card.movie.title).toBe('Home Movie')
                 expect(card.upcomingShowtimes).toHaveLength(3)
                 expect(card.upcomingShowtimes.map((s) => s.id)).not.toContain(s4.id)
@@ -164,9 +152,7 @@ describe('UserHomeView', () => {
                 const { body } = await fix.httpClient
                     .get('/views/user-app/home')
                     .ok({ schema: UserHomeViewSchema })
-                const home = body as HomeResponse
-
-                const card = ensure(home.showingMovies[0])
+                const card = ensure(body.showingMovies[0])
                 expect(card.upcomingShowtimes.map((s) => s.id)).not.toContain(pastShowtime.id)
             })
         })

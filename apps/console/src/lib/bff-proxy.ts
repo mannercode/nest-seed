@@ -40,24 +40,3 @@ export function resolveForwardedClientIp(
     const realIp = headers.get('x-real-ip')?.trim()
     return realIp && isIP(realIp) !== 0 ? realIp : undefined
 }
-
-export async function retryWithRotatedSession<Response>({
-    createUnavailableResponse,
-    retry,
-    setAuthTokens,
-    tokens
-}: {
-    createUnavailableResponse: () => Response
-    retry: () => Promise<Response>
-    setAuthTokens: (response: Response, tokens: AuthTokens) => void
-    tokens: AuthTokens
-}): Promise<Response> {
-    let response: Response
-    try {
-        response = await retry()
-    } catch {
-        response = createUnavailableResponse()
-    }
-    setAuthTokens(response, tokens)
-    return response
-}

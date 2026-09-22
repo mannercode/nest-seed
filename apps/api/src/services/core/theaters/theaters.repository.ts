@@ -93,7 +93,7 @@ export class TheatersRepository extends CrudRepository<Theater> {
     private buildQuery(searchDto: SearchTheatersPageDto, options: QueryBuilderOptions) {
         const { name } = searchDto
 
-        const builder = new QueryBuilder<Theater>()
+        const builder = new QueryBuilder()
         builder.addRegex('name', name ?? undefined)
 
         const query = builder.build(options)

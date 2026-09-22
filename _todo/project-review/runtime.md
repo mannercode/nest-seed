@@ -31,22 +31,32 @@
 
 ### R4. 상영 성공 뒤의 API-docs polling 두 개는 중복이다
 
+상태: 반영 완료. workflow 성공 뒤 상영·티켓은 한 번 조회하고 없거나 부족하면 실패한다. 통합 검증 결과는 [통합 목록](README.md)을 따른다.
+
 - 근거: `common.fixture:215`의 준비는 `wait_for_showtime_creation` 성공 뒤 `wait_for_showtime`을 호출한다. booking/purchases는 이어서 `wait_for_tickets`도 호출한다. 두 후속 함수는 각각 최대 30회 조회한다.
 - 근거 소스: `ShowtimeCreationPersistenceService.validateAndCreate`와 `ShowtimeBulkCreatorService.create`는 상영·티켓·operation을 같은 transaction에서 생성하며 workflow는 완료 뒤 `succeeded`를 반환한다. Mongo 연결도 secondary read를 선택하지 않는다.
 - 추천: workflow 상태 polling 하나를 유지하고 상영/티켓은 한 번 조회해 필요한 값이 없으면 실패시킨다. 완료 이후에도 아직 생성 중일 수 있다는 불필요한 기대를 제거한다. 조회 결과 전체를 검증하는 대형 계약 테스트로 확대할 필요는 없다.
 
 ### R5. 테스트 helper의 미사용 확장점과 Redis guard는 줄일 여지가 있다
 
+상태: 검토·반영 완료. 미사용 `onAfterEach`·`extra`를 제거했다. Redis scope·pattern·최소 길이는 공유 Redis에서 허용할 정리 범위의 계약이므로 유지한다. factory와 공개 cleanup 함수의 검사는 서로 다른 진입점을 보호하므로 하나를 제거하지 않는다.
+
 - 근거: `tools/vitest-helpers/index.js`의 `onAfterEach`, `createGlobalTeardown.extra`는 저장소에 사용처가 없다. helper는 실제로 API와 common의 두 배선에 사용되는데 Redis 정리에 별도 scope·pattern·16자 이상 검사 및 중복 검사가 붙어 있다.
 - 추천: 미사용 hook부터 제거 후보로 둔다. Redis는 API 접두사만 지우는 안전한 범위를 유지하되, 16자라는 임의 조건과 두 표현을 동시에 받는 API가 필요한지 검토한다. 공유 Redis에서 flushall로 바꾸자는 뜻이 아니다. 범용 정리 라이브러리로 확장할 이유도 없다.
 
 ### R6. free-port는 유지하되 진단을 숨기지 않게 할 수 있다
 
+상태: 반영 완료. `ss` 오류는 전달하고 kill은 `ESRCH`만 무시한다. listen 재확인은 `EADDRINUSE`만 대상으로 한다.
+
 - 근거: `tools/dev-tools/free-port.js:29`의 ss 실패는 빈 PID 목록으로, `:46`의 모든 kill 실패는 이미 종료된 프로세스로 취급한다.
 - 영향: 명령 부재나 권한 오류도 결국 'still busy'로만 보인다. 성공 판정을 직접 위조하지는 않으므로 R2보다 우선도가 낮다.
 - 최소 개선: 포트 정리 자체와 짧은 listen 재확인은 유지하고, ss 실패는 원인을 보고하며 kill은 실제 프로세스 소멸 오류만 무시한다. 포트 관리 framework나 별도 서비스는 필요 없다.
 
-## 재현성과 버전 관리: 선택 사항
+## 재현성과 버전 관리
+
+상태: 갱신·통합 검증 완료. 앱·Dev Container의 Node 이미지와 pnpm bootstrap을 함께 고정하고 lychee의 `latest`를 tag·digest로 바꿨다. npm은 Nest core 계열·Vitest/coverage·Restate SDK/client·AWS SDK를 함께 갱신했다. 아래 표는 최초 검토 기록이며 실제 선택 버전은 manifest·lockfile·이미지 설정이 기준이다.
+
+Testcontainers Mongo의 최신 12.1.0에도 digest를 tag로 오인하는 shell 선택 코드가 남아 있어 기존 예외를 유지한다. peer dependency의 반복은 소비자 계약이므로 catalog로 옮기지 않으며 TSC·Rspack·Vitest의 별도 실행 목적도 유지한다. TypeScript 고정 결정은 변경하지 않았다. 루트 테스트의 기본 HTTP adapter도 API와 같은 버전으로 명시하고 peer 해석을 정리해 Nest core가 중복 로드되지 않게 했다.
 
 - 앱 Dockerfile 3개는 `npm install -g pnpm`으로 bootstrap 버전만 고정하지 않는다. 프로젝트 `packageManager` 및 lockfile에는 12.4.1이 고정돼 있고 pnpm 12의 기본 `pmOnFail=download`가 선언 버전을 실행한다. 따라서 '앱 설치가 무조건 최신 pnpm으로 된다'고 단정하면 틀리다. 다만 bootstrap까지 Dev Container와 같은 버전으로 맞추면 설명과 설치 경로가 단순해진다. https://pnpm.io/settings/cli#pmonfail
 - `tools/compose.yml:4`의 lychee만 `latest`다. 새 버전이 cache 상황에 따라 달라져 문서 검사 결과가 바뀔 수 있다. 기존 이미지 고정 방식을 적용하는 정도면 충분하며 자체 도구 이미지를 만들 이유는 없다.

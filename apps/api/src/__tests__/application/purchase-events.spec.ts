@@ -44,9 +44,9 @@ describe('PurchaseEvents', () => {
 
     afterEach(async () => Promise.all(teardowns.map((teardown) => teardown())))
 
-    it('4개 복제본이 알림을 전체 한 번만 처리한다', async () => {
-        const replicas = await Promise.all(Array.from({ length: 3 }, createAppTestContext))
-        teardowns.push(...replicas.map((replica) => replica.teardown))
+    it('한 프로세스의 Nest context 4개에서 공유 consumer의 알림 로그 1회를 관측한다', async () => {
+        const contexts = await Promise.all(Array.from({ length: 3 }, createAppTestContext))
+        teardowns.push(...contexts.map((context) => context.teardown))
 
         await events.emitTicketPurchased({
             purchaseRecordId: 'purchase-replicas',

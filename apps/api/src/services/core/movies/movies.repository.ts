@@ -116,7 +116,7 @@ export class MoviesRepository extends CrudRepository<Movie> {
     private buildQuery(searchDto: SearchMoviesPageDto, options: QueryBuilderOptions) {
         const { director, genre, plot, rating, releaseDate, title } = searchDto
 
-        const builder = new QueryBuilder<Movie>()
+        const builder = new QueryBuilder()
         builder.addEquals('isPublished', true)
         builder.addRegex('title', title ?? undefined)
         builder.addEquals('genres', genre)

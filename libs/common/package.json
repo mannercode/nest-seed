@@ -40,12 +40,12 @@
         "zod": "^4.0.0"
     },
     "devDependencies": {
-        "@aws-sdk/client-s3": "3.1133.0",
+        "@aws-sdk/client-s3": "3.1137.0",
         "@mannercode/testing": "workspace:*",
         "@mannercode/vitest-helpers": "workspace:*",
         "@nats-io/jetstream": "3.4.0",
-        "@restatedev/restate-sdk": "1.17.0",
-        "@restatedev/restate-sdk-clients": "1.17.0",
+        "@restatedev/restate-sdk": "1.17.2",
+        "@restatedev/restate-sdk-clients": "1.17.2",
         "@testcontainers/mongodb": "12.1.0",
         "@testcontainers/nats": "12.1.0",
         "@types/bcrypt": "6.0.0",
@@ -53,7 +53,7 @@
         "ioredis": "6.0.0",
         "mongodb": "7.6.0",
         "testcontainers": "12.1.0",
-        "vitest": "5.0.0",
+        "vitest": "5.0.1",
         "zod": "4.6.5"
     }
 }

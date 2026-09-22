@@ -105,7 +105,7 @@ export class ShowtimesRepository extends CrudRepository<Showtime> {
     private buildQuery(searchDto: SearchShowtimesDto, options: QueryBuilderOptions = {}) {
         const { endTimeRange, movieIds, sagaIds, startTimeRange, theaterIds } = searchDto
 
-        const builder = new QueryBuilder<Showtime>()
+        const builder = new QueryBuilder()
         builder.addIn('sagaId', sagaIds)
         builder.addIn('movieId', movieIds)
         builder.addIn('theaterId', theaterIds)

@@ -11,7 +11,7 @@ import {
 import { ShowtimeCreationOperationRepository } from './internal/showtime-creation-operation.repository.js'
 import { ShowtimeCreationEvents } from './showtime-creation.events.js'
 import { ShowtimeCreationService } from './showtime-creation.service.js'
-import { ShowtimeCreationWorkflowClient } from './worker/restate-workflow-client.service.js'
+import { ShowtimeCreationWorkflowClient } from './worker/showtime-creation-workflow-client.js'
 import { ShowtimeCreationWorkflow } from './worker/workflow.js'
 
 @Module({

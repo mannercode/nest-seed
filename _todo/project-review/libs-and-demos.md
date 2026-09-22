@@ -83,11 +83,15 @@ TimeUtil.toMs('-1h30m')                → -1_800_000
 
 ### S3 테스트의 데이터 양과 호출 수
 
+상태: 반영 완료. 256 B binary와 서로 다른 두 객체의 실제 저장·다운로드로 키·본문·헤더를 확인한다. 거부 6종은 provider의 HTTP status와 XML 오류 코드를 단언해 5xx가 통과하지 않게 했다.
+
 - `libs/common/src/s3/__tests__/s3-object.service.spec.ts:596`: 매번 다른 key인지 확인하려고 실제 S3 `putObject`를 200회 동시에 수행한다. UUID 함수 자체의 형식·중복 확인은 `utils/__tests__/id.spec.ts`에도 있다. 소수의 서로 다른 내용 저장과 다운로드 확인으로 wrapper의 핵심 계약을 더 직접 검증할 수 있다. 성능·부하 테스트라는 별도 목적도 없다.
 - `libs/common/src/s3/__tests__/s3-object.service.fixture.ts:54`: HEAD·content type·length 비교용 데이터가 10MiB이고 여러 테스트에서 반복 업로드한다. 해당 조건에 큰 파일이 필요하지 않다. 작은 고정 binary fixture면 충분하다. 단순히 검사 통과를 위해 assertions나 coverage를 낮추자는 제안이 아니다.
 - 같은 S3 spec의 기존 '업로드 거부' 시나리오들은 `response.ok === false`만 확인한다. 저장소 500/503도 정책 거부를 검증했다고 통과한다. 현재 시나리오에서 실제 provider가 반환하는 정상 거부 상태를 확인해 assertion을 구체화하면 된다. 새 실패 행렬이나 새 테스트 파일은 필요하지 않다.
 
 ### 타입·파일 배치
+
+상태: 반영 완료. 무효한 QueryBuilder 제네릭을 제거하고 매핑 helper는 utils로 옮겼다. JwtAuthTokens는 type으로, 공통 인증 폐기는 `revokeAllSessions(subjectId)`로, 테스트 context 옵션은 `TestModuleOptions`로 명확히 했다. HTTP client의 요청 상태와 health·Restate spec 파일도 실제 역할에 맞췄다. 도메인의 사용자 전용 메서드명은 유지한다. NATS의 기본 모듈 등록·주입 데코레이터는 다른 common 통합 테스트에서 실행하지 않으므로 해당 단위 검증은 유지한다.
 
 - `libs/common/src/mongodb/mongo.util.ts:103`: `QueryBuilder<_T>`의 `_T`를 어디에도 쓰지 않으며 field는 string, value는 any다. `new QueryBuilder<User>()`가 필드·값 타입을 검사한다는 인상만 준다. **사용하지 않는 제네릭 제거**가 가장 작은 개선이다. 엄격한 범용 Mongo 쿼리 DSL로 확장하는 것은 권하지 않는다.
 - `mongo.util.ts:161`의 `assignIfDefined`, `:172`의 `mapDocToDto`는 MongoDB와 관계없는 필드·스키마 변환이다. common에 남기는 것은 맞지만 `utils` 아래가 더 찾기 쉽다. API 전용 코드로 옮겨야 할 근거는 없다.
@@ -96,6 +100,8 @@ TimeUtil.toMs('-1h30m')                → -1_800_000
 - `InjectNatsPubSub`가 function인지, dynamic module의 provider 수가 1인지 등의 단위 단언은 실제 Nest 주입 통합 경로보다 가치가 낮다. 같은 계약을 통합 검증에서 보장하는 경우 정리할 수 있으나 공통 SDK adapter 테스트를 일괄 삭제할 근거는 아니다.
 
 ### 데모 BFF의 작은 정리 후보
+
+상태: 반영 완료. 단일 사용 콜백 helper를 route의 직접 처리로 바꿨다. 최초 upstream fetch 실패도 기존 재시도 실패와 같은 502 JSON을 반환한다. 회전한 쿠키 보존·한 번 재시도·기존 BFF 정책은 유지한다. 범용 브라우저 JSON fallback은 추가하지 않았다.
 
 `apps/console/src/lib/bff-proxy.ts:44`와 user-app 동일 파일의 `retryWithRotatedSession<Response>`는 각 앱의 route 한 곳에서만 쓴다. response 생성·retry·cookie setter 세 콜백을 전달하는 제네릭 helper 대신 해당 route에서 try/catch 후 새 cookie를 쓰면 동작이 더 직접 드러난다. 외부 common으로 다시 옮기지 않는다.
 
@@ -129,5 +135,5 @@ TimeUtil.toMs('-1h30m')                → -1_800_000
 - JWT에는 authVersion이나 즉시 액세스 토큰 회수 장치가 없다. 현행 회전 hash·Redis 원자 연산은 기본 로그인 계약을 지키는 데 필요하다. Redis 개별 명령 실패 확인도 보안 과잉이 아니다.
 - Restate/JetStream은 SDK 실행을 common에, 업무 단계·이벤트 내용·보존 정책을 앱에 두고 있다. 현재 역할 분리는 타당하다.
 - API integration 우선, 100% coverage, 기존 단건/다건 계약은 사용자 결정이다. 테스트 수만 세어 이를 완화하지 않는다.
-- Mongo `findWithPagination`은 transaction을 받으면서 같은 session에 Promise.all을 쓴다. 현재 API 호출부는 transaction을 전달하지 않는다. 드라이버의 동시 session 작업 계약과 비교해야 하는 후속 검토 후보이며 이번에 실행 결함으로 확정하지 않았다.
+- Mongo `findWithPagination`의 후속 검토를 완료했다. 드라이버가 같은 transaction 내 병렬 작업을 지원하지 않으므로 목록·개수를 순차 조회하도록 수정했다. 실제 미커밋 변경의 조회와 rollback을 검증하며 transaction이 없는 경로는 병렬 실행을 유지한다.
 - `HttpTestClient.sse()`의 준비 콜백과 API fixture의 전용 client·요청 순서는 [T1](tests.md#t1-상영-완료-sse-구독이-요청보다-늦게-시작한다)에서 반영됐다. 일반 SSE parser를 새로 구현하는 방향으로 확대하지 않았다.

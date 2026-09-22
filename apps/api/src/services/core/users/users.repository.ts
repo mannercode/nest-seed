@@ -107,7 +107,7 @@ export class UsersRepository extends CrudRepository<User> {
     private buildQuery(searchDto: SearchUsersPageDto, options: QueryBuilderOptions) {
         const { email, name } = searchDto
 
-        const builder = new QueryBuilder<User>()
+        const builder = new QueryBuilder()
         builder.addRegex('name', name ?? undefined)
         builder.addRegex('email', email ?? undefined)
 

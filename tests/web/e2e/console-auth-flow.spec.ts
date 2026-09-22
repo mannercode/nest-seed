@@ -103,7 +103,7 @@ test('관리자 refresh 직접 호출은 console BFF에서 404다', async ({ pag
     expect(result).toEqual({ exposesToken: false, status: 404 })
 })
 
-test('관리자 세션은 HttpOnly 쿠키로 보호 API에 전달되고 만료 시 회전한다', async ({
+test('관리자 세션은 HttpOnly 쿠키로 전달되고 access 인증 실패 시 갱신된다', async ({
     context,
     page
 }) => {
@@ -130,7 +130,7 @@ test('관리자 세션은 HttpOnly 쿠키로 보호 API에 전달되고 만료 �
         expect(header?.value).toContain(`Expires=${new Date(payload.exp * 1000).toUTCString()}`)
     }
 
-    await context.addCookies([{ ...accessCookie!, value: 'expired-access-token' }])
+    await context.addCookies([{ ...accessCookie!, value: 'invalid-access-token' }])
 
     const me = await page.evaluate(async () => {
         const response = await fetch('/api/admins/me')
@@ -141,7 +141,7 @@ test('관리자 세션은 HttpOnly 쿠키로 보호 API에 전달되고 만료 �
 
     const accessCookieAfter = await getSessionCookie(context, ACCESS_COOKIE)
     const refreshCookieAfter = await getSessionCookie(context, REFRESH_COOKIE)
-    expect(accessCookieAfter?.value).not.toBe('expired-access-token')
+    expect(accessCookieAfter?.value).not.toBe('invalid-access-token')
     expect(refreshCookieAfter?.value).not.toBe(refreshCookieBefore?.value)
 })
 
@@ -156,10 +156,7 @@ test('관리자 보호 응답은 브라우저와 중간 캐시에 저장되지 �
     expect(me).toEqual({ cacheControl: 'private, no-store', status: 200 })
 })
 
-test('만료 access 토큰으로 동시 요청해도 refresh를 한 번만 회전하고 세션을 유지한다', async ({
-    context,
-    page
-}) => {
+test('잘못된 access 토큰으로 동시 요청해도 갱신 후 세션을 유지한다', async ({ context, page }) => {
     await login(page)
 
     const accessCookie = await getSessionCookie(context, ACCESS_COOKIE)
@@ -167,7 +164,7 @@ test('만료 access 토큰으로 동시 요청해도 refresh를 한 번만 회�
     expect(accessCookie).toBeDefined()
     expect(refreshCookieBefore).toBeDefined()
 
-    await context.addCookies([{ ...accessCookie!, value: 'expired-access-token' }])
+    await context.addCookies([{ ...accessCookie!, value: 'invalid-access-token' }])
 
     const statuses = await page.evaluate(async () => {
         const responses = await Promise.all([fetch('/api/admins/me'), fetch('/api/admins/me')])
@@ -177,7 +174,7 @@ test('만료 access 토큰으로 동시 요청해도 refresh를 한 번만 회�
 
     const accessCookieAfter = await getSessionCookie(context, ACCESS_COOKIE)
     const refreshCookieAfter = await getSessionCookie(context, REFRESH_COOKIE)
-    expect(accessCookieAfter?.value).not.toBe('expired-access-token')
+    expect(accessCookieAfter?.value).not.toBe('invalid-access-token')
     expect(refreshCookieAfter?.value).not.toBe(refreshCookieBefore?.value)
     expect(await page.evaluate(async () => (await fetch('/api/admins/me')).status)).toBe(200)
 })

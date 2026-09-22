@@ -105,10 +105,7 @@ test('사용자 로그인 세션으로 보호 API와 홈을 요청한다', async
     await expect(page.getByText(email)).toBeVisible()
 })
 
-test('access 토큰이 만료되면 refresh 토큰을 회전하고 원 요청을 한 번 재시도한다', async ({
-    context,
-    page
-}) => {
+test('access 인증 실패 시 refresh 토큰을 회전해 보호 API를 요청한다', async ({ context, page }) => {
     const loginResponse = page.waitForResponse(
         (response) => new URL(response.url()).pathname === '/api/users/login'
     )
@@ -132,14 +129,14 @@ test('access 토큰이 만료되면 refresh 토큰을 회전하고 원 요청을
         expect(header?.value).toContain(`Expires=${new Date(payload.exp * 1000).toUTCString()}`)
     }
 
-    await context.addCookies([{ ...accessCookie!, value: 'expired-access-token' }])
+    await context.addCookies([{ ...accessCookie!, value: 'invalid-access-token' }])
 
     const status = await page.evaluate(async () => (await fetch('/api/users/me')).status)
     expect(status).toBe(200)
 
     const accessCookieAfter = await getSessionCookie(context, ACCESS_COOKIE)
     const refreshCookieAfter = await getSessionCookie(context, REFRESH_COOKIE)
-    expect(accessCookieAfter?.value).not.toBe('expired-access-token')
+    expect(accessCookieAfter?.value).not.toBe('invalid-access-token')
     expect(refreshCookieAfter?.value).not.toBe(refreshCookieBefore?.value)
 })
 

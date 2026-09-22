@@ -83,7 +83,8 @@ describe('S3ObjectService', () => {
 
                 const response = await fetch(presigned.url, { body: form, method: 'POST' })
 
-                expect(response.ok).toBe(false)
+                expect(response.status).toBe(403)
+                expect(await response.text()).toContain('<Code>AccessDenied</Code>')
             })
         })
 
@@ -122,7 +123,8 @@ describe('S3ObjectService', () => {
 
                 const response = await fetch(presigned.url, { body: form, method: 'POST' })
 
-                expect(response.ok).toBe(false)
+                expect(response.status).toBe(403)
+                expect(await response.text()).toContain('<Code>AccessDenied</Code>')
             })
         })
 
@@ -161,7 +163,8 @@ describe('S3ObjectService', () => {
 
                 const response = await fetch(presigned.url, { body: form, method: 'POST' })
 
-                expect(response.ok).toBe(false)
+                expect(response.status).toBe(400)
+                expect(await response.text()).toContain('<Code>BadDigest</Code>')
             })
         })
 
@@ -186,7 +189,8 @@ describe('S3ObjectService', () => {
 
                 const response = await fetch(presigned.url, { body: form, method: 'POST' })
 
-                expect(response.ok).toBe(false)
+                expect(response.status).toBe(403)
+                expect(await response.text()).toContain('<Code>AccessDenied</Code>')
             })
         })
 
@@ -231,7 +235,8 @@ describe('S3ObjectService', () => {
 
                 const response = await fetch(presigned.url, { body: form, method: 'POST' })
 
-                expect(response.ok).toBe(false)
+                expect(response.status).toBe(400)
+                expect(await response.text()).toContain('<Code>EntityTooLarge</Code>')
             })
         })
 
@@ -264,7 +269,8 @@ describe('S3ObjectService', () => {
 
                 const response = await fetch(presigned.url, { body: form, method: 'POST' })
 
-                expect(response.ok).toBe(false)
+                expect(response.status).toBe(400)
+                expect(await response.text()).toContain('<Code>EntityTooSmall</Code>')
             })
         })
     })
@@ -594,20 +600,44 @@ describe('S3ObjectService', () => {
     })
 
     describe('putObject', () => {
-        it('여러 번 호출하면 매번 서로 다른 키를 반환한다', async () => {
-            const object = {
-                contentType: 'text/plain',
-                data: Buffer.from('body'),
-                filename: 'file.txt'
-            }
-            const count = 200
+        it('같은 파일 이름도 서로 다른 키에 저장하고 각 내용과 헤더를 그대로 내려받는다', async () => {
+            const objects = [
+                {
+                    contentType: 'text/plain',
+                    data: Buffer.from('first upload 한글'),
+                    filename: '같은 이름.txt'
+                },
+                {
+                    contentType: 'application/octet-stream',
+                    data: testBuffer,
+                    filename: '같은 이름.txt'
+                }
+            ]
 
             const results = await Promise.all(
-                Array.from({ length: count }, () => fix.s3Service.putObject(object))
+                objects.map(async (object) => ({
+                    ...(await fix.s3Service.putObject(object)),
+                    object
+                }))
             )
             const keys = new Set(results.map((result) => result.key))
 
-            expect(keys.size).toBe(count)
+            expect(keys.size).toBe(objects.length)
+            for (const { key, object } of results) {
+                const downloadUrl = await fix.s3Service.presignDownloadUrl({
+                    expiresInSec: 60,
+                    key
+                })
+                const response = await fetch(downloadUrl)
+
+                expect(response.status).toBe(200)
+                expect(response.headers.get('content-type')).toBe(object.contentType)
+                expect(response.headers.get('content-length')).toBe(String(object.data.length))
+                expect(response.headers.get('content-disposition')).toBe(
+                    HttpUtil.buildContentDisposition(object.filename)
+                )
+                expect(Buffer.from(await response.arrayBuffer())).toEqual(object.data)
+            }
         })
     })
 

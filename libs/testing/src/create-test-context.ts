@@ -9,7 +9,7 @@ import type { Server } from 'http'
 import { Test, type TestingModule } from '@nestjs/testing'
 import { isDebuggingEnabled } from './utils.js'
 
-export type ModuleMetadataEx = ModuleMetadata & {
+export type TestModuleOptions = ModuleMetadata & {
     configureApp?: (app: INestApplication<Server>) => Promise<void>
     ignoreGuards?: Type<CanActivate>[]
     overrideProviders?: { original: string | symbol | Type; replacement: any }[]
@@ -32,7 +32,7 @@ export async function createTestContext({
     ignoreGuards,
     overrideProviders,
     ...metadata
-}: ModuleMetadataEx): Promise<TestContext> {
+}: TestModuleOptions): Promise<TestContext> {
     const builder = Test.createTestingModule(metadata)
 
     ignoreGuards?.forEach((guard) => {

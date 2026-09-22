@@ -1,7 +1,7 @@
 /**
- * 같은 refresh token을 여러 복제본에서 동시에 회전시킨다.
+ * 복제본 스택에 같은 refresh token의 회전 요청을 동시에 보낸다.
  * 정확히 하나만 성공하고 나머지는 이미 교체된 토큰이어야 하며,
- * 승자의 새 refresh token은 다시 회전돼 로그인 세션가 폐기되지 않았음을 증명해야 한다.
+ * 승자의 새 refresh token으로 다시 회전해 현재 로그인 세션을 계속 사용할 수 있는지 확인한다.
  */
 
 const { test } = require('node:test')
@@ -98,11 +98,12 @@ async function runInner(iteration) {
             throw new Error(
                 `iter ${iteration} group ${groupIdx}: winner token followup expected 200, ` +
                     `got status=${followup.status} replica=${followup.replicaId} ` +
-                    `body=${JSON.stringify(followup.body).slice(0, 120)} — token family was revoked`
+                    `body=${JSON.stringify(followup.body).slice(0, 120)} — current login session could not be refreshed`
             )
         }
     }
 
+    // 복제본 분산은 충돌 키별이 아니라 이번 회차 전체의 응답에서 확인한다.
     if (replicaSet.size < 2) {
         throw new Error(
             `iter ${iteration}: only 1 replica served (got ${[...replicaSet]}) — cross-replica unverified`
@@ -112,7 +113,7 @@ async function runInner(iteration) {
     return { groups: USER_GROUPS, total: results.length, replicas: replicaSet.size }
 }
 
-test('같은 refresh token의 동시 회전은 하나만 성공하고 승자 token family를 유지한다', async () => {
+test('같은 refresh token의 동시 회전은 하나만 성공하고 현재 로그인 세션을 유지한다', async () => {
     console.log(
         `[race] server=${SERVER_URL} groups=${USER_GROUPS} clients/user=${CLIENTS_PER_USER} inner=${INNER_ITERATIONS}`
     )

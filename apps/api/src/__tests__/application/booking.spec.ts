@@ -202,15 +202,7 @@ describe('BookingService', () => {
                 ticketIds = pickIds(resources.tickets.slice(0, 2))
             })
 
-            it('204를 반환한다', async () => {
-                await fix.httpClient
-                    .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body({ ticketIds })
-                    .noContent()
-            })
-
-            it('보유 상태가 반영된다', async () => {
+            it('204를 반환하고 보유 상태를 반영한다', async () => {
                 await fix.httpClient
                     .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
                     .headers({ Authorization: `Bearer ${accessToken}` })

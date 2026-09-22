@@ -1,4 +1,4 @@
-// 같은 티켓 쌍을 여러 복제본에서 동시에 선점해 그룹마다 한 건만 204가 되는지 검증한다.
+// 복제본 스택에 같은 티켓 쌍의 선점을 동시에 요청해 그룹마다 한 건만 204가 되는지 검증한다.
 
 const { test } = require('node:test')
 const {
@@ -80,6 +80,7 @@ async function runInner(iteration, movieId, theaterId, tokens, startTimeOffsetMs
         }
     }
 
+    // 복제본 분산은 충돌 키별이 아니라 이번 회차 전체의 응답에서 확인한다.
     if (replicaSet.size < 2) {
         throw new Error(
             `iter ${iteration}: only 1 replica (got ${[...replicaSet]}) — cross-replica unverified`
@@ -89,7 +90,7 @@ async function runInner(iteration, movieId, theaterId, tokens, startTimeOffsetMs
     return { total: results.length, replicas: replicaSet.size }
 }
 
-test('같은 티켓 묶음의 동시 선점은 여러 복제본에서도 한 사용자만 성공한다', async () => {
+test('같은 티켓 묶음의 동시 선점은 한 사용자만 성공한다', async () => {
     console.log(
         `[hold] server=${SERVER_URL} groups=${TICKET_GROUPS} users/group=${USERS_PER_GROUP} inner=${INNER_ITERATIONS}`
     )

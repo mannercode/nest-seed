@@ -1,4 +1,4 @@
-// 같은 이메일 가입을 여러 복제본에 동시에 보내 정확히 한 건만 201이 되는지 검증한다.
+// 복제본 스택에 같은 이메일의 가입을 동시에 보내 정확히 한 건만 201이 되는지 검증한다.
 
 const { test } = require('node:test')
 const { readPositiveInt, request, secureRandomHex, SERVER_URL } = require('./race-common')
@@ -58,6 +58,7 @@ async function runInner(iteration) {
         }
     }
 
+    // 복제본 분산은 충돌 키별이 아니라 이번 회차 전체의 응답에서 확인한다.
     if (replicaSet.size < 2) {
         throw new Error(
             `iter ${iteration}: only 1 replica served (got ${[...replicaSet]}) — cross-replica unverified`
@@ -67,7 +68,7 @@ async function runInner(iteration) {
     return { groups: EMAIL_GROUPS, total: results.length, replicas: replicaSet.size }
 }
 
-test('같은 이메일의 동시 가입은 여러 복제본에서도 정확히 하나만 성공한다', async () => {
+test('같은 이메일의 동시 가입은 정확히 하나만 성공한다', async () => {
     console.log(
         `[race] server=${SERVER_URL} groups=${EMAIL_GROUPS} clients/group=${CLIENTS_PER_GROUP} inner=${INNER_ITERATIONS}`
     )

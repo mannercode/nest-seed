@@ -210,7 +210,7 @@ describe('TicketHoldingService', () => {
             ).toBe(true)
         })
 
-        it('일부 티켓만 구매 claim하면 나머지 hold를 원 사용자 목록과 TTL에 유지한다', async () => {
+        it('일부 티켓만 구매 claim해도 나머지는 원 사용자가 선점한 상태로 유지한다', async () => {
             const showtimeId = oid(0x10)
             const userId = oid(0xc1)
             const otherUserId = oid(0xc2)

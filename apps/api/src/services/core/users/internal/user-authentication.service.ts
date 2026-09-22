@@ -32,7 +32,7 @@ export class UserAuthenticationService {
     }
 
     async revokeAllForUser(userId: string): Promise<void> {
-        await this.jwtAuthService.revokeAllForUser(userId)
+        await this.jwtAuthService.revokeAllSessions(userId)
     }
 
     async revokeRefreshToken(refreshToken: string): Promise<void> {

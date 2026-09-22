@@ -40,7 +40,9 @@ claimId·claimUntil·5분 lease는 같은 요청의 제출 담당자를 하나�
 
 같은 본문의 동시 접수도 동일 sagaId로 제출한 뒤 202를 받게 허용한다면 claim·만료·release 분기를 줄일 수 있다. **현재 접수 중 409를 유지한다면 lease도 설명 가능한 구현이다.** 단순화하려고 lease만 제거하거나 기간을 근거 없이 줄이지 않는다. accepted 기록은 유지해 과거 키 재요청의 불필요한 재제출도 막아야 한다. API 계약 선택 뒤에 구현할 후보다.
 
-### A4. 작은 코드 정리는 행동을 바꿀 때 함께 한다
+### A4. 작은 코드 정리
+
+상태: 반영 완료. 단순 DTO 매핑 6곳은 단건 변환을 다건에서 재사용하고 추천 정렬의 중복 분기를 제거했다. Movies의 일괄 asset 조회는 유지한다. 상영 응답 조합은 `toBookingShowtimes`, 상영 workflow client 파일은 클래스명에 맞췄다. 나머지 이름은 현재 의미가 명확해 개명하지 않으며 도메인 계산·역할별 인증 위임의 소유 경계도 유지한다.
 
 - 여러 서비스의 `toDto`가 배열 하나를 만들어 `toDtos`를 호출한 뒤 `ensure`한다. 단순 `mapDocToDto`인 Users·Theaters·Payments·WatchRecords 등은 단건 변환을 직접 쓰고 다건이 이를 호출하면 읽기 쉽다. Movies는 asset URL을 묶어서 조회하므로 같은 방식으로 바꾸면 다건 조회 최적화를 잃을 수 있다. 일괄 변환하지 않는다.
 - [MovieRecommender](../../apps/api/src/services/application/recommendation/domain/movie-recommender.ts)의 관람 이력 없는 분기에서는 genreScore가 모두 0이다. 같은 `genreScore, releaseDate` 정렬로 결과가 같아 분기 하나를 줄일 수 있다. 별도 전략 클래스나 추천 옵션을 만들지 않는다.

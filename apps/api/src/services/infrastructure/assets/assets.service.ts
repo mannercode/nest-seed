@@ -178,16 +178,11 @@ export class AssetsService {
     }
 
     private toDto(asset: Asset): AssetDto {
-        return ensure(this.toDtos([asset])[0])
+        return mapDocToDto({ ...asset, download: null, owner: this.toOwner(asset) }, AssetSchema)
     }
 
     private toDtos(assets: Asset[]) {
-        return assets.map((asset) => {
-            return mapDocToDto(
-                { ...asset, download: null, owner: this.toOwner(asset) },
-                AssetSchema
-            )
-        })
+        return assets.map((asset) => this.toDto(asset))
     }
 
     private toOwner(asset: Asset): { entityId: string; service: string } | null {

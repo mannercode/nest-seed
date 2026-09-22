@@ -1,11 +1,6 @@
 import { createHash } from 'node:crypto'
 import { type NextRequest, NextResponse } from 'next/server'
-import {
-    hasSameOrigin,
-    resolveForwardedClientIp,
-    retryWithRotatedSession,
-    type AuthTokens
-} from '@/lib/bff-proxy'
+import { hasSameOrigin, resolveForwardedClientIp, type AuthTokens } from '@/lib/bff-proxy'
 
 const ACCESS_COOKIE = 'nest-seed-user-access'
 const REFRESH_COOKIE = 'nest-seed-user-refresh'
@@ -83,7 +78,12 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<NextR
         return response
     }
 
-    const upstream = await callApi(request, pathname, accessToken, body)
+    let upstream: Response
+    try {
+        upstream = await callApi(request, pathname, accessToken, body)
+    } catch {
+        return jsonResponse({ message: 'Upstream service unavailable' }, 502)
+    }
 
     if (isLogin && upstream.ok) {
         const tokens = await parseTokens(upstream)
@@ -99,16 +99,15 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<NextR
         const refreshed = await refreshAuthTokens(authPath, refreshToken)
         if (refreshed.tokens) {
             const tokens = refreshed.tokens
-            return retryWithRotatedSession({
-                createUnavailableResponse: () =>
-                    jsonResponse({ message: 'Upstream service unavailable' }, 502),
-                retry: async () => {
-                    const retried = await callApi(request, pathname, tokens.accessToken, body)
-                    return copyResponse(retried)
-                },
-                setAuthTokens: setAuthCookies,
-                tokens
-            })
+            let response: NextResponse
+            try {
+                const retried = await callApi(request, pathname, tokens.accessToken, body)
+                response = await copyResponse(retried)
+            } catch {
+                response = jsonResponse({ message: 'Upstream service unavailable' }, 502)
+            }
+            setAuthCookies(response, tokens)
+            return response
         }
 
         // 다른 BFF 인스턴스가 같은 토큰을 막 회전한 경우에는 winner가 내려 준 쿠키를

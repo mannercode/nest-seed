@@ -471,6 +471,53 @@ describe('CrudRepository', () => {
     })
 
     describe('findWithPagination', () => {
+        it('트랜잭션의 목록과 개수를 순차 조회하고 미커밋 변경도 함께 반영한다', async () => {
+            const committed = await fix.soft.create('committed')
+            const find = fix.soft.collection.find.bind(fix.soft.collection)
+            const countDocuments = fix.soft.collection.countDocuments.bind(fix.soft.collection)
+            let itemsRead = false
+
+            vi.spyOn(fix.soft.collection, 'find').mockImplementation((...args) => {
+                const cursor = find(...args)
+                const toArray = cursor.toArray.bind(cursor)
+                vi.spyOn(cursor, 'toArray').mockImplementation(async () => {
+                    const items = await toArray()
+                    itemsRead = true
+                    return items
+                })
+                return cursor
+            })
+            const count = vi
+                .spyOn(fix.soft.collection, 'countDocuments')
+                .mockImplementation((...args) => {
+                    expect(itemsRead).toBe(true)
+                    return countDocuments(...args)
+                })
+
+            await expect(
+                fix.soft.withTransaction(async (transaction) => {
+                    const created = await fix.soft.create('uncommitted', { transaction })
+                    await fix.soft.delete({ id: committed.id, transaction })
+
+                    const result = await fix.soft.findWithPagination({
+                        pagination: {},
+                        transaction
+                    })
+
+                    expect(result).toEqual({ items: [created], page: 1, size: 3, total: 1 })
+                    expect(count).toHaveBeenCalledTimes(1)
+                    throw new Error('rollback pagination changes')
+                })
+            ).rejects.toThrow('rollback pagination changes')
+
+            expect(await fix.soft.findWithPagination({ pagination: {} })).toEqual({
+                items: [committed],
+                page: 1,
+                size: 3,
+                total: 1
+            })
+        })
+
         it('page, size와 정렬 구간을 반환한다', async () => {
             await fix.soft.createMany(['d', 'a', 'c', 'b', 'e'])
 

@@ -172,13 +172,7 @@ describe('MoviesService', () => {
     })
 
     describe('DELETE /movies/:id', () => {
-        it('영화가 존재하면 204를 반환한다', async () => {
-            const movie = await createMovie(fix)
-
-            await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
-        })
-
-        it('삭제 후에는 조회 시 404를 반환한다', async () => {
+        it('204를 반환하고 삭제 후 조회에는 404를 반환한다', async () => {
             const movie = await createMovie(fix)
 
             await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
@@ -208,11 +202,7 @@ describe('MoviesService', () => {
                 movie = ensure((await moviesService.getMany([createdMovie.id]))[0])
             })
 
-            it('204를 반환한다', async () => {
-                await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
-            })
-
-            it('이미지 URL이 무효화된다', async () => {
+            it('204를 반환하고 이미지 URL을 무효화한다', async () => {
                 await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
 
                 const response = await fetch(ensure(movie.imageUrls[0]))

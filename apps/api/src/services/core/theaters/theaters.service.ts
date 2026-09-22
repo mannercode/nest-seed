@@ -1,4 +1,4 @@
-import { type TransactionContext, ensure, mapDocToDto } from '@mannercode/common'
+import { type TransactionContext, mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import {
     CreateTheaterDto,
@@ -55,10 +55,10 @@ export class TheatersService {
     }
 
     private toDto(theater: Theater) {
-        return ensure(this.toDtos([theater])[0])
+        return mapDocToDto(theater, TheaterSchema)
     }
 
     private toDtos(theaters: Theater[]) {
-        return theaters.map((theater) => mapDocToDto(theater, TheaterSchema))
+        return theaters.map((theater) => this.toDto(theater))
     }
 }

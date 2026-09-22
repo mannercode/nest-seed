@@ -2,7 +2,7 @@ import { LatLong, omit, Require, sortBy } from '@mannercode/common'
 import type { ShowtimeDto, TheaterDto, TicketSalesForShowtimeDto } from '#core'
 import type { BookingShowtimeDto } from './dtos/index.js'
 
-export function generateShowtimesForBooking(
+export function toBookingShowtimes(
     showtimes: ShowtimeDto[],
     ticketSalesForShowtimes: TicketSalesForShowtimeDto[]
 ): BookingShowtimeDto[] {

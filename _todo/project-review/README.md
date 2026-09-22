@@ -1,24 +1,29 @@
 # 시드 프로젝트 전체 검토
 
-최초 검토의 기준 코드는 main `1510689e`다. 하위 보고서의 파일 수·행 번호·검증 기록은 당시 상태이며, 현재 반영 상태와 선택적 후속 작업은 아래 목록을 따른다. 가이드 개정안은 루트 README와 `docs/`에 반영됐다.
+최초 검토의 기준 코드는 main `1510689e`다. 하위 보고서의 파일 수·행 번호·검증 기록은 당시 상태이며, 현재 반영 상태는 아래 목록을 따른다. 가이드 개정안은 루트 README와 `docs/`에 반영됐다.
 
-## 먼저 판단할 것
+## 남은 작업 처리 상태
 
-1. **기존 동작·검증의 오류를 고친다.** 테스트가 5xx를 무시하거나 완료를 sleep으로 추측하는 부분, 정리 실패의 exit 0, 누락된 lint, common 유틸의 잘못된 결과가 우선이다. 새로운 기능·테스트 행렬·보안 장치를 만들 필요가 없다.
-2. **실제 중복 상태·불필요한 실행을 줄인다.** 읽지 않는 구매 알림 발행 상태, 상영 완료 뒤 중복 polling, UUID 확인을 위한 실제 S3 200회 업로드가 구체적인 후보다.
-3. **계약을 바꾸는 선택은 사용자 결정에 따른다.** 영화 assetIds 직접 입력과 구매 알림 DB 상태는 제거하고, 상영 접수 중 409 응답과 lease는 유지하기로 결정했다.
+사용자가 남은 항목의 완료를 요청해 선택적 후보까지 다시 검토했다. 남은 코드·문서 작업은 없으며 새 이미지·의존성을 포함한 로컬 AtoZ의 모든 검증 항목을 통과했다. 아래의 유지 결정은 미룬 작업이 아니라 기존 계약과 실제 검증 역할을 확인한 결과다.
 
-모든 발견이 필수 작업은 아니다. 문서에서 실제 검증보다 강하게 주장한 부분은 표현을 바로잡으면 된다. 이름·위치 정리, dependency patch 갱신, 데모의 예외 응답 개선은 현재 계약 결함과 우선순위를 구분한다.
+| 영역            | 처리 결과                                                                                                                |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| 실행 환경 R1–R6 | lint·종료 코드·env 안내 완료. 완료 뒤 중복 polling과 미사용 hook 제거, free-port 진단 보존                               |
+| common 결함     | 기존 유틸 6개 수정 유지. Mongo transaction pagination 순차 조회·미커밋 변경/rollback 검증, S3 거부 status·오류 코드 단언 |
+| API A1–A4       | assetIds 직접 입력·구매 알림 DB 상태 제거, 접수 409와 lease 유지. 단순 DTO 매핑·추천 분기·혼동되는 이름 정리             |
+| 검증 비용·표현  | S3 200회 업로드와 10 MiB fixture 축소, 동일 행위의 중복 테스트 병합. race·알림·인증 제목을 실제 관측 범위로 수정         |
+| 타입·배치       | 무효 제네릭·중복 응답 타입 제거, 매핑 helper 이동, 데이터 class·공통 API·spec 이름 정리                                  |
+| 데모            | 단일 사용 콜백 helper 제거. 최초 upstream 실패도 기존 502 JSON 계약 적용, 회전 쿠키 보존                                 |
+| 버전·재현성     | Node·pnpm bootstrap·lychee 고정 및 같은 계열 SDK/서버 갱신. TypeScript의 명시적 고정은 유지                              |
+| 문서            | SoLA·네이밍·controller 모듈 순환·운영 경계와 새로 확인한 보장을 현행 가이드에 반영                                       |
 
-## 선택적 후속 작업
+## 검토 후 유지한 항목
 
-확인된 오류와 API A1–A3의 결정·반영은 완료했다. 아래는 미해결 계약이 아닌 선택적 단순화·정리 후보이며 이번 변경에는 포함하지 않는다.
-
-| 우선순위 | 내용                                                      | 근거와 최소 범위                                                                    |
-| -------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| 단순화   | API-docs 중복 polling·S3 테스트 비용·미사용 helper 확장점 | [실행 환경 R4·R5](runtime.md), [libs 테스트](libs-and-demos.md). 같은 보장은 유지   |
-| 선택     | bootstrap/image 고정·같은 계열 patch 갱신                 | [실행 환경 버전 검토](runtime.md). 전체 도구 교체·TypeScript 일괄 major 갱신은 제외 |
-| 선택     | 지역 이름·파일 위치·작은 중복·데모 helper                 | 각 보고서의 선택 항목. 일괄 개명·새 공통화는 하지 않음                              |
+- Redis scope·pattern·최소 길이는 공유 자원의 정리 범위 계약이다. factory와 공개 cleanup의 검사는 서로 다른 진입점을 보호한다.
+- Testcontainers Mongo 최신 12.1.0도 digest를 tag로 오인해 구형 shell을 선택한다. 현재 digest 예외를 유지하고 별도 container framework를 만들지 않는다.
+- Movies의 일괄 asset 조회, 서로 다른 필드를 수정하는 테스트, NATS 기본 모듈 등록·주입 데코레이터 검증은 다른 경로가 같은 보장을 대신하지 않는다.
+- RequestValidationPipe는 pipe 옆 HTTP fixture와 함께 두고 검증 성격을 제목으로 밝힌다. 순수 계산·workflow 분류·알림 lifecycle·데모 BFF 정책의 독립 검증은 유지한다.
+- peer dependency 계약, TSC·Rspack·Vitest의 다른 실행 목적, 역할별 인증 위임과 앱 도메인 계산은 합치지 않는다. 뜻이 명확한 이름과 짧은 지역 변수의 일괄 개명도 하지 않는다.
 
 ## 최초 검토 범위
 
@@ -47,7 +52,7 @@ API·libs 중심, 기존 common 유틸, 독립 scripts의 SDK 사용, 5분 액�
 
 [문서 검토 6개 항목](../docs-reference-review.md)은 완료됐다. SoLA의 계층 구분·컨트롤러 분리와 서비스 단수·복수·DTO/Schema 네이밍도 현행 가이드에 반영됐다.
 
-## 완료된 검증 보완
+## 이전 변경의 완료된 검증 보완
 
 - [R1·R2](runtime.md): 누락된 설정·개발 도구의 lint를 연결하고, 실행기 정리 실패가 성공으로 끝나지 않도록 종료 코드를 보존한다.
 - [T1–T3](tests.md): SSE 준비 후 요청, 성공·생성 개수·동시 finalize 응답 단언, 실패 시 stream·worker·barrier 정리를 반영했다. cron 정리는 작업 완료를 직접 기다린다.
@@ -56,13 +61,25 @@ API·libs 중심, 기존 common 유틸, 독립 scripts의 SDK 사용, 5분 액�
 - [A1–A3](api.md): 영화 이미지는 업로드·finalize로만 연결하고, 구매 알림의 발행 복구는 Restate가 맡는다. 상영 접수 중 409와 lease는 유지한다. 구매 알림의 기존 DB 필드를 일괄 삭제하지 않으며, 진행 중인 이전 journal은 기존 revision에서 완료해야 한다.
 - README의 삭제된 보관 문서 링크 두 개가 [AtoZ 실패](https://github.com/mannercode/nest-seed/actions/runs/35762228653)의 원인이었다. 링크를 수정한 뒤 현행 가이드와 `_todo` 링크 검사가 모두 통과했다.
 
-인프라 초기화를 제외한 AtoZ 본 검증과 마지막 Temporal 보완 후 API·common 재검증을 로컬에서 통과했다. 최종 API 404개·common 547개는 커버리지 100%를 유지했고, testing 29개·브라우저 E2E 18개·API 문서 76개도 통과했다. GitHub Actions에서 수정본을 다시 실행한 결과는 아니다.
+인프라 초기화를 제외한 AtoZ 본 검증과 마지막 Temporal 보완 후 API·common 재검증을 로컬에서 통과했다. 최종 API 404개·common 547개는 커버리지 100%를 유지했고, testing 29개·브라우저 E2E 18개·API 문서 76개도 통과했다. 이후 [PR #200 AtoZ](https://github.com/mannercode/nest-seed/actions/runs/35788111390)와 merge 뒤 [main AtoZ](https://github.com/mannercode/nest-seed/actions/runs/35788897121)도 통과했다. 이 결과는 아래 추가 정리 전 커밋의 검증이다.
 
 benchmark는 `DURATION_MS=35000`으로 7개 부하 조건을 5분 27초 동안 실행해 모두 오류율 0을 확인했다. 기존 액세스 TTL 5분을 넘긴 실행이며, 인증 갱신 실패가 전체 실행을 중단하고 업무 401은 재시도하지 않는 경로도 실제 스크립트를 사용한 격리 검증으로 확인했다.
 
 변경한 race 5개(`ticket-holding-race`, `purchase-overlap-race`, `purchase-double-spend`, `showtime-overlap-race`, `sse-fanout-race`)는 4개 복제본에서 각각 `INNER_ITERATIONS=2`로 통과했다. 그룹·동시 요청 수는 기본값을 유지했으며 SSE는 회차마다 100개 client × 10개 saga의 이벤트 1,000개를 전달했다. 기본 반복 횟수와 전체 race 묶음을 실행한 결과는 아니다.
 
 이전 검증에서 `replica-chaos`는 기본 시간·부하·오류율 기준으로 통과했고, 복구 후 복제본 4개 응답과 전체 오류율 0.056%를 관측했다.
+
+## 이번 정리의 검증
+
+별도 project·network·volume에서 Node 26.10.0, pnpm 12.4.2와 갱신한 이미지로 검증했다. 기존 개발 인프라 데이터는 초기화하지 않았다.
+
+- frozen install, 인프라 초기화와 Restate SIGKILL journal 복구, 모든 workspace의 AtoZ 항목, production 이미지 빌드, 루트 lint·문서 링크·shell 검사가 통과했다.
+- API 390개·common 548개가 통과했고 statements·branches·functions·lines 모두 100%다. testing 29개, 브라우저 E2E 18개, API 복제본 4개의 API 문서 76개도 통과했다.
+- 동일 행위의 중복 API 시나리오 14개를 합치면서 응답·저장 단언을 유지했다. Mongo transaction pagination 검증은 기존 spec에 추가했다. 새 테스트 파일·의존성 종류·보안 정책은 추가하지 않았다.
+- 갱신된 Nest의 peer 해석을 정리하고 루트 테스트 HTTP adapter도 API 버전과 맞췄다. root·API·common·testing이 같은 Nest core 인스턴스를 읽는 것을 확인했다.
+- 임시 runner의 DNS 별칭·Docker 소켓 설정을 바로잡은 뒤 실패 단계부터 다시 실행했다. 최초 동시 설치의 종료 대기는 원인을 확정하지 못했으며 이후 단독 설치·frozen install은 정상 종료했다.
+
+이번 추가 변경은 아직 push하지 않았으므로 이 결과는 로컬 검증이다. 반복 CI·전체 race·benchmark를 이번 버전 조합에서 새로 실행했다고 주장하지 않는다.
 
 ## 최초 검토 당시의 검증
 

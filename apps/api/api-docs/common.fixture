@@ -155,59 +155,46 @@ wait_for_showtime_creation() {
 	exit 2
 }
 
-wait_for_showtime() {
-	local attempts=30
-	local attempt
+get_created_showtime() {
 	local showtimeId
 
-	for ((attempt = 1; attempt <= attempts; attempt++)); do
-		SETUP POST /showtime-creation/showtimes/search \
-			-H 'Content-Type: application/json' \
-			-d '{ "theaterIds": ["'${THEATER_ID}'"] }'
+	SETUP POST /showtime-creation/showtimes/search \
+		-H 'Content-Type: application/json' \
+		-d '{ "theaterIds": ["'${THEATER_ID}'"] }'
 
-		showtimeId=$(
-			echo "${BODY}" |
-				jq -r --arg movieId "${MOVIE_ID}" --arg theaterId "${THEATER_ID}" \
-					'.[] | select(.movieId == $movieId and .theaterId == $theaterId) | .id' |
-				head -n 1
-		)
+	showtimeId=$(
+		echo "${BODY}" |
+			jq -r --arg movieId "${MOVIE_ID}" --arg theaterId "${THEATER_ID}" \
+				'[.[] | select(.movieId == $movieId and .theaterId == $theaterId)] | first | .id'
+	)
 
-		if [[ -n "${showtimeId}" && "${showtimeId}" != "null" ]]; then
-			SHOWTIME_ID="${showtimeId}"
-			return 0
-		fi
+	if [[ -n "${showtimeId}" && "${showtimeId}" != "null" ]]; then
+		SHOWTIME_ID="${showtimeId}"
+		return 0
+	fi
 
-		sleep 1
-	done
-
-	LOG_LINE "# 준비 실패: ${attempts}초 안에 상영 시간이 생성되지 않았다"
+	LOG_LINE "# 준비 실패: 상영 생성 성공 후 상영 시간이 조회되지 않았다"
 	LOG_LINE ""
-	echo "[FAIL] SETUP wait_for_showtime: ${attempts}초 동안 기다렸지만 상영 시간이 생성되지 않았다 (movieId=${MOVIE_ID}, theaterId=${THEATER_ID})"
+	echo "[FAIL] SETUP get_created_showtime: 생성된 상영 시간이 없다 (movieId=${MOVIE_ID}, theaterId=${THEATER_ID})"
 	exit 2
 }
 
-wait_for_tickets() {
-	local attempts=30
-	local attempt
+get_created_tickets() {
 	local ticketCount
 
-	for ((attempt = 1; attempt <= attempts; attempt++)); do
-		SETUP GET /booking/showtimes/${SHOWTIME_ID}/tickets
+	SETUP GET /booking/showtimes/${SHOWTIME_ID}/tickets
 
-		ticketCount=$(echo "${BODY}" | jq -r 'length')
+	ticketCount=$(echo "${BODY}" | jq -r 'length')
 
-		if [[ "${ticketCount}" -ge 2 ]]; then
-			TICKET_ID_1=$(echo "${BODY}" | jq -r '.[0].id')
-			TICKET_ID_2=$(echo "${BODY}" | jq -r '.[1].id')
-			return 0
-		fi
+	if [[ "${ticketCount}" -ge 2 ]]; then
+		TICKET_ID_1=$(echo "${BODY}" | jq -r '.[0].id')
+		TICKET_ID_2=$(echo "${BODY}" | jq -r '.[1].id')
+		return 0
+	fi
 
-		sleep 1
-	done
-
-	LOG_LINE "# 준비 실패: ${attempts}초 안에 티켓이 생성되지 않았다"
+	LOG_LINE "# 준비 실패: 상영 생성 성공 후 필요한 티켓이 조회되지 않았다"
 	LOG_LINE ""
-	echo "[FAIL] SETUP wait_for_tickets: ${attempts}초 동안 기다렸지만 티켓이 생성되지 않았다 (showtimeId=${SHOWTIME_ID}, ticketCount=${ticketCount})"
+	echo "[FAIL] SETUP get_created_tickets: 생성된 티켓이 부족하다 (showtimeId=${SHOWTIME_ID}, ticketCount=${ticketCount})"
 	exit 2
 }
 
@@ -217,7 +204,7 @@ setup_showtime_resources() {
 	create_theater
 	request_showtime_creation
 	wait_for_showtime_creation
-	wait_for_showtime
+	get_created_showtime
 }
 
 upload_presigned_post() {
