@@ -31,15 +31,18 @@ describe('Env', () => {
             expect(Env.getNumber('TEST_NUMBER')).toBe(123)
         })
 
-        it('숫자가 아닌 값이면 예외를 던진다', () => {
-            process.env.TEST_NUMBER = 'abc'
-            expect(() => Env.getNumber('TEST_NUMBER')).toThrow(
-                expect.objectContaining({
-                    status: 500,
-                    cause: 'Environment variable TEST_NUMBER must be a valid number'
-                })
-            )
-        })
+        it.each(['abc', ' ', '\t', 'NaN', 'Infinity'])(
+            '숫자가 아닌 %j이면 예외를 던진다',
+            (value) => {
+                process.env.TEST_NUMBER = value
+                expect(() => Env.getNumber('TEST_NUMBER')).toThrow(
+                    expect.objectContaining({
+                        status: 500,
+                        cause: 'Environment variable TEST_NUMBER must be a valid number'
+                    })
+                )
+            }
+        )
 
         it('숫자로 시작하지만 뒤가 다르면 예외를 던진다', () => {
             process.env.TEST_NUMBER = '123abc'
@@ -79,16 +82,25 @@ describe('Env', () => {
             expect(Env.getBoolean('TEST_BOOLEAN')).toBe(true)
         })
 
-        it('"true"가 아닌 비어 있지 않은 값은 false로 처리한다', () => {
-            process.env.TEST_BOOLEAN = '1'
+        it('대소문자와 관계없이 false를 읽는다', () => {
+            process.env.TEST_BOOLEAN = 'false'
             expect(Env.getBoolean('TEST_BOOLEAN')).toBe(false)
-
-            process.env.TEST_BOOLEAN = 'yes'
-            expect(Env.getBoolean('TEST_BOOLEAN')).toBe(false)
-
-            process.env.TEST_BOOLEAN = 'truthy'
+            process.env.TEST_BOOLEAN = 'FALSE'
             expect(Env.getBoolean('TEST_BOOLEAN')).toBe(false)
         })
+
+        it.each(['1', 'yes', 'tru', 'truthy', ' '])(
+            '불리언이 아닌 %j이면 예외를 던진다',
+            (value) => {
+                process.env.TEST_BOOLEAN = value
+                expect(() => Env.getBoolean('TEST_BOOLEAN')).toThrow(
+                    expect.objectContaining({
+                        status: 500,
+                        cause: 'Environment variable TEST_BOOLEAN must be true or false'
+                    })
+                )
+            }
+        )
 
         it('빈 문자열로 설정하면 미정의로 취급해 예외를 던진다', () => {
             process.env.TEST_BOOLEAN = ''

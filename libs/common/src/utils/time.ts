@@ -4,14 +4,14 @@ import { ensure } from './validator.js'
 export class TimeUtil {
     /**
      * 밀리초 값을 `1d2h3m4s5ms`처럼 큰 단위부터 이어 붙인 문자열로 변환한다.
-     * 0은 `0ms`, 음수는 전체 결과 앞에 `-`를 붙여 표현한다.
+     * 0은 `0ms`, 음수는 toMs가 같은 값으로 읽도록 각 항목에 `-`를 붙인다.
      */
     static fromMs(milliseconds: number): string {
         if (milliseconds === 0) {
             return '0ms'
         }
 
-        const isNegative = milliseconds < 0
+        const sign = milliseconds < 0 ? '-' : ''
         let remainingMs = Math.abs(milliseconds)
 
         const days = Math.floor(remainingMs / (24 * 60 * 60 * 1000))
@@ -24,13 +24,13 @@ export class TimeUtil {
         const millisecondsRemainder = remainingMs % 1000
 
         let result = ''
-        if (days > 0) result += `${days}d`
-        if (hours > 0) result += `${hours}h`
-        if (minutes > 0) result += `${minutes}m`
-        if (seconds > 0) result += `${seconds}s`
-        if (millisecondsRemainder > 0) result += `${millisecondsRemainder}ms`
+        if (days > 0) result += `${sign}${days}d`
+        if (hours > 0) result += `${sign}${hours}h`
+        if (minutes > 0) result += `${sign}${minutes}m`
+        if (seconds > 0) result += `${sign}${seconds}s`
+        if (millisecondsRemainder > 0) result += `${sign}${millisecondsRemainder}ms`
 
-        return (isNegative ? '-' : '') + result.trim()
+        return result
     }
 
     /**

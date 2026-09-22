@@ -5,7 +5,6 @@ import { buildCreateAssetDto, uploadAsset } from './assets.utils.js'
 
 export function buildCreateMovieDto(overrides: Partial<UpsertMovieDto> = {}): UpsertMovieDto {
     return {
-        assetIds: [] as string[],
         director: 'Quentin Tarantino',
         durationInSeconds: 90 * 60,
         genres: [MovieGenre.Action],

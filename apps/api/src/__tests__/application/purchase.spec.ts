@@ -4,7 +4,6 @@ import { randomUUID } from 'node:crypto'
 import { PurchaseEvents } from '#application'
 import {
     PurchaseRecordStatus,
-    PurchaseEventStatus,
     TicketStatus,
     ShowtimesService,
     type PurchaseRecordDto,
@@ -668,14 +667,9 @@ describe('PurchaseService', () => {
                     .mockImplementationOnce(async (event) => {
                         retryEntered.resolve()
                         await release.promise
-                        return publish(event)
+                        await publish(event)
+                        throw new Error('publish acknowledgement lost')
                     })
-                const records = fix.module.get(PurchaseRecordsService)
-                const markPublished = records.markEventPublished.bind(records)
-                vi.spyOn(records, 'markEventPublished').mockImplementationOnce(async (id) => {
-                    await markPublished(id)
-                    throw new Error('delivery acknowledgement lost')
-                })
                 const idempotencyKey = randomUUID()
                 const send = () =>
                     new HttpTestClient(fix.httpClient.serverUrl)
@@ -687,12 +681,12 @@ describe('PurchaseService', () => {
                         .body(buildCreatePurchaseDto(heldTickets))
                         .created({ schema: PurchaseRecordSchema })
                 const { body: record }: { body: PurchaseRecordDto } = await send()
+                const stored = await fix.module
+                    .get(PurchaseRecordsRepository)
+                    .get({ id: record.id })
                 await retryEntered.promise
                 try {
-                    expect(
-                        (await fix.module.get(PurchaseRecordsRepository).get({ id: record.id }))
-                            .purchaseEventStatus
-                    ).toBe(PurchaseEventStatus.Pending)
+                    expect(stored).not.toHaveProperty('purchaseEventStatus')
                     expect(
                         (await getTickets(fix, pickIds(heldTickets))).every(
                             (ticket) => ticket.status === TicketStatus.Sold
@@ -708,10 +702,9 @@ describe('PurchaseService', () => {
                 const client = fix.module.get(PurchaseEventWorkflowClient)
                 await client.waitForCompletion(await client.submit(record, record.id))
                 expect(
-                    (await fix.module.get(PurchaseRecordsRepository).get({ id: record.id }))
-                        .purchaseEventStatus
-                ).toBe(PurchaseEventStatus.Published)
-                expect(emit).toHaveBeenCalledTimes(2)
+                    await fix.module.get(PurchaseRecordsRepository).get({ id: record.id })
+                ).toEqual(stored)
+                expect(emit).toHaveBeenCalledTimes(3)
                 expect((await send()).body).toEqual(record)
             })
 

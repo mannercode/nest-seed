@@ -68,6 +68,8 @@ BullMQ나 JetStream consumer만으로도 작업을 실행할 수 있지만 단�
 
 운영에서는 revision별 endpoint를 등록하고 기존 invocation이 끝날 때까지 이전 코드를 유지해야 한다. [Restate의 deployment](https://docs.restate.dev/concepts/services/)는 새 invocation과 진행 중인 실행이 사용할 코드를 구분한다.
 
+workflow step을 삭제하거나 순서를 바꾸면 이전 journal은 이전 코드에서 끝내야 한다. 같은 endpoint에 새 코드를 덮어쓰면 재개 시 step 순서가 맞지 않을 수 있다. 새 DB 문서에서 필드를 없애는 것과 보존된 journal의 실행 코드를 교체하는 것은 별개의 전환이다.
+
 ```text
 v1 실행 유지 → v2 endpoint 등록 → 신규 실행 전환 → v1 drain 확인 → v1 제거
 ```

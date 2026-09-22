@@ -9,7 +9,8 @@ export class PasswordHasher {
         return hash(rawPassword, BCRYPT_SALT_ROUNDS)
     }
 
-    static verify(rawPassword: string, hashedPassword: string | undefined): Promise<boolean> {
-        return compare(rawPassword, hashedPassword ?? TIMING_DUMMY_HASH)
+    static async verify(rawPassword: string, hashedPassword: string | undefined): Promise<boolean> {
+        const matches = await compare(rawPassword, hashedPassword ?? TIMING_DUMMY_HASH)
+        return hashedPassword !== undefined && matches
     }
 }

@@ -65,6 +65,60 @@ describe('NatsPubSubService', () => {
         expect(received2).toEqual(['payload'])
     })
 
+    it('동시 구독자는 같은 준비 완료를 기다리고 등록 순서대로 메시지를 받는다', async () => {
+        const connection = (fix.pubSubB as any).connection as NatsConnection
+        const flush = connection.flush.bind(connection)
+        const ready = Promise.withResolvers<void>()
+        vi.spyOn(connection, 'flush').mockImplementationOnce(async () => {
+            await flush()
+            await ready.promise
+        })
+        const received: string[] = []
+        const completed: string[] = []
+        const first = fix.pubSubB
+            .subscribe(subject, () => received.push('first'))
+            .then(() => completed.push('first'))
+        const second = fix.pubSubB
+            .subscribe(subject, () => received.push('second'))
+            .then(() => completed.push('second'))
+
+        try {
+            await flush()
+            expect(completed).toEqual([])
+            await fix.pubSubA.publish(subject, 'while-preparing')
+            await waitFor(() => received.length === 2)
+            expect(received).toEqual(['first', 'second'])
+            ready.resolve()
+            await Promise.all([first, second])
+            expect(completed).toEqual(['first', 'second'])
+        } finally {
+            ready.resolve()
+            await Promise.all([first, second])
+        }
+    })
+
+    it('공유 준비가 실패하면 모든 등록이 실패하고 다음 명시적 구독은 새로 시작한다', async () => {
+        const connection = (fix.pubSubB as any).connection as NatsConnection
+        const failure = new Error('SUB flush failed')
+        vi.spyOn(connection, 'flush').mockRejectedValueOnce(failure)
+        const failedHandler = vi.fn()
+        const results = await Promise.allSettled([
+            fix.pubSubB.subscribe(subject, failedHandler),
+            fix.pubSubB.subscribe(subject, failedHandler)
+        ])
+        expect(results).toEqual([
+            { status: 'rejected', reason: failure },
+            { status: 'rejected', reason: failure }
+        ])
+
+        const received: string[] = []
+        await fix.pubSubB.subscribe(subject, (message) => received.push(message))
+        await fix.pubSubA.publish(subject, 'after-failure')
+        await waitFor(() => received.length === 1)
+        expect(received).toEqual(['after-failure'])
+        expect(failedHandler).not.toHaveBeenCalled()
+    })
+
     it('구독 해제된 핸들러에는 더 이상 메시지가 오지 않는다', async () => {
         const received: string[] = []
         const handler = (msg: string) => received.push(msg)

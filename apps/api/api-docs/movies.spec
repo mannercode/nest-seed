@@ -13,8 +13,7 @@ TEST "영화를 생성한다" \
 			"plot": "API 문서 흐름 검증용 줄거리",
 			"durationInSeconds": 7200,
 			"director": "감독 이름",
-			"rating": "PG",
-			"assetIds": []
+			"rating": "PG"
 		}'
 
 MOVIE_ID=$(echo "${BODY}" | jq -r '.id')

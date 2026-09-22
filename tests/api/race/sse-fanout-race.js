@@ -3,6 +3,7 @@
 const { test } = require('node:test')
 const {
     readPositiveInt,
+    refreshAdminAccessToken,
     request,
     secureRandomHex,
     SERVER_URL,
@@ -36,8 +37,7 @@ async function setupFixture() {
             plot: 'stress plot',
             durationInSeconds: 7200,
             director: 'stress',
-            rating: 'PG',
-            assetIds: []
+            rating: 'PG'
         }
     })
     if (movie.status !== 201) throw new Error(`movie create failed: ${movie.status}`)
@@ -145,6 +145,7 @@ test('모든 SSE client는 여러 복제본에서 완료된 모든 saga event를
     const iterSpacingMs = SAGAS_PER_INNER * 3 * 60 * 60 * 1000 + 24 * 60 * 60 * 1000
 
     for (let i = 1; i <= INNER_ITERATIONS; i++) {
+        await refreshAdminAccessToken()
         const result = await runInner(movieId, theaterId, i, i * iterSpacingMs)
         console.log(
             `[sse] iter ${i}/${INNER_ITERATIONS} OK — ${result.events} events delivered, ${result.replicas} replicas`

@@ -1,13 +1,16 @@
 import { isDeepStrictEqual } from 'node:util'
 
-interface TemporalValue {
-    equals?(other: unknown): boolean
-    toString(): string
+type TemporalValue = { equals?(other: unknown): boolean; toString(): string }
+type TemporalEntry = { tag: string; value: TemporalValue; key: symbol }
+
+type EqualitySnapshot = {
+    value: object
+    properties: Map<PropertyKey, unknown>
+    temporal?: symbol
+    entries?: Map<unknown, unknown> | Set<unknown>
 }
 
-function getTemporalTag(value: unknown): string | undefined {
-    if (typeof value !== 'object' || value === null) return undefined
-
+function getTemporalTag(value: object): string | undefined {
     const tag = Object.prototype.toString.call(value)
     return tag.startsWith('[object Temporal.') ? tag : undefined
 }
@@ -95,19 +98,62 @@ export function orderBy<T>(
 }
 
 export function isEqual(a: unknown, b: unknown): boolean {
-    const aTemporalTag = getTemporalTag(a)
-    const bTemporalTag = getTemporalTag(b)
+    const temporals: TemporalEntry[] = []
+    return isDeepStrictEqual(
+        equalitySnapshot(a, new WeakMap(), temporals),
+        equalitySnapshot(b, new WeakMap(), temporals)
+    )
+}
 
-    if (aTemporalTag !== undefined || bTemporalTag !== undefined) {
-        if (aTemporalTag !== bTemporalTag) return false
+// Node의 비교는 유지하고, 내부 슬롯만 가진 Temporal의 값도 비교 자료에 포함한다.
+// 대상은 열거 가능한 속성과 Map/Set 원소이며 순환 구조도 유지한다.
+function equalitySnapshot(
+    value: unknown,
+    seen: WeakMap<object, EqualitySnapshot>,
+    temporals: TemporalEntry[]
+): unknown {
+    if (typeof value !== 'object' || value === null) return value
+    if (seen.has(value)) return seen.get(value)
 
-        const temporalA = a as TemporalValue
-        return typeof temporalA.equals === 'function'
-            ? temporalA.equals(b)
-            : temporalA.toString() === (b as TemporalValue).toString()
+    const snapshot: EqualitySnapshot = { value, properties: new Map() }
+    seen.set(value, snapshot)
+    const tag = getTemporalTag(value)
+    if (tag) {
+        const temporal = value as TemporalValue
+        // 별칭 시간대처럼 문자열은 달라도 equals가 같은 값으로 보는 경우를 보존한다.
+        const previous = temporals.find(
+            (entry) =>
+                entry.tag === tag &&
+                (typeof entry.value.equals === 'function'
+                    ? entry.value.equals(temporal)
+                    : entry.value.toString() === temporal.toString())
+        )
+        if (previous) {
+            snapshot.temporal = previous.key
+        } else {
+            const key = Symbol(tag)
+            temporals.push({ tag, value: temporal, key })
+            snapshot.temporal = key
+        }
     }
-
-    return isDeepStrictEqual(a, b)
+    for (const key of Reflect.ownKeys(value)) {
+        if (Object.prototype.propertyIsEnumerable.call(value, key)) {
+            snapshot.properties.set(key, equalitySnapshot(Reflect.get(value, key), seen, temporals))
+        }
+    }
+    if (value instanceof Map) {
+        snapshot.entries = new Map(
+            [...value].map(([key, entry]) => [
+                equalitySnapshot(key, seen, temporals),
+                equalitySnapshot(entry, seen, temporals)
+            ])
+        )
+    } else if (value instanceof Set) {
+        snapshot.entries = new Set(
+            [...value].map((entry) => equalitySnapshot(entry, seen, temporals))
+        )
+    }
+    return snapshot
 }
 
 export function differenceWith<T, U = T>(
@@ -133,12 +179,12 @@ export function minBy<T>(arr: T[], fn: (item: T) => number): T | undefined {
 }
 
 export function countBy<T>(arr: T[], fn?: (item: T) => string): Record<string, number> {
-    const result: Record<string, number> = {}
+    const result = new Map<string, number>()
     for (const item of arr) {
         const key = fn ? fn(item) : String(item)
-        result[key] = (result[key] ?? 0) + 1
+        result.set(key, (result.get(key) ?? 0) + 1)
     }
-    return result
+    return Object.fromEntries(result)
 }
 
 export function sumBy<T>(arr: T[], fn: (item: T) => number): number {

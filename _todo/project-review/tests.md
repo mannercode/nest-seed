@@ -40,7 +40,7 @@
 
 ### T4. 긴 외부 테스트가 5분 access token을 끝까지 재사용한다
 
-상태: 부분 완료. [purchase-double-spend](../../tests/api/race/purchase-double-spend.js)는 `150e4f99`에서 매 반복 전 관리자 로그인·사용자 refresh를 추가했다. benchmark와 다른 장시간 시나리오는 아래 남은 범위를 검토한다.
+상태: 완료. 인증을 사용하는 장시간 race는 매 반복 전 관리자 로그인·사용자 refresh를 공유 helper로 수행한다. benchmark는 seed 회차·측정 전에 로그인하고 VU가 만료 전에 갱신한다. 인증 실패는 실행 전체를 실패시키며 업무 401을 재시도하지 않는다. 5분을 넘긴 실제 benchmark와 변경한 race 5개를 검증했으며 상세 조건은 [통합 목록](README.md)에 둔다. 아래 근거는 최초 검토 당시 상태다.
 
 - `.env.api:9`, `:13`은 사용자·관리자 access token을 5분으로 정한다.
 - benchmark는 `tests/api/benchmark/run.sh:108`에서 한 번 로그인하고 seed한 다음 같은 token을 k6에 넘긴다. 기본 seed 한 회는 30초이고, `crud.js:21`의 7개 시나리오는 마지막 종료까지 약 291초가 걸린다. 새 환경에서 seed가 한 회만 있어도 전체가 5분을 넘는다. 마지막 쓰기는 성능 문제가 아니라 인증 만료로 실패할 수 있다.

@@ -1,4 +1,4 @@
-import { Checksum, ensure, omit, paginationResultSchema } from '@mannercode/common'
+import { Checksum, ensure, paginationResultSchema } from '@mannercode/common'
 import { nullObjectId, plainDate } from '@mannercode/testing'
 import {
     MovieDefaults,
@@ -15,7 +15,6 @@ import {
     createUnpublishedMovie,
     Errors,
     testAssets,
-    uploadAndFinalizeAsset,
     uploadAndFinalizeMovieAsset,
     type AppTestContext,
     createAppTestContext
@@ -35,12 +34,14 @@ describe('MoviesService', () => {
     afterEach(() => teardown?.())
 
     describe('POST /movies', () => {
-        it.each([{ durationInSeconds: '90' }, { title: true }, { releaseDate: null }])(
-            '본문의 잘못된 필드 %j는 400을 반환한다',
-            async (invalid) => {
-                await fix.httpClient.post('/movies').body(invalid).badRequest()
-            }
-        )
+        it.each([
+            { durationInSeconds: '90' },
+            { title: true },
+            { releaseDate: null },
+            { assetIds: [nullObjectId] }
+        ])('본문의 잘못된 필드 %j는 400을 반환한다', async (invalid) => {
+            await fix.httpClient.post('/movies').body(invalid).badRequest()
+        })
 
         it('생성된 영화를 반환한다', async () => {
             const createDto = buildCreateMovieDto()
@@ -50,11 +51,7 @@ describe('MoviesService', () => {
                 .body(createDto)
                 .created({
                     schema: MovieSchema,
-                    expected: {
-                        ...omit(createDto, ['assetIds']),
-                        id: expect.any(String),
-                        imageUrls: []
-                    }
+                    expected: { ...createDto, id: expect.any(String), imageUrls: [] }
                 })
             expect(response.text).toContain('"releaseDate":"1970-01-01"')
         })
@@ -88,8 +85,8 @@ describe('MoviesService', () => {
             let movie: MovieDto
 
             beforeEach(async () => {
-                const asset = await uploadAndFinalizeAsset(fix, testAssets.image)
-                movie = await createMovie(fix, { assetIds: [asset.id] })
+                movie = await createMovie(fix)
+                await uploadAndFinalizeMovieAsset(fix, movie.id)
             })
 
             it('imageUrls로 이미지를 다운로드할 수 있다', async () => {
@@ -129,7 +126,6 @@ describe('MoviesService', () => {
 
         it('수정된 영화를 반환한다', async () => {
             const updateDto = {
-                assetIds: [],
                 director: 'Steven Spielberg',
                 durationInSeconds: 10 * 60,
                 genres: ['romance', 'thriller'],
@@ -141,10 +137,18 @@ describe('MoviesService', () => {
             await fix.httpClient
                 .patch(`/movies/${movie.id}`)
                 .body(updateDto)
-                .ok({
-                    schema: MovieSchema,
-                    expected: { ...movie, ...omit(updateDto, ['assetIds']) }
-                })
+                .ok({ schema: MovieSchema, expected: { ...movie, ...updateDto } })
+        })
+
+        it('assetIds 직접 입력은 거절하고 기존 이미지 연결을 유지한다', async () => {
+            await uploadAndFinalizeMovieAsset(fix, movie.id)
+            const { body: before } = await fix.httpClient
+                .get(`/movies/${movie.id}`)
+                .ok({ schema: MovieSchema })
+            await fix.httpClient.patch(`/movies/${movie.id}`).body({ assetIds: [] }).badRequest()
+            await fix.httpClient
+                .get(`/movies/${movie.id}`)
+                .ok({ schema: MovieSchema, expected: before })
         })
 
         it('수정 내용이 DB에 저장된다', async () => {
@@ -228,11 +232,8 @@ describe('MoviesService', () => {
         let movieB2: MovieDto
 
         beforeEach(async () => {
-            const asset = await uploadAndFinalizeAsset(fix, testAssets.image)
-
             const createdMovies = await Promise.all([
                 createMovie(fix, {
-                    assetIds: [asset.id],
                     director: 'James Cameron',
                     genres: [MovieGenre.Action, MovieGenre.Comedy],
                     plot: 'plot-a1',
@@ -267,6 +268,7 @@ describe('MoviesService', () => {
             ])
 
             movieA1 = createdMovies[0]
+            await uploadAndFinalizeMovieAsset(fix, movieA1.id)
             movieA2 = createdMovies[1]
             movieB1 = createdMovies[2]
             movieB2 = createdMovies[3]

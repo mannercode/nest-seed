@@ -1,6 +1,6 @@
 # libs/와 데모 검토 결과
 
-검토 범위는 `libs/`, `apps/console/`, `apps/user-app/`의 추적 파일 193개, 14,164줄 전체다. 런타임·타입·barrel·설정·테스트·fixture를 모두 읽었다. 실행 코드는 수정하지 않았다. 아래 후보는 소스 검토와 명시한 inline 재현에 근거하며 전체 CI 결과는 [통합 목록](README.md)에 둔다.
+최초 검토 범위는 `libs/`, `apps/console/`, `apps/user-app/`의 추적 파일 193개, 14,164줄 전체다. 런타임·타입·barrel·설정·테스트·fixture를 모두 읽었다. 아래 근거는 당시 소스 검토와 inline 재현이며, 후속 반영 상태를 항목별로 표시한다. 검증 결과는 [통합 목록](README.md)에 둔다.
 
 ## 판단
 
@@ -11,6 +11,8 @@
 ## 재현하거나 코드로 확인한 문제
 
 ### 1. 중첩된 Temporal 값을 `isEqual`이 같다고 판정한다
+
+상태: 완료. Node의 엄격한 비교를 유지하면서 열거 가능한 속성·배열·Map·Set의 Temporal 값과 달력·참조 날짜를 비교 자료에 포함한다. 순환 참조와 프로토타입도 보존하며 새 비교 패키지를 추가하지 않았다.
 
 근거: `libs/common/src/utils/lodash.ts:97`, `:110`.
 
@@ -26,6 +28,8 @@ isEqual([Instant(0)], [Instant(1)])         → true
 
 ### 2. 음수 복합 시간의 표시와 파싱이 서로 다르다
 
+상태: 완료. 기존 항목별 부호 문법을 유지하고 `fromMs`도 `-1h-30m`으로 출력한다. 양수·음수 복합 시간과 소수 밀리초의 왕복 변환을 검증한다.
+
 근거: `libs/common/src/utils/time.ts:33`, `:49`, `:70`.
 
 ```text
@@ -37,6 +41,8 @@ TimeUtil.toMs('-1h30m')                → -1_800_000
 
 ### 3. 해시가 없는 비밀번호 검증이 특정 입력에 성공한다
 
+상태: 완료. dummy 비교를 수행해도 저장된 해시가 없으면 false를 반환한다. dummy 원문도 인증 성공을 만들지 않으며 기존 Users/Admins의 계정 존재 확인은 유지한다.
+
 근거: `libs/common/src/auth/password.ts:5`, `:12`; `libs/common/src/auth/__tests__/guards.spec.ts:157`.
 
 `PasswordHasher.verify('timing-equalization-only', undefined)`가 true다. 기존 테스트도 이를 기대한다. timing dummy 비교 결과를 그대로 인증 결과처럼 반환하기 때문이다. 현재 Users/Admins 인증은 `user && isValid` / `admin && isValid`를 확인하므로 **현재 API 인증 우회는 아니다**.
@@ -44,6 +50,8 @@ TimeUtil.toMs('-1h30m')                → -1_800_000
 재사용 함수의 계약은 해시가 없으면 실패가 자연스럽다. dummy 비교를 유지하더라도 결과는 false로 반환하면 된다. 더 강한 인증 장치나 새로운 계정 잠금 정책을 추가할 이유는 없다.
 
 ### 4. `Env`는 잘못된 설정을 정상 값으로 바꾼다
+
+상태: 완료. 불리언은 대소문자를 무시한 true·false만 허용하고, 숫자의 공백·비유한 값은 예외로 거절한다. 기존 wrapper와 필수 env 오류 방식은 유지한다.
 
 근거: `libs/common/src/utils/env.ts:4`, `:13`; `libs/common/src/config/base-config.service.ts:7`.
 
@@ -53,11 +61,15 @@ TimeUtil.toMs('-1h30m')                → -1_800_000
 
 ### 5. `countBy`는 일반 객체의 상속된 속성명에서 숫자를 반환하지 않는다
 
+상태: 완료. Map으로 집계한 뒤 일반 객체로 반환한다. `constructor`·`__proto__`·`toString`도 독립적인 own key와 숫자 개수를 갖는다.
+
 근거: `libs/common/src/utils/lodash.ts:135`.
 
 `countBy(['constructor', 'constructor'])`의 결과는 `{ constructor: 'function Object() { [native code] }11' }`이다. `Record<string, number>` 계약과 다르다. 문자열 키 집계는 Map 또는 own-key 사전을 쓰면 작은 변경으로 해결할 수 있다. 이를 근거로 저장소 전역 보안 프레임워크를 도입할 이유는 없다. 현재 API의 `application/recommendation/domain/movie-recommender.ts:10`에서 사용한다. 입력이 제한된 MovieGenre enum이므로 위 속성명은 현재 추천 경로에서 나오지 않는다.
 
 ### 6. 동시에 등록한 NATS 구독자가 같은 준비 완료를 기다리지 않는다
+
+상태: 완료. 같은 subject·queue는 준비 Promise를 공유하고, 각 핸들러를 등록 순서대로 연결한 뒤 함께 기다린다. 준비 실패는 모든 호출자에게 전달하며 실패한 구독을 정리한다. 실제 NATS 연결에서 준비 지연·실패·다음 명시적 구독을 검증했다.
 
 근거: `libs/common/src/nats/nats-pubsub.service.ts:50`–`:61`.
 
@@ -118,4 +130,4 @@ TimeUtil.toMs('-1h30m')                → -1_800_000
 - Restate/JetStream은 SDK 실행을 common에, 업무 단계·이벤트 내용·보존 정책을 앱에 두고 있다. 현재 역할 분리는 타당하다.
 - API integration 우선, 100% coverage, 기존 단건/다건 계약은 사용자 결정이다. 테스트 수만 세어 이를 완화하지 않는다.
 - Mongo `findWithPagination`은 transaction을 받으면서 같은 session에 Promise.all을 쓴다. 현재 API 호출부는 transaction을 전달하지 않는다. 드라이버의 동시 session 작업 계약과 비교해야 하는 후속 검토 후보이며 이번에 실행 결함으로 확정하지 않았다.
-- `HttpTestClient.sse()`는 즉시 반환하고 준비 완료를 노출하지 않는다. 공유 client에서 다음 요청이 agent를 덮을 수도 있다. API fixture가 별도 client를 쓰는지와 실제 SSE 시작 순서는 API 테스트 담당이 확인해야 한다. 일반 SSE parser를 새로 구현하자는 제안은 아니다.
+- `HttpTestClient.sse()`의 준비 콜백과 API fixture의 전용 client·요청 순서는 [T1](tests.md#t1-상영-완료-sse-구독이-요청보다-늦게-시작한다)에서 반영됐다. 일반 SSE parser를 새로 구현하는 방향으로 확대하지 않았다.

@@ -280,9 +280,105 @@ describe('isEqual', () => {
         expect(isEqual({}, date)).toBe(false)
     })
 
-    it('인스턴스 equals가 없는 Temporal.Duration은 정규화된 문자열로 비교한다', () => {
+    it('Temporal.Duration은 정규화된 문자열로 비교한다', () => {
         expect(isEqual(temporal.Duration.from('P1D'), temporal.Duration.from('P1D'))).toBe(true)
         expect(isEqual(temporal.Duration.from('P1D'), temporal.Duration.from('P2D'))).toBe(false)
+    })
+
+    it('객체와 배열 안의 Temporal도 값과 타입을 비교한다', () => {
+        const first = temporal.Instant.fromEpochMilliseconds(0)
+        const same = temporal.Instant.fromEpochMilliseconds(0)
+        const later = temporal.Instant.fromEpochMilliseconds(1)
+        expect(isEqual({ at: [first] }, { at: [same] })).toBe(true)
+        expect(isEqual({ at: [first] }, { at: [later] })).toBe(false)
+        expect(isEqual([first], [first.toString()])).toBe(false)
+    })
+
+    it('Map과 Set의 순서는 무시하고 내부 Temporal 값은 구분한다', () => {
+        const first = temporal.Instant.fromEpochMilliseconds(0)
+        const later = temporal.Instant.fromEpochMilliseconds(1)
+        expect(isEqual(new Set([first, later]), new Set([later, first]))).toBe(true)
+        expect(isEqual(new Set([first]), new Set([later]))).toBe(false)
+        expect(isEqual(new Map([[first, { at: later }]]), new Map([[later, { at: first }]]))).toBe(
+            false
+        )
+        expect(
+            isEqual(
+                new Map([[first, later]]),
+                new Map([
+                    [
+                        temporal.Instant.fromEpochMilliseconds(0),
+                        temporal.Instant.fromEpochMilliseconds(1)
+                    ]
+                ])
+            )
+        ).toBe(true)
+    })
+
+    it('같은 Temporal 값을 가진 별개 Map 키와 Set 원소를 합치지 않는다', () => {
+        const instant = (milliseconds: number) =>
+            temporal.Instant.fromEpochMilliseconds(milliseconds)
+        expect(
+            isEqual(
+                new Set([instant(0), instant(0), instant(1)]),
+                new Set([instant(0), instant(1), instant(1)])
+            )
+        ).toBe(false)
+        expect(
+            isEqual(
+                new Map([
+                    [instant(0), instant(0)],
+                    [instant(0), instant(1)]
+                ]),
+                new Map([
+                    [instant(0), instant(2)],
+                    [instant(0), instant(1)]
+                ])
+            )
+        ).toBe(false)
+        expect(
+            isEqual(
+                new Map([
+                    [instant(0), 'first'],
+                    [instant(0), 'second']
+                ]),
+                new Map([
+                    [instant(0), 'second'],
+                    [instant(0), 'first']
+                ])
+            )
+        ).toBe(true)
+    })
+
+    it('순환 객체의 symbol 속성 안에 있는 Temporal도 비교한다', () => {
+        const at = Symbol('at')
+        const first: any = { [at]: temporal.Instant.fromEpochMilliseconds(0) }
+        first.self = first
+        const second: any = { [at]: temporal.Instant.fromEpochMilliseconds(1) }
+        second.self = second
+        expect(isEqual(first, second)).toBe(false)
+        second[at] = temporal.Instant.fromEpochMilliseconds(0)
+        expect(isEqual(first, second)).toBe(true)
+    })
+
+    it('월일과 연월의 참조 날짜도 보존하고 일반 객체의 프로토타입은 구분한다', () => {
+        expect(
+            isEqual(
+                [new temporal.PlainMonthDay(2, 29, 'iso8601', 2000)],
+                [new temporal.PlainMonthDay(2, 29, 'iso8601', 1972)]
+            )
+        ).toBe(false)
+        expect(isEqual(Object.create(null), {})).toBe(false)
+        expect(isEqual(new Date(0), new Date(0))).toBe(true)
+    })
+
+    it('ZonedDateTime의 별칭 시간대는 native equals와 같은 결과를 낸다', () => {
+        const alias = temporal.ZonedDateTime.from('2026-01-01T10:00-05:00[US/Eastern]')
+        const primary = temporal.ZonedDateTime.from('2026-01-01T10:00-05:00[America/New_York]')
+        expect(alias.equals(primary)).toBe(true)
+        expect(isEqual(alias, primary)).toBe(true)
+        expect(isEqual({ at: alias }, { at: primary })).toBe(true)
+        expect(isEqual({ at: alias }, { at: primary.withTimeZone('UTC') })).toBe(false)
     })
 })
 
@@ -320,6 +416,12 @@ describe('minBy', () => {
 })
 
 describe('countBy', () => {
+    it('객체의 상속된 속성명도 독립적인 숫자 키로 집계한다', () => {
+        const counts = countBy(['constructor', 'constructor', '__proto__', 'toString'])
+        expect(counts).toEqual({ constructor: 2, ['__proto__']: 1, toString: 1 })
+        expect(Object.getPrototypeOf(counts)).toBe(Object.prototype)
+    })
+
     it('키 함수로 그룹별 개수를 센다', () => {
         expect(countBy([6.1, 4.2, 6.3], (n) => String(Math.floor(n)))).toEqual({ '4': 1, '6': 2 })
     })
