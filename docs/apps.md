@@ -2,9 +2,9 @@
 
 `apps/api`는 이 시드의 중심이다. `console`과 `user-app`은 API 연결·쿠키 인증·화면 조회의 예제다. API의 모듈 설계는 아래 경계를 따르고, 공통화할 구현은 [libs 기준](libs.md)으로 판단한다.
 
-## 모듈 의존 방향
+## SoLA의 모듈 의존 방향
 
-SoLA는 도메인 하나의 규칙과 여러 도메인을 조합하는 책임을 분리한다. 같은 계층의 다른 모듈을 직접 참조하지 않고, 둘을 사용할 수 있는 상위 계층에서 협력시킨다.
+SoLA는 모듈 사이의 책임과 의존 방향을 정한다. Controller·Service·Repository의 기술적 역할 구분과는 별개로, 한 도메인의 규칙은 Core에, 여러 도메인을 조합하는 책임은 Application에 둔다. 각 도메인 모듈 안에는 필요한 Service·Repository를 함께 둘 수 있다. 같은 계층의 다른 모듈을 직접 참조하지 않고, 둘을 사용할 수 있는 상위 계층에서 협력시킨다.
 
 ```text
 Gateway         HTTP 진입점·인증 주체·입력 변환
@@ -20,13 +20,39 @@ Infrastructure  결제·파일 같은 외부 연동의 앱 정책
 
 필요한 하위 계층은 직접 사용할 수 있다. 단일 극장 CRUD는 Gateway → Core로 충분하다. 영화 삭제 전에 상영 존재를 확인해야 하는 작업은 `CatalogManagementService`가 Movies와 Showtimes를 조합한다. 계층 수를 맞추기 위해 통과만 하는 Application Service를 만들지 않는다.
 
-컨트롤러를 도메인 모듈 밖에 두는 이유도 순환 참조다. MoviesModule 안의 컨트롤러가 RecommendationModule을 부르고 Recommendation이 Movies를 조회하면 모듈 의존이 양방향이 된다. Gateway가 둘을 소비하면 Recommendation → Movies의 단방향을 유지할 수 있다. `forwardRef`는 이 책임 결합을 해결하지 않는다.
-
 View는 데이터를 읽어 화면 DTO·순서·개수를 결정한다. `UserHomeViewService`가 추천·영화·상영·극장을 조합하는 예다. 도메인 상태 변경과 transaction은 View에 두지 않는다. Application과 Core는 View를 모르며 화면 요구가 도메인 API의 목적을 바꾸지 않게 한다.
 
 도메인 내부에는 필요한 Service·Repository·모델·DTO를 둔다. `internal/`과 `worker/`는 구현을 나눈 위치이며 별도 도메인 계층이 아니다. 모듈 공개 진입점과 이름은 [개발 규칙](reference/conventions.md)을 따른다. 계층 방향과 모듈 간 import는 lint가 검사하지만 View의 읽기 전용 책임처럼 코드의 의미는 리뷰해야 한다.
 
 `config/`는 주입받은 env를 검증하고, `modules/`와 `app.module.ts`는 연결·제공자를 조립한다. 이곳에 도메인 규칙을 넣지 않는다. `ConfigModule`은 `ignoreEnvFile: true`로 실행 환경을 사용한다. 파일 주입과 재생성은 [Dev Container](devcontainer.md)의 책임이다.
+
+### 컨트롤러를 Gateway로 분리하는 이유
+
+이 시드에서는 컨트롤러가 다른 모듈에서 export한 서비스를 주입받도록, 컨트롤러를 등록한 모듈이 해당 모듈을 import한다. 이 때문에 컨트롤러를 도메인 모듈에 묶으면 상위 유스케이스에 대한 의존까지 도메인 모듈에 생길 수 있다.
+
+예를 들어 현재 `MoviesHttpController`는 `MoviesService`와 `CatalogManagementService`를 사용한다. 이 컨트롤러를 `MoviesModule`에 등록하면 `CatalogManagementModule`을 import해야 하는데, `CatalogManagementModule`도 영화 삭제를 위해 `MoviesModule`을 import한다. 서비스 호출은 CatalogManagement → Movies의 단방향이어도 모듈은 서로 참조하게 된다.
+
+```mermaid
+flowchart LR
+    subgraph coupled["도메인 모듈에 컨트롤러를 등록한 경우"]
+        direction TB
+        M1["MoviesModule<br/>MoviesHttpController · MoviesService"]
+        C1["CatalogManagementModule"]
+        M1 -->|컨트롤러의 삭제 호출| C1
+        C1 -->|영화 삭제| M1
+    end
+    subgraph separated["Gateway로 컨트롤러를 분리"]
+        direction TB
+        A["AppModule<br/>Gateway 컨트롤러"]
+        C2["CatalogManagementModule"]
+        M2["MoviesModule"]
+        A --> C2
+        A --> M2
+        C2 --> M2
+    end
+```
+
+그래서 이 시드는 컨트롤러를 `services/gateway`에 두고 `AppModule`에 등록해 필요한 모듈을 상위에서 소비한다. `MoviesModule`은 컨트롤러의 유스케이스 의존을 갖지 않고, CatalogManagement → Movies의 단방향이 유지된다. 폴더 이동과 함께 NestJS 모듈의 등록·import 경계도 분리해야 한다. `forwardRef`로 순환 의존의 주입을 가능하게 해도 이 책임 결합은 사라지지 않는다.
 
 ## 데이터와 DTO
 

@@ -4,7 +4,9 @@
 
 ## 이름은 동작과 계약을 설명한다
 
-Core는 관리하는 도메인(`UsersService`), Application은 조합하는 유스케이스(`PurchaseService`)로 이름 짓는다. 데이터를 조회하고 협력을 조율하는 `RecommendationService`와 전달받은 데이터만 계산하는 `MovieRecommender`처럼 역할을 구분한다. 이름만 맞추려고 새 계층이나 클래스를 추가하지 않는다.
+엔티티 집합을 관리하는 서비스는 Core의 `UsersService`, `MoviesService`처럼 도메인의 복수형으로 이름 짓는다. 여러 도메인을 조합하는 Application 서비스는 `PurchaseService`, `ShowtimeCreationService`처럼 유스케이스를 나타내는 단수형 이름을 쓴다. 단수·복수는 한 요청이 처리하는 데이터 개수가 아니라 서비스의 책임을 구분한다.
+
+데이터를 조회하고 협력을 조율하는 `RecommendationService`와 전달받은 데이터만 계산하는 `MovieRecommender`처럼 역할을 구분한다. 이름만 맞추려고 새 계층이나 클래스를 추가하지 않는다.
 
 단순 조회의 조건은 객체 인자로 표현한다. 업무 목적·반환 정보·다른 조회와의 구분이 중요하면 이름에도 드러낸다.
 
@@ -34,7 +36,13 @@ findByPurchaseRecordId({ purchaseRecordId })
 
 객체·유니온의 기본 선언은 `type`이다. 클래스 구현 계약이나 선언 병합에는 `interface`를 사용하는 프로젝트 스타일을 따른다. 객체 형태의 type alias도 `implements`할 수 있으므로 언어의 제약으로 설명하지 않는다.
 
-HTTP 요청·응답과 JSON에서 복원할 데이터는 Zod 스키마를 계약으로 삼고 `z.infer`로 타입을 얻는다. 같은 필드를 클래스와 스키마에 두 번 적지 않는다. JSON 경계를 통과하지 않는 내부 함수 인자까지 스키마를 새로 만들 필요는 없다.
+HTTP 요청·응답과 JSON에서 복원할 데이터는 Zod 스키마를 계약으로 삼고 `z.infer`로 타입을 얻는다. DTO의 `Dto`와 스키마의 `Schema`는 같은 계약의 타입과 런타임 검증을 구분한다. [극장 생성 DTO](../../apps/api/src/services/core/theaters/dtos/create-theater.dto.ts)가 그 예다.
+
+```ts
+export type CreateTheaterDto = z.infer<typeof CreateTheaterSchema>
+```
+
+요청 검사·변환에는 `CreateTheaterSchema`, 검증된 값을 받는 함수 인자에는 `CreateTheaterDto`를 사용한다. 같은 필드를 클래스와 스키마에 두 번 적지 않는다. JSON 경계를 통과하지 않는 내부 함수 인자까지 스키마를 새로 만들 필요는 없다.
 
 JSON 본문의 숫자·불리언·문자열은 선언한 타입으로 받는다. 쿼리 숫자나 날짜처럼 변환이 필요한 필드만 명시적으로 변환한다. 수정 필드를 생략하면 기존 값을 유지하며, `null`은 실제 모델이 허용할 때만 받는다.
 
