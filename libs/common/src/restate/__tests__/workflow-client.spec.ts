@@ -42,14 +42,14 @@ describe('RestateWorkflowClient', () => {
         status: 'Accepted'
     }
 
-    it('workflow key와 10초 attempt timeout으로 제출하되 완료를 암묵적으로 기다리지 않는다', async () => {
+    it('workflow key와 60초 attempt timeout으로 제출하되 완료를 암묵적으로 기다리지 않는다', async () => {
         const fix = createFixture({ result: vi.fn() })
 
         await expect(fix.client.submit(input, input.sagaId)).resolves.toBe(submission)
         expect(fix.workflowClient).toHaveBeenCalledWith(fix.definition, input.sagaId)
         expect(fix.workflowSubmit).toHaveBeenCalledTimes(1)
         expect(fix.workflowSubmit.mock.calls[0]?.[0]).toEqual(input)
-        expect(fix.workflowSubmit.mock.calls[0]?.[1].opts).toEqual({ timeout: 10_000 })
+        expect(fix.workflowSubmit.mock.calls[0]?.[1].opts).toEqual({ timeout: 60_000 })
         expect(fix.result).not.toHaveBeenCalled()
         expect(restateMocks.connect).toHaveBeenCalledWith({
             retry: {
@@ -96,7 +96,7 @@ describe('RestateWorkflowClient', () => {
 
         await expect(fix.client.output(input.sagaId)).resolves.toEqual({ ready: false })
         expect(fix.workflowClient).toHaveBeenCalledWith(fix.definition, input.sagaId)
-        expect(workflowOutput.mock.calls[0]?.[0].opts).toEqual({ timeout: 10_000 })
+        expect(workflowOutput.mock.calls[0]?.[0].opts).toEqual({ timeout: 60_000 })
     })
 
     it('workflow 출력이 준비됐으면 결과를 반환한다', async () => {
