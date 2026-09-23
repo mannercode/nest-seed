@@ -55,7 +55,7 @@ describe('MongoModule', () => {
                 expect(connection.client.options.writeConcern).toMatchObject({
                     j: true,
                     w: 'majority',
-                    wtimeoutMS: 10000
+                    wtimeoutMS: 60000
                 })
             } finally {
                 await module.close()

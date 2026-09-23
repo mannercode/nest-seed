@@ -10,7 +10,7 @@ import { TemporalJsonSerde } from './temporal-json.serde.js'
 
 export type DurableWorkflowSubmission<Output> = WorkflowSubmission<Output>
 
-const SUBMIT_ATTEMPT_TIMEOUT_MS = 10_000
+const SUBMIT_ATTEMPT_TIMEOUT_MS = 60_000
 
 export class RestateWorkflowClient<Input, Output> {
     private readonly ingress: Ingress

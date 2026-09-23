@@ -19,7 +19,7 @@ function readPositiveInt(name, defaultValue) {
     return n
 }
 
-const HTTP_REQUEST_TIMEOUT_MS = readPositiveInt('HTTP_REQUEST_TIMEOUT_MS', 30_000)
+const HTTP_REQUEST_TIMEOUT_MS = readPositiveInt('HTTP_REQUEST_TIMEOUT_MS', 120_000)
 const SSE_HANDSHAKE_TIMEOUT_MS = readPositiveInt('SSE_HANDSHAKE_TIMEOUT_MS', 30_000)
 
 function secureRandomHex(byteLength = 16) {

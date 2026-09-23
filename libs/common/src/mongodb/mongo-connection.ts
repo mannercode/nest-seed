@@ -17,7 +17,7 @@ export function createMongoDriverOptions({
         minPoolSize,
         maxPoolSize: 200,
         waitQueueTimeoutMS: 5000,
-        writeConcern: { journal: true, w: 'majority', wtimeoutMS: 10000 }
+        writeConcern: { journal: true, w: 'majority', wtimeoutMS: 60000 }
     }
 }
 
