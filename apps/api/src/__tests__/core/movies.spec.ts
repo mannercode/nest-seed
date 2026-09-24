@@ -20,6 +20,7 @@ import {
     createAppTestContext
 } from '../helpers/index.js'
 import { AdminAuthGuard } from '#gateway'
+import { MoviesRepository } from '../../services/core/movies/movies.repository.js'
 
 describe('MoviesService', () => {
     let fix: AppTestContext
@@ -141,14 +142,24 @@ describe('MoviesService', () => {
         })
 
         it('assetIds 직접 입력은 거절하고 기존 이미지 연결을 유지한다', async () => {
-            await uploadAndFinalizeMovieAsset(fix, movie.id)
-            const { body: before } = await fix.httpClient
-                .get(`/movies/${movie.id}`)
-                .ok({ schema: MovieSchema })
+            const assetId = await uploadAndFinalizeMovieAsset(fix, movie.id)
+            const moviesRepository = fix.module.get(MoviesRepository)
+            const before = await moviesRepository.getForUpdate(movie.id)
+            expect(before.movie.assetIds).toEqual([assetId])
+
             await fix.httpClient.patch(`/movies/${movie.id}`).body({ assetIds: [] }).badRequest()
-            await fix.httpClient
+            expect(await moviesRepository.getForUpdate(movie.id)).toEqual(before)
+
+            const { body } = await fix.httpClient
                 .get(`/movies/${movie.id}`)
-                .ok({ schema: MovieSchema, expected: before })
+                .ok({
+                    schema: MovieSchema,
+                    expected: { ...movie, imageUrls: [expect.any(String)] }
+                })
+            const response = await fetch(ensure(body.imageUrls[0]))
+            expect(response.ok).toBe(true)
+            const buffer = Buffer.from(await response.bytes())
+            expect(Checksum.fromBuffer(buffer)).toEqual(testAssets.image.checksum)
         })
 
         it('수정 내용이 DB에 저장된다', async () => {
