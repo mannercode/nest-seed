@@ -8,22 +8,12 @@ permissions:
     contents: read
 jobs:
     stability:
-        name: ${{ matrix.name }}
+        name: atoz (${{ matrix.batch }}/5)
         timeout-minutes: 240
         strategy:
             fail-fast: false
             matrix:
-                include:
-                    - name: libs
-                      repeat: 75
-                      command: pnpm --recursive --filter './libs/**' --fail-if-no-match run test --coverage.enabled=false
-                    - name: api
-                      repeat: 60
-                      setup: pnpm run pretest
-                      command: pnpm --filter './apps/api' --fail-if-no-match run test --coverage.enabled=false
-                    - name: infra-reset
-                      repeat: 50
-                      command: bash infra/reset.sh
+                batch: [1, 2, 3, 4, 5]
         runs-on: ubuntu-24.04-arm
         steps:
             - uses: actions/checkout@v7.0.1
@@ -32,10 +22,9 @@ jobs:
               with:
                   runCmd: |
                       set -e
-                      ${{ matrix.setup }}
                       run=1
-                      while [ "$run" -le ${{ matrix.repeat }} ]; do
-                          echo "[Run ${run}/${{ matrix.repeat }}]"
-                          ${{ matrix.command }}
+                      while [ "$run" -le 10 ]; do
+                          echo "[Run ${run}/10]"
+                          pnpm run atoz
                           run=$((run + 1))
                       done
