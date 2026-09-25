@@ -1,0 +1,55 @@
+name: Retry Runner Disconnect
+on:
+    workflow_run:
+        workflows: ['Test AtoZ', 'Test Stability', 'Test API Race']
+        types: [completed]
+permissions:
+    actions: write
+    checks: read
+jobs:
+    retry:
+        if: >-
+            github.event.workflow_run.conclusion == 'failure' &&
+            github.event.workflow_run.run_attempt == 1
+        runs-on: ubuntu-24.04-arm
+        timeout-minutes: 5
+        steps:
+            - name: Retry only jobs interrupted by a disconnected runner
+              shell: bash
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  RUN_ID: ${{ github.event.workflow_run.id }}
+              run: |
+                  run_path="repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}"
+                  jobs=$(gh api --paginate "${run_path}/attempts/1/jobs?per_page=100" --jq '
+                      .jobs[] | select(.conclusion != "success" and .conclusion != "skipped" and .conclusion != "neutral") |
+                      [.id, .conclusion, .check_run_url] | @tsv')
+                  if [ -z "$jobs" ]; then
+                      echo "No unsuccessful jobs to retry."
+                      exit 0
+                  fi
+
+                  while IFS=$'\t' read -r job_id conclusion check_run_url; do
+                      if [ "$conclusion" != "failure" ]; then
+                          echo "Job ${job_id} ended with ${conclusion}; preserving the workflow result."
+                          exit 0
+                      fi
+                      annotations=$(gh api --paginate --slurp "${check_run_url}/annotations?per_page=100")
+                      if ! jq -e '
+                          [.[][] | select(.annotation_level == "failure")] |
+                          length > 0 and all(.[]; .message | startswith("The hosted runner lost communication with the server."))
+                          ' <<< "$annotations" > /dev/null; then
+                          echo "Job ${job_id} has another failure; preserving the workflow result."
+                          exit 0
+                      fi
+                  done <<< "$jobs"
+
+                  current_run=$(gh api "$run_path")
+                  if ! jq -e '.status == "completed" and .conclusion == "failure" and .run_attempt == 1' \
+                      <<< "$current_run" > /dev/null; then
+                      echo "The workflow was already rerun or its state changed."
+                      exit 0
+                  fi
+
+                  gh api --method POST "${run_path}/rerun-failed-jobs" -F enable_debug_logging=true
+                  echo "Requested one rerun of disconnected jobs in run ${RUN_ID}."
