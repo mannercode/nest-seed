@@ -94,12 +94,8 @@ MongoDB는 주 데이터와 transaction, Redis는 선점·리프레시 세션, N
 | `tools/`         | [개발·테스트 실행 도구](docs/tools.md)                   |
 | `.devcontainer/` | [개발 환경과 env 주입](docs/devcontainer.md)             |
 
-공통 작성 규칙은 [네이밍·타입·오류·테스트 규칙](docs/reference/conventions.md)에 둔다. 할 일과 미결 검토가 생기면 루트 `_todo/`에서 관리한다.
+작성 방법은 [개발 규칙](docs/reference/conventions.md), 변경과 리뷰의 판단 기준은 [프로젝트 변경·검토 기준](docs/reference/project-review.md)을 따른다. 할 일과 미결 검토는 루트 `_todo/`에서 관리한다.
 
-## 기능·코드 변경 시 주의사항
+## 운영 적용 범위
 
-시드 구성은 가져다 쓰고 고치기 쉬운 출발점인지, `libs/`는 여러 프로젝트에서 사용할 공개 계약이 정확한지 판단한다. 상세 변경 기준, 전체 리뷰 점검 목록과 TODO 관리는 [프로젝트 변경·검토 기준](docs/reference/project-review.md)을 따른다.
-
-## 포크와 운영 적용
-
-포크할 때 프로젝트 식별자와 작성자 URL을 일괄 치환하지 않는다. 패키지 scope를 바꾸면 manifest·의존성·import·별칭·lockfile을 함께 맞춘다. 개발용 스택을 운영에 적용하려면 [BFF 신뢰 경계](docs/apps.md#데모와-bff)와 [Restate revision 전환](docs/reference/decisions.md#restate와-외부-효과)의 조건을 검토한다. TLS·backup·운영 관측·무중단 배포는 이 시드의 제공 범위에 없다.
+제공하는 인프라와 실행 구성은 개발·검증용이다. 운영 환경의 TLS·백업·모니터링·무중단 배포 구성은 포함하지 않는다. 운영에 적용할 때는 [BFF의 프록시 신뢰 조건](docs/apps.md#데모와-bff)과 [Restate의 배포 revision](docs/reference/decisions.md#배포-revision)을 확인한다.

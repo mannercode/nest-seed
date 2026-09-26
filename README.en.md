@@ -51,8 +51,6 @@ Starting the Dev Container resets the development infrastructure data. Run the c
 
 `.env.api` and `.env.infra` contain committed development and verification values. Review project identifiers and credentials when forking, and inject production secrets outside the repository. After editing these files, [recreate the Dev Container](docs/devcontainer.md#1-환경-변수는-재생성해야-반영된다) to inject the new values.
 
-Do not globally replace `nest-seed` or `mannercode` when forking. Distinguish project identifiers, author URLs, and the repositories targeted by CI. Changing the package scope also requires updating workspace manifests, dependencies, imports, aliases, and the lockfile together.
-
 ## 2. Main commands
 
 | Command               | Purpose                                                         |
@@ -150,6 +148,7 @@ Each `docs/*.md` guide corresponds to a repository directory and explains its re
 - [devcontainer](docs/devcontainer.md) — the single development path, DooD constraints, and security
 - [decisions](docs/reference/decisions.md) — choices, alternatives, and non-guarantees
 - [development rules](docs/reference/conventions.md) — naming, DTOs, types, ESM, errors, and test-writing conventions
+- [project change and review criteria](docs/reference/project-review.md) — criteria for seed code and reusable libraries, review scope, and TODO management
 
 When needed, keep tasks and work plans in `_todo/`. `docs/` contains project guides only.
 
