@@ -46,7 +46,7 @@ describe('createTestContext, createHttpTestContext', () => {
         expect(onModuleDestroy).toHaveBeenCalledTimes(1)
     })
 
-    it('실패 정리도 실패하면 최초 설정 오류를 유지한다', async () => {
+    it('초기화와 자원 정리가 모두 실패하면 초기화 오류를 다시 던진다', async () => {
         const setupError = new Error('app init failed')
 
         class SetupAndCleanupFailureProvider {

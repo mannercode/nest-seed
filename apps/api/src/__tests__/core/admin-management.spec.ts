@@ -22,7 +22,7 @@ describe('AdminManagement', () => {
     })
     afterEach(() => teardown?.())
 
-    describe('admin lifecycle을 HTTP로 요청하면', () => {
+    describe('HTTP로 관리자를 생성하거나 삭제하려 할 때', () => {
         it('POST /admins는 404를 반환한다', async () => {
             await fix.httpClient
                 .post('/admins')
@@ -84,7 +84,7 @@ describe('AdminManagement', () => {
     })
 
     describe('AdminsService.remove', () => {
-        it('존재하지 않는 admin이면 404를 반환한다', async () => {
+        it('존재하지 않는 관리자이면 404 예외를 던진다', async () => {
             const service = fix.module.get(AdminsService)
 
             await expect(service.remove(nullObjectId)).rejects.toThrow(

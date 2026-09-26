@@ -6,7 +6,7 @@ export abstract class BaseConfigService {
     constructor(private readonly configService: ConfigService) {}
 
     getBoolean(key: string): boolean {
-        const value = this.configService.get<boolean | string>(key)
+        const value = this.configService.get<unknown>(key)
 
         if (value === undefined) {
             throw new InternalServerErrorException('Internal server error', {
@@ -16,9 +16,11 @@ export abstract class BaseConfigService {
 
         if (typeof value === 'boolean') return value
 
-        const lowered = String(value).trim().toLowerCase()
-        if (lowered === 'true') return true
-        if (lowered === 'false') return false
+        if (typeof value === 'string') {
+            const lowered = value.trim().toLowerCase()
+            if (lowered === 'true') return true
+            if (lowered === 'false') return false
+        }
 
         throw new InternalServerErrorException('Internal server error', {
             cause: `Key '${key}' is not a boolean: '${value}'`
@@ -26,7 +28,7 @@ export abstract class BaseConfigService {
     }
 
     getNumber(key: string): number {
-        const value = this.configService.get<number | string>(key)
+        const value = this.configService.get<unknown>(key)
 
         if (value === undefined) {
             throw new InternalServerErrorException('Internal server error', {
@@ -35,7 +37,10 @@ export abstract class BaseConfigService {
         }
 
         // Number('')는 0이라 빈 문자열이 조용히 0으로 통과한다. 명시적으로 거절한다.
-        if (typeof value === 'string' && value.trim().length === 0) {
+        if (
+            (typeof value !== 'number' && typeof value !== 'string') ||
+            (typeof value === 'string' && value.trim().length === 0)
+        ) {
             throw new InternalServerErrorException('Internal server error', {
                 cause: `Key '${key}' is not a finite number: '${value}'`
             })
@@ -51,11 +56,17 @@ export abstract class BaseConfigService {
     }
 
     getString(key: string): string {
-        const value = this.configService.get<string>(key)
+        const value = this.configService.get<unknown>(key)
 
-        if (value === undefined || value.length === 0) {
+        if (value === undefined || value === '') {
             throw new InternalServerErrorException('Internal server error', {
                 cause: `Key '${key}' is not defined`
+            })
+        }
+
+        if (typeof value !== 'string') {
+            throw new InternalServerErrorException('Internal server error', {
+                cause: `Key '${key}' is not a string`
             })
         }
 

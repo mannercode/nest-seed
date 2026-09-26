@@ -12,7 +12,7 @@
 | NATS·JetStream      | 복제본 간 fan-out, 저장·ack·재전달                      |
 | Restate             | endpoint 중단 뒤 journal을 통한 실행 재개               |
 
-메모리 mock이나 단일 서버로 바꾸면 이 경계의 실패가 개발 중 드러나지 않는다. 그렇다고 각 제품의 모든 장애나 운영 HA를 이 시드에서 구현·검증한다는 뜻은 아니다. 애플리케이션의 보장과 도구 선택 근거는 [설계 결정](reference/decisions.md)에 둔다.
+메모리 mock이나 단일 서버로 바꾸면 이 경계의 실패가 개발 중 드러나지 않는다. 애플리케이션의 보장과 도구 선택 근거는 [설계 결정](reference/decisions.md)에 둔다.
 
 ## 2. 시작과 reset의 범위
 

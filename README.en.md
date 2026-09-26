@@ -38,20 +38,20 @@ See [apps](docs/apps.md) for layers and distributed boundaries and [design decis
 
 ## 1. Getting started
 
+When forking for a new project, replace the project name `nest-seed` and organization name `mannercode` (including the `@mannercode/*` package scope) with your own names.
+
 The Dev Container is the only supported development path. Open the repository on a Docker host through VS Code Remote SSH, then use the Dev Containers extension. The workspace must have the same absolute path on the host and inside the container ([development environment](docs/devcontainer.md#2-docker-outside-of-docker의-경로-계약)).
 
 Starting the Dev Container resets the development infrastructure data. Run the commands below in the container terminal.
 
-1. Open the repository in VS Code and run `Reopen in Container`. The first boot may take a while while images and development infrastructure are prepared.
+1. Open the repository in VS Code and run `Reopen in Container`.
 2. Run `pnpm run test` for the basic checks. Use `pnpm run atoz` for the full regression, including an infrastructure reset.
 3. Run `pnpm run dev`, then check the API with `curl http://localhost:3000/health`.
 4. Forward `3100` and `3200` in the VS Code **Ports** panel and open the displayed addresses in your browser. Automatic port forwarding is disabled.
 5. Sign in to the console (3100) with the development admin (`admin@nest-seed.local` / `DevPass1!`) and create movies and theaters. Infrastructure resets recreate this account.
 6. Use the user app (3200) to explore sign-up, login, and the composed home view. The executable API docs run showtime, booking, and purchase APIs through an independent fixture flow.
 
-`.env.api` and `.env.infra` contain committed development and verification values. Review project identifiers and credentials when forking, and inject production secrets outside the repository. After editing these files, [recreate the Dev Container](docs/devcontainer.md#1-환경-변수는-재생성해야-반영된다) to inject the new values.
-
-Do not globally replace `nest-seed` or `mannercode` when forking. Distinguish project identifiers, author URLs, and the repositories targeted by CI. Changing the package scope also requires updating workspace manifests, dependencies, imports, aliases, and the lockfile together.
+`.env.api` and `.env.infra` contain committed development and verification values. Inject production secrets outside the repository. After editing these files, [recreate the Dev Container](docs/devcontainer.md#1-환경-변수는-재생성해야-반영된다) to inject the new values.
 
 ## 2. Main commands
 
@@ -69,7 +69,7 @@ Do not globally replace `nest-seed` or `mannercode` when forking. Distinguish pr
 
 ## 3. API reference
 
-Instead of static Swagger/OpenAPI, `apps/api/api-docs/*.spec` sends real requests and serves as the HTTP contract for representative success and failure paths. This prevents documentation from silently drifting away from behavior.
+`apps/api/api-docs/*.spec` sends real requests and documents representative success and failure paths.
 
 ```bash
 bash apps/api/api-docs/run.sh
@@ -108,7 +108,7 @@ Each `TEST` detail log records the actual response body. The spec itself shows t
 | Object storage                           | AWS SDK with the S3-compatible VersityGW               |
 | Verification                             | Vitest, Testcontainers, Playwright, k6, Docker Compose |
 
-These tools own different failure boundaries; they are not included merely as a technology showcase. [Design decisions](docs/reference/decisions.md) explains why this combination was chosen and why Kafka, BullMQ, Swagger, Nx, and others were not.
+[Design decisions](docs/reference/decisions.md) explains why this combination was chosen and why Kafka, BullMQ, Swagger, Nx, and others were not.
 
 ## 6. Domain tour
 
@@ -134,7 +134,10 @@ Payments are an example implementation that records payment state in MongoDB wit
 
 ## 8. Production scope
 
-`tests/api/compose.yml` exercises distributed behavior; it is not a production deployment. It does not provide TLS, secret management, backup/restore, an observability backend, a frontend edge, or zero-downtime revision rollout. Before production use, review the [BFF IP trust boundary](docs/apps.md#데모와-bff) and [Restate revision transition requirements](docs/reference/decisions.md#배포-revision).
+`tests/api/compose.yml` exercises distributed behavior; it is not a production deployment. It does not provide TLS, secret management, backup/restore, an observability backend, a frontend edge, or zero-downtime revision rollout.
+
+- To use forwarded user IP addresses in the demos, the proxy must supply the actual connection IP and direct access that bypasses it must be blocked. Follow the [client IP forwarding setup](docs/apps.md#데모와-bff).
+- When deploying workflow code while purchases or showtime creations are still running, keep the previous code available until those executions finish. Follow the [deployment procedure for preserving running workflows](docs/reference/decisions.md#배포-revision).
 
 ## 9. Documentation
 
@@ -150,6 +153,7 @@ Each `docs/*.md` guide corresponds to a repository directory and explains its re
 - [devcontainer](docs/devcontainer.md) — the single development path, DooD constraints, and security
 - [decisions](docs/reference/decisions.md) — choices, alternatives, and non-guarantees
 - [development rules](docs/reference/conventions.md) — naming, DTOs, types, ESM, errors, and test-writing conventions
+- [project change and review criteria](docs/reference/project-review.md) — criteria for seed code and reusable libraries, review scope, and TODO management
 
 When needed, keep tasks and work plans in `_todo/`. `docs/` contains project guides only.
 

@@ -1,4 +1,5 @@
-import type { ConfigService } from '@nestjs/config'
+import { InternalServerErrorException } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import {
     type BaseConfigServiceFixture,
     createBaseConfigServiceFixture
@@ -20,6 +21,16 @@ describe('BaseConfigService', () => {
     afterEach(() => fix.teardown())
 
     describe('getString', () => {
+        it.each([null, 123, true, [], {}].map((value) => ({ value })))(
+            '문자열이 아닌 $value는 거절한다',
+            ({ value }) => {
+                const service = createServiceWithConfig({ S: value })
+                expect(() => service.getString('S')).toThrow(
+                    expect.objectContaining({ status: 500, cause: "Key 'S' is not a string" })
+                )
+            }
+        )
+
         it('키가 존재하면 문자열을 반환한다', () => {
             const result = fix.appConfigService.getString('TEST_STRING_KEY')
             expect(result).toBe('value')
@@ -43,6 +54,25 @@ describe('BaseConfigService', () => {
     })
 
     describe('getNumber', () => {
+        it.each([null, true, false, [], [123], {}].map((value) => ({ value })))(
+            '숫자로 강제 변환되는 $value도 거절한다',
+            ({ value }) => {
+                const service = createServiceWithConfig({ N: value })
+                expect(() => service.getNumber('N')).toThrow(
+                    expect.objectContaining({
+                        status: 500,
+                        cause: expect.stringContaining('not a finite number')
+                    })
+                )
+            }
+        )
+
+        it('숫자 값은 유한성을 검사해 반환한다', () => {
+            const service = createServiceWithConfig({ N: 1.5, BAD: Infinity })
+            expect(service.getNumber('N')).toBe(1.5)
+            expect(() => service.getNumber('BAD')).toThrow(InternalServerErrorException)
+        })
+
         it('키가 존재하면 숫자를 반환한다', () => {
             const result = fix.appConfigService.getNumber('TEST_NUMBER_KEY')
             expect(result).toBe(123)
@@ -89,6 +119,20 @@ describe('BaseConfigService', () => {
     })
 
     describe('getBoolean', () => {
+        it.each([null, 1, ['true'], { toString: () => 'true' }].map((value) => ({ value })))(
+            '불리언·문자열이 아닌 $value는 거절한다',
+            ({ value }) => {
+                const service = createServiceWithConfig({ B: value })
+                expect(() => service.getBoolean('B')).toThrow(InternalServerErrorException)
+            }
+        )
+
+        it('ConfigService의 불리언 값을 그대로 반환한다', () => {
+            const service = createServiceWithConfig({ T: true, F: false })
+            expect(service.getBoolean('T')).toBe(true)
+            expect(service.getBoolean('F')).toBe(false)
+        })
+
         it('키가 존재하면 불리언을 반환한다', () => {
             const result = fix.appConfigService.getBoolean('TEST_BOOLEAN_KEY')
             expect(result).toBe(true)
@@ -136,6 +180,5 @@ class TestConfigService extends BaseConfigService {
 }
 
 function createServiceWithConfig(values: Record<string, unknown>) {
-    const configService = { get: (key: string) => values[key] } as unknown as ConfigService
-    return new TestConfigService(configService)
+    return new TestConfigService(new ConfigService(values))
 }

@@ -26,7 +26,11 @@ import {
     createAppTestContext
 } from '../helpers/index.js'
 import { submitAndWaitForCompletion } from './showtime-creation.utils.js'
-import { ShowtimeCreationEvents, RequestShowtimeCreationResponseSchema } from '#application'
+import {
+    BookingShowtimeSchema,
+    ShowtimeCreationEventService,
+    RequestShowtimeCreationResponseSchema
+} from '#application'
 import { ShowtimeCreationWorkflowClient } from '../../services/application/showtime-creation/worker/index.js'
 
 describe('ShowtimeCreationService', () => {
@@ -117,8 +121,8 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('GET /showtime-creation/event-stream', () => {
-        it('SSE도 Instant를 밀리초 3자리 UTC JSON으로 전송한다', async () => {
-            const events = fix.module.get(ShowtimeCreationEvents)
+        it('SSE의 시각을 UTC 밀리초 3자리 문자열로 전송한다', async () => {
+            const events = fix.module.get(ShowtimeCreationEventService)
             const sseClient = new HttpTestClient(fix.httpClient.serverUrl)
             const sagaId = newObjectIdString()
             let received: string | undefined
@@ -176,15 +180,20 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('GET /showtime-creation/showtimes/:sagaId/status', () => {
-        it.each([false, true])(
-            '알림 발행 실패=%s에도 SSE 구독 없이 최종 상태를 조회한다',
-            async (failNotification) => {
+        describe.each([
+            { label: '진행 알림을 발행할 수 있을 때', failNotification: false },
+            { label: '진행 알림을 발행할 수 없을 때', failNotification: true }
+        ])('$label', ({ failNotification }) => {
+            beforeEach(() => {
                 if (failNotification) {
                     vi.spyOn(
-                        fix.module.get(ShowtimeCreationEvents),
+                        fix.module.get(ShowtimeCreationEventService),
                         'emitStatusChanged'
                     ).mockRejectedValue(new Error('NATS unavailable'))
                 }
+            })
+
+            it('SSE를 구독하지 않아도 완료 상태를 조회한다', async () => {
                 const created = await fix.httpClient
                     .post('/showtime-creation/showtimes')
                     .headers({ Authorization: `Bearer ${adminAccessToken}` })
@@ -217,10 +226,10 @@ describe('ShowtimeCreationService', () => {
                 await expect(ticketsService.search({ sagaIds: [sagaId] })).resolves.toHaveLength(
                     status.createdTicketCount
                 )
-            }
-        )
+            })
+        })
 
-        it('요청한 관리자의 접수 기록이 없는 saga ID는 노출하지 않는다', async () => {
+        it('요청한 관리자에게 접수 기록이 없는 작업이면 404를 반환한다', async () => {
             await fix.httpClient
                 .get(`/showtime-creation/showtimes/${nullObjectId}/status`)
                 .headers({ Authorization: `Bearer ${adminAccessToken}` })
@@ -246,7 +255,7 @@ describe('ShowtimeCreationService', () => {
                 .badRequest({ expected: Errors.Idempotency.KeyInvalid() })
         })
 
-        it('같은 키와 같은 요청은 최초 saga ID를 반환한다', async () => {
+        it('같은 키와 본문으로 다시 요청하면 최초 작업 ID를 반환한다', async () => {
             const idempotencyKey = randomUUID()
             const createDto = buildCreateDto()
 
@@ -326,7 +335,7 @@ describe('ShowtimeCreationService', () => {
             await first
         })
 
-        it('Restate 제출 실패 뒤 같은 키를 재시도하면 같은 submission을 이어서 시작한다', async () => {
+        it('Restate 제출에 실패해도 같은 키로 재요청하면 기존 작업을 다시 제출한다', async () => {
             const workflow = fix.module.get(ShowtimeCreationWorkflowClient)
             const submitWorkflow = vi
                 .spyOn(workflow, 'submit')
@@ -352,8 +361,8 @@ describe('ShowtimeCreationService', () => {
             expect(submitWorkflow.mock.calls[1]?.[1]).toBe(submitWorkflow.mock.calls[0]?.[1])
         })
 
-        it('Restate에는 제출됐지만 accepted 저장이 실패하면 같은 saga로 복구한다', async () => {
-            const events = fix.module.get(ShowtimeCreationEvents)
+        it('작업 제출 후 접수 완료 저장이 실패해도 같은 작업으로 재접수한다', async () => {
+            const events = fix.module.get(ShowtimeCreationEventService)
             const workflow = fix.module.get(ShowtimeCreationWorkflowClient)
             const submissions = fix.module.get(ShowtimeCreationSubmissionRepository)
             const emitStatusChanged = vi.spyOn(events, 'emitStatusChanged')
@@ -391,7 +400,7 @@ describe('ShowtimeCreationService', () => {
             expect(replay.body).toEqual({ sagaId: expect.any(String) })
         })
 
-        it('accepted 저장 전에 claim을 잃으면 같은 saga를 다시 claim해 복구한다', async () => {
+        it('접수 완료 기록 전에 처리 권한을 잃어도 같은 키로 재접수할 수 있다', async () => {
             const submissions = fix.module.get(ShowtimeCreationSubmissionRepository)
             const markAccepted = vi.spyOn(submissions, 'markAccepted').mockResolvedValueOnce(null)
             const idempotencyKey = randomUUID()
@@ -415,7 +424,7 @@ describe('ShowtimeCreationService', () => {
             expect(replay.body).toEqual({ sagaId: expect.any(String) })
         })
 
-        it('submission 저장 실패 시 workflow를 시작하지 않는다', async () => {
+        it('접수 기록을 저장하지 못하면 상영 생성 작업을 시작하지 않는다', async () => {
             const workflow = fix.module.get(ShowtimeCreationWorkflowClient)
             const submissions = fix.module.get(ShowtimeCreationSubmissionRepository)
             const submitWorkflow = vi.spyOn(workflow, 'submit')
@@ -433,7 +442,7 @@ describe('ShowtimeCreationService', () => {
             expect(submitWorkflow).not.toHaveBeenCalled()
         })
 
-        it('만료된 submission의 동시 회수 요청 중 하나만 claim을 얻는다', async () => {
+        it('처리 권한이 풀린 접수를 동시에 다시 맡으려 하면 하나만 성공한다', async () => {
             const submissions = fix.module.get(ShowtimeCreationSubmissionRepository)
             const principalId = randomUUID()
             const idempotencyKey = randomUUID()
@@ -481,7 +490,7 @@ describe('ShowtimeCreationService', () => {
             ])
         })
 
-        it('실행 전 검증 실패는 키를 소비하지 않는다', async () => {
+        it('입력 검증에 실패하면 수정한 요청을 같은 키로 다시 보낼 수 있다', async () => {
             const idempotencyKey = randomUUID()
             const createDto = buildCreateDto()
 
@@ -522,13 +531,13 @@ describe('ShowtimeCreationService', () => {
                 result = await create()
             })
 
-            it('사가 식별자를 반환한다', () => {
+            it('상영 생성 작업 ID를 반환한다', () => {
                 expect(result.response.body).toEqual(
                     expect.objectContaining({ sagaId: expect.any(String) })
                 )
             })
 
-            it('SSE로 사가 상태 변화를 스트리밍한다', () => {
+            it('SSE로 상영 생성 상태를 전달한다', () => {
                 expect(result.completion).toEqual(
                     expect.objectContaining({
                         sagaId: result.response.body.sagaId,
@@ -555,7 +564,56 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        it('사가 상태를 waiting → processing → succeeded 순서로 발행한다', async () => {
+        describe.each([
+            { label: '극장의 좌석 배치가 비어 있을 때', seatmap: { blocks: [] } },
+            {
+                label: '극장의 모든 좌석이 비활성일 때',
+                seatmap: { blocks: [{ name: 'A', rows: [{ name: '1', layout: 'XXXX' }] }] }
+            }
+        ])('$label', ({ seatmap }) => {
+            beforeEach(async () => {
+                await fix.httpClient
+                    .patch(`/theaters/${theater.id}`)
+                    .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                    .body({ seatmap })
+                    .ok({ schema: TheaterSchema })
+            })
+
+            it('상영은 생성하지만 티켓 수와 판매 집계는 0이다', async () => {
+                const { response, completion } = await submitAndWaitForCompletion(
+                    fix,
+                    adminAccessToken,
+                    'succeeded',
+                    () =>
+                        fix.httpClient
+                            .post('/showtime-creation/showtimes')
+                            .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                            .headers({ 'Idempotency-Key': randomUUID() })
+                            .body(buildCreateDto())
+                            .accepted({ schema: RequestShowtimeCreationResponseSchema })
+                )
+
+                expect(completion.createdShowtimeCount).toBe(1)
+                expect(completion.createdTicketCount).toBe(0)
+                const showtimes = await showtimesService.search({ sagaIds: [response.body.sagaId] })
+                expect(showtimes).toHaveLength(1)
+                expect(await ticketsService.search({ sagaIds: [response.body.sagaId] })).toEqual([])
+
+                await fix.httpClient
+                    .get(
+                        `/booking/movies/${movie.id}/theaters/${theater.id}/showdates/21000101/showtimes`
+                    )
+                    .ok({
+                        schema: BookingShowtimeSchema.array(),
+                        expected: showtimes.map((showtime) => ({
+                            ...showtime,
+                            ticketSales: { available: 0, sold: 0, total: 0 }
+                        }))
+                    })
+            })
+        })
+
+        it('상영 생성 상태를 waiting → processing → succeeded 순서로 발행한다', async () => {
             const {
                 response: { body },
                 events
@@ -738,12 +796,12 @@ describe('ShowtimeCreationService', () => {
                 sagaId = body.sagaId
             })
 
-            it('Restate durable step 재시도마다 생성 쓰기까지 실제로 실행한다', () => {
+            it('상영 생성을 정해진 횟수만큼 재시도한다', () => {
                 expect(createShowtimesSpy).toHaveBeenCalledTimes(4)
                 expect(attemptedTicketCount).toBeGreaterThan(0)
             })
 
-            it('실패한 transaction의 상영 시간과 티켓을 모두 롤백한다', async () => {
+            it('저장한 상영과 티켓을 모두 되돌린다', async () => {
                 const showtimes = await showtimesService.search({ sagaIds: [sagaId] })
                 const tickets = await ticketsService.search({ sagaIds: [sagaId] })
                 expect(showtimes).toEqual([])
@@ -751,7 +809,7 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        it('티켓 저장이 한 번 실패해도 durable step 재시도로 한 세트만 생성한다', async () => {
+        it('티켓 저장이 한 번 실패해도 재시도하여 상영과 티켓을 중복 없이 생성한다', async () => {
             vi.spyOn(ticketsService, 'createMany').mockRejectedValueOnce(
                 new Error('transient ticket write failure')
             )
@@ -774,7 +832,7 @@ describe('ShowtimeCreationService', () => {
             expect(tickets).toHaveLength(completion.createdTicketCount)
         })
 
-        it('커밋 뒤 첫 완료 보고를 잃어도 재시도가 저장 결과를 읽어 중복 없이 성공한다', async () => {
+        it('저장 완료 응답을 잃어도 상영과 티켓을 다시 만들지 않고 기존 결과를 반환한다', async () => {
             const realValidateAndCreate = persistence.validateAndCreate.bind(persistence)
             const persistenceSpy = vi
                 .spyOn(persistence, 'validateAndCreate')
@@ -805,7 +863,7 @@ describe('ShowtimeCreationService', () => {
             expect(tickets).toHaveLength(completion.createdTicketCount)
         })
 
-        it('같은 saga를 순차 재실행하면 저장된 결과를 반환하고 중복 생성하지 않는다', async () => {
+        it('같은 작업 ID로 다시 실행하면 상영과 티켓을 중복 생성하지 않는다', async () => {
             const sagaId = newObjectIdString()
             const createDto = buildCreateDto()
 
@@ -822,7 +880,7 @@ describe('ShowtimeCreationService', () => {
             }
         })
 
-        it('완료된 sagaId를 다른 입력으로 재사용하면 거부한다', async () => {
+        it('완료된 작업 ID를 다른 생성 조건에 재사용하면 거부한다', async () => {
             const sagaId = newObjectIdString()
             const createDto = buildCreateDto()
             await persistence.validateAndCreate(createDto, sagaId)
@@ -840,7 +898,7 @@ describe('ShowtimeCreationService', () => {
             )
         })
 
-        it('한 operation의 상영 시간 수가 안전 상한을 넘으면 transaction 전에 거부한다', async () => {
+        it('한 번에 생성할 상영 수가 상한을 넘으면 저장 전에 거부한다', async () => {
             const createDto = {
                 ...buildCreateDto(),
                 startTimes: Array.from({ length: 15 }, (_, index) =>
@@ -856,7 +914,7 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        it('좌석 티켓 수가 안전 상한을 넘으면 showtime insert도 롤백한다', async () => {
+        it('생성할 티켓 수가 상한을 넘으면 이미 저장한 상영도 되돌린다', async () => {
             const largeTheater = await createTheater(fix, {
                 seatmap: {
                     blocks: [{ name: 'A', rows: [{ name: '1', layout: 'O'.repeat(10_001) }] }]
@@ -875,7 +933,7 @@ describe('ShowtimeCreationService', () => {
             await expect(showtimesService.search({ sagaIds: [sagaId] })).resolves.toEqual([])
         })
 
-        it('같은 saga를 동시에 재실행해도 두 호출이 같은 한 세트에 수렴한다', async () => {
+        it('같은 작업 ID로 동시에 실행해도 상영과 티켓이 중복으로 저장되지 않는다', async () => {
             const sagaId = newObjectIdString()
             const createDto = buildCreateDto()
 
@@ -894,7 +952,7 @@ describe('ShowtimeCreationService', () => {
             }
         })
 
-        it('같은 극장의 겹치는 두 saga를 동시에 실행하면 정확히 하나만 생성한다', async () => {
+        it('같은 극장의 겹치는 상영을 동시에 생성하면 한 요청만 성공한다', async () => {
             const createDto = buildCreateDto()
             const sagaIds = [newObjectIdString(), newObjectIdString()]
 
@@ -956,7 +1014,7 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        it('한 극장만 충돌해도 전체가 실패하고 어느 극장에도 행을 남기지 않는다', async () => {
+        it('한 극장만 시간이 겹쳐도 요청한 모든 극장에 새 상영을 만들지 않는다', async () => {
             // 첫 극장에만 겹치는 기존 상영을 두고, 충돌 없는 두 번째 극장을 같은 사가로 묶는다.
             const theaterB = await createTheater(fix)
             const [conflictingShowtime] = await createShowtimes(fix, [

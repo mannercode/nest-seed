@@ -56,7 +56,7 @@ flowchart LR
 
 ## 데이터와 DTO
 
-각 도메인은 자기 collection을 소유한다. 다른 도메인의 repository나 collection을 직접 join하지 않고 공개 서비스를 통해 협력한다. Ticket의 `movieId`·`theaterId`·`showtimeId`처럼 조회를 단순하게 하는 안정적인 값은 중복 저장할 수 있다. 중복 값이 바뀔 때의 책임까지 사라지는 것은 아니다.
+각 도메인은 자기 collection을 소유한다. 다른 도메인의 repository나 collection을 직접 join하지 않고 공개 서비스를 통해 협력한다. Ticket의 `movieId`·`theaterId`·`showtimeId`처럼 조회를 단순하게 하는 안정적인 값은 중복 저장할 수 있다.
 
 | 용어           | 역할                                            |
 | -------------- | ----------------------------------------------- |
@@ -66,7 +66,9 @@ flowchart LR
 | TicketHolding  | 만료되는 Redis 선점 상태                        |
 | Ticket         | DB에 남는 판매 여부와 좌석 좌표                 |
 
-극장은 좌석 배치 하나를 가진 상영 공간으로 단순화한다. 극장 좌석과 티켓 좌석은 같은 모양이어도 각 도메인이 소유하는 의미가 달라 별도 모델이다. 좌석 좌표에는 별도 ID를 만들지 않는다.
+극장은 좌석 배치 하나를 가진 상영 공간으로 단순화한다. 극장 좌석과 티켓 좌석은 같은 모양이어도 각 도메인이 소유하는 의미가 달라 별도 모델이다. 좌석 좌표에는 별도 ID를 만들지 않는다. 생성·수정 입력에서 활성 좌석의 `(block, row, seatNumber)` 중복을 거부해 같은 좌석의 티켓이 여러 개 생기지 않게 한다.
+
+빈 배치나 전부 `X`인 배치도 허용한다. 티켓이 없는 상영은 예매 조회에서 판매 집계를 0으로 반환한다. Tickets의 집계는 요청한 상영 ID마다 결과를 제공하며, 그 결과 자체가 누락된 내부 오류는 정상적인 0건과 구분한다.
 
 HTTP ID는 문자열로 전달한다. ObjectId 변환은 Repository의 명시적인 필터에서 처리한다. 서비스는 Mongo 오류 번호나 ClientSession을 다루지 않는다. transaction으로 묶을 업무는 Application이 결정하고, 세션 생성·종료와 driver 실행은 common이 소유한다. `TransactionContext`는 콜백 안에서만 유효하며, 재실행될 수 있는 transaction 콜백에 결제·메시지 발행을 넣지 않는다.
 
@@ -138,11 +140,11 @@ SSE 발행 실패·기한 초과는 기록하고 업무 실행을 계속한다. 
 
 구매 완료 알림은 JetStream에 보존한다. DB·PubAck·소비자의 외부 효과·ack 사이를 한 transaction으로 묶지 못하므로 at-least-once이고 중복은 가능하다. 실제 발송을 추가할 소비자는 구매 ID를 provider 멱등성 키 또는 durable inbox 키로 사용해야 한다. 현재 소비자는 발송할 내용을 로그로 남기는 예제다.
 
-stream은 용량을 넘으면 새 발행을 거부하고 workflow가 재시도한다. 보존·중복 억제 기간과 크기는 [purchase.events.ts](../apps/api/src/services/application/purchase/purchase.events.ts)가 소유한다. 상세 원리와 도구 선택은 [설계 결정](reference/decisions.md)에 둔다.
+stream은 용량을 넘으면 새 발행을 거부하고 workflow가 재시도한다. 보존·중복 억제 기간과 크기는 [purchase-event.service.ts](../apps/api/src/services/application/purchase/purchase-event.service.ts)가 소유한다. 상세 원리와 도구 선택은 [설계 결정](reference/decisions.md)에 둔다.
 
 ## HTTP와 인증 계약
 
-리소스 중심 경로를 기본으로 하되 `booking/`, `showtime-creation/`처럼 여러 단계가 함께 의미를 갖는 유스케이스는 namespace로 묶는다. 긴 ID 목록·복합 검색은 `POST .../search`를 사용할 수 있다. 이 예외로 상태 변경을 조회처럼 숨기지 않는다.
+리소스 중심 경로를 기본으로 하되 `booking/`, `showtime-creation/`처럼 여러 단계가 함께 의미를 갖는 유스케이스는 namespace로 묶는다. 긴 ID 목록·복합 조건의 읽기 전용 검색에는 `POST .../search`를 사용할 수 있다.
 
 구매·상영 생성처럼 중복 실행 비용이 큰 POST에는 Idempotency-Key가 필요하다. 주체·키·본문의 관계를 유지한다.
 
@@ -157,7 +159,7 @@ stream은 용량을 넘으면 새 발행을 거부하고 workflow가 재시도�
 
 부수 효과 전 검증 실패와 실행을 시작한 뒤 저장한 실패는 다르다. 구매가 저장한 오류도 보상 완료 후 같은 키로 재현한다. 재시도마다 새 키를 만들면 멱등 요청이 아니다.
 
-구매 기록은 멱등성 키가 없는 내부 생성도 허용하므로 문자열 키에만 unique 제약을 적용한다. 멱등성 조회에도 이 부분 인덱스의 문자열 조건을 명시해야 누적된 구매 기록 전체를 순회하지 않는다.
+구매 기록은 멱등성 키가 없는 내부 생성도 허용하므로 문자열 키에만 unique 제약을 적용한다. 멱등성 조회에도 이 부분 인덱스의 문자열 조건을 명시해야 누적된 구매 기록 전체를 순회하지 않는다. 결제의 구매 ID 조회도 같은 이유로 부분 인덱스의 문자열 조건을 포함한다.
 
 admin은 콘텐츠와 임의 사용자 자원을, user는 본인 자원을 다룬다. 최초 admin은 독립 스크립트로 생성한다. `/me`와 구매자의 ID는 본문의 값 대신 token subject로 결정한다. 같은 컨트롤러에 공개·user·admin 경로가 섞이면 guard를 메서드마다 지정하고, `/me`는 `/:userId`보다 먼저 선언한다.
 
@@ -179,7 +181,7 @@ API 테스트는 실제 Nest 앱과 MongoDB·Redis·S3·NATS·Restate 경계를 
 
 `common.fixture`의 `login_admin`·`login_user`는 이후 요청에 인증 헤더를 넣고, `as_guest`는 자동 주입을 해제한다. spec의 명시적 Authorization이 우선한다. 직접 실행 대상은 api-docs의 `.env`, 외부 검증 스택은 runner가 지정한 SERVER_URL을 사용한다.
 
-`scripts/`는 API 소스와 별도로 실행한다. admin 생성과 Restate 개발 등록 같은 도구는 common 빌드 없이 필요한 SDK를 직접 사용한다. 이 경계를 이유 없이 앱 DI나 공통 runtime으로 옮기지 않는다.
+`scripts/`는 API 소스와 별도로 실행한다. admin 생성과 Restate 개발 등록 같은 도구는 common 빌드 없이 필요한 SDK를 직접 사용한다.
 
 ## 데모와 BFF
 

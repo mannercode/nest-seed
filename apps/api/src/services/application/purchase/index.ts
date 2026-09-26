@@ -1,6 +1,6 @@
 export * from './dtos/index.js'
 export * from './errors.js'
-export * from './purchase.events.js'
+export * from './purchase-event.service.js'
 export * from './purchase.module.js'
 export * from './purchase.service.js'
 export { PurchaseWorkflow } from './worker/workflow.js'

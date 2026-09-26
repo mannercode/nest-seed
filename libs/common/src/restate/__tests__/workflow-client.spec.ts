@@ -42,7 +42,7 @@ describe('RestateWorkflowClient', () => {
         status: 'Accepted'
     }
 
-    it('workflow key와 60초 attempt timeout으로 제출하되 완료를 암묵적으로 기다리지 않는다', async () => {
+    it('지정한 키와 60초 제한으로 작업을 제출하고 완료를 기다리지 않는다', async () => {
         const fix = createFixture({ result: vi.fn() })
 
         await expect(fix.client.submit(input, input.sagaId)).resolves.toBe(submission)
@@ -72,7 +72,7 @@ describe('RestateWorkflowClient', () => {
         expect(result).toHaveBeenCalledWith(submission)
     })
 
-    it('명시한 완료 대기의 실패는 호출자에게 전달한다', async () => {
+    it('작업 완료를 기다리다 실패하면 호출자에게 오류를 전달한다', async () => {
         const fix = createFixture({
             result: vi.fn().mockRejectedValue(new Error('workflow failed'))
         })
@@ -80,7 +80,7 @@ describe('RestateWorkflowClient', () => {
         await expect(fix.client.waitForCompletion(submission)).rejects.toThrow('workflow failed')
     })
 
-    it('제출 자체가 실패해도 완료 대기를 암묵적으로 시작하지 않는다', async () => {
+    it('작업 제출이 실패하면 오류를 전달하고 완료를 기다리지 않는다', async () => {
         const fix = createFixture({
             result: vi.fn(),
             workflowSubmit: vi.fn().mockRejectedValue(new Error('ingress unavailable'))

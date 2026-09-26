@@ -1,267 +1,317 @@
 import {
-    type DurableMessages,
-    type NatsConnection,
-    getNatsConnectionToken
-} from '@mannercode/common'
-import {
     AckPolicy,
     DeliverPolicy,
     DiscardPolicy,
     ReplayPolicy,
     RetentionPolicy,
     StorageType,
-    jetstream,
-    jetstreamManager
+    jetstream
 } from '@nats-io/jetstream'
 import type { MockInstance } from 'vitest'
-import { PurchaseEvents } from '#application'
+import { PurchaseEventService, type TicketPurchasedEvent } from '#application'
 import { type AppTestContext, createAppTestContext } from '../helpers/index.js'
 import { Logger } from '@nestjs/common'
-import { waitFor } from './purchase-events.utils.js'
+import {
+    getJetStream,
+    getNotificationLogs,
+    mockNotificationMessages,
+    NOTIFICATION_LOG,
+    waitFor,
+    waitForNotifications
+} from './purchase-events.utils.js'
 import { PurchaseNotificationService } from '../../services/application/purchase/internal/index.js'
-import { NATS_CONNECTION_NAME } from '#config'
 
-const NOTIFICATION_LOG = 'would send purchase confirmation'
-
-const countLogCalls = (logSpy: MockInstance, message: string) =>
-    logSpy.mock.calls.filter(([msg]) => msg === message).length
-
-describe('PurchaseEvents', () => {
+describe('PurchaseEventService', () => {
     let fix: AppTestContext
-    let teardowns: AppTestContext['teardown'][]
-    let events: PurchaseEvents
-    let logSpy: MockInstance
-    let errorSpy: MockInstance
+    let teardown: AppTestContext['teardown'] | undefined
+    let events: PurchaseEventService
 
     beforeEach(async () => {
+        teardown = undefined
+
         fix = await createAppTestContext()
-        teardowns = [fix.teardown]
-        events = fix.module.get(PurchaseEvents)
-
-        logSpy = vi.spyOn(Logger.prototype, 'log')
-        errorSpy = vi.spyOn(Logger.prototype, 'error')
+        teardown = fix.teardown
+        events = fix.module.get(PurchaseEventService)
     })
+    afterEach(() => teardown?.())
 
-    afterEach(async () => Promise.all(teardowns.map((teardown) => teardown())))
+    describe('emitTicketPurchased', () => {
+        describe('같은 구매 ID의 이벤트를 이미 발행했을 때', () => {
+            let event: TicketPurchasedEvent
 
-    it('한 프로세스의 Nest context 4개에서 공유 consumer의 알림 로그 1회를 관측한다', async () => {
-        const contexts = await Promise.all(Array.from({ length: 3 }, createAppTestContext))
-        teardowns.push(...contexts.map((context) => context.teardown))
-
-        await events.emitTicketPurchased({
-            purchaseRecordId: 'purchase-replicas',
-            ticketIds: ['t1', 't2'],
-            userId: 'user-1'
-        })
-
-        await waitFor(() => countLogCalls(logSpy, NOTIFICATION_LOG) === 1)
-
-        expect(logSpy).toHaveBeenCalledWith(
-            NOTIFICATION_LOG,
-            expect.objectContaining({
-                dedupeKey: 'purchase-replicas',
-                purchaseRecordId: 'purchase-replicas'
+            beforeEach(async () => {
+                event = {
+                    purchaseRecordId: 'purchase-duplicate',
+                    ticketIds: ['t1'],
+                    userId: 'user-1'
+                }
+                await events.emitTicketPurchased(event)
             })
-        )
-    })
 
-    it('알림 소비자가 중단된 동안 발행한 이벤트를 재시작 뒤 처리한다', async () => {
-        const notification = fix.module.get(PurchaseNotificationService)
+            it('중복 발행 방지 기간 안에 다시 발행해도 한 건만 저장한다', async () => {
+                await events.emitTicketPurchased(event)
 
-        await notification.onModuleDestroy()
-        await events.emitTicketPurchased({
-            purchaseRecordId: 'purchase-offline',
-            ticketIds: ['t1'],
-            userId: 'user-1'
-        })
-        expect(countLogCalls(logSpy, NOTIFICATION_LOG)).toBe(0)
-
-        await notification.onModuleInit()
-
-        await waitFor(() => countLogCalls(logSpy, NOTIFICATION_LOG) === 1)
-    })
-
-    it('알림 처리 실패를 ack하지 않고 지연 재전달한다', async () => {
-        let attempts = 0
-        logSpy.mockImplementation((message) => {
-            if (message === NOTIFICATION_LOG && attempts++ === 0) {
-                throw new Error('temporary notification failure')
-            }
-        })
-
-        await events.emitTicketPurchased({
-            purchaseRecordId: 'purchase-retry',
-            ticketIds: ['t1'],
-            userId: 'user-1'
-        })
-
-        await waitFor(() => attempts === 2, 5000)
-        expect(errorSpy).toHaveBeenCalledWith(
-            'purchase notification retry scheduled',
-            expect.objectContaining({ deliveryCount: 1, purchaseRecordId: 'purchase-retry' })
-        )
-    })
-
-    it('같은 purchaseRecordId 재발행은 duplicate window에서 한 건만 저장한다', async () => {
-        const { manager, streamName } = await getJetStream(fix, events)
-        const event = {
-            purchaseRecordId: 'purchase-duplicate',
-            ticketIds: ['t1'],
-            userId: 'user-1'
-        }
-
-        await events.emitTicketPurchased(event)
-        await events.emitTicketPurchased(event)
-
-        const stream = await manager.streams.info(streamName)
-        expect(stream.state.messages).toBe(1)
-    })
-
-    it('구매 stream과 알림 durable consumer의 내구성 계약을 고정한다', async () => {
-        const { manager, streamName } = await getJetStream(fix, events)
-        const stream = await manager.streams.info(streamName)
-        const consumers = await manager.consumers.list(streamName).next()
-        const [consumer] = consumers
-
-        expect(stream.config).toMatchObject({
-            discard: DiscardPolicy.New,
-            max_age: 7 * 24 * 60 * 60 * 1_000_000_000,
-            max_bytes: 1024 * 1024,
-            num_replicas: 1,
-            retention: RetentionPolicy.Limits,
-            storage: StorageType.File,
-            subjects: [events.subjects.purchased]
-        })
-        expect(consumers).toHaveLength(1)
-        expect(consumer?.config).toMatchObject({
-            ack_policy: AckPolicy.Explicit,
-            deliver_policy: DeliverPolicy.All,
-            filter_subject: events.subjects.purchased,
-            replay_policy: ReplayPolicy.Instant
+                const { manager, streamName } = await getJetStream(fix)
+                const stream = await manager.streams.info(streamName)
+                expect(stream.state.messages).toBe(1)
+            })
         })
     })
 
-    it('형식이 잘못된 이벤트는 재시도하지 않고 종료한다', async () => {
-        const { connection, manager, streamName } = await getJetStream(fix, events)
+    describe('onModuleInit', () => {
+        it('구매 이벤트의 보존 정책과 알림 소비자를 등록한다', async () => {
+            const { manager, streamName } = await getJetStream(fix)
+            const stream = await manager.streams.info(streamName)
+            const consumers = await manager.consumers.list(streamName).next()
+            const [consumer] = consumers
 
-        await jetstream(connection).publish(
-            events.subjects.purchased,
-            JSON.stringify({ purchaseRecordId: '', ticketIds: [], userId: 'user-1' }),
-            { expect: { streamName }, msgID: 'invalid-purchase-event' }
-        )
-
-        await waitFor(() =>
-            errorSpy.mock.calls.some(
-                ([message]) => message === 'invalid purchase notification event'
-            )
-        )
-        await waitFor(async () => {
-            const [consumer] = await manager.consumers.list(streamName).next()
-            return consumer?.num_ack_pending === 0 && consumer.num_pending === 0
+            expect(stream.config).toMatchObject({
+                discard: DiscardPolicy.New,
+                max_age: 7 * 24 * 60 * 60 * 1_000_000_000,
+                max_bytes: 1024 * 1024,
+                num_replicas: 1,
+                retention: RetentionPolicy.Limits,
+                storage: StorageType.File,
+                subjects: [events.subjects.purchased]
+            })
+            expect(consumers).toHaveLength(1)
+            expect(consumer?.config).toMatchObject({
+                ack_policy: AckPolicy.Explicit,
+                deliver_policy: DeliverPolicy.All,
+                filter_subject: events.subjects.purchased,
+                replay_policy: ReplayPolicy.Instant
+            })
         })
-    })
-
-    it('JSON이 아닌 이벤트도 재시도하지 않고 종료한다', async () => {
-        const { connection, streamName } = await getJetStream(fix, events)
-
-        await jetstream(connection).publish(events.subjects.purchased, 'not-json', {
-            expect: { streamName },
-            msgID: 'malformed-purchase-event'
-        })
-
-        await waitFor(() =>
-            errorSpy.mock.calls.some(
-                ([message]) => message === 'invalid purchase notification event'
-            )
-        )
     })
 })
 
 describe('PurchaseNotificationService', () => {
-    it('소비 iterator가 조용히 끝나도 비정상 종료로 기록한다', async () => {
-        const messages = fakeMessages(async function* () {})
-        const { service, errorSpy } = await createNotificationService(messages)
+    let fix: AppTestContext
+    let teardowns: AppTestContext['teardown'][]
+    let events: PurchaseEventService
+    let notification: PurchaseNotificationService
+    let logSpy: MockInstance
+    let errorSpy: MockInstance
 
-        await service.onModuleInit()
+    beforeEach(async () => {
+        teardowns = []
 
-        await waitFor(() =>
-            errorSpy.mock.calls.some(
-                ([message]) => message === 'purchase notification consumer stopped unexpectedly'
-            )
-        )
-        await service.onModuleDestroy()
-
-        expect(messages.close).toHaveBeenCalledOnce()
+        fix = await createAppTestContext()
+        teardowns.push(fix.teardown)
+        events = fix.module.get(PurchaseEventService)
+        notification = fix.module.get(PurchaseNotificationService)
+        logSpy = vi.spyOn(Logger.prototype, 'log')
+        errorSpy = vi.spyOn(Logger.prototype, 'error')
+    })
+    afterEach(async () => {
+        const results = await Promise.allSettled(teardowns.map((teardown) => teardown()))
+        const failure = results.find((result) => result.status === 'rejected')
+        if (failure) throw failure.reason
     })
 
-    it('소비 iterator 오류를 기록하고 rejection을 외부로 누출하지 않는다', async () => {
-        const failure = new Error('consumer failure')
-        const messages = fakeMessages(async function* () {
-            throw failure
+    describe('구매 완료 알림', () => {
+        describe('여러 앱이 같은 소비자를 공유할 때', () => {
+            beforeEach(async () => {
+                // 한 프로세스의 앱 4개다. 프로세스 장애·재전달의 중복 방지 검증은 아니다.
+                for (let i = 0; i < 3; i++) {
+                    const context = await createAppTestContext()
+                    teardowns.push(context.teardown)
+                }
+            })
+
+            it('구매 이벤트 한 건을 한 번 처리한다', async () => {
+                await events.emitTicketPurchased({
+                    purchaseRecordId: 'purchase-replicas',
+                    ticketIds: ['t1', 't2'],
+                    userId: 'user-1'
+                })
+                await waitForNotifications(fix)
+
+                expect(getNotificationLogs(logSpy)).toEqual([
+                    [
+                        NOTIFICATION_LOG,
+                        {
+                            dedupeKey: 'purchase-replicas',
+                            purchaseRecordId: 'purchase-replicas',
+                            ticketCount: 2,
+                            userId: 'user-1'
+                        }
+                    ]
+                ])
+            })
         })
-        const { service, errorSpy } = await createNotificationService(messages)
 
-        await service.onModuleInit()
+        describe('소비자가 중단된 동안 이벤트가 발행되었을 때', () => {
+            beforeEach(async () => {
+                await notification.onModuleDestroy()
+                await events.emitTicketPurchased({
+                    purchaseRecordId: 'purchase-offline',
+                    ticketIds: ['t1'],
+                    userId: 'user-1'
+                })
+            })
 
-        await waitFor(() =>
-            errorSpy.mock.calls.some(
-                ([message]) => message === 'purchase notification consumer failed'
-            )
-        )
-        await service.onModuleDestroy()
+            it('소비자를 다시 시작하면 보관된 이벤트를 처리한다', async () => {
+                expect(getNotificationLogs(logSpy)).toHaveLength(0)
 
-        expect(errorSpy).toHaveBeenCalledWith('purchase notification consumer failed', failure)
+                await notification.onModuleInit()
+                await waitForNotifications(fix)
+
+                expect(getNotificationLogs(logSpy)).toHaveLength(1)
+                expect(logSpy).toHaveBeenCalledWith(
+                    NOTIFICATION_LOG,
+                    expect.objectContaining({ purchaseRecordId: 'purchase-offline' })
+                )
+            })
+        })
+
+        describe('첫 알림 처리에 실패할 때', () => {
+            let attempts: number
+
+            beforeEach(() => {
+                attempts = 0
+                logSpy.mockImplementation((message) => {
+                    if (message === NOTIFICATION_LOG && attempts++ === 0) {
+                        throw new Error('temporary notification failure')
+                    }
+                })
+            })
+
+            it('이벤트를 재전달받아 알림을 처리한다', async () => {
+                await events.emitTicketPurchased({
+                    purchaseRecordId: 'purchase-retry',
+                    ticketIds: ['t1'],
+                    userId: 'user-1'
+                })
+                await waitForNotifications(fix, 5000)
+
+                expect(attempts).toBe(2)
+                expect(errorSpy).toHaveBeenCalledWith(
+                    'purchase notification retry scheduled',
+                    expect.objectContaining({
+                        deliveryCount: 1,
+                        purchaseRecordId: 'purchase-retry'
+                    })
+                )
+            })
+        })
+
+        describe.each([
+            [
+                '필수 필드가 잘못된',
+                JSON.stringify({ purchaseRecordId: '', ticketIds: [], userId: 'user-1' })
+            ],
+            ['JSON이 아닌', 'not-json']
+        ])('%s 이벤트를 받았을 때', (_, payload) => {
+            let stream: Awaited<ReturnType<typeof getJetStream>>
+
+            beforeEach(async () => {
+                stream = await getJetStream(fix)
+            })
+
+            it('오류를 기록하고 소비 대기 목록에서 제거한다', async () => {
+                const { connection, streamName } = stream
+                await jetstream(connection).publish(events.subjects.purchased, payload, {
+                    expect: { streamName },
+                    msgID: 'invalid-purchase-event'
+                })
+                await waitForNotifications(fix)
+
+                expect(getNotificationLogs(logSpy)).toHaveLength(0)
+                expect(errorSpy).toHaveBeenCalledWith(
+                    'invalid purchase notification event',
+                    expect.objectContaining({ error: expect.anything(), streamSequence: 1 })
+                )
+            })
+        })
     })
 
-    it('정상 종료 중 발생한 iterator 오류는 비정상 장애로 기록하지 않는다', async () => {
-        let release!: () => void
-        const gate = new Promise<void>((resolve) => (release = resolve))
-        const messages = fakeMessages(async function* () {
-            await gate
-            throw new Error('closed iterator')
-        }, release)
-        const { service, errorSpy } = await createNotificationService(messages)
+    describe('onModuleInit', () => {
+        beforeEach(() => notification.onModuleDestroy())
 
-        await service.onModuleInit()
-        await service.onModuleDestroy()
+        describe('소비 스트림이 오류 없이 끝날 때', () => {
+            let messages: ReturnType<typeof mockNotificationMessages>
 
-        expect(errorSpy).not.toHaveBeenCalledWith(
-            'purchase notification consumer failed',
-            expect.anything()
-        )
+            beforeEach(() => {
+                messages = mockNotificationMessages(fix, async function* () {})
+            })
+
+            it('예기치 않은 종료를 기록하고 스트림을 정리한다', async () => {
+                await notification.onModuleInit()
+                await waitFor(() => errorSpy.mock.calls.length > 0)
+                await notification.onModuleDestroy()
+
+                expect(errorSpy).toHaveBeenCalledWith(
+                    'purchase notification consumer stopped unexpectedly'
+                )
+                expect(messages.close).toHaveBeenCalledOnce()
+            })
+        })
+
+        describe('소비 스트림이 예외를 던질 때', () => {
+            let failure: Error
+
+            beforeEach(() => {
+                failure = new Error('consumer failure')
+                mockNotificationMessages(fix, async function* () {
+                    throw failure
+                })
+            })
+
+            it('원인을 기록하고 종료 시 오류를 다시 던지지 않는다', async () => {
+                await notification.onModuleInit()
+                await waitFor(() => errorSpy.mock.calls.length > 0)
+
+                expect(errorSpy).toHaveBeenCalledWith(
+                    'purchase notification consumer failed',
+                    failure
+                )
+                await expect(notification.onModuleDestroy()).resolves.toBeUndefined()
+            })
+        })
     })
 
-    it('초기화 전에 종료되어도 안전하다', async () => {
-        const messages = fakeMessages(async function* () {})
-        const { service } = await createNotificationService(messages)
+    describe('onModuleDestroy', () => {
+        beforeEach(() => notification.onModuleDestroy())
 
-        await expect(service.onModuleDestroy()).resolves.toBeUndefined()
-        expect(messages.close).not.toHaveBeenCalled()
+        describe('스트림을 닫을 때 예외가 발생하는 경우', () => {
+            let messages: ReturnType<typeof mockNotificationMessages>
+
+            beforeEach(async () => {
+                const release = Promise.withResolvers<void>()
+                messages = mockNotificationMessages(
+                    fix,
+                    async function* () {
+                        await release.promise
+                        throw new Error('closed iterator')
+                    },
+                    release.resolve
+                )
+                await notification.onModuleInit()
+            })
+
+            it('종료 중인 스트림의 오류를 장애로 기록하지 않는다', async () => {
+                await notification.onModuleDestroy()
+
+                expect(messages.close).toHaveBeenCalledOnce()
+                expect(errorSpy).not.toHaveBeenCalled()
+            })
+        })
+
+        describe('서비스가 아직 초기화되지 않았을 때', () => {
+            let uninitialized: PurchaseNotificationService
+            let consume: MockInstance
+
+            beforeEach(() => {
+                uninitialized = new PurchaseNotificationService(events)
+                consume = vi.spyOn(events, 'consumeNotifications')
+            })
+
+            it('소비를 시작하지 않고 종료한다', async () => {
+                await expect(uninitialized.onModuleDestroy()).resolves.toBeUndefined()
+
+                expect(consume).not.toHaveBeenCalled()
+            })
+        })
     })
 })
-
-async function getJetStream(fix: AppTestContext, events: PurchaseEvents) {
-    const connection = fix.module.get<NatsConnection>(getNatsConnectionToken(NATS_CONNECTION_NAME))
-    const manager = await jetstreamManager(connection)
-    const streamName = await manager.streams.find(events.subjects.purchased)
-    return { connection, manager, streamName }
-}
-
-function fakeMessages(
-    iterator: () => AsyncGenerator<never, void, unknown>,
-    onClose: () => void = () => undefined
-) {
-    const messages = iterator() as unknown as DurableMessages
-    messages.close = vi.fn(async () => onClose())
-    return messages
-}
-
-async function createNotificationService(messages: DurableMessages) {
-    const fakeEvents = {
-        consumeNotifications: vi.fn(async () => messages)
-    } as unknown as PurchaseEvents
-    return {
-        errorSpy: vi.spyOn(Logger.prototype, 'error'),
-        service: new PurchaseNotificationService(fakeEvents)
-    }
-}

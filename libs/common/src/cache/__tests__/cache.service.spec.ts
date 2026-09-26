@@ -1,3 +1,4 @@
+import { InternalServerErrorException } from '@nestjs/common'
 import { type CacheServiceFixture, createCacheServiceFixture } from './cache.service.fixture.js'
 import { sleep } from '../../utils/index.js'
 
@@ -10,6 +11,32 @@ describe('CacheService', () => {
     afterEach(() => fix.teardown())
 
     describe('incrementWithExpiry', () => {
+        it.each([NaN, Infinity, -Infinity, 0.5])(
+            '유효하지 않은 TTL %s는 카운터를 쓰기 전에 거절한다',
+            async (ttl) => {
+                await expect(
+                    fix.cacheService.incrementWithExpiry('invalid-counter', ttl)
+                ).rejects.toThrow(
+                    expect.objectContaining({
+                        status: 500,
+                        cause: 'Counter TTL must be an integer (ms)'
+                    })
+                )
+                expect(await fix.cacheService.get('invalid-counter')).toBeNull()
+
+                await fix.cacheService.set('existing-counter', '7')
+                await expect(
+                    fix.cacheService.incrementWithExpiry('existing-counter', ttl)
+                ).rejects.toThrow(InternalServerErrorException)
+                expect(await fix.cacheService.get('existing-counter')).toBe('7')
+            }
+        )
+
+        it.each([0, -1])('TTL이 %s이면 카운터를 즉시 만료시킨다', async (ttl) => {
+            expect(await fix.cacheService.incrementWithExpiry('immediate-counter', ttl)).toBe(1)
+            expect(await fix.cacheService.get('immediate-counter')).toBeNull()
+        })
+
         it('동시 증가가 유실되지 않고 최초 증가 때 만료를 설정한다', async () => {
             const results = await Promise.all(
                 Array.from({ length: 20 }, () =>
@@ -43,6 +70,20 @@ describe('CacheService', () => {
     })
 
     describe('set', () => {
+        it.each([NaN, Infinity, -Infinity, 0.5])(
+            '유효하지 않은 TTL %s는 기존 값을 덮어쓰지 않는다',
+            async (ttl) => {
+                await fix.cacheService.set('key', 'original')
+                await expect(fix.cacheService.set('key', 'replacement', ttl)).rejects.toThrow(
+                    expect.objectContaining({
+                        status: 500,
+                        cause: 'TTL must be a non-negative integer (0 for no expiration)'
+                    })
+                )
+                expect(await fix.cacheService.get('key')).toBe('original')
+            }
+        )
+
         it('TTL이 없으면 값을 저장한다', async () => {
             await fix.cacheService.set('key', 'value')
             const cachedValue = await fix.cacheService.get('key')
@@ -120,6 +161,21 @@ describe('CacheService', () => {
     })
 
     describe('withLock', () => {
+        it.each([NaN, Infinity, -Infinity, 0.5])(
+            '유효하지 않은 TTL %s는 락 생성과 콜백 실행 전에 거절한다',
+            async (ttl) => {
+                const callback = vi.fn(() => 'unused')
+                await expect(fix.cacheService.withLock('job', ttl, callback)).rejects.toThrow(
+                    expect.objectContaining({
+                        status: 500,
+                        cause: 'Lock TTL must be a positive integer (ms)'
+                    })
+                )
+                expect(callback).not.toHaveBeenCalled()
+                expect(await fix.cacheService.get('lock:job')).toBeNull()
+            }
+        )
+
         it('락을 점유한 동안에는 다른 호출이 콜백을 실행하지 않는다', async () => {
             let running = 0
             let maxConcurrent = 0

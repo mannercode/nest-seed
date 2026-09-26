@@ -1,4 +1,5 @@
 import { InternalServerErrorException, Logger } from '@nestjs/common'
+import { inspect } from 'node:util'
 import { isEqual } from './lodash.js'
 
 export class Assume {
@@ -36,7 +37,7 @@ export class Require {
     static equals<T>(a: T, b: T, message: string) {
         if (!isEqual(a, b)) {
             throw new InternalServerErrorException('Internal server error', {
-                cause: `${JSON.stringify(a)} !== ${JSON.stringify(b)}, ${message}`
+                cause: `${inspect(a, { customInspect: false })} !== ${inspect(b, { customInspect: false })}, ${message}`
             })
         }
     }

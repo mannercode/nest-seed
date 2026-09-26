@@ -2,6 +2,7 @@ import { connect, type NatsConnection } from '@nats-io/transport-node'
 import { jetstreamManager } from '@nats-io/jetstream'
 import type { MockInstance } from 'vitest'
 import { withTestId } from '@mannercode/testing'
+import * as testing from '@mannercode/testing'
 import {
     type NatsPubSubServiceFixture,
     createNatsPubSubServiceFixture
@@ -9,6 +10,7 @@ import {
 import { Logger as NestLogger } from '@nestjs/common'
 import {
     InjectNatsPubSub,
+    getNatsConnectionToken,
     NatsPubSubModule,
     JetStreamChannel,
     type DurableMessages,
@@ -40,7 +42,7 @@ describe('NatsPubSubService', () => {
     })
     afterEach(() => fix.teardown())
 
-    it('두 복제본이 같은 NATS를 공유하면 한쪽에서 발행한 메시지가 다른 쪽 구독자에게 도달한다', async () => {
+    it('서로 다른 서비스 인스턴스 사이에서 NATS 메시지를 전달한다', async () => {
         const received: string[] = []
         await fix.pubSubB.subscribe(subject, (msg) => received.push(msg))
 
@@ -152,6 +154,48 @@ describe('NatsPubSubService', () => {
 
         expect(received).toEqual([])
     })
+
+    it.each([false, true])(
+        '종료는 진행 중 핸들러를 기다리고 다음 호출을 막는다 (먼저 구독 해제: %s)',
+        async (unsubscribeFirst) => {
+            const entered = Promise.withResolvers<void>()
+            const release = Promise.withResolvers<void>()
+            const finished = vi.fn()
+            const next = vi.fn()
+            const handler = vi.fn(async () => {
+                entered.resolve()
+                await release.promise
+                finished()
+            })
+            await fix.pubSubB.subscribe(subject, handler)
+            if (!unsubscribeFirst) await fix.pubSubB.subscribe(subject, next)
+            let stopping: Promise<void> | undefined
+            let stopped = false
+
+            try {
+                await fix.pubSubA.publish(subject, 'in-flight')
+                await entered.promise
+                await fix.pubSubA.publish(subject, 'queued')
+                if (unsubscribeFirst) await fix.pubSubB.unsubscribe(subject, handler)
+                stopping = fix.pubSubB.onModuleDestroy().then(() => {
+                    stopped = true
+                })
+                // 이미 완료된 종료 훅의 then까지 실행한 뒤, handler 대기를 확인한다.
+                await Promise.resolve()
+                expect(stopped).toBe(false)
+                expect(finished).not.toHaveBeenCalled()
+
+                release.resolve()
+                await stopping
+                expect(finished).toHaveBeenCalledTimes(1)
+                expect(handler).toHaveBeenCalledTimes(1)
+                expect(next).not.toHaveBeenCalled()
+            } finally {
+                release.resolve()
+                await stopping
+            }
+        }
+    )
 
     it('구독한 적 없는 subject를 구독 해제해도 아무 일도 일어나지 않는다', async () => {
         await expect(fix.pubSubB.unsubscribe('never-subscribed', () => {})).resolves.toBeUndefined()
@@ -271,7 +315,7 @@ describe('NatsPubSubService', () => {
             await waitFor(() => errorSpy.mock.calls.length > 0)
         })
 
-        it('logger.error를 한 번 호출하고 수신 루프를 조용히 종료한다', () => {
+        it('수신 오류를 로그에 한 번 기록한다', () => {
             const errorCalls = errorSpy.mock.calls.filter((call) =>
                 String(call[0]).includes(errorSubject)
             )
@@ -342,6 +386,43 @@ describe('NatsPubSubService', () => {
     })
 })
 
+describe('createNatsPubSubServiceFixture', () => {
+    it.each(['second-context', 'flush', 'cleanup'] as const)(
+        '%s 실패 시 생성한 context를 모두 닫고 원래 초기화 오류를 유지한다',
+        async (stage) => {
+            const failure = new Error('fixture initialization failed')
+            const createContext = testing.createTestContext
+            const contexts: Array<{ close: () => Promise<void>; closeSpy: MockInstance }> = []
+            vi.spyOn(testing, 'createTestContext').mockImplementation(async (options) => {
+                if (stage === 'second-context' && contexts.length === 1) throw failure
+                const context = await createContext(options)
+                const close = context.close.bind(context)
+                const first = contexts.length === 0
+                const closeSpy = vi.spyOn(context, 'close').mockImplementation(async () => {
+                    await close()
+                    if (stage === 'cleanup' && first) throw new Error('cleanup failed')
+                })
+                contexts.push({ close, closeSpy })
+                if (stage !== 'second-context' && first) {
+                    const connection = context.module.get<NatsConnection>(
+                        getNatsConnectionToken('replicaA')
+                    )
+                    vi.spyOn(connection, 'flush').mockRejectedValueOnce(failure)
+                }
+                return context
+            })
+
+            try {
+                await expect(createNatsPubSubServiceFixture()).rejects.toBe(failure)
+                expect(contexts).toHaveLength(stage === 'second-context' ? 1 : 2)
+                for (const context of contexts) expect(context.closeSpy).toHaveBeenCalledTimes(1)
+            } finally {
+                await Promise.allSettled(contexts.map((context) => context.close()))
+            }
+        }
+    )
+})
+
 describe('InjectNatsPubSub', () => {
     it('이름 없이 호출하면 파라미터 데코레이터를 반환한다', async () => {
         expect(typeof InjectNatsPubSub(undefined)).toBe('function')
@@ -395,7 +476,7 @@ describe('JetStreamChannel', () => {
         await connection.close()
     })
 
-    it('동시 초기화와 중복 발행은 한 stream과 메시지로 수렴한다', async () => {
+    it('동시에 초기화한 뒤 같은 ID로 두 번 발행해도 메시지 한 건만 저장한다', async () => {
         await Promise.all([channel.initialize(), channel.initialize()])
         await channel.publish({ value: 'one' }, 'id')
         await channel.publish({ value: 'one' }, 'id')
@@ -411,7 +492,7 @@ describe('JetStreamChannel', () => {
         })
     })
 
-    it('소비자가 없어도 보존한 메시지를 읽고 명시적으로 확인한다', async () => {
+    it('소비 시작 전에 발행한 메시지도 받고 처리 완료를 서버에 알린다', async () => {
         await channel.publish({ value: 'one' }, 'id')
         messages = await channel.consume()
         iterator = messages[Symbol.asyncIterator]()

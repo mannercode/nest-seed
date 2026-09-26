@@ -47,9 +47,12 @@ export class PaymentsRepository extends CrudRepository<Payment> {
         // purchaseRecordId가 결제의 idempotency key다. 재시도나 커밋 결과 불명확 상황에서도
         // 같은 구매에 두 결제 행을 만들지 않는다.
         const now = DateUtil.toDate(DateUtil.now())
+        const filter = this.activeFilter({
+            purchaseRecordId: { $eq: createDto.purchaseRecordId, $type: 'string' }
+        })
         try {
             await this.updateDocument(
-                this.activeFilter({ purchaseRecordId: createDto.purchaseRecordId }),
+                filter,
                 {
                     $setOnInsert: {
                         __v: 0,
@@ -71,15 +74,15 @@ export class PaymentsRepository extends CrudRepository<Payment> {
             // 그 경우 승자가 만든 행을 아래에서 읽으면 되고, 다른 DB 오류는 숨기지 않는다.
             if (!isDuplicateKeyError(error)) throw error
         }
-        const payment = await this.findDocument(
-            this.activeFilter({ purchaseRecordId: createDto.purchaseRecordId })
-        )
+        const payment = await this.findDocument(filter)
 
         return ensure(payment)
     }
 
     async findByPurchaseRecordId({ purchaseRecordId }: { purchaseRecordId: string }) {
-        const payment = await this.findDocument(this.activeFilter({ purchaseRecordId }))
+        const payment = await this.findDocument(
+            this.activeFilter({ purchaseRecordId: { $eq: purchaseRecordId, $type: 'string' } })
+        )
         return payment
     }
 }

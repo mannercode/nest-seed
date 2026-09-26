@@ -6,7 +6,7 @@ import { ShowtimeCreationEventSchema, type ShowtimeCreationEvent } from './inter
 
 // NATS로 복제본을 건넌 상태를 로컬 RxJS 스트림에 전달하며, PROJECT_ID로 테스트를 격리한다.
 @Injectable()
-export class ShowtimeCreationEvents implements OnModuleInit, OnModuleDestroy {
+export class ShowtimeCreationEventService implements OnModuleInit, OnModuleDestroy {
     private readonly natsSubject: string
 
     private readonly subject = new Subject<ShowtimeCreationEvent>()

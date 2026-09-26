@@ -1,4 +1,4 @@
-import { type TransactionContext, mapDocToDto } from '@mannercode/common'
+import { type TransactionContext, ensure, mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import {
     AggregateTicketSalesDto,
@@ -15,8 +15,13 @@ export class TicketsService {
     constructor(private readonly repository: TicketsRepository) {}
 
     async aggregateSales(aggregateDto: AggregateTicketSalesDto) {
-        const salesByShowtime = await this.repository.aggregateSales(aggregateDto)
-        return salesByShowtime
+        const ticketSales = await this.repository.aggregateSales(aggregateDto)
+        const salesByShowtime = new Map(ticketSales.map((sales) => [sales.showtimeId, sales]))
+
+        return ensure(aggregateDto.showtimeIds).map(
+            (showtimeId) =>
+                salesByShowtime.get(showtimeId) ?? { available: 0, showtimeId, sold: 0, total: 0 }
+        )
     }
 
     async createMany(

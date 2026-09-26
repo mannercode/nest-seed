@@ -106,5 +106,20 @@ describe('ByteUtil', () => {
                 expect(ByteUtil.fromString(ByteUtil.toString(value))).toBe(value)
             }
         })
+
+        it.each([
+            [0.5, '0.5B'],
+            [-0.5, '-0.5B'],
+            [1.5, '1.5B'],
+            [-1.5, '-1.5B'],
+            [1024.5, '1KB 0.5B'],
+            [-1024.5, '-1KB -0.5B'],
+            [1e-7, '1e-7B'],
+            [-1e-7, '-1e-7B'],
+            [Number.MIN_VALUE, '5e-324B']
+        ] as const)('%s 바이트의 소수 부분을 표시하고 다시 읽는다', (value, formatted) => {
+            expect(ByteUtil.toString(value)).toBe(formatted)
+            expect(ByteUtil.fromString(formatted)).toBe(value)
+        })
     })
 })

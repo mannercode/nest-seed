@@ -85,6 +85,34 @@ describe('HttpTestClient', () => {
     })
 
     describe('SSE', () => {
+        it('한글 바이트가 청크 사이에 나뉘어도 원문을 전달한다', async () => {
+            const firstChunk = Promise.withResolvers<void>()
+            const received = Promise.withResolvers<string>()
+            const reject = (reason: unknown) => {
+                firstChunk.reject(reason)
+                received.reject(reason)
+            }
+
+            fix.httpClient.get('/split-utf8-event').sse((data) => {
+                if (data === 'ready') firstChunk.resolve()
+                else received.resolve(data)
+            }, reject)
+
+            try {
+                const [data] = await Promise.all([
+                    received.promise,
+                    firstChunk.promise.then(() =>
+                        new HttpTestClient(fix.httpClient.serverUrl)
+                            .post('/complete-utf8-event')
+                            .created()
+                    )
+                ])
+                expect(data).toBe('한글')
+            } finally {
+                fix.httpClient.abort()
+            }
+        })
+
         it('첫 이벤트 없이도 수신 준비를 알리고 이후 요청의 이벤트를 받는다', async () => {
             const ready = Promise.withResolvers<void>()
             const received = Promise.withResolvers<string>()

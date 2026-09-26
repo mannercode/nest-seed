@@ -9,13 +9,13 @@ import {
     ShowtimeCreationSubmissionRepository
 } from './internal/index.js'
 import { ShowtimeCreationOperationRepository } from './internal/showtime-creation-operation.repository.js'
-import { ShowtimeCreationEvents } from './showtime-creation.events.js'
+import { ShowtimeCreationEventService } from './showtime-creation-event.service.js'
 import { ShowtimeCreationService } from './showtime-creation.service.js'
 import { ShowtimeCreationWorkflowClient } from './worker/showtime-creation-workflow-client.js'
 import { ShowtimeCreationWorkflow } from './worker/workflow.js'
 
 @Module({
-    exports: [ShowtimeCreationService, ShowtimeCreationEvents, ShowtimeCreationWorkflow],
+    exports: [ShowtimeCreationService, ShowtimeCreationEventService, ShowtimeCreationWorkflow],
     imports: [
         NatsPubSubModule.register({ natsName: NATS_CONNECTION_NAME }),
         MoviesModule,
@@ -24,7 +24,7 @@ import { ShowtimeCreationWorkflow } from './worker/workflow.js'
         TicketsModule
     ],
     providers: [
-        ShowtimeCreationEvents,
+        ShowtimeCreationEventService,
         ShowtimeCreationService,
         ShowtimeBulkValidatorService,
         ShowtimeBulkCreatorService,

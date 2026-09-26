@@ -16,6 +16,8 @@ NestJS 프로젝트를 시작할 때 가져다 쓰고 고칠 수 있는 시드�
 
 ## 시작하기
 
+새 프로젝트로 포크할 때는 프로젝트명 `nest-seed`와 조직명 `mannercode`(`@mannercode/*` 패키지 scope 포함)를 사용할 이름으로 바꾼다.
+
 공식 개발 경로는 Dev Container다. Docker가 있는 호스트의 저장소를 VS Code Remote SSH로 열고 Dev Containers 확장을 사용한다. 호스트와 컨테이너의 workspace 절대경로는 같아야 한다. 이유는 [개발 환경](docs/devcontainer.md)에 있다.
 
 1. VS Code에서 `Reopen in Container`를 실행한다. 시작할 때 개발 인프라를 초기화하고 의존성을 준비한다.
@@ -43,7 +45,7 @@ Dev Container 시작, `bash infra/reset.sh`, `pnpm run atoz`는 개발 데이터
 | `pnpm run race <scenario>` | 다중 복제본의 HTTP/SSE 경쟁 또는 복제본 종료 시나리오          |
 | `pnpm run benchmark`       | 같은 조건의 API 성능 비교                                      |
 
-race와 benchmark는 기본 test·AtoZ에 포함되지 않는다. 같은 API Vitest 명령을 동시에 두 번 실행하는 것은 지원하지 않는다. 커버리지 100%와 반복 CI는 검증되지 않은 경로와 간헐 실패를 드러내는 개발 제약이며, 모든 버그가 없다는 보장은 아니다. 테스트별 목적과 검증 한계는 [tests 가이드](docs/tests.md)에 있다.
+race와 benchmark는 기본 test·AtoZ에 포함되지 않는다. 같은 API Vitest 명령을 동시에 두 번 실행하는 것은 지원하지 않는다. 커버리지 100%와 반복 CI는 검증되지 않은 경로와 간헐 실패를 드러내는 개발 제약이다. 테스트별 목적과 검증 한계는 [tests 가이드](docs/tests.md)에 있다.
 
 ### 필요한 테스트만 실행하기
 
@@ -77,7 +79,7 @@ pnpm --filter './tests/web' exec playwright install chromium
 - API 문서의 실제 응답은 `apps/api/api-docs/_output/logs/`, 실행 항목 요약은 같은 `_output/docs/summary.md`에 있다.
 - benchmark는 `tests/api/benchmark/_output/<실행 시각>/`에 `report.html`과 `summary.json`을 남긴다. 측정용 극장 데이터는 DB에 남으며 `bash infra/reset.sh`로 초기화한다.
 
-CI 반복의 실패 회차는 `[Run i/N]`에서 찾는다. API Race의 runner 진단과 같은 시각의 컨테이너 로그를 함께 본다. 실패 후 MongoDB 상태 snapshot 하나만으로 당시 원인을 확정하지 않는다.
+CI 반복의 실패 회차는 `[Run i/N]`에서 찾는다. API Race의 runner 진단과 같은 시각의 컨테이너 로그를 함께 본다.
 
 ## 구조와 선택
 
@@ -94,6 +96,11 @@ MongoDB는 주 데이터와 transaction, Redis는 선점·리프레시 세션, N
 | `tools/`         | [개발·테스트 실행 도구](docs/tools.md)                   |
 | `.devcontainer/` | [개발 환경과 env 주입](docs/devcontainer.md)             |
 
-공통 작성 규칙은 [네이밍·타입·오류·테스트 규칙](docs/reference/conventions.md)에 둔다. 할 일과 미결 검토가 생기면 루트 `_todo/`에서 관리한다.
+작성 방법은 [개발 규칙](docs/reference/conventions.md), 변경과 리뷰의 판단 기준은 [프로젝트 변경·검토 기준](docs/reference/project-review.md)을 따른다. 할 일과 미결 검토는 루트 `_todo/`에서 관리한다.
 
-포크할 때 프로젝트 식별자와 작성자 URL을 일괄 치환하지 않는다. 패키지 scope를 바꾸면 manifest·의존성·import·별칭·lockfile을 함께 맞춘다. 개발용 스택을 운영에 적용하려면 [BFF 신뢰 경계](docs/apps.md#데모와-bff)와 [Restate revision 전환](docs/reference/decisions.md#restate와-외부-효과)의 조건을 검토한다. TLS·backup·운영 관측·무중단 배포는 이 시드의 제공 범위에 없다.
+## 운영 적용 범위
+
+제공하는 인프라와 실행 구성은 개발·검증용이다. 운영 환경의 TLS·백업·모니터링·무중단 배포 구성은 포함하지 않는다.
+
+- 데모에서 사용자 IP를 전달받도록 설정하려면 프록시가 실제 접속 IP를 넣고, 이를 우회한 직접 접속을 막아야 한다. [사용자 IP 전달 설정](docs/apps.md#데모와-bff)을 따른다.
+- 진행 중인 구매·상영 작업이 있을 때 workflow 코드를 배포하려면 기존 작업이 끝날 때까지 이전 코드를 유지해야 한다. [진행 중인 작업을 보존하는 배포](docs/reference/decisions.md#배포-revision)를 따른다.

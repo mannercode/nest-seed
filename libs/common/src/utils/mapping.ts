@@ -6,7 +6,12 @@ export function assignIfDefined<
     Target extends Record<string, any>,
     Source extends Record<string, any>,
     K extends keyof Source & keyof Target
->(target: Target, source: Source, key: K, transform?: Transform<NonNullable<Source[K]>>): void {
+>(
+    target: Target,
+    source: Source,
+    key: K,
+    transform?: Transform<Exclude<Source[K], undefined>>
+): void {
     const value = source[key]
     if (value === undefined) return
     target[key] = transform ? transform(value) : value

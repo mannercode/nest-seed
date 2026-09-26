@@ -1,7 +1,7 @@
 import { CacheService, DateUtil, ensure, pickIds, Require } from '@mannercode/common'
 import { HttpTestClient, oid } from '@mannercode/testing'
 import { randomUUID } from 'node:crypto'
-import { PurchaseEvents } from '#application'
+import { PurchaseEventService } from '#application'
 import {
     PurchaseRecordStatus,
     TicketStatus,
@@ -121,7 +121,7 @@ describe('PurchaseService', () => {
                 expect(createPayment).toHaveBeenCalledTimes(1)
             })
 
-            it('DB 예약 전 같은 키를 다시 제출해도 workflow를 중복 실행하지 않는다', async () => {
+            it('구매 기록 저장 전 같은 키로 재요청해도 구매와 결제는 한 번만 실행한다', async () => {
                 const records = fix.module.get(PurchaseRecordsService)
                 const createRecord = records.create.bind(records)
                 const entered = Promise.withResolvers<void>()
@@ -159,7 +159,7 @@ describe('PurchaseService', () => {
                 expect(createPayment).toHaveBeenCalledTimes(1)
             })
 
-            it('최초 조회 뒤 같은 키의 구매가 완료되어도 판매 오류 대신 최초 결과를 재생한다', async () => {
+            it('티켓 조회를 기다리는 동안 같은 키의 구매가 완료되면 그 구매 결과를 반환한다', async () => {
                 const tickets = fix.module.get(TicketsService)
                 const getMany = tickets.getMany.bind(tickets)
                 const createPayment = vi.spyOn(fix.module.get(PaymentsService), 'create')
@@ -320,7 +320,7 @@ describe('PurchaseService', () => {
                 await first
             })
 
-            it('실행 전 검증 실패는 키를 소비하지 않는다', async () => {
+            it('입력 검증에 실패하면 수정한 요청을 같은 키로 다시 보낼 수 있다', async () => {
                 const idempotencyKey = randomUUID()
                 const createDto = buildCreatePurchaseDto(heldTickets)
 
@@ -376,7 +376,7 @@ describe('PurchaseService', () => {
                 expect(soldTickets.every((t) => t.status === TicketStatus.Sold)).toBe(true)
             })
 
-            it('판매 뒤 Redis claim 정리가 실패해도 완료 구매를 되돌리지 않는다', async () => {
+            it('판매 후 티켓 선점 해제에 실패해도 구매 완료와 판매 상태를 유지한다', async () => {
                 const ticketHoldingService = fix.module.get(TicketHoldingService)
                 vi.spyOn(ticketHoldingService, 'releasePurchaseClaims').mockRejectedValueOnce(
                     new Error('redis cleanup failed')
@@ -482,15 +482,17 @@ describe('PurchaseService', () => {
                     })
             })
 
-            it.each([
-                { label: '커밋 응답 유실', failure: new Error('commit response lost') },
+            describe.each([
                 {
-                    label: '늦은 시도의 업무상 거절',
+                    label: '선점·결제 응답을 잃고 구매 완료 응답도 받지 못했을 때',
+                    failure: new Error('commit response lost')
+                },
+                {
+                    label: '선점·결제 응답을 잃고 구매 완료 뒤 오류 응답을 받았을 때',
                     failure: new BadRequestException(Errors.Purchase.NotHeld())
                 }
-            ])(
-                '선점·결제 재시도와 $label 뒤에도 최초 완료 결과를 유지한다',
-                async ({ failure }) => {
+            ])('$label', ({ failure }) => {
+                beforeEach(() => {
                     const holding = fix.module.get(TicketHoldingService)
                     const claim = holding.claimTicketsForPurchase.bind(holding)
                     vi.spyOn(holding, 'claimTicketsForPurchase').mockImplementationOnce(
@@ -513,6 +515,9 @@ describe('PurchaseService', () => {
                             throw failure
                         }
                     )
+                })
+
+                it('결제를 중복 생성하지 않고 최초 구매 결과와 판매 상태를 유지한다', async () => {
                     const idempotencyKey = randomUUID()
                     const createDto = buildCreatePurchaseDto(heldTickets)
                     const send = () =>
@@ -541,10 +546,10 @@ describe('PurchaseService', () => {
                         (await fix.module.get(PurchaseRecordsRepository).get({ id: completed.id }))
                             .status
                     ).toBe(PurchaseRecordStatus.Completed)
-                }
-            )
+                })
+            })
 
-            it('완료 transaction의 일시 실패는 판매를 rollback하고 같은 결제로 재시도한다', async () => {
+            it('구매 완료 저장이 한 번 실패하면 티켓 판매를 되돌리고 같은 결제로 재시도한다', async () => {
                 const records = fix.module.get(PurchaseRecordsService)
                 const complete = records.markCompleted.bind(records)
                 const retryEntered = Promise.withResolvers<void>()
@@ -556,7 +561,7 @@ describe('PurchaseService', () => {
                         await release.promise
                         return complete(...args)
                     })
-                const emit = vi.spyOn(fix.module.get(PurchaseEvents), 'emitTicketPurchased')
+                const emit = vi.spyOn(fix.module.get(PurchaseEventService), 'emitTicketPurchased')
                 const payment = vi.spyOn(fix.module.get(PaymentsService), 'create')
                 const request = fix.httpClient
                     .post('/purchases')
@@ -587,7 +592,7 @@ describe('PurchaseService', () => {
                 ).toBe(true)
             })
 
-            it('업무상 거절은 보상을 끝까지 재시도하고 최초 오류 응답을 재생한다', async () => {
+            it('구매가 거절되면 결제 취소를 재시도하고 같은 키에는 최초 오류를 반환한다', async () => {
                 const ticketPurchase = fix.module.get(TicketPurchaseService)
                 vi.spyOn(ticketPurchase, 'completePurchase').mockRejectedValueOnce(
                     new BadRequestException(Errors.Purchase.NotHeld())
@@ -635,8 +640,8 @@ describe('PurchaseService', () => {
                 }
             })
 
-            it('알림 장애는 구매 응답을 막지 않고 별도 workflow에서 복구한다', async () => {
-                const events = fix.module.get(PurchaseEvents)
+            it('구매 완료를 먼저 응답하고 실패한 알림 발행은 별도로 재시도한다', async () => {
+                const events = fix.module.get(PurchaseEventService)
                 const publish = events.emitTicketPurchased.bind(events)
                 const retryEntered = Promise.withResolvers<void>()
                 const release = Promise.withResolvers<void>()
@@ -704,7 +709,7 @@ describe('PurchaseService', () => {
                     .conflict({ expected: Errors.Purchase.AlreadySold(pickIds(heldTickets)) })
             })
 
-            it('구매 예약 저장 실패는 결제 전에 재시도한다', async () => {
+            it('구매 기록 저장이 실패하면 결제 전에 다시 저장한다', async () => {
                 const repository = fix.module.get(PurchaseRecordsRepository)
                 const payment = vi.spyOn(fix.module.get(PaymentsService), 'create')
                 const insert = vi
@@ -725,7 +730,7 @@ describe('PurchaseService', () => {
                 expect(payment).toHaveBeenCalledTimes(1)
             })
 
-            it('문자열 HttpException도 같은 키 재시도에서 같은 상태와 본문을 반환한다', async () => {
+            it('문자열 본문으로 발생한 오류도 같은 키에는 최초 상태 코드와 본문을 반환한다', async () => {
                 const ticketPurchaseService = fix.module.get(TicketPurchaseService)
                 vi.spyOn(ticketPurchaseService, 'claimPurchase').mockRejectedValueOnce(
                     new HttpException('purchase dependency rejected the request', 418)
@@ -863,7 +868,7 @@ describe('PurchaseService', () => {
             ).toBe(true)
         })
 
-        it('결제 중 purchase claim이 만료돼 다른 고객이 다시 보유한 티켓을 판매하지 않는다', async () => {
+        it('결제 중 선점이 만료되어 다른 고객이 보유한 티켓은 판매하지 않는다', async () => {
             const tickets = await createShowtimeAndTickets(fix)
             const heldByFirst = await holdTickets(fix, user.id, tickets)
             const showtimeId = ensure(heldByFirst[0]).showtimeId

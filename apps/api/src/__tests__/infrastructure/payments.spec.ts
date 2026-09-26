@@ -26,7 +26,7 @@ describe('PaymentsService', () => {
     afterEach(() => teardown?.())
 
     describe('cancel', () => {
-        it('결제 행을 지우지 않고 status를 cancelled로 전이한다', async () => {
+        it('결제 기록을 유지하며 취소 상태로 바꾼다', async () => {
             const payment = await createPayment(fix)
 
             await paymentsService.cancel(payment.id)
@@ -39,7 +39,7 @@ describe('PaymentsService', () => {
             })
         })
 
-        it('purchaseRecordId로 취소하며 결제가 없어도 멱등이다', async () => {
+        it('구매 ID로 결제를 취소하고 해당 결제가 없어도 오류를 던지지 않는다', async () => {
             const payment = await createPayment(fix)
 
             await paymentsService.cancelByPurchaseRecordId({
@@ -90,7 +90,39 @@ describe('PaymentsService', () => {
             ).toBe(true)
         })
 
-        it('동시 upsert의 중복 키 loser는 winner가 만든 결제를 반환한다', async () => {
+        it('결제가 누적되어도 생성·재조회·취소 조회는 구매 ID 인덱스로 대상만 읽는다', async () => {
+            const createDtos = Array.from({ length: 256 }, () => buildCreatePaymentDto())
+            const payments = await Promise.all(createDtos.map((dto) => paymentsService.create(dto)))
+            const createDto = ensure(createDtos.at(-1))
+            const repository = fix.module.get(PaymentsRepository)
+            const updateOne = vi.spyOn(repository.collection, 'updateOne')
+            const findOne = vi.spyOn(repository.collection, 'findOne')
+
+            const retried = await paymentsService.create(createDto)
+            expect(retried).toEqual(payments.at(-1))
+            await paymentsService.cancelByPurchaseRecordId({
+                purchaseRecordId: createDto.purchaseRecordId
+            })
+
+            const filters = [
+                ensure(updateOne.mock.calls[0])[0],
+                ensure(findOne.mock.calls[0])[0],
+                ensure(findOne.mock.calls[1])[0]
+            ]
+            for (const filter of filters) {
+                const { executionStats, queryPlanner } = await repository.collection
+                    .find(filter)
+                    .limit(1)
+                    .explain('executionStats')
+                expect(JSON.stringify(queryPlanner.winningPlan)).toContain(
+                    'purchaseRecordId_partial_unique'
+                )
+                expect(executionStats.totalDocsExamined).toBe(1)
+                expect(executionStats.totalKeysExamined).toBe(1)
+            }
+        })
+
+        it('결제 저장 중 중복 키 오류가 나면 이미 저장된 같은 구매의 결제를 반환한다', async () => {
             const existing = await createPayment(fix)
 
             const repository = fix.module.get(PaymentsRepository)

@@ -2,6 +2,7 @@ import { ensure, pickIds } from '@mannercode/common'
 import { nullObjectId, oid } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
 import { TicketStatus, type TicketDto, TicketsService } from '#core'
+import { TicketsRepository } from '../../services/core/tickets/tickets.repository.js'
 import {
     buildCreateTicketDto,
     createTickets,
@@ -121,16 +122,48 @@ describe('TicketsService', () => {
     })
 
     describe('sellForPurchase', () => {
-        it('판매 가능한 티켓들을 구매에 귀속하고 판매 완료 상태로 반환한다', async () => {
-            const tickets = await createTickets(fix, [
-                { status: TicketStatus.Available },
-                { status: TicketStatus.Available },
-                { status: TicketStatus.Available }
-            ])
+        describe('판매 가능한 티켓이 있을 때', () => {
+            let tickets: TicketDto[]
+            const purchaseRecordId = oid(0x10)
 
-            const updatedTickets = await ticketsService.sellForPurchase(pickIds(tickets), oid(0x10))
+            beforeEach(async () => {
+                tickets = await createTickets(fix, [
+                    { status: TicketStatus.Available },
+                    { status: TicketStatus.Available },
+                    { status: TicketStatus.Available }
+                ])
+            })
 
-            expect(updatedTickets.every((t) => t.status === TicketStatus.Sold)).toBe(true)
+            it('요청한 티켓을 해당 구매에 연결하고 판매 완료 상태로 반환한다', async () => {
+                const updatedTickets = await ticketsService.sellForPurchase(
+                    pickIds(tickets),
+                    purchaseRecordId
+                )
+
+                expect(updatedTickets).toHaveLength(tickets.length)
+                expect(updatedTickets).toEqual(
+                    expect.arrayContaining(
+                        tickets.map((ticket) => ({ ...ticket, status: TicketStatus.Sold }))
+                    )
+                )
+
+                // 구매 귀속은 공개 TicketDto에 없는 저장 계약이다.
+                const stored = await fix.module
+                    .get(TicketsRepository)
+                    .getMany({ ids: pickIds(tickets) })
+                expect(stored).toHaveLength(tickets.length)
+                expect(stored).toEqual(
+                    expect.arrayContaining(
+                        tickets.map(({ id }) =>
+                            expect.objectContaining({
+                                id,
+                                purchaseRecordId,
+                                status: TicketStatus.Sold
+                            })
+                        )
+                    )
+                )
+            })
         })
 
         it('일부 티켓이 판매 가능하지 않으면 409로 거절하고 아무것도 바꾸지 않는다', async () => {
@@ -173,6 +206,7 @@ describe('TicketsService', () => {
     describe('aggregateSales', () => {
         it('상영 시간 ID 목록에 대한 판매 통계를 반환한다', async () => {
             const showtimeId = oid(0x10)
+            const emptyShowtimeId = oid(0x11)
             const totalCount = 50
             const soldCount = 5
 
@@ -182,7 +216,9 @@ describe('TicketsService', () => {
             const soldTickets = createdTickets.slice(0, soldCount)
             await ticketsService.sellForPurchase(pickIds(soldTickets), oid(0x20))
 
-            const ticketSales = await ticketsService.aggregateSales({ showtimeIds: [showtimeId] })
+            const ticketSales = await ticketsService.aggregateSales({
+                showtimeIds: [showtimeId, emptyShowtimeId]
+            })
 
             expect(ticketSales).toEqual([
                 {
@@ -190,7 +226,8 @@ describe('TicketsService', () => {
                     showtimeId,
                     sold: soldCount,
                     total: totalCount
-                }
+                },
+                { available: 0, showtimeId: emptyShowtimeId, sold: 0, total: 0 }
             ])
         })
     })

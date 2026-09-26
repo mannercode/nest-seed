@@ -15,13 +15,14 @@ export class TimeUtil {
         let remainingMs = Math.abs(milliseconds)
 
         const days = Math.floor(remainingMs / (24 * 60 * 60 * 1000))
-        remainingMs %= 24 * 60 * 60 * 1000
+        // parser가 곱셈으로 복원하는 값과 같은 값을 빼야 큰 수의 반올림 잔여량도 보존된다.
+        remainingMs -= days * (24 * 60 * 60 * 1000)
         const hours = Math.floor(remainingMs / (60 * 60 * 1000))
-        remainingMs %= 60 * 60 * 1000
+        remainingMs -= hours * (60 * 60 * 1000)
         const minutes = Math.floor(remainingMs / (60 * 1000))
-        remainingMs %= 60 * 1000
+        remainingMs -= minutes * (60 * 1000)
         const seconds = Math.floor(remainingMs / 1000)
-        const millisecondsRemainder = remainingMs % 1000
+        const millisecondsRemainder = remainingMs - seconds * 1000
 
         let result = ''
         if (days > 0) result += `${sign}${days}d`
@@ -38,7 +39,8 @@ export class TimeUtil {
      * 단위는 `ms`, `s`, `m`, `h`, `d`만 허용하며, 형식이 맞지 않으면 예외를 던진다.
      */
     static toMs(timeExpression: string): number {
-        const validFormatRegex = /^(-?\d+(\.\d+)?)(ms|s|m|h|d)(\s*(-?\d+(\.\d+)?)(ms|s|m|h|d))*$/
+        const validFormatRegex =
+            /^(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)(ms|s|m|h|d)(\s*(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)(ms|s|m|h|d))*$/
 
         if (!validFormatRegex.test(timeExpression)) {
             throw new InternalServerErrorException('Internal server error', {
@@ -46,10 +48,13 @@ export class TimeUtil {
             })
         }
 
-        const timeTokenRegex = /(-?\d+(?:\.\d+)?)(ms|s|m|h|d)/g
+        const timeTokenRegex = /(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)(ms|s|m|h|d)/g
         let totalMilliseconds = 0
 
-        for (const [, amount, unit] of timeExpression.matchAll(timeTokenRegex)) {
+        // fromMs가 큰 단위부터 내보내므로 작은 잔여량을 먼저 더해 반복 반올림을 피한다.
+        for (const [, amount, unit] of Array.from(
+            timeExpression.matchAll(timeTokenRegex)
+        ).reverse()) {
             let unitValue: number
             switch (ensure(unit)) {
                 case 'd':

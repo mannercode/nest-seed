@@ -43,6 +43,18 @@ describe('LatLong', () => {
             expect(Math.abs(distance - halfCircumference)).toBeLessThan(halfCircumference * 0.005)
         })
 
+        it('정반대 좌표의 반올림 오차가 있어도 유한한 거리를 반환한다', () => {
+            const from = { latitude: 0.08, longitude: 0 }
+            const to = { latitude: -0.08, longitude: 180 }
+
+            const distance = LatLong.distanceInMeters(from, to)
+
+            expect(Number.isFinite(distance)).toBe(true)
+            expect(distance).toBeCloseTo(Math.PI * 6_371_000, 5)
+            expect(LatLong.distanceInMeters(to, from)).toBe(distance)
+            expect(LatLong.distanceInMeters(from, from)).toBe(0)
+        })
+
         it('1m 미만 정밀도가 필요한 매우 가까운 좌표 차이도 안정적으로 계산한다', () => {
             const a = { latitude: 37.5, longitude: 127.0 }
             const b = { latitude: 37.5 + 1e-7, longitude: 127.0 }

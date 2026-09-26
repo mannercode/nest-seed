@@ -12,7 +12,7 @@ API 앱 context와 테스트 파일이 공유하는 MongoClient는 수명이 다
 
 ## 2. dev-tools — 명시적으로 실행하는 개발 도구
 
-`free-port`는 개발 서버가 사용할 포트의 리스너를 종료해 포트를 비운다. `tunnel`은 console·user-app을 Quick Tunnel로 공개하고 종료 시 함께 시작한 tunnel 프로세스를 정리한다. 앱이 요청을 처리하면서 호출하는 기능은 아니다.
+`free-port`는 개발 서버가 사용할 포트의 리스너를 종료해 포트를 비운다. `tunnel`은 console·user-app을 Quick Tunnel로 공개하고 종료 시 함께 시작한 tunnel 프로세스를 정리한다.
 
 `free-port`의 명령·권한 오류는 즉시 실패한다. 조회 직후 사라진 프로세스만 무시하고, listen 재확인은 포트 사용 중일 때만 수행해 환경 오류가 단순한 포트 점유로 가려지지 않게 한다.
 
@@ -26,4 +26,4 @@ lychee와 k6는 [tools/compose.yml](../tools/compose.yml)의 일회성 컨테이
 
 lychee는 `lint:root`에서 내부 문서 링크와 fragment를 확인한다. 외부 사이트 가용성 때문에 lint가 흔들리지 않도록 offline 검사하며 `_todo/` 문서와 과거 가이드 원문의 옛 링크는 제외한다. k6는 benchmark 실행기가 API 스택과 연결해 실행하고 Dev Container 사용자 권한으로 결과를 남긴다.
 
-두 도구의 bind mount는 [호스트와 컨테이너의 같은 절대경로](devcontainer.md#2-docker-outside-of-docker의-경로-계약)를 전제로 한다. 도구 종료는 인프라 reset이 아니며 개발 데이터가 초기화됐다고 판단하지 않는다.
+두 도구의 bind mount는 [호스트와 컨테이너의 같은 절대경로](devcontainer.md#2-docker-outside-of-docker의-경로-계약)를 전제로 한다.

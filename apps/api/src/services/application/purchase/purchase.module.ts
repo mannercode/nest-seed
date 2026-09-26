@@ -9,8 +9,8 @@ import {
 import {
     DEFAULT_PURCHASE_EVENTS_MAX_BYTES,
     PURCHASE_EVENTS_MAX_BYTES,
-    PurchaseEvents
-} from './purchase.events.js'
+    PurchaseEventService
+} from './purchase-event.service.js'
 import { PurchaseService } from './purchase.service.js'
 import { PurchaseWorkflow } from './worker/workflow.js'
 import { PurchaseWorkflowClient } from './worker/workflow-client.js'
@@ -33,7 +33,7 @@ import { PurchaseEventWorkflowClient } from './worker/event-workflow-client.js'
         PurchaseEventWorkflow,
         PurchaseEventWorkflowClient,
         TicketPurchaseService,
-        PurchaseEvents,
+        PurchaseEventService,
         PurchaseNotificationService,
         PurchaseTransactionRepository,
         { provide: PURCHASE_EVENTS_MAX_BYTES, useValue: DEFAULT_PURCHASE_EVENTS_MAX_BYTES }

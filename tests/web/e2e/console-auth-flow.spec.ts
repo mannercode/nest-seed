@@ -60,9 +60,7 @@ test('관리자 세션 없이 극장 목록에 직접 접근하면 로그인으�
     await expect(page).toHaveURL(/\/login$/)
 })
 
-test('교차 역할 사용자 로그인 경로는 console BFF에서 토큰을 노출하지 않고 404다', async ({
-    page
-}) => {
+test('관리자 앱에서 고객 로그인 경로를 요청하면 토큰 없이 404를 반환한다', async ({ page }) => {
     await page.goto('/login')
 
     const result = await page.evaluate(
@@ -84,7 +82,7 @@ test('교차 역할 사용자 로그인 경로는 console BFF에서 토큰을 �
     expect(result).toEqual({ exposesToken: false, status: 404 })
 })
 
-test('관리자 refresh 직접 호출은 console BFF에서 404다', async ({ page }) => {
+test('관리자 앱에서 토큰 갱신 경로를 직접 요청하면 404를 반환한다', async ({ page }) => {
     await page.goto('/login')
 
     const result = await page.evaluate(async () => {
@@ -237,7 +235,7 @@ test('BFF가 전달한 클라이언트 IP별로 로그인 실패 한도를 격�
     expect(result.secondIpStatus).toBe(401)
 })
 
-test('BFF는 1MiB를 넘는 요청 본문을 upstream 전에 거절한다', async ({ page }) => {
+test('BFF는 요청 본문이 1MiB를 넘으면 413을 반환한다', async ({ page }) => {
     await page.goto('/login')
 
     const result = await page.evaluate(async () => {

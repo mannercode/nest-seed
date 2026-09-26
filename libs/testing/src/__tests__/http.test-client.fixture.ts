@@ -19,6 +19,27 @@ export type HttpTestClientFixture = { httpClient: HttpTestClient; teardown: () =
 @Controller()
 class HttpTestClientController {
     private readonly pendingEvents = new Subject<{ data: { status: string } }>()
+    private splitEventResponse: Response
+
+    @Get('split-utf8-event')
+    splitUtf8Event(@Res() res: Response) {
+        this.splitEventResponse = res
+        res.type('text/event-stream')
+        // ready 수신이 확인된 뒤에만 나머지 바이트를 보내 청크 분할을 보장한다.
+        res.write(
+            Buffer.concat([
+                Buffer.from('data: ready\n\ndata: '),
+                Buffer.from('한글').subarray(0, 1)
+            ])
+        )
+    }
+
+    @Post('complete-utf8-event')
+    completeUtf8Event() {
+        this.splitEventResponse.end(
+            Buffer.concat([Buffer.from('한글').subarray(1), Buffer.from('\n\n')])
+        )
+    }
 
     @Sse('events-after-ready')
     eventsAfterReady() {

@@ -5,7 +5,7 @@ import { connect } from 'node:http2'
 import { RestateEndpoint } from '../index.js'
 
 describe('RestateEndpoint', () => {
-    it('포트 0을 지정하면 임의 포트로 열고 HTTP/2 session까지 정상 종료한다', async () => {
+    it('포트에 0을 지정하면 사용 가능한 포트로 서버를 열고 종료 시 연결도 닫는다', async () => {
         const endpoint = createEndpoint()
         await endpoint.onApplicationBootstrap()
         expect(endpoint.port).toBeGreaterThan(0)
@@ -19,7 +19,7 @@ describe('RestateEndpoint', () => {
         expect(endpoint.port).toBe(0)
     })
 
-    it('시작하지 않은 endpoint 종료는 그대로 끝난다', async () => {
+    it('서버를 시작하기 전에 종료해도 예외를 던지지 않는다', async () => {
         await expect(createEndpoint().onApplicationShutdown()).resolves.toBeUndefined()
     })
 
@@ -42,7 +42,7 @@ describe('RestateEndpoint', () => {
         }
     })
 
-    it('graceful close가 끝나지 않으면 5초 뒤 남은 session을 강제 종료한다', async () => {
+    it('정상 종료가 5초 안에 끝나지 않으면 남은 연결을 강제로 닫는다', async () => {
         vi.useFakeTimers()
         const endpoint = createEndpoint()
         let finishServerClose!: () => void

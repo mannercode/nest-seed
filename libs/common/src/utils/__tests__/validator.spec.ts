@@ -64,6 +64,26 @@ describe('Require', () => {
         it('값이 같으면 통과한다', () => {
             expect(() => Require.equals(1, 1, 'not equal')).not.toThrow()
         })
+
+        it('BigInt 불일치도 불변식 오류와 진단을 보존한다', () => {
+            expect(() => Require.equals(1n, 2n, 'bigint mismatch')).toThrow(
+                expect.objectContaining({ status: 500, cause: '1n !== 2n, bigint mismatch' })
+            )
+        })
+
+        it('순환 객체 불일치도 불변식 오류와 원인 메시지를 보존한다', () => {
+            const first: any = { value: 1 }
+            first.self = first
+            const second: any = { value: 2 }
+            second.self = second
+
+            expect(() => Require.equals(first, second, 'cycle mismatch')).toThrow(
+                expect.objectContaining({
+                    status: 500,
+                    cause: expect.stringMatching(/Circular.*!==.*Circular.*cycle mismatch/)
+                })
+            )
+        })
     })
 })
 
