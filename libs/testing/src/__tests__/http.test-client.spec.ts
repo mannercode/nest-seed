@@ -86,6 +86,55 @@ describe('HttpTestClient', () => {
     })
 
     describe('SSE', () => {
+        describe.each([
+            { name: '한 번에', continuation: undefined },
+            { name: '두 청크로', continuation: 'data: second\n\n' }
+        ])('$name 응답할 때', ({ continuation }) => {
+            beforeEach(() => {
+                fix.setRawEvents({
+                    content: 'data: first\n\n',
+                    contentType: 'text/event-stream',
+                    continuation
+                })
+            })
+
+            it('요청 본문으로 이벤트 응답을 HTML로 바꾸거나 내용을 주입할 수 없다', async () => {
+                const abort = new AbortController()
+
+                try {
+                    const response = await fetch(`${fix.httpClient.serverUrl}/raw-events`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            content: '<script>alert(1)</script>',
+                            contentType: 'text/html',
+                            split: continuation !== undefined
+                        }),
+                        signal: abort.signal
+                    })
+
+                    if (continuation !== undefined) {
+                        await new HttpTestClient(fix.httpClient.serverUrl)
+                            .post('/complete-raw-events')
+                            .body({ content: '<script>alert(2)</script>' })
+                            .created()
+                    }
+
+                    expect(response.status).toBe(200)
+                    expect(response.headers.get('content-type')).toBe(
+                        'text/event-stream; charset=utf-8'
+                    )
+                    expect(await response.text()).toBe(
+                        continuation === undefined
+                            ? 'data: first\n\n\n\ndata: fixture-complete\n\n'
+                            : 'data: fixture-ready\n\ndata: first\n\ndata: second\n\n\n\ndata: fixture-complete\n\n'
+                    )
+                } finally {
+                    abort.abort()
+                }
+            })
+        })
+
         it.each([
             {
                 name: '여러 data 줄을 개행으로 연결한다',
@@ -140,7 +189,7 @@ describe('HttpTestClient', () => {
                 expected: ['first\nsecond\nthird']
             }
         ])('$name', async ({ content, expected }) => {
-            const result = await receiveRawEvents(fix.httpClient, { content })
+            const result = await receiveRawEvents(fix, { content })
 
             expect(result).toEqual({ events: expected, errors: [] })
         })
@@ -170,10 +219,7 @@ describe('HttpTestClient', () => {
         ])(
             '$name 경계에서 청크가 나뉘어도 한 이벤트를 전달한다',
             async ({ first, continuation }) => {
-                const result = await receiveRawEvents(fix.httpClient, {
-                    content: first,
-                    continuation
-                })
+                const result = await receiveRawEvents(fix, { content: first, continuation })
 
                 expect(result).toEqual({ events: ['first\nsecond'], errors: [] })
             }
@@ -186,15 +232,13 @@ describe('HttpTestClient', () => {
                 contentType: ' text/event-stream ; charset=utf-8 '
             }
         ])('$name 형식도 이벤트 스트림으로 읽는다', async ({ contentType }) => {
+            fix.setRawEvents({ content: 'data: first\n\n', contentType })
             try {
                 const result = await new Promise((resolve) => {
-                    fix.httpClient
-                        .post('/raw-events')
-                        .body({ content: 'data: first\n\n', contentType, split: false })
-                        .sse(
-                            (data) => resolve({ data }),
-                            (error) => resolve({ error })
-                        )
+                    fix.httpClient.post('/raw-events').sse(
+                        (data) => resolve({ data }),
+                        (error) => resolve({ error })
+                    )
                 })
 
                 expect(result).toEqual({ data: 'first' })
