@@ -1,5 +1,7 @@
 # tests · demos 전체 감사
 
+진행할 항목은 TD-01의 구매 경쟁 단언 수정뿐이다. TD-02와 추가 보완 후보는 보류한다. 작업 범위와 읽기 부담의 기준은 [진행할 작업](README.md)을 따른다.
+
 - 기준: HEAD `6bbe8cdf7df05ce9aa69cd6ab116f8ccde3fb7f0`, 2026-09-26.
 - 범위: `tests_demos-files.json`의 90개 파일. 텍스트 89개 13,197줄을 모두 새로 읽었고, binary PNG 1개는 전체 bytes hash와 header metadata를 확인했다. 샘플 읽기로 전체 검토를 대체하지 않았다.
 - 선행 지침: README, AGENTS, docs/apps.md, docs/tests.md, docs/reference/conventions.md, docs/reference/decisions.md.
@@ -8,7 +10,7 @@
 
 ## 확인된 발견
 
-### TD-01 — P2: 구매 overlap 검증이 잘못된 부분/과다 판매를 성공으로 판정한다
+### TD-01 — 진행: 구매 overlap 검증이 잘못된 부분/과다 판매를 성공으로 판정한다
 
 - 위치: [tests/api/race/purchase-overlap-race.js](../../tests/api/race/purchase-overlap-race.js) 81행–`84`; 요청 묶음은 같은 파일 `133`행에 이미 보존한다.
 - 조건: `[t1,t2]` 요청이 201을 반환했지만 실제 응답·저장 이력·티켓 상태가 `[t2]` 한 장 또는 `[t1,t2,t3]` 세 장으로 잘못 반영된 경우.
@@ -19,7 +21,7 @@
 - 최소 수정: 승자에게 연결된 원 요청 티켓 배열을 보존하고, 성공 응답과 완료 이력의 티켓 목록이 그 배열과 정확히 같은지 단언한다. 티켓 상태의 기대값도 원 요청 배열에서 만든다. 기존 파일 안에서 수정 가능하다.
 - 확신: 높음. 실행한 현재 검증 함수가 두 잘못된 결과를 실제로 통과시켰다.
 
-### TD-02 — P2: 병렬 Nest context 초기화 일부 실패 시 성공 context가 정리되지 않는다
+### TD-02 — 보류: 병렬 Nest context 초기화 일부 실패 시 성공 context가 정리되지 않는다
 
 - 위치: [apps/api/src/\_\_tests\_\_/application/purchase-events.spec.ts](../../apps/api/src/__tests__/application/purchase-events.spec.ts) 48행–`49`. 초기 teardown 목록의 수명은 `36`–`45`행도 관련된다.
 - 조건: 추가 context 3개 중 하나가 초기화에 실패하고 다른 context는 생성에 성공한 경우.
@@ -27,10 +29,10 @@
 - 영향: 성공한 임시 앱의 HTTP/NATS/Redis 등의 자원이 살아남아, 최초 인프라 오류 뒤 테스트 종료 지연이나 다음 테스트에 영향을 줄 수 있다. beforeEach도 새 목록을 context 생성 뒤에 설정하여 첫 초기화 실패 때 undefined, 이후 실패 때 이전 목록이 남는 문제가 있다.
 - 재현: 미변경 해당 테스트 callback 본문을 context factory stub으로 실행했다. 1·3번 context 성공, 2번 실패를 주입했을 때 base teardown만 호출되고 성공 context 1·3이 모두 남았다. 실제 연결은 만들지 않았다.
 - 증거: `purchase-events-cleanup-reproduction.json`.
-- 최소 수정: beforeEach 시작에서 teardown 목록을 비운다. 추가 context 생성은 모든 결과가 settle할 때까지 기다린 후 성공 context를 정리에 등록하고, 초기화 실패가 있으면 실패를 그대로 보고한다. 단순히 생성 완료 callback에서 목록에 push만 하면 다른 생성이 끝나기 전에 afterEach가 시작할 수 있어 충분하지 않다.
+- 수정 후보(보류): beforeEach 시작에서 teardown 목록을 비운다. 추가 context 생성은 모든 결과가 settle할 때까지 기다린 후 성공 context를 정리에 등록하고, 초기화 실패가 있으면 실패를 그대로 보고한다. 단순히 생성 완료 callback에서 목록에 push만 하면 다른 생성이 끝나기 전에 afterEach가 시작할 수 있어 충분하지 않다.
 - 확신: 높음. JavaScript Promise.all의 조기 rejection과 실제 callback 제어 흐름을 격리 실행해 확인했다.
 
-## 보완할 수 있으나 현재 확정 결함과 구분할 사항
+## 보류한 추가 보완 후보
 
 - [apps/api/src/\_\_tests\_\_/core/tickets.spec.ts](../../apps/api/src/__tests__/core/tickets.spec.ts) 133행의 성공 반환 검증은 `every`만 사용해 빈 배열도 참이다. 실제 저장은 purchase/aggregateSales 등의 다른 테스트가 확인하므로 전체 테스트가 판매 누락을 모두 놓친다고 주장하지 않는다. 기존 성공 case에서 요청 ID·길이를 함께 비교하면 해당 반환 계약을 직접 고정할 수 있다.
 - `core/admin-auth.spec.ts:166`–`167`, `core/user-auth.spec.ts:389`–`390`의 refresh 테스트는 원 토큰과 다르다는 사실만 확인한다. 빈 응답의 undefined도 이 단언을 통과한다. common JWT 및 외부 refresh/browser 테스트가 별도로 유효 토큰 사용을 검사한다. 기존 두 API case에 문자열 필드 존재 확인을 추가하면 제목에 맞는 단언이 된다.
