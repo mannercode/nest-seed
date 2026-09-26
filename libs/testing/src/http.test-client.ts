@@ -153,8 +153,9 @@ export class HttpTestClient {
             .parse((response, _unused) => {
                 let buffer = ''
 
-                response.on('data', (chunk: any) => {
-                    buffer += chunk.toString()
+                response.setEncoding('utf8')
+                response.on('data', (chunk: string) => {
+                    buffer += chunk
 
                     let separatorIndex = buffer.indexOf('\n\n')
                     while (separatorIndex !== -1) {

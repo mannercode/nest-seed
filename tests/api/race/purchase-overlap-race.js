@@ -3,6 +3,7 @@
  * 패자는 결제 전 claim에서 거절될 수 있으므로 결제 취소는 이 시나리오의 검증 범위가 아니다.
  */
 
+const { deepStrictEqual } = require('node:assert/strict')
 const { test } = require('node:test')
 const {
     createAndLoginUser,
@@ -53,6 +54,12 @@ async function verifyGroup(iteration, g, cust, triple, responses, showtimeId) {
     if (!winner.body || !winner.body.id) {
         throw new Error(`iter ${iteration} group ${g}: success response has no purchase id`)
     }
+    const expectedIds = [...winner.bundle].sort()
+    deepStrictEqual(
+        winner.body.purchaseItems.map((item) => item.itemId).sort(),
+        expectedIds,
+        `iter ${iteration} group ${g}: success response must match requested tickets`
+    )
 
     const readBack = await request('GET', '/users/me/purchases', {
         headers: { authorization: `Bearer ${cust.accessToken}` }
@@ -72,13 +79,18 @@ async function verifyGroup(iteration, g, cust, triple, responses, showtimeId) {
                 `got [${touching.map((p) => p.id).join(', ')}]`
         )
     }
+    deepStrictEqual(
+        touching[0].purchaseItems.map((item) => item.itemId).sort(),
+        expectedIds,
+        `iter ${iteration} group ${g}: purchase history must match requested tickets`
+    )
 
     const tickets = await request('GET', `/booking/showtimes/${showtimeId}/tickets`)
     if (tickets.status !== 200 || !Array.isArray(tickets.body)) {
         throw new Error(`iter ${iteration} group ${g}: tickets read-back status=${tickets.status}`)
     }
     const statusById = new Map(tickets.body.map((t) => [t.id, t.status]))
-    const winnerIds = new Set(winner.body.purchaseItems.map((item) => item.itemId))
+    const winnerIds = new Set(expectedIds)
     for (const ticketId of triple) {
         const expected = winnerIds.has(ticketId) ? 'sold' : 'available'
         const actual = statusById.get(ticketId)
@@ -130,7 +142,7 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
                         authorization: `Bearer ${cust.accessToken}`,
                         'idempotency-key': secureRandomHex()
                     }
-                }).then((r) => ({ ...r, group: g, bundle: bundle.join('+') }))
+                }).then((r) => ({ ...r, group: g, bundle }))
             )
         }
     }

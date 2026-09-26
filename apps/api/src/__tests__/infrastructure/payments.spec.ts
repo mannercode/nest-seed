@@ -90,6 +90,38 @@ describe('PaymentsService', () => {
             ).toBe(true)
         })
 
+        it('결제가 누적되어도 생성·재조회·취소 조회는 구매 ID 인덱스로 대상만 읽는다', async () => {
+            const createDtos = Array.from({ length: 256 }, () => buildCreatePaymentDto())
+            const payments = await Promise.all(createDtos.map((dto) => paymentsService.create(dto)))
+            const createDto = ensure(createDtos.at(-1))
+            const repository = fix.module.get(PaymentsRepository)
+            const updateOne = vi.spyOn(repository.collection, 'updateOne')
+            const findOne = vi.spyOn(repository.collection, 'findOne')
+
+            const retried = await paymentsService.create(createDto)
+            expect(retried).toEqual(payments.at(-1))
+            await paymentsService.cancelByPurchaseRecordId({
+                purchaseRecordId: createDto.purchaseRecordId
+            })
+
+            const filters = [
+                ensure(updateOne.mock.calls[0])[0],
+                ensure(findOne.mock.calls[0])[0],
+                ensure(findOne.mock.calls[1])[0]
+            ]
+            for (const filter of filters) {
+                const { executionStats, queryPlanner } = await repository.collection
+                    .find(filter)
+                    .limit(1)
+                    .explain('executionStats')
+                expect(JSON.stringify(queryPlanner.winningPlan)).toContain(
+                    'purchaseRecordId_partial_unique'
+                )
+                expect(executionStats.totalDocsExamined).toBe(1)
+                expect(executionStats.totalKeysExamined).toBe(1)
+            }
+        })
+
         it('동시 upsert의 중복 키 loser는 winner가 만든 결제를 반환한다', async () => {
             const existing = await createPayment(fix)
 

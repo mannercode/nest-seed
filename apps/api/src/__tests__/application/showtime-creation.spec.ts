@@ -26,7 +26,11 @@ import {
     createAppTestContext
 } from '../helpers/index.js'
 import { submitAndWaitForCompletion } from './showtime-creation.utils.js'
-import { ShowtimeCreationEvents, RequestShowtimeCreationResponseSchema } from '#application'
+import {
+    BookingShowtimeSchema,
+    ShowtimeCreationEvents,
+    RequestShowtimeCreationResponseSchema
+} from '#application'
 import { ShowtimeCreationWorkflowClient } from '../../services/application/showtime-creation/worker/index.js'
 
 describe('ShowtimeCreationService', () => {
@@ -553,6 +557,48 @@ describe('ShowtimeCreationService', () => {
                 expect(result.completion.createdTicketCount).toBe(8)
                 expect(createdTickets).toHaveLength(8)
             })
+        })
+
+        it.each([
+            { blocks: [] },
+            { blocks: [{ name: 'A', rows: [{ name: '1', layout: 'XXXX' }] }] }
+        ])('0좌석 배치 %j로 상영을 생성하면 예매 조회의 판매 집계는 0이다', async (seatmap) => {
+            await fix.httpClient
+                .patch(`/theaters/${theater.id}`)
+                .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                .body({ seatmap })
+                .ok({ schema: TheaterSchema })
+
+            const { response, completion } = await submitAndWaitForCompletion(
+                fix,
+                adminAccessToken,
+                'succeeded',
+                () =>
+                    fix.httpClient
+                        .post('/showtime-creation/showtimes')
+                        .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                        .headers({ 'Idempotency-Key': randomUUID() })
+                        .body(buildCreateDto())
+                        .accepted({ schema: RequestShowtimeCreationResponseSchema })
+            )
+
+            expect(completion.createdShowtimeCount).toBe(1)
+            expect(completion.createdTicketCount).toBe(0)
+            const showtimes = await showtimesService.search({ sagaIds: [response.body.sagaId] })
+            expect(showtimes).toHaveLength(1)
+            expect(await ticketsService.search({ sagaIds: [response.body.sagaId] })).toEqual([])
+
+            await fix.httpClient
+                .get(
+                    `/booking/movies/${movie.id}/theaters/${theater.id}/showdates/21000101/showtimes`
+                )
+                .ok({
+                    schema: BookingShowtimeSchema.array(),
+                    expected: showtimes.map((showtime) => ({
+                        ...showtime,
+                        ticketSales: { available: 0, sold: 0, total: 0 }
+                    }))
+                })
         })
 
         it('사가 상태를 waiting → processing → succeeded 순서로 발행한다', async () => {

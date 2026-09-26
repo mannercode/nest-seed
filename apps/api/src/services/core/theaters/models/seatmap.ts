@@ -20,7 +20,15 @@ export class SeatBlock {
     rows: SeatRow[]
 }
 
-export const SeatmapSchema = z.strictObject({ blocks: z.array(SeatBlockSchema) })
+export const SeatmapSchema = z.strictObject({ blocks: z.array(SeatBlockSchema) }).refine(
+    (seatmap) => {
+        const coordinates = Seatmap.getAllSeats(seatmap).map(({ block, row, seatNumber }) =>
+            JSON.stringify([block, row, seatNumber])
+        )
+        return new Set(coordinates).size === coordinates.length
+    },
+    { message: 'Seat coordinates must be unique' }
+)
 
 export class Seatmap {
     blocks: SeatBlock[]

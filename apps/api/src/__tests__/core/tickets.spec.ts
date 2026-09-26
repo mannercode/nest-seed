@@ -173,6 +173,7 @@ describe('TicketsService', () => {
     describe('aggregateSales', () => {
         it('상영 시간 ID 목록에 대한 판매 통계를 반환한다', async () => {
             const showtimeId = oid(0x10)
+            const emptyShowtimeId = oid(0x11)
             const totalCount = 50
             const soldCount = 5
 
@@ -182,7 +183,9 @@ describe('TicketsService', () => {
             const soldTickets = createdTickets.slice(0, soldCount)
             await ticketsService.sellForPurchase(pickIds(soldTickets), oid(0x20))
 
-            const ticketSales = await ticketsService.aggregateSales({ showtimeIds: [showtimeId] })
+            const ticketSales = await ticketsService.aggregateSales({
+                showtimeIds: [showtimeId, emptyShowtimeId]
+            })
 
             expect(ticketSales).toEqual([
                 {
@@ -190,7 +193,8 @@ describe('TicketsService', () => {
                     showtimeId,
                     sold: soldCount,
                     total: totalCount
-                }
+                },
+                { available: 0, showtimeId: emptyShowtimeId, sold: 0, total: 0 }
             ])
         })
     })

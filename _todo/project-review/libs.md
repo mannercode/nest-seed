@@ -1,6 +1,6 @@
 # libs 전체 감사 — 2026-09-26
 
-진행할 항목은 L2의 SSE 디코딩 교체뿐이다. 나머지 발견과 수정 후보는 보류하며 이번 작업의 완료 조건에 포함하지 않는다. 작업 범위와 읽기 부담의 기준은 [진행할 작업](README.md)을 따른다.
+L2의 SSE 디코딩 교체와 검증을 완료했다. 나머지 발견과 수정 후보는 보류한다. 아래 재현은 원검토 시점의 기록이며, 현재 수정 결과는 [통합 결과](README.md)를 따른다.
 
 기준: `6bbe8cdf7df05ce9aa69cd6ab116f8ccde3fb7f0`. `libs-files.json`의 162개, 12,526줄을 모두 새로 완독했다. README/AGENTS/docs/libs.md/docs/reference/conventions.md/docs/reference/decisions.md를 먼저 확인했다. 파일별 상태는 [전체 파일 목록](files.md)에 있다. 소스·설정·테스트 파일은 변경하지 않았다. 외부 인프라를 중단·초기화하거나 별도 full suite를 실행하지 않았다. 전체 검증 결과는 [통합 결과](README.md)에 있다.
 
@@ -17,7 +17,7 @@
 - 수정 후보(보류): 종료 시 각 state의 등록 handler를 비우고 소비 task를 추적하여 종료 훅이 진행 중 task의 끝을 관찰하게 한다. 정상 경로와 종료 barrier 경로를 기존 nats spec에서 검증한다. 새 메시지 재시도나 별도 shutdown framework는 필요 없다.
 - 테스트 공백: 기존 destroy 테스트는 종료 뒤 새 publish만 확인하여 이미 실행 중인 메시지의 나머지 handler를 놓친다.
 
-### L2 — 진행 / 확신 높음: SSE 문자열이 UTF-8 바이트 경계에서 손상된다
+### L2 — 완료 / 원검토 확신 높음: SSE 문자열이 UTF-8 바이트 경계에서 손상된다
 
 - 위치: [libs/testing/src/http.test-client.ts](../../libs/testing/src/http.test-client.ts) 156행–`:157`.
 - 트리거: `data: 한글\n\n`을 첫 '한'의 첫 UTF-8 byte 뒤에서 둘로 나누어 전송한다.

@@ -42,6 +42,27 @@ describe('TheatersService', () => {
                 .body({})
                 .badRequest({ expected: Errors.RequestValidation.Failed(expect.any(Array)) })
         })
+
+        it('같은 행의 좌석 좌표가 중복되면 400을 반환한다', async () => {
+            const createDto = buildCreateTheaterDto({
+                seatmap: {
+                    blocks: [
+                        {
+                            name: 'A',
+                            rows: [
+                                { name: '1', layout: 'O' },
+                                { name: '1', layout: 'O' }
+                            ]
+                        }
+                    ]
+                }
+            })
+
+            await fix.httpClient
+                .post('/theaters')
+                .body(createDto)
+                .badRequest({ expected: Errors.RequestValidation.Failed(expect.any(Array)) })
+        })
     })
 
     describe('GET /theaters/:id', () => {
@@ -89,6 +110,24 @@ describe('TheatersService', () => {
             await fix.httpClient
                 .get(`/theaters/${theater.id}`)
                 .ok({ schema: TheaterSchema, expected: { ...theater, ...updateDto } })
+        })
+
+        it('블록 사이에 좌석 좌표가 중복되면 400을 반환하고 기존 배치를 유지한다', async () => {
+            await fix.httpClient
+                .patch(`/theaters/${theater.id}`)
+                .body({
+                    seatmap: {
+                        blocks: [
+                            { name: 'A', rows: [{ name: '1', layout: 'O' }] },
+                            { name: 'A', rows: [{ name: '1', layout: 'O' }] }
+                        ]
+                    }
+                })
+                .badRequest({ expected: Errors.RequestValidation.Failed(expect.any(Array)) })
+
+            await fix.httpClient
+                .get(`/theaters/${theater.id}`)
+                .ok({ schema: TheaterSchema, expected: theater })
         })
 
         it('ID에 해당하는 극장이 없으면 404를 반환한다', async () => {
