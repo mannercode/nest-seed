@@ -100,4 +100,7 @@ MongoDB는 주 데이터와 transaction, Redis는 선점·리프레시 세션, N
 
 ## 운영 적용 범위
 
-제공하는 인프라와 실행 구성은 개발·검증용이다. 운영 환경의 TLS·백업·모니터링·무중단 배포 구성은 포함하지 않는다. 운영에 적용할 때는 [BFF의 프록시 신뢰 조건](docs/apps.md#데모와-bff)과 [Restate의 배포 revision](docs/reference/decisions.md#배포-revision)을 확인한다.
+제공하는 인프라와 실행 구성은 개발·검증용이다. 운영 환경의 TLS·백업·모니터링·무중단 배포 구성은 포함하지 않는다.
+
+- 데모에서 사용자 IP를 전달받도록 설정하려면 프록시가 실제 접속 IP를 넣고, 이를 우회한 직접 접속을 막아야 한다. [사용자 IP 전달 설정](docs/apps.md#데모와-bff)을 따른다.
+- 진행 중인 구매·상영 작업이 있을 때 workflow 코드를 배포하려면 기존 작업이 끝날 때까지 이전 코드를 유지해야 한다. [진행 중인 작업을 보존하는 배포](docs/reference/decisions.md#배포-revision)를 따른다.

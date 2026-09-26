@@ -134,7 +134,10 @@ Payments are an example implementation that records payment state in MongoDB wit
 
 ## 8. Production scope
 
-`tests/api/compose.yml` exercises distributed behavior; it is not a production deployment. It does not provide TLS, secret management, backup/restore, an observability backend, a frontend edge, or zero-downtime revision rollout. Before production use, review the [BFF IP trust boundary](docs/apps.md#데모와-bff) and [Restate revision transition requirements](docs/reference/decisions.md#배포-revision).
+`tests/api/compose.yml` exercises distributed behavior; it is not a production deployment. It does not provide TLS, secret management, backup/restore, an observability backend, a frontend edge, or zero-downtime revision rollout.
+
+- To use forwarded user IP addresses in the demos, the proxy must supply the actual connection IP and direct access that bypasses it must be blocked. Follow the [client IP forwarding setup](docs/apps.md#데모와-bff).
+- When deploying workflow code while purchases or showtime creations are still running, keep the previous code available until those executions finish. Follow the [deployment procedure for preserving running workflows](docs/reference/decisions.md#배포-revision).
 
 ## 9. Documentation
 
