@@ -23,6 +23,7 @@ function getSubscriptionKey(subject: string, queue?: string) {
 export class NatsPubSubService implements OnModuleDestroy {
     private readonly logger = new Logger(NatsPubSubService.name)
     private readonly subscriptions = new Map<string, SubscriptionState>()
+    private readonly consumeTasks = new Set<Promise<void>>()
 
     constructor(private readonly connection: NatsConnection) {}
 
@@ -31,10 +32,12 @@ export class NatsPubSubService implements OnModuleDestroy {
     }
 
     async onModuleDestroy() {
-        for (const { sub } of this.subscriptions.values()) {
+        for (const { handlers, sub } of this.subscriptions.values()) {
+            handlers.clear()
             sub.unsubscribe()
         }
         this.subscriptions.clear()
+        await Promise.all(this.consumeTasks)
     }
 
     async publish(subject: string, message: string): Promise<void> {
@@ -68,6 +71,7 @@ export class NatsPubSubService implements OnModuleDestroy {
             // 동시 등록도 같은 SUB의 서버 처리 확인을 기다린다.
             await state.ready
         } catch (error) {
+            state.handlers.clear()
             state.sub.unsubscribe()
             if (this.subscriptions.get(key) === state) this.subscriptions.delete(key)
             throw error
@@ -88,7 +92,7 @@ export class NatsPubSubService implements OnModuleDestroy {
 
     private startConsumeLoop(state: SubscriptionState) {
         // 비정상 종료는 무트래픽과 구분하기 어려우므로 기록하고, 외곽 catch로 rejection을 막는다.
-        void (async () => {
+        const task = (async () => {
             try {
                 for await (const msg of state.sub) {
                     const text = msg.string()
@@ -110,6 +114,8 @@ export class NatsPubSubService implements OnModuleDestroy {
                 )
             }
         })()
+        this.consumeTasks.add(task)
+        void task.finally(() => this.consumeTasks.delete(task))
     }
 }
 

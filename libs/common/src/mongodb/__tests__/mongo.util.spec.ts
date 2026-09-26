@@ -277,6 +277,19 @@ describe('assignIfDefined, mapDocToDto', () => {
         expect(target).toEqual({ email: null, id: 'obj:123', name: 'new' })
     })
 
+    it('transform의 인자 타입과 실제 전달 값에 null을 포함한다', () => {
+        const source = { name: null as string | null | undefined }
+        const target = { name: 'old' }
+
+        assignIfDefined(target, source, 'name', (value) => {
+            expectTypeOf(value).toEqualTypeOf<string | null>()
+            expect(value).toBeNull()
+            return value === null ? 'empty' : value.toUpperCase()
+        })
+
+        expect(target.name).toBe('empty')
+    })
+
     it('스키마에 선언한 필드만 DTO로 매핑한다', () => {
         const dto = mapDocToDto(
             { extra: true, id: 'id', name: 'name', optional: undefined },

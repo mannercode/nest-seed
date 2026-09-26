@@ -24,6 +24,12 @@ export class CacheService {
     }
 
     async incrementWithExpiry(key: string, ttlMs: number): Promise<number> {
+        if (!Number.isInteger(ttlMs)) {
+            throw new InternalServerErrorException('Internal server error', {
+                cause: 'Counter TTL must be an integer (ms)'
+            })
+        }
+
         const result = await this.redis.eval(
             `local count = redis.call('INCR', KEYS[1])
              if count == 1 then redis.call('PEXPIRE', KEYS[1], ARGV[1]) end
@@ -57,7 +63,7 @@ export class CacheService {
     }
 
     async set(key: string, value: string, ttlMs = 0) {
-        if (ttlMs < 0) {
+        if (!Number.isInteger(ttlMs) || ttlMs < 0) {
             throw new InternalServerErrorException('Internal server error', {
                 cause: 'TTL must be a non-negative integer (0 for no expiration)'
             })
@@ -79,7 +85,7 @@ export class CacheService {
         ttlMs: number,
         fn: () => Promise<T> | T
     ): Promise<{ ran: false } | { ran: true; result: T }> {
-        if (ttlMs <= 0) {
+        if (!Number.isInteger(ttlMs) || ttlMs <= 0) {
             throw new InternalServerErrorException('Internal server error', {
                 cause: 'Lock TTL must be a positive integer (ms)'
             })

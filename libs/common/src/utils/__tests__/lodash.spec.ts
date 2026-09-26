@@ -102,6 +102,21 @@ describe('pick', () => {
     it('존재하지 않는 키는 무시한다', () => {
         expect(pick({ a: 1 } as any, ['a', 'b'])).toEqual({ a: 1 })
     })
+
+    it('특수 이름과 symbol을 일반 데이터 키로 보존한다', () => {
+        const symbol = Symbol('field')
+        const source = {
+            ...JSON.parse('{"__proto__":{"value":1},"constructor":"data"}'),
+            [symbol]: 2
+        }
+        const result = pick(source, ['__proto__', 'constructor', symbol])
+
+        expect(Object.keys(result)).toEqual(['__proto__', 'constructor'])
+        expect(Object.getPrototypeOf(result)).toBe(Object.prototype)
+        expect(result.__proto__).toEqual({ value: 1 })
+        expect(result.constructor).toBe('data')
+        expect(result[symbol]).toBe(2)
+    })
 })
 
 describe('uniq', () => {
@@ -168,6 +183,21 @@ describe('orderBy', () => {
 })
 
 describe('isEqual', () => {
+    it('동일 객체는 getter를 실행하지 않고 같다고 판정한다', () => {
+        let reads = 0
+        const getter = vi.fn(() => ++reads)
+        const value = {
+            get value() {
+                return getter()
+            }
+        }
+
+        expect(isEqual(value, value)).toBe(true)
+        expect(getter).not.toHaveBeenCalled()
+        expect(isEqual(NaN, NaN)).toBe(true)
+        expect(isEqual(0, -0)).toBe(false)
+    })
+
     it('두 수가 같으면 true를 반환한다', () => {
         expect(isEqual(1, 1)).toBe(true)
     })
@@ -448,5 +478,14 @@ describe('sumBy', () => {
 describe('pickBy', () => {
     it('조건 함수가 true를 반환하는 항목만 남긴다', () => {
         expect(pickBy({ a: 1, b: null, c: 3 }, (v) => v != null)).toEqual({ a: 1, c: 3 })
+    })
+
+    it('선택한 특수 이름을 prototype 변경 없이 데이터 키로 보존한다', () => {
+        const source = JSON.parse('{"__proto__":{"value":1},"constructor":"data","omit":null}')
+        const result = pickBy(source, (value) => value !== null)
+
+        expect(Object.keys(result)).toEqual(['__proto__', 'constructor'])
+        expect(Object.getPrototypeOf(result)).toBe(Object.prototype)
+        expect(result).toEqual(JSON.parse('{"__proto__":{"value":1},"constructor":"data"}'))
     })
 })

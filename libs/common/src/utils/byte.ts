@@ -8,7 +8,7 @@ export class ByteUtil {
      */
     static fromString(sizeExpression: string): number {
         const validFormatRegex =
-            /^(-?\d+(\.\d+)?)(B|KB|MB|GB|TB)(\s+(-?\d+(\.\d+)?)(B|KB|MB|GB|TB))*$/i
+            /^(-?\d+(?:\.\d+)?(?:e[+-]?\d+)?)(B|KB|MB|GB|TB)(\s+(-?\d+(?:\.\d+)?(?:e[+-]?\d+)?)(B|KB|MB|GB|TB))*$/i
 
         if (!validFormatRegex.test(sizeExpression)) {
             throw new InternalServerErrorException('Internal server error', {
@@ -17,7 +17,7 @@ export class ByteUtil {
         }
 
         const normalized = sizeExpression.toUpperCase()
-        const sizeTokenRegex = /(-?\d+(?:\.\d+)?)(B|KB|MB|GB|TB)/g
+        const sizeTokenRegex = /(-?\d+(?:\.\d+)?(?:E[+-]?\d+)?)(B|KB|MB|GB|TB)/g
 
         let totalBytes = 0
         for (const [, amount, unit] of normalized.matchAll(sizeTokenRegex)) {
@@ -60,8 +60,7 @@ export class ByteUtil {
             ['TB', 1024 ** 4],
             ['GB', 1024 ** 3],
             ['MB', 1024 ** 2],
-            ['KB', 1024],
-            ['B', 1]
+            ['KB', 1024]
         ]
 
         const parts: string[] = []
@@ -73,6 +72,8 @@ export class ByteUtil {
                 parts.push(`${sign}${unitAmount}${unit}`)
             }
         }
+
+        if (bytes > 0) parts.push(`${sign}${bytes}B`)
 
         return parts.join(' ')
     }

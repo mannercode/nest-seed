@@ -1,4 +1,4 @@
-import type { Collection, Db, IndexDescription, MongoClient } from 'mongodb'
+import { type Collection, type Db, type IndexDescription, MongoClient } from 'mongodb'
 import { BadRequestException, Logger, NotFoundException } from '@nestjs/common'
 import type { TransactionContext } from '../../index.js'
 import { OrderDirection } from '../../pagination/index.js'
@@ -13,9 +13,45 @@ import {
 } from '../index.js'
 import {
     createMongoRepositoryFixture,
+    SamplesRepository,
     type Sample,
     type MongoRepositoryFixture
 } from './crud.repository.fixture.js'
+
+describe('createMongoRepositoryFixture', () => {
+    it.each(['connect', 'index', 'cleanup'] as const)(
+        '%s 실패 시 열린 연결을 닫고 원래 초기화 오류를 유지한다',
+        async (stage) => {
+            const failure = new Error('fixture initialization failed')
+            const connect = MongoClient.prototype.connect
+            const close = MongoClient.prototype.close
+            let closeClient: (() => Promise<void>) | undefined
+            vi.spyOn(MongoClient.prototype, 'connect').mockImplementationOnce(async function (
+                this: MongoClient
+            ) {
+                closeClient = close.bind(this)
+                await connect.call(this)
+                if (stage === 'connect') throw failure
+                return this
+            })
+            if (stage !== 'connect')
+                vi.spyOn(SamplesRepository.prototype, 'onModuleInit').mockRejectedValueOnce(failure)
+            const closeSpy = vi
+                .spyOn(MongoClient.prototype, 'close')
+                .mockImplementationOnce(async function (this: MongoClient) {
+                    await close.call(this)
+                    if (stage === 'cleanup') throw new Error('cleanup failed')
+                })
+
+            try {
+                await expect(createMongoRepositoryFixture()).rejects.toBe(failure)
+                expect(closeSpy).toHaveBeenCalledTimes(1)
+            } finally {
+                await closeClient?.()
+            }
+        }
+    )
+})
 
 describe('CrudRepository', () => {
     let fix: MongoRepositoryFixture

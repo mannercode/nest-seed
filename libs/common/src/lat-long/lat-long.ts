@@ -49,9 +49,15 @@ export class LatLong {
         const deltaLat = toLat - fromLat
         const deltaLng = toLng - fromLng
 
-        const halfChordSquared =
-            Math.sin(deltaLat / 2) ** 2 +
-            Math.cos(fromLat) * Math.cos(toLat) * Math.sin(deltaLng / 2) ** 2
+        // 정반대 좌표의 반올림 오차가 제곱근의 정의역을 벗어나지 않게 한다.
+        const halfChordSquared = Math.min(
+            1,
+            Math.max(
+                0,
+                Math.sin(deltaLat / 2) ** 2 +
+                    Math.cos(fromLat) * Math.cos(toLat) * Math.sin(deltaLng / 2) ** 2
+            )
+        )
 
         const centralAngle =
             2 * Math.atan2(Math.sqrt(halfChordSquared), Math.sqrt(1 - halfChordSquared))

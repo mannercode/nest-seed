@@ -101,18 +101,28 @@ export type MongoRepositoryFixture = {
 
 export async function createMongoRepositoryFixture(): Promise<MongoRepositoryFixture> {
     const client = new MongoClient(requiredEnvironment('TESTLIB_MONGO_URI'))
-    await client.connect()
+    try {
+        await client.connect()
 
-    const customIndexes: IndexDescription[] = [{ key: { name: 1 }, name: 'name_lookup' }]
-    const soft = new SamplesRepository(client, 'nativeCrudSoftSamples', { indexes: customIndexes })
-    const hard = new SamplesRepository(client, 'nativeCrudHardSamples', { hardDelete: true })
-    const projected = new SamplesRepository(client, 'nativeCrudProjectedSamples', {
-        projection: { secret: 0 }
-    })
+        const customIndexes: IndexDescription[] = [{ key: { name: 1 }, name: 'name_lookup' }]
+        const soft = new SamplesRepository(client, 'nativeCrudSoftSamples', {
+            indexes: customIndexes
+        })
+        const hard = new SamplesRepository(client, 'nativeCrudHardSamples', { hardDelete: true })
+        const projected = new SamplesRepository(client, 'nativeCrudProjectedSamples', {
+            projection: { secret: 0 }
+        })
 
-    await Promise.all([soft.onModuleInit(), hard.onModuleInit(), projected.onModuleInit()])
+        await soft.onModuleInit()
+        await hard.onModuleInit()
+        await projected.onModuleInit()
 
-    return { client, hard, projected, soft, teardown: () => client.close() }
+        return { client, hard, projected, soft, teardown: () => client.close() }
+    } catch (error) {
+        // 정리 실패가 원래 연결·초기화 오류를 덮지 않게 한다.
+        await client.close().catch(() => undefined)
+        throw error
+    }
 }
 
 function requiredEnvironment(name: string): string {

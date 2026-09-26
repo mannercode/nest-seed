@@ -29,6 +29,17 @@ describe('TimeUtil', () => {
         it('유효하지 않은 형식이면 예외를 던진다', () => {
             expect(() => TimeUtil.toMs('2z')).toThrow(InternalServerErrorException)
         })
+
+        it('지수 표기의 부호와 단위를 함께 읽는다', () => {
+            expect(TimeUtil.toMs('1s1e-7ms')).toBe(1000.0000001)
+            expect(TimeUtil.toMs('-1s-1e-7ms')).toBe(-1000.0000001)
+            expect(TimeUtil.toMs('1E+2ms')).toBe(100)
+        })
+
+        it.each(['1ems', '1e-ms', '1e+ms', '1e1e2ms'])(
+            '불완전한 지수 표현 %s는 예외를 던진다',
+            (value) => expect(() => TimeUtil.toMs(value)).toThrow(InternalServerErrorException)
+        )
     })
 
     describe('fromMs', () => {
@@ -58,6 +69,19 @@ describe('TimeUtil', () => {
                 expect(TimeUtil.toMs(TimeUtil.fromMs(value))).toBe(value)
             }
         })
+
+        it.each([
+            1e-7,
+            -1e-7,
+            Number.MIN_VALUE,
+            -Number.MIN_VALUE,
+            1000.0000001,
+            1e21,
+            -1e21,
+            9223950542569945000
+        ])('%s 밀리초를 표시한 문자열을 같은 값으로 되돌린다', (value) =>
+            expect(TimeUtil.toMs(TimeUtil.fromMs(value))).toBe(value)
+        )
     })
 })
 import { InternalServerErrorException } from '@nestjs/common'

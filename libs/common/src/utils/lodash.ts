@@ -51,15 +51,15 @@ export function omit<T extends object, K extends keyof T>(
 }
 
 export function pick<T extends object, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> {
-    const result = {} as Pick<T, K>
+    const entries: Array<[K, T[K]]> = []
 
     for (const key of keys) {
         if (key in obj) {
-            result[key] = obj[key]
+            entries.push([key, obj[key]])
         }
     }
 
-    return result
+    return Object.fromEntries(entries) as Pick<T, K>
 }
 
 export function uniq<T>(arr: T[]): T[] {
@@ -98,6 +98,8 @@ export function orderBy<T>(
 }
 
 export function isEqual(a: unknown, b: unknown): boolean {
+    if (Object.is(a, b)) return true
+
     const temporals: TemporalEntry[] = []
     return isDeepStrictEqual(
         equalitySnapshot(a, new WeakMap(), temporals),
@@ -195,11 +197,7 @@ export function pickBy<T extends object>(
     obj: T,
     predicate: (value: T[keyof T], key: string) => boolean
 ): Partial<T> {
-    const result: Partial<T> = {}
-    for (const [key, value] of Object.entries(obj) as Array<[keyof T, T[keyof T]]>) {
-        if (predicate(value, key as string)) {
-            result[key] = value
-        }
-    }
-    return result
+    return Object.fromEntries(
+        Object.entries(obj).filter(([key, value]) => predicate(value, key))
+    ) as Partial<T>
 }
