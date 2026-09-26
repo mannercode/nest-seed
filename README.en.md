@@ -38,6 +38,8 @@ See [apps](docs/apps.md) for layers and distributed boundaries and [design decis
 
 ## 1. Getting started
 
+When forking for a new project, replace the project name `nest-seed` and organization name `mannercode` (including the `@mannercode/*` package scope) with your own names.
+
 The Dev Container is the only supported development path. Open the repository on a Docker host through VS Code Remote SSH, then use the Dev Containers extension. The workspace must have the same absolute path on the host and inside the container ([development environment](docs/devcontainer.md#2-docker-outside-of-docker의-경로-계약)).
 
 Starting the Dev Container resets the development infrastructure data. Run the commands below in the container terminal.

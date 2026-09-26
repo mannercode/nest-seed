@@ -16,6 +16,8 @@ NestJS 프로젝트를 시작할 때 가져다 쓰고 고칠 수 있는 시드�
 
 ## 시작하기
 
+새 프로젝트로 포크할 때는 프로젝트명 `nest-seed`와 조직명 `mannercode`(`@mannercode/*` 패키지 scope 포함)를 사용할 이름으로 바꾼다.
+
 공식 개발 경로는 Dev Container다. Docker가 있는 호스트의 저장소를 VS Code Remote SSH로 열고 Dev Containers 확장을 사용한다. 호스트와 컨테이너의 workspace 절대경로는 같아야 한다. 이유는 [개발 환경](docs/devcontainer.md)에 있다.
 
 1. VS Code에서 `Reopen in Container`를 실행한다. 시작할 때 개발 인프라를 초기화하고 의존성을 준비한다.
