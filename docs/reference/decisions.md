@@ -1,114 +1,116 @@
 # 설계 선택과 한계
 
-현재 선택의 이유와 교체할 때 잃거나 새로 맡게 될 책임을 정리한다. 실행 계약은 [apps](../apps.md), 공통 코드의 경계는 [libs](../libs.md)가 소유한다.
+현재 설계를 선택한 이유와 다른 방식으로 바꿀 때 달라지는 책임을 정리한다. API의 동작과 보장은 [apps](../apps.md), 공통 코드의 범위는 [libs](../libs.md)를 참고한다.
 
 ## 시드의 범위
 
-이 시드는 단순 CRUD와 분산 실행의 예제를 함께 제공한다. 그렇다고 예매 서비스의 모든 기능·장애·보안 정책을 완성하지 않는다. 새 장치는 현재 요구사항에서 줄이는 비용이 학습·실행·유지 비용보다 클 때만 도입한다.
+이 시드는 단순 CRUD와 분산 실행의 예제를 함께 제공한다. 예매 서비스의 모든 기능과 장애 대응·보안 정책까지 제공하지는 않는다. 새 기술이나 계층은 현재 요구사항을 해결하면서 줄일 수 있는 비용이 학습·실행·유지 비용보다 클 때 도입한다.
 
-핵심은 API와 재사용 라이브러리다. 데모는 연결 흐름을 보여 줄 정도로 유지한다. 작은 중복을 없애려고 범용 BFF나 인증 프레임워크를 만들지 않는다. 기존 유틸은 사용처 개수만으로 삭제하지 않고 제공하는 계약과 찾기 쉬운 이름의 가치를 본다.
+핵심은 API와 재사용 라이브러리다. 데모는 API와의 연결 흐름을 보여 주는 범위로 유지한다. 작은 중복을 없애려고 범용 BFF나 인증 프레임워크를 만들지 않는다. 기존 유틸을 유지할지는 사용처 개수만이 아니라, 제공하는 계약과 기능을 쉽게 찾을 수 있는 이름의 가치로 판단한다.
 
 ## NestJS와 모듈 경계
 
-SoLA의 하향 의존·동료 모듈 참조 금지는 순환 참조를 줄이기 위한 선택이다. 단일 Core의 CRUD는 Gateway가 직접 호출하고, 협력이 있을 때만 Application이 조합한다. View는 화면 전용 읽기 소비자이므로 도메인 제공자가 화면 요구를 알 필요가 없다.
+SoLA에서 하위 계층만 참조하고 같은 계층의 다른 모듈을 직접 참조하지 않는 것은 순환 참조를 줄이기 위해서다. 하나의 Core로 처리할 수 있는 CRUD는 Gateway가 직접 호출하고, 여러 도메인의 협력이 필요할 때 Application이 조합한다. 화면 응답은 View가 도메인 데이터를 읽어 구성하므로 각 도메인은 화면 요구를 알 필요가 없다.
 
-NestJS 예외·DI는 앱의 기본 도구로 사용한다. SDK 연결·실행을 common으로 모으되 DB 교체나 다른 언어로의 재작성을 자동화하려는 추상화는 만들지 않는다. 앱 Repository는 쿼리·인덱스·도메인 오류 변환을 소유한다. `TransactionContext`가 있어도 transaction 의미와 원자성 설계까지 DB 독립적이 되는 것은 아니다.
+NestJS의 예외와 DI를 앱의 기본 도구로 사용한다. SDK 연결·실행은 common으로 모으지만 DB 교체나 다른 언어로의 재작성을 자동화하려는 추상화는 만들지 않는다. 앱의 Repository는 쿼리·인덱스를 정의하고 저장소 오류를 도메인 오류로 바꾼다. `TransactionContext`를 사용해도 transaction의 의미와 원자성 설계는 사용하는 DB에 따라 달라진다.
 
-`generateUuid`는 Node의 어떤 API를 써야 하는지 매번 찾지 않고 목적대로 호출하기 위한 공통 유틸이다. 같은 이유로 유용한 기존 wrapper는 유지하지만 Node 기본 API 전부를 감싸지는 않는다. 독립 실행 스크립트는 common 빌드를 요구하지 않도록 SDK를 직접 사용한다.
+`generateUuid`는 UUID를 만들 때 어떤 Node API를 써야 하는지 매번 찾지 않고, 기능 이름으로 기억하고 호출할 수 있게 한 공통 유틸이다. 같은 목적에 맞는 기존 래퍼는 유지하지만 Node 기본 API 전부를 감싸지는 않는다. 독립 실행 스크립트는 common을 먼저 빌드하지 않아도 실행할 수 있도록 SDK를 직접 사용한다.
 
-DTO는 요청 검증과 응답·workflow·테스트의 JSON 복원에 같은 런타임 스키마를 재사용하기 위해 Zod를 선택했다. 클래스의 변환 데코레이터도 가능한 설계이며, Zod 사용은 이 프로젝트의 선택이다. 타입 인자만으로 런타임 변환 정보가 생기지 않으므로 변환할 경계에 스키마를 명시한다.
+DTO에는 Zod를 사용한다. 요청 검증과 응답·workflow·테스트의 JSON 복원에 같은 런타임 스키마를 재사용하기 위해서다. 클래스의 변환 데코레이터로도 구현할 수 있지만 이 프로젝트는 스키마를 선택했다. 타입 인자만으로 런타임 변환 정보를 알 수 없으므로 데이터를 변환하는 지점에 스키마를 명시한다.
 
 ## MongoDB와 원자성
 
-문서 단위 모델과 공식 driver 사용을 예제로 삼아 MongoDB를 선택했다. 도메인 사이의 관계는 서비스 공개 API로 관리한다. 같은 경계는 관계형 DB로도 설계할 수 있으며, cross-domain 외래 키·join을 쓰지 않는다는 사실이 MongoDB를 필수로 만들지는 않는다.
+문서 단위 모델과 공식 driver 사용을 보여 주기 위해 MongoDB를 선택했다. 도메인 사이의 관계는 서비스의 공개 API로 관리한다. 관계형 DB에서도 같은 경계를 둘 수 있다. 도메인 간 외래 키나 join을 쓰지 않는 설계에 MongoDB가 반드시 필요한 것은 아니다.
 
-여러 쓰기가 함께 성공해야 하면 transaction을 사용한다. 현재 개발 topology는 Replica Set이다. MongoDB의 다중 문서 transaction은 [Replica Set과 sharded cluster](https://www.mongodb.com/docs/manual/core/transactions-production-consideration/)에서 지원되고 standalone은 지원하지 않는다.
+여러 쓰기를 함께 확정해야 할 때는 transaction을 사용한다. 개발 환경도 Replica Set으로 구성한다. MongoDB의 다중 문서 transaction은 [Replica Set과 sharded cluster](https://www.mongodb.com/docs/manual/core/transactions-production-consideration/)에서 지원하며 standalone에서는 지원하지 않기 때문이다.
 
-과반수·저널 쓰기 확인에는 일시적인 복제·디스크 지연을 허용하되 무한 대기는 막는 기한을 둔다. `wtimeout`은 이미 반영된 쓰기를 취소하지 않으므로, 기한을 넘긴 결과를 성공이나 rollback으로 추측하지 않고 오류를 전달한다.
+과반수 복제와 저널 쓰기를 확인할 때는 일시적인 복제·디스크 지연을 기다리되 기한을 둔다. `wtimeout`은 이미 반영된 쓰기를 취소하지 않으므로, 기한을 넘기면 성공이나 rollback으로 추측하지 않고 오류를 전달한다.
 
-동시 요청의 무결성은 DB unique index·조건부 전이·transaction이 맡는다. transaction callback의 일시 오류 재시도는 driver에 위임한다. 상영의 검증·생성은 극장 문서 갱신을 먼저 수행해 서로 충돌하도록 하고, 재시도에서 새로운 snapshot을 읽는다. 단순히 transaction을 썼다는 사실만으로 두 요청의 “없음” 조회 후 삽입 경쟁이 해결되지는 않는다.
+동시 요청의 무결성은 DB의 unique index, 조건부 상태 전환, transaction으로 지킨다. transaction 콜백의 일시 오류는 driver가 재시도한다. 상영을 검증·생성하기 전에 극장 문서를 갱신해 같은 극장에 대한 transaction끼리 충돌하도록 하고, 재시도에서는 새로운 snapshot을 읽는다. transaction을 사용해도 두 요청이 모두 “없음”을 조회한 뒤 삽입하는 경쟁까지 자동으로 막아 주지는 않기 때문이다.
 
-RDB로 옮기면 transaction·제약·조회 기능을 활용할 수 있다. 이 경우 저장소 구현뿐 아니라 동시성 제어·조회 계약도 함께 검증해야 한다. 지금 포크할 가능성만으로 두 DB 구현을 유지하지 않는다.
+관계형 DB로 옮길 때는 저장소 구현뿐 아니라 동시성 제어와 조회 계약도 함께 검증해야 한다. 포크한 프로젝트에서 DB를 바꿀 가능성만으로 두 DB 구현을 미리 유지하지 않는다.
 
 ## Redis 락과 선점
 
-분산 락은 중복 작업 비용을 줄일 때 사용한다. 만료 업로드 정리는 `withLock`으로 다른 복제본이 작업 중이면 건너뛴다. 기다려야 하는 소비자를 위한 `withLockBlocking`도 공통 유틸로 유지한다.
+분산 락은 중복 작업 비용을 줄이는 데 사용한다. 만료된 업로드를 정리할 때는 `withLock`으로 다른 복제본이 작업 중인지 확인하고, 그렇다면 건너뛴다. 락을 기다려야 하는 호출자를 위해 `withLockBlocking`도 공통 유틸로 제공한다.
 
-락 TTL이 만료하거나 소유 프로세스가 종료될 수 있으므로 락만으로 판매 정합성을 보장하지 않는다. 구매에는 티켓 묶음 전체를 키로 한 추가 락을 두지 않는다. `[A, B]`와 `[B, C]`처럼 일부만 겹치는 요청을 그런 키로는 직렬화할 수 없기 때문이다. Redis는 선점 소유권을, DB는 최종 판매 전이를 맡는다.
+락의 TTL이 만료되거나 락을 얻은 프로세스가 종료될 수 있으므로, 락만으로 판매 정합성을 보장하지 않는다. 구매에는 티켓 묶음 전체를 키로 한 추가 락을 두지 않는다. `[A, B]`와 `[B, C]`처럼 일부만 겹치는 요청은 키가 달라 이런 락으로 순서를 보장할 수 없기 때문이다. Redis는 선점 소유권을 관리하고 DB는 최종 판매 상태를 확정한다.
 
-Redlock은 독립 Redis master들의 다른 topology를 전제로 한다. 현재 Redis Cluster의 단일 키 락을 Redlock과 같은 보장으로 설명하지 않는다. 필요한 DB 원자성을 유지하는 현재 구조에 별도 락 알고리즘을 추가하지 않는다.
+Redlock은 독립된 Redis master 여러 개를 전제로 하므로 현재 Redis Cluster의 단일 키 락과 구성이 다르다. 두 방식이 같은 보장을 제공하는 것으로 보지 않는다. 현재는 DB에서 필요한 원자성을 지키므로 별도 락 알고리즘을 추가하지 않는다.
 
 ## Core NATS와 JetStream
 
-프로세스 내부 EventEmitter만으로 다른 API 복제본의 SSE client에 알림을 보낼 수 없어 NATS를 사용한다. Core NATS는 연결된 구독자에 대한 실시간 전달, JetStream은 소비자 중단 동안 보존할 구매 완료 이벤트를 맡는다.
+프로세스 내부의 EventEmitter로는 다른 API 복제본에 연결된 SSE client에 알림을 보낼 수 없어 NATS를 사용한다. Core NATS는 연결된 구독자에게 실시간으로 전달하고, JetStream은 소비자가 중단된 동안에도 구매 완료 이벤트를 보존한다.
 
-진행 이벤트를 놓치면 별도 상태 조회로 확인할 수 있으므로 모든 subject에 저장·ack·재전달을 붙이지 않는다. 반면 구매 완료 알림은 늦게 처리해도 남아 있어야 하므로 durable consumer를 사용한다. 메일 같은 실제 외부 효과를 추가하면 소비자도 멱등 처리를 소유해야 한다.
+진행 이벤트를 놓쳐도 별도로 상태를 조회할 수 있으므로 모든 subject에 저장·ack·재전달을 적용하지 않는다. 구매 완료 알림은 처리가 늦어져도 남아 있어야 하므로 durable consumer를 사용한다. 메일 발송 같은 외부 효과를 추가하면 소비자에서도 중복 실행을 막는 멱등 처리를 해야 한다.
 
-Core NATS의 flush, JetStream PubAck, 소비자의 ack는 서로 다른 경계다. broker의 유한한 중복 억제 기간을 영구 exactly-once 보장으로 해석하지 않는다. DB 완료와 발행·소비의 원자성이 나뉘는 현재 계약은 at-least-once다.
+Core NATS의 flush, JetStream의 PubAck, 소비자의 ack는 각각 확인하는 대상이 다르다. broker가 중복을 억제하는 기간은 유한하므로 영구적인 exactly-once 보장은 아니다. DB 저장 완료와 메시지 발행·소비를 하나의 원자적 작업으로 묶지 못하므로 현재 계약은 at-least-once다.
 
-Redis Pub/Sub도 실시간 전달에는 맞지만 durable 경로는 별도로 필요하다. Kafka를 추가하면 운영·학습 대상이 늘고 현재 예제에서 얻는 이점은 작다. sticky session도 작업을 실행하는 복제본과 SSE가 연결된 복제본이 다를 수 있어 메시지 통로를 대신하지 않는다.
+Redis Pub/Sub도 실시간 전달에 사용할 수 있지만 메시지를 보존하는 경로가 별도로 필요하다. Kafka를 추가하면 운영·학습 대상이 늘어나는 데 비해 현재 예제에서 얻는 이점은 작다. sticky session을 사용해도 작업을 실행하는 복제본과 SSE가 연결된 복제본은 다를 수 있으므로 복제본 사이의 메시지 전달을 대신할 수 없다.
 
 ## Restate와 외부 효과
 
-상영 생성과 구매는 Restate workflow로 재시도·중단 후 재개를 표현한다. 두 업무에 자체 lease 실행기와 별도 복구 scheduler를 각각 만들지 않는다. workflow journal은 완료 step 결과를 재사용하고, 짧은 DB 묶음 쓰기는 MongoDB transaction으로 원자적으로 확정한다.
+상영 생성과 구매는 Restate workflow로 재시도하고 중단 후 재개한다. 이를 통해 두 업무에 lease를 관리하는 실행기와 복구 scheduler를 각각 구현하지 않아도 된다. Restate는 journal에 기록한 완료 step의 결과를 재사용하며, 짧은 DB 묶음 쓰기는 MongoDB transaction으로 원자적으로 확정한다.
 
 ```text
 외부 쓰기 성공 → 응답 또는 journal 기록 전 종료 → 같은 step 재실행 가능
 ```
 
-따라서 `ctx.run`으로 감쌌어도 외부 효과는 멱등해야 한다. 상영 operation의 unique sagaId, 구매의 원자 완료·응답 스냅샷, 결제의 구매 ID가 이를 맡는다. workflow key는 같은 작업의 재제출을 합칠 뿐 다른 작업끼리의 좌석·시간 경쟁을 조정하지 않는다.
+따라서 `ctx.run`으로 감쌌어도 외부 효과는 멱등해야 한다. 상영 생성은 operation의 sagaId에 unique 제약을 두고, 구매는 완료 상태와 응답 스냅샷을 원자적으로 저장하며, 결제는 구매 ID로 중복을 막는다. workflow key는 같은 작업의 재제출을 합칠 뿐 서로 다른 작업의 좌석·시간 경쟁을 조정하지 않는다.
 
-상영 생성은 DB commit으로 업무가 완료된다. 뒤의 SSE와 output 보관은 호출자가 상태를 알아내기 위한 수단이다. 같은 API 안의 접수 HTTP 요청과 Restate가 실행하는 workflow는 실행 시점·복제본이 다를 수 있다. 출력 보존 기간이 끝났다는 사실을 DB 생성이 취소된 것으로 해석하지 않는다.
+상영 생성은 DB commit으로 완료된다. 그 뒤의 SSE 알림과 workflow 결과 보관은 호출자가 상태를 확인하는 수단이다. HTTP 접수 요청을 처리하는 시점·복제본과 Restate가 workflow를 실행하는 시점·복제본은 다를 수 있다. 결과 보존 기간이 끝나도 DB에 생성한 상영은 취소되지 않는다.
 
-구매 HTTP는 workflow 결과를 기다린다. broker 장애가 구매 완료 응답을 막지 않게 완료 알림은 별도 workflow로 넘긴다. 네트워크 오류를 업무상 거절로 확정하거나, 결제 결과를 모르는 상태에서 취소했다고 응답하지 않는다.
+구매 HTTP 요청은 workflow 결과를 기다린다. broker 장애 때문에 구매 완료 응답이 막히지 않도록 완료 알림은 별도 workflow로 넘긴다. 네트워크 오류만으로 업무상 거절을 확정하거나, 결제 결과를 모르는 상태에서 취소했다고 응답하지 않는다.
 
-BullMQ나 JetStream consumer만으로도 작업을 실행할 수 있지만 단계 재시도·상태·보상을 직접 관리해야 한다. Temporal도 요구를 충족하지만 이 저장소에서는 별도 worker bundle·sandbox·서버 DB setup보다 API에 붙는 Restate endpoint가 작은 구성이었다.
+BullMQ나 JetStream consumer로도 작업을 실행할 수 있지만 단계별 재시도·상태·보상은 직접 관리해야 한다. workflow 엔진인 Temporal도 요구를 충족한다. 이 저장소에서는 별도 worker bundle·sandbox·서버 DB를 관리하는 구성보다 API에 endpoint를 붙이는 Restate 구성이 작아 이를 선택했다.
 
 ### 배포 revision
 
-운영에서는 revision별 endpoint를 등록하고 기존 invocation이 끝날 때까지 이전 코드를 유지해야 한다. [Restate의 deployment](https://docs.restate.dev/concepts/services/)는 새 invocation과 진행 중인 실행이 사용할 코드를 구분한다.
+운영에서는 revision별로 endpoint를 등록하고 기존 invocation이 끝날 때까지 이전 코드를 유지해야 한다. [Restate의 deployment](https://docs.restate.dev/concepts/services/)는 새 invocation과 진행 중인 실행이 사용할 코드를 구분한다.
 
-workflow step을 삭제하거나 순서를 바꾸면 이전 journal은 이전 코드에서 끝내야 한다. 같은 endpoint에 새 코드를 덮어쓰면 재개 시 step 순서가 맞지 않을 수 있다. 새 DB 문서에서 필드를 없애는 것과 보존된 journal의 실행 코드를 교체하는 것은 별개의 전환이다.
+workflow step을 삭제하거나 순서를 바꾸면 이전 journal에 기록된 실행은 이전 코드로 끝내야 한다. 같은 endpoint에 새 코드를 덮어쓰면 실행을 재개할 때 step 순서가 맞지 않을 수 있다. 새 DB 문서에서 필드를 없애는 것과 기존 journal의 실행 코드를 교체하는 것은 별도로 검토해야 한다.
 
 ```text
-v1 실행 유지 → v2 endpoint 등록 → 신규 실행 전환 → v1 drain 확인 → v1 제거
+v1 실행 유지 → v2 endpoint 등록 → 신규 실행 전환 → v1 실행 종료 확인 → v1 제거
 ```
 
 개발용 force 재등록이나 테스트의 고정 NGINX URI를 운영 무중단 배포 방식으로 복사하지 않는다. 개발 reset은 journal까지 삭제하므로 보존할 실행이 없는 환경에서만 사용한다.
 
 ## 기본 로그인과 데모
 
-액세스 권한은 짧은 JWT 만료로 제한한다. 현재 5분 동안 유효한 토큰을 발급하고 매 요청에서 계정·토큰 DB를 조회하지 않는다. 즉시 회수를 원하면 서버가 액세스 세션을 관리하는 다른 계약이 필요하므로 authVersion 같은 장치를 선제적으로 덧붙이지 않는다.
+액세스 권한의 유지 시간은 짧은 JWT 유효 기간으로 제한한다. 현재 토큰은 5분간 유효하며, 매 요청에서 계정·토큰 DB를 조회하지 않는다. 즉시 권한을 회수하려면 서버에서 액세스 세션을 관리하는 등 인증 계약을 바꿔야 하므로 authVersion 같은 장치를 미리 추가하지 않는다.
 
-리프레시 회전과 로그아웃을 위한 Redis 상태는 기본 로그인 계약에 필요한 부분이다. 현재 해시만 원자적으로 바꾸고 기존 토큰의 재사용은 거절한다. 토큰 계보·이메일별 잠금·과거 refresh 재사용에 따른 전체 세션 폐기는 포함하지 않는다.
+리프레시 토큰 교체와 로그아웃에는 Redis에 저장한 세션 상태가 필요하다. 현재 토큰의 해시만 원자적으로 바꾸고 이전 토큰의 재사용은 거절한다. 토큰의 교체 이력을 추적하거나 이메일별로 로그인을 잠그지는 않는다. 과거 리프레시 토큰을 재사용했다는 이유로 현재 세션을 모두 폐기하지도 않는다.
 
-데모의 Route Handler는 쿠키를 API 요청으로 전달하는 앱 코드다. 화면별 API 응답 조합인 View와 역할이 다르다. 이를 common의 재사용 BFF framework로 키우지 않는다. IP 헤더·cookie 설정을 운영에 적용할 조건은 [apps](../apps.md#데모와-bff)가 소유한다.
+데모의 Route Handler는 쿠키를 API 요청으로 전달하는 앱 코드이며, 화면별 응답을 조합하는 View와 역할이 다르다. 이를 common의 재사용 BFF 프레임워크로 키우지 않는다. IP 헤더와 쿠키 설정을 운영에 적용하려면 [apps의 조건](../apps.md#데모와-bff)을 따른다.
 
 ## 검증의 강도와 의미
 
-커버리지를 수집하는 API와 common 구현은 line·branch·function 100%를 요구한다. 임계치에 여유가 있으면 새로 추가한 미실행 분기가 기존 점수에 가려질 수 있기 때문에, 구멍을 같은 변경에서 검토하게 하려는 제약이다.
+커버리지를 수집하는 API와 common 구현은 line·branch·function 100%를 요구한다. 기준에 여유가 있으면 새로 추가한 분기를 실행하지 않아도 기존 점수 덕분에 통과할 수 있다. 100% 기준은 실행되지 않은 경로를 같은 변경에서 검토하게 하려는 제약이다.
 
-100%는 단언의 의미나 race 안전성을 증명하지 않는다. 도달하기 어려운 방어 분기는 먼저 구조를 단순하게 할 수 있는지 검토하고, 제외가 필요하면 이유를 명시한다. 수치를 채우려고 의미 없는 unit test와 운영 코드의 테스트 전용 분기를 늘리지 않는다.
+100%가 단언의 의미나 동시 요청의 안전성까지 증명하지는 않는다. 방어 분기와 커버리지 제외를 다루는 방법은 [테스트 작성 규칙](conventions.md#테스트는-한-행동의-결과를-검증한다)을 따른다.
 
-API 통합 테스트는 실제 인프라를 사용한다. 외부 race는 프로세스 간 HTTP·SSE를, 브라우저는 실제 화면·쿠키·API 연결을 확인한다. 데모의 proxy unit suite를 별도로 크게 유지하지 않는다. 검증 범위와 한계는 [tests](../tests.md)에 있다.
+API는 실제 인프라와의 통합을 검증한다. 데모는 프록시의 unit suite를 별도로 크게 유지하기보다 브라우저에서 실제 화면·쿠키·API의 연결을 확인한다. 프로세스 간 HTTP·SSE 경쟁은 API 복제본 4개로 검증하고, 간헐 실패는 반복 CI로 찾는다. 검증 범위와 한계, 필수 검사와 반복 CI의 관계는 [tests](../tests.md)를 따른다.
 
-4개 API 복제본과 반복 CI는 의도한 검증 환경이다. Stability의 coverage 없는 반복 실행은 간헐 실패를 찾으며 필수 AtoZ의 게이트를 대신하지 않는다. 테스트 수·실행 횟수만으로 과잉을 판단하지 않고 실제로 검사하는 행동과 비용을 비교한다.
+테스트 수나 반복 횟수만으로 과잉 여부를 판단하지 않고, 검증하는 동작과 실행 비용을 함께 본다.
 
 ## 개발 환경과 로그
 
-Dev Container 하나를 공식 개발 경로로 둔다. Mongo Replica Set·Redis Cluster·S3·NATS·Restate의 버전·설정 차이를 각 개발자에게 맡기지 않기 위해서다. Redis Cluster의 다중 키 제한처럼 standalone에서 드러나지 않는 계약도 개발 중 확인한다.
+공식 개발 경로는 Dev Container로 통일한다. 개발자마다 MongoDB Replica Set·Redis Cluster·S3·NATS·Restate의 버전과 설정이 달라지는 것을 막기 위해서다. Redis Cluster의 다중 키 제한처럼 standalone에서는 드러나지 않는 제약도 개발 중 확인한다.
 
-Node는 네이티브 Temporal을 사용하는 26 계열을 유지한다. TypeScript는 사용처별로 고정하며 legacy compiler API를 사용하는 앱·도구까지 자동으로 같은 major로 올리지 않는다. topology와 파괴적 reset은 [infra](../infra.md), 환경 주입과 DooD는 [Dev Container](../devcontainer.md)가 소유한다.
+Node는 네이티브 Temporal을 사용하는 26 계열을 유지한다. TypeScript 버전은 사용처별로 고정한다. legacy compiler API에 의존하는 앱·도구까지 일괄적으로 같은 major 버전으로 올리지 않기 위해서다. 인프라 구성과 reset의 삭제 범위는 [infra](../infra.md), 환경 변수 주입과 호스트 Docker 사용(DooD)은 [Dev Container](../devcontainer.md)를 참고한다.
 
-활성화된 API 로그는 ECS JSON 한 줄로 stdout/stderr에 출력한다. 컨테이너 내부의 별도 회전 파일을 중복으로 만들지 않는다. 검증 스택은 Docker 로그를 제한된 크기로 회전하고, 장기 저장·검색 backend는 실제 배포에서 선택한다. 요청·응답 본문과 query는 runtime 요청 로그에 포함하지 않는다.
+활성화된 API 로그는 한 줄의 ECS JSON으로 stdout/stderr에 출력한다. 컨테이너 안에 별도 로그 파일을 만들어 중복으로 회전시키지 않는다. 검증 스택은 Docker에서 로그 파일 크기를 제한하고 회전시킨다. 장기 저장·검색 시스템은 실제 배포 환경에 맞춰 선택한다. 실행 중 남기는 요청 로그에는 요청·응답 본문과 query를 포함하지 않는다.
 
 ## 추가하지 않은 도구
 
 | 도구                      | 현재 선택의 이유                                                                                    |
 | ------------------------- | --------------------------------------------------------------------------------------------------- |
 | OpenAPI / Swagger         | 주요 흐름은 실행 가능한 curl 문서로 동작과 함께 검증한다. 별도 카탈로그·SDK 생성은 요구하지 않는다. |
-| Passport                  | 현재 역할별 인증은 Nest Guard로 작게 표현한다.                                                      |
-| Nx / Turborepo            | 현재 workspace 실행은 pnpm으로 충분하며 추가 task graph·cache가 필요하지 않다.                      |
+| Passport                  | 현재 역할별 인증은 Nest Guard로 간단히 구현할 수 있다.                                              |
+| Nx / Turborepo            | 현재 workspace 실행은 pnpm으로 충분하며 별도 작업 의존성 관리나 캐시가 필요하지 않다.               |
 | GraphQL                   | 홈 화면 한 응답은 View로 조합할 수 있어 별도 schema·resolver 체계를 넣지 않는다.                    |
-| pino                      | 현재 로그 처리량에 교체를 요구하는 병목 근거가 없다.                                                |
-| Service Mesh·관측 backend | 운영 플랫폼 선택을 시드에 선제적으로 고정하지 않는다.                                               |
+| pino                      | 현재 로거를 교체해야 할 처리량 병목은 확인되지 않았다.                                              |
+| Service Mesh·관측 backend | 운영 플랫폼은 실제 배포 환경에 맞춰 선택한다.                                                       |
+
+영화 예매 도메인의 설계 과정은 블로그 시리즈 [백엔드 서비스 분석과 설계 1](https://mannercode.com/2025/04/01/backend-design-1.html), [2](https://mannercode.com/2025/05/01/backend-design-2.html), [3](https://mannercode.com/2025/06/01/backend-design-3.html)을 참고한다.
