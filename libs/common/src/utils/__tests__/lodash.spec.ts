@@ -446,7 +446,7 @@ describe('minBy', () => {
 })
 
 describe('countBy', () => {
-    it('객체의 상속된 속성명도 독립적인 숫자 키로 집계한다', () => {
+    it('상속된 속성 이름도 데이터 키로 사용해 개수를 센다', () => {
         const counts = countBy(['constructor', 'constructor', '__proto__', 'toString'])
         expect(counts).toEqual({ constructor: 2, ['__proto__']: 1, toString: 1 })
         expect(Object.getPrototypeOf(counts)).toBe(Object.prototype)

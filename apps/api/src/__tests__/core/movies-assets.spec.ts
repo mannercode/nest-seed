@@ -143,7 +143,7 @@ describe('MoviesAssets', () => {
             expect(asset?.owner).toEqual({ entityId: ownerMovie.id, service: 'movies' })
         })
 
-        it('다른 영화 에셋이 잘못 연결돼 있어도 실제 owner를 확인하고 삭제하지 않는다', async () => {
+        it('잘못 연결된 에셋이라도 다른 영화 소유이면 삭제하지 않는다', async () => {
             const movie = await createUnpublishedMovie(fix)
             const ownerMovie = await createUnpublishedMovie(fix)
             const assetId = await uploadAndFinalizeMovieAsset(fix, ownerMovie.id)
@@ -166,7 +166,7 @@ describe('MoviesAssets', () => {
     })
 
     describe('DELETE /movies/:movieId', () => {
-        it('assetIds가 오염돼 있어도 다른 영화가 실제 소유한 에셋은 삭제하지 않는다', async () => {
+        it('영화에 잘못 연결된 다른 영화의 에셋은 함께 삭제하지 않는다', async () => {
             const movie = await createUnpublishedMovie(fix)
             const ownerMovie = await createUnpublishedMovie(fix)
             const assetId = await uploadAndFinalizeMovieAsset(fix, ownerMovie.id)
@@ -179,7 +179,7 @@ describe('MoviesAssets', () => {
             expect(asset?.owner).toEqual({ entityId: ownerMovie.id, service: 'movies' })
         })
 
-        it('삭제되는 영화의 아직 업로드 중인 pending 에셋도 함께 삭제한다', async () => {
+        it('영화를 삭제하면 업로드 중인 에셋도 함께 삭제한다', async () => {
             const movie = await createUnpublishedMovie(fix)
             const upload = await createMovieAsset(fix, movie.id, testAssets.image)
             const pendingAssetsRepository = fix.module.get(MoviePendingAssetsRepository)

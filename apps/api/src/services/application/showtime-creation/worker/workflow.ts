@@ -19,7 +19,7 @@ import {
 } from '../internal/index.js'
 import { ShowtimeCreationWorkflowInputSchema, type ShowtimeCreationWorkflowInput } from './types.js'
 import { ShowtimeCreationPersistenceService } from '../internal/showtime-creation-persistence.service.js'
-import { ShowtimeCreationEvents } from '../showtime-creation.events.js'
+import { ShowtimeCreationEventService } from '../showtime-creation-event.service.js'
 
 const EVENT_ATTEMPT_TIMEOUT_MS = 10_000
 const VALIDATE_AND_CREATE_RETRY = {
@@ -30,7 +30,7 @@ const VALIDATE_AND_CREATE_RETRY = {
 const RUN_TIMEOUT_MS = 60_000
 
 type WorkflowDependencies = {
-    events: Pick<ShowtimeCreationEvents, 'emitStatusChanged'>
+    events: Pick<ShowtimeCreationEventService, 'emitStatusChanged'>
     persistence: Pick<ShowtimeCreationPersistenceService, 'validateAndCreate'>
     projectId: string
 }
@@ -162,7 +162,7 @@ export class ShowtimeCreationWorkflow {
     readonly definition: ShowtimeCreationWorkflowDefinition
 
     constructor(
-        events: ShowtimeCreationEvents,
+        events: ShowtimeCreationEventService,
         persistence: ShowtimeCreationPersistenceService,
         config: AppConfigService
     ) {

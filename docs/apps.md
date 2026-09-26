@@ -140,7 +140,7 @@ SSE 발행 실패·기한 초과는 기록하고 업무 실행을 계속한다. 
 
 구매 완료 알림은 JetStream에 보존한다. DB·PubAck·소비자의 외부 효과·ack 사이를 한 transaction으로 묶지 못하므로 at-least-once이고 중복은 가능하다. 실제 발송을 추가할 소비자는 구매 ID를 provider 멱등성 키 또는 durable inbox 키로 사용해야 한다. 현재 소비자는 발송할 내용을 로그로 남기는 예제다.
 
-stream은 용량을 넘으면 새 발행을 거부하고 workflow가 재시도한다. 보존·중복 억제 기간과 크기는 [purchase.events.ts](../apps/api/src/services/application/purchase/purchase.events.ts)가 소유한다. 상세 원리와 도구 선택은 [설계 결정](reference/decisions.md)에 둔다.
+stream은 용량을 넘으면 새 발행을 거부하고 workflow가 재시도한다. 보존·중복 억제 기간과 크기는 [purchase-event.service.ts](../apps/api/src/services/application/purchase/purchase-event.service.ts)가 소유한다. 상세 원리와 도구 선택은 [설계 결정](reference/decisions.md)에 둔다.
 
 ## HTTP와 인증 계약
 

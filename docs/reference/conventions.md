@@ -8,6 +8,8 @@
 
 데이터를 조회하고 협력을 조율하는 `RecommendationService`와 전달받은 데이터만 계산하는 `MovieRecommender`처럼 역할을 구분한다. 이름만 맞추려고 새 계층이나 클래스를 추가하지 않는다.
 
+이벤트 발행·구독을 담당하는 서비스도 `PurchaseEventService`처럼 `Service`로 끝내고 파일은 `purchase-event.service.ts`로 맞춘다. 이벤트 데이터인 `TicketPurchasedEvent`와 구분한다.
+
 단순 조회의 조건은 객체 인자로 표현한다. 업무 목적·반환 정보·다른 조회와의 구분이 중요하면 이름에도 드러낸다.
 
 ```ts
@@ -93,6 +95,8 @@ throw new ConflictException(MovieErrors.DeleteBlockedByShowtimes(movieId))
 API는 `src/__tests__`에서 실제 모듈과 인프라를 연결하는 통합 테스트를 기본으로 한다. 복잡한 계산이나 독립적인 변환 계약은 직접 검증할 수 있다. 단순 위임 함수마다 unit test를 추가하지 않으며, 새 테스트 파일은 저장소 작업 지침에 따른다.
 
 코드 식별자는 영어로, 조건과 기대 결과는 한국어로 쓴다. 부모 조건과 테스트 설명을 이어 읽을 수 있어야 한다.
+
+제목은 내부 용어를 나열하기보다 조건과 결과를 이해할 수 있는 문장으로 쓴다. “키를 소비하지 않는다”보다 “수정한 요청을 같은 키로 다시 보낼 수 있다”처럼 관찰하는 결과를 드러낸다. 기술명·필드명은 구분에 필요할 때 유지하고, 매개변수 사례도 `실패=true`나 긴 객체 대신 뜻이 드러나는 조건 이름을 쓴다.
 
 ```text
 describe('POST /users')

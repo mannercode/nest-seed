@@ -5,7 +5,7 @@ import {
 } from '@mannercode/common'
 import { jetstreamManager } from '@nats-io/jetstream'
 import type { MockInstance } from 'vitest'
-import { PurchaseEvents } from '#application'
+import { PurchaseEventService } from '#application'
 import { NATS_CONNECTION_NAME } from '#config'
 import type { AppTestContext } from '../helpers/index.js'
 
@@ -16,7 +16,7 @@ export function getNotificationLogs(logSpy: MockInstance) {
 }
 
 export async function getJetStream(ctx: AppTestContext) {
-    const events = ctx.module.get(PurchaseEvents)
+    const events = ctx.module.get(PurchaseEventService)
     const connection = ctx.module.get<NatsConnection>(getNatsConnectionToken(NATS_CONNECTION_NAME))
     const manager = await jetstreamManager(connection)
     const streamName = await manager.streams.find(events.subjects.purchased)
@@ -46,7 +46,9 @@ export function mockNotificationMessages(
         [Symbol.asyncIterator]: iterator,
         close: vi.fn(async () => onClose())
     } satisfies DurableMessages
-    vi.spyOn(ctx.module.get(PurchaseEvents), 'consumeNotifications').mockResolvedValueOnce(messages)
+    vi.spyOn(ctx.module.get(PurchaseEventService), 'consumeNotifications').mockResolvedValueOnce(
+        messages
+    )
     return messages
 }
 

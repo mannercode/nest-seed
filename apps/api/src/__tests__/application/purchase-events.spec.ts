@@ -8,7 +8,7 @@ import {
     jetstream
 } from '@nats-io/jetstream'
 import type { MockInstance } from 'vitest'
-import { PurchaseEvents, type TicketPurchasedEvent } from '#application'
+import { PurchaseEventService, type TicketPurchasedEvent } from '#application'
 import { type AppTestContext, createAppTestContext } from '../helpers/index.js'
 import { Logger } from '@nestjs/common'
 import {
@@ -21,17 +21,17 @@ import {
 } from './purchase-events.utils.js'
 import { PurchaseNotificationService } from '../../services/application/purchase/internal/index.js'
 
-describe('PurchaseEvents', () => {
+describe('PurchaseEventService', () => {
     let fix: AppTestContext
     let teardown: AppTestContext['teardown'] | undefined
-    let events: PurchaseEvents
+    let events: PurchaseEventService
 
     beforeEach(async () => {
         teardown = undefined
 
         fix = await createAppTestContext()
         teardown = fix.teardown
-        events = fix.module.get(PurchaseEvents)
+        events = fix.module.get(PurchaseEventService)
     })
     afterEach(() => teardown?.())
 
@@ -48,7 +48,7 @@ describe('PurchaseEvents', () => {
                 await events.emitTicketPurchased(event)
             })
 
-            it('중복 보존 기간 안에 다시 발행해도 한 건만 저장한다', async () => {
+            it('중복 발행 방지 기간 안에 다시 발행해도 한 건만 저장한다', async () => {
                 await events.emitTicketPurchased(event)
 
                 const { manager, streamName } = await getJetStream(fix)
@@ -88,7 +88,7 @@ describe('PurchaseEvents', () => {
 describe('PurchaseNotificationService', () => {
     let fix: AppTestContext
     let teardowns: AppTestContext['teardown'][]
-    let events: PurchaseEvents
+    let events: PurchaseEventService
     let notification: PurchaseNotificationService
     let logSpy: MockInstance
     let errorSpy: MockInstance
@@ -98,7 +98,7 @@ describe('PurchaseNotificationService', () => {
 
         fix = await createAppTestContext()
         teardowns.push(fix.teardown)
-        events = fix.module.get(PurchaseEvents)
+        events = fix.module.get(PurchaseEventService)
         notification = fix.module.get(PurchaseNotificationService)
         logSpy = vi.spyOn(Logger.prototype, 'log')
         errorSpy = vi.spyOn(Logger.prototype, 'error')

@@ -25,7 +25,7 @@ export const ticketPurchasedEventSchema = z.object({
 export type TicketPurchasedEvent = z.infer<typeof ticketPurchasedEventSchema>
 
 @Injectable()
-export class PurchaseEvents implements OnModuleInit {
+export class PurchaseEventService implements OnModuleInit {
     private readonly channel: JetStreamChannel
     readonly subjects: { purchased: string }
 

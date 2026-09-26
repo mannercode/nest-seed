@@ -38,7 +38,7 @@ async function getSessionCookie(context: BrowserContext, name: string) {
     return cookies.find((cookie) => cookie.name === name)
 }
 
-test('교차 역할 관리자 로그인 경로는 user BFF에서 토큰을 노출하지 않고 404다', async ({ page }) => {
+test('고객 앱에서 관리자 로그인 경로를 요청하면 토큰 없이 404를 반환한다', async ({ page }) => {
     await page.goto(`${USER_APP_BASE_URL}/login`)
 
     const result = await page.evaluate(
@@ -60,7 +60,7 @@ test('교차 역할 관리자 로그인 경로는 user BFF에서 토큰을 노�
     expect(result).toEqual({ exposesToken: false, status: 404 })
 })
 
-test('사용자 refresh 직접 호출은 user BFF에서 404다', async ({ page }) => {
+test('고객 앱에서 토큰 갱신 경로를 직접 요청하면 404를 반환한다', async ({ page }) => {
     await page.goto(`${USER_APP_BASE_URL}/login`)
 
     const result = await page.evaluate(async () => {

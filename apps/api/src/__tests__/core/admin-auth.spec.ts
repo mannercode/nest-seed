@@ -155,16 +155,27 @@ describe('AdminAuthentication', () => {
     })
 
     describe('POST /admins/refresh', () => {
-        it('유효한 리프레시 토큰이면 새 토큰을 반환한다', async () => {
-            const { accessToken, refreshToken } = await loginAdmin(fix, credentials)
+        describe('유효한 리프레시 토큰을 가지고 있을 때', () => {
+            let tokens: Awaited<ReturnType<typeof loginAdmin>>
 
-            const { body } = await fix.httpClient
-                .post('/admins/refresh')
-                .body({ refreshToken })
-                .ok()
+            beforeEach(async () => {
+                tokens = await loginAdmin(fix, credentials)
+            })
 
-            expect(body.accessToken).not.toEqual(accessToken)
-            expect(body.refreshToken).not.toEqual(refreshToken)
+            it('새 액세스 토큰과 리프레시 토큰을 반환한다', async () => {
+                const { body } = await fix.httpClient
+                    .post('/admins/refresh')
+                    .body({ refreshToken: tokens.refreshToken })
+                    .ok({
+                        expected: {
+                            accessToken: expect.stringMatching(/\S/),
+                            refreshToken: expect.stringMatching(/\S/)
+                        }
+                    })
+
+                expect(body.accessToken).not.toEqual(tokens.accessToken)
+                expect(body.refreshToken).not.toEqual(tokens.refreshToken)
+            })
         })
     })
 

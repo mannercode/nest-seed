@@ -153,7 +153,7 @@ describe('MoviesPublish', () => {
         }
     })
 
-    it('동시 갱신으로 CAS가 한 번 빗나가면 최신 문서를 다시 읽어 갱신한다', async () => {
+    it('다른 수정과 충돌하면 최신 영화를 다시 읽어 수정을 재시도한다', async () => {
         const moviesService = fix.module.get(MoviesService)
         const repository = fix.module.get(MoviesRepository)
         const movie = await createMovie(fix)
@@ -185,7 +185,7 @@ describe('MoviesPublish', () => {
         await fix.httpClient.get(`/movies/${movie.id}`).ok({ schema: MovieSchema, expected: movie })
     })
 
-    it('CAS가 반복해서 빗나가면 정해진 횟수 뒤 409를 반환한다', async () => {
+    it('영화 수정이 계속 충돌하면 정해진 횟수만 재시도하고 409를 반환한다', async () => {
         const repository = fix.module.get(MoviesRepository)
         const movie = await createMovie(fix)
         const update = vi.spyOn(repository.collection, 'findOneAndUpdate').mockResolvedValue(null)

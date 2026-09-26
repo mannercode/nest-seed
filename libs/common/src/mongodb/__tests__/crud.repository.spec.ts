@@ -297,7 +297,7 @@ describe('CrudRepository', () => {
             expect(createIndexes).toHaveBeenCalledWith([sagaIndex])
         })
 
-        it('실제 초기화에서 빠진 인덱스를 만들었다', async () => {
+        it('초기화할 때 기본 인덱스와 설정한 인덱스를 생성한다', async () => {
             const indexes = await fix.soft.collection.listIndexes().toArray()
             const names = indexes.map(({ name }) => name)
 

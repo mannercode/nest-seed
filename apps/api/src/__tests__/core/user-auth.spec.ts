@@ -381,13 +381,27 @@ describe('UserAuthentication', () => {
     })
 
     describe('POST /users/refresh', () => {
-        it('유효한 리프레시 토큰이면 새 인증 토큰을 반환한다', async () => {
-            const { accessToken, refreshToken } = await loginUser(fix, credentials)
+        describe('유효한 리프레시 토큰을 가지고 있을 때', () => {
+            let tokens: Awaited<ReturnType<typeof loginUser>>
 
-            const { body } = await fix.httpClient.post('/users/refresh').body({ refreshToken }).ok()
+            beforeEach(async () => {
+                tokens = await loginUser(fix, credentials)
+            })
 
-            expect(body.accessToken).not.toEqual(accessToken)
-            expect(body.refreshToken).not.toEqual(refreshToken)
+            it('새 액세스 토큰과 리프레시 토큰을 반환한다', async () => {
+                const { body } = await fix.httpClient
+                    .post('/users/refresh')
+                    .body({ refreshToken: tokens.refreshToken })
+                    .ok({
+                        expected: {
+                            accessToken: expect.stringMatching(/\S/),
+                            refreshToken: expect.stringMatching(/\S/)
+                        }
+                    })
+
+                expect(body.accessToken).not.toEqual(tokens.accessToken)
+                expect(body.refreshToken).not.toEqual(tokens.refreshToken)
+            })
         })
 
         it('리프레시 토큰이 검증되지 않으면 401을 반환한다', async () => {

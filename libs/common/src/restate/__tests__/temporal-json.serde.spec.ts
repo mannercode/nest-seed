@@ -4,7 +4,7 @@ import { instant, plainDate } from '@mannercode/testing'
 import { TemporalJsonSerde, defineWorkflow, isWorkflowCancellation } from '../index.js'
 
 describe('TemporalJsonSerde', () => {
-    it('Temporal을 기존 wire 형식으로 직렬화하고 역직렬화는 JSON 타입을 유지한다', () => {
+    it('Temporal 값을 JSON 문자열로 저장하고 다시 읽을 때는 문자열을 유지한다', () => {
         const value = { date: plainDate('2025-01-02'), timestamp: instant('2025-01-02T03:04:00Z') }
 
         const serialized = TemporalJsonSerde.serialize(value)
@@ -18,7 +18,7 @@ describe('TemporalJsonSerde', () => {
         })
     })
 
-    it('void handler와 ctx.run 결과는 빈 payload로 왕복한다', () => {
+    it('undefined를 빈 데이터로 저장하고 다시 읽으면 undefined를 반환한다', () => {
         const serialized = TemporalJsonSerde.serialize(undefined)
 
         expect(serialized).toHaveLength(0)

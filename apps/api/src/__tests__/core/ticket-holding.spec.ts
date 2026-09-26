@@ -171,7 +171,7 @@ describe('TicketHoldingService', () => {
     })
 
     describe('claimTicketsForPurchase, confirmPurchaseClaims, releasePurchaseClaims', () => {
-        it('현재 hold owner를 purchase owner로 원자 전환하고 소유자 조건으로 해제한다', async () => {
+        it('구매에 할당한 티켓은 다른 고객이 보유할 수 없고 할당을 해제하면 보유할 수 있다', async () => {
             const showtimeId = oid(0x10)
             const userId = oid(0xc1)
             const otherUserId = oid(0xc2)
@@ -210,7 +210,7 @@ describe('TicketHoldingService', () => {
             ).toBe(true)
         })
 
-        it('일부 티켓만 구매 claim해도 나머지는 원 사용자가 선점한 상태로 유지한다', async () => {
+        it('일부 티켓을 구매에 할당해도 나머지는 기존 고객의 보유 목록에 남는다', async () => {
             const showtimeId = oid(0x10)
             const userId = oid(0xc1)
             const otherUserId = oid(0xc2)
@@ -243,7 +243,7 @@ describe('TicketHoldingService', () => {
             ).toBe(false)
         })
 
-        it('hold가 다른 고객에게 넘어갔으면 claim하지 않는다', async () => {
+        it('다른 고객이 보유한 티켓은 구매에 할당하지 않는다', async () => {
             const showtimeId = oid(0x10)
             const ticketIds = [oid(0xa0)]
             const ownerId = oid(0xc2)
@@ -262,7 +262,7 @@ describe('TicketHoldingService', () => {
             )
         })
 
-        it('판매 직전 purchase owner를 확인하고, 다른 고객에게 넘어간 claim은 갱신하지 않는다', async () => {
+        it('구매에 할당한 티켓을 다른 고객이 다시 보유하면 기존 구매의 권한을 갱신하지 않는다', async () => {
             const showtimeId = oid(0x10)
             const ticketId = oid(0xa0)
             const purchaseRecordId = oid(0xd0)
@@ -313,7 +313,7 @@ describe('TicketHoldingService', () => {
             )
         })
 
-        it('claim 해제는 그 사이 다른 고객이 얻은 hold를 지우지 않는다', async () => {
+        it('구매의 티켓 할당을 해제해도 새로 보유한 다른 고객의 티켓은 해제하지 않는다', async () => {
             const showtimeId = oid(0x10)
             const ticketId = oid(0xa0)
             const purchaseRecordId = oid(0xd0)

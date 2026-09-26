@@ -26,7 +26,7 @@ describe('PaymentsService', () => {
     afterEach(() => teardown?.())
 
     describe('cancel', () => {
-        it('결제 행을 지우지 않고 status를 cancelled로 전이한다', async () => {
+        it('결제 기록을 유지하며 취소 상태로 바꾼다', async () => {
             const payment = await createPayment(fix)
 
             await paymentsService.cancel(payment.id)
@@ -39,7 +39,7 @@ describe('PaymentsService', () => {
             })
         })
 
-        it('purchaseRecordId로 취소하며 결제가 없어도 멱등이다', async () => {
+        it('구매 ID로 결제를 취소하고 해당 결제가 없어도 오류를 던지지 않는다', async () => {
             const payment = await createPayment(fix)
 
             await paymentsService.cancelByPurchaseRecordId({
@@ -122,7 +122,7 @@ describe('PaymentsService', () => {
             }
         })
 
-        it('동시 upsert의 중복 키 loser는 winner가 만든 결제를 반환한다', async () => {
+        it('결제 저장 중 중복 키 오류가 나면 이미 저장된 같은 구매의 결제를 반환한다', async () => {
             const existing = await createPayment(fix)
 
             const repository = fix.module.get(PaymentsRepository)

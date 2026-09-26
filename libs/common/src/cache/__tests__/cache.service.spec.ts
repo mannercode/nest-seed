@@ -32,7 +32,7 @@ describe('CacheService', () => {
             }
         )
 
-        it.each([0, -1])('TTL %s는 기존처럼 카운터를 즉시 만료한다', async (ttl) => {
+        it.each([0, -1])('TTL이 %s이면 카운터를 즉시 만료시킨다', async (ttl) => {
             expect(await fix.cacheService.incrementWithExpiry('immediate-counter', ttl)).toBe(1)
             expect(await fix.cacheService.get('immediate-counter')).toBeNull()
         })

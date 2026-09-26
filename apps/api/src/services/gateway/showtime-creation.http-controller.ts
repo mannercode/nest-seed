@@ -17,7 +17,7 @@ import { map, Observable } from 'rxjs'
 import {
     BulkCreateShowtimesSchema,
     SearchShowtimesByTheatersBodySchema,
-    ShowtimeCreationEvents,
+    ShowtimeCreationEventService,
     ShowtimeCreationService,
     type BulkCreateShowtimesDto,
     type SearchShowtimesByTheatersBodyDto
@@ -32,7 +32,7 @@ import { ParseIdempotencyKeyPipe } from './pipes/index.js'
 export class ShowtimeCreationHttpController {
     constructor(
         private readonly showtimeCreationService: ShowtimeCreationService,
-        private readonly events: ShowtimeCreationEvents
+        private readonly events: ShowtimeCreationEventService
     ) {}
 
     @Sse('event-stream')

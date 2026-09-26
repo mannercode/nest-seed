@@ -1,6 +1,6 @@
 import type { DurableMessages, DurableMessage } from '@mannercode/common'
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
-import { PurchaseEvents, ticketPurchasedEventSchema } from '../purchase.events.js'
+import { PurchaseEventService, ticketPurchasedEventSchema } from '../purchase-event.service.js'
 
 const RETRY_DELAY_MS = 1000
 
@@ -13,7 +13,7 @@ export class PurchaseNotificationService implements OnModuleInit, OnModuleDestro
     private messages: DurableMessages | undefined
     private stopping = false
 
-    constructor(private readonly events: PurchaseEvents) {}
+    constructor(private readonly events: PurchaseEventService) {}
 
     async onModuleInit() {
         this.stopping = false

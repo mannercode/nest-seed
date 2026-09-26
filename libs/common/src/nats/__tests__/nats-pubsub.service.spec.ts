@@ -42,7 +42,7 @@ describe('NatsPubSubService', () => {
     })
     afterEach(() => fix.teardown())
 
-    it('두 복제본이 같은 NATS를 공유하면 한쪽에서 발행한 메시지가 다른 쪽 구독자에게 도달한다', async () => {
+    it('서로 다른 서비스 인스턴스 사이에서 NATS 메시지를 전달한다', async () => {
         const received: string[] = []
         await fix.pubSubB.subscribe(subject, (msg) => received.push(msg))
 
@@ -315,7 +315,7 @@ describe('NatsPubSubService', () => {
             await waitFor(() => errorSpy.mock.calls.length > 0)
         })
 
-        it('logger.error를 한 번 호출하고 수신 루프를 조용히 종료한다', () => {
+        it('수신 오류를 로그에 한 번 기록한다', () => {
             const errorCalls = errorSpy.mock.calls.filter((call) =>
                 String(call[0]).includes(errorSubject)
             )
@@ -476,7 +476,7 @@ describe('JetStreamChannel', () => {
         await connection.close()
     })
 
-    it('동시 초기화와 중복 발행은 한 stream과 메시지로 수렴한다', async () => {
+    it('동시에 초기화한 뒤 같은 ID로 두 번 발행해도 메시지 한 건만 저장한다', async () => {
         await Promise.all([channel.initialize(), channel.initialize()])
         await channel.publish({ value: 'one' }, 'id')
         await channel.publish({ value: 'one' }, 'id')
@@ -492,7 +492,7 @@ describe('JetStreamChannel', () => {
         })
     })
 
-    it('소비자가 없어도 보존한 메시지를 읽고 명시적으로 확인한다', async () => {
+    it('소비 시작 전에 발행한 메시지도 받고 처리 완료를 서버에 알린다', async () => {
         await channel.publish({ value: 'one' }, 'id')
         messages = await channel.consume()
         iterator = messages[Symbol.asyncIterator]()

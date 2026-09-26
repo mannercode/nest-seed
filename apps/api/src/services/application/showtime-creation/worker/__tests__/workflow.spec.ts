@@ -43,7 +43,7 @@ describe('createShowtimeCreationWorkflow', () => {
         expect(fix.events.map(({ status }) => status)).toEqual(['waiting', 'processing'])
     })
 
-    it('업무 실패를 알리는 발행 오류가 원래 실패 결과를 덮지 않는다', async () => {
+    it('실패 알림을 보내지 못해도 상영 생성의 원래 실패 원인을 반환한다', async () => {
         const fix = createFixture({
             emitStatusChanged: async () => {
                 throw new Error('NATS unavailable')
@@ -57,7 +57,7 @@ describe('createShowtimeCreationWorkflow', () => {
         })
     })
 
-    it('알림 도중 workflow 취소는 다시 던진다', async () => {
+    it('알림 발행 중 작업이 취소되면 취소 오류를 다시 던진다', async () => {
         const failure = new CancelledError()
         const fix = createFixture({
             emitStatusChanged: async () => {
@@ -68,7 +68,7 @@ describe('createShowtimeCreationWorkflow', () => {
         expect(fix.persistence).not.toHaveBeenCalled()
     })
 
-    it('발행이 멈춰도 각 10초 제한 후 업무를 진행하고 결과를 반환한다', async () => {
+    it('알림 발행이 끝나지 않아도 대기 기한 후 상영 생성을 진행하고 결과를 반환한다', async () => {
         vi.useFakeTimers()
         try {
             const fix = createFixture({
@@ -88,7 +88,7 @@ describe('createShowtimeCreationWorkflow', () => {
         }
     })
 
-    it('업무 예외만 Restate terminal error로 분류한다', () => {
+    it('잘못된 요청과 없는 자원 오류는 재시도하지 않는 오류로 분류한다', () => {
         const fix = createFixture({ result: { kind: 'failed', conflictingShowtimes: [] } })
         const classify = fix.definition.options?.asTerminalError
         if (!classify) throw new Error('terminal error classifier is missing')

@@ -2,13 +2,13 @@ import { defineWorkflow } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { AppConfigService } from '#config'
 import { PurchaseRecordSchema, type PurchaseRecordDto } from '#core'
-import { PurchaseEvents } from '../purchase.events.js'
+import { PurchaseEventService } from '../purchase-event.service.js'
 
 @Injectable()
 export class PurchaseEventWorkflow {
     readonly definition
 
-    constructor(events: PurchaseEvents, config: AppConfigService) {
+    constructor(events: PurchaseEventService, config: AppConfigService) {
         this.definition = defineWorkflow({
             name: `PurchaseEvent-${config.projectId}`,
             input: PurchaseRecordSchema,

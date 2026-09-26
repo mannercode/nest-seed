@@ -211,7 +211,7 @@ describe('AssetsService', () => {
             await expect(assetsService.isUploadComplete(assetId)).resolves.toBe(true)
         })
 
-        it('없는 에셋의 완료 요청은 404를 반환한다', async () => {
+        it('존재하지 않는 에셋의 업로드를 완료 처리하면 404 예외를 던진다', async () => {
             await expect(
                 assetsService.finalizeUpload(nullObjectId, buildFinalizeAssetDto())
             ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
