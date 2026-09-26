@@ -34,8 +34,6 @@ findByPurchaseRecordId({ purchaseRecordId })
 
 요청 DTO는 `CreateTheaterDto`, `UpdateUserDto`, `SearchTheatersPageDto`처럼 동작·대상을 드러낸다. `releaseDate` 같은 달력 날짜와 `createdAt` 같은 순간의 의미를 타입과 직렬화에서도 구분한다. 파일 경로 변수는 파일이면 `Path`, 디렉터리면 `Dir`로 끝내 호출자가 결합할 대상을 알 수 있게 한다.
 
-포크에서는 같은 문자열이라도 프로젝트 식별자·CI 대상 저장소와 원저자·참고 자료 URL의 역할을 구분해 바꾼다. 패키지 scope 변경은 manifest·의존성·import·별칭·lockfile에 함께 반영한다.
-
 ## 타입과 변환
 
 객체·유니온의 기본 선언은 `type`이다. 클래스 구현 계약이나 선언 병합에는 `interface`를 사용하는 프로젝트 스타일을 따른다. 객체 형태의 type alias도 `implements`할 수 있으므로 언어의 제약으로 설명하지 않는다.
