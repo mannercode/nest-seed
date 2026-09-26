@@ -284,6 +284,101 @@ describe('CacheService', () => {
     })
 
     describe('withLockBlocking', () => {
+        describe('대기 기한이 정해져 있으면', () => {
+            let now: number
+
+            beforeEach(() => {
+                now = 0
+                vi.spyOn(performance, 'now').mockImplementation(() => now)
+            })
+
+            it('waitMs가 0이면 락을 시도하거나 콜백을 실행하지 않는다', async () => {
+                const set = vi.spyOn(fix.redis, 'set')
+                const runner = vi.fn(() => 'unused')
+
+                await expect(
+                    fix.cacheService.withLockBlocking('job', 5_000, runner, { waitMs: 0 })
+                ).rejects.toThrow(expect.objectContaining({ status: 503 }))
+
+                expect(set).not.toHaveBeenCalled()
+                expect(runner).not.toHaveBeenCalled()
+            })
+
+            describe.each([
+                { label: '대기 기한에 도달하면', responseTime: 10 },
+                { label: '대기 기한이 지나면', responseTime: 11 }
+            ])('락 획득 응답을 받을 때 $label', ({ responseTime }) => {
+                beforeEach(() => {
+                    const set = fix.redis.set.bind(fix.redis)
+                    vi.spyOn(fix.redis, 'set').mockImplementationOnce(async (...args) => {
+                        const result = await set(...args)
+                        now = responseTime
+                        return result
+                    })
+                })
+
+                it('콜백을 실행하지 않고 획득한 락을 해제한다', async () => {
+                    const runner = vi.fn(() => 'unused')
+
+                    await expect(
+                        fix.cacheService.withLockBlocking('job', 5_000, runner, { waitMs: 10 })
+                    ).rejects.toThrow(expect.objectContaining({ status: 503 }))
+
+                    expect(runner).not.toHaveBeenCalled()
+                    expect(await fix.cacheService.get('lock:job')).toBeNull()
+                })
+            })
+
+            describe('다음 획득을 기다리는 동안 기한이 지나면', () => {
+                beforeEach(async () => {
+                    await fix.cacheService.set('lock:job', 'other', 10_000)
+                    let firstAttemptFinished = false
+                    vi.spyOn(performance, 'now').mockImplementation(() => {
+                        const current = now
+                        if (firstAttemptFinished) now = 10
+                        return current
+                    })
+                    const set = fix.redis.set.bind(fix.redis)
+                    vi.spyOn(fix.redis, 'set').mockImplementationOnce(async (...args) => {
+                        const result = await set(...args)
+                        await fix.cacheService.delete('lock:job')
+                        firstAttemptFinished = true
+                        return result
+                    })
+                })
+
+                it('락이 비어 있어도 다시 획득하거나 콜백을 실행하지 않는다', async () => {
+                    const runner = vi.fn(() => 'unused')
+
+                    await expect(
+                        fix.cacheService.withLockBlocking('job', 5_000, runner, {
+                            pollMs: 0,
+                            waitMs: 10
+                        })
+                    ).rejects.toThrow(expect.objectContaining({ status: 503 }))
+
+                    expect(fix.redis.set).toHaveBeenCalledTimes(1)
+                    expect(runner).not.toHaveBeenCalled()
+                    expect(await fix.cacheService.get('lock:job')).toBeNull()
+                })
+            })
+
+            it('기한 전에 시작한 콜백은 기한 뒤에 끝나도 결과를 반환한다', async () => {
+                const result = await fix.cacheService.withLockBlocking(
+                    'job',
+                    5_000,
+                    async () => {
+                        now = 20
+                        return 42
+                    },
+                    { waitMs: 10 }
+                )
+
+                expect(result).toBe(42)
+                expect(await fix.cacheService.get('lock:job')).toBeNull()
+            })
+        })
+
         it('경쟁이 없으면 즉시 실행된다', async () => {
             const result = await fix.cacheService.withLockBlocking('job', 5_000, async () => 42)
             expect(result).toBe(42)

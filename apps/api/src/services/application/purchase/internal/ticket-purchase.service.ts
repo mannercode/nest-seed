@@ -103,6 +103,10 @@ export class TicketPurchaseService {
     private async getShowtime(ticketItems: PurchaseItemDto[]) {
         const ticketIds = ticketItems.map((item) => item.itemId)
         const tickets = await this.ticketsService.getMany(ticketIds)
+        // getMany는 같은 저장소 ID를 한 번만 반환하므로 대소문자만 다른 ID도 중복으로 본다.
+        if (tickets.length !== ticketIds.length) {
+            throw new BadRequestException(PurchaseErrors.DuplicateTickets())
+        }
         const showtimeId = this.getShowtimeId(tickets)
         const showtimes = await this.showtimesService.getMany([showtimeId])
 

@@ -348,6 +348,64 @@ describe('PurchaseService', () => {
                     .created({ schema: PurchaseRecordSchema })
             })
 
+            it.each([
+                { label: '같은 ID의', duplicateId: (id: string) => id },
+                { label: '대소문자만 다른 ID의', duplicateId: (id: string) => id.toUpperCase() }
+            ])(
+                '$label 중복 티켓을 보내면 400을 반환하고 같은 키로 정상 구매할 수 있다',
+                async ({ duplicateId }) => {
+                    const ticket = ensure(heldTickets[0])
+                    const idempotencyKey = randomUUID()
+                    const headers = {
+                        Authorization: `Bearer ${accessToken}`,
+                        'Idempotency-Key': idempotencyKey
+                    }
+                    const invalidDto = buildCreatePurchaseDto([
+                        ticket,
+                        { ...ticket, id: duplicateId(ticket.id) }
+                    ])
+
+                    await fix.httpClient
+                        .post('/purchases')
+                        .headers(headers)
+                        .body(invalidDto)
+                        .badRequest({ expected: Errors.Purchase.DuplicateTickets() })
+
+                    expect(
+                        await fix.module
+                            .get(PurchaseRecordsRepository)
+                            .collection.countDocuments({ userId: user.id })
+                    ).toBe(0)
+                    expect(
+                        await fix.module
+                            .get(PaymentsRepository)
+                            .collection.countDocuments({ userId: user.id })
+                    ).toBe(0)
+                    expect(
+                        await fix.module
+                            .get(TicketHoldingService)
+                            .searchHeldTicketIds(ticket.showtimeId, user.id)
+                    ).toEqual(pickIds(heldTickets))
+
+                    const correctedDto = buildCreatePurchaseDto([ticket])
+                    await fix.httpClient
+                        .post('/purchases')
+                        .headers(headers)
+                        .body(correctedDto)
+                        .created({
+                            schema: PurchaseRecordSchema,
+                            expected: {
+                                ...correctedDto,
+                                userId: user.id,
+                                createdAt: expect.any(Temporal.Instant),
+                                id: expect.any(String),
+                                paymentId: expect.any(String),
+                                updatedAt: expect.any(Temporal.Instant)
+                            }
+                        })
+                }
+            )
+
             it('구매를 반환하고 결제 기록과 티켓 판매 상태를 저장한다', async () => {
                 const createDto = buildCreatePurchaseDto(heldTickets)
 

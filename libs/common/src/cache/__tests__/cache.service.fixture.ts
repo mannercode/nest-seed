@@ -1,12 +1,13 @@
 import { createTestContext, withTestId } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
-import { RedisModule } from '../../redis/index.js'
+import { getRedisConnectionToken, RedisModule, type RedisConnection } from '../../redis/index.js'
 import { CacheModule, CacheService, InjectCache } from '../index.js'
 
 export type CacheServiceFixture = {
     cacheA: CacheService
     cacheB: CacheService
     cacheService: CacheService
+    redis: RedisConnection
     teardown: () => Promise<void>
 }
 
@@ -32,10 +33,11 @@ export async function createCacheServiceFixture() {
     const cacheService = module.get(CacheService.getName())
     const cacheA = module.get(CacheService.getName('a'))
     const cacheB = module.get(CacheService.getName('b'))
+    const redis = module.get<RedisConnection>(getRedisConnectionToken('name'))
 
     const teardown = async () => {
         await close()
     }
 
-    return { cacheA, cacheB, cacheService, teardown }
+    return { cacheA, cacheB, cacheService, redis, teardown }
 }
