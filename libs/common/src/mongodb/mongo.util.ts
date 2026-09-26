@@ -70,7 +70,7 @@ function isEncodableRecord(value: unknown): value is Record<string, unknown> {
 export function plainDateFromMongo(
     value: Date | Temporal.Instant | Temporal.PlainDate
 ): Temporal.PlainDate {
-    if (value instanceof Temporal.PlainDate) return value
+    if (value instanceof Temporal.PlainDate) return DateUtil.plainDateFromInput(value)
     if (value instanceof Temporal.Instant) return DateUtil.toPlainDate(DateUtil.toDate(value))
     return DateUtil.toPlainDate(value)
 }

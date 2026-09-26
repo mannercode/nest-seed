@@ -249,7 +249,7 @@ describe('CrudRepository', () => {
             expect(createIndexes).toHaveBeenCalledWith([{ key: { deletedAt: 1 } }, nameIndex])
         })
 
-        it('같은 client와 namespace의 동시 초기화를 재사용한다', async () => {
+        it('같은 client와 namespace에서 같은 인덱스 선언의 동시 초기화를 재사용한다', async () => {
             const createIndexes = vi.fn(async () => [] as string[])
             const client = {} as MongoClient
             const namespace = `test.memoized${sequence++}`
@@ -265,6 +265,89 @@ describe('CrudRepository', () => {
             await Promise.all([first.onModuleInit(), second.onModuleInit()])
 
             expect(createIndexes).toHaveBeenCalledTimes(1)
+        })
+
+        describe('이미 초기화한 컬렉션에 unique 인덱스를 추가로 선언하면', () => {
+            let repository: SamplesRepository
+
+            beforeEach(async () => {
+                const collectionName = 'nativeCrudAdditionalIndexes'
+                const first = new SamplesRepository(fix.client, collectionName, {
+                    indexes: [{ key: { name: 1 }, name: 'name_lookup' }]
+                })
+                await first.onModuleInit()
+                repository = new SamplesRepository(fix.client, collectionName, {
+                    indexes: [{ key: { secret: 1 }, name: 'secret_unique', unique: true }]
+                })
+            })
+
+            it('후속 초기화가 인덱스를 생성해 중복 쓰기를 거절한다', async () => {
+                await repository.onModuleInit()
+
+                expect(await repository.collection.listIndexes().toArray()).toEqual(
+                    expect.arrayContaining([
+                        expect.objectContaining({ name: 'secret_unique', unique: true })
+                    ])
+                )
+                await repository.collection.insertOne({ secret: 'same' })
+                await expect(
+                    repository.collection.insertOne({ secret: 'same' })
+                ).rejects.toMatchObject({ code: 11000 })
+            })
+        })
+
+        describe('같은 이름의 인덱스를 다른 옵션으로 선언하면', () => {
+            let repository: SamplesRepository
+
+            beforeEach(() => {
+                repository = new SamplesRepository(fix.client, fix.soft.collection.collectionName, {
+                    indexes: [{ key: { name: 1 }, name: 'name_lookup', unique: true }]
+                })
+            })
+
+            it('인덱스 옵션 충돌을 호출자에게 전달한다', async () => {
+                await expect(repository.onModuleInit()).rejects.toMatchObject({ code: 86 })
+            })
+        })
+
+        describe('복합 인덱스의 필드 순서가 다르면', () => {
+            let first: SamplesRepository
+            let second: SamplesRepository
+
+            beforeEach(() => {
+                const collectionName = 'nativeCrudOrderedIndexes'
+                first = new SamplesRepository(fix.client, collectionName, {
+                    hardDelete: true,
+                    indexes: [
+                        {
+                            key: new Map([
+                                ['name', 1],
+                                ['secret', 1]
+                            ])
+                        }
+                    ]
+                })
+                second = new SamplesRepository(fix.client, collectionName, {
+                    hardDelete: true,
+                    indexes: [
+                        {
+                            key: new Map([
+                                ['secret', 1],
+                                ['name', 1]
+                            ])
+                        }
+                    ]
+                })
+            })
+
+            it('동시에 초기화해도 두 인덱스를 모두 생성한다', async () => {
+                await Promise.all([first.onModuleInit(), second.onModuleInit()])
+
+                const indexes = await second.collection.listIndexes().toArray()
+                expect(indexes.map(({ name }) => name)).toEqual(
+                    expect.arrayContaining(['name_1_secret_1', 'secret_1_name_1'])
+                )
+            })
         })
 
         it('초기화 실패는 캐시에서 제거해 다음 호출이 재시도한다', async () => {
@@ -414,6 +497,44 @@ describe('CrudRepository', () => {
     })
 
     describe('find, get, findMany, getMany, allExist', () => {
+        describe('문자열 ID의 대소문자가 다르면', () => {
+            const id = 'abcdef123456abcdef123456'
+            const upperId = id.toUpperCase()
+            const missingId = 'fedcba123456fedcba123456'
+            let created: Sample
+
+            beforeEach(async () => {
+                const draft = { ...fix.soft.draft('sample'), id }
+                await fix.soft.insertDrafts([draft])
+                created = draft
+            })
+
+            it.each([
+                { label: '대문자 ID 하나', ids: [upperId] },
+                { label: '대소문자가 다른 중복 ID', ids: [id, upperId] }
+            ])('getMany는 $label 입력으로 같은 문서를 한 번 반환한다', async ({ ids }) => {
+                await expect(fix.soft.getMany({ ids })).resolves.toEqual([created])
+            })
+
+            it('getMany는 실제 누락된 ID만 보고한다', async () => {
+                await expect(
+                    fix.soft.getMany({ ids: [upperId, missingId.toUpperCase()] })
+                ).rejects.toMatchObject({
+                    response: MongoErrors.MultipleDocumentsNotFound([missingId])
+                })
+            })
+
+            it('allExist는 대소문자가 다른 중복 ID를 같은 대상으로 센다', async () => {
+                await expect(fix.soft.allExist([id, upperId])).resolves.toBe(true)
+            })
+
+            it('allExist는 실제 누락된 ID가 섞이면 false를 반환한다', async () => {
+                await expect(
+                    fix.soft.allExist([id, upperId, missingId.toUpperCase()])
+                ).resolves.toBe(false)
+            })
+        })
+
         it('find/get 단건 조회와 누락을 구분한다', async () => {
             const created = await fix.soft.create('sample')
             const missingId = objectId('000000000000000000000000').toHexString()

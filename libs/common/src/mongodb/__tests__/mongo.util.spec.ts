@@ -42,6 +42,22 @@ describe('newObjectIdString, objectId, objectIds', () => {
 })
 
 describe('mongoToPublic, mongoArrayToPublic, withoutPublicId, encodeMongoValues, plainDateFromMongo', () => {
+    it.each(['buddhist', 'japanese', 'hebrew'])(
+        '%s 달력의 날짜를 BSON으로 왕복하거나 직접 복원해도 같은 ISO 날짜를 유지한다',
+        (calendar) => {
+            const date = Temporal.PlainDate.from('2025-01-01').withCalendar(calendar)
+
+            const stored = encodeMongoValues(date) as Date
+            const restored = plainDateFromMongo(stored)
+            const native = plainDateFromMongo(date)
+
+            expect(stored.toISOString()).toBe('2025-01-01T00:00:00.000Z')
+            expect(restored.toString()).toBe('2025-01-01')
+            expect(restored.calendarId).toBe('iso8601')
+            expect(native.equals(restored)).toBe(true)
+        }
+    )
+
     it('원본을 변경하지 않고 _id를 문자열 id로 교체한다', () => {
         const _id = new ObjectId()
         const doc = { _id, name: 'sample' }

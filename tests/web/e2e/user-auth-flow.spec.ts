@@ -136,6 +136,8 @@ test('access 인증 실패 시 refresh 토큰을 회전해 보호 API를 요청�
 
     const accessCookieAfter = await getSessionCookie(context, ACCESS_COOKIE)
     const refreshCookieAfter = await getSessionCookie(context, REFRESH_COOKIE)
+    expect(accessCookieAfter).toMatchObject({ value: expect.any(String) })
+    expect(refreshCookieAfter).toMatchObject({ value: expect.any(String) })
     expect(accessCookieAfter?.value).not.toBe('invalid-access-token')
     expect(refreshCookieAfter?.value).not.toBe(refreshCookieBefore?.value)
 })

@@ -139,6 +139,8 @@ test('관리자 세션은 HttpOnly 쿠키로 전달되고 access 인증 실패 �
 
     const accessCookieAfter = await getSessionCookie(context, ACCESS_COOKIE)
     const refreshCookieAfter = await getSessionCookie(context, REFRESH_COOKIE)
+    expect(accessCookieAfter).toMatchObject({ value: expect.any(String) })
+    expect(refreshCookieAfter).toMatchObject({ value: expect.any(String) })
     expect(accessCookieAfter?.value).not.toBe('invalid-access-token')
     expect(refreshCookieAfter?.value).not.toBe(refreshCookieBefore?.value)
 })
@@ -172,6 +174,8 @@ test('잘못된 access 토큰으로 동시 요청해도 갱신 후 세션을 유
 
     const accessCookieAfter = await getSessionCookie(context, ACCESS_COOKIE)
     const refreshCookieAfter = await getSessionCookie(context, REFRESH_COOKIE)
+    expect(accessCookieAfter).toMatchObject({ value: expect.any(String) })
+    expect(refreshCookieAfter).toMatchObject({ value: expect.any(String) })
     expect(accessCookieAfter?.value).not.toBe('invalid-access-token')
     expect(refreshCookieAfter?.value).not.toBe(refreshCookieBefore?.value)
     expect(await page.evaluate(async () => (await fetch('/api/admins/me')).status)).toBe(200)

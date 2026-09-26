@@ -1,5 +1,11 @@
 import { BadRequestException, NotFoundException, type OnModuleInit } from '@nestjs/common'
-import { type Collection, type Document, type IndexDescription, type MongoClient } from 'mongodb'
+import {
+    BSON,
+    type Collection,
+    type Document,
+    type IndexDescription,
+    type MongoClient
+} from 'mongodb'
 import type { PaginationDto, PaginationResult } from '../pagination/index.js'
 import type { TransactionContext } from '../transaction.js'
 import type { CrudDocument, VersionedDocument } from './mongo.document.js'
@@ -132,7 +138,10 @@ export abstract class CrudRepository<Doc extends CrudDocument>
             initializationByClient.set(this.client, initializations)
         }
 
-        const key = this.collection.namespace
+        // BSON으로 비교 키를 만들어 Map과 복합 인덱스의 필드 순서까지 구분한다.
+        const key = Buffer.from(
+            BSON.serialize({ namespace: this.collection.namespace, indexes: this.indexes })
+        ).toString('base64')
         let initialization = initializations.get(key)
         if (!initialization) {
             initialization = this.collection.createIndexes(this.indexes).then(() => undefined)
@@ -182,7 +191,7 @@ export abstract class CrudRepository<Doc extends CrudDocument>
         transaction: TransactionArg = undefined,
         signal: AbortSignal | undefined = undefined
     ) {
-        const uniqueIds = uniq(ids)
+        const uniqueIds = uniq(ids.map((id) => objectId(id).toHexString()))
         if (uniqueIds.length === 0) return true
         const session = this.getSession(transaction)
         const count = await this.collection.countDocuments(
@@ -279,7 +288,7 @@ export abstract class CrudRepository<Doc extends CrudDocument>
         transaction?: TransactionArg
         signal?: AbortSignal | undefined
     }) {
-        const uniqueIds = uniq(ids)
+        const uniqueIds = uniq(ids.map((id) => objectId(id).toHexString()))
         Assume.equalLength(uniqueIds, ids, `Duplicate IDs detected and removed:${ids}`)
         const docs = await this.findMany({ ids: uniqueIds, transaction, signal })
         const notFoundIds = differenceWith(uniqueIds, docs, (id, doc) => id === doc.id)

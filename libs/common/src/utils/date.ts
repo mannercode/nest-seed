@@ -155,14 +155,15 @@ export class DateUtil {
 
     /** 날짜 전용 값을 BSON Date로 저장하기 위한 UTC 자정 경계 변환이다. */
     static plainDateToDate(date: Temporal.PlainDate): Date {
+        const isoDate = this.plainDateFromInput(date)
         const boundary = new Date(0)
-        boundary.setUTCFullYear(date.year, date.month - 1, date.day)
+        boundary.setUTCFullYear(isoDate.year, isoDate.month - 1, isoDate.day)
         boundary.setUTCHours(0, 0, 0, 0)
         return boundary
     }
 
     static startOfUtcDay(date: Temporal.PlainDate): Temporal.Instant {
-        return this.fromISOString(`${date.toString()}T00:00:00.000Z`)
+        return this.fromDate(this.plainDateToDate(date))
     }
 
     static endOfUtcDay(date: Temporal.PlainDate): Temporal.Instant {
@@ -170,7 +171,9 @@ export class DateUtil {
     }
 
     static plainDateFromInput(value: Date | string | Temporal.PlainDate): Temporal.PlainDate {
-        if (value instanceof Temporal.PlainDate) return value
+        if (value instanceof Temporal.PlainDate) {
+            return value.calendarId === 'iso8601' ? value : value.withCalendar('iso8601')
+        }
         if (value instanceof Date) return this.toPlainDate(value)
         if (!ISO_PLAIN_DATE.test(value)) {
             throw new InternalServerErrorException('Internal server error', {
@@ -181,13 +184,14 @@ export class DateUtil {
     }
 
     static toYMD(date: Temporal.PlainDate | Temporal.PlainDateTime): string {
-        if (date.year < 0 || date.year > 9999) {
+        const isoDate = date.withCalendar('iso8601')
+        if (isoDate.year < 0 || isoDate.year > 9999) {
             throw new InternalServerErrorException('Internal server error', {
                 cause: 'YYYYMMDD only supports years from 0000 through 9999.'
             })
         }
-        return `${date.year.toString().padStart(4, '0')}${date.month
+        return `${isoDate.year.toString().padStart(4, '0')}${isoDate.month
             .toString()
-            .padStart(2, '0')}${date.day.toString().padStart(2, '0')}`
+            .padStart(2, '0')}${isoDate.day.toString().padStart(2, '0')}`
     }
 }

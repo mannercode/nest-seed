@@ -132,18 +132,13 @@ export class HttpTestClient {
         errorHandler: (reason: any) => void,
         readyHandler?: () => void
     ): this {
-        // 이 클라이언트는 LF 빈 줄(\n\n)을 이벤트 구분자로 사용하며, TCP 청크 경계는 이벤트 경계와 무관하다.
-        // 청크를 버퍼에 모아 완성된 이벤트만 하나씩 전달한다. 한 청크에 이벤트 여러 개가 와도 모두 처리된다.
         const dispatch = (rawEvent: string) => {
             const message = this.parseEventMessage(rawEvent)
 
-            if (message.event !== 'error' && message.data) {
-                messageHandler(message.data)
-            } else if (message.data !== undefined || message.event !== undefined) {
+            if (message.event === 'error') {
                 errorHandler(message)
-            } else {
-                // SSE 형식이 아닌 본문(잘못된 경로로 받은 404 JSON 등)은 원문 그대로 넘긴다.
-                errorHandler(rawEvent)
+            } else if (message.data !== undefined) {
+                messageHandler(message.data)
             }
         }
 
@@ -152,23 +147,40 @@ export class HttpTestClient {
             .buffer(true)
             .parse((response, _unused) => {
                 let buffer = ''
+                let previousChunkEndedWithCR = false
+                const isEventStream =
+                    response.headers['content-type']?.split(';', 1)[0]?.trim().toLowerCase() ===
+                    'text/event-stream'
 
                 response.setEncoding('utf8')
                 response.on('data', (chunk: string) => {
-                    buffer += chunk
+                    if (!isEventStream) {
+                        buffer += chunk
+                        return
+                    }
+
+                    // CR은 즉시 줄바꿈으로 처리하고, 다음 청크의 LF가 이어지면 한 번만 센다.
+                    if (previousChunkEndedWithCR && chunk.startsWith('\n')) {
+                        chunk = chunk.slice(1)
+                    }
+                    previousChunkEndedWithCR = chunk.endsWith('\r')
+                    buffer += chunk.replace(/\r\n?/g, '\n')
 
                     let separatorIndex = buffer.indexOf('\n\n')
                     while (separatorIndex !== -1) {
-                        const rawEvent = buffer.slice(0, separatorIndex).trim()
+                        const rawEvent = buffer.slice(0, separatorIndex)
                         buffer = buffer.slice(separatorIndex + 2)
                         if (0 < rawEvent.length) dispatch(rawEvent)
                         separatorIndex = buffer.indexOf('\n\n')
                     }
                 })
-                // Node 스트림의 'end'는 인자를 주지 않는다. 구분자 없이 끝난 잔여 본문(404 JSON 등)을 여기서 처리한다.
                 response.on('end', () => {
-                    const rest = buffer.trim()
-                    if (0 < rest.length) dispatch(rest)
+                    if (isEventStream) {
+                        if (0 < buffer.length) dispatch(buffer)
+                    } else if (0 < buffer.trim().length) {
+                        // SSE가 아닌 오류 응답(404 JSON 등)은 원문을 전달한다.
+                        errorHandler(buffer.trim())
+                    }
                 })
                 // 첫 이벤트가 없어도 응답 스트림의 수신 준비를 알린다.
                 readyHandler?.()
@@ -191,22 +203,24 @@ export class HttpTestClient {
         const parsedMessage: Partial<EventMessage> = {}
 
         lines.forEach((line) => {
-            const [key, ...rest] = line.split(': ')
-            const value = rest.join(': ')
-            if (key && value) {
-                switch (key) {
-                    case 'data':
-                        parsedMessage.data = value
-                        break
-                    case 'event':
-                        parsedMessage.event = value
-                        break
-                    case 'id':
-                        parsedMessage.id = parseInt(value, 10)
-                        break
-                    default:
-                        break
-                }
+            const colonIndex = line.indexOf(':')
+            const key = colonIndex === -1 ? line : line.slice(0, colonIndex)
+            let value = colonIndex === -1 ? '' : line.slice(colonIndex + 1)
+            if (value.startsWith(' ')) value = value.slice(1)
+
+            switch (key) {
+                case 'data':
+                    parsedMessage.data =
+                        parsedMessage.data === undefined ? value : `${parsedMessage.data}\n${value}`
+                    break
+                case 'event':
+                    parsedMessage.event = value
+                    break
+                case 'id':
+                    parsedMessage.id = parseInt(value, 10)
+                    break
+                default:
+                    break
             }
         })
 

@@ -2,7 +2,7 @@ import { InternalServerErrorException } from '@nestjs/common'
 import { DateUtil } from './date.js'
 
 export class JsonUtil {
-    /** Instant를 기존 Date JSON 계약과 같은 밀리초 3자리 UTC 문자열로 고정한다. */
+    /** Instant는 밀리초 3자리 UTC, PlainDate는 같은 날짜의 ISO 문자열로 내보낸다. */
     static stringify(value: unknown): string {
         const serialized: unknown = JSON.stringify(value, JsonUtil.temporalReplacer)
         if (typeof serialized !== 'string') {
@@ -16,6 +16,10 @@ export class JsonUtil {
     /** Express의 `json replacer`에도 그대로 등록할 수 있다. */
     static temporalReplacer(this: Record<string, unknown>, key: string, value: unknown): unknown {
         const original = this[key]
-        return original instanceof Temporal.Instant ? DateUtil.toISOString(original) : value
+        if (original instanceof Temporal.Instant) return DateUtil.toISOString(original)
+        if (original instanceof Temporal.PlainDate) {
+            return DateUtil.plainDateFromInput(original).toString()
+        }
+        return value
     }
 }

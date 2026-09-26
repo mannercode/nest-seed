@@ -50,6 +50,8 @@ CacheService는 비유한 값·소수 TTL을 Redis 쓰기 전에 거절해 카�
 
 common은 이 조건을 BSON ObjectId로 만들지만, 모든 `_id` 문자열을 순회하며 추측하지 않는다. 집계의 문자열 그룹 키는 `{ _id: 'group-name' }` 그대로 사용할 수 있다.
 
+ObjectId 문자열은 대소문자 구분 없이 같은 ID로 취급한다. 같은 컬렉션을 사용하는 저장소도 각자의 인덱스 선언을 적용하며 충돌은 초기화 오류로 전달한다.
+
 생성·조회·갱신 결과의 문서 `_id`는 문자열 `id`로 반환한다. ID를 제외한 projection에는 `id`를 추가하지 않는다. 집계 결과의 `_id`는 그룹 필드명이므로 이름을 유지하고 ObjectId 값만 문자열로 바꾼다. `newDocument`는 문자열 ID를 만들며 실제 저장 경계에서 BSON으로 바꾼다. `toDomainDocument`는 이미 ID와 시간 값이 변환된 문서를 받는다.
 
 트랜잭션은 DB 타입이 없는 `TransactionContext`로 전달하고 MongoDB 세션·드라이버 옵션은 common이 관리한다. 업무 단위와 필요한 snapshot·시간 제한의 선택은 앱에 남는다. Temporal 값의 BSON 변환은 문자열 추측 없이 실제 타입을 기준으로 수행한다.
@@ -61,6 +63,8 @@ common은 이 조건을 BSON ObjectId로 만들지만, 모든 `_id` 문자열을
 일반 JSON 파싱은 `JSON.parse`로 한다. 날짜처럼 보이는 문자열이나 큰 숫자의 타입을 자동 추측하지 않는다. 날짜·시점으로 복원할 필드는 DTO 스키마에 명시한다. 정밀도 보존이 필요한 큰 정수는 JSON 문자열 계약으로 다룬다.
 
 `JsonUtil.stringify`와 HTTP 응답은 Instant를 UTC 밀리초 3자리, PlainDate를 날짜 문자열로 내보낸다. Restate도 같은 JSON 형식을 저장하며 workflow 입력·step의 DTO 결과·최종 결과는 각 스키마로 복원한다. 재실행 때 journal 값을 읽으므로 step 이름·순서·저장 형식 변경은 복구 중인 데이터와 함께 검토해야 한다.
+
+PlainDate는 입력·저장·직렬화·UTC 날짜 계산에서 같은 날짜의 ISO 달력으로 정규화한다. 달력 식별자는 보존하지 않고 문자열 입력은 달력 주석 없는 ISO 날짜만 받는다.
 
 테스트 응답도 같은 DTO 스키마를 사용한다.
 
@@ -79,6 +83,8 @@ const { body } = await fix.httpClient
 SSE로 요청 결과를 검증할 때는 `HttpTestClient.sse`의 세 번째 콜백으로 응답 스트림의 수신 준비를 확인한 뒤 요청한다. 첫 이벤트가 올 때까지 기다리면 요청과 구독이 서로 기다릴 수 있다. 완료·실패 여부와 관계없이 테스트가 연 스트림은 `finally`에서 닫는다.
 
 TCP 청크는 UTF-8 문자 중간에서도 나뉠 수 있다. 문자 디코딩은 Node 스트림에 맡기고 완성된 문자열에서 이벤트를 나눠 한글 같은 다중 바이트 문자를 보존한다.
+
+같은 SSE 이벤트의 여러 data 줄은 개행으로 연결하고 빈 data도 콜백에 전달한다. HTTP 오류 본문은 오류 콜백으로 전달한다.
 
 ## 6. 공통 유틸의 값 계약
 

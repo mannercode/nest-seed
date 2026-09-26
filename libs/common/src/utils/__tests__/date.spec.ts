@@ -26,6 +26,16 @@ describe('DateUtil', () => {
     })
 
     describe('toYMD', () => {
+        it.each(['buddhist', 'japanese', 'hebrew'])(
+            '%s 달력의 날짜와 날짜시각을 같은 ISO 날짜의 YYYYMMDD로 표현한다',
+            (calendar) => {
+                const date = Temporal.PlainDate.from('2025-01-01').withCalendar(calendar)
+
+                expect(DateUtil.toYMD(date)).toBe('20250101')
+                expect(DateUtil.toYMD(date.toPlainDateTime())).toBe('20250101')
+            }
+        )
+
         it('PlainDate를 YYYYMMDD 형식 문자열로 변환한다', () => {
             expect(DateUtil.toYMD(Temporal.PlainDate.from('1999-01-02'))).toBe('19990102')
         })
@@ -101,6 +111,20 @@ describe('DateUtil', () => {
     })
 
     describe('외부 Date 경계', () => {
+        it.each(['buddhist', 'japanese', 'hebrew'])(
+            '%s 달력의 날짜를 같은 날짜의 UTC 자정에 저장하고 ISO로 복원한다',
+            (calendar) => {
+                const date = Temporal.PlainDate.from('2025-01-01').withCalendar(calendar)
+
+                const stored = DateUtil.plainDateToDate(date)
+                const restored = DateUtil.toPlainDate(stored)
+
+                expect(stored.toISOString()).toBe('2025-01-01T00:00:00.000Z')
+                expect(restored.calendarId).toBe('iso8601')
+                expect(restored.toString()).toBe('2025-01-01')
+            }
+        )
+
         it('Instant와 BSON Date 호환 값을 밀리초 손실 없이 왕복한다', () => {
             const instant = Temporal.Instant.from('2023-06-18T12:12:34.567Z')
 
@@ -161,4 +185,14 @@ describe('DateUtil', () => {
             Date.UTC(2023, 5, 18)
         )
     })
+
+    it.each(['buddhist', 'japanese', 'hebrew'])(
+        '%s 달력의 날짜도 같은 ISO 날짜의 UTC 범위를 반환한다',
+        (calendar) => {
+            const date = Temporal.PlainDate.from('2025-01-01').withCalendar(calendar)
+
+            expect(DateUtil.startOfUtcDay(date).toString()).toBe('2025-01-01T00:00:00Z')
+            expect(DateUtil.endOfUtcDay(date).toString()).toBe('2025-01-01T23:59:59.999Z')
+        }
+    )
 })

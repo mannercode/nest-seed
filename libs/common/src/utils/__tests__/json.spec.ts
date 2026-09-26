@@ -4,6 +4,22 @@ import { JsonUtil, InstantFromInputSchema, PlainDateFromInputSchema } from '../i
 
 describe('JsonUtil', () => {
     describe('stringify', () => {
+        it.each(['buddhist', 'japanese', 'hebrew'])(
+            '%s 달력의 날짜를 ISO JSON으로 보내고 같은 DTO 스키마로 복원한다',
+            (calendar) => {
+                const date = Temporal.PlainDate.from('2025-01-01').withCalendar(calendar)
+                const schema = z.object({ date: PlainDateFromInputSchema })
+
+                const serialized = JsonUtil.stringify({ date })
+                const restored = schema.parse(JSON.parse(serialized))
+
+                expect(serialized).toBe('{"date":"2025-01-01"}')
+                expect(restored.date.calendarId).toBe('iso8601')
+                expect(restored.date.toString()).toBe('2025-01-01')
+                expect(date.calendarId).toBe(calendar)
+            }
+        )
+
         it('Instant를 Date.toISOString과 같은 밀리초 3자리 JSON 계약으로 직렬화한다', () => {
             const at = Temporal.Instant.from('2023-06-18T12:12:34Z')
 

@@ -1,5 +1,11 @@
 import type { MockInstance } from 'vitest'
-import { DateUtil, newObjectIdString, sleep, paginationResultSchema } from '@mannercode/common'
+import {
+    DateUtil,
+    ensure,
+    newObjectIdString,
+    sleep,
+    paginationResultSchema
+} from '@mannercode/common'
 import { HttpTestClient, instant, nullObjectId } from '@mannercode/testing'
 import { randomUUID } from 'node:crypto'
 import {
@@ -389,11 +395,14 @@ describe('ShowtimeCreationService', () => {
 
             expect(markAccepted).toHaveBeenCalledTimes(2)
             expect(markAccepted.mock.calls[1]?.[1]).toBe(idempotencyKey)
-            await expect(
-                Promise.all(submitWorkflow.mock.results.map(({ value }) => value)).then((results) =>
-                    results.map(({ status }) => status)
-                )
-            ).resolves.toEqual(['Accepted', 'PreviouslyAccepted'])
+            const workflowSubmissions = await Promise.all(
+                submitWorkflow.mock.results.map(({ value }) => value)
+            )
+            expect(workflowSubmissions.map(({ status }) => status)).toEqual([
+                'Accepted',
+                'PreviouslyAccepted'
+            ])
+            await workflow.waitForCompletion(ensure(workflowSubmissions[0]))
             expect(
                 emitStatusChanged.mock.calls.filter(([event]) => event.status === 'waiting')
             ).toHaveLength(1)

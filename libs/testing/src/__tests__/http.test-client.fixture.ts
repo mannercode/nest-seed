@@ -6,6 +6,7 @@ import {
     Get,
     Header,
     Headers,
+    HttpCode,
     Post,
     Req,
     Res,
@@ -20,6 +21,27 @@ export type HttpTestClientFixture = { httpClient: HttpTestClient; teardown: () =
 class HttpTestClientController {
     private readonly pendingEvents = new Subject<{ data: { status: string } }>()
     private splitEventResponse: Response
+    private rawEventResponse: Response
+
+    @Post('raw-events')
+    @HttpCode(200)
+    rawEvents(
+        @Body() body: { content: string; contentType: string; split: boolean },
+        @Res() res: Response
+    ) {
+        res.set('Content-Type', body.contentType)
+        if (body.split) {
+            this.rawEventResponse = res
+            res.write(`data: fixture-ready\n\n${body.content}`)
+        } else {
+            res.end(`${body.content}\n\ndata: fixture-complete\n\n`)
+        }
+    }
+
+    @Post('complete-raw-events')
+    completeRawEvents(@Body() body: { content: string }) {
+        this.rawEventResponse.end(`${body.content}\n\ndata: fixture-complete\n\n`)
+    }
 
     @Get('split-utf8-event')
     splitUtf8Event(@Res() res: Response) {
@@ -132,6 +154,45 @@ class HttpTestClientController {
     notFoundText(@Res() res: Response) {
         // SSE 클라이언트가 비-SSE 응답(한 줄 JSON)을 받는 시나리오이다.
         res.status(404).json({ error: 'Not Found', message: 'Cannot GET' })
+    }
+}
+
+export async function receiveRawEvents(
+    httpClient: HttpTestClient,
+    { content, continuation }: { content: string; continuation?: string }
+): Promise<{ events: string[]; errors: unknown[] }> {
+    const completion = Promise.withResolvers<void>()
+    const events: string[] = []
+    const errors: unknown[] = []
+    let continuationRequest: Promise<unknown> | undefined
+
+    httpClient
+        .post('/raw-events')
+        .body({ content, contentType: 'text/event-stream', split: continuation !== undefined })
+        .sse(
+            (data) => {
+                if (data === 'fixture-ready') {
+                    // 첫 청크를 실제로 수신한 뒤 나머지를 보내 TCP 분할을 보장한다.
+                    continuationRequest = new HttpTestClient(httpClient.serverUrl)
+                        .post('/complete-raw-events')
+                        .body({ content: continuation })
+                        .created()
+                    void continuationRequest.catch(completion.reject)
+                } else if (data === 'fixture-complete') {
+                    completion.resolve()
+                } else {
+                    events.push(data)
+                }
+            },
+            (reason) => errors.push(reason)
+        )
+
+    try {
+        await completion.promise
+        await continuationRequest
+        return { events, errors }
+    } finally {
+        httpClient.abort()
     }
 }
 
