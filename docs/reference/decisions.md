@@ -62,7 +62,7 @@ Redis Pub/Sub도 실시간 전달에는 맞지만 durable 경로는 별도로 �
 
 구매 HTTP는 workflow 결과를 기다린다. broker 장애가 구매 완료 응답을 막지 않게 완료 알림은 별도 workflow로 넘긴다. 네트워크 오류를 업무상 거절로 확정하거나, 결제 결과를 모르는 상태에서 취소했다고 응답하지 않는다.
 
-BullMQ나 JetStream consumer만으로도 작업을 실행할 수 있지만 단계 재시도·상태·보상을 직접 관리해야 한다. Temporal도 요구를 충족하지만 이 저장소에서는 별도 worker bundle·sandbox·서버 DB setup보다 API에 붙는 Restate endpoint가 작은 구성이었다. 이는 프로젝트의 선택이며 어느 도구가 항상 더 단순하다는 뜻은 아니다.
+BullMQ나 JetStream consumer만으로도 작업을 실행할 수 있지만 단계 재시도·상태·보상을 직접 관리해야 한다. Temporal도 요구를 충족하지만 이 저장소에서는 별도 worker bundle·sandbox·서버 DB setup보다 API에 붙는 Restate endpoint가 작은 구성이었다.
 
 ### 배포 revision
 
@@ -90,7 +90,7 @@ v1 실행 유지 → v2 endpoint 등록 → 신규 실행 전환 → v1 drain �
 
 100%는 단언의 의미나 race 안전성을 증명하지 않는다. 도달하기 어려운 방어 분기는 먼저 구조를 단순하게 할 수 있는지 검토하고, 제외가 필요하면 이유를 명시한다. 수치를 채우려고 의미 없는 unit test와 운영 코드의 테스트 전용 분기를 늘리지 않는다.
 
-API 통합 테스트는 실제 인프라를 사용한다. 외부 race는 프로세스 간 HTTP·SSE를, 브라우저는 실제 화면·쿠키·API 연결을 확인한다. 데모의 proxy unit suite를 별도로 크게 유지하지 않는다. 각 검증의 한계는 [tests](../tests.md)에 적고, 서로 대신 증명한다고 해석하지 않는다.
+API 통합 테스트는 실제 인프라를 사용한다. 외부 race는 프로세스 간 HTTP·SSE를, 브라우저는 실제 화면·쿠키·API 연결을 확인한다. 데모의 proxy unit suite를 별도로 크게 유지하지 않는다. 검증 범위와 한계는 [tests](../tests.md)에 있다.
 
 4개 API 복제본과 반복 CI는 의도한 검증 환경이다. Stability의 coverage 없는 반복 실행은 간헐 실패를 찾으며 필수 AtoZ의 게이트를 대신하지 않는다. 테스트 수·실행 횟수만으로 과잉을 판단하지 않고 실제로 검사하는 행동과 비용을 비교한다.
 
@@ -112,5 +112,3 @@ Node는 네이티브 Temporal을 사용하는 26 계열을 유지한다. TypeScr
 | GraphQL                   | 홈 화면 한 응답은 View로 조합할 수 있어 별도 schema·resolver 체계를 넣지 않는다.                    |
 | pino                      | 현재 로그 처리량에 교체를 요구하는 병목 근거가 없다.                                                |
 | Service Mesh·관측 backend | 운영 플랫폼 선택을 시드에 선제적으로 고정하지 않는다.                                               |
-
-이 표는 도구의 일반적인 우열이 아니라 현재 요구사항에 대한 결정이다.

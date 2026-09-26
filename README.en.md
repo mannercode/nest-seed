@@ -44,14 +44,14 @@ The Dev Container is the only supported development path. Open the repository on
 
 Starting the Dev Container resets the development infrastructure data. Run the commands below in the container terminal.
 
-1. Open the repository in VS Code and run `Reopen in Container`. The first boot may take a while while images and development infrastructure are prepared.
+1. Open the repository in VS Code and run `Reopen in Container`.
 2. Run `pnpm run test` for the basic checks. Use `pnpm run atoz` for the full regression, including an infrastructure reset.
 3. Run `pnpm run dev`, then check the API with `curl http://localhost:3000/health`.
 4. Forward `3100` and `3200` in the VS Code **Ports** panel and open the displayed addresses in your browser. Automatic port forwarding is disabled.
 5. Sign in to the console (3100) with the development admin (`admin@nest-seed.local` / `DevPass1!`) and create movies and theaters. Infrastructure resets recreate this account.
 6. Use the user app (3200) to explore sign-up, login, and the composed home view. The executable API docs run showtime, booking, and purchase APIs through an independent fixture flow.
 
-`.env.api` and `.env.infra` contain committed development and verification values. Review project identifiers and credentials when forking, and inject production secrets outside the repository. After editing these files, [recreate the Dev Container](docs/devcontainer.md#1-환경-변수는-재생성해야-반영된다) to inject the new values.
+`.env.api` and `.env.infra` contain committed development and verification values. Inject production secrets outside the repository. After editing these files, [recreate the Dev Container](docs/devcontainer.md#1-환경-변수는-재생성해야-반영된다) to inject the new values.
 
 ## 2. Main commands
 
@@ -69,7 +69,7 @@ Starting the Dev Container resets the development infrastructure data. Run the c
 
 ## 3. API reference
 
-Instead of static Swagger/OpenAPI, `apps/api/api-docs/*.spec` sends real requests and serves as the HTTP contract for representative success and failure paths. This prevents documentation from silently drifting away from behavior.
+`apps/api/api-docs/*.spec` sends real requests and documents representative success and failure paths.
 
 ```bash
 bash apps/api/api-docs/run.sh
@@ -108,7 +108,7 @@ Each `TEST` detail log records the actual response body. The spec itself shows t
 | Object storage                           | AWS SDK with the S3-compatible VersityGW               |
 | Verification                             | Vitest, Testcontainers, Playwright, k6, Docker Compose |
 
-These tools own different failure boundaries; they are not included merely as a technology showcase. [Design decisions](docs/reference/decisions.md) explains why this combination was chosen and why Kafka, BullMQ, Swagger, Nx, and others were not.
+[Design decisions](docs/reference/decisions.md) explains why this combination was chosen and why Kafka, BullMQ, Swagger, Nx, and others were not.
 
 ## 6. Domain tour
 

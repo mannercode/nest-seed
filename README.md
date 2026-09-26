@@ -45,7 +45,7 @@ Dev Container 시작, `bash infra/reset.sh`, `pnpm run atoz`는 개발 데이터
 | `pnpm run race <scenario>` | 다중 복제본의 HTTP/SSE 경쟁 또는 복제본 종료 시나리오          |
 | `pnpm run benchmark`       | 같은 조건의 API 성능 비교                                      |
 
-race와 benchmark는 기본 test·AtoZ에 포함되지 않는다. 같은 API Vitest 명령을 동시에 두 번 실행하는 것은 지원하지 않는다. 커버리지 100%와 반복 CI는 검증되지 않은 경로와 간헐 실패를 드러내는 개발 제약이며, 모든 버그가 없다는 보장은 아니다. 테스트별 목적과 검증 한계는 [tests 가이드](docs/tests.md)에 있다.
+race와 benchmark는 기본 test·AtoZ에 포함되지 않는다. 같은 API Vitest 명령을 동시에 두 번 실행하는 것은 지원하지 않는다. 커버리지 100%와 반복 CI는 검증되지 않은 경로와 간헐 실패를 드러내는 개발 제약이다. 테스트별 목적과 검증 한계는 [tests 가이드](docs/tests.md)에 있다.
 
 ### 필요한 테스트만 실행하기
 
@@ -79,7 +79,7 @@ pnpm --filter './tests/web' exec playwright install chromium
 - API 문서의 실제 응답은 `apps/api/api-docs/_output/logs/`, 실행 항목 요약은 같은 `_output/docs/summary.md`에 있다.
 - benchmark는 `tests/api/benchmark/_output/<실행 시각>/`에 `report.html`과 `summary.json`을 남긴다. 측정용 극장 데이터는 DB에 남으며 `bash infra/reset.sh`로 초기화한다.
 
-CI 반복의 실패 회차는 `[Run i/N]`에서 찾는다. API Race의 runner 진단과 같은 시각의 컨테이너 로그를 함께 본다. 실패 후 MongoDB 상태 snapshot 하나만으로 당시 원인을 확정하지 않는다.
+CI 반복의 실패 회차는 `[Run i/N]`에서 찾는다. API Race의 runner 진단과 같은 시각의 컨테이너 로그를 함께 본다.
 
 ## 구조와 선택
 

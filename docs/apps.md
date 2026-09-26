@@ -56,7 +56,7 @@ flowchart LR
 
 ## 데이터와 DTO
 
-각 도메인은 자기 collection을 소유한다. 다른 도메인의 repository나 collection을 직접 join하지 않고 공개 서비스를 통해 협력한다. Ticket의 `movieId`·`theaterId`·`showtimeId`처럼 조회를 단순하게 하는 안정적인 값은 중복 저장할 수 있다. 중복 값이 바뀔 때의 책임까지 사라지는 것은 아니다.
+각 도메인은 자기 collection을 소유한다. 다른 도메인의 repository나 collection을 직접 join하지 않고 공개 서비스를 통해 협력한다. Ticket의 `movieId`·`theaterId`·`showtimeId`처럼 조회를 단순하게 하는 안정적인 값은 중복 저장할 수 있다.
 
 | 용어           | 역할                                            |
 | -------------- | ----------------------------------------------- |
@@ -144,7 +144,7 @@ stream은 용량을 넘으면 새 발행을 거부하고 workflow가 재시도�
 
 ## HTTP와 인증 계약
 
-리소스 중심 경로를 기본으로 하되 `booking/`, `showtime-creation/`처럼 여러 단계가 함께 의미를 갖는 유스케이스는 namespace로 묶는다. 긴 ID 목록·복합 검색은 `POST .../search`를 사용할 수 있다. 이 예외로 상태 변경을 조회처럼 숨기지 않는다.
+리소스 중심 경로를 기본으로 하되 `booking/`, `showtime-creation/`처럼 여러 단계가 함께 의미를 갖는 유스케이스는 namespace로 묶는다. 긴 ID 목록·복합 조건의 읽기 전용 검색에는 `POST .../search`를 사용할 수 있다.
 
 구매·상영 생성처럼 중복 실행 비용이 큰 POST에는 Idempotency-Key가 필요하다. 주체·키·본문의 관계를 유지한다.
 
@@ -181,7 +181,7 @@ API 테스트는 실제 Nest 앱과 MongoDB·Redis·S3·NATS·Restate 경계를 
 
 `common.fixture`의 `login_admin`·`login_user`는 이후 요청에 인증 헤더를 넣고, `as_guest`는 자동 주입을 해제한다. spec의 명시적 Authorization이 우선한다. 직접 실행 대상은 api-docs의 `.env`, 외부 검증 스택은 runner가 지정한 SERVER_URL을 사용한다.
 
-`scripts/`는 API 소스와 별도로 실행한다. admin 생성과 Restate 개발 등록 같은 도구는 common 빌드 없이 필요한 SDK를 직접 사용한다. 이 경계를 이유 없이 앱 DI나 공통 runtime으로 옮기지 않는다.
+`scripts/`는 API 소스와 별도로 실행한다. admin 생성과 Restate 개발 등록 같은 도구는 common 빌드 없이 필요한 SDK를 직접 사용한다.
 
 ## 데모와 BFF
 

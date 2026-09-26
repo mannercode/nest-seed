@@ -6,7 +6,7 @@
 
 엔티티 집합을 관리하는 서비스는 Core의 `UsersService`, `MoviesService`처럼 도메인의 복수형으로 이름 짓는다. 여러 도메인을 조합하는 Application 서비스는 `PurchaseService`, `ShowtimeCreationService`처럼 유스케이스를 나타내는 단수형 이름을 쓴다. 단수·복수는 한 요청이 처리하는 데이터 개수가 아니라 서비스의 책임을 구분한다.
 
-데이터를 조회하고 협력을 조율하는 `RecommendationService`와 전달받은 데이터만 계산하는 `MovieRecommender`처럼 역할을 구분한다. 이름만 맞추려고 새 계층이나 클래스를 추가하지 않는다.
+데이터를 조회하고 협력을 조율하는 `RecommendationService`와 전달받은 데이터만 계산하는 `MovieRecommender`처럼 역할을 구분한다.
 
 이벤트 발행·구독을 담당하는 서비스도 `PurchaseEventService`처럼 `Service`로 끝내고 파일은 `purchase-event.service.ts`로 맞춘다. 이벤트 데이터인 `TicketPurchasedEvent`와 구분한다.
 
@@ -36,7 +36,7 @@ findByPurchaseRecordId({ purchaseRecordId })
 
 ## 타입과 변환
 
-객체·유니온의 기본 선언은 `type`이다. 클래스 구현 계약이나 선언 병합에는 `interface`를 사용하는 프로젝트 스타일을 따른다. 객체 형태의 type alias도 `implements`할 수 있으므로 언어의 제약으로 설명하지 않는다.
+객체·유니온의 기본 선언은 `type`이다. 클래스 구현 계약이나 선언 병합에는 `interface`를 사용하는 프로젝트 스타일을 따른다.
 
 HTTP 요청·응답과 JSON에서 복원할 데이터는 Zod 스키마를 계약으로 삼고 `z.infer`로 타입을 얻는다. DTO의 `Dto`와 스키마의 `Schema`는 같은 계약의 타입과 런타임 검증을 구분한다. [극장 생성 DTO](../../apps/api/src/services/core/theaters/dtos/create-theater.dto.ts)가 그 예다.
 
