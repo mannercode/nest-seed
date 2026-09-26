@@ -116,7 +116,8 @@ export class CacheService {
         return { ran: true, result: await fn() }
     }
 
-    // waitMs 동안 폴링하며 획득 순서는 보장하지 않는다.
+    // waitMs가 지나면 새 fn을 시작하지 않는다. 실행 중인 fn의 시간은 제한하지 않는다.
+    // 락 획득 순서는 보장하지 않는다.
     async withLockBlocking<T>(
         key: string,
         ttlMs: number,
@@ -128,20 +129,27 @@ export class CacheService {
         }: { pollMs?: number; signal?: AbortSignal; waitMs?: number } = {}
     ): Promise<T> {
         const deadline = performance.now() + waitMs
-        for (;;) {
-            signal?.throwIfAborted()
-            // Redis SET을 기다리는 동안 취소됐을 수 있으므로 실제 callback 진입 직전에도 확인한다.
-            const attempt = await this.withLock(key, ttlMs, () => {
-                signal?.throwIfAborted()
-                return fn()
-            })
-            if (attempt.ran) return attempt.result
-            if (performance.now() >= deadline) {
+        const remainingWaitMs = () => {
+            const remaining = deadline - performance.now()
+            if (remaining <= 0) {
                 throw new ServiceUnavailableException('Service unavailable', {
                     cause: `withLockBlocking: could not acquire '${key}' within ${waitMs}ms`
                 })
             }
-            await sleep(pollMs, undefined, { signal })
+            return remaining
+        }
+
+        for (;;) {
+            signal?.throwIfAborted()
+            remainingWaitMs()
+            // SET 응답을 기다리는 동안 취소되거나 기한이 지났다면 획득한 락만 해제한다.
+            const attempt = await this.withLock(key, ttlMs, () => {
+                signal?.throwIfAborted()
+                remainingWaitMs()
+                return fn()
+            })
+            if (attempt.ran) return attempt.result
+            await sleep(Math.min(pollMs, remainingWaitMs()), undefined, { signal })
         }
     }
 

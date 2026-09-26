@@ -4,6 +4,10 @@ export const PurchaseErrors = {
         message: 'One or more tickets have already been sold.',
         ticketIds
     }),
+    DuplicateTickets: () => ({
+        code: 'ERR_PURCHASE_DUPLICATE_TICKETS',
+        message: 'A purchase cannot contain duplicate tickets.'
+    }),
     LimitExceeded: (maxCount: number) => ({
         code: 'ERR_PURCHASE_LIMIT_EXCEEDED',
         message: 'You have exceeded the maximum number of items allowed for purchase.',

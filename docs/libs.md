@@ -37,6 +37,8 @@ NATS 종료 훅은 새 handler의 실행을 막고 이미 실행 중인 handler�
 
 `CacheService`의 TTL은 정수 밀리초로 지정한다. 유효하지 않은 TTL은 Redis에 쓰기 전에 거절하므로 카운터 증가만 남지 않는다. `set`의 0은 영구 저장을 뜻하고, `withLock`은 양수만 허용한다. `incrementWithExpiry`의 0·음수는 즉시 만료를 뜻한다.
 
+`withLockBlocking`은 `waitMs` 안에서만 콜백을 시작한다. 기한이 지나면 늦게 획득한 락도 해제하고 503 예외를 던지며, `waitMs`가 0이면 획득을 시도하지 않는다. 기한 전에 시작한 콜백의 실행 시간은 제한하지 않는다.
+
 `generateUuid` 같은 래퍼를 두는 이유와 공통화 기준은 [설계 결정](reference/decisions.md#nestjs와-모듈-경계)을 따른다.
 
 ## 3. 저장소 ID와 트랜잭션
