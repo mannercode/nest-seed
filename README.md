@@ -98,4 +98,8 @@ MongoDB는 주 데이터와 transaction, Redis는 선점·리프레시 세션, N
 
 ## 기능·코드 변경 시 주의사항
 
-시드 구성은 가져다 쓰고 고치기 쉬운 출발점인지, `libs/`는 여러 프로젝트에서 사용할 공개 계약이 정확한지 판단한다. 상세 변경 기준, 전체 리뷰 점검 목록, TODO 관리와 포크 시 주의사항은 [프로젝트 변경·검토 기준](docs/reference/project-review.md)을 따른다.
+시드 구성은 가져다 쓰고 고치기 쉬운 출발점인지, `libs/`는 여러 프로젝트에서 사용할 공개 계약이 정확한지 판단한다. 상세 변경 기준, 전체 리뷰 점검 목록과 TODO 관리는 [프로젝트 변경·검토 기준](docs/reference/project-review.md)을 따른다.
+
+## 포크와 운영 적용
+
+포크할 때 프로젝트 식별자와 작성자 URL을 일괄 치환하지 않는다. 패키지 scope를 바꾸면 manifest·의존성·import·별칭·lockfile을 함께 맞춘다. 개발용 스택을 운영에 적용하려면 [BFF 신뢰 경계](docs/apps.md#데모와-bff)와 [Restate revision 전환](docs/reference/decisions.md#restate와-외부-효과)의 조건을 검토한다. TLS·backup·운영 관측·무중단 배포는 이 시드의 제공 범위에 없다.
