@@ -52,7 +52,7 @@
         "@testcontainers/mongodb": "12.1.0",
         "@testcontainers/nats": "12.1.0",
         "@types/express": "5.0.6",
-        "@types/node": "26.5.1",
+        "@types/node": "26.6.2",
         "@vitest/coverage-v8": "5.0.1",
         "concurrently": "10.0.5",
         "eslint-import-resolver-typescript": "4.4.5",
