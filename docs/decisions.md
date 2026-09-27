@@ -10,23 +10,15 @@
 
 ## NestJS와 모듈 경계
 
-이 API는 모듈을 역할에 따라 Gateway → View → Application → Core → Infrastructure 계층으로 나누는 [SoLA 구조](../apps/README.md#sola의-모듈-의존-방향)를 사용한다. 하위 계층만 참조하고 같은 계층의 다른 모듈은 직접 참조하지 않아 모듈 간 순환 의존을 피한다.
+컨트롤러를 Gateway에 두어 업무 모듈을 사용하는 것과 HTTP API를 등록하는 것을 따로 결정한다. 예를 들어 추천 기능에서 `MoviesModule`을 import해도 `/movies` API가 함께 등록되지 않는다. 조회와 삭제를 서로 다른 서비스가 처리해도 영화 API의 URL·요청값 검사·인증 설정은 한곳에서 관리한다.
 
-하나의 Core로 처리할 수 있는 CRUD는 Gateway가 직접 호출하고, 여러 도메인의 협력이 필요할 때 Application이 조합한다. 화면 응답은 View가 도메인 데이터를 읽어 구성하므로 각 도메인은 화면 요구를 알 필요가 없다.
+각 업무 모듈에 컨트롤러를 두면 해당 기능의 API와 서비스 코드를 가까이에서 읽을 수 있지만, 지금 배치에서는 Gateway와 업무 모듈의 폴더를 오가야 한다. 계층별 역할과 컨트롤러 등록 예시는 [API 가이드](../apps/api/README.md)에 있다.
 
-REST API 컨트롤러는 `services/gateway`에 모으고 `AppModule`에 등록한다. 예를 들어 영화 조회와 삭제는 모두 `MoviesHttpController`에서 받는다. 조회는 `MoviesService`에, 삭제는 `MovieDeletionService`에 맡기므로 업무를 처리하는 서비스가 달라도 영화 API의 URL·요청값 검사·인증 설정은 한곳에서 확인할 수 있다.
-
-각 업무 모듈에 컨트롤러를 두면 해당 기능의 API와 서비스 코드를 가까이에서 읽을 수 있다. 이 방식에서는 영화 조회 컨트롤러를 `MoviesModule`에, 삭제 컨트롤러를 `MovieDeletionModule`에 등록한다. `/movies` 관련 API를 찾으려면 두 모듈을 살펴봐야 한다.
-
-현재 `MoviesModule`에는 컨트롤러가 없으므로, 추천 같은 다른 기능에서 이 모듈을 import해도 영화 HTTP API가 함께 등록되지 않는다. `/movies` 요청을 받을지는 `AppModule`에서 컨트롤러를 등록해 결정한다.
-
-그 대신 API에서 서비스 구현을 따라 읽을 때는 Gateway와 업무 모듈의 폴더를 오가야 한다. 두 방식의 등록 예시는 [컨트롤러의 배치와 등록](../apps/README.md#컨트롤러의-배치와-등록)에 있다.
-
-NestJS의 예외와 DI를 앱의 기본 도구로 사용한다. SDK 연결·실행은 common으로 모으지만 DB 교체나 다른 언어로의 재작성을 자동화하려는 추상화는 만들지 않는다. 앱의 Repository는 쿼리·인덱스를 정의하고 저장소 오류를 도메인 오류로 바꾼다. `TransactionContext`를 사용해도 transaction의 의미와 원자성 설계는 사용하는 DB에 따라 달라진다.
+NestJS의 예외와 DI를 앱의 기본 도구로 사용한다. DB 교체나 다른 언어로의 재작성을 자동화하려는 추상화는 만들지 않는다.
 
 `generateUuid`는 UUID를 만들 때 어떤 Node API를 써야 하는지 매번 찾지 않고, 기능 이름으로 기억하고 호출할 수 있게 한 공통 유틸이다. 같은 목적에 맞는 기존 래퍼는 유지하지만 Node 기본 API 전부를 감싸지는 않는다. 독립 실행 스크립트는 common을 먼저 빌드하지 않아도 실행할 수 있도록 SDK를 직접 사용한다.
 
-DTO에는 Zod를 사용한다. 요청 검증과 응답·workflow·테스트의 JSON 복원에 같은 런타임 스키마를 재사용하기 위해서다. 클래스의 변환 데코레이터로도 구현할 수 있지만 이 프로젝트는 스키마를 선택했다. 타입 인자만으로 런타임 변환 정보를 알 수 없으므로 데이터를 변환하는 지점에 스키마를 명시한다.
+DTO에는 Zod를 사용한다. 요청 검증과 응답·workflow·테스트의 JSON 복원에 같은 런타임 스키마를 재사용하기 위해서다. 클래스의 변환 데코레이터로도 구현할 수 있지만 이 프로젝트는 스키마를 선택했다.
 
 ## MongoDB와 원자성
 
