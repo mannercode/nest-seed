@@ -20,7 +20,7 @@ NestJS 프로젝트를 시작할 때 가져다 쓰고 고칠 수 있는 시드�
 
 새 프로젝트로 포크할 때는 프로젝트명 `nest-seed`와 조직명 `mannercode`(`@mannercode/*` 패키지 scope 포함)를 사용할 이름으로 바꾼다.
 
-지원하는 개발 환경은 Dev Container다. Docker가 있는 호스트의 저장소를 VS Code Remote SSH로 열고 Dev Containers 확장을 사용한다. 호스트와 컨테이너에서 workspace의 절대경로가 같아야 하는 이유는 [개발 환경](docs/devcontainer.md)에 있다.
+지원하는 개발 환경은 Dev Container다. Docker가 있는 호스트의 저장소를 VS Code Remote SSH로 열고 Dev Containers 확장을 사용한다. 호스트와 컨테이너에서 workspace의 절대경로가 같아야 하는 이유는 [개발 환경](.devcontainer/README.md)에 있다.
 
 1. VS Code에서 `Reopen in Container`를 실행한다. 시작 과정에서 의존성을 설치하고 개발 인프라를 초기화한다.
 2. 컨테이너 터미널에서 `pnpm run test`를 실행한다.
@@ -30,7 +30,7 @@ NestJS 프로젝트를 시작할 때 가져다 쓰고 고칠 수 있는 시드�
 
 Dev Container 시작, `bash infra/reset.sh`, `pnpm run atoz`는 개발 데이터를 지운다. DB·S3 파일·Restate journal·JetStream 이벤트를 보존할 환경에서 실행하지 않는다. 초기화 뒤 개발 admin도 다시 만들어진다.
 
-루트 `.env.api`와 `.env.infra`에는 개발·검증용 설정값이 커밋되어 있다. 이 파일을 수정한 뒤에는 Dev Container를 재생성해야 변경한 값이 반영된다. 운영 secret은 저장소 밖에서 주입한다. 파일별 역할과 주입 방법은 [개발 환경](docs/devcontainer.md)에 있다.
+루트 `.env.api`와 `.env.infra`에는 개발·검증용 설정값이 커밋되어 있다. 이 파일을 수정한 뒤에는 Dev Container를 재생성해야 변경한 값이 반영된다. 운영 secret은 저장소 밖에서 주입한다. 파일별 역할과 주입 방법은 [개발 환경](.devcontainer/README.md)에 있다.
 
 ## 실행과 검증
 
@@ -47,7 +47,7 @@ Dev Container 시작, `bash infra/reset.sh`, `pnpm run atoz`는 개발 데이터
 | `pnpm run race <scenario>` | 다중 복제본의 HTTP/SSE 경쟁 또는 복제본 종료 시나리오         |
 | `pnpm run benchmark`       | 같은 조건의 API 성능 비교                                     |
 
-race와 benchmark는 기본 test·AtoZ에 포함되지 않는다. 같은 API Vitest 명령을 동시에 여러 번 실행하는 것은 지원하지 않는다. 커버리지 100% 기준은 테스트가 실행하지 않은 코드 경로를, 반복 CI는 간헐적인 실패를 찾기 위한 제약이다. 테스트별 목적과 검증 범위는 [tests 가이드](docs/tests.md)에 있다.
+race와 benchmark는 기본 test·AtoZ에 포함되지 않는다. 같은 API Vitest 명령을 동시에 여러 번 실행하는 것은 지원하지 않는다. 커버리지 100% 기준은 테스트가 실행하지 않은 코드 경로를, 반복 CI는 간헐적인 실패를 찾기 위한 제약이다. 테스트별 목적과 검증 범위는 [tests 가이드](tests/README.md)에 있다.
 
 ### 필요한 테스트만 실행하기
 
@@ -69,7 +69,7 @@ bash apps/api/api-docs/run.sh showtime-creation.spec
 
 `pnpm run race`는 시나리오 목록을, `pnpm run e2e:list`는 브라우저 테스트 목록을 보여 준다. 브라우저 테스트를 화면에서 선택하고 실행하려면 `pnpm run e2e:ui`를 사용한다.
 
-Playwright 버전을 바꾸면 Chromium과 브라우저 실행에 필요한 OS 패키지도 맞춰야 한다. Dev Container를 다시 빌드하는 방법은 [개발 환경](docs/devcontainer.md#3-시작-순서와-데이터-수명)을 따른다. Dev Container 시작·AtoZ는 Chromium을 설치하며, Chromium만 다시 설치할 때는 다음 명령을 쓴다.
+Playwright 버전을 바꾸면 Chromium과 브라우저 실행에 필요한 OS 패키지도 맞춰야 한다. Dev Container를 다시 빌드하는 방법은 [개발 환경](.devcontainer/README.md#3-시작-순서와-데이터-수명)을 따른다. Dev Container 시작·AtoZ는 Chromium을 설치하며, Chromium만 다시 설치할 때는 다음 명령을 쓴다.
 
 ```bash
 pnpm --filter './tests/web' exec playwright install chromium
@@ -88,15 +88,17 @@ CI의 반복 실행 중 실패한 회차는 `[Run i/N]`에서 찾는다. API Rac
 
 API는 SoLA의 Gateway → View → Application → Core → Infrastructure 순서로 하위 계층에 의존한다. 필요한 하위 계층은 중간 계층을 거치지 않고 직접 호출할 수 있다. 같은 계층의 여러 모듈을 조합하는 작업은 상위 계층에서 맡는다. 단일 Core의 CRUD에는 Application 계층을 추가하지 않는다.
 
-MongoDB는 데이터 저장과 트랜잭션, Redis는 좌석 선점과 리프레시 세션을 맡는다. NATS는 실시간 메시지를 전달하고, JetStream은 나중에 처리할 메시지를 보존하며, Restate는 중단된 작업을 재개한다. SDK 연결·호출은 common에, 업무 쿼리·정책·workflow 단계는 API에 구현한다. 선택 이유와 한계는 [설계 결정](docs/reference/decisions.md)에 있다.
+MongoDB는 데이터 저장과 트랜잭션, Redis는 좌석 선점과 리프레시 세션을 맡는다. NATS는 실시간 메시지를 전달하고, JetStream은 나중에 처리할 메시지를 보존하며, Restate는 중단된 작업을 재개한다. SDK 연결·호출은 common에, 업무 쿼리·정책·workflow 단계는 API에 구현한다. 선택 이유와 한계는 [설계 결정](docs/decisions.md)에 있다.
 
-| 위치             | 안내                                                     |
-| ---------------- | -------------------------------------------------------- |
-| `apps/`          | [모듈 경계, 업무 흐름, 인증과 DTO](docs/apps.md)         |
-| `libs/`          | [공통화 기준과 공개 계약](docs/libs.md)                  |
-| `tests/`         | [다중 프로세스·브라우저·성능 검증의 범위](docs/tests.md) |
-| `infra/`         | [개발 인프라 구성과 reset의 범위](docs/infra.md)         |
-| `tools/`         | [개발·테스트 실행 도구](docs/tools.md)                   |
-| `.devcontainer/` | [개발 환경과 env 주입](docs/devcontainer.md)             |
+### 저장소 루트의 주요 폴더
 
-작성 방법은 [개발 규칙](docs/reference/conventions.md), 변경과 리뷰의 판단 기준은 [프로젝트 변경·검토 기준](docs/reference/project-review.md)을 따른다. 할 일과 미결 검토는 루트 `_todo/`에서 관리한다.
+| 폴더                             | 안내                                                       |
+| -------------------------------- | ---------------------------------------------------------- |
+| [.devcontainer/](.devcontainer/) | [개발 환경과 env 주입](.devcontainer/README.md)            |
+| [apps/](apps/)                   | [모듈 경계, 업무 흐름, 인증과 DTO](apps/README.md)         |
+| [infra/](infra/)                 | [개발 인프라 구성과 reset의 범위](infra/README.md)         |
+| [libs/](libs/)                   | [공통화 기준과 공개 계약](libs/README.md)                  |
+| [tests/](tests/)                 | [다중 프로세스·브라우저·성능 검증의 범위](tests/README.md) |
+| [tools/](tools/)                 | [개발·테스트 실행 도구](tools/README.md)                   |
+
+작성 방법은 [개발 규칙](docs/conventions.md), 변경과 리뷰의 판단 기준은 [프로젝트 변경·검토 기준](docs/project-review.md)을 따른다. 할 일과 미결 검토는 루트 `_todo/`에서 관리한다.

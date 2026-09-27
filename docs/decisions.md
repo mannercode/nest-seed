@@ -1,6 +1,6 @@
 # 설계 선택과 한계
 
-현재 설계를 선택한 이유와 다른 방식으로 바꿀 때 달라지는 책임을 정리한다. API의 동작과 보장은 [apps](../apps.md), 공통 코드의 범위는 [libs](../libs.md)를 참고한다.
+현재 설계를 선택한 이유와 다른 방식으로 바꿀 때 달라지는 책임을 정리한다. API의 동작과 보장은 [apps](../apps/README.md), 공통 코드의 범위는 [libs](../libs/README.md)를 참고한다.
 
 ## 시드의 범위
 
@@ -48,19 +48,21 @@ Core NATS의 flush, JetStream의 PubAck, 소비자의 ack는 각각 확인하는
 
 Redis Pub/Sub도 실시간 전달에 사용할 수 있지만 메시지를 보존하는 경로가 별도로 필요하다. Kafka를 추가하면 운영·학습 대상이 늘어나는 데 비해 현재 예제에서 얻는 이점은 작다. sticky session을 사용해도 작업을 실행하는 복제본과 SSE가 연결된 복제본은 다를 수 있으므로 복제본 사이의 메시지 전달을 대신할 수 없다.
 
-## Restate와 외부 효과
+## Restate를 선택한 이유와 재실행 제약
 
 상영 생성과 구매는 Restate workflow로 재시도하고 중단 후 재개한다. 이를 통해 두 업무에 lease를 관리하는 실행기와 복구 scheduler를 각각 구현하지 않아도 된다. Restate는 journal에 기록한 완료 step의 결과를 재사용하며, 짧은 DB 묶음 쓰기는 MongoDB transaction으로 원자적으로 확정한다.
 
-```text
-외부 쓰기 성공 → 응답 또는 journal 기록 전 종료 → 같은 step 재실행 가능
+```mermaid
+flowchart TB
+    Write["외부 쓰기 성공"] --> Interrupted["응답 또는 journal 기록 전<br/>실행 중단"]
+    Interrupted --> Retry["같은 step 재실행 가능"]
 ```
 
-따라서 `ctx.run`으로 감쌌어도 외부 효과는 멱등해야 한다. 상영 생성은 operation의 sagaId에 unique 제약을 두고, 구매는 완료 상태와 응답 스냅샷을 원자적으로 저장하며, 결제는 구매 ID로 중복을 막는다. workflow key는 같은 작업의 재제출을 합칠 뿐 서로 다른 작업의 좌석·시간 경쟁을 조정하지 않는다.
+따라서 `ctx.run`으로 감쌌어도 외부 효과는 멱등해야 한다. 예를 들어 결제는 구매 ID로 중복을 막는다. workflow key는 같은 작업의 재제출을 합칠 뿐 서로 다른 작업의 좌석·시간 경쟁을 조정하지 않는다.
 
-상영 생성은 DB commit으로 완료된다. 그 뒤의 SSE 알림과 workflow 결과 보관은 호출자가 상태를 확인하는 수단이다. HTTP 접수 요청을 처리하는 시점·복제본과 Restate가 workflow를 실행하는 시점·복제본은 다를 수 있다. 결과 보존 기간이 끝나도 DB에 생성한 상영은 취소되지 않는다.
+저장·보상·응답의 구체적인 계약은 [구매와 선점](../apps/README.md#구매와-선점), [상영 생성과 알림](../apps/README.md#상영-생성과-알림)을 따른다.
 
-구매 HTTP 요청은 workflow 결과를 기다린다. broker 장애 때문에 구매 완료 응답이 막히지 않도록 완료 알림은 별도 workflow로 넘긴다. 네트워크 오류만으로 업무상 거절을 확정하거나, 결제 결과를 모르는 상태에서 취소했다고 응답하지 않는다.
+구매 완료 알림은 별도 workflow로 넘겨 broker 장애가 구매 완료 응답을 막지 않게 한다.
 
 BullMQ나 JetStream consumer로도 작업을 실행할 수 있지만 단계별 재시도·상태·보상은 직접 관리해야 한다. workflow 엔진인 Temporal도 요구를 충족한다. 이 저장소에서는 별도 worker bundle·sandbox·서버 DB를 관리하는 구성보다 API에 endpoint를 붙이는 Restate 구성이 작아 이를 선택했다.
 
@@ -70,8 +72,12 @@ BullMQ나 JetStream consumer로도 작업을 실행할 수 있지만 단계별 �
 
 workflow step을 삭제하거나 순서를 바꾸면 이전 journal에 기록된 실행은 이전 코드로 끝내야 한다. 같은 endpoint에 새 코드를 덮어쓰면 실행을 재개할 때 step 순서가 맞지 않을 수 있다. 새 DB 문서에서 필드를 없애는 것과 기존 journal의 실행 코드를 교체하는 것은 별도로 검토해야 한다.
 
-```text
-v1 실행 유지 → v2 endpoint 등록 → 신규 실행 전환 → v1 실행 종료 확인 → v1 제거
+```mermaid
+flowchart TB
+    A["v1 실행 유지"] --> B["v2 endpoint 등록"]
+    B --> C["신규 실행을 v2로 전환"]
+    C --> D["v1 실행 종료 확인"]
+    D --> E["v1 제거"]
 ```
 
 개발용 force 재등록이나 테스트의 고정 NGINX URI를 운영 무중단 배포 방식으로 복사하지 않는다. 개발 reset은 journal까지 삭제하므로 보존할 실행이 없는 환경에서만 사용한다.
@@ -82,7 +88,7 @@ v1 실행 유지 → v2 endpoint 등록 → 신규 실행 전환 → v1 실행 �
 
 리프레시 토큰 교체와 로그아웃에는 Redis에 저장한 세션 상태가 필요하다. 현재 토큰의 해시만 원자적으로 바꾸고 이전 토큰의 재사용은 거절한다. 토큰의 교체 이력을 추적하거나 이메일별로 로그인을 잠그지는 않는다. 과거 리프레시 토큰을 재사용했다는 이유로 현재 세션을 모두 폐기하지도 않는다.
 
-데모의 Route Handler는 쿠키를 API 요청으로 전달하는 앱 코드이며, 화면별 응답을 조합하는 View와 역할이 다르다. 이를 common의 재사용 BFF 프레임워크로 키우지 않는다. IP 헤더와 쿠키 설정을 운영에 적용하려면 [apps의 조건](../apps.md#데모와-bff)을 따른다.
+데모의 Route Handler는 쿠키를 API 요청으로 전달하는 앱 코드이며, 화면별 응답을 조합하는 View와 역할이 다르다. 이를 common의 재사용 BFF 프레임워크로 키우지 않는다. IP 헤더와 쿠키 설정을 운영에 적용하려면 [apps의 조건](../apps/README.md#데모와-bff)을 따른다.
 
 ## 검증의 강도와 의미
 
@@ -90,7 +96,7 @@ v1 실행 유지 → v2 endpoint 등록 → 신규 실행 전환 → v1 실행 �
 
 100%가 단언의 의미나 동시 요청의 안전성까지 증명하지는 않는다. 방어 분기와 커버리지 제외를 다루는 방법은 [테스트 작성 규칙](conventions.md#테스트는-한-행동의-결과를-검증한다)을 따른다.
 
-API는 실제 인프라와의 통합을 검증한다. 데모는 프록시의 unit suite를 별도로 크게 유지하기보다 브라우저에서 실제 화면·쿠키·API의 연결을 확인한다. 프로세스 간 HTTP·SSE 경쟁은 API 복제본 4개로 검증하고, 간헐 실패는 반복 CI로 찾는다. 검증 범위와 한계, 필수 검사와 반복 CI의 관계는 [tests](../tests.md)를 따른다.
+API는 실제 인프라와의 통합을 검증한다. 데모는 프록시의 unit suite를 별도로 크게 유지하기보다 브라우저에서 실제 화면·쿠키·API의 연결을 확인한다. 프로세스 간 HTTP·SSE 경쟁은 API 복제본 4개로 검증하고, 간헐 실패는 반복 CI로 찾는다. 검증 범위와 한계, 필수 검사와 반복 CI의 관계는 [tests](../tests/README.md)를 따른다.
 
 테스트 수나 반복 횟수만으로 과잉 여부를 판단하지 않고, 검증하는 동작과 실행 비용을 함께 본다.
 
@@ -98,7 +104,7 @@ API는 실제 인프라와의 통합을 검증한다. 데모는 프록시의 uni
 
 공식 개발 경로는 Dev Container로 통일한다. 개발자마다 MongoDB Replica Set·Redis Cluster·S3·NATS·Restate의 버전과 설정이 달라지는 것을 막기 위해서다. Redis Cluster의 다중 키 제한처럼 standalone에서는 드러나지 않는 제약도 개발 중 확인한다.
 
-Node는 네이티브 Temporal을 사용하는 26 계열을 유지한다. TypeScript 버전은 사용처별로 고정한다. legacy compiler API에 의존하는 앱·도구까지 일괄적으로 같은 major 버전으로 올리지 않기 위해서다. 인프라 구성과 reset의 삭제 범위는 [infra](../infra.md), 환경 변수 주입과 호스트 Docker 사용(DooD)은 [Dev Container](../devcontainer.md)를 참고한다.
+Node는 네이티브 Temporal을 사용하는 26 계열을 유지한다. TypeScript 버전은 사용처별로 고정한다. legacy compiler API에 의존하는 앱·도구까지 일괄적으로 같은 major 버전으로 올리지 않기 위해서다. 인프라 구성과 reset의 삭제 범위는 [infra](../infra/README.md), 환경 변수 주입과 호스트 Docker 사용(DooD)은 [Dev Container](../.devcontainer/README.md)를 참고한다.
 
 활성화된 API 로그는 한 줄의 ECS JSON으로 stdout/stderr에 출력한다. 컨테이너 안에 별도 로그 파일을 만들어 중복으로 회전시키지 않는다. 검증 스택은 Docker에서 로그 파일 크기를 제한하고 회전시킨다. 장기 저장·검색 시스템은 실제 배포 환경에 맞춰 선택한다. 실행 중 남기는 요청 로그에는 요청·응답 본문과 query를 포함하지 않는다.
 

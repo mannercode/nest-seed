@@ -1,6 +1,6 @@
 # 개발 규칙
 
-자동 포맷으로 정할 수 없는 이름·공개 계약·오류·테스트의 작성 기준이다. 코드 배치는 [apps](../apps.md), 공통화 범위는 [libs](../libs.md)를 따른다.
+자동 포맷으로 정할 수 없는 이름·공개 계약·오류·테스트의 작성 기준이다. 코드 배치는 [apps](../apps/README.md), 공통화 범위는 [libs](../libs/README.md)를 따른다.
 
 ## 이름은 동작과 계약을 설명한다
 
@@ -37,7 +37,7 @@ findByPurchaseRecordId({ purchaseRecordId })
 
 객체·유니온은 기본적으로 `type`으로 선언한다. 클래스가 구현할 계약을 선언하거나 선언 병합이 필요하면 `interface`를 쓴다.
 
-HTTP 요청·응답과 JSON에서 복원할 데이터는 Zod 스키마로 정의하고 `z.infer`로 타입을 얻는다. 타입 이름은 `Dto`, 실행 시 검사·변환에 쓸 스키마 이름은 `Schema`로 끝낸다. [극장 생성 DTO](../../apps/api/src/services/core/theaters/dtos/create-theater.dto.ts)가 그 예다.
+HTTP 요청·응답과 JSON에서 복원할 데이터는 Zod 스키마로 정의하고 `z.infer`로 타입을 얻는다. 타입 이름은 `Dto`, 실행 시 검사·변환에 쓸 스키마 이름은 `Schema`로 끝낸다. [극장 생성 DTO](../apps/api/src/services/core/theaters/dtos/create-theater.dto.ts)가 그 예다.
 
 ```ts
 export type CreateTheaterDto = z.infer<typeof CreateTheaterSchema>
@@ -47,7 +47,7 @@ export type CreateTheaterDto = z.infer<typeof CreateTheaterSchema>
 
 JSON 본문의 숫자·불리언·문자열은 선언한 타입으로 받는다. 쿼리 숫자나 날짜처럼 변환이 필요한 필드만 명시적으로 변환한다. 수정 필드를 생략하면 기존 값을 유지하며, `null`은 실제 모델이 허용할 때만 받는다.
 
-JSON 복원과 HTTP 테스트에서 스키마를 사용하는 방법은 [공유 패키지의 JSON과 DTO 복원](../libs.md#4-json과-dto-복원)을 따른다.
+JSON 복원과 HTTP 테스트에서 스키마를 사용하는 방법은 [공유 패키지의 JSON과 DTO 복원](../libs/README.md#4-json과-dto-복원)을 따른다.
 
 ## Import와 공개 경계
 
@@ -65,7 +65,7 @@ import { UsersService } from '#core'
 
 백엔드는 Node의 ESM과 TypeScript의 NodeNext 설정을 사용한다. 상대 import의 `.js`는 빌드 후 Node가 읽을 파일을 가리키며 TypeScript는 대응하는 `.ts`를 검사한다. 패키지 이름과 `#core` 같은 별칭에는 확장자를 붙이지 않는다. 디렉터리 import 대신 `index.js`를 명시하고 타입만 참조할 때는 `import type`을 사용한다.
 
-ESM 패키지 안의 CommonJS 도구는 `.cjs`, ESM 형식을 명시할 도구는 `.mjs`를 쓴다. CommonJS 패키지에서는 `.js` 도구도 CommonJS로 실행된다. common의 peer dependency 설치와 SDK 호출 경계는 [공유 패키지](../libs.md#2-common은-연동-구현을-소유한다)를 따른다.
+ESM 패키지 안의 CommonJS 도구는 `.cjs`, ESM 형식을 명시할 도구는 `.mjs`를 쓴다. CommonJS 패키지에서는 `.js` 도구도 CommonJS로 실행된다. common의 peer dependency 설치와 SDK 호출 경계는 [공유 패키지](../libs/README.md#2-common은-연동-구현을-소유한다)를 따른다.
 
 ## 오류와 불변식
 
@@ -110,6 +110,6 @@ API spec에서는 `createAppTestContext`와 공통 훅이 앱을 준비하고 �
 
 ## 실행과 커밋
 
-개발자와 CI는 루트의 package script로 실행한다. 각 workspace는 지원하는 `dev`, `build`, `test`, `lint`, `format`, `atoz` 명령을 같은 뜻으로 제공한다. 실제 검사 범위는 각 package script에서, 명령별 사용법은 [README의 실행 안내](../../README.md#실행과-검증)에서 확인한다.
+개발자와 CI는 루트의 package script로 실행한다. 각 workspace는 지원하는 `dev`, `build`, `test`, `lint`, `format`, `atoz` 명령을 같은 뜻으로 제공한다. 실제 검사 범위는 각 package script에서, 명령별 사용법은 [README의 실행 안내](../README.md#실행과-검증)에서 확인한다.
 
 커밋 메시지는 Conventional Commits의 `type(scope): subject` 형식으로 변경 의도를 쓴다. 허용하는 type과 커밋 hook의 동작은 commitlint·lint-staged 설정에서 확인한다.

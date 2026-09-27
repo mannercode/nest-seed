@@ -1,8 +1,8 @@
 # libs/ — 공유 패키지
 
-다른 NestJS 프로젝트에서도 사용할 공통 코드와 테스트 도구를 둔다. 영화·상영·구매 같은 업무 규칙은 앱에 구현한다. 개별 API의 사용법은 타입과 JSDoc에서, 도구를 선택한 이유는 [설계 결정](reference/decisions.md)에서 확인한다.
+다른 NestJS 프로젝트에서도 사용할 공통 코드와 테스트 도구를 둔다. 영화·상영·구매 같은 업무 규칙은 앱에 구현한다. 개별 API의 사용법은 타입과 JSDoc에서, 도구를 선택한 이유는 [설계 결정](../docs/decisions.md)에서 확인한다.
 
-이 폴더에는 [재사용 라이브러리 변경·검토 기준](reference/project-review.md#영역별-판단-기준)을 적용한다. 현재 시드의 사용처에 한정하지 않고 여러 프로젝트가 의존하는 라이브러리의 공개 계약을 기준으로 판단한다.
+이 폴더에는 [재사용 라이브러리 변경·검토 기준](../docs/project-review.md#영역별-판단-기준)을 적용한다. 현재 시드의 사용처에 한정하지 않고 여러 프로젝트가 의존하는 라이브러리의 공개 계약을 기준으로 판단한다.
 
 ## 1. 코드가 실행되는 곳으로 나눈다
 
@@ -12,7 +12,7 @@
 | `libs/testing`         | spec과 fixture가 import하는 HTTP client·테스트 context |
 | `tools/vitest-helpers` | 소스 변환 전에 실행되는 Vitest 준비·정리               |
 
-앱은 `testing`을 개발 의존성으로만 설치한다. Vitest 준비·정리 도구는 라이브러리를 빌드하기 전에도 실행할 수 있도록 [tools](tools.md)에 둔다.
+앱은 `testing`을 개발 의존성으로만 설치한다. Vitest 준비·정리 도구는 라이브러리를 빌드하기 전에도 실행할 수 있도록 [tools](../tools/README.md)에 둔다.
 
 ## 2. common은 연동 구현을 소유한다
 
@@ -39,7 +39,7 @@ NATS 종료 훅은 새 handler의 실행을 막고 이미 실행 중인 handler�
 
 `withLockBlocking`은 `waitMs` 안에서만 콜백을 시작한다. 기한이 지나면 늦게 획득한 락도 해제하고 503 예외를 던지며, `waitMs`가 0이면 획득을 시도하지 않는다. 기한 전에 시작한 콜백의 실행 시간은 제한하지 않는다.
 
-`generateUuid` 같은 래퍼를 두는 이유와 공통화 기준은 [설계 결정](reference/decisions.md#nestjs와-모듈-경계)을 따른다.
+`generateUuid` 같은 래퍼를 두는 이유와 공통화 기준은 [설계 결정](../docs/decisions.md#nestjs와-모듈-경계)을 따른다.
 
 ## 3. 저장소 ID와 트랜잭션
 
@@ -64,7 +64,7 @@ ObjectId 문자열은 대소문자 구분 없이 같은 ID로 취급한다. 같�
 
 JSON은 `JSON.parse`로 읽고 날짜·시점으로 복원할 필드를 DTO 스키마에 명시한다. 문자열 모양이나 숫자 크기로 타입을 추측하지 않는다. 정밀도를 보존해야 하는 큰 정수는 JSON 문자열로 주고받는다.
 
-`JsonUtil.stringify`와 HTTP 응답은 Instant를 밀리초가 3자리인 UTC 문자열로, PlainDate를 날짜 문자열로 내보낸다. Restate도 같은 JSON 형식으로 저장하고 workflow 입력과 step의 DTO 결과, 최종 결과를 각 스키마로 복원한다. step 이름·순서·저장 형식을 바꿀 때는 [기존 journal과의 배포 호환 조건](reference/decisions.md#배포-revision)을 따른다.
+`JsonUtil.stringify`와 HTTP 응답은 Instant를 밀리초가 3자리인 UTC 문자열로, PlainDate를 날짜 문자열로 내보낸다. Restate도 같은 JSON 형식으로 저장하고 workflow 입력과 step의 DTO 결과, 최종 결과를 각 스키마로 복원한다. step 이름·순서·저장 형식을 바꿀 때는 [기존 journal과의 배포 호환 조건](../docs/decisions.md#배포-revision)을 따른다.
 
 PlainDate 객체는 입력·저장·직렬화·UTC 날짜 계산에서 같은 날짜의 ISO 달력으로 정규화한다. 달력 식별자는 보존하지 않는다. 문자열 입력은 달력 주석 없는 ISO 날짜만 받는다.
 

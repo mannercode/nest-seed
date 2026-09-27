@@ -12,7 +12,13 @@ services:
             - --exclude-path
             - 'docs/backup/(before-reduction/|recovered/2026-)'
             - '*.md'
+            - '.devcontainer/README.md'
+            - 'apps/README.md'
             - 'docs/**/*.md'
+            - 'infra/README.md'
+            - 'libs/README.md'
+            - 'tests/README.md'
+            - 'tools/README.md'
 
     k6:
         profiles: [benchmark]

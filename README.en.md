@@ -24,9 +24,11 @@ Read each implementation alongside its [API integration test](apps/api/src/__tes
 
 ## Getting started
 
+The provided infrastructure and execution setup are for development and verification.
+
 When forking for a new project, replace the project name `nest-seed` and organization name `mannercode`, including the `@mannercode/*` package scope, with your own names.
 
-The supported development environment is the Dev Container. Open the repository on a Docker host through VS Code Remote SSH and use the Dev Containers extension. The [development environment guide](docs/devcontainer.md) explains why the workspace must have the same absolute path on the host and inside the container.
+The supported development environment is the Dev Container. Open the repository on a Docker host through VS Code Remote SSH and use the Dev Containers extension. The [development environment guide](.devcontainer/README.md) explains why the workspace must have the same absolute path on the host and inside the container.
 
 1. Run `Reopen in Container` in VS Code. Startup installs dependencies and resets the development infrastructure.
 2. Run `pnpm run test` in the container terminal.
@@ -36,7 +38,7 @@ The supported development environment is the Dev Container. Open the repository 
 
 Dev Container startup, `bash infra/reset.sh`, and `pnpm run atoz` delete development data. Do not run them in an environment where DB data, S3 files, the Restate journal, or JetStream events must survive. Resets also recreate the development admin.
 
-The root `.env.api` and `.env.infra` files contain committed development and verification settings. After editing either file, recreate the Dev Container to apply the changes. Inject production secrets outside the repository. The [development environment guide](docs/devcontainer.md) explains each file's role and how its values are injected.
+The root `.env.api` and `.env.infra` files contain committed development and verification settings. After editing either file, recreate the Dev Container to apply the changes. Inject production secrets outside the repository. The [development environment guide](.devcontainer/README.md) explains each file's role and how its values are injected.
 
 ## Running and verifying
 
@@ -53,7 +55,7 @@ Run these commands from the repository root inside the Dev Container. Each comma
 | `pnpm run race <scenario>` | Run HTTP/SSE contention or replica termination scenarios across API replicas |
 | `pnpm run benchmark`       | Compare API performance under the same conditions                            |
 
-Race and benchmark runs are not part of the default test or AtoZ commands. Concurrent runs of the same API Vitest command are unsupported. The 100% coverage requirement exposes code paths that tests have not executed; repeated CI runs look for intermittent failures. The [tests guide](docs/tests.md) explains what each suite verifies.
+Race and benchmark runs are not part of the default test or AtoZ commands. Concurrent runs of the same API Vitest command are unsupported. The 100% coverage requirement exposes code paths that tests have not executed; repeated CI runs look for intermittent failures. The [tests guide](tests/README.md) explains what each suite verifies.
 
 ### Running selected tests
 
@@ -75,7 +77,7 @@ The specs contain requests, and the execution logs contain actual responses. The
 
 `pnpm run race` lists race scenarios, and `pnpm run e2e:list` lists browser tests. Use `pnpm run e2e:ui` to select and run browser tests interactively.
 
-When changing the Playwright version, update Chromium and its required OS packages too. Follow the [development environment guide](docs/devcontainer.md#3-시작-순서와-데이터-수명) to rebuild the Dev Container. Dev Container startup and AtoZ install Chromium. To reinstall Chromium alone, run:
+When changing the Playwright version, update Chromium and its required OS packages too. Follow the [development environment guide](.devcontainer/README.md#3-시작-순서와-데이터-수명) to rebuild the Dev Container. Dev Container startup and AtoZ install Chromium. To reinstall Chromium alone, run:
 
 ```bash
 pnpm --filter './tests/web' exec playwright install chromium
@@ -94,22 +96,17 @@ Find the failed iteration of a repeated CI run by its `[Run i/N]` marker. For AP
 
 The API follows SoLA dependencies from Gateway → View → Application → Core → Infrastructure. A layer can call a lower layer directly without passing through intermediate layers. A higher layer combines modules from the same lower layer. CRUD within a single Core does not need an Application layer.
 
-MongoDB handles data storage and transactions; Redis handles seat holds and refresh sessions. NATS delivers real-time messages, JetStream preserves messages for later processing, and Restate resumes interrupted work. SDK connections and calls live in common; business queries, policies, and workflow steps live in the API. See [design decisions](docs/reference/decisions.md) for the reasons and limitations.
+MongoDB handles data storage and transactions; Redis handles seat holds and refresh sessions. NATS delivers real-time messages, JetStream preserves messages for later processing, and Restate resumes interrupted work. SDK connections and calls live in common; business queries, policies, and workflow steps live in the API. See [design decisions](docs/decisions.md) for the reasons and limitations.
 
-| Location         | Guide                                                                          |
-| ---------------- | ------------------------------------------------------------------------------ |
-| `apps/`          | [Module boundaries, business flows, authentication, and DTOs](docs/apps.md)    |
-| `libs/`          | [Shared code and public contracts](docs/libs.md)                               |
-| `tests/`         | [Scope of multi-process, browser, and performance verification](docs/tests.md) |
-| `infra/`         | [Development infrastructure and what reset removes](docs/infra.md)             |
-| `tools/`         | [Development and test execution tools](docs/tools.md)                          |
-| `.devcontainer/` | [Development environment and env injection](docs/devcontainer.md)              |
+### Main directories at the repository root
 
-Follow the [development conventions](docs/reference/conventions.md) when writing code and the [project change and review criteria](docs/reference/project-review.md) when assessing changes. Keep tasks and unresolved reviews in the root `_todo/` directory.
+| Directory                        | Guide                                                                            |
+| -------------------------------- | -------------------------------------------------------------------------------- |
+| [.devcontainer/](.devcontainer/) | [Development environment and env injection](.devcontainer/README.md)             |
+| [apps/](apps/)                   | [Module boundaries, business flows, authentication, and DTOs](apps/README.md)    |
+| [infra/](infra/)                 | [Development infrastructure and what reset removes](infra/README.md)             |
+| [libs/](libs/)                   | [Shared code and public contracts](libs/README.md)                               |
+| [tests/](tests/)                 | [Scope of multi-process, browser, and performance verification](tests/README.md) |
+| [tools/](tools/)                 | [Development and test execution tools](tools/README.md)                          |
 
-## Production scope
-
-The provided infrastructure and execution setup are for development and verification. They do not include production TLS, backups, monitoring, or zero-downtime deployment.
-
-- To forward user IP addresses through the demos, the proxy must supply the actual connection IP, and direct access that bypasses it must be blocked. Follow the [client IP forwarding setup](docs/apps.md#데모와-bff).
-- When deploying workflow code while purchases or showtime creations are still running, keep the previous code available until those executions finish. Follow the [deployment procedure for preserving running workflows](docs/reference/decisions.md#배포-revision).
+Follow the [development conventions](docs/conventions.md) when writing code and the [project change and review criteria](docs/project-review.md) when assessing changes. Keep tasks and unresolved reviews in the root `_todo/` directory.

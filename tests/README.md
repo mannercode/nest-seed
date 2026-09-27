@@ -4,16 +4,19 @@ API와 라이브러리의 기본 동작은 각 workspace의 통합 테스트에�
 
 ## API 스택과 수명
 
-[API Compose](../tests/api/compose.yml)는 API 문서·race·benchmark가 사용하는 API 복제본 4개와 NGINX를 띄우고 기존 개발 인프라에 연결한다. 프로세스를 나눠 실행해야 동시 요청을 처리할 때 로컬 메모리에만 의존하는지, Redis·DB·NATS를 통해 다른 프로세스와 협력하는지 구분할 수 있다.
+[API Compose](api/compose.yml)는 API 문서·race·benchmark가 사용하는 API 복제본 4개와 NGINX를 띄우고 기존 개발 인프라에 연결한다. 프로세스를 나눠 실행해야 동시 요청을 처리할 때 로컬 메모리에만 의존하는지, Redis·DB·NATS를 통해 다른 프로세스와 협력하는지 구분할 수 있다.
 
-```text
-HTTP/SSE client → NGINX → API 복제본 4개 → 개발 인프라
-Restate         → NGINX의 HTTP/2 endpoint → API 복제본 4개
+```mermaid
+flowchart TB
+    Client["HTTP/SSE client"] -->|HTTP / SSE| Nginx["NGINX"]
+    Restate["Restate"] -->|workflow 실행 · HTTP/2| Nginx
+    Nginx --> API["API 복제본 4개"]
+    API --> Infra["개발 인프라"]
 ```
 
 이 스택은 운영 배포 예제가 아니다. TLS·secret 관리·백업/복구·관측 시스템·프론트엔드 배포·무중단 revision 전환은 제공하지 않는다.
 
-환경 변수는 [개발 환경의 주입 방식](devcontainer.md#1-환경-변수는-재생성해야-반영된다)을 따른다. 실행기는 Dev Container에 설정된 고정 개발 관리자 계정으로 로그인하므로, infra reset이 생성한 계정이 준비되어 있어야 한다. 스택을 종료하면 API·NGINX만 정리한다. DB·bucket·journal은 별도 [infra reset](infra.md)으로 초기화하며, benchmark가 만든 데이터도 스택 종료 후 남는다.
+환경 변수는 [개발 환경의 주입 방식](../.devcontainer/README.md#1-환경-변수는-재생성해야-반영된다)을 따른다. 실행기는 Dev Container에 설정된 고정 개발 관리자 계정으로 로그인하므로, infra reset이 생성한 계정이 준비되어 있어야 한다. 스택을 종료하면 API·NGINX만 정리한다. DB·bucket·journal은 별도 [infra reset](../infra/README.md)으로 초기화하며, benchmark가 만든 데이터도 스택 종료 후 남는다.
 
 API 문서·benchmark·web 실행기는 검증 명령이 실패하면 그 종료 코드를 반환한다. 검증이 성공해도 스택 정리에 실패하면 실행 전체를 실패로 처리한다.
 
@@ -59,9 +62,9 @@ race가 실패하면 실행기가 스택을 정리하기 전에 컨테이너 로
 
 HTTP `/health`가 성공해도 Restate의 workflow 등록은 따로 필요하다. 실행기는 API와 NGINX가 healthy 상태가 된 후 `restate-register`를 실행한다. 개별 복제본 주소 대신 고정된 `http://nginx:9080`을 등록해 workflow 실행 요청을 API 복제본에 전달한다.
 
-API의 HTTP 포트나 Restate 내부 포트를 바꾸면 환경 변수뿐 아니라 [NGINX upstream](../tests/api/nginx.conf)과 Compose의 등록 URI도 함께 맞춘다.
+API의 HTTP 포트나 Restate 내부 포트를 바꾸면 환경 변수뿐 아니라 [NGINX upstream](api/nginx.conf)과 Compose의 등록 URI도 함께 맞춘다.
 
-등록에는 `force: false`를 사용하므로 같은 URI의 코드·manifest만 바꿔서는 기존 배포 정의가 교체되지 않는다. 보존할 작업이 없는 개발 환경에서는 infra reset으로 초기화할 수 있지만, journal도 삭제되므로 운영 revision 전환에는 사용하지 않는다. 진행 중인 작업을 보존하는 배포 조건은 [설계 결정](reference/decisions.md)에서 설명한다.
+등록에는 `force: false`를 사용하므로 같은 URI의 코드·manifest만 바꿔서는 기존 배포 정의가 교체되지 않는다. 보존할 작업이 없는 개발 환경에서는 infra reset으로 초기화할 수 있지만, journal도 삭제되므로 운영 revision 전환에는 사용하지 않는다. 진행 중인 작업을 보존하는 배포 조건은 [설계 결정](../docs/decisions.md)에서 설명한다.
 
 ## 브라우저 E2E와 데모
 
@@ -69,7 +72,7 @@ web 테스트는 production build한 console·user-app과 API를 Compose로 실�
 
 console의 로그인·영화/극장/사용자 관리와 user-app의 가입·로그인·홈 조회, 쿠키 전달·갱신·로그아웃을 검증한다. 예매·구매 전체 UI는 검증 대상이 아니다. API 통합 테스트와 같은 행동을 검사하더라도 브라우저 테스트에서는 실제 화면·BFF·쿠키가 API와 함께 동작하는지 확인한다.
 
-web Compose는 내부 HTTP를 사용하므로 쿠키의 Secure 속성을 끈다. 테스트가 신뢰할 수 있는 프록시 역할을 하도록 전달 헤더 신뢰 설정도 켠다. 이 설정을 운영 기본값으로 복사하지 않는다. 테스트에서 IP 헤더를 전달하는 것만으로는 실제 공개 프록시의 헤더 재구성이나 원본 서버(origin)로의 직접 접근 차단을 검증할 수 없다. 운영에 적용할 조건은 [apps 가이드](apps.md)에 있다.
+web Compose는 내부 HTTP를 사용하므로 쿠키의 Secure 속성을 끈다. 테스트가 신뢰할 수 있는 프록시 역할을 하도록 전달 헤더 신뢰 설정도 켠다. 이 설정을 운영 기본값으로 복사하지 않는다. 테스트에서 IP 헤더를 전달하는 것만으로는 실제 공개 프록시의 헤더 재구성이나 원본 서버(origin)로의 직접 접근 차단을 검증할 수 없다. 운영에 적용할 조건은 [apps 가이드](../apps/README.md)에 있다.
 
 web 실행기는 `${COMPOSE_PROJECT_NAME}-web` 프로젝트의 앱만 종료한다.
 

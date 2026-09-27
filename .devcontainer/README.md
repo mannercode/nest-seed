@@ -4,9 +4,16 @@
 
 ## 1. 환경 변수는 재생성해야 반영된다
 
-루트 [.env.infra](../.env.infra)에는 인프라 접속 정보·이미지·포트·개발 관리자 계정을, [.env.api](../.env.api)에는 인증·HTTP·업무 설정을 둔다. 두 파일의 값은 Dev Container를 **만들 때** 환경 변수로 전달되며 pnpm·앱·테스트가 상속한다. 값을 바꿨다면 **Rebuild Container로 재생성한다.** 앱이나 컨테이너를 재시작하는 것만으로는 반영되지 않는다.
+루트 [.env.infra](../.env.infra)에는 인프라 접속 정보·이미지·포트·개발 관리자 계정을, [.env.api](../.env.api)에는 인증·HTTP·업무 설정을 둔다.
 
-API와 reset·API 테스트 실행기는 루트 env 파일을 다시 읽지 않는다. API는 전달받은 환경 변수를 검증한다. API/web Compose는 새 앱 컨테이너에 두 파일을 전달할 때 `env_file`의 `format: raw`를 사용한다.
+```mermaid
+flowchart TB
+    Files[".env.infra · .env.api"] -->|Dev Container 생성 시| Container["Dev Container 환경 변수"]
+    Container -->|상속| Processes["pnpm · 앱 · 테스트 · reset"]
+    Files -->|"API/web Compose · env_file (format: raw)"| API["검증 스택의 API 컨테이너"]
+```
+
+값을 바꿨다면 **Rebuild Container로 재생성한다.** 앱이나 컨테이너를 재시작하는 것만으로는 반영되지 않는다. API와 reset·API 테스트 실행기는 루트 env 파일을 다시 읽지 않는다. API는 전달받은 환경 변수를 검증한다.
 
 이 방식에서는 `$`와 따옴표도 값의 일부다. 셸 문법처럼 다른 변수를 참조하거나 값을 따옴표로 감싸지 않는다.
 
@@ -37,7 +44,16 @@ PASSWORD=secret
 
 ## 3. 시작 순서와 데이터 수명
 
-의존성 설치 → lockfile 버전에 맞는 Chromium 설치 → [인프라 reset](infra.md#2-시작과-reset의-범위)이 순서대로 끝난 뒤 앱을 실행한다. workspace를 bind mount하면 이미지의 같은 경로가 가려지므로 프로젝트 의존성은 이미지에 미리 설치하지 않는다.
+Dev Container는 다음 순서로 준비한다. [인프라 reset](../infra/README.md#2-시작과-reset의-범위)까지 성공한 뒤 앱을 실행한다.
+
+```mermaid
+flowchart TB
+    Dependencies["의존성 설치"] --> Chromium["lockfile 버전에 맞는 Chromium 설치"]
+    Chromium --> Reset["인프라 reset"]
+    Reset --> App["앱 실행 가능"]
+```
+
+workspace를 bind mount하면 이미지의 같은 경로가 가려지므로 프로젝트 의존성은 이미지에 미리 설치하지 않는다.
 
 브라우저 실행에 필요한 OS 패키지는 이미지 빌드에서 설치한다. Playwright 버전을 변경하면 Dev Container도 다시 빌드해 Chromium과 OS 패키지 버전을 맞춘다.
 
