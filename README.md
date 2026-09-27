@@ -1,6 +1,6 @@
 # nest-seed
 
-NestJS 기반 백엔드 프로젝트를 위한 시작 템플릿이다. `apps/api`가 중심 API이고 `libs/`에는 다른 NestJS 프로젝트에서도 사용할 공통 코드가 있다. 영화 예매 예제로 모듈 간 협력, 데이터 정합성, 외부 서비스 연동을 설명한다. `console`과 `user-app`은 API에 연결하는 작은 Next.js 데모다.
+NestJS 기반 백엔드 프로젝트를 위한 시작 템플릿이다. `apps/api`가 중심 API이고 `libs/`에는 다른 NestJS 프로젝트에서도 사용할 공통 코드가 있다. [영화 예매 예제](apps/api/README.md#예제-살펴보기)로 모듈 간 협력, 데이터 정합성, 외부 서비스 연동을 설명한다. `console`과 `user-app`은 API에 연결하는 작은 Next.js 데모다.
 
 ## 시작하기
 
@@ -19,20 +19,6 @@ NestJS 기반 백엔드 프로젝트를 위한 시작 템플릿이다. `apps/api
 Dev Container 시작, `bash infra/reset.sh`, `pnpm run atoz`는 개발 데이터를 지운다. DB·S3 파일·Restate journal·JetStream 이벤트를 보존할 환경에서 실행하지 않는다. 초기화 뒤 개발 admin도 다시 만들어진다.
 
 루트 `.env.api`와 `.env.infra`에는 개발·검증용 설정값이 커밋되어 있다. 이 파일을 수정한 뒤에는 Dev Container를 재생성해야 변경한 값이 반영된다. 운영 secret은 저장소 밖에서 주입한다. 파일별 역할과 주입 방법은 [개발 환경](.devcontainer/README.md)에 있다.
-
-## 예제 살펴보기
-
-단순 CRUD부터 시작해 모듈 조합과 비동기 처리를 차례로 살펴본다.
-
-| 읽을 코드                                                                 | 보여 주는 것                                 |
-| ------------------------------------------------------------------------- | -------------------------------------------- |
-| [theaters](apps/api/src/services/core/theaters/)                          | 서비스·저장소·DTO의 기본 구성                |
-| [booking](apps/api/src/services/application/booking/)                     | 여러 도메인의 공개 API를 조합하는 유스케이스 |
-| [home](apps/api/src/services/view/user-app/home/)                         | 화면에 필요한 읽기 응답 조합                 |
-| [showtime-creation](apps/api/src/services/application/showtime-creation/) | 비동기 접수, Restate 실행, DB 트랜잭션과 SSE |
-| [purchase](apps/api/src/services/application/purchase/)                   | 한 상영의 티켓 구매, 멱등성·보상·완료 알림   |
-
-각 코드와 같은 이름의 [API 통합 테스트](apps/api/src/__tests__/)를 함께 읽으면 허용하는 입력, 응답 형태, 저장 결과를 확인할 수 있다. 실제 결제 대행사(PG) 연동, 여러 상영관을 갖는 극장 모델, 예매 전체 UI는 구현하지 않는다.
 
 ## 실행과 검증
 

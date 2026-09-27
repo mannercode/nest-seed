@@ -8,7 +8,7 @@
 
 _This is a translation of [README.md](README.md). The Korean original is authoritative; the other guides and code comments are in Korean._
 
-A starter template for NestJS backend projects. `apps/api` is the main API, and `libs/` contains common code for use in other NestJS projects. The movie-booking example demonstrates cooperation between modules, data consistency, and external service integration. `console` and `user-app` are small Next.js demos connected to the API.
+A starter template for NestJS backend projects. `apps/api` is the main API, and `libs/` contains common code for use in other NestJS projects. The [movie-booking example](apps/api/README.md#예제-살펴보기) demonstrates cooperation between modules, data consistency, and external service integration. `console` and `user-app` are small Next.js demos connected to the API.
 
 ## Getting started
 
@@ -27,20 +27,6 @@ The supported development environment is the Dev Container. Open the repository 
 Dev Container startup, `bash infra/reset.sh`, and `pnpm run atoz` delete development data. Do not run them in an environment where DB data, S3 files, the Restate journal, or JetStream events must survive. Resets also recreate the development admin.
 
 The root `.env.api` and `.env.infra` files contain committed development and verification settings. After editing either file, recreate the Dev Container to apply the changes. Inject production secrets outside the repository. The [development environment guide](.devcontainer/README.md) explains each file's role and how its values are injected.
-
-## Exploring the example
-
-Start with simple CRUD, then explore module composition and asynchronous processing.
-
-| Code to read                                                              | What it demonstrates                                                                     |
-| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| [theaters](apps/api/src/services/core/theaters/)                          | Basic service, repository, and DTO structure                                             |
-| [booking](apps/api/src/services/application/booking/)                     | A use case that combines public APIs from several domains                                |
-| [home](apps/api/src/services/view/user-app/home/)                         | Combining reads for a screen-specific response                                           |
-| [showtime-creation](apps/api/src/services/application/showtime-creation/) | Asynchronous submission, Restate execution, DB transactions, and SSE                     |
-| [purchase](apps/api/src/services/application/purchase/)                   | Buying tickets for one showtime, idempotency, compensation, and completion notifications |
-
-Read each implementation alongside its [API integration test](apps/api/src/__tests__/) of the same name to check accepted inputs, response shapes, and stored results. Integration with a real payment provider, a cinema model with multiple screening rooms, and a complete booking UI are outside the scope of this seed.
 
 ## Running and verifying
 
