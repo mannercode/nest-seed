@@ -2,6 +2,20 @@
 
 NestJS로 구현한 영화 예매 API다. 실행 방법은 [루트 README](../../README.md#실행과-검증), API의 동작과 보장은 [앱 가이드](../README.md#데이터와-dto)를 따른다. 공통 코드로 옮길지는 [libs 기준](../../libs/README.md)으로 판단한다.
 
+## 예제 살펴보기
+
+단순 CRUD부터 시작해 모듈 조합과 비동기 처리를 차례로 살펴본다.
+
+| 읽을 코드                                                        | 보여 주는 것                                 |
+| ---------------------------------------------------------------- | -------------------------------------------- |
+| [theaters](src/services/core/theaters/)                          | 서비스·저장소·DTO의 기본 구성                |
+| [booking](src/services/application/booking/)                     | 여러 도메인의 공개 API를 조합하는 유스케이스 |
+| [home](src/services/view/user-app/home/)                         | 화면에 필요한 읽기 응답 조합                 |
+| [showtime-creation](src/services/application/showtime-creation/) | 비동기 접수, Restate 실행, DB 트랜잭션과 SSE |
+| [purchase](src/services/application/purchase/)                   | 한 상영의 티켓 구매, 멱등성·보상·완료 알림   |
+
+각 코드와 같은 이름의 [API 통합 테스트](src/__tests__/)를 함께 읽으면 허용하는 입력, 응답 형태, 저장 결과를 확인할 수 있다. 실제 결제 대행사(PG) 연동, 여러 상영관을 갖는 극장 모델, 예매 전체 UI는 구현하지 않는다.
+
 ## SoLA의 모듈 의존 방향
 
 이 API는 모듈을 역할별 계층으로 나누는 SoLA 구조를 사용한다. 하위 계층만 참조하고 같은 계층의 다른 모듈은 직접 참조하지 않아 모듈 간 순환 의존을 피한다. 여러 모듈을 조합하는 작업은 상위 계층에서 맡는다.

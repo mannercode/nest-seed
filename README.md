@@ -1,18 +1,10 @@
 # nest-seed
 
-NestJS 프로젝트를 시작할 때 가져다 쓰고 고칠 수 있는 시드다. `apps/api`가 중심 API이고 `libs/`에는 다른 NestJS 프로젝트에서도 사용할 공통 코드가 있다. 영화 예매 예제로 모듈 간 협력, 데이터 정합성, 외부 서비스 연동을 설명한다. `console`과 `user-app`은 API에 연결하는 작은 Next.js 데모다.
+NestJS 기반 백엔드 프로젝트를 위한 시작 템플릿이다.
 
-단순 CRUD부터 시작해 모듈 조합과 비동기 처리를 차례로 살펴본다.
+`apps/api`가 중심 API이고 `libs/`에는 다른 NestJS 프로젝트에서도 사용할 공통 코드가 있다. `console`과 `user-app`은 API에 연결하는 작은 Next.js 데모다.
 
-| 읽을 코드                                                                 | 보여 주는 것                                 |
-| ------------------------------------------------------------------------- | -------------------------------------------- |
-| [theaters](apps/api/src/services/core/theaters/)                          | 서비스·저장소·DTO의 기본 구성                |
-| [booking](apps/api/src/services/application/booking/)                     | 여러 도메인의 공개 API를 조합하는 유스케이스 |
-| [home](apps/api/src/services/view/user-app/home/)                         | 화면에 필요한 읽기 응답 조합                 |
-| [showtime-creation](apps/api/src/services/application/showtime-creation/) | 비동기 접수, Restate 실행, DB 트랜잭션과 SSE |
-| [purchase](apps/api/src/services/application/purchase/)                   | 한 상영의 티켓 구매, 멱등성·보상·완료 알림   |
-
-각 코드와 같은 이름의 [API 통합 테스트](apps/api/src/__tests__/)를 함께 읽으면 허용하는 입력, 응답 형태, 저장 결과를 확인할 수 있다. 실제 결제 대행사(PG) 연동, 여러 상영관을 갖는 극장 모델, 예매 전체 UI는 구현하지 않는다.
+[영화 예매 예제](apps/api/README.md#예제-살펴보기)로 모듈 간 협력, 데이터 정합성, 외부 서비스 연동을 설명한다.
 
 ## 시작하기
 

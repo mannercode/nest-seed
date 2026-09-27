@@ -8,19 +8,11 @@
 
 _This is a translation of [README.md](README.md). The Korean original is authoritative; the other guides and code comments are in Korean._
 
-A starting point you can copy and adapt for a NestJS project. `apps/api` is the main API, and `libs/` contains common code for use in other NestJS projects. The movie-booking example demonstrates cooperation between modules, data consistency, and external service integration. `console` and `user-app` are small Next.js demos connected to the API.
+A starter template for NestJS backend projects.
 
-Start with simple CRUD, then explore module composition and asynchronous processing.
+`apps/api` is the main API, and `libs/` contains common code for use in other NestJS projects. `console` and `user-app` are small Next.js demos connected to the API.
 
-| Code to read                                                              | What it demonstrates                                                                     |
-| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| [theaters](apps/api/src/services/core/theaters/)                          | Basic service, repository, and DTO structure                                             |
-| [booking](apps/api/src/services/application/booking/)                     | A use case that combines public APIs from several domains                                |
-| [home](apps/api/src/services/view/user-app/home/)                         | Combining reads for a screen-specific response                                           |
-| [showtime-creation](apps/api/src/services/application/showtime-creation/) | Asynchronous submission, Restate execution, DB transactions, and SSE                     |
-| [purchase](apps/api/src/services/application/purchase/)                   | Buying tickets for one showtime, idempotency, compensation, and completion notifications |
-
-Read each implementation alongside its [API integration test](apps/api/src/__tests__/) of the same name to check accepted inputs, response shapes, and stored results. Integration with a real payment provider, a cinema model with multiple screening rooms, and a complete booking UI are outside the scope of this seed.
+The [movie-booking example](apps/api/README.md#예제-살펴보기) demonstrates cooperation between modules, data consistency, and external service integration.
 
 ## Getting started
 
