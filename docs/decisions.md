@@ -10,7 +10,9 @@
 
 ## NestJS와 모듈 경계
 
-SoLA는 하위 계층만 참조하고 같은 계층의 다른 모듈을 직접 참조하지 않는 규칙으로 모듈 간 순환 의존을 피한다. 하나의 Core로 처리할 수 있는 CRUD는 Gateway가 직접 호출하고, 여러 도메인의 협력이 필요할 때 Application이 조합한다. 화면 응답은 View가 도메인 데이터를 읽어 구성하므로 각 도메인은 화면 요구를 알 필요가 없다.
+이 API는 모듈을 역할에 따라 Gateway → View → Application → Core → Infrastructure 계층으로 나누는 [SoLA 구조](../apps/README.md#sola의-모듈-의존-방향)를 사용한다. 하위 계층만 참조하고 같은 계층의 다른 모듈은 직접 참조하지 않아 모듈 간 순환 의존을 피한다.
+
+하나의 Core로 처리할 수 있는 CRUD는 Gateway가 직접 호출하고, 여러 도메인의 협력이 필요할 때 Application이 조합한다. 화면 응답은 View가 도메인 데이터를 읽어 구성하므로 각 도메인은 화면 요구를 알 필요가 없다.
 
 REST API 컨트롤러는 `services/gateway`에 모으고 `AppModule`에 등록한다. 예를 들어 영화 조회와 삭제는 모두 `MoviesHttpController`에서 받는다. 조회는 `MoviesService`에, 삭제는 `MovieDeletionService`에 맡기므로 업무를 처리하는 서비스가 달라도 영화 API의 URL·요청값 검사·인증 설정은 한곳에서 확인할 수 있다.
 
