@@ -3,6 +3,7 @@ import { jetstreamManager } from '@nats-io/jetstream'
 import type { MockInstance } from 'vitest'
 import { withTestId } from '@mannercode/testing'
 import * as testing from '@mannercode/testing'
+import { ensure } from '../../utils/index.js'
 import {
     type NatsPubSubServiceFixture,
     createNatsPubSubServiceFixture
@@ -42,252 +43,313 @@ describe('NatsPubSubService', () => {
     })
     afterEach(() => fix.teardown())
 
-    it('서로 다른 서비스 인스턴스 사이에서 NATS 메시지를 전달한다', async () => {
-        const received: string[] = []
-        await fix.pubSubB.subscribe(subject, (msg) => received.push(msg))
-
-        await fix.pubSubA.publish(subject, 'hello')
-
-        await waitFor(() => received.length > 0)
-        expect(received).toEqual(['hello'])
-    })
-
-    it('한 subject에 구독자가 여러 명 있으면 모두 메시지를 받는다', async () => {
-        const received1: string[] = []
-        const received2: string[] = []
-
-        await fix.pubSubB.subscribe(subject, (msg) => received1.push(msg))
-        await fix.pubSubB.subscribe(subject, (msg) => received2.push(msg))
-
-        await fix.pubSubA.publish(subject, 'payload')
-
-        await waitFor(() => received1.length > 0 && received2.length > 0)
-
-        expect(received1).toEqual(['payload'])
-        expect(received2).toEqual(['payload'])
-    })
-
-    it('동시 구독자는 같은 준비 완료를 기다리고 등록 순서대로 메시지를 받는다', async () => {
-        const connection = (fix.pubSubB as any).connection as NatsConnection
-        const flush = connection.flush.bind(connection)
-        const ready = Promise.withResolvers<void>()
-        vi.spyOn(connection, 'flush').mockImplementationOnce(async () => {
-            await flush()
-            await ready.promise
+    describe('다른 서비스 인스턴스에 구독자가 등록되어 있으면', () => {
+        let received: string[]
+        beforeEach(async () => {
+            received = []
+            await fix.pubSubB.subscribe(subject, (msg) => received.push(msg))
         })
-        const received: string[] = []
-        const completed: string[] = []
-        const first = fix.pubSubB
-            .subscribe(subject, () => received.push('first'))
-            .then(() => completed.push('first'))
-        const second = fix.pubSubB
-            .subscribe(subject, () => received.push('second'))
-            .then(() => completed.push('second'))
+        it('메시지를 발행하면 그 구독자가 수신한다', async () => {
+            await fix.pubSubA.publish(subject, 'hello')
 
-        try {
-            await flush()
-            expect(completed).toEqual([])
-            await fix.pubSubA.publish(subject, 'while-preparing')
-            await waitFor(() => received.length === 2)
-            expect(received).toEqual(['first', 'second'])
-            ready.resolve()
-            await Promise.all([first, second])
-            expect(completed).toEqual(['first', 'second'])
-        } finally {
-            ready.resolve()
-            await Promise.all([first, second])
-        }
+            await waitFor(() => received.length > 0)
+            expect(received).toEqual(['hello'])
+        })
     })
 
-    it('같은 subject의 구독 등록이 실패하면 함께 기다린 호출도 실패하고 다음 호출은 다시 등록한다', async () => {
-        const connection = (fix.pubSubB as any).connection as NatsConnection
-        const failure = new Error('SUB flush failed')
-        vi.spyOn(connection, 'flush').mockRejectedValueOnce(failure)
-        const failedHandler = vi.fn()
-        const results = await Promise.allSettled([
-            fix.pubSubB.subscribe(subject, failedHandler),
-            fix.pubSubB.subscribe(subject, failedHandler)
-        ])
-        expect(results).toEqual([
-            { status: 'rejected', reason: failure },
-            { status: 'rejected', reason: failure }
-        ])
+    describe('같은 subject에 핸들러 두 개가 등록되어 있으면', () => {
+        let firstHandler: (message: string) => void
+        let received1: string[]
+        let received2: string[]
+        beforeEach(async () => {
+            received1 = []
+            received2 = []
 
-        const received: string[] = []
-        await fix.pubSubB.subscribe(subject, (message) => received.push(message))
-        await fix.pubSubA.publish(subject, 'after-failure')
-        await waitFor(() => received.length === 1)
-        expect(received).toEqual(['after-failure'])
-        expect(failedHandler).not.toHaveBeenCalled()
+            firstHandler = (msg) => {
+                received1.push(msg)
+            }
+            await fix.pubSubB.subscribe(subject, firstHandler)
+            await fix.pubSubB.subscribe(subject, (msg) => received2.push(msg))
+        })
+        it('메시지를 발행하면 두 핸들러가 모두 수신한다', async () => {
+            await fix.pubSubA.publish(subject, 'payload')
+
+            await waitFor(() => received1.length > 0 && received2.length > 0)
+
+            expect(received1).toEqual(['payload'])
+            expect(received2).toEqual(['payload'])
+        })
+
+        it('한 핸들러를 해제해도 나머지 핸들러는 메시지를 수신한다', async () => {
+            await fix.pubSubB.unsubscribe(subject, firstHandler)
+
+            await fix.pubSubA.publish(subject, 'still-listening')
+            await waitFor(() => received2.length > 0)
+            expect(received2).toEqual(['still-listening'])
+        })
     })
 
-    it('구독 해제된 핸들러에는 더 이상 메시지가 오지 않는다', async () => {
-        const received: string[] = []
-        const handler = (msg: string) => received.push(msg)
+    describe('구독 등록의 flush 응답이 지연되면', () => {
+        let flush: NatsConnection['flush']
+        let ready: ReturnType<typeof Promise.withResolvers<void>>
+        beforeEach(async () => {
+            const connection = (fix.pubSubB as any).connection as NatsConnection
+            flush = connection.flush.bind(connection)
+            ready = Promise.withResolvers<void>()
+            vi.spyOn(connection, 'flush').mockImplementationOnce(async () => {
+                await flush()
+                await ready.promise
+            })
+        })
+        it('동시에 구독해도 등록 순서대로 수신하고 같은 flush가 끝나야 두 구독이 완료된다', async () => {
+            const received: string[] = []
+            const completed: string[] = []
+            const first = fix.pubSubB
+                .subscribe(subject, () => received.push('first'))
+                .then(() => completed.push('first'))
+            const second = fix.pubSubB
+                .subscribe(subject, () => received.push('second'))
+                .then(() => completed.push('second'))
 
-        await fix.pubSubB.subscribe(subject, handler)
-
-        await fix.pubSubA.publish(subject, 'before-unsub')
-        await waitFor(() => received.length > 0)
-
-        await fix.pubSubB.unsubscribe(subject, handler)
-
-        await fix.pubSubA.publish(subject, 'after-unsub')
-        // "아무 메시지도 오지 않음"을 보장할 신호가 없어 잠깐 대기 후 검사한다.
-        // 부하 시 50ms는 부족하므로 200ms 여유를 둔다.
-        await new Promise((r) => setTimeout(r, 200))
-
-        expect(received).toEqual(['before-unsub'])
+            try {
+                await flush()
+                expect(completed).toEqual([])
+                await fix.pubSubA.publish(subject, 'while-preparing')
+                await waitFor(() => received.length === 2)
+                expect(received).toEqual(['first', 'second'])
+                ready.resolve()
+                await Promise.all([first, second])
+                expect(completed).toEqual(['first', 'second'])
+            } finally {
+                ready.resolve()
+                await Promise.all([first, second])
+            }
+        })
     })
 
-    it('onModuleDestroy 후에는 공유 연결이 살아 있어도 핸들러가 호출되지 않는다', async () => {
-        const received: string[] = []
-        await fix.pubSubB.subscribe(subject, (msg) => received.push(msg))
+    describe('첫 구독의 flush가 실패하도록 설정하면', () => {
+        let failure: Error
+        beforeEach(() => {
+            const connection = (fix.pubSubB as any).connection as NatsConnection
+            failure = new Error('SUB flush failed')
+            vi.spyOn(connection, 'flush').mockRejectedValueOnce(failure)
+        })
+        it('동시 구독은 모두 실패하고 다음 구독은 메시지를 수신한다', async () => {
+            const failedHandler = vi.fn()
+            const results = await Promise.allSettled([
+                fix.pubSubB.subscribe(subject, failedHandler),
+                fix.pubSubB.subscribe(subject, failedHandler)
+            ])
+            expect(results).toEqual([
+                { status: 'rejected', reason: failure },
+                { status: 'rejected', reason: failure }
+            ])
 
-        // 실제 배치에서는 연결을 전역 NatsModule이 소유하므로, 연결 종료 없이 서비스 destroy만으로 구독이 끊겨야 한다.
-        await fix.pubSubB.onModuleDestroy()
-
-        await fix.pubSubA.publish(subject, 'after-destroy')
-        // "아무 메시지도 오지 않음"을 보장할 신호가 없어 잠깐 대기 후 검사한다.
-        // 부하 시 50ms는 부족하므로 200ms 여유를 둔다.
-        await new Promise((r) => setTimeout(r, 200))
-
-        expect(received).toEqual([])
+            const received: string[] = []
+            await fix.pubSubB.subscribe(subject, (message) => received.push(message))
+            await fix.pubSubA.publish(subject, 'after-failure')
+            await waitFor(() => received.length === 1)
+            expect(received).toEqual(['after-failure'])
+            expect(failedHandler).not.toHaveBeenCalled()
+        })
     })
 
-    it.each([false, true])(
-        '종료는 진행 중 핸들러를 기다리고 다음 호출을 막는다 (먼저 구독 해제: %s)',
-        async (unsubscribeFirst) => {
-            const entered = Promise.withResolvers<void>()
-            const release = Promise.withResolvers<void>()
-            const finished = vi.fn()
-            const next = vi.fn()
-            const handler = vi.fn(async () => {
+    describe('구독자가 메시지를 한 번 수신했으면', () => {
+        let received: string[]
+        let handler: (message: string) => void
+        beforeEach(async () => {
+            received = []
+            handler = (msg: string) => received.push(msg)
+
+            await fix.pubSubB.subscribe(subject, handler)
+
+            await fix.pubSubA.publish(subject, 'before-unsub')
+            await waitFor(() => received.length > 0)
+        })
+        it('구독을 해제한 뒤 발행한 메시지는 수신하지 않는다', async () => {
+            await fix.pubSubB.unsubscribe(subject, handler)
+
+            await fix.pubSubA.publish(subject, 'after-unsub')
+            // "아무 메시지도 오지 않음"을 보장할 신호가 없어 잠깐 대기 후 검사한다.
+            // 부하 시 50ms는 부족하므로 200ms 여유를 둔다.
+            await new Promise((r) => setTimeout(r, 200))
+
+            expect(received).toEqual(['before-unsub'])
+        })
+    })
+
+    describe('구독을 등록한 서비스를 종료했으면', () => {
+        let received: string[]
+        beforeEach(async () => {
+            received = []
+            await fix.pubSubB.subscribe(subject, (msg) => received.push(msg))
+
+            // 실제 배치에서는 연결을 전역 NatsModule이 소유하므로, 연결 종료 없이 서비스 destroy만으로 구독이 끊겨야 한다.
+            await fix.pubSubB.onModuleDestroy()
+        })
+        it('공유 연결로 메시지를 발행해도 종료한 서비스의 핸들러는 호출되지 않는다', async () => {
+            await fix.pubSubA.publish(subject, 'after-destroy')
+            // "아무 메시지도 오지 않음"을 보장할 신호가 없어 잠깐 대기 후 검사한다.
+            // 부하 시 50ms는 부족하므로 200ms 여유를 둔다.
+            await new Promise((r) => setTimeout(r, 200))
+
+            expect(received).toEqual([])
+        })
+    })
+
+    describe.each([
+        { label: '핸들러 두 개가 등록되어 있으면', unsubscribeFirst: false },
+        { label: '핸들러 한 개가 등록되어 있으면', unsubscribeFirst: true }
+    ])('$label', ({ unsubscribeFirst }) => {
+        let entered: ReturnType<typeof Promise.withResolvers<void>>
+        let release: ReturnType<typeof Promise.withResolvers<void>>
+        let finished: ReturnType<typeof vi.fn<() => void>>
+        let next: ReturnType<typeof vi.fn<() => void>>
+        let handler: ReturnType<typeof vi.fn<() => Promise<void>>>
+        beforeEach(async () => {
+            entered = Promise.withResolvers<void>()
+            release = Promise.withResolvers<void>()
+            finished = vi.fn()
+            next = vi.fn()
+            handler = vi.fn(async () => {
                 entered.resolve()
                 await release.promise
                 finished()
             })
             await fix.pubSubB.subscribe(subject, handler)
             if (!unsubscribeFirst) await fix.pubSubB.subscribe(subject, next)
-            let stopping: Promise<void> | undefined
-            let stopped = false
+        })
+        it(
+            unsubscribeFirst
+                ? '처리 중인 핸들러의 구독을 해제하고 종료해도 그 처리가 끝날 때까지 기다린다'
+                : '메시지 처리 중 종료하면 진행 중 핸들러를 기다리고 다음 핸들러는 호출하지 않는다',
+            async () => {
+                let stopping: Promise<void> | undefined
+                let stopped = false
 
-            try {
-                await fix.pubSubA.publish(subject, 'in-flight')
-                await entered.promise
-                await fix.pubSubA.publish(subject, 'queued')
-                if (unsubscribeFirst) await fix.pubSubB.unsubscribe(subject, handler)
-                stopping = fix.pubSubB.onModuleDestroy().then(() => {
-                    stopped = true
-                })
-                // 이미 완료된 종료 훅의 then까지 실행한 뒤, handler 대기를 확인한다.
-                await Promise.resolve()
-                expect(stopped).toBe(false)
-                expect(finished).not.toHaveBeenCalled()
+                try {
+                    await fix.pubSubA.publish(subject, 'in-flight')
+                    await entered.promise
+                    await fix.pubSubA.publish(subject, 'queued')
+                    if (unsubscribeFirst) await fix.pubSubB.unsubscribe(subject, handler)
+                    stopping = fix.pubSubB.onModuleDestroy().then(() => {
+                        stopped = true
+                    })
+                    // 이미 완료된 종료 훅의 then까지 실행한 뒤, handler 대기를 확인한다.
+                    await Promise.resolve()
+                    expect(stopped).toBe(false)
+                    expect(finished).not.toHaveBeenCalled()
 
-                release.resolve()
-                await stopping
-                expect(finished).toHaveBeenCalledTimes(1)
-                expect(handler).toHaveBeenCalledTimes(1)
-                expect(next).not.toHaveBeenCalled()
-            } finally {
-                release.resolve()
-                await stopping
+                    release.resolve()
+                    await stopping
+                    expect(finished).toHaveBeenCalledTimes(1)
+                    expect(handler).toHaveBeenCalledTimes(1)
+                    expect(next).not.toHaveBeenCalled()
+                } finally {
+                    release.resolve()
+                    await stopping
+                }
             }
-        }
-    )
+        )
+    })
 
-    it('구독한 적 없는 subject를 구독 해제해도 아무 일도 일어나지 않는다', async () => {
+    it('구독한 적 없는 subject를 해제해도 오류 없이 끝난다', async () => {
         await expect(fix.pubSubB.unsubscribe('never-subscribed', () => {})).resolves.toBeUndefined()
     })
 
-    it('다른 subject에 구독이 있을 때 본인 subject 해제는 다른 구독에 영향이 없다', async () => {
-        const otherSubject = withTestId('other')
-        const received: string[] = []
+    describe('다른 subject에만 구독자가 등록되어 있으면', () => {
+        let otherSubject: string
+        let received: string[]
+        beforeEach(async () => {
+            otherSubject = withTestId('other')
+            received = []
 
-        await fix.pubSubB.subscribe(otherSubject, (msg) => received.push(msg))
-
-        await fix.pubSubB.unsubscribe(subject, () => {})
-
-        await fix.pubSubA.publish(otherSubject, 'survived')
-        await waitFor(() => received.length > 0)
-        expect(received).toEqual(['survived'])
-    })
-
-    it('여러 핸들러 중 하나만 제거해도 NATS 구독은 유지된다', async () => {
-        const received: string[] = []
-        const firstHandler = () => {}
-        const secondHandler = (msg: string) => received.push(msg)
-
-        await fix.pubSubB.subscribe(subject, firstHandler)
-        await fix.pubSubB.subscribe(subject, secondHandler)
-
-        await fix.pubSubB.unsubscribe(subject, firstHandler)
-
-        await fix.pubSubA.publish(subject, 'still-listening')
-        await waitFor(() => received.length > 0)
-        expect(received).toEqual(['still-listening'])
-    })
-
-    it('큐 그룹을 지정하면 같은 그룹에서 인스턴스 하나만 메시지를 받는다', async () => {
-        const receivedA: string[] = []
-        const receivedB: string[] = []
-        const queue = withTestId('queue-group')
-
-        await fix.pubSubA.subscribe(subject, (msg) => receivedA.push(msg), { queue })
-        await fix.pubSubB.subscribe(subject, (msg) => receivedB.push(msg), { queue })
-
-        await fix.pubSubA.publish(subject, 'queued')
-        await waitFor(() => receivedA.length + receivedB.length > 0)
-        // 중복 전달이 있었다면 도달했을 시간만큼 잠깐 기다린다.
-        await new Promise((r) => setTimeout(r, 50))
-
-        expect(receivedA.length + receivedB.length).toBe(1)
-    })
-
-    it('같은 subject에 브로드캐스트 구독과 큐 구독을 함께 둘 수 있다', async () => {
-        const broadcastReceived: string[] = []
-        const queueReceivedA: string[] = []
-        const queueReceivedB: string[] = []
-        const queue = withTestId('mixed-queue-group')
-
-        await fix.pubSubB.subscribe(subject, (msg) => broadcastReceived.push(msg))
-        await fix.pubSubB.subscribe(subject, (msg) => queueReceivedB.push(msg), { queue })
-        await fix.pubSubA.subscribe(subject, (msg) => queueReceivedA.push(msg), { queue })
-
-        await fix.pubSubA.publish(subject, 'mixed')
-
-        await waitFor(
-            () =>
-                broadcastReceived.length === 1 &&
-                queueReceivedA.length + queueReceivedB.length === 1
-        )
-        // 중복 전달이 있었다면 도달했을 시간만큼 잠깐 기다린다.
-        await new Promise((r) => setTimeout(r, 50))
-
-        expect(broadcastReceived).toEqual(['mixed'])
-        expect(queueReceivedA.length + queueReceivedB.length).toBe(1)
-    })
-
-    it('한 핸들러가 예외를 던져도 나머지 핸들러와 이후 메시지를 계속 전달한다', async () => {
-        const errorSpy = vi.spyOn(NestLogger.prototype, 'error').mockImplementation(() => undefined)
-
-        const received: string[] = []
-
-        await fix.pubSubB.subscribe(subject, async () => {
-            throw new Error('boom')
+            await fix.pubSubB.subscribe(otherSubject, (msg) => received.push(msg))
         })
-        await fix.pubSubB.subscribe(subject, (msg) => received.push(msg))
+        it('구독하지 않은 subject를 해제해도 기존 subject의 메시지는 수신한다', async () => {
+            await fix.pubSubB.unsubscribe(subject, () => {})
 
-        await fix.pubSubA.publish(subject, 'after-throw')
+            await fix.pubSubA.publish(otherSubject, 'survived')
+            await waitFor(() => received.length > 0)
+            expect(received).toEqual(['survived'])
+        })
+    })
 
-        await waitFor(() => errorSpy.mock.calls.some((c) => String(c[0]).includes(subject)))
+    describe('두 인스턴스가 같은 큐 그룹으로 구독했으면', () => {
+        let receivedA: string[]
+        let receivedB: string[]
+        beforeEach(async () => {
+            receivedA = []
+            receivedB = []
+            const queue = withTestId('queue-group')
 
-        await fix.pubSubA.publish(subject, 'next')
-        await waitFor(() => received.length === 2)
+            await fix.pubSubA.subscribe(subject, (msg) => receivedA.push(msg), { queue })
+            await fix.pubSubB.subscribe(subject, (msg) => receivedB.push(msg), { queue })
+        })
+        it('메시지를 발행하면 두 인스턴스 중 하나만 수신한다', async () => {
+            await fix.pubSubA.publish(subject, 'queued')
+            await waitFor(() => receivedA.length + receivedB.length > 0)
+            // 중복 전달이 있었다면 도달했을 시간만큼 잠깐 기다린다.
+            await new Promise((r) => setTimeout(r, 50))
 
-        expect(received).toEqual(['after-throw', 'next'])
-        errorSpy.mockRestore()
+            expect(receivedA.length + receivedB.length).toBe(1)
+        })
+    })
+
+    describe('브로드캐스트 구독과 같은 큐 그룹의 구독 두 개가 등록되어 있으면', () => {
+        let broadcastReceived: string[]
+        let queueReceivedA: string[]
+        let queueReceivedB: string[]
+        beforeEach(async () => {
+            broadcastReceived = []
+            queueReceivedA = []
+            queueReceivedB = []
+            const queue = withTestId('mixed-queue-group')
+
+            await fix.pubSubB.subscribe(subject, (msg) => broadcastReceived.push(msg))
+            await fix.pubSubB.subscribe(subject, (msg) => queueReceivedB.push(msg), { queue })
+            await fix.pubSubA.subscribe(subject, (msg) => queueReceivedA.push(msg), { queue })
+        })
+        it('메시지를 발행하면 브로드캐스트 구독자와 큐 구독자 하나가 수신한다', async () => {
+            await fix.pubSubA.publish(subject, 'mixed')
+
+            await waitFor(
+                () =>
+                    broadcastReceived.length === 1 &&
+                    queueReceivedA.length + queueReceivedB.length === 1
+            )
+            // 중복 전달이 있었다면 도달했을 시간만큼 잠깐 기다린다.
+            await new Promise((r) => setTimeout(r, 50))
+
+            expect(broadcastReceived).toEqual(['mixed'])
+            expect(queueReceivedA.length + queueReceivedB.length).toBe(1)
+        })
+    })
+
+    describe('예외를 던지는 핸들러와 정상 핸들러가 등록되어 있으면', () => {
+        let errorSpy: MockInstance
+        let received: string[]
+        beforeEach(async () => {
+            errorSpy = vi.spyOn(NestLogger.prototype, 'error').mockImplementation(() => undefined)
+
+            received = []
+
+            await fix.pubSubB.subscribe(subject, async () => {
+                throw new Error('boom')
+            })
+            await fix.pubSubB.subscribe(subject, (msg) => received.push(msg))
+        })
+        it('메시지를 두 번 발행하면 오류를 기록하면서 정상 핸들러에 모두 전달한다', async () => {
+            await fix.pubSubA.publish(subject, 'after-throw')
+
+            await waitFor(() => errorSpy.mock.calls.some((c) => String(c[0]).includes(subject)))
+
+            await fix.pubSubA.publish(subject, 'next')
+            await waitFor(() => received.length === 2)
+
+            expect(received).toEqual(['after-throw', 'next'])
+            errorSpy.mockRestore()
+        })
     })
 
     describe('소비 루프의 이터레이터가 예외를 던지면', () => {
@@ -339,39 +401,43 @@ describe('NatsPubSubService', () => {
         })
     })
 
-    it('subject의 모든 핸들러를 해제한 뒤 다시 구독하면 발행한 메시지가 정상 도달한다', async () => {
-        const handler1 = () => {}
-        await fix.pubSubB.subscribe(subject, handler1)
-        await fix.pubSubB.unsubscribe(subject, handler1)
+    describe('subject의 마지막 핸들러를 해제했으면', () => {
+        let handler: () => void
+        beforeEach(async () => {
+            handler = () => {}
+            await fix.pubSubB.subscribe(subject, handler)
+            await fix.pubSubB.unsubscribe(subject, handler)
+        })
+        it('다시 구독한 뒤 발행하면 새 핸들러가 메시지를 수신한다', async () => {
+            const received: string[] = []
+            await fix.pubSubB.subscribe(subject, (msg) => received.push(msg))
 
-        const received: string[] = []
-        await fix.pubSubB.subscribe(subject, (msg) => received.push(msg))
+            await fix.pubSubA.publish(subject, 'after-resubscribe')
+            await waitFor(() => received.length > 0)
 
-        await fix.pubSubA.publish(subject, 'after-resubscribe')
-        await waitFor(() => received.length > 0)
+            expect(received).toEqual(['after-resubscribe'])
+        })
 
-        expect(received).toEqual(['after-resubscribe'])
+        it('같은 핸들러를 다시 해제해도 오류 없이 끝난다', async () => {
+            await expect(fix.pubSubB.unsubscribe(subject, handler)).resolves.toBeUndefined()
+        })
     })
 
-    it('이미 제거된 핸들러를 다시 구독 해제해도 예외를 던지지 않는다', async () => {
-        const handler = () => {}
-        await fix.pubSubB.subscribe(subject, handler)
-        await fix.pubSubB.unsubscribe(subject, handler)
+    describe('같은 subject에 핸들러 세 개가 차례로 등록되어 있으면', () => {
+        let order: string[]
+        beforeEach(async () => {
+            order = []
 
-        await expect(fix.pubSubB.unsubscribe(subject, handler)).resolves.toBeUndefined()
-    })
+            await fix.pubSubB.subscribe(subject, () => order.push('first'))
+            await fix.pubSubB.subscribe(subject, () => order.push('second'))
+            await fix.pubSubB.subscribe(subject, () => order.push('third'))
+        })
+        it('메시지를 발행하면 핸들러를 등록 순서대로 호출한다', async () => {
+            await fix.pubSubA.publish(subject, 'msg')
+            await waitFor(() => order.length === 3)
 
-    it('같은 subject에 등록된 여러 핸들러는 등록 순서대로 호출된다', async () => {
-        const order: string[] = []
-
-        await fix.pubSubB.subscribe(subject, () => order.push('first'))
-        await fix.pubSubB.subscribe(subject, () => order.push('second'))
-        await fix.pubSubB.subscribe(subject, () => order.push('third'))
-
-        await fix.pubSubA.publish(subject, 'msg')
-        await waitFor(() => order.length === 3)
-
-        expect(order).toEqual(['first', 'second', 'third'])
+            expect(order).toEqual(['first', 'second', 'third'])
+        })
     })
 
     it('구독 직후 발행한 메시지도 핸들러에 도달한다', async () => {
@@ -387,12 +453,17 @@ describe('NatsPubSubService', () => {
 })
 
 describe('createNatsPubSubServiceFixture', () => {
-    it.each(['second-context', 'flush', 'cleanup'] as const)(
-        '%s 실패 시 생성한 context를 모두 닫고 원래 초기화 오류를 유지한다',
-        async (stage) => {
-            const failure = new Error('fixture initialization failed')
+    describe.each([
+        { label: '두 번째 앱 생성이 실패하면', stage: 'second-context' },
+        { label: '연결 확인이 실패하면', stage: 'flush' },
+        { label: '연결 확인과 정리가 모두 실패하면', stage: 'cleanup' }
+    ] as const)('$label', ({ stage }) => {
+        let failure: Error
+        let contexts: Array<{ close: () => Promise<void>; closeSpy: MockInstance }>
+        beforeEach(async () => {
+            failure = new Error('fixture initialization failed')
             const createContext = testing.createTestContext
-            const contexts: Array<{ close: () => Promise<void>; closeSpy: MockInstance }> = []
+            contexts = []
             vi.spyOn(testing, 'createTestContext').mockImplementation(async (options) => {
                 if (stage === 'second-context' && contexts.length === 1) throw failure
                 const context = await createContext(options)
@@ -411,7 +482,8 @@ describe('createNatsPubSubServiceFixture', () => {
                 }
                 return context
             })
-
+        })
+        it('픽스처 생성 시 이미 만든 앱을 모두 닫고 최초 초기화 오류를 던진다', async () => {
             try {
                 await expect(createNatsPubSubServiceFixture()).rejects.toBe(failure)
                 expect(contexts).toHaveLength(stage === 'second-context' ? 1 : 2)
@@ -419,8 +491,8 @@ describe('createNatsPubSubServiceFixture', () => {
             } finally {
                 await Promise.allSettled(contexts.map((context) => context.close()))
             }
-        }
-    )
+        })
+    })
 })
 
 describe('InjectNatsPubSub', () => {
@@ -492,54 +564,64 @@ describe('JetStreamChannel', () => {
         })
     })
 
-    it('소비 시작 전에 발행한 메시지도 받고 처리 완료를 서버에 알린다', async () => {
-        await channel.publish({ value: 'one' }, 'id')
-        messages = await channel.consume()
-        iterator = messages[Symbol.asyncIterator]()
-        const result = await iterator.next()
-        if (result.done) throw new Error('Expected a retained message')
-        expect(result.value.decode()).toEqual({ value: 'one' })
-        expect(result.value.deliveryCount).toBe(1)
-        expect(result.value.sequence).toBe(1)
-        const acknowledgments = connection.subscribe(
-            `$JS.EVENT.METRIC.CONSUMER.ACK.${streamName}.${consumerName}`,
-            { max: 1 }
-        )
-        await manager.consumers.update(streamName, consumerName, { sample_freq: '100' })
-        result.value.acknowledge()
-        // flush는 ACK 전송만 확인한다. 서버가 ACK를 처리했다는 이벤트 뒤에 상태를 읽는다.
-        const acknowledgment = await acknowledgments[Symbol.asyncIterator]().next()
-        expect(acknowledgment.value?.json()).toMatchObject({ stream_seq: result.value.sequence })
-        expect((await manager.consumers.info(streamName, consumerName)).num_ack_pending).toBe(0)
-        const ending = iterator.next()
-        await messages.close()
-        expect(await ending).toEqual({ done: true, value: undefined })
+    describe('소비 시작 전에 발행한 메시지가 보관되어 있으면', () => {
+        beforeEach(async () => {
+            await channel.publish({ value: 'one' }, 'id')
+        })
+        it('소비를 시작해 메시지를 처리하고 ACK하면 서버의 확인 대기에서 제거한다', async () => {
+            messages = await channel.consume()
+            iterator = messages[Symbol.asyncIterator]()
+            const result = await iterator.next()
+            if (result.done) throw new Error('Expected a retained message')
+            expect(result.value.decode()).toEqual({ value: 'one' })
+            expect(result.value.deliveryCount).toBe(1)
+            expect(result.value.sequence).toBe(1)
+            const acknowledgments = connection.subscribe(
+                `$JS.EVENT.METRIC.CONSUMER.ACK.${streamName}.${consumerName}`,
+                { max: 1 }
+            )
+            await manager.consumers.update(streamName, consumerName, { sample_freq: '100' })
+            result.value.acknowledge()
+            // flush는 ACK 전송만 확인한다. 서버가 ACK를 처리했다는 이벤트 뒤에 상태를 읽는다.
+            const acknowledgment = await acknowledgments[Symbol.asyncIterator]().next()
+            expect(acknowledgment.value?.json()).toMatchObject({
+                stream_seq: result.value.sequence
+            })
+            expect((await manager.consumers.info(streamName, consumerName)).num_ack_pending).toBe(0)
+            const ending = iterator.next()
+            await messages.close()
+            expect(await ending).toEqual({ done: true, value: undefined })
+        })
     })
 
-    it('처리 실패한 메시지를 재전달하고 폐기하면 확인 대기에서 제거한다', async () => {
-        messages = await channel.consume()
-        await channel.publish({ value: 'retry' }, 'retry')
-        iterator = messages[Symbol.asyncIterator]()
-        const first = await iterator.next()
-        if (first.done) throw new Error('Expected the first delivery')
-        const retryStarted = performance.now()
-        first.value.retryAfter(100)
-        const second = await iterator.next()
-        if (second.done) throw new Error('Expected a redelivery')
-        expect(performance.now() - retryStarted).toBeGreaterThanOrEqual(90)
-        expect(second.value.sequence).toBe(first.value.sequence)
-        expect(second.value.deliveryCount).toBe(2)
-        const terminations = connection.subscribe(
-            `$JS.EVENT.ADVISORY.CONSUMER.MSG_TERMINATED.${streamName}.${consumerName}`,
-            { max: 1 }
-        )
-        await connection.flush()
-        second.value.discard('invalid event')
-        const termination = await terminations[Symbol.asyncIterator]().next()
-        expect(termination.value?.json()).toMatchObject({
-            stream_seq: second.value.sequence,
-            reason: 'invalid event'
+    describe('소비자가 시작되었고 메시지가 발행되었으면', () => {
+        beforeEach(async () => {
+            messages = await channel.consume()
+            await channel.publish({ value: 'retry' }, 'retry')
         })
-        expect((await manager.consumers.info(streamName, consumerName)).num_ack_pending).toBe(0)
+        it('메시지 재시도를 요청하면 재전달하고 폐기하면 확인 대기에서 제거한다', async () => {
+            iterator = ensure(messages)[Symbol.asyncIterator]()
+            const first = await iterator.next()
+            if (first.done) throw new Error('Expected the first delivery')
+            const retryStarted = performance.now()
+            first.value.retryAfter(100)
+            const second = await iterator.next()
+            if (second.done) throw new Error('Expected a redelivery')
+            expect(performance.now() - retryStarted).toBeGreaterThanOrEqual(90)
+            expect(second.value.sequence).toBe(first.value.sequence)
+            expect(second.value.deliveryCount).toBe(2)
+            const terminations = connection.subscribe(
+                `$JS.EVENT.ADVISORY.CONSUMER.MSG_TERMINATED.${streamName}.${consumerName}`,
+                { max: 1 }
+            )
+            await connection.flush()
+            second.value.discard('invalid event')
+            const termination = await terminations[Symbol.asyncIterator]().next()
+            expect(termination.value?.json()).toMatchObject({
+                stream_seq: second.value.sequence,
+                reason: 'invalid event'
+            })
+            expect((await manager.consumers.info(streamName, consumerName)).num_ack_pending).toBe(0)
+        })
     })
 })

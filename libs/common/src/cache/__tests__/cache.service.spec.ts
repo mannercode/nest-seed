@@ -11,26 +11,30 @@ describe('CacheService', () => {
     afterEach(() => fix.teardown())
 
     describe('incrementWithExpiry', () => {
-        it.each([NaN, Infinity, -Infinity, 0.5])(
-            '유효하지 않은 TTL %s는 카운터를 쓰기 전에 거절한다',
-            async (ttl) => {
-                await expect(
-                    fix.cacheService.incrementWithExpiry('invalid-counter', ttl)
-                ).rejects.toThrow(
-                    expect.objectContaining({
-                        status: 500,
-                        cause: 'Counter TTL must be an integer (ms)'
-                    })
-                )
-                expect(await fix.cacheService.get('invalid-counter')).toBeNull()
-
+        describe('기존 카운터가 저장되어 있으면', () => {
+            beforeEach(async () => {
                 await fix.cacheService.set('existing-counter', '7')
-                await expect(
-                    fix.cacheService.incrementWithExpiry('existing-counter', ttl)
-                ).rejects.toThrow(InternalServerErrorException)
-                expect(await fix.cacheService.get('existing-counter')).toBe('7')
-            }
-        )
+            })
+            it.each([NaN, Infinity, -Infinity, 0.5])(
+                '유효하지 않은 TTL %s로 증가를 요청하면 새 카운터를 만들거나 기존 값을 바꾸지 않는다',
+                async (ttl) => {
+                    await expect(
+                        fix.cacheService.incrementWithExpiry('invalid-counter', ttl)
+                    ).rejects.toThrow(
+                        expect.objectContaining({
+                            status: 500,
+                            cause: 'Counter TTL must be an integer (ms)'
+                        })
+                    )
+                    expect(await fix.cacheService.get('invalid-counter')).toBeNull()
+
+                    await expect(
+                        fix.cacheService.incrementWithExpiry('existing-counter', ttl)
+                    ).rejects.toThrow(InternalServerErrorException)
+                    expect(await fix.cacheService.get('existing-counter')).toBe('7')
+                }
+            )
+        })
 
         it.each([0, -1])('TTL이 %s이면 카운터를 즉시 만료시킨다', async (ttl) => {
             expect(await fix.cacheService.incrementWithExpiry('immediate-counter', ttl)).toBe(1)
@@ -56,33 +60,41 @@ describe('CacheService', () => {
             expect(ttl).toBeLessThanOrEqual(10_000)
         })
 
-        it('추가 증가가 기존 만료를 연장하지 않는다', async () => {
-            await fix.cacheService.incrementWithExpiry('counter', 10_000)
-            expect(await fix.cacheService.incrementWithExpiry('counter', 60_000)).toBe(2)
-            const ttl = await fix.cacheService.executeScript(
-                "return redis.call('PTTL', KEYS[1])",
-                ['counter'],
-                []
-            )
-            expect(ttl).toBeGreaterThan(0)
-            expect(ttl).toBeLessThanOrEqual(10_000)
+        describe('만료 시간이 10초인 카운터가 존재하면', () => {
+            beforeEach(async () => {
+                await fix.cacheService.incrementWithExpiry('counter', 10_000)
+            })
+            it('TTL 60초로 다시 증가시켜도 기존 만료 시간을 연장하지 않는다', async () => {
+                expect(await fix.cacheService.incrementWithExpiry('counter', 60_000)).toBe(2)
+                const ttl = await fix.cacheService.executeScript(
+                    "return redis.call('PTTL', KEYS[1])",
+                    ['counter'],
+                    []
+                )
+                expect(ttl).toBeGreaterThan(0)
+                expect(ttl).toBeLessThanOrEqual(10_000)
+            })
         })
     })
 
     describe('set', () => {
-        it.each([NaN, Infinity, -Infinity, 0.5])(
-            '유효하지 않은 TTL %s는 기존 값을 덮어쓰지 않는다',
-            async (ttl) => {
+        describe('기존 값이 저장되어 있으면', () => {
+            beforeEach(async () => {
                 await fix.cacheService.set('key', 'original')
-                await expect(fix.cacheService.set('key', 'replacement', ttl)).rejects.toThrow(
-                    expect.objectContaining({
-                        status: 500,
-                        cause: 'TTL must be a non-negative integer (0 for no expiration)'
-                    })
-                )
-                expect(await fix.cacheService.get('key')).toBe('original')
-            }
-        )
+            })
+            it.each([NaN, Infinity, -Infinity, 0.5])(
+                '유효하지 않은 TTL %s로 저장하면 예외를 던지고 기존 값을 유지한다',
+                async (ttl) => {
+                    await expect(fix.cacheService.set('key', 'replacement', ttl)).rejects.toThrow(
+                        expect.objectContaining({
+                            status: 500,
+                            cause: 'TTL must be a non-negative integer (0 for no expiration)'
+                        })
+                    )
+                    expect(await fix.cacheService.get('key')).toBe('original')
+                }
+            )
+        })
 
         it('TTL이 없으면 값을 저장한다', async () => {
             await fix.cacheService.set('key', 'value')
@@ -104,7 +116,7 @@ describe('CacheService', () => {
             expect(afterExpiration).toBeNull()
         })
 
-        it('TTL이 0이면 만료되지 않는다', async () => {
+        it('TTL 0으로 저장한 값은 1.5초 뒤에도 조회할 수 있다', async () => {
             await fix.cacheService.set('key', 'value', 0)
 
             const beforeExpiration = await fix.cacheService.get('key')
@@ -127,16 +139,19 @@ describe('CacheService', () => {
     })
 
     describe('delete', () => {
-        it('저장된 값을 삭제한다', async () => {
-            await fix.cacheService.set('key', 'value')
+        describe('저장된 값이 존재하면', () => {
+            beforeEach(async () => {
+                await fix.cacheService.set('key', 'value')
 
-            const beforeDelete = await fix.cacheService.get('key')
-            expect(beforeDelete).toEqual('value')
+                const beforeDelete = await fix.cacheService.get('key')
+                expect(beforeDelete).toEqual('value')
+            })
+            it('삭제하면 해당 키를 조회할 수 없다', async () => {
+                await fix.cacheService.delete('key')
 
-            await fix.cacheService.delete('key')
-
-            const afterDelete = await fix.cacheService.get('key')
-            expect(afterDelete).toBeNull()
+                const afterDelete = await fix.cacheService.get('key')
+                expect(afterDelete).toBeNull()
+            })
         })
     })
 
@@ -198,16 +213,19 @@ describe('CacheService', () => {
             expect(executedCount).toBeGreaterThanOrEqual(1)
         }, 30_000)
 
-        it('다른 호출자가 점유한 락은 획득하지 못하고 기존 락을 건드리지 않는다', async () => {
-            await fix.cacheService.set('lock:job', 'other-runner', 10_000)
-
-            const result = await fix.cacheService.withLock('job', 5_000, async () => {
-                throw new Error('should not run while another owner holds lock')
+        describe('다른 호출자가 락을 점유했으면', () => {
+            beforeEach(async () => {
+                await fix.cacheService.set('lock:job', 'other-runner', 10_000)
             })
+            it('락 획득을 요청해도 실행하지 않고 기존 락을 유지한다', async () => {
+                const result = await fix.cacheService.withLock('job', 5_000, async () => {
+                    throw new Error('should not run while another owner holds lock')
+                })
 
-            expect(result.ran).toBe(false)
-            const value = await fix.cacheService.get('lock:job')
-            expect(value).toBe('other-runner')
+                expect(result.ran).toBe(false)
+                const value = await fix.cacheService.get('lock:job')
+                expect(value).toBe('other-runner')
+            })
         })
 
         it('만료된 락을 다른 호출자가 잡으면 원래 호출자의 해제가 새 락을 지우지 않는다', async () => {
@@ -284,7 +302,7 @@ describe('CacheService', () => {
     })
 
     describe('withLockBlocking', () => {
-        describe('대기 기한이 정해져 있으면', () => {
+        describe('경과 시간을 조절할 수 있으면', () => {
             let now: number
 
             beforeEach(() => {
@@ -379,7 +397,7 @@ describe('CacheService', () => {
             })
         })
 
-        it('경쟁이 없으면 즉시 실행된다', async () => {
+        it('경쟁이 없으면 콜백을 실행하고 결과를 반환한다', async () => {
             const result = await fix.cacheService.withLockBlocking('job', 5_000, async () => 42)
             expect(result).toBe(42)
         })
@@ -410,45 +428,73 @@ describe('CacheService', () => {
             expect(maxConcurrent).toBe(1)
         }, 30_000)
 
-        it('대기 시간 안에 락을 못 잡으면 예외를 던진다', async () => {
-            await fix.cacheService.set('lock:job', 'other', 10_000)
+        describe('다른 호출자가 락을 10초간 점유했으면', () => {
+            beforeEach(async () => {
+                await fix.cacheService.set('lock:job', 'other', 10_000)
+            })
+            it('50ms 안에 락을 얻지 못하면 503 예외를 던진다', async () => {
+                await expect(
+                    fix.cacheService.withLockBlocking('job', 5_000, async () => 'unused', {
+                        pollMs: 10,
+                        waitMs: 50
+                    })
+                ).rejects.toThrow(
+                    expect.objectContaining({
+                        status: 503,
+                        cause: expect.stringMatching(/could not acquire 'job'/)
+                    })
+                )
+            })
 
-            await expect(
-                fix.cacheService.withLockBlocking('job', 5_000, async () => 'unused', {
-                    pollMs: 10,
-                    waitMs: 50
-                })
-            ).rejects.toThrow(
-                expect.objectContaining({
-                    status: 503,
-                    cause: expect.stringMatching(/could not acquire 'job'/)
-                })
-            )
+            it('락을 기다리는 중 취소하면 취소 오류를 던진다', async () => {
+                const controller = new AbortController()
+                const waiting = fix.cacheService.withLockBlocking(
+                    'job',
+                    5_000,
+                    async () => 'unused',
+                    { pollMs: 1000, signal: controller.signal }
+                )
+
+                setTimeout(() => controller.abort(new Error('activity cancelled')), 20)
+
+                await expect(waiting).rejects.toThrow('The operation was aborted')
+            })
         })
 
-        it('waitMs가 경과하기 전에는 예외를 던지지 않는다', async () => {
-            // 다른 보유자가 짧게 보유하다 해제하면 같은 호출이 락을 획득해 정상 동작한다.
-            await fix.cacheService.set('lock:job', 'other', 100)
-
-            const start = performance.now()
-            const result = await fix.cacheService.withLockBlocking('job', 5_000, async () => 42, {
-                pollMs: 20,
-                waitMs: 1000
+        describe('다른 호출자의 락이 100ms 뒤에 만료되면', () => {
+            beforeEach(async () => {
+                // 다른 보유자가 짧게 보유하다 해제하면 같은 호출이 락을 획득해 정상 동작한다.
+                await fix.cacheService.set('lock:job', 'other', 100)
             })
-            const elapsed = performance.now() - start
+            it('만료 후 락을 획득해 대기 기한 안에 결과를 반환한다', async () => {
+                const start = performance.now()
+                const result = await fix.cacheService.withLockBlocking(
+                    'job',
+                    5_000,
+                    async () => 42,
+                    { pollMs: 20, waitMs: 1000 }
+                )
+                const elapsed = performance.now() - start
 
-            expect(result).toBe(42)
-            expect(elapsed).toBeLessThan(1000)
+                expect(result).toBe(42)
+                expect(elapsed).toBeLessThan(1000)
+            })
         })
 
-        it('pollMs가 0이어도 선점된 락이 풀리면 획득해 실행한다', async () => {
-            // 락을 짧게 선점해 첫 시도를 실패시켜야 pollMs가 쓰이는 재시도 경로가 실행된다.
-            await fix.cacheService.set('lock:job', 'other', 200)
-
-            const result = await fix.cacheService.withLockBlocking('job', 5_000, async () => 1, {
-                pollMs: 0
+        describe('다른 호출자의 락이 200ms 뒤에 만료되면', () => {
+            beforeEach(async () => {
+                // 락을 짧게 선점해 첫 시도를 실패시켜야 pollMs가 쓰이는 재시도 경로가 실행된다.
+                await fix.cacheService.set('lock:job', 'other', 200)
             })
-            expect(result).toBe(1)
+            it('pollMs가 0이어도 만료 후 락을 획득해 콜백을 실행한다', async () => {
+                const result = await fix.cacheService.withLockBlocking(
+                    'job',
+                    5_000,
+                    async () => 1,
+                    { pollMs: 0 }
+                )
+                expect(result).toBe(1)
+            })
         })
 
         it('이미 취소된 signal을 받으면 콜백을 실행하지 않고 취소 오류를 던진다', async () => {
@@ -462,19 +508,6 @@ describe('CacheService', () => {
                 })
             ).rejects.toThrow('activity cancelled')
             expect(runner).not.toHaveBeenCalled()
-        })
-
-        it('락을 기다리는 중 취소되면 다음 획득을 시도하지 않는다', async () => {
-            await fix.cacheService.set('lock:job', 'other', 10_000)
-            const controller = new AbortController()
-            const waiting = fix.cacheService.withLockBlocking('job', 5_000, async () => 'unused', {
-                pollMs: 1000,
-                signal: controller.signal
-            })
-
-            setTimeout(() => controller.abort(new Error('activity cancelled')), 20)
-
-            await expect(waiting).rejects.toThrow('The operation was aborted')
         })
     })
 

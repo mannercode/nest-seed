@@ -53,7 +53,7 @@ describe('JwtAuthService', () => {
     afterEach(() => fix.teardown())
 
     describe('generateAuthTokens', () => {
-        it('역할 클레임과 issuer·audience를 가진 토큰을 발급한다', async () => {
+        it('사용자 클레임과 issuer·audience를 가진 토큰을 발급한다', async () => {
             const tokens = await fix.jwtService.generateAuthTokens({ sub: 'u1', email: 'email' })
             expect(decode(tokens.accessToken)).toMatchObject({
                 sub: 'u1',
@@ -68,7 +68,7 @@ describe('JwtAuthService', () => {
             })
         })
 
-        it('세션 해시와 사용자 인덱스를 같은 슬롯에 만료와 함께 저장한다', async () => {
+        it('토큰 발급 시 세션 해시와 사용자 인덱스를 만료 시간과 함께 저장한다', async () => {
             const { refreshToken } = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
             const key = sessionKey(fix, refreshToken)
             const index = `${fix.jwtService.prefix}:{u1}:sessions`
@@ -81,39 +81,52 @@ describe('JwtAuthService', () => {
             }
         })
 
-        it('Redis 명령 일부가 실패하면 토큰을 반환하지 않고 500을 던진다', async () => {
-            await fix.redis.set(`${fix.jwtService.prefix}:{u1}:sessions`, 'wrong-type')
-
-            await expect(fix.jwtService.generateAuthTokens({ sub: 'u1' })).rejects.toMatchObject({
-                status: 500,
-                cause: expect.stringContaining('WRONGTYPE')
+        describe('세션 인덱스 키에 집합 대신 문자열이 저장되어 있으면', () => {
+            beforeEach(async () => {
+                await fix.redis.set(`${fix.jwtService.prefix}:{u1}:sessions`, 'wrong-type')
+            })
+            it('토큰 발급 시 Redis 자료형 오류를 원인으로 500 예외를 던진다', async () => {
+                await expect(
+                    fix.jwtService.generateAuthTokens({ sub: 'u1' })
+                ).rejects.toMatchObject({
+                    status: 500,
+                    cause: expect.stringContaining('WRONGTYPE')
+                })
             })
         })
 
-        it('Redis transaction이 중단되면 토큰을 반환하지 않고 500을 던진다', async () => {
-            const index = `${fix.jwtService.prefix}:{u1}:sessions`
-            await fix.redis.watch(index)
-            await fix.redis.sadd(index, 'changed-session')
-
-            await expect(fix.jwtService.generateAuthTokens({ sub: 'u1' })).rejects.toMatchObject({
-                status: 500,
-                cause: 'Redis transaction was aborted'
+        describe('감시 중인 세션 인덱스가 변경되었으면', () => {
+            beforeEach(async () => {
+                const index = `${fix.jwtService.prefix}:{u1}:sessions`
+                await fix.redis.watch(index)
+                await fix.redis.sadd(index, 'changed-session')
+            })
+            it('토큰 발급 시 트랜잭션 중단을 원인으로 500 예외를 던진다', async () => {
+                await expect(
+                    fix.jwtService.generateAuthTokens({ sub: 'u1' })
+                ).rejects.toMatchObject({ status: 500, cause: 'Redis transaction was aborted' })
             })
         })
 
-        it('액세스 토큰 TTL이 1초 미만이면 발급 즉시 만료된다', async () => {
-            const short = await createJwtAuthServiceFixtureWithShortTtl()
-            try {
+        describe('액세스 토큰 TTL이 1초 미만이면', () => {
+            let short: JwtAuthServiceFixture
+            beforeEach(async () => {
+                short = await createJwtAuthServiceFixtureWithShortTtl()
+            })
+            afterEach(() => short.teardown())
+            it('토큰 발급 시 만료 시각이 발급 시각과 같다', async () => {
                 const { accessToken } = await short.jwtService.generateAuthTokens({ sub: 'u1' })
                 expect(decode(accessToken).exp).toBe(decode(accessToken).iat)
-            } finally {
-                await short.teardown()
-            }
+            })
         })
 
-        it.each([{}, { sub: 12345 }, { sub: '' }])(
-            '사용자를 식별할 수 없는 %j로 세션을 만들지 않는다',
-            async (payload) => {
+        it.each([
+            { label: 'sub가 없는', payload: {} },
+            { label: 'sub가 숫자인', payload: { sub: 12345 } },
+            { label: 'sub가 빈 문자열인', payload: { sub: '' } }
+        ])(
+            '$label 입력으로 토큰을 발급하면 401 예외를 던지고 세션을 만들지 않는다',
+            async ({ payload }) => {
                 await expect(fix.jwtService.generateAuthTokens(payload)).rejects.toMatchObject({
                     status: 401
                 })
@@ -140,18 +153,28 @@ describe('JwtAuthService', () => {
             expect(decode(rotated.refreshToken).jti).not.toBe(decode(original.refreshToken).jti)
         })
 
-        it('이미 교체된 토큰을 반복 제출해도 현재 세션은 폐기하지 않는다', async () => {
-            const first = await fix.jwtService.refreshAuthTokens(original.refreshToken)
-            const second = await fix.jwtService.refreshAuthTokens(first.refreshToken)
-            for (const old of [original.refreshToken, first.refreshToken, original.refreshToken]) {
-                await expect(fix.jwtService.refreshAuthTokens(old)).rejects.toMatchObject({
-                    status: 409,
-                    response: JwtAuthErrors.RefreshTokenReplaced()
-                })
-            }
-            await expect(
-                fix.jwtService.refreshAuthTokens(second.refreshToken)
-            ).resolves.toMatchObject({ refreshToken: expect.any(String) })
+        describe('같은 세션의 토큰을 두 번 교체했으면', () => {
+            let first: JwtAuthTokens
+            let second: JwtAuthTokens
+            beforeEach(async () => {
+                first = await fix.jwtService.refreshAuthTokens(original.refreshToken)
+                second = await fix.jwtService.refreshAuthTokens(first.refreshToken)
+            })
+            it('이전 토큰으로 갱신하면 409 예외를 던지고 최신 토큰은 계속 갱신할 수 있다', async () => {
+                for (const old of [
+                    original.refreshToken,
+                    first.refreshToken,
+                    original.refreshToken
+                ]) {
+                    await expect(fix.jwtService.refreshAuthTokens(old)).rejects.toMatchObject({
+                        status: 409,
+                        response: JwtAuthErrors.RefreshTokenReplaced()
+                    })
+                }
+                await expect(
+                    fix.jwtService.refreshAuthTokens(second.refreshToken)
+                ).resolves.toMatchObject({ refreshToken: expect.any(String) })
+            })
         })
 
         it('동시 갱신은 하나만 성공하고 승자의 새 토큰을 유지한다', async () => {
@@ -173,50 +196,73 @@ describe('JwtAuthService', () => {
             ).resolves.toMatchObject({ accessToken: expect.any(String) })
         })
 
-        it.each(['logout', 'logout-all'] as const)(
-            '새 토큰 준비 중 %s하면 늦은 갱신이 세션을 되살리지 않는다',
-            async (operation) => {
-                const pause = pauseNextTokenIssue(fix)
-                const rotating = fix.jwtService.refreshAuthTokens(original.refreshToken)
-                const rejected = expect(rotating).rejects.toMatchObject({ status: 401 })
-                await pause.reached
-                if (operation === 'logout')
-                    await fix.jwtService.revokeRefreshToken(original.refreshToken)
-                else await fix.jwtService.revokeAllSessions('u1')
-                pause.release()
-                await rejected
-                expect(await fix.redis.get(sessionKey(fix, original.refreshToken))).toBeNull()
-                expect(await fix.redis.smembers(`${fix.jwtService.prefix}:{u1}:sessions`)).toEqual(
-                    []
+        describe('새 토큰 발급을 일시 중지하도록 설정하면', () => {
+            let pause: ReturnType<typeof pauseNextTokenIssue>
+            beforeEach(() => {
+                pause = pauseNextTokenIssue(fix)
+            })
+            afterEach(() => pause.release())
+            it.each(['logout', 'logout-all'] as const)(
+                '새 토큰 준비 중 %s하면 늦은 갱신이 세션을 되살리지 않는다',
+                async (operation) => {
+                    const rotating = fix.jwtService.refreshAuthTokens(original.refreshToken)
+                    const rejected = expect(rotating).rejects.toMatchObject({ status: 401 })
+                    await pause.reached
+                    if (operation === 'logout')
+                        await fix.jwtService.revokeRefreshToken(original.refreshToken)
+                    else await fix.jwtService.revokeAllSessions('u1')
+                    pause.release()
+                    await rejected
+                    expect(await fix.redis.get(sessionKey(fix, original.refreshToken))).toBeNull()
+                    expect(
+                        await fix.redis.smembers(`${fix.jwtService.prefix}:{u1}:sessions`)
+                    ).toEqual([])
+                }
+            )
+        })
+        describe('다음 토큰 서명이 실패하도록 설정하면', () => {
+            beforeEach(() => {
+                const internal = fix.jwtService as unknown as {
+                    createTokens(): Promise<JwtAuthTokens>
+                }
+                vi.spyOn(internal, 'createTokens').mockRejectedValueOnce(
+                    new Error('signing failed')
                 )
-            }
-        )
-
-        it('서명 실패로 새 토큰을 준비하지 못하면 이전 토큰은 유지한다', async () => {
-            const internal = fix.jwtService as unknown as { createTokens(): Promise<JwtAuthTokens> }
-            vi.spyOn(internal, 'createTokens').mockRejectedValueOnce(new Error('signing failed'))
-            await expect(fix.jwtService.refreshAuthTokens(original.refreshToken)).rejects.toThrow(
-                'signing failed'
-            )
-            await expect(
-                fix.jwtService.refreshAuthTokens(original.refreshToken)
-            ).resolves.toMatchObject({ refreshToken: expect.any(String) })
+            })
+            it('갱신은 오류를 던지고 이전 토큰으로 다시 갱신할 수 있다', async () => {
+                await expect(
+                    fix.jwtService.refreshAuthTokens(original.refreshToken)
+                ).rejects.toThrow('signing failed')
+                await expect(
+                    fix.jwtService.refreshAuthTokens(original.refreshToken)
+                ).resolves.toMatchObject({ refreshToken: expect.any(String) })
+            })
         })
 
-        it('Redis 원자 교체 결과가 손상되면 실패를 알리고 기존 세션을 유지한다', async () => {
-            vi.spyOn(fix.redis, 'eval').mockResolvedValueOnce(null)
-            await expect(fix.jwtService.refreshAuthTokens(original.refreshToken)).rejects.toThrow(
-                expect.objectContaining({
-                    status: 500,
-                    cause: 'Refresh token rotation returned an invalid result'
-                })
-            )
-            await expect(
-                fix.jwtService.refreshAuthTokens(original.refreshToken)
-            ).resolves.toMatchObject({ refreshToken: expect.any(String) })
+        describe('Redis가 토큰 교체 결과로 null을 반환하도록 설정하면', () => {
+            beforeEach(() => {
+                vi.spyOn(fix.redis, 'eval').mockResolvedValueOnce(null)
+            })
+            it('갱신은 500 예외를 던지고 기존 토큰으로 다시 갱신할 수 있다', async () => {
+                await expect(
+                    fix.jwtService.refreshAuthTokens(original.refreshToken)
+                ).rejects.toThrow(
+                    expect.objectContaining({
+                        status: 500,
+                        cause: 'Refresh token rotation returned an invalid result'
+                    })
+                )
+                await expect(
+                    fix.jwtService.refreshAuthTokens(original.refreshToken)
+                ).resolves.toMatchObject({ refreshToken: expect.any(String) })
+            })
         })
 
-        it.each([undefined, '', 1])('sessionId가 %s인 토큰은 거부한다', async (sessionId) => {
+        it.each([
+            { label: 'sessionId가 없는', sessionId: undefined },
+            { label: 'sessionId가 빈 문자열인', sessionId: '' },
+            { label: 'sessionId가 숫자인', sessionId: 1 }
+        ])('$label 토큰으로 갱신하면 401 예외를 던진다', async ({ sessionId }) => {
             const token = await signedRefresh({ sub: 'u1', sessionId })
             await expect(fix.jwtService.refreshAuthTokens(token)).rejects.toMatchObject({
                 status: 401
@@ -231,80 +277,107 @@ describe('JwtAuthService', () => {
     })
 
     describe('로그아웃', () => {
-        it('세션 삭제 뒤 인덱스 정리가 실패하면 500을 던진다', async () => {
-            const { refreshToken } = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
-            await fix.redis.set(`${fix.jwtService.prefix}:{u1}:sessions`, 'wrong-type')
-
-            await expect(fix.jwtService.revokeRefreshToken(refreshToken)).rejects.toMatchObject({
-                status: 500,
-                cause: expect.stringContaining('WRONGTYPE')
+        describe('세션은 존재하지만 세션 인덱스가 문자열로 바뀌었으면', () => {
+            let tokens: JwtAuthTokens
+            beforeEach(async () => {
+                tokens = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
+                await fix.redis.set(`${fix.jwtService.prefix}:{u1}:sessions`, 'wrong-type')
             })
-        })
-
-        it('전체 로그아웃의 Redis 명령 일부가 실패하면 500을 던진다', async () => {
-            await fix.jwtService.generateAuthTokens({ sub: 'u1' })
-            const read = fix.redis.smembers.bind(fix.redis)
-            vi.spyOn(fix.redis, 'smembers').mockImplementationOnce(async (key) => {
-                const ids = await read(key)
-                await fix.redis.set(key, 'wrong-type')
-                return ids
-            })
-
-            await expect(fix.jwtService.revokeAllSessions('u1')).rejects.toMatchObject({
-                status: 500,
-                cause: expect.stringContaining('WRONGTYPE')
-            })
-        })
-
-        it('한 세션만 폐기하고 같은 사용자의 다른 로그인은 유지한다', async () => {
-            const first = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
-            const second = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
-            await fix.jwtService.revokeRefreshToken(first.refreshToken)
-            await expect(
-                fix.jwtService.refreshAuthTokens(first.refreshToken)
-            ).rejects.toMatchObject({ status: 401 })
-            await expect(
-                fix.jwtService.refreshAuthTokens(second.refreshToken)
-            ).resolves.toMatchObject({ refreshToken: expect.any(String) })
-        })
-
-        it('전체 로그아웃은 회전한 세션까지 폐기하고 다른 사용자는 유지한다', async () => {
-            const first = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
-            const rotated = await fix.jwtService.refreshAuthTokens(first.refreshToken)
-            const second = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
-            const other = await fix.jwtService.generateAuthTokens({ sub: 'u2' })
-            await fix.jwtService.revokeAllSessions('u1')
-            for (const token of [rotated.refreshToken, second.refreshToken]) {
-                await expect(fix.jwtService.refreshAuthTokens(token)).rejects.toMatchObject({
-                    status: 401
+            it('로그아웃 시 Redis 자료형 오류를 원인으로 500 예외를 던진다', async () => {
+                await expect(
+                    fix.jwtService.revokeRefreshToken(tokens.refreshToken)
+                ).rejects.toMatchObject({
+                    status: 500,
+                    cause: expect.stringContaining('WRONGTYPE')
                 })
-            }
-            await expect(
-                fix.jwtService.refreshAuthTokens(other.refreshToken)
-            ).resolves.toMatchObject({ refreshToken: expect.any(String) })
+            })
         })
 
-        it('대상 세션을 조회한 뒤 새로 로그인한 세션의 인덱스는 지우지 않는다', async () => {
-            const old = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
-            const read = fix.redis.smembers.bind(fix.redis)
-            let added!: JwtAuthTokens
-            vi.spyOn(fix.redis, 'smembers').mockImplementationOnce(async (key) => {
-                const ids = await read(key)
-                added = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
-                return ids
+        describe('세션 인덱스 조회 직후 인덱스 자료형이 바뀌도록 설정하면', () => {
+            beforeEach(async () => {
+                await fix.jwtService.generateAuthTokens({ sub: 'u1' })
+                const read = fix.redis.smembers.bind(fix.redis)
+                vi.spyOn(fix.redis, 'smembers').mockImplementationOnce(async (key) => {
+                    const ids = await read(key)
+                    await fix.redis.set(key, 'wrong-type')
+                    return ids
+                })
             })
-            await fix.jwtService.revokeAllSessions('u1')
-            await expect(fix.jwtService.refreshAuthTokens(old.refreshToken)).rejects.toMatchObject({
-                status: 401
+            it('전체 로그아웃 시 Redis 자료형 오류를 원인으로 500 예외를 던진다', async () => {
+                await expect(fix.jwtService.revokeAllSessions('u1')).rejects.toMatchObject({
+                    status: 500,
+                    cause: expect.stringContaining('WRONGTYPE')
+                })
             })
-            const rotated = await fix.jwtService.refreshAuthTokens(added.refreshToken)
-            await fix.jwtService.revokeAllSessions('u1')
-            await expect(
-                fix.jwtService.refreshAuthTokens(rotated.refreshToken)
-            ).rejects.toMatchObject({ status: 401 })
         })
 
-        it('활성 세션이 없는 사용자의 전체 로그아웃은 멱등이다', async () => {
+        describe('같은 사용자의 로그인 세션이 두 개 존재하면', () => {
+            let first: JwtAuthTokens
+            let second: JwtAuthTokens
+            beforeEach(async () => {
+                first = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
+                second = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
+            })
+            it('한 세션을 로그아웃하면 그 토큰만 갱신을 거부하고 다른 세션은 유지한다', async () => {
+                await fix.jwtService.revokeRefreshToken(first.refreshToken)
+                await expect(
+                    fix.jwtService.refreshAuthTokens(first.refreshToken)
+                ).rejects.toMatchObject({ status: 401 })
+                await expect(
+                    fix.jwtService.refreshAuthTokens(second.refreshToken)
+                ).resolves.toMatchObject({ refreshToken: expect.any(String) })
+            })
+        })
+
+        describe('토큰을 갱신한 세션과 다른 로그인 세션 및 다른 사용자의 세션이 존재하면', () => {
+            let rotated: JwtAuthTokens
+            let second: JwtAuthTokens
+            let other: JwtAuthTokens
+            beforeEach(async () => {
+                const first = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
+                rotated = await fix.jwtService.refreshAuthTokens(first.refreshToken)
+                second = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
+                other = await fix.jwtService.generateAuthTokens({ sub: 'u2' })
+            })
+            it('전체 로그아웃하면 대상 사용자의 모든 세션을 폐기하고 다른 사용자는 유지한다', async () => {
+                await fix.jwtService.revokeAllSessions('u1')
+                for (const token of [rotated.refreshToken, second.refreshToken]) {
+                    await expect(fix.jwtService.refreshAuthTokens(token)).rejects.toMatchObject({
+                        status: 401
+                    })
+                }
+                await expect(
+                    fix.jwtService.refreshAuthTokens(other.refreshToken)
+                ).resolves.toMatchObject({ refreshToken: expect.any(String) })
+            })
+        })
+
+        describe('로그아웃 대상 조회 직후 새 세션이 생성되도록 설정하면', () => {
+            let old: JwtAuthTokens
+            let added: JwtAuthTokens
+            beforeEach(async () => {
+                old = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
+                const read = fix.redis.smembers.bind(fix.redis)
+                vi.spyOn(fix.redis, 'smembers').mockImplementationOnce(async (key) => {
+                    const ids = await read(key)
+                    added = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
+                    return ids
+                })
+            })
+            it('전체 로그아웃은 이전 세션만 폐기하고 새 세션은 다음 로그아웃에서 폐기한다', async () => {
+                await fix.jwtService.revokeAllSessions('u1')
+                await expect(
+                    fix.jwtService.refreshAuthTokens(old.refreshToken)
+                ).rejects.toMatchObject({ status: 401 })
+                const rotated = await fix.jwtService.refreshAuthTokens(added.refreshToken)
+                await fix.jwtService.revokeAllSessions('u1')
+                await expect(
+                    fix.jwtService.refreshAuthTokens(rotated.refreshToken)
+                ).rejects.toMatchObject({ status: 401 })
+            })
+        })
+
+        it('활성 세션이 없는 사용자를 전체 로그아웃해도 오류 없이 끝난다', async () => {
             await expect(fix.jwtService.revokeAllSessions('missing')).resolves.toBeUndefined()
         })
     })
@@ -341,15 +414,16 @@ describe('JwtAuthService', () => {
             ).rejects.toMatchObject({ status: 401 })
         })
 
-        it.each([{ issuer: 'other' }, { audience: 'other' }, { secret: 'wrong' }])(
-            '기대와 다른 검증 조건 %j를 거부한다',
-            async (options) => {
-                await expect(
-                    fix.jwtService.refreshAuthTokens(
-                        await signedRefresh({ sub: 'u1', sessionId: 's1' }, options)
-                    )
-                ).rejects.toMatchObject({ status: 401 })
-            }
-        )
+        it.each([
+            { label: 'issuer가 다른', options: { issuer: 'other' } },
+            { label: 'audience가 다른', options: { audience: 'other' } },
+            { label: '서명 키가 다른', options: { secret: 'wrong' } }
+        ])('$label 토큰으로 갱신하면 401 예외를 던진다', async ({ options }) => {
+            await expect(
+                fix.jwtService.refreshAuthTokens(
+                    await signedRefresh({ sub: 'u1', sessionId: 's1' }, options)
+                )
+            ).rejects.toMatchObject({ status: 401 })
+        })
     })
 })

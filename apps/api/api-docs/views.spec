@@ -11,9 +11,9 @@ create_and_login_user
 # (admin 토큰을 보내면 user 가드와 secret이 달라 서명 검증이 실패해 401이 된다.)
 as_guest
 
-TEST "게스트가 사용자 앱 홈을 조회한다(추천은 개봉일 순)" \
+TEST "로그인하지 않은 사용자가 사용자 앱 홈을 조회한다" \
 	200 GET /views/user-app/home
 
-TEST "로그인 사용자가 사용자 앱 홈을 조회한다(추천 개인화)" \
+TEST "로그인한 사용자가 사용자 앱 홈을 조회한다" \
 	200 GET /views/user-app/home \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"

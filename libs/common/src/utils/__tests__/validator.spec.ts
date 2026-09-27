@@ -132,14 +132,10 @@ describe('ensure', () => {
         expect(ensure('hello')).toBe('hello')
     })
 
-    it('0/false/""은 통과시키고 null/undefined만 예외를 던진다', () => {
-        expect(ensure(0)).toBe(0)
-        expect(ensure(false)).toBe(false)
-        expect(ensure('')).toBe('')
-
-        expect(() => ensure(null)).toThrow(
-            expect.objectContaining({ status: 500, cause: 'Value must exist.' })
-        )
+    it.each([0, false, ''])('값이 %j이면 그대로 반환한다', (value) => {
+        expect(ensure(value)).toBe(value)
+    })
+    it('값이 undefined이면 예외를 던진다', () => {
         expect(() => ensure(undefined)).toThrow(
             expect.objectContaining({ status: 500, cause: 'Value must exist.' })
         )

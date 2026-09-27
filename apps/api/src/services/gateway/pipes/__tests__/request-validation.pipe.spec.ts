@@ -13,7 +13,7 @@ describe('RequestValidationPipe HTTP 및 오류 변환', () => {
     })
     afterEach(() => fix.teardown())
 
-    it('경로가 없는 Standard Schema 오류도 안전하게 변환한다', async () => {
+    it('경로가 없는 스키마 오류는 field가 빈 문자열인 예외로 변환해 던진다', async () => {
         const schema = {
             '~standard': {
                 validate: () => ({ issues: [{ message: 'root validation failed' }] }),
@@ -34,7 +34,7 @@ describe('RequestValidationPipe HTTP 및 오류 변환', () => {
     })
 
     describe('POST /', () => {
-        it('유효한 페이로드는 검증을 통과한다', async () => {
+        it('유효한 본문으로 요청하면 201을 반환한다', async () => {
             await fix.httpClient.post('/').body({ date: nullDate, sampleId: 'id' }).created()
         })
 
@@ -54,7 +54,7 @@ describe('RequestValidationPipe HTTP 및 오류 변환', () => {
         })
 
         // 응답을 만드는 함수로 예상값까지 만들면 같은 오류를 놓칠 수 있으므로, 기대하는 JSON을 직접 적는다.
-        it('검증 실패 시 code·message·details[{ field, constraints }] 형식의 본문을 반환한다', async () => {
+        it('필수 필드가 누락되면 필드명과 검증 오류를 담은 400 응답을 반환한다', async () => {
             await fix.httpClient
                 .post('/')
                 .body({ date: nullDate })
@@ -71,14 +71,14 @@ describe('RequestValidationPipe HTTP 및 오류 변환', () => {
     })
 
     describe('POST /array', () => {
-        it('유효한 배열은 검증을 통과한다', async () => {
+        it('유효한 배열로 요청하면 201을 반환한다', async () => {
             await fix.httpClient
                 .post('/array')
                 .body([{ date: nullDate, sampleId: 'id' }])
                 .created()
         })
 
-        it('배열 항목 중 하나라도 유효하지 않으면 400을 반환한다', async () => {
+        it('배열 항목의 날짜가 잘못되면 400을 반환한다', async () => {
             await fix.httpClient
                 .post('/array')
                 .body([{ date: 'wrong', sampleId: 'id' }])
@@ -87,14 +87,14 @@ describe('RequestValidationPipe HTTP 및 오류 변환', () => {
     })
 
     describe('POST /nested', () => {
-        it('유효한 중첩 배열은 검증을 통과한다', async () => {
+        it('유효한 중첩 배열로 요청하면 201을 반환한다', async () => {
             await fix.httpClient
                 .post('/nested')
                 .body({ samples: [{ date: nullDate, sampleId: 'id' }] })
                 .created()
         })
 
-        it('중첩 배열 항목 중 하나라도 유효하지 않으면 400을 반환한다', async () => {
+        it('중첩 배열 항목의 날짜가 잘못되면 400을 반환한다', async () => {
             await fix.httpClient
                 .post('/nested')
                 .body({ samples: [{ date: 'wrong', sampleId: 'id' }] })

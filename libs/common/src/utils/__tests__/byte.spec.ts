@@ -40,10 +40,12 @@ describe('ByteUtil', () => {
             )
         })
 
-        it('소문자 단위도 인식한다', () => {
-            expect(ByteUtil.fromString('1kb')).toBe(1024)
-            expect(ByteUtil.fromString('1mb')).toBe(1024 * 1024)
-            expect(ByteUtil.fromString('1gb')).toBe(1024 ** 3)
+        it.each([
+            ['1kb', 1024],
+            ['1mb', 1024 * 1024],
+            ['1gb', 1024 ** 3]
+        ] as const)('소문자 단위 %s도 바이트로 변환한다', (input, expected) => {
+            expect(ByteUtil.fromString(input)).toBe(expected)
         })
 
         describe('유효하지 않은 형식', () => {
@@ -100,12 +102,12 @@ describe('ByteUtil', () => {
             )
         })
 
-        it('toString 결과를 fromString이 같은 값으로 되돌린다 (왕복)', () => {
-            const values = [1536, 1024 ** 2 * 1.5, -1536, 1024 ** 3 + 256 * 1024 ** 2 + 128 * 1024]
-            for (const value of values) {
+        it.each([1536, 1024 ** 2 * 1.5, -1536, 1024 ** 3 + 256 * 1024 ** 2 + 128 * 1024])(
+            '%s를 문자열로 변환한 뒤 읽으면 원래 값으로 돌아온다',
+            (value) => {
                 expect(ByteUtil.fromString(ByteUtil.toString(value))).toBe(value)
             }
-        })
+        )
 
         it.each([
             [0.5, '0.5B'],

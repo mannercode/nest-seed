@@ -29,7 +29,7 @@ describe('UsersService', () => {
     afterEach(() => teardown?.())
 
     describe('POST /users', () => {
-        it('생성된 고객을 반환한다', async () => {
+        it('생성된 사용자를 반환한다', async () => {
             const createDto = buildCreateUserDto({ name: '2000-01-02' })
 
             await fix.httpClient
@@ -41,26 +41,45 @@ describe('UsersService', () => {
                 })
         })
 
-        it.each([{ name: false }, { password: 1234 }])(
-            '문자열 필드의 잘못된 타입 %j는 400을 반환한다',
-            async (invalid) => {
-                await fix.httpClient
-                    .post('/users')
-                    .body({ ...buildCreateUserDto(), ...invalid })
-                    .badRequest()
-            }
-        )
-
-        it('이미 존재하는 이메일이면 409를 반환한다', async () => {
-            const email = 'user@mail.com'
-            await createUser(fix, { email })
-
-            const createDto = buildCreateUserDto({ email })
-
+        it.each([
+            { condition: 'name이 문자열이 아니면', invalid: { name: false } },
+            { condition: 'password가 문자열이 아니면', invalid: { password: 1234 } }
+        ])('$condition 400을 반환한다', async ({ invalid }) => {
             await fix.httpClient
                 .post('/users')
-                .body(createDto)
-                .conflict({ expected: Errors.Users.EmailAlreadyExists(createDto.email) })
+                .body({ ...buildCreateUserDto(), ...invalid })
+                .badRequest()
+        })
+
+        describe('사용자가 존재하면', () => {
+            const email = 'user@mail.com'
+
+            beforeEach(async () => {
+                await createUser(fix, { email })
+            })
+
+            it('그 사용자의 이메일로 가입을 요청하면 409를 반환한다', async () => {
+                await fix.httpClient
+                    .post('/users')
+                    .body(buildCreateUserDto({ email }))
+                    .conflict({ expected: Errors.Users.EmailAlreadyExists(email) })
+            })
+        })
+
+        describe('탈퇴한 사용자가 있으면', () => {
+            const email = 'rejoin@mail.com'
+
+            beforeEach(async () => {
+                const user = await createUser(fix, { email })
+                await fix.httpClient.delete(`/users/${user.id}`).headers(adminAuth).noContent()
+            })
+
+            it('같은 이메일로 다시 가입할 수 있다', async () => {
+                await fix.httpClient
+                    .post('/users')
+                    .body(buildCreateUserDto({ email }))
+                    .created({ schema: UserSchema })
+            })
         })
 
         it(
@@ -101,31 +120,25 @@ describe('UsersService', () => {
                 .body({})
                 .badRequest({ expected: Errors.RequestValidation.Failed(expect.any(Array)) })
         })
-
-        it('중복 키가 아닌 저장 오류는 ConflictException으로 바꾸지 않고 그대로 던진다', async () => {
-            const service = fix.module.get(UsersService)
-            const repository = fix.module.get(UsersRepository)
-            const failure = new Error('storage unavailable')
-            vi.spyOn(repository.collection, 'insertOne').mockRejectedValueOnce(failure)
-
-            // "그대로 던진다"의 핵심은 409로 변환되지 않는 것이므로 예외 타입까지 확인한다.
-            const promise = service.create(buildCreateUserDto())
-            await expect(promise).rejects.toBe(failure)
-            await expect(promise).rejects.not.toBeInstanceOf(ConflictException)
-        })
     })
 
     describe('GET /users/:id', () => {
-        it('ID에 해당하는 고객을 반환한다', async () => {
-            const user = await createUser(fix)
+        describe('사용자가 존재하면', () => {
+            let user: UserDto
 
-            await fix.httpClient
-                .get(`/users/${user.id}`)
-                .headers(adminAuth)
-                .ok({ schema: UserSchema, expected: user })
+            beforeEach(async () => {
+                user = await createUser(fix)
+            })
+
+            it('해당 사용자를 반환한다', async () => {
+                await fix.httpClient
+                    .get(`/users/${user.id}`)
+                    .headers(adminAuth)
+                    .ok({ schema: UserSchema, expected: user })
+            })
         })
 
-        it('ID에 해당하는 고객이 없으면 404를 반환한다', async () => {
+        it('존재하지 않는 사용자 ID로 조회하면 404를 반환한다', async () => {
             await fix.httpClient
                 .get(`/users/${nullObjectId}`)
                 .headers(adminAuth)
@@ -140,7 +153,7 @@ describe('UsersService', () => {
             user = await createUser(fix, { name: 'original-name' })
         })
 
-        it('수정된 고객을 반환한다', async () => {
+        it('수정된 사용자를 반환한다', async () => {
             const updateDto = { birthDate: plainDate('1900-12-31'), email: 'new@mail.com' }
 
             await fix.httpClient
@@ -172,7 +185,7 @@ describe('UsersService', () => {
                 .ok({ schema: UserSchema, expected: { ...user, ...updateDto } })
         })
 
-        it('ID에 해당하는 고객이 없으면 404를 반환한다', async () => {
+        it('존재하지 않는 사용자 ID로 수정하면 404를 반환한다', async () => {
             await fix.httpClient
                 .patch(`/users/${nullObjectId}`)
                 .headers(adminAuth)
@@ -180,7 +193,7 @@ describe('UsersService', () => {
                 .notFound({ expected: Errors.Mongo.DocumentNotFound(nullObjectId) })
         })
 
-        describe('password를 변경하면', () => {
+        describe('사용자의 비밀번호가 변경되었으면', () => {
             const newPassword = 'newPassword'
             let refreshToken: string
 
@@ -196,7 +209,7 @@ describe('UsersService', () => {
                     .ok({ schema: UserSchema })
             })
 
-            it('새 password로 로그인할 수 있다', async () => {
+            it('새 비밀번호로 로그인할 수 있다', async () => {
                 await fix.httpClient
                     .post('/users/login')
                     .body({ email: user.email, password: newPassword })
@@ -208,7 +221,7 @@ describe('UsersService', () => {
                     })
             })
 
-            it('기존 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
+            it('기존 리프레시 토큰으로 갱신을 요청하면 401을 반환한다', async () => {
                 await fix.httpClient
                     .post('/users/refresh')
                     .body({ refreshToken })
@@ -216,65 +229,69 @@ describe('UsersService', () => {
             })
         })
 
-        it('다른 고객의 이메일로 변경하면 409를 반환한다', async () => {
+        describe('다른 사용자가 존재하면', () => {
             const existingEmail = 'taken@mail.com'
-            await createUser(fix, { email: existingEmail })
-            const target = await createUser(fix, { email: 'mine@mail.com' })
 
-            await fix.httpClient
-                .patch(`/users/${target.id}`)
-                .headers(adminAuth)
-                .body({ email: existingEmail })
-                .conflict({ expected: Errors.Users.EmailAlreadyExists(existingEmail) })
+            beforeEach(async () => {
+                await createUser(fix, { email: existingEmail })
+            })
+
+            it('그 사용자의 이메일로 변경을 요청하면 409를 반환한다', async () => {
+                await fix.httpClient
+                    .patch(`/users/${user.id}`)
+                    .headers(adminAuth)
+                    .body({ email: existingEmail })
+                    .conflict({ expected: Errors.Users.EmailAlreadyExists(existingEmail) })
+            })
         })
     })
 
     describe('DELETE /users/:id', () => {
-        it('204를 반환하고 삭제 후 조회에는 404를 반환한다', async () => {
-            const user = await createUser(fix)
+        describe('사용자가 존재하면', () => {
+            let user: UserDto
 
-            await fix.httpClient.delete(`/users/${user.id}`).headers(adminAuth).noContent()
+            beforeEach(async () => {
+                user = await createUser(fix)
+            })
 
-            await fix.httpClient
-                .get(`/users/${user.id}`)
-                .headers(adminAuth)
-                .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([user.id]) })
+            it('204를 반환하고 삭제 후 조회에는 404를 반환한다', async () => {
+                await fix.httpClient.delete(`/users/${user.id}`).headers(adminAuth).noContent()
+
+                await fix.httpClient
+                    .get(`/users/${user.id}`)
+                    .headers(adminAuth)
+                    .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([user.id]) })
+            })
         })
 
-        it('고객이 없어도 204를 반환한다', async () => {
+        it('존재하지 않는 사용자 ID로 삭제를 요청해도 204를 반환한다', async () => {
             await fix.httpClient.delete(`/users/${nullObjectId}`).headers(adminAuth).noContent()
-        })
-
-        it('탈퇴한 고객의 이메일로 다시 가입할 수 있다', async () => {
-            const email = 'rejoin@mail.com'
-            const user = await createUser(fix, { email })
-
-            await fix.httpClient.delete(`/users/${user.id}`).headers(adminAuth).noContent()
-
-            await fix.httpClient
-                .post('/users')
-                .body(buildCreateUserDto({ email }))
-                .created({ schema: UserSchema })
-        })
-
-        it('삭제된 고객의 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
-            const { user, refreshToken } = await createAndLoginUser(fix)
-
-            await fix.httpClient.delete(`/users/${user.id}`).headers(adminAuth).noContent()
-
-            await fix.httpClient
-                .post('/users/refresh')
-                .body({ refreshToken })
-                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
-        })
-
-        it('회수할 세션이 없으면 계정 존재 여부와 무관하게 완료한다', async () => {
-            const service = fix.module.get(UsersService)
-            await expect(service.revokeAllForUser(nullObjectId)).resolves.toBeUndefined()
         })
     })
 
-    describe('관리자 전용 사용자 관리 경로에 접근할 때', () => {
+    describe('POST /users/refresh', () => {
+        describe('로그인한 사용자가 탈퇴했으면', () => {
+            let refreshToken: string
+
+            beforeEach(async () => {
+                const session = await createAndLoginUser(fix)
+                refreshToken = session.refreshToken
+                await fix.httpClient
+                    .delete(`/users/${session.user.id}`)
+                    .headers(adminAuth)
+                    .noContent()
+            })
+
+            it('기존 리프레시 토큰으로 갱신을 요청하면 401을 반환한다', async () => {
+                await fix.httpClient
+                    .post('/users/refresh')
+                    .body({ refreshToken })
+                    .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+            })
+        })
+    })
+
+    describe('일반 사용자로 로그인했으면', () => {
         let userAuth: { Authorization: string }
         let target: UserDto
 
@@ -284,14 +301,14 @@ describe('UsersService', () => {
             target = await createUser(fix, { email: 'target@mail.com' })
         })
 
-        it('user 토큰으로 GET /users/:id에 접근하면 401을 반환한다', async () => {
+        it('GET /users/:id 요청에 401을 반환한다', async () => {
             await fix.httpClient
                 .get(`/users/${target.id}`)
                 .headers(userAuth)
                 .unauthorized({ expected: Errors.Auth.Unauthorized() })
         })
 
-        it('user 토큰으로 PATCH /users/:id에 접근하면 401을 반환한다', async () => {
+        it('PATCH /users/:id 요청에 401을 반환한다', async () => {
             await fix.httpClient
                 .patch(`/users/${target.id}`)
                 .headers(userAuth)
@@ -299,21 +316,29 @@ describe('UsersService', () => {
                 .unauthorized({ expected: Errors.Auth.Unauthorized() })
         })
 
-        it('user 토큰으로 DELETE /users/:id에 접근하면 401을 반환한다', async () => {
+        it('DELETE /users/:id 요청에 401을 반환한다', async () => {
             await fix.httpClient
                 .delete(`/users/${target.id}`)
                 .headers(userAuth)
                 .unauthorized({ expected: Errors.Auth.Unauthorized() })
         })
 
-        it('user 토큰으로 GET /users 목록에 접근하면 401을 반환한다', async () => {
+        it('GET /users 요청에 401을 반환한다', async () => {
             await fix.httpClient
                 .get('/users')
                 .headers(userAuth)
                 .unauthorized({ expected: Errors.Auth.Unauthorized() })
         })
+    })
 
-        it('Authorization 헤더가 없으면 401을 반환한다', async () => {
+    describe('인증 정보가 없으면', () => {
+        let target: UserDto
+
+        beforeEach(async () => {
+            target = await createUser(fix, { email: 'target@mail.com' })
+        })
+
+        it('GET /users/:id 요청에 401을 반환한다', async () => {
             await fix.httpClient
                 .get(`/users/${target.id}`)
                 .unauthorized({ expected: Errors.Auth.Unauthorized() })
@@ -407,6 +432,42 @@ describe('UsersService', () => {
                 .headers(adminAuth)
                 .query({ wrong: 'value' })
                 .badRequest({ expected: Errors.RequestValidation.Failed(expect.any(Array)) })
+        })
+    })
+
+    describe('create', () => {
+        describe('중복 키가 아닌 오류로 저장에 실패하면', () => {
+            let service: UsersService
+            let failure: Error
+
+            beforeEach(() => {
+                service = fix.module.get(UsersService)
+                const repository = fix.module.get(UsersRepository)
+                failure = new Error('storage unavailable')
+                vi.spyOn(repository.collection, 'insertOne').mockRejectedValueOnce(failure)
+            })
+
+            it('저장 오류를 그대로 던진다', async () => {
+                const promise = service.create(buildCreateUserDto())
+                await expect(promise).rejects.toBe(failure)
+                await expect(promise).rejects.not.toBeInstanceOf(ConflictException)
+            })
+        })
+    })
+
+    describe('revokeAllForUser', () => {
+        describe('사용자와 리프레시 세션이 없으면', () => {
+            let service: UsersService
+            let userId: string
+
+            beforeEach(() => {
+                service = fix.module.get(UsersService)
+                userId = nullObjectId
+            })
+
+            it('오류 없이 완료한다', async () => {
+                await expect(service.revokeAllForUser(userId)).resolves.toBeUndefined()
+            })
         })
     })
 })

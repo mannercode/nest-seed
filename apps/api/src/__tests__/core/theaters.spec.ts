@@ -66,12 +66,16 @@ describe('TheatersService', () => {
     })
 
     describe('GET /theaters/:id', () => {
-        it('ID에 해당하는 극장을 반환한다', async () => {
-            const theater = await createTheater(fix)
-
-            await fix.httpClient
-                .get(`/theaters/${theater.id}`)
-                .ok({ schema: TheaterSchema, expected: theater })
+        describe('극장이 존재하면', () => {
+            let theater: TheaterDto
+            beforeEach(async () => {
+                theater = await createTheater(fix)
+            })
+            it('ID로 해당 극장을 조회할 수 있다', async () => {
+                await fix.httpClient
+                    .get(`/theaters/${theater.id}`)
+                    .ok({ schema: TheaterSchema, expected: theater })
+            })
         })
 
         it('ID에 해당하는 극장이 없으면 404를 반환한다', async () => {
@@ -136,36 +140,34 @@ describe('TheatersService', () => {
                 .body({})
                 .notFound({ expected: Errors.Mongo.DocumentNotFound(nullObjectId) })
         })
-
-        it('필수 필드를 null로 바꾸는 직접 호출은 저장 전에 거부한다', async () => {
-            const theatersService = fix.module.get(TheatersService)
-
-            // @ts-expect-error 런타임 호출이 타입 계약을 어긴 경우를 검증한다.
-            await expect(theatersService.update(theater.id, { name: null })).rejects.toThrow()
-            await fix.httpClient
-                .get(`/theaters/${theater.id}`)
-                .ok({ schema: TheaterSchema, expected: theater })
-        })
     })
 
     describe('DELETE /theaters/:id', () => {
-        it('204를 반환하고 삭제 후 조회에는 404를 반환한다', async () => {
-            const theater = await createTheater(fix)
+        describe('상영이 없는 극장이 존재하면', () => {
+            let theater: TheaterDto
+            beforeEach(async () => {
+                theater = await createTheater(fix)
+            })
+            it('204를 반환하고 삭제 후 조회에는 404를 반환한다', async () => {
+                await fix.httpClient.delete(`/theaters/${theater.id}`).noContent()
 
-            await fix.httpClient.delete(`/theaters/${theater.id}`).noContent()
-
-            await fix.httpClient
-                .get(`/theaters/${theater.id}`)
-                .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([theater.id]) })
+                await fix.httpClient
+                    .get(`/theaters/${theater.id}`)
+                    .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([theater.id]) })
+            })
         })
 
-        it('상영이 참조하는 극장은 삭제할 수 없다', async () => {
-            const theater = await createTheater(fix)
-            await createShowtimes(fix, [{ theaterId: theater.id }])
-
-            await fix.httpClient
-                .delete(`/theaters/${theater.id}`)
-                .conflict({ expected: Errors.Theaters.DeleteBlockedByShowtimes(theater.id) })
+        describe('상영이 등록된 극장이 있으면', () => {
+            let theater: TheaterDto
+            beforeEach(async () => {
+                theater = await createTheater(fix)
+                await createShowtimes(fix, [{ theaterId: theater.id }])
+            })
+            it('극장 삭제 요청에 409를 반환한다', async () => {
+                await fix.httpClient
+                    .delete(`/theaters/${theater.id}`)
+                    .conflict({ expected: Errors.Theaters.DeleteBlockedByShowtimes(theater.id) })
+            })
         })
 
         it('극장이 없어도 204를 반환한다', async () => {
@@ -222,6 +224,22 @@ describe('TheatersService', () => {
                 .get('/theaters')
                 .query({ wrong: 'value' })
                 .badRequest({ expected: Errors.RequestValidation.Failed(expect.any(Array)) })
+        })
+    })
+
+    describe('update', () => {
+        let theater: TheaterDto
+        beforeEach(async () => {
+            theater = await createTheater(fix, { name: 'original-name' })
+        })
+        it('필수 필드를 null로 수정하면 예외를 던지고 기존 값을 유지한다', async () => {
+            const theatersService = fix.module.get(TheatersService)
+
+            // @ts-expect-error 런타임 호출이 타입 계약을 어긴 경우를 검증한다.
+            await expect(theatersService.update(theater.id, { name: null })).rejects.toThrow()
+            await fix.httpClient
+                .get(`/theaters/${theater.id}`)
+                .ok({ schema: TheaterSchema, expected: theater })
         })
     })
 })

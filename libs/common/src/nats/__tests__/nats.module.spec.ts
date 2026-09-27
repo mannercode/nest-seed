@@ -31,13 +31,18 @@ describe('getNatsConnectionToken', () => {
 })
 
 describe('NatsConnectionRegistry', () => {
-    it('drain이 실패한 연결이 있어도 onModuleDestroy는 예외를 전파하지 않는다', async () => {
-        const registry = new NatsConnectionRegistry()
-        const connection = { drain: vi.fn().mockRejectedValue(new Error('boom')) }
-        registry.add(connection as any)
-
-        await expect(registry.onModuleDestroy()).resolves.toBeUndefined()
-        expect(connection.drain).toHaveBeenCalled()
+    describe('drain이 실패하는 연결이 등록되어 있으면', () => {
+        let registry: NatsConnectionRegistry
+        let connection: { drain: ReturnType<typeof vi.fn> }
+        beforeEach(() => {
+            registry = new NatsConnectionRegistry()
+            connection = { drain: vi.fn().mockRejectedValue(new Error('boom')) }
+            registry.add(connection as any)
+        })
+        it('종료 시 연결의 drain을 호출하고 오류는 전파하지 않는다', async () => {
+            await expect(registry.onModuleDestroy()).resolves.toBeUndefined()
+            expect(connection.drain).toHaveBeenCalled()
+        })
     })
 })
 

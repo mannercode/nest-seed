@@ -9,12 +9,15 @@ describe('Checksum', () => {
             ).toEqual({ algorithm: 'sha256', base64: 'encoded-checksum' })
         })
 
-        it('지원하지 않는 알고리즘, 빈 값과 알 수 없는 필드를 거부한다', () => {
-            expect(() => ChecksumSchema.parse({ algorithm: 'md5', base64: 'value' })).toThrow()
-            expect(() => ChecksumSchema.parse({ algorithm: 'sha256', base64: '' })).toThrow()
-            expect(() =>
-                ChecksumSchema.parse({ algorithm: 'sha256', base64: 'value', unknown: true })
-            ).toThrow()
+        it.each([
+            { label: '지원하지 않는 알고리즘', input: { algorithm: 'md5', base64: 'value' } },
+            { label: '빈 체크섬', input: { algorithm: 'sha256', base64: '' } },
+            {
+                label: '알 수 없는 필드',
+                input: { algorithm: 'sha256', base64: 'value', unknown: true }
+            }
+        ])('$label 입력을 검증하면 예외를 던진다', ({ input }) => {
+            expect(() => ChecksumSchema.parse(input)).toThrow()
         })
     })
 

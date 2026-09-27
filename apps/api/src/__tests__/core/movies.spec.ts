@@ -36,11 +36,11 @@ describe('MoviesService', () => {
 
     describe('POST /movies', () => {
         it.each([
-            { durationInSeconds: '90' },
-            { title: true },
-            { releaseDate: null },
-            { assetIds: [nullObjectId] }
-        ])('본문의 잘못된 필드 %j는 400을 반환한다', async (invalid) => {
+            { condition: '상영 시간이 문자열이면', invalid: { durationInSeconds: '90' } },
+            { condition: '제목이 불리언이면', invalid: { title: true } },
+            { condition: '개봉일이 null이면', invalid: { releaseDate: null } },
+            { condition: 'assetIds를 직접 지정하면', invalid: { assetIds: [nullObjectId] } }
+        ])('$condition 400을 반환한다', async ({ invalid }) => {
             await fix.httpClient.post('/movies').body(invalid).badRequest()
         })
 
@@ -74,12 +74,16 @@ describe('MoviesService', () => {
     })
 
     describe('GET /movies/:id', () => {
-        it('ID에 해당하는 영화를 반환한다', async () => {
-            const movie = await createMovie(fix)
-
-            await fix.httpClient
-                .get(`/movies/${movie.id}`)
-                .ok({ schema: MovieSchema, expected: movie })
+        describe('공개된 영화가 있으면', () => {
+            let movie: MovieDto
+            beforeEach(async () => {
+                movie = await createMovie(fix)
+            })
+            it('ID로 해당 영화를 조회할 수 있다', async () => {
+                await fix.httpClient
+                    .get(`/movies/${movie.id}`)
+                    .ok({ schema: MovieSchema, expected: movie })
+            })
         })
 
         describe('이미지가 있을 때', () => {
@@ -109,12 +113,16 @@ describe('MoviesService', () => {
                 .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]) })
         })
 
-        it('미공개(draft) 영화면 404를 반환한다', async () => {
-            const draft = await createUnpublishedMovie(fix)
-
-            await fix.httpClient
-                .get(`/movies/${draft.id}`)
-                .notFound({ expected: Errors.Movies.NotFound(draft.id) })
+        describe('미공개 영화가 있으면', () => {
+            let draft: MovieDto
+            beforeEach(async () => {
+                draft = await createUnpublishedMovie(fix)
+            })
+            it('ID로 조회하면 404를 반환한다', async () => {
+                await fix.httpClient
+                    .get(`/movies/${draft.id}`)
+                    .notFound({ expected: Errors.Movies.NotFound(draft.id) })
+            })
         })
     })
 
@@ -141,25 +149,33 @@ describe('MoviesService', () => {
                 .ok({ schema: MovieSchema, expected: { ...movie, ...updateDto } })
         })
 
-        it('assetIds 직접 입력은 거절하고 기존 이미지 연결을 유지한다', async () => {
-            const assetId = await uploadAndFinalizeMovieAsset(fix, movie.id)
-            const moviesRepository = fix.module.get(MoviesRepository)
-            const before = await moviesRepository.getForUpdate(movie.id)
-            expect(before.movie.assetIds).toEqual([assetId])
+        describe('영화에 이미지가 연결되어 있으면', () => {
+            let moviesRepository: MoviesRepository
+            let before: Awaited<ReturnType<MoviesRepository['getForUpdate']>>
+            beforeEach(async () => {
+                const assetId = await uploadAndFinalizeMovieAsset(fix, movie.id)
+                moviesRepository = fix.module.get(MoviesRepository)
+                before = await moviesRepository.getForUpdate(movie.id)
+                expect(before.movie.assetIds).toEqual([assetId])
+            })
+            it('assetIds를 직접 수정하는 요청에 400을 반환하고 기존 이미지 연결을 유지한다', async () => {
+                await fix.httpClient
+                    .patch(`/movies/${movie.id}`)
+                    .body({ assetIds: [] })
+                    .badRequest()
+                expect(await moviesRepository.getForUpdate(movie.id)).toEqual(before)
 
-            await fix.httpClient.patch(`/movies/${movie.id}`).body({ assetIds: [] }).badRequest()
-            expect(await moviesRepository.getForUpdate(movie.id)).toEqual(before)
-
-            const { body } = await fix.httpClient
-                .get(`/movies/${movie.id}`)
-                .ok({
-                    schema: MovieSchema,
-                    expected: { ...movie, imageUrls: [expect.any(String)] }
-                })
-            const response = await fetch(ensure(body.imageUrls[0]))
-            expect(response.ok).toBe(true)
-            const buffer = Buffer.from(await response.bytes())
-            expect(Checksum.fromBuffer(buffer)).toEqual(testAssets.image.checksum)
+                const { body } = await fix.httpClient
+                    .get(`/movies/${movie.id}`)
+                    .ok({
+                        schema: MovieSchema,
+                        expected: { ...movie, imageUrls: [expect.any(String)] }
+                    })
+                const response = await fetch(ensure(body.imageUrls[0]))
+                expect(response.ok).toBe(true)
+                const buffer = Buffer.from(await response.bytes())
+                expect(Checksum.fromBuffer(buffer)).toEqual(testAssets.image.checksum)
+            })
         })
 
         it('수정 내용이 DB에 저장된다', async () => {
@@ -183,26 +199,34 @@ describe('MoviesService', () => {
     })
 
     describe('DELETE /movies/:id', () => {
-        it('204를 반환하고 삭제 후 조회에는 404를 반환한다', async () => {
-            const movie = await createMovie(fix)
+        describe('상영이 없는 영화가 존재하면', () => {
+            let movie: MovieDto
+            beforeEach(async () => {
+                movie = await createMovie(fix)
+            })
+            it('204를 반환하고 삭제 후 조회에는 404를 반환한다', async () => {
+                await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
 
-            await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
-
-            await fix.httpClient
-                .get(`/movies/${movie.id}`)
-                .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([movie.id]) })
+                await fix.httpClient
+                    .get(`/movies/${movie.id}`)
+                    .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([movie.id]) })
+            })
         })
 
-        it('상영이 참조하는 영화는 삭제할 수 없다', async () => {
-            const movie = await createMovie(fix)
-            await createShowtimes(fix, [{ movieId: movie.id }])
-
-            await fix.httpClient
-                .delete(`/movies/${movie.id}`)
-                .conflict({ expected: Errors.Movies.DeleteBlockedByShowtimes(movie.id) })
+        describe('상영이 등록된 영화가 있으면', () => {
+            let movie: MovieDto
+            beforeEach(async () => {
+                movie = await createMovie(fix)
+                await createShowtimes(fix, [{ movieId: movie.id }])
+            })
+            it('영화 삭제 요청에 409를 반환한다', async () => {
+                await fix.httpClient
+                    .delete(`/movies/${movie.id}`)
+                    .conflict({ expected: Errors.Movies.DeleteBlockedByShowtimes(movie.id) })
+            })
         })
 
-        describe('이미지가 있는 영화를 삭제할 때', () => {
+        describe('이미지가 연결된 영화가 있으면', () => {
             let movie: MovieDto
 
             beforeEach(async () => {

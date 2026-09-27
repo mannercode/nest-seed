@@ -1,6 +1,7 @@
-import { ensure, pickIds, sleep } from '@mannercode/common'
-import { oid } from '@mannercode/testing'
-import { PurchaseRecordsService, PurchaseRecordStatus } from '#core'
+import type { MockInstance } from 'vitest'
+import { DateUtil, ensure, pickIds } from '@mannercode/common'
+import { instant, oid } from '@mannercode/testing'
+import { type PurchaseRecordDto, PurchaseRecordsService, PurchaseRecordStatus } from '#core'
 import {
     buildCreatePurchaseRecordDto,
     createPurchaseRecord,
@@ -40,11 +41,14 @@ describe('PurchaseRecordsService', () => {
     })
 
     describe('findIdempotencyOperation', () => {
-        it.each(['key-255', 'missing-key'])(
-            '구매 기록이 누적되어도 %s 조회는 대상 문서만 읽는다',
-            async (idempotencyKey) => {
-                const userId = oid(0x1)
-                const records = await Promise.all(
+        describe('멱등성 키가 서로 다른 구매 기록 256건이 존재하면', () => {
+            const userId = oid(0x1)
+            let records: PurchaseRecordDto[]
+            let repository: PurchaseRecordsRepository
+            let findOne: MockInstance<PurchaseRecordsRepository['collection']['findOne']>
+
+            beforeEach(async () => {
+                records = await Promise.all(
                     Array.from({ length: 256 }, (_, index) =>
                         purchaseRecordsService.create(buildCreatePurchaseRecordDto({ userId }), {
                             idempotency: { fingerprint: 'fingerprint', key: `key-${index}` },
@@ -52,41 +56,69 @@ describe('PurchaseRecordsService', () => {
                         })
                     )
                 )
-                const repository = fix.module.get(PurchaseRecordsRepository)
-                const findOne = vi.spyOn(repository.collection, 'findOne')
+                repository = fix.module.get(PurchaseRecordsRepository)
+                findOne = vi.spyOn(repository.collection, 'findOne')
+            })
 
-                const operation = await purchaseRecordsService.findIdempotencyOperation({
-                    userId,
-                    idempotencyKey
-                })
+            it.each([
+                { condition: '등록된 키로 조회하면', idempotencyKey: 'key-255' },
+                { condition: '등록되지 않은 키로 조회해도', idempotencyKey: 'missing-key' }
+            ])(
+                '$condition 문서와 인덱스 키를 각각 한 건 이하로 읽는다',
+                async ({ idempotencyKey }) => {
+                    const operation = await purchaseRecordsService.findIdempotencyOperation({
+                        userId,
+                        idempotencyKey
+                    })
 
-                expect(operation?.purchaseRecord).toEqual(
-                    idempotencyKey === 'key-255' ? records[255] : undefined
-                )
-                // 실제 서비스가 보낸 조회를 explain해 데이터 증가에 따른 전체 순회를 막는다.
-                const [filter] = ensure(findOne.mock.calls[0])
-                const { executionStats } = await repository.collection
-                    .find(filter)
-                    .limit(1)
-                    .explain('executionStats')
-                expect(executionStats.totalDocsExamined).toBeLessThanOrEqual(1)
-                expect(executionStats.totalKeysExamined).toBeLessThanOrEqual(1)
-            }
-        )
+                    expect(operation?.purchaseRecord).toEqual(
+                        idempotencyKey === 'key-255' ? records[255] : undefined
+                    )
+                    // 실제 서비스가 보낸 조회를 explain해 데이터 증가에 따른 전체 순회를 막는다.
+                    const [filter] = ensure(findOne.mock.calls[0])
+                    const { executionStats } = await repository.collection
+                        .find(filter)
+                        .limit(1)
+                        .explain('executionStats')
+                    expect(executionStats.totalDocsExamined).toBeLessThanOrEqual(1)
+                    expect(executionStats.totalKeysExamined).toBeLessThanOrEqual(1)
+                }
+            )
+        })
     })
 
     describe('findCompleted', () => {
-        it('해당 userId의 구매 기록만 반환한다', async () => {
+        describe('서로 다른 사용자의 완료된 구매 기록이 존재하면', () => {
             const userId = oid(0x1)
-            const mine1 = await createPurchaseRecord(fix, { userId })
-            const mine2 = await createPurchaseRecord(fix, { userId })
-            await createPurchaseRecord(fix, { userId: oid(0x2) })
+            let mine1: PurchaseRecordDto
+            let mine2: PurchaseRecordDto
 
-            const records = await purchaseRecordsService.findCompleted({ userId })
+            beforeEach(async () => {
+                const now = vi.spyOn(DateUtil, 'now')
+                try {
+                    now.mockReturnValue(instant('2025-01-01T00:00:00Z'))
+                    mine1 = await createPurchaseRecord(fix, { userId })
+                    now.mockReturnValue(instant('2025-01-02T00:00:00Z'))
+                    mine2 = await createPurchaseRecord(fix, { userId })
+                } finally {
+                    now.mockRestore()
+                }
+                await createPurchaseRecord(fix, { userId: oid(0x2) })
+            })
 
-            expect(records).toEqual(expect.arrayContaining([mine1, mine2]))
-            expect(records).toHaveLength(2)
-            expect(records.every((record) => record.userId === userId)).toBe(true)
+            it('지정한 사용자의 구매 기록만 반환한다', async () => {
+                const records = await purchaseRecordsService.findCompleted({ userId })
+
+                expect(records).toEqual(expect.arrayContaining([mine1, mine2]))
+                expect(records).toHaveLength(2)
+                expect(records.every((record) => record.userId === userId)).toBe(true)
+            })
+
+            it('최근 구매 기록부터 반환한다', async () => {
+                const records = await purchaseRecordsService.findCompleted({ userId })
+
+                expect(pickIds(records)).toEqual([mine2.id, mine1.id])
+            })
         })
 
         it('구매 기록이 없으면 빈 배열을 반환한다', async () => {
@@ -94,115 +126,163 @@ describe('PurchaseRecordsService', () => {
 
             expect(records).toEqual([])
         })
-
-        it('구매 기록을 최신 구매가 먼저 오도록 정렬해 반환한다', async () => {
-            const userId = oid(0x1)
-            const first = await createPurchaseRecord(fix, { userId })
-            // createdAt이 ms 단위에서 동률이 되지 않도록 두 생성 사이를 벌린다.
-            await sleep(50)
-            const second = await createPurchaseRecord(fix, { userId })
-
-            const records = await purchaseRecordsService.findCompleted({ userId })
-
-            expect(pickIds(records)).toEqual([second.id, first.id])
-        })
     })
 
     describe('PurchaseRecordStatus', () => {
-        it('pending은 이력에서 숨기고 완료 후 최초 응답을 유지하며 늦은 보상을 거절한다', async () => {
+        describe('멱등성 키가 있는 구매 기록이 존재하면', () => {
             const createDto = buildCreatePurchaseRecordDto({ paymentId: null })
             const idempotency = { fingerprint: 'fingerprint', key: 'purchase-key' }
-            const pending = await purchaseRecordsService.create(createDto, {
-                idempotency,
-                pending: true
-            })
-            expect(
-                await purchaseRecordsService.findCompleted({ userId: createDto.userId })
-            ).toEqual([])
-            const response = await purchaseRecordsService.setPaymentId(pending.id, oid(0x99))
-            const transactions = fix.module.get(PurchaseTransactionRepository)
-            const completed = await transactions.run((transaction) =>
-                purchaseRecordsService.markCompleted(pending.id, response, transaction)
-            )
-            expect(
-                await purchaseRecordsService.findCompleted({ userId: createDto.userId })
-            ).toEqual([completed])
+            let pending: PurchaseRecordDto
 
-            const operation = ensure(
-                await purchaseRecordsService.findIdempotencyOperation({
-                    userId: createDto.userId,
-                    idempotencyKey: idempotency.key
+            beforeEach(async () => {
+                pending = await purchaseRecordsService.create(createDto, {
+                    idempotency,
+                    pending: true
                 })
-            )
-            expect(operation.response).toEqual(response)
-            expect(operation.status).toBe(PurchaseRecordStatus.Completed)
-            expect(
-                await purchaseRecordsService.beginCompensation(pending.id, {
-                    response: { message: 'late failure' },
-                    status: 400
-                })
-            ).toBe(false)
-        })
-
-        it('보상 시작 뒤 늦은 완료를 거절하고 보상·취소의 재시도는 허용한다', async () => {
-            const createDto = buildCreatePurchaseRecordDto({ paymentId: null })
-            const idempotency = { fingerprint: 'fingerprint', key: 'purchase-key' }
-            const pending = await purchaseRecordsService.create(createDto, {
-                idempotency,
-                pending: true
             })
-            const error = { response: { message: 'purchase rejected' }, status: 400 }
-            expect(await purchaseRecordsService.beginCompensation(pending.id, error)).toBe(true)
-            expect(await purchaseRecordsService.beginCompensation(pending.id, error)).toBe(true)
-            await expect(
-                fix.module
-                    .get(PurchaseTransactionRepository)
-                    .run((transaction) =>
-                        purchaseRecordsService.markCompleted(pending.id, pending, transaction)
+
+            it('처리 중인 구매는 완료된 구매 이력에서 제외한다', async () => {
+                expect(
+                    await purchaseRecordsService.findCompleted({ userId: createDto.userId })
+                ).toEqual([])
+            })
+
+            describe('결제 ID가 연결되어 있으면', () => {
+                let response: PurchaseRecordDto
+
+                beforeEach(async () => {
+                    response = await purchaseRecordsService.setPaymentId(pending.id, oid(0x99))
+                })
+
+                it('완료 처리하면 구매 이력에 포함하고 최초 응답을 보존한다', async () => {
+                    const transactions = fix.module.get(PurchaseTransactionRepository)
+                    const completed = await transactions.run((transaction) =>
+                        purchaseRecordsService.markCompleted(pending.id, response, transaction)
                     )
-            ).rejects.toThrow(
-                expect.objectContaining({
-                    status: 500,
-                    cause: 'Only a pending purchase can be completed.'
-                })
-            )
-            await expect(
-                purchaseRecordsService.setPaymentId(pending.id, oid(0x99))
-            ).rejects.toThrow(
-                expect.objectContaining({
-                    status: 500,
-                    cause: 'Only a pending purchase can receive a payment.'
-                })
-            )
-            await purchaseRecordsService.markCancelled(pending.id)
-            await purchaseRecordsService.markCancelled(pending.id)
-            expect(
-                await purchaseRecordsService.findCompleted({ userId: createDto.userId })
-            ).toEqual([])
-            const operation = ensure(
-                await purchaseRecordsService.findIdempotencyOperation({
-                    userId: createDto.userId,
-                    idempotencyKey: idempotency.key
-                })
-            )
-            expect(operation).toMatchObject({
-                errorResponse: error.response,
-                errorStatus: error.status,
-                status: PurchaseRecordStatus.Cancelled
-            })
-        })
+                    expect(
+                        await purchaseRecordsService.findCompleted({ userId: createDto.userId })
+                    ).toEqual([completed])
 
-        it('완료 상태는 취소로 바꾸지 않는다', async () => {
-            const record = await createPurchaseRecord(fix)
-            await expect(purchaseRecordsService.markCancelled(record.id)).rejects.toThrow(
-                expect.objectContaining({
-                    status: 500,
-                    cause: 'Only a compensating purchase can be cancelled.'
+                    const operation = ensure(
+                        await purchaseRecordsService.findIdempotencyOperation({
+                            userId: createDto.userId,
+                            idempotencyKey: idempotency.key
+                        })
+                    )
+                    expect(operation.response).toEqual(response)
+                    expect(operation.status).toBe(PurchaseRecordStatus.Completed)
                 })
-            )
-            expect(await purchaseRecordsService.findCompleted({ userId: record.userId })).toEqual([
-                record
-            ])
+
+                describe('구매가 완료되었으면', () => {
+                    let completed: PurchaseRecordDto
+
+                    beforeEach(async () => {
+                        completed = await fix.module
+                            .get(PurchaseTransactionRepository)
+                            .run((transaction) =>
+                                purchaseRecordsService.markCompleted(
+                                    pending.id,
+                                    response,
+                                    transaction
+                                )
+                            )
+                    })
+
+                    it('뒤늦은 보상 요청을 거절한다', async () => {
+                        expect(
+                            await purchaseRecordsService.beginCompensation(pending.id, {
+                                response: { message: 'late failure' },
+                                status: 400
+                            })
+                        ).toBe(false)
+                    })
+
+                    it('취소를 요청하면 예외를 던지고 완료된 기록을 유지한다', async () => {
+                        await expect(
+                            purchaseRecordsService.markCancelled(completed.id)
+                        ).rejects.toThrow(
+                            expect.objectContaining({
+                                status: 500,
+                                cause: 'Only a compensating purchase can be cancelled.'
+                            })
+                        )
+                        expect(
+                            await purchaseRecordsService.findCompleted({ userId: completed.userId })
+                        ).toEqual([completed])
+                    })
+                })
+            })
+
+            describe('보상이 시작되었으면', () => {
+                const error = { response: { message: 'purchase rejected' }, status: 400 }
+
+                beforeEach(async () => {
+                    expect(await purchaseRecordsService.beginCompensation(pending.id, error)).toBe(
+                        true
+                    )
+                })
+
+                it('보상 시작을 다시 요청해도 허용한다', async () => {
+                    expect(await purchaseRecordsService.beginCompensation(pending.id, error)).toBe(
+                        true
+                    )
+                })
+
+                it('완료를 요청하면 예외를 던진다', async () => {
+                    await expect(
+                        fix.module
+                            .get(PurchaseTransactionRepository)
+                            .run((transaction) =>
+                                purchaseRecordsService.markCompleted(
+                                    pending.id,
+                                    pending,
+                                    transaction
+                                )
+                            )
+                    ).rejects.toThrow(
+                        expect.objectContaining({
+                            status: 500,
+                            cause: 'Only a pending purchase can be completed.'
+                        })
+                    )
+                })
+
+                it('결제 ID 연결을 요청하면 예외를 던진다', async () => {
+                    await expect(
+                        purchaseRecordsService.setPaymentId(pending.id, oid(0x99))
+                    ).rejects.toThrow(
+                        expect.objectContaining({
+                            status: 500,
+                            cause: 'Only a pending purchase can receive a payment.'
+                        })
+                    )
+                })
+
+                describe('취소까지 완료되었으면', () => {
+                    beforeEach(async () => {
+                        await purchaseRecordsService.markCancelled(pending.id)
+                    })
+
+                    it('취소를 다시 요청해도 취소 상태와 기존 오류 정보를 유지한다', async () => {
+                        await purchaseRecordsService.markCancelled(pending.id)
+
+                        expect(
+                            await purchaseRecordsService.findCompleted({ userId: createDto.userId })
+                        ).toEqual([])
+                        const operation = ensure(
+                            await purchaseRecordsService.findIdempotencyOperation({
+                                userId: createDto.userId,
+                                idempotencyKey: idempotency.key
+                            })
+                        )
+                        expect(operation).toMatchObject({
+                            errorResponse: error.response,
+                            errorStatus: error.status,
+                            status: PurchaseRecordStatus.Cancelled
+                        })
+                    })
+                })
+            })
         })
     })
 })

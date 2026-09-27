@@ -68,24 +68,28 @@ describe('BookingService', () => {
                 .ok({ schema: BookingShowtimeSchema.array(), expected: [] })
         })
 
-        it('상영의 티켓 집계가 누락되면 500을 반환한다', async () => {
-            const theaterId = ensure(createdTickets[0]).theaterId
-            vi.spyOn(fix.module.get(TicketsService), 'aggregateSales').mockResolvedValueOnce([])
-
-            await fix.httpClient
-                .get(
-                    `/booking/movies/${movie.id}/theaters/${theaterId}/showdates/29990101/showtimes`
-                )
-                .send(500, {
-                    expected: {
-                        statusCode: 500,
-                        message: 'Internal server error',
-                        error: 'Internal Server Error'
-                    }
-                })
+        describe('티켓 집계가 빈 결과를 반환하면', () => {
+            let theaterId: string
+            beforeEach(() => {
+                theaterId = ensure(createdTickets[0]).theaterId
+                vi.spyOn(fix.module.get(TicketsService), 'aggregateSales').mockResolvedValueOnce([])
+            })
+            it('상영 목록 조회 요청에 500을 반환한다', async () => {
+                await fix.httpClient
+                    .get(
+                        `/booking/movies/${movie.id}/theaters/${theaterId}/showdates/29990101/showtimes`
+                    )
+                    .send(500, {
+                        expected: {
+                            statusCode: 500,
+                            message: 'Internal server error',
+                            error: 'Internal Server Error'
+                        }
+                    })
+            })
         })
 
-        it('극장, 상영일, 상영 시간, 티켓을 차례로 조회해 티켓을 보유한다', async () => {
+        it('극장·상영일·상영 시간·티켓을 차례로 조회하고 선택한 티켓을 선점한다', async () => {
             let theater: TheaterDto
             let showdate: Temporal.PlainDate
             let showtime: ShowtimeDto
@@ -144,7 +148,7 @@ describe('BookingService', () => {
                 showtime = ensure(showtimes[0])
             })
 
-            await step('4. 상영 시간의 티켓을 조회해 가용 상태를 확인한다', async () => {
+            await step('4. 상영 시간의 티켓을 조회해 판매되지 않은 상태를 확인한다', async () => {
                 const expectedTickets = createdTickets.filter(
                     (ticket) => ticket.showtimeId === showtime.id
                 )
@@ -158,7 +162,7 @@ describe('BookingService', () => {
                 expect(tickets.every((t) => t.status === TicketStatus.Available)).toBe(true)
             })
 
-            await step('5. 선택한 티켓을 보유한다', async () => {
+            await step('5. 선택한 티켓을 선점한다', async () => {
                 const ticketIds = pickIds(tickets.slice(0, 2))
 
                 await fix.httpClient
@@ -188,7 +192,7 @@ describe('BookingService', () => {
                 .unauthorized({ expected: Errors.Auth.Unauthorized() })
         })
 
-        describe('가용 티켓을 선택했을 때', () => {
+        describe('선점되지 않은 티켓이 존재하면', () => {
             let accessToken: string
             let userId: string
             let showtimeId: string
@@ -202,7 +206,7 @@ describe('BookingService', () => {
                 ticketIds = pickIds(resources.tickets.slice(0, 2))
             })
 
-            it('204를 반환하고 보유 상태를 반영한다', async () => {
+            it('선점 요청에 204를 반환하고 선점 목록에 티켓을 추가한다', async () => {
                 await fix.httpClient
                     .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
                     .headers({ Authorization: `Bearer ${accessToken}` })
@@ -216,65 +220,71 @@ describe('BookingService', () => {
                 )
                 expect(heldTicketIds.sort()).toEqual([...ticketIds].sort())
             })
+
+            it('존재하지 않는 티켓이 섞여 있으면 404를 반환한다', async () => {
+                await fix.httpClient
+                    .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body({ ticketIds: [...ticketIds, nullObjectId] })
+                    .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]) })
+            })
+
+            it('선점 수량 제한을 넘는 요청에 400을 반환한다', async () => {
+                const max = fix.module.get(AppConfigService).ticket.maxPerPurchase
+                const ticketIds = Array.from({ length: max + 1 }, (_, i) => oid(0x100 + i))
+
+                await fix.httpClient
+                    .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body({ ticketIds })
+                    .badRequest({ expected: Errors.Booking.HoldLimitExceeded(max) })
+            })
         })
 
-        it('티켓이 이미 다른 고객에게 보유되어 있으면 409를 반환한다', async () => {
-            const resources = await createAllResources(fix, locations, startTimes)
-            const accessToken = resources.accessToken
-            const showtimeId = ensure(resources.showtimes[0]).id
-            const ticketIds = pickIds(resources.tickets.slice(0, 2))
+        describe('다른 사용자 ID로 선점된 티켓이 존재하면', () => {
+            let accessToken: string
+            let showtimeId: string
+            let ticketIds: string[]
+            beforeEach(async () => {
+                const resources = await createAllResources(fix, locations, startTimes)
+                accessToken = resources.accessToken
+                showtimeId = ensure(resources.showtimes[0]).id
+                ticketIds = pickIds(resources.tickets.slice(0, 2))
 
-            await holdTickets(fix, { userId: oid(0xff), showtimeId, ticketIds })
-
-            await fix.httpClient
-                .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
-                .headers({ Authorization: `Bearer ${accessToken}` })
-                .body({ ticketIds })
-                .conflict({ expected: Errors.Booking.TicketsAlreadyHeld() })
+                await holdTickets(fix, { userId: oid(0xff), showtimeId, ticketIds })
+            })
+            it('해당 티켓의 선점 요청에 409를 반환한다', async () => {
+                await fix.httpClient
+                    .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
+                    .headers({ Authorization: `Bearer ${accessToken}` })
+                    .body({ ticketIds })
+                    .conflict({ expected: Errors.Booking.TicketsAlreadyHeld() })
+            })
         })
 
-        it('존재하지 않는 티켓이 섞여 있으면 404를 반환한다', async () => {
-            const resources = await createAllResources(fix, locations, startTimes)
-            const showtimeId = ensure(resources.showtimes[0]).id
-            const ticketIds = [...pickIds(resources.tickets.slice(0, 2)), nullObjectId]
-
-            await fix.httpClient
-                .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
-                .headers({ Authorization: `Bearer ${resources.accessToken}` })
-                .body({ ticketIds })
-                .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]) })
-        })
-
-        it('다른 상영의 티켓이 섞여 있으면 400을 반환한다', async () => {
-            const resources = await createAllResources(fix, locations, [
-                instant('2999-01-01T12:00Z'),
-                instant('2999-01-01T15:00Z')
-            ])
-            const showtimeId = ensure(resources.showtimes[0]).id
-            const ownTicket = ensure(resources.tickets.find((t) => t.showtimeId === showtimeId))
-            const otherTicket = ensure(resources.tickets.find((t) => t.showtimeId !== showtimeId))
-
-            await fix.httpClient
-                .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
-                .headers({ Authorization: `Bearer ${resources.accessToken}` })
-                .body({ ticketIds: [ownTicket.id, otherTicket.id] })
-                .badRequest({
-                    expected: Errors.Booking.TicketsNotInShowtime([otherTicket.id], showtimeId)
-                })
-        })
-
-        it('한 번에 보유할 수 있는 수량을 넘으면 400을 반환한다', async () => {
-            const resources = await createAllResources(fix, locations, startTimes)
-            const showtimeId = ensure(resources.showtimes[0]).id
-
-            const max = fix.module.get(AppConfigService).ticket.maxPerPurchase
-            const ticketIds = Array.from({ length: max + 1 }, (_, i) => oid(0x100 + i))
-
-            await fix.httpClient
-                .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
-                .headers({ Authorization: `Bearer ${resources.accessToken}` })
-                .body({ ticketIds })
-                .badRequest({ expected: Errors.Booking.HoldLimitExceeded(max) })
+        describe('서로 다른 상영의 티켓이 존재하면', () => {
+            let resources: Awaited<ReturnType<typeof createAllResources>>
+            let showtimeId: string
+            let ownTicket: TicketDto
+            let otherTicket: TicketDto
+            beforeEach(async () => {
+                resources = await createAllResources(fix, locations, [
+                    instant('2999-01-01T12:00Z'),
+                    instant('2999-01-01T15:00Z')
+                ])
+                showtimeId = ensure(resources.showtimes[0]).id
+                ownTicket = ensure(resources.tickets.find((t) => t.showtimeId === showtimeId))
+                otherTicket = ensure(resources.tickets.find((t) => t.showtimeId !== showtimeId))
+            })
+            it('두 상영의 티켓을 함께 선점하는 요청에 400을 반환한다', async () => {
+                await fix.httpClient
+                    .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
+                    .headers({ Authorization: `Bearer ${resources.accessToken}` })
+                    .body({ ticketIds: [ownTicket.id, otherTicket.id] })
+                    .badRequest({
+                        expected: Errors.Booking.TicketsNotInShowtime([otherTicket.id], showtimeId)
+                    })
+            })
         })
     })
 

@@ -167,16 +167,14 @@ class HttpTestClientController {
     }
 }
 
-export async function receiveRawEvents(
-    { httpClient, setRawEvents }: HttpTestClientFixture,
-    { content, continuation }: { content: string; continuation?: string }
-): Promise<{ events: string[]; errors: unknown[] }> {
+export async function receiveRawEvents({
+    httpClient
+}: HttpTestClientFixture): Promise<{ events: string[]; errors: unknown[] }> {
     const completion = Promise.withResolvers<void>()
     const events: string[] = []
     const errors: unknown[] = []
     let continuationRequest: Promise<unknown> | undefined
 
-    setRawEvents({ content, contentType: 'text/event-stream', continuation })
     httpClient.post('/raw-events').sse(
         (data) => {
             if (data === 'fixture-ready') {

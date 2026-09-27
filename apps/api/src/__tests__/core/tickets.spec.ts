@@ -164,71 +164,85 @@ describe('TicketsService', () => {
                     )
                 )
             })
+
+            it('없는 티켓 ID를 함께 판매하면 404 예외를 던지고 기존 티켓의 상태를 유지한다', async () => {
+                const ticket = ensure(tickets[0])
+
+                const promise = ticketsService.sellForPurchase([ticket.id, nullObjectId], oid(0x10))
+
+                // '없는 티켓'은 상태 충돌(409)이 아니라 누락 id 목록을 담은 404로 분류되어야 한다.
+                await expect(promise).rejects.toMatchObject({
+                    response: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]),
+                    status: HttpStatus.NOT_FOUND
+                })
+
+                const after = await ticketsService.getMany([ticket.id])
+                expect(ensure(after[0]).status).toBe(TicketStatus.Available)
+            })
         })
 
-        it('일부 티켓이 판매 가능하지 않으면 409로 거절하고 아무것도 바꾸지 않는다', async () => {
-            const createdTickets = await createTickets(fix, [
-                { status: TicketStatus.Available },
-                { status: TicketStatus.Sold }
-            ])
-            const first = ensure(createdTickets[0])
-            const second = ensure(createdTickets[1])
-
-            const promise = ticketsService.sellForPurchase([first.id, second.id], oid(0x10))
-
-            await expect(promise).rejects.toMatchObject({
-                response: { code: 'ERR_TICKET_STATUS_TRANSITION_FAILED', ticketIds: [second.id] },
-                status: 409
+        describe('판매 가능한 티켓과 이미 판매된 티켓이 있으면', () => {
+            let first: TicketDto
+            let second: TicketDto
+            beforeEach(async () => {
+                const createdTickets = await createTickets(fix, [
+                    { status: TicketStatus.Available },
+                    { status: TicketStatus.Sold }
+                ])
+                first = ensure(createdTickets[0])
+                second = ensure(createdTickets[1])
             })
+            it('함께 판매를 요청하면 409 예외를 던지고 판매 가능한 티켓의 상태를 유지한다', async () => {
+                const promise = ticketsService.sellForPurchase([first.id, second.id], oid(0x10))
 
-            // 전부-아니면-전무: 충돌이 있으면 나머지 티켓도 전이되지 않아야 한다.
-            const after = await ticketsService.getMany([first.id])
-            expect(ensure(after[0]).status).toBe(TicketStatus.Available)
-        })
+                await expect(promise).rejects.toMatchObject({
+                    response: {
+                        code: 'ERR_TICKET_STATUS_TRANSITION_FAILED',
+                        ticketIds: [second.id]
+                    },
+                    status: 409
+                })
 
-        it('존재하지 않는 티켓이 섞이면 전이를 시도하지 않고 404를 던진다', async () => {
-            const createdTickets = await createTickets(fix, [{ status: TicketStatus.Available }])
-            const ticket = ensure(createdTickets[0])
-
-            const promise = ticketsService.sellForPurchase([ticket.id, nullObjectId], oid(0x10))
-
-            // '없는 티켓'은 상태 충돌(409)이 아니라 누락 id 목록을 담은 404로 분류되어야 한다.
-            await expect(promise).rejects.toMatchObject({
-                response: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]),
-                status: HttpStatus.NOT_FOUND
+                // 전부-아니면-전무: 충돌이 있으면 나머지 티켓도 전이되지 않아야 한다.
+                const after = await ticketsService.getMany([first.id])
+                expect(ensure(after[0]).status).toBe(TicketStatus.Available)
             })
-
-            const after = await ticketsService.getMany([ticket.id])
-            expect(ensure(after[0]).status).toBe(TicketStatus.Available)
         })
     })
 
     describe('aggregateSales', () => {
-        it('상영 시간 ID 목록에 대한 판매 통계를 반환한다', async () => {
-            const showtimeId = oid(0x10)
-            const emptyShowtimeId = oid(0x11)
-            const totalCount = 50
-            const soldCount = 5
+        describe('한 상영의 티켓 50장 중 5장이 판매되었으면', () => {
+            let showtimeId: string
+            let emptyShowtimeId: string
+            let totalCount: number
+            let soldCount: number
+            beforeEach(async () => {
+                showtimeId = oid(0x10)
+                emptyShowtimeId = oid(0x11)
+                totalCount = 50
+                soldCount = 5
 
-            const createDtos = Array.from({ length: totalCount }, () => ({ showtimeId }))
-            const createdTickets = await createTickets(fix, createDtos)
+                const createDtos = Array.from({ length: totalCount }, () => ({ showtimeId }))
+                const createdTickets = await createTickets(fix, createDtos)
 
-            const soldTickets = createdTickets.slice(0, soldCount)
-            await ticketsService.sellForPurchase(pickIds(soldTickets), oid(0x20))
-
-            const ticketSales = await ticketsService.aggregateSales({
-                showtimeIds: [showtimeId, emptyShowtimeId]
+                const soldTickets = createdTickets.slice(0, soldCount)
+                await ticketsService.sellForPurchase(pickIds(soldTickets), oid(0x20))
             })
+            it('판매 집계와 티켓이 없는 상영의 0건 집계를 함께 반환한다', async () => {
+                const ticketSales = await ticketsService.aggregateSales({
+                    showtimeIds: [showtimeId, emptyShowtimeId]
+                })
 
-            expect(ticketSales).toEqual([
-                {
-                    available: totalCount - soldCount,
-                    showtimeId,
-                    sold: soldCount,
-                    total: totalCount
-                },
-                { available: 0, showtimeId: emptyShowtimeId, sold: 0, total: 0 }
-            ])
+                expect(ticketSales).toEqual([
+                    {
+                        available: totalCount - soldCount,
+                        showtimeId,
+                        sold: soldCount,
+                        total: totalCount
+                    },
+                    { available: 0, showtimeId: emptyShowtimeId, sold: 0, total: 0 }
+                ])
+            })
         })
     })
 })

@@ -23,58 +23,95 @@ describe('createShowtimeCreationWorkflow', () => {
         sagaId: 'saga-id'
     }
 
-    it.each([
-        [new Error('database unavailable'), 'database unavailable'],
-        ['non-error rejection', 'non-error rejection']
-    ])('실행 오류 %p를 error 상태로 바꾼다', async (failure, message) => {
-        const fix = createFixture({ failure })
-
-        const terminal = await run(fix)
-
-        expect(fix.events.at(-1)).toEqual({ message, sagaId: input.sagaId, status: 'error' })
-        expect(terminal).toEqual({ message, sagaId: input.sagaId, status: 'error' })
-    })
-
-    it('취소는 error 이벤트로 바꾸지 않고 다시 던진다', async () => {
-        const failure = new CancelledError()
-        const fix = createFixture({ failure })
-
-        await expect(run(fix)).rejects.toBe(failure)
-        expect(fix.events.map(({ status }) => status)).toEqual(['waiting', 'processing'])
-    })
-
-    it('실패 알림을 보내지 못해도 상영 생성의 원래 실패 원인을 반환한다', async () => {
-        const fix = createFixture({
-            emitStatusChanged: async () => {
-                throw new Error('NATS unavailable')
-            },
-            failure: new Error('database unavailable')
-        })
-        await expect(run(fix)).resolves.toEqual({
-            sagaId: input.sagaId,
-            status: 'error',
+    describe.each([
+        {
+            condition: 'Error 객체를 던지면',
+            failure: new Error('database unavailable'),
             message: 'database unavailable'
+        },
+        {
+            condition: '문자열을 던지면',
+            failure: 'non-error rejection',
+            message: 'non-error rejection'
+        }
+    ])('상영 저장이 $condition', ({ failure, message }) => {
+        let fix: ReturnType<typeof createFixture>
+
+        beforeEach(() => {
+            fix = createFixture({ failure })
+        })
+
+        it('오류 메시지를 포함한 error 이벤트를 발행하고 같은 실행 결과를 반환한다', async () => {
+            const terminal = await run(fix)
+
+            expect(fix.events.at(-1)).toEqual({ message, sagaId: input.sagaId, status: 'error' })
+            expect(terminal).toEqual({ message, sagaId: input.sagaId, status: 'error' })
         })
     })
 
-    it('알림 발행 중 작업이 취소되면 취소 오류를 다시 던진다', async () => {
-        const failure = new CancelledError()
-        const fix = createFixture({
-            emitStatusChanged: async () => {
-                throw failure
-            }
+    describe('상영 저장이 취소 오류를 던지면', () => {
+        let failure: CancelledError
+        let fix: ReturnType<typeof createFixture>
+        beforeEach(() => {
+            failure = new CancelledError()
+            fix = createFixture({ failure })
         })
-        await expect(run(fix)).rejects.toBe(failure)
-        expect(fix.persistence).not.toHaveBeenCalled()
+        it('error 이벤트를 발행하지 않고 취소 오류를 다시 던진다', async () => {
+            await expect(run(fix)).rejects.toBe(failure)
+            expect(fix.events.map(({ status }) => status)).toEqual(['waiting', 'processing'])
+        })
     })
 
-    it('알림 발행이 끝나지 않아도 대기 기한 후 상영 생성을 진행하고 결과를 반환한다', async () => {
-        vi.useFakeTimers()
-        try {
-            const fix = createFixture({
+    describe('알림 발행과 상영 저장이 모두 실패하면', () => {
+        let fix: ReturnType<typeof createFixture>
+        beforeEach(() => {
+            fix = createFixture({
+                emitStatusChanged: async () => {
+                    throw new Error('NATS unavailable')
+                },
+                failure: new Error('database unavailable')
+            })
+        })
+        it('상영 저장의 실패 원인을 실행 결과에 담아 반환한다', async () => {
+            await expect(run(fix)).resolves.toEqual({
+                sagaId: input.sagaId,
+                status: 'error',
+                message: 'database unavailable'
+            })
+        })
+    })
+
+    describe('알림 발행이 취소 오류를 던지면', () => {
+        let failure: CancelledError
+        let fix: ReturnType<typeof createFixture>
+        beforeEach(() => {
+            failure = new CancelledError()
+            fix = createFixture({
+                emitStatusChanged: async () => {
+                    throw failure
+                }
+            })
+        })
+        it('상영 저장을 시작하지 않고 취소 오류를 다시 던진다', async () => {
+            await expect(run(fix)).rejects.toBe(failure)
+            expect(fix.persistence).not.toHaveBeenCalled()
+        })
+    })
+
+    describe('알림 발행이 끝나지 않으면', () => {
+        let fix: ReturnType<typeof createFixture>
+
+        beforeEach(() => {
+            vi.useFakeTimers()
+            fix = createFixture({
                 emitStatusChanged: () => new Promise<void>(() => undefined),
                 result: { conflictingShowtimes: [], kind: 'failed' }
             })
+        })
+
+        afterEach(() => vi.useRealTimers())
+
+        it('대기 기한이 지나면 상영 저장을 실행하고 그 결과를 반환한다', async () => {
             const completion = run(fix)
             await vi.advanceTimersByTimeAsync(30_000)
             await expect(completion).resolves.toEqual({
@@ -83,24 +120,40 @@ describe('createShowtimeCreationWorkflow', () => {
                 conflictingShowtimes: []
             })
             expect(fix.persistence).toHaveBeenCalledOnce()
-        } finally {
-            vi.useRealTimers()
-        }
+        })
     })
 
-    it('잘못된 요청과 없는 자원 오류는 재시도하지 않는 오류로 분류한다', () => {
-        const fix = createFixture({ result: { kind: 'failed', conflictingShowtimes: [] } })
-        const classify = fix.definition.options?.asTerminalError
-        if (!classify) throw new Error('terminal error classifier is missing')
+    describe('asTerminalError', () => {
+        let classify: (error: unknown) => TerminalError | undefined
 
-        const badRequest = classify(new BadRequestException('bad request'))
-        const notFound = classify(new NotFoundException('not found'))
+        beforeEach(() => {
+            const fix = createFixture({ result: { kind: 'failed', conflictingShowtimes: [] } })
+            const configured = fix.definition.options?.asTerminalError
+            if (!configured) throw new Error('terminal error classifier is missing')
+            classify = configured
+        })
 
-        expect(badRequest).toBeInstanceOf(TerminalError)
-        expect(badRequest).toMatchObject({ code: 400, message: 'bad request' })
-        expect(notFound).toBeInstanceOf(TerminalError)
-        expect(notFound).toMatchObject({ code: 404, message: 'not found' })
-        expect(classify(new Error('retry me'))).toBeUndefined()
+        it.each([
+            {
+                condition: '잘못된 요청 예외는',
+                failure: new BadRequestException('bad request'),
+                expected: { code: 400, message: 'bad request' }
+            },
+            {
+                condition: '자원을 찾을 수 없다는 예외는',
+                failure: new NotFoundException('not found'),
+                expected: { code: 404, message: 'not found' }
+            }
+        ])('$condition 재시도하지 않는 오류로 변환한다', ({ failure, expected }) => {
+            const result = classify(failure)
+
+            expect(result).toBeInstanceOf(TerminalError)
+            expect(result).toMatchObject(expected)
+        })
+
+        it('일반 Error는 재시도 중단 오류로 변환하지 않는다', () => {
+            expect(classify(new Error('retry me'))).toBeUndefined()
+        })
     })
 
     type FixtureOptions = {

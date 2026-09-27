@@ -63,7 +63,7 @@ describe('getByPath', () => {
         expect(getByPath(obj, 'arr[0].id')).toBe(1)
     })
 
-    it('경로가 닿지 않으면 기본값을 반환한다', () => {
+    it('지정한 경로에 값이 없으면 기본값을 반환한다', () => {
         expect(getByPath(obj, 'a.b.d', 'fallback')).toBe('fallback')
     })
 
@@ -71,16 +71,17 @@ describe('getByPath', () => {
         expect(getByPath(null, 'a.b', 'default')).toBe('default')
     })
 
-    it('중간 경로에 null/undefined가 있으면 기본값을 반환한다', () => {
-        expect(getByPath({ a: null }, 'a.b.c', 'fallback')).toBe('fallback')
-        expect(getByPath({ a: { b: undefined } }, 'a.b.c', 'fallback')).toBe('fallback')
+    it.each([
+        { label: 'a가 null', input: { a: null } },
+        { label: 'b가 undefined', input: { a: { b: undefined } } }
+    ])('경로 중간의 $label이면 기본값을 반환한다', ({ input }) => {
+        expect(getByPath(input, 'a.b.c', 'fallback')).toBe('fallback')
     })
 })
 
 describe('omit', () => {
-    it('입력이 null이나 undefined면 undefined를 반환한다', () => {
-        expect(omit(null as any, ['a'])).toBeUndefined()
-        expect(omit(undefined as any, ['a'])).toBeUndefined()
+    it.each([null, undefined])('입력이 %s이면 undefined를 반환한다', (input) => {
+        expect(omit(input as any, ['a'])).toBeUndefined()
     })
 
     it('지정된 키를 제외한 객체를 반환한다', () => {
@@ -141,7 +142,18 @@ describe('sortBy', () => {
     })
 
     it('동일한 값은 순서를 유지한다', () => {
-        expect(sortBy([{ v: 1 }, { v: 1 }], 'v')).toEqual([{ v: 1 }, { v: 1 }])
+        expect(
+            sortBy(
+                [
+                    { id: 'first', v: 1 },
+                    { id: 'second', v: 1 }
+                ],
+                'v'
+            )
+        ).toEqual([
+            { id: 'first', v: 1 },
+            { id: 'second', v: 1 }
+        ])
     })
 
     it('빈 배열을 받으면 빈 배열을 반환한다', () => {
@@ -194,8 +206,6 @@ describe('isEqual', () => {
 
         expect(isEqual(value, value)).toBe(true)
         expect(getter).not.toHaveBeenCalled()
-        expect(isEqual(NaN, NaN)).toBe(true)
-        expect(isEqual(0, -0)).toBe(false)
     })
 
     it('두 수가 같으면 true를 반환한다', () => {
@@ -310,9 +320,11 @@ describe('isEqual', () => {
         expect(isEqual({}, date)).toBe(false)
     })
 
-    it('Temporal.Duration은 정규화된 문자열로 비교한다', () => {
-        expect(isEqual(temporal.Duration.from('P1D'), temporal.Duration.from('P1D'))).toBe(true)
-        expect(isEqual(temporal.Duration.from('P1D'), temporal.Duration.from('P2D'))).toBe(false)
+    it.each([
+        { label: '기간이 같으면', other: 'P1D', expected: true },
+        { label: '기간이 다르면', other: 'P2D', expected: false }
+    ])('Temporal.Duration의 $label $expected를 반환한다', ({ other, expected }) => {
+        expect(isEqual(temporal.Duration.from('P1D'), temporal.Duration.from(other))).toBe(expected)
     })
 
     it('객체와 배열 안의 Temporal도 값과 타입을 비교한다', () => {
@@ -391,14 +403,18 @@ describe('isEqual', () => {
         expect(isEqual(first, second)).toBe(true)
     })
 
-    it('월일과 연월의 참조 날짜도 보존하고 일반 객체의 프로토타입은 구분한다', () => {
+    it('PlainMonthDay의 월일이 같아도 참조 연도가 다르면 false를 반환한다', () => {
         expect(
             isEqual(
                 [new temporal.PlainMonthDay(2, 29, 'iso8601', 2000)],
                 [new temporal.PlainMonthDay(2, 29, 'iso8601', 1972)]
             )
         ).toBe(false)
+    })
+    it('객체의 프로토타입이 다르면 false를 반환한다', () => {
         expect(isEqual(Object.create(null), {})).toBe(false)
+    })
+    it('Date의 시각이 같으면 true를 반환한다', () => {
         expect(isEqual(new Date(0), new Date(0))).toBe(true)
     })
 
@@ -409,6 +425,13 @@ describe('isEqual', () => {
         expect(isEqual(alias, primary)).toBe(true)
         expect(isEqual({ at: alias }, { at: primary })).toBe(true)
         expect(isEqual({ at: alias }, { at: primary.withTimeZone('UTC') })).toBe(false)
+    })
+
+    it('NaN끼리 비교하면 true를 반환한다', () => {
+        expect(isEqual(NaN, NaN)).toBe(true)
+    })
+    it('0과 -0을 비교하면 false를 반환한다', () => {
+        expect(isEqual(0, -0)).toBe(false)
     })
 })
 

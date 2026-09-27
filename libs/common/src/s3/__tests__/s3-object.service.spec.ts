@@ -46,7 +46,7 @@ describe('S3ObjectService', () => {
             expect(presigned).toEqual({ fields: expect.any(Object), url: expect.any(String) })
         })
 
-        describe('Content-Disposition 필드를 지정했을 때', () => {
+        describe('Content-Disposition을 지정한 업로드 정책이 있으면', () => {
             const contentDisposition = 'attachment; filename="sample.txt"'
             const uploadBody = Buffer.from('hello')
             let presigned: { fields: Record<string, string>; url: string }
@@ -88,7 +88,7 @@ describe('S3ObjectService', () => {
             })
         })
 
-        describe('메타데이터 필드를 지정했을 때', () => {
+        describe('메타데이터를 지정한 업로드 정책이 있으면', () => {
             const uploadBody = Buffer.from('hello')
             let presigned: { fields: Record<string, string>; url: string }
 
@@ -128,7 +128,7 @@ describe('S3ObjectService', () => {
             })
         })
 
-        describe('체크섬을 지정했을 때', () => {
+        describe('체크섬을 지정한 업로드 정책이 있으면', () => {
             const uploadBody = Buffer.from('hello')
             let presigned: { fields: Record<string, string>; url: string }
 
@@ -168,7 +168,7 @@ describe('S3ObjectService', () => {
             })
         })
 
-        describe('contentType을 지정했을 때', () => {
+        describe('contentType이 text/plain인 업로드 정책이 있으면', () => {
             const uploadBody = Buffer.from('hello')
             let presigned: { fields: Record<string, string>; url: string }
 
@@ -194,7 +194,7 @@ describe('S3ObjectService', () => {
             })
         })
 
-        describe('업로드 크기 제한을 지정했을 때', () => {
+        describe('업로드 크기를 5바이트로 제한한 정책이 있으면', () => {
             const uploadBody = Buffer.from('hello')
             let presigned: { fields: Record<string, string>; url: string }
 
@@ -217,7 +217,7 @@ describe('S3ObjectService', () => {
             })
         })
 
-        describe('업로드 크기 상한이 본문보다 작을 때', () => {
+        describe('업로드 크기 상한이 4바이트인 정책이 있으면', () => {
             const uploadBody = Buffer.from('hello')
             let presigned: { fields: Record<string, string>; url: string }
 
@@ -230,7 +230,7 @@ describe('S3ObjectService', () => {
                 })
             })
 
-            it('업로드를 거부한다', async () => {
+            it('5바이트를 업로드하면 400을 반환한다', async () => {
                 const form = buildPresignedPostForm(presigned.fields, uploadBody, 'text/plain')
 
                 const response = await fetch(presigned.url, { body: form, method: 'POST' })
@@ -240,7 +240,7 @@ describe('S3ObjectService', () => {
             })
         })
 
-        describe('업로드 크기 하한만 지정했을 때', () => {
+        describe('업로드 크기 하한만 5바이트로 지정한 정책이 있으면', () => {
             const minContentLength = 5
             let presigned: { fields: Record<string, string>; url: string }
 
@@ -350,7 +350,7 @@ describe('S3ObjectService', () => {
                 expect(isCompleted).toBe(true)
             })
 
-            it('컨텐츠 정보가 일치하면 true를 반환한다', async () => {
+            it('파일 크기와 contentType을 일치하게 전달하면 true를 반환한다', async () => {
                 const isCompleted = await fix.s3Service.isUploadComplete({
                     contentLength: s3Object.data.byteLength,
                     contentType: s3Object.contentType,
@@ -385,77 +385,106 @@ describe('S3ObjectService', () => {
             expect(isCompleted).toBe(false)
         })
 
-        it('contentType을 기대했는데 응답에 없으면 false를 반환한다', async () => {
-            vi.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({ ContentLength: 1 })
-
-            const isCompleted = await fix.s3Service.isUploadComplete({
-                contentType: 'text/plain',
-                key: 'key'
+        describe('HEAD 응답에 ContentType이 없도록 설정하면', () => {
+            beforeEach(() => {
+                vi.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
+                    ContentLength: 1
+                })
             })
+            it('contentType을 지정해 완료 여부를 조회하면 false를 반환한다', async () => {
+                const isCompleted = await fix.s3Service.isUploadComplete({
+                    contentType: 'text/plain',
+                    key: 'key'
+                })
 
-            expect(isCompleted).toBe(false)
+                expect(isCompleted).toBe(false)
+            })
         })
 
         describe('content-type 정규화', () => {
-            it('charset이 붙은 content-type은 base 타입만 비교한다', async () => {
-                vi.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
-                    ContentLength: 1,
-                    ContentType: 'application/json; charset=utf-8'
+            describe('HEAD 응답의 ContentType에 charset이 포함되면', () => {
+                beforeEach(() => {
+                    vi.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
+                        ContentLength: 1,
+                        ContentType: 'application/json; charset=utf-8'
+                    })
                 })
+                it('charset을 제외한 contentType으로 완료 여부를 조회해도 true를 반환한다', async () => {
+                    const result = await fix.s3Service.isUploadComplete({
+                        contentType: 'application/json',
+                        key: 'k'
+                    })
 
-                const result = await fix.s3Service.isUploadComplete({
-                    contentType: 'application/json',
-                    key: 'k'
+                    expect(result).toBe(true)
                 })
-
-                expect(result).toBe(true)
             })
 
-            it('대소문자나 공백이 섞인 content-type도 정규화 후 비교한다', async () => {
-                vi.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
-                    ContentLength: 1,
-                    ContentType: '  Application/JSON  '
+            describe('HEAD 응답의 ContentType에 대문자와 앞뒤 공백이 포함되면', () => {
+                beforeEach(() => {
+                    vi.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
+                        ContentLength: 1,
+                        ContentType: '  Application/JSON  '
+                    })
                 })
+                it('소문자 contentType으로 완료 여부를 조회해도 true를 반환한다', async () => {
+                    const result = await fix.s3Service.isUploadComplete({
+                        contentType: 'application/json',
+                        key: 'k'
+                    })
 
-                const result = await fix.s3Service.isUploadComplete({
-                    contentType: 'application/json',
-                    key: 'k'
+                    expect(result).toBe(true)
                 })
-
-                expect(result).toBe(true)
             })
         })
 
-        it('S3 요청이 예기치 않게 실패하면 예외를 던진다', async () => {
-            vi.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(new Error('unexpected'))
+        describe('HEAD 요청이 실패하도록 설정하면', () => {
+            beforeEach(() => {
+                vi.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(
+                    new Error('unexpected')
+                )
+            })
+            it('완료 여부를 조회하면 원래 오류를 던진다', async () => {
+                const promise = fix.s3Service.isUploadComplete({ key: 'key' })
 
-            const promise = fix.s3Service.isUploadComplete({ key: 'key' })
-
-            await expect(promise).rejects.toThrow('unexpected')
+                await expect(promise).rejects.toThrow('unexpected')
+            })
         })
 
-        it('HEAD 응답이 404가 아닌 에러(예: 403, 500)면 예외를 그대로 던진다', async () => {
-            const error403 = Object.assign(new Error('forbidden'), {
-                $metadata: { httpStatusCode: 403 }
+        describe('HEAD 요청이 403 오류로 실패하도록 설정하면', () => {
+            beforeEach(() => {
+                const error403 = Object.assign(new Error('forbidden'), {
+                    $metadata: { httpStatusCode: 403 }
+                })
+                vi.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(error403)
             })
-            vi.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(error403)
-
-            await expect(fix.s3Service.isUploadComplete({ key: 'k' })).rejects.toThrow('forbidden')
+            it('완료 여부를 조회하면 접근 거부 오류를 던진다', async () => {
+                await expect(fix.s3Service.isUploadComplete({ key: 'k' })).rejects.toThrow(
+                    'forbidden'
+                )
+            })
         })
 
-        it('isUploadComplete가 예외를 던진 뒤에도 같은 인스턴스의 다음 호출은 정상 동작한다', async () => {
-            const created = await fix.s3Service.putObject({
-                contentType: 'text/plain',
-                data: testBuffer,
-                filename: 'file.txt'
+        describe('객체가 존재하고 다음 HEAD 요청이 실패하도록 설정하면', () => {
+            let created: Awaited<ReturnType<S3ObjectServiceFixture['s3Service']['putObject']>>
+            beforeEach(async () => {
+                created = await fix.s3Service.putObject({
+                    contentType: 'text/plain',
+                    data: testBuffer,
+                    filename: 'file.txt'
+                })
+
+                vi.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(
+                    new Error('transient')
+                )
             })
+            it('첫 완료 조회는 오류를 던지고 다음 조회는 true를 반환한다', async () => {
+                await expect(fix.s3Service.isUploadComplete({ key: 'k' })).rejects.toThrow(
+                    'transient'
+                )
 
-            vi.spyOn(toAny(fix.s3Service).s3, 'send').mockRejectedValueOnce(new Error('transient'))
-
-            await expect(fix.s3Service.isUploadComplete({ key: 'k' })).rejects.toThrow('transient')
-
-            const isCompleted = await fix.s3Service.isUploadComplete({ key: created.key })
-            expect(isCompleted).toBe(true)
+                const isCompleted = await fix.s3Service.isUploadComplete({ key: created.key })
+                expect(isCompleted).toBe(true)
+            })
         })
     })
 
@@ -467,15 +496,9 @@ describe('S3ObjectService', () => {
                 await uploadObject(fix.s3Service, key, 'upload body')
             })
 
-            it('no-content와 함께 키를 반환한다', async () => {
+            it('삭제하면 상태 코드 204와 키를 반환하고 객체도 사라진다', async () => {
                 const result = await fix.s3Service.deleteObject(key)
-
                 expect(result).toEqual({ key, status: HttpStatus.NO_CONTENT })
-            })
-
-            it('삭제하면 객체가 실제로 사라진다', async () => {
-                await fix.s3Service.deleteObject(key)
-
                 const isCompleted = await fix.s3Service.isUploadComplete({ key })
                 expect(isCompleted).toBe(false)
             })
@@ -502,27 +525,30 @@ describe('S3ObjectService', () => {
             expect(contents).toHaveLength(keys.length)
         })
 
-        it('키가 없는 객체는 제외한다', async () => {
-            const sendSpy = vi.spyOn(toAny(fix.s3Service).s3, 'send')
-            sendSpy.mockResolvedValueOnce({
-                Contents: [
-                    { Key: 'a.txt', LastModified: new Date('2024-01-01T00:00:00.000Z') },
-                    { Key: 'b.txt' },
-                    { LastModified: new Date('2024-01-01T00:00:00.000Z') }
-                ]
+        describe('목록 응답에 키가 없는 객체가 포함되도록 설정하면', () => {
+            beforeEach(() => {
+                const sendSpy = vi.spyOn(toAny(fix.s3Service).s3, 'send')
+                sendSpy.mockResolvedValueOnce({
+                    Contents: [
+                        { Key: 'a.txt', LastModified: new Date('2024-01-01T00:00:00.000Z') },
+                        { Key: 'b.txt' },
+                        { LastModified: new Date('2024-01-01T00:00:00.000Z') }
+                    ]
+                })
             })
+            it('객체 목록 조회 시 키가 없는 항목을 제외한다', async () => {
+                const { contents } = await fix.s3Service.listObjects({})
 
-            const { contents } = await fix.s3Service.listObjects({})
-
-            expect(contents).toEqual([
-                {
-                    eTag: undefined,
-                    key: 'a.txt',
-                    lastModified: Temporal.Instant.from('2024-01-01T00:00:00.000Z'),
-                    size: undefined
-                },
-                { eTag: undefined, key: 'b.txt', lastModified: undefined, size: undefined }
-            ])
+                expect(contents).toEqual([
+                    {
+                        eTag: undefined,
+                        key: 'a.txt',
+                        lastModified: Temporal.Instant.from('2024-01-01T00:00:00.000Z'),
+                        size: undefined
+                    },
+                    { eTag: undefined, key: 'b.txt', lastModified: undefined, size: undefined }
+                ])
+            })
         })
 
         it('접두어를 지정하면 해당 접두어로 시작하는 객체만 반환한다', async () => {
@@ -545,14 +571,19 @@ describe('S3ObjectService', () => {
             expect(contents).toHaveLength(maxKeys)
         })
 
-        it('nextToken을 지정하면 다음 페이지를 반환한다', async () => {
-            const maxKeys = 2
-            const listResult = await fix.s3Service.listObjects({ maxKeys })
-            const nextToken = listResult.nextToken
+        describe('첫 페이지의 다음 페이지 토큰이 있으면', () => {
+            let maxKeys: number
+            let nextToken: string | undefined
+            beforeEach(async () => {
+                maxKeys = 2
+                const listResult = await fix.s3Service.listObjects({ maxKeys })
+                nextToken = listResult.nextToken
+            })
+            it('그 토큰으로 조회하면 남은 객체를 반환한다', async () => {
+                const { contents } = await fix.s3Service.listObjects({ maxKeys, nextToken })
 
-            const { contents } = await fix.s3Service.listObjects({ maxKeys, nextToken })
-
-            expect(contents).toHaveLength(keys.length - maxKeys)
+                expect(contents).toHaveLength(keys.length - maxKeys)
+            })
         })
 
         it('delimiter를 지정하면 최상위 객체와 공통 prefix를 반환한다', async () => {
@@ -581,21 +612,24 @@ describe('S3ObjectService', () => {
             expect(commonPrefixes ?? []).toHaveLength(0)
         })
 
-        it('S3가 따옴표가 붙은 ETag를 반환해도 따옴표를 제거한 값으로 반환한다', async () => {
-            vi.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
-                Contents: [
-                    {
-                        ETag: '"abc123"',
-                        Key: 'a.txt',
-                        LastModified: new Date('2024-01-01T00:00:00.000Z'),
-                        Size: 10
-                    }
-                ]
+        describe('목록 응답의 ETag에 따옴표가 포함되도록 설정하면', () => {
+            beforeEach(() => {
+                vi.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({
+                    Contents: [
+                        {
+                            ETag: '"abc123"',
+                            Key: 'a.txt',
+                            LastModified: new Date('2024-01-01T00:00:00.000Z'),
+                            Size: 10
+                        }
+                    ]
+                })
             })
+            it('객체 목록 조회 시 ETag의 따옴표를 제거한다', async () => {
+                const { contents } = await fix.s3Service.listObjects({})
 
-            const { contents } = await fix.s3Service.listObjects({})
-
-            expect(contents[0]?.eTag).toBe('abc123')
+                expect(contents[0]?.eTag).toBe('abc123')
+            })
         })
     })
 

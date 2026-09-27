@@ -44,7 +44,7 @@ describe('PaginationDto', () => {
                 .badRequest({ expected: CommonErrors.Pagination.DirectionInvalid() })
         })
 
-        it('direction이 대문자(ASC/DESC)이면 400을 반환한다', async () => {
+        it('정렬 방향을 대문자 ASC로 요청하면 400을 반환한다', async () => {
             await fix.httpClient
                 .get('/pagination')
                 .query({ orderby: 'name:ASC' })
@@ -93,7 +93,7 @@ describe('PaginationDto', () => {
         expect(dto.orderby).toBeNull()
     })
 
-    it('orderby가 문자열이 아니면 BadRequestException을 던진다', () => {
+    it('orderby가 숫자이면 BadRequestException을 던진다', () => {
         try {
             PaginationSchema.parse({ orderby: 123 })
             throw new Error('Expected BadRequestException to be thrown')
@@ -105,7 +105,7 @@ describe('PaginationDto', () => {
         }
     })
 
-    it('orderby의 name 또는 direction이 비어 있으면 BadRequestException을 던진다', () => {
+    it('orderby의 정렬 방향이 비어 있으면 BadRequestException을 던진다', () => {
         try {
             PaginationSchema.parse({ orderby: 'name:' })
             throw new Error('Expected BadRequestException to be thrown')

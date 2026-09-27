@@ -196,33 +196,37 @@ describe('PurchaseNotificationService', () => {
             })
         })
 
-        describe.each([
-            [
-                '필수 필드가 잘못된',
-                JSON.stringify({ purchaseRecordId: '', ticketIds: [], userId: 'user-1' })
-            ],
-            ['JSON이 아닌', 'not-json']
-        ])('%s 이벤트를 받았을 때', (_, payload) => {
+        describe('구매 이벤트 검증', () => {
             let stream: Awaited<ReturnType<typeof getJetStream>>
-
             beforeEach(async () => {
                 stream = await getJetStream(fix)
             })
-
-            it('오류를 기록하고 소비 대기 목록에서 제거한다', async () => {
-                const { connection, streamName } = stream
-                await jetstream(connection).publish(events.subjects.purchased, payload, {
-                    expect: { streamName },
-                    msgID: 'invalid-purchase-event'
-                })
-                await waitForNotifications(fix)
-
-                expect(getNotificationLogs(logSpy)).toHaveLength(0)
-                expect(errorSpy).toHaveBeenCalledWith(
-                    'invalid purchase notification event',
-                    expect.objectContaining({ error: expect.anything(), streamSequence: 1 })
-                )
-            })
+            it.each([
+                {
+                    label: '필수 필드가 잘못된',
+                    payload: JSON.stringify({
+                        purchaseRecordId: '',
+                        ticketIds: [],
+                        userId: 'user-1'
+                    })
+                },
+                { label: 'JSON이 아닌', payload: 'not-json' }
+            ])(
+                '$label 이벤트를 발행하면 오류를 기록하고 소비 대기 목록에서 제거한다',
+                async ({ payload }) => {
+                    const { connection, streamName } = stream
+                    await jetstream(connection).publish(events.subjects.purchased, payload, {
+                        expect: { streamName },
+                        msgID: 'invalid-purchase-event'
+                    })
+                    await waitForNotifications(fix)
+                    expect(getNotificationLogs(logSpy)).toHaveLength(0)
+                    expect(errorSpy).toHaveBeenCalledWith(
+                        'invalid purchase notification event',
+                        expect.objectContaining({ error: expect.anything(), streamSequence: 1 })
+                    )
+                }
+            )
         })
     })
 

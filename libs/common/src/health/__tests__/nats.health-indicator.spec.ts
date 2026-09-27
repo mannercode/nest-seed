@@ -17,11 +17,14 @@ describe('NatsHealthIndicator', () => {
             expect(healthStatus).toEqual({ key: { status: 'up' } })
         })
 
-        it('flush가 실패하면 메시지와 함께 down 상태를 반환한다', async () => {
-            vi.spyOn(fix.connection, 'flush').mockRejectedValueOnce(new Error('error'))
-
-            const healthStatus = await fix.natsIndicator.isHealthy('key', fix.connection)
-            expect(healthStatus).toEqual({ key: { reason: 'error', status: 'down' } })
+        describe('NATS flush가 실패하도록 설정하면', () => {
+            beforeEach(() => {
+                vi.spyOn(fix.connection, 'flush').mockRejectedValueOnce(new Error('error'))
+            })
+            it('상태 조회 시 오류 메시지와 down 상태를 반환한다', async () => {
+                const healthStatus = await fix.natsIndicator.isHealthy('key', fix.connection)
+                expect(healthStatus).toEqual({ key: { reason: 'error', status: 'down' } })
+            })
         })
     })
 })

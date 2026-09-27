@@ -75,18 +75,24 @@ describe('defineWorkflow', () => {
             message: 'terminal',
             code: 409
         })
+    })
 
+    it('오류 분류 함수를 생략하면 asTerminalError를 설정하지 않는다', () => {
         const retrying = defineWorkflow({
             name: 'retrying-workflow',
             input: z.void(),
-            run: execute,
+            run: async () => undefined,
             options: { abortTimeout: 100, inactivityTimeout: 1000, workflowRetention: 5000 }
         }) as unknown as { options: { asTerminalError?: unknown } }
         expect(retrying.options.asTerminalError).toBeUndefined()
     })
+})
 
-    it('워크플로 취소 오류만 취소로 분류한다', () => {
-        expect(isWorkflowCancellation(new CancelledError())).toBe(true)
-        expect(isWorkflowCancellation(new Error('temporary'))).toBe(false)
+describe('isWorkflowCancellation', () => {
+    it.each([
+        { label: '워크플로 취소 오류', error: new CancelledError(), expected: true },
+        { label: '일반 오류', error: new Error('temporary'), expected: false }
+    ])('$label 여부를 판별한다', ({ error, expected }) => {
+        expect(isWorkflowCancellation(error)).toBe(expected)
     })
 })

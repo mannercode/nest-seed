@@ -20,13 +20,13 @@ describe('JsonUtil', () => {
             }
         )
 
-        it('Instant를 Date.toISOString과 같은 밀리초 3자리 JSON 계약으로 직렬화한다', () => {
+        it('Instant를 밀리초 세 자리가 있는 UTC 문자열로 직렬화한다', () => {
             const at = Temporal.Instant.from('2023-06-18T12:12:34Z')
 
             expect(JsonUtil.stringify({ at })).toBe('{"at":"2023-06-18T12:12:34.000Z"}')
         })
 
-        it('PlainDate는 YYYY-MM-DD 계약을 그대로 유지한다', () => {
+        it('PlainDate를 YYYY-MM-DD 문자열로 직렬화한다', () => {
             const date = Temporal.PlainDate.from('2023-06-18')
 
             expect(JsonUtil.stringify({ date })).toBe('{"date":"2023-06-18"}')
@@ -51,7 +51,7 @@ describe('JsonUtil', () => {
             expect(output.title).toBe(input.title)
         })
 
-        it('JSON 문자열로 표현할 수 없는 root 값은 명시적으로 거부한다', () => {
+        it('최상위 값으로 undefined를 전달하면 예외를 던진다', () => {
             expect(() => JsonUtil.stringify(undefined)).toThrow(InternalServerErrorException)
         })
     })

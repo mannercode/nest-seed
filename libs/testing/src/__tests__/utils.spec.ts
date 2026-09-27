@@ -1,15 +1,29 @@
 import { instant, oid, plainDate, step, withTestId } from '../index.js'
 
 describe('instant, plainDate', () => {
-    it('시각 문자열과 epoch 값을 밀리초 Instant로 만든다', () => {
-        expect(instant('2025-01-02T03:04Z').toString()).toBe('2025-01-02T03:04:00Z')
-        expect(instant(1).epochMilliseconds).toBe(1)
-        expect(instant(Temporal.Instant.fromEpochMilliseconds(2)).epochMilliseconds).toBe(2)
+    it.each([
+        {
+            label: '분까지만 있는 시각 문자열',
+            input: '2025-01-02T03:04Z',
+            expected: '2025-01-02T03:04:00Z'
+        },
+        { label: 'epoch 밀리초', input: 1, expected: '1970-01-01T00:00:00.001Z' },
+        {
+            label: 'Instant 객체',
+            input: Temporal.Instant.fromEpochMilliseconds(2),
+            expected: '1970-01-01T00:00:00.002Z'
+        }
+    ])('$label 입력을 Instant로 변환한다', ({ input, expected }) => {
+        expect(instant(input).toString()).toBe(expected)
     })
 
-    it('날짜 전용 문자열과 PlainDate만 PlainDate로 만든다', () => {
-        expect(plainDate('2025-01-02').toString()).toBe('2025-01-02')
-        expect(plainDate(Temporal.PlainDate.from('2025-01-02')).toString()).toBe('2025-01-02')
+    it.each([
+        { label: '날짜 문자열', input: '2025-01-02' },
+        { label: 'PlainDate 객체', input: Temporal.PlainDate.from('2025-01-02') }
+    ])('$label 입력을 PlainDate로 변환한다', ({ input }) => {
+        expect(plainDate(input).toString()).toBe('2025-01-02')
+    })
+    it('시각이 포함된 문자열을 PlainDate로 변환하면 예외를 던진다', () => {
         expect(() => plainDate('2025-01-02T23:59Z')).toThrow('Expected an ISO calendar date')
     })
 })
@@ -47,27 +61,20 @@ describe('step', () => {
 })
 
 describe('withTestId', () => {
-    it('TEST_ID 환경변수가 없으면 예외를 던진다', () => {
-        const original = process.env.TEST_ID
-        delete process.env.TEST_ID
-
-        try {
+    describe('TEST_ID 환경 변수가 없으면', () => {
+        beforeEach(() => vi.stubEnv('TEST_ID', undefined))
+        afterEach(() => vi.unstubAllEnvs())
+        it('접두어로 테스트 ID를 만들면 예외를 던진다', () => {
             expect(() => withTestId('foo')).toThrow(/TEST_ID/)
-        } finally {
-            if (original !== undefined) process.env.TEST_ID = original
-        }
+        })
     })
 
-    it('TEST_ID가 있으면 prefix-TEST_ID 형식으로 반환한다', () => {
-        const original = process.env.TEST_ID
-        process.env.TEST_ID = 'abc123'
-
-        try {
+    describe('TEST_ID 환경 변수가 설정되어 있으면', () => {
+        beforeEach(() => vi.stubEnv('TEST_ID', 'abc123'))
+        afterEach(() => vi.unstubAllEnvs())
+        it('접두어와 TEST_ID를 하이픈으로 연결한다', () => {
             expect(withTestId('foo')).toBe('foo-abc123')
-        } finally {
-            if (original !== undefined) process.env.TEST_ID = original
-            else delete process.env.TEST_ID
-        }
+        })
     })
 })
 

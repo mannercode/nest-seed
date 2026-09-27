@@ -2,65 +2,86 @@ import type { INestApplication } from '@nestjs/common'
 import { createTestContext, createHttpTestContext } from '../index.js'
 
 describe('createTestContext, createHttpTestContext', () => {
-    it('앱 초기화가 실패하면 모듈을 정리하고 원래 오류를 다시 던진다', async () => {
-        const setupError = new Error('app init failed')
-        const onModuleDestroy = vi.fn()
+    describe('제공자의 초기화가 실패하도록 설정하면', () => {
+        let setupError: Error
+        let onModuleDestroy: ReturnType<typeof vi.fn<() => void>>
+        let provider: new () => object
+        beforeEach(() => {
+            setupError = new Error('app init failed')
+            onModuleDestroy = vi.fn()
 
-        class InitFailureProvider {
-            onModuleInit() {
-                throw setupError
+            class InitFailureProvider {
+                onModuleInit() {
+                    throw setupError
+                }
+
+                onModuleDestroy() {
+                    onModuleDestroy()
+                }
             }
-
-            onModuleDestroy() {
-                onModuleDestroy()
-            }
-        }
-
-        const result = createTestContext({ providers: [InitFailureProvider] })
-
-        await expect(result).rejects.toBe(setupError)
-        expect(onModuleDestroy).toHaveBeenCalledTimes(1)
-    })
-
-    it('HTTP URL 조회가 실패하면 열린 서버와 모듈을 정리하고 원래 오류를 다시 던진다', async () => {
-        const setupError = new Error('getUrl failed')
-        const onModuleDestroy = vi.fn()
-        let app: INestApplication | undefined
-
-        class LifecycleProvider {
-            onModuleDestroy() {
-                onModuleDestroy()
-            }
-        }
-
-        const result = createHttpTestContext({
-            configureApp: async (createdApp) => {
-                app = createdApp
-                vi.spyOn(createdApp, 'getUrl').mockRejectedValue(setupError)
-            },
-            providers: [LifecycleProvider]
+            provider = InitFailureProvider
         })
+        it('앱 생성 시 모듈을 정리하고 최초 초기화 오류를 던진다', async () => {
+            const result = createTestContext({ providers: [provider] })
 
-        await expect(result).rejects.toBe(setupError)
-        expect(app?.getHttpServer().listening).toBe(false)
-        expect(onModuleDestroy).toHaveBeenCalledTimes(1)
+            await expect(result).rejects.toBe(setupError)
+            expect(onModuleDestroy).toHaveBeenCalledTimes(1)
+        })
     })
 
-    it('초기화와 자원 정리가 모두 실패하면 초기화 오류를 다시 던진다', async () => {
-        const setupError = new Error('app init failed')
+    describe('HTTP 앱의 URL 조회가 실패하도록 설정하면', () => {
+        let setupError: Error
+        let onModuleDestroy: ReturnType<typeof vi.fn<() => void>>
+        let app: INestApplication | undefined
+        let options: Parameters<typeof createHttpTestContext>[0]
+        beforeEach(() => {
+            setupError = new Error('getUrl failed')
+            onModuleDestroy = vi.fn()
+            app = undefined
 
-        class SetupAndCleanupFailureProvider {
-            onModuleInit() {
-                throw setupError
+            class LifecycleProvider {
+                onModuleDestroy() {
+                    onModuleDestroy()
+                }
             }
-
-            onModuleDestroy() {
-                throw new Error('app cleanup failed')
+            options = {
+                configureApp: async (createdApp) => {
+                    app = createdApp
+                    vi.spyOn(createdApp, 'getUrl').mockRejectedValue(setupError)
+                },
+                providers: [LifecycleProvider]
             }
-        }
+        })
+        it('HTTP 컨텍스트 생성 시 서버와 모듈을 닫고 URL 조회 오류를 던진다', async () => {
+            const result = createHttpTestContext(options)
 
-        const result = createTestContext({ providers: [SetupAndCleanupFailureProvider] })
+            await expect(result).rejects.toBe(setupError)
+            expect(app?.getHttpServer().listening).toBe(false)
+            expect(onModuleDestroy).toHaveBeenCalledTimes(1)
+        })
+    })
 
-        await expect(result).rejects.toBe(setupError)
+    describe('제공자의 초기화와 정리가 모두 실패하도록 설정하면', () => {
+        let setupError: Error
+        let provider: new () => object
+        beforeEach(() => {
+            setupError = new Error('app init failed')
+
+            class SetupAndCleanupFailureProvider {
+                onModuleInit() {
+                    throw setupError
+                }
+
+                onModuleDestroy() {
+                    throw new Error('app cleanup failed')
+                }
+            }
+            provider = SetupAndCleanupFailureProvider
+        })
+        it('앱 생성 시 최초 초기화 오류를 던진다', async () => {
+            const result = createTestContext({ providers: [provider] })
+
+            await expect(result).rejects.toBe(setupError)
+        })
     })
 })

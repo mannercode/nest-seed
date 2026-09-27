@@ -35,7 +35,7 @@ describe('newObjectIdString, objectId, objectIds', () => {
         expect(objectIds([])).toEqual([])
     })
 
-    it('유효하지 않은 문자열은 400으로 거부한다', () => {
+    it('유효하지 않은 ID 문자열을 변환하면 예외를 던진다', () => {
         expect(() => objectId('invalid-id')).toThrow(BadRequestException)
         expect(() => objectIds([newObjectIdString(), 'invalid-id'])).toThrow('not a valid ObjectId')
     })
@@ -69,10 +69,11 @@ describe('mongoToPublic, mongoArrayToPublic, withoutPublicId, encodeMongoValues,
         expect(doc._id).toBe(_id)
     })
 
-    it('null과 배열을 처리한다', () => {
-        const _id = new ObjectId()
-
+    it('mongoToPublic에 null을 전달하면 null을 반환한다', () => {
         expect(mongoToPublic(null)).toBeNull()
+    })
+    it('문서 배열을 변환하면 각 ObjectId를 문자열 ID로 반환한다', () => {
+        const _id = new ObjectId()
         expect(mongoArrayToPublic<{ id: string }>([{ _id }, { _id: new ObjectId() }])).toEqual([
             { id: _id.toHexString() },
             { id: expect.any(String) }
@@ -194,84 +195,109 @@ describe('QueryBuilder', () => {
         builder = new QueryBuilder()
     })
 
-    it('equals는 nullish만 생략하고 falsy 값은 유지한다', () => {
-        builder.addEquals('missing', undefined).addEquals('nulled', null)
-        expect(builder.build({ allowEmpty: true })).toEqual({})
-
-        expect(new QueryBuilder().addEquals('zero', 0).build()).toEqual({ zero: 0 })
-        expect(new QueryBuilder().addEquals('false', false).build()).toEqual({ false: false })
-        expect(new QueryBuilder().addEquals('empty', '').build()).toEqual({ empty: '' })
+    it.each([
+        { label: 'undefined', value: undefined },
+        { label: 'null', value: null }
+    ])('$label로 동등 조건을 추가하면 그 조건을 생략한다', ({ value }) => {
+        expect(builder.addEquals('value', value).build({ allowEmpty: true })).toEqual({})
+    })
+    it.each([0, false, ''])('값이 %j인 동등 조건을 그대로 유지한다', (value) => {
+        expect(builder.addEquals('value', value).build()).toEqual({ value })
     })
 
-    it('id가 있을 때만 ObjectId 조건을 추가한다', () => {
+    it('ID 문자열로 조건을 추가하면 ObjectId로 변환한다', () => {
         const id = newObjectIdString()
-
         expect(builder.addId('_id', id).build()).toEqual({ _id: objectId(id) })
-        expect(new QueryBuilder().addId('_id').build({ allowEmpty: true })).toEqual({})
+    })
+    it('ID를 생략하면 조건을 추가하지 않는다', () => {
+        expect(builder.addId('_id').build({ allowEmpty: true })).toEqual({})
     })
 
-    it('in 조건의 중복을 제거하고 빈 목록과 미지정을 구분한다', () => {
+    it('in 조건의 값이 중복되면 중복을 제거하고 경고를 기록한다', () => {
         const warn = vi.spyOn(Logger, 'warn').mockImplementation(() => undefined)
-
         expect(builder.addIn('entityId', ['a', 'a', 'b']).build()).toEqual({
             entityId: { $in: ['a', 'b'] }
         })
         expect(warn).toHaveBeenCalledWith(expect.stringContaining('Duplicate entityId'))
-        expect(new QueryBuilder().addIn('x', []).addIn('y').build()).toEqual({ x: { $in: [] } })
+    })
+    it('빈 in 목록은 유지하고 생략한 목록은 조건에서 제외한다', () => {
+        expect(builder.addIn('x', []).addIn('y').build()).toEqual({ x: { $in: [] } })
     })
 
-    it('날짜 범위의 양끝 또는 한쪽 끝만 추가한다', () => {
-        const start = Temporal.Instant.from('2025-01-01T00:00:00Z')
-        const end = Temporal.Instant.from('2025-01-02T00:00:00Z')
-        const storedStart = new Date('2025-01-01T00:00:00Z')
-        const storedEnd = new Date('2025-01-02T00:00:00Z')
-
-        expect(builder.addRange('createdAt', { end, start }).build()).toEqual({
-            createdAt: { $gte: storedStart, $lte: storedEnd }
-        })
-        expect(new QueryBuilder().addRange('at', { start }).build()).toEqual({
-            at: { $gte: storedStart }
-        })
-        expect(new QueryBuilder().addRange('at', { end }).build()).toEqual({
-            at: { $lte: storedEnd }
-        })
-        expect(
-            new QueryBuilder()
-                .addRange('a', undefined)
-                .addRange('b', {})
-                .build({ allowEmpty: true })
-        ).toEqual({})
+    it.each([
+        {
+            label: '양끝',
+            range: {
+                start: Temporal.Instant.from('2025-01-01T00:00:00Z'),
+                end: Temporal.Instant.from('2025-01-02T00:00:00Z')
+            },
+            expected: {
+                $gte: new Date('2025-01-01T00:00:00Z'),
+                $lte: new Date('2025-01-02T00:00:00Z')
+            }
+        },
+        {
+            label: '시작',
+            range: { start: Temporal.Instant.from('2025-01-01T00:00:00Z') },
+            expected: { $gte: new Date('2025-01-01T00:00:00Z') }
+        },
+        {
+            label: '끝',
+            range: { end: Temporal.Instant.from('2025-01-02T00:00:00Z') },
+            expected: { $lte: new Date('2025-01-02T00:00:00Z') }
+        }
+    ])('날짜 범위의 $label 값을 전달하면 해당 경계를 조건에 포함한다', ({ range, expected }) => {
+        expect(builder.addRange('at', range).build()).toEqual({ at: expected })
+    })
+    it.each([
+        { label: '미지정', range: undefined },
+        { label: '빈 객체', range: {} }
+    ])('날짜 범위가 $label이면 조건을 추가하지 않는다', ({ range }) => {
+        expect(builder.addRange('at', range).build({ allowEmpty: true })).toEqual({})
     })
 
-    it('regex 값을 이스케이프하고 옵션을 적용한다', () => {
-        expect(builder.addRegex('name', '.*').build()).toEqual({ name: /\.\*/i })
-        expect(new QueryBuilder().addRegex('name', 'a.b', { prefix: true }).build()).toEqual({
-            name: /^a\.b/i
-        })
-        expect(
-            new QueryBuilder().addRegex('name', 'Text', { caseSensitive: true }).build()
-        ).toEqual({ name: /Text/ })
-        expect(
-            new QueryBuilder()
-                .addRegex('name', 'Text', { caseSensitive: true, prefix: true })
-                .build()
-        ).toEqual({ name: /^Text/ })
-        expect(new QueryBuilder().addRegex('name').build({ allowEmpty: true })).toEqual({})
+    it.each([
+        { label: '기본 옵션', value: '.*', options: undefined, expected: /\.\*/i },
+        { label: '접두어 옵션', value: 'a.b', options: { prefix: true }, expected: /^a\.b/i },
+        {
+            label: '대소문자 구분 옵션',
+            value: 'Text',
+            options: { caseSensitive: true },
+            expected: /Text/
+        },
+        {
+            label: '접두어와 대소문자 구분 옵션',
+            value: 'Text',
+            options: { caseSensitive: true, prefix: true },
+            expected: /^Text/
+        }
+    ])(
+        '$label으로 정규식 조건을 만들면 특수문자를 이스케이프하고 옵션을 적용한다',
+        ({ value, options, expected }) => {
+            expect(builder.addRegex('name', value, options).build()).toEqual({ name: expected })
+        }
+    )
+    it('정규식 값을 생략하면 조건을 추가하지 않는다', () => {
+        expect(builder.addRegex('name').build({ allowEmpty: true })).toEqual({})
     })
 
-    it('빈 필터는 기본적으로 거부하고 명시한 경우만 허용한다', () => {
+    it('빈 필터를 만들면 기본적으로 예외를 던진다', () => {
         expect(() => builder.build()).toThrow(BadRequestException)
+    })
+    it('allowEmpty를 지정하면 빈 필터를 반환한다', () => {
         expect(builder.build({ allowEmpty: true })).toEqual({})
     })
 })
 
 describe('isDuplicateKeyError', () => {
-    it('duplicate key code만 식별한다', () => {
-        expect(isDuplicateKeyError({ code: 11000 })).toBe(true)
-        expect(isDuplicateKeyError({ code: 121 })).toBe(false)
-        expect(isDuplicateKeyError({ message: 'error' })).toBe(false)
-        expect(isDuplicateKeyError(null)).toBe(false)
-        expect(isDuplicateKeyError('error')).toBe(false)
+    it.each([
+        { label: '중복 키 코드 11000', input: { code: 11000 }, expected: true },
+        { label: '다른 오류 코드', input: { code: 121 }, expected: false },
+        { label: '코드 없는 객체', input: { message: 'error' }, expected: false },
+        { label: 'null', input: null, expected: false },
+        { label: '문자열', input: 'error', expected: false }
+    ])('$label 입력의 중복 키 오류 여부를 판별한다', ({ input, expected }) => {
+        expect(isDuplicateKeyError(input)).toBe(expected)
     })
 })
 

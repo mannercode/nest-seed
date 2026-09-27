@@ -62,27 +62,29 @@ describe('ShowtimesService', () => {
     })
 
     describe('getMany', () => {
-        it('주어진 상영 시간 ID 목록에 해당하는 상영 시간을 반환한다', async () => {
-            const showtimes = await createShowtimes(fix, [
-                { startTime: instant('2000-01-01T12:00Z') },
-                { startTime: instant('2000-01-01T14:00Z') }
-            ])
+        describe('상영 두 건이 존재하면', () => {
+            let showtimes: ShowtimeDto[]
 
-            const fetchedShowtimes = await showtimesService.getMany(pickIds(showtimes))
+            beforeEach(async () => {
+                showtimes = await createShowtimes(fix, [
+                    { startTime: instant('2000-01-01T12:00Z') },
+                    { startTime: instant('2000-01-01T14:00Z') }
+                ])
+            })
 
-            expect(fetchedShowtimes).toEqual(expect.arrayContaining(showtimes))
-        })
+            it('두 ID로 조회하면 해당 상영들을 반환한다', async () => {
+                const fetchedShowtimes = await showtimesService.getMany(pickIds(showtimes))
 
-        it('상영 시간 ID 목록 중 하나라도 없으면 404를 던진다', async () => {
-            const [existingShowtime] = await createShowtimes(fix, [
-                { startTime: instant('2000-01-01T12:00Z') }
-            ])
+                expect(fetchedShowtimes).toEqual(expect.arrayContaining(showtimes))
+            })
 
-            const promise = showtimesService.getMany([ensure(existingShowtime).id, nullObjectId])
+            it('존재하지 않는 ID를 함께 조회하면 404 예외를 던진다', async () => {
+                const promise = showtimesService.getMany([ensure(showtimes[0]).id, nullObjectId])
 
-            await expect(promise).rejects.toMatchObject({
-                message: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]).message,
-                status: HttpStatus.NOT_FOUND
+                await expect(promise).rejects.toMatchObject({
+                    message: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]).message,
+                    status: HttpStatus.NOT_FOUND
+                })
             })
         })
     })
@@ -150,23 +152,27 @@ describe('ShowtimesService', () => {
             })
         })
 
-        it('결과를 startTime 오름차순으로 정렬해 반환한다', async () => {
-            const sagaId = oid(0x9)
+        describe('시작 시각과 다른 순서로 상영이 등록되어 있으면', () => {
+            let sagaId: string
+            beforeEach(async () => {
+                sagaId = oid(0x9)
 
-            // 삽입 순서를 일부러 뒤섞어 정렬 결과가 Mongo 자연 순서와 구분되게 한다
-            await showtimesService.createMany([
-                buildCreateShowtimeDto({ sagaId, startTime: instant('2000-01-01T14:00Z') }),
-                buildCreateShowtimeDto({ sagaId, startTime: instant('2000-01-01T12:00Z') }),
-                buildCreateShowtimeDto({ sagaId, startTime: instant('2000-01-01T13:00Z') })
-            ])
+                // 삽입 순서를 일부러 뒤섞어 정렬 결과가 Mongo 자연 순서와 구분되게 한다
+                await showtimesService.createMany([
+                    buildCreateShowtimeDto({ sagaId, startTime: instant('2000-01-01T14:00Z') }),
+                    buildCreateShowtimeDto({ sagaId, startTime: instant('2000-01-01T12:00Z') }),
+                    buildCreateShowtimeDto({ sagaId, startTime: instant('2000-01-01T13:00Z') })
+                ])
+            })
+            it('시작 시각이 빠른 순서로 반환한다', async () => {
+                const showtimes = await showtimesService.search({ sagaIds: [sagaId] })
 
-            const showtimes = await showtimesService.search({ sagaIds: [sagaId] })
-
-            expect(showtimes.map((showtime) => showtime.startTime)).toEqual([
-                instant('2000-01-01T12:00Z'),
-                instant('2000-01-01T13:00Z'),
-                instant('2000-01-01T14:00Z')
-            ])
+                expect(showtimes.map((showtime) => showtime.startTime)).toEqual([
+                    instant('2000-01-01T12:00Z'),
+                    instant('2000-01-01T13:00Z'),
+                    instant('2000-01-01T14:00Z')
+                ])
+            })
         })
 
         it('필터가 비어 있으면 400을 던진다', async () => {

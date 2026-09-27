@@ -27,19 +27,28 @@ describe('Health', () => {
             expect(body).toEqual({ status: 'ok', info: allUp, error: {}, details: allUp })
         })
 
-        it('핵심 의존성 하나라도 비정상이면 503과 실패 정보를 반환한다', async () => {
-            const mongo = fix.module.get(MongoConnection)
-            vi.spyOn(mongo.db, 'command').mockRejectedValueOnce(new Error('mongo down'))
+        describe('MongoDB 상태 확인에 실패하면', () => {
+            beforeEach(() => {
+                const mongo = fix.module.get(MongoConnection)
+                vi.spyOn(mongo.db, 'command').mockRejectedValueOnce(new Error('mongo down'))
+            })
 
-            const { body } = await fix.httpClient.get('/health').send(503)
-            const info = {
-                redis: { status: 'up' },
-                nats: { status: 'up' },
-                restate: { status: 'up' }
-            }
-            const error = { mongodb: { reason: 'Error: mongo down', status: 'down' } }
+            it('503과 MongoDB의 실패 정보를 반환한다', async () => {
+                const { body } = await fix.httpClient.get('/health').send(503)
+                const info = {
+                    redis: { status: 'up' },
+                    nats: { status: 'up' },
+                    restate: { status: 'up' }
+                }
+                const error = { mongodb: { reason: 'Error: mongo down', status: 'down' } }
 
-            expect(body).toEqual({ status: 'error', info, error, details: { ...info, ...error } })
+                expect(body).toEqual({
+                    status: 'error',
+                    info,
+                    error,
+                    details: { ...info, ...error }
+                })
+            })
         })
     })
 })

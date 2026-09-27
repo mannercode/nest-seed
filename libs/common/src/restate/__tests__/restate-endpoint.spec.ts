@@ -42,47 +42,54 @@ describe('RestateEndpoint', () => {
         }
     })
 
-    it('정상 종료가 5초 안에 끝나지 않으면 남은 연결을 강제로 닫는다', async () => {
-        vi.useFakeTimers()
-        const endpoint = createEndpoint()
-        let finishServerClose!: () => void
-        const session = { close: vi.fn(), destroy: vi.fn(() => finishServerClose()) }
-        const server = {
-            close: vi.fn((done: () => void) => {
-                finishServerClose = done
-            })
-        }
-        const internals = endpoint as unknown as {
-            server: typeof server
-            sessions: Set<typeof session>
-        }
-        internals.server = server
-        internals.sessions.add(session)
-
-        try {
-            const shutdown = endpoint.onApplicationShutdown()
-            expect(session.close).toHaveBeenCalledTimes(1)
-            await vi.advanceTimersByTimeAsync(5_000)
-            await shutdown
-            expect(session.destroy).toHaveBeenCalledTimes(1)
-        } finally {
-            vi.useRealTimers()
-        }
+    describe('연결을 강제로 닫기 전까지 서버 종료가 끝나지 않도록 설정하면', () => {
+        let endpoint: RestateEndpoint
+        let session: { close: ReturnType<typeof vi.fn>; destroy: ReturnType<typeof vi.fn> }
+        beforeEach(() => {
+            vi.useFakeTimers()
+            endpoint = createEndpoint()
+            let finishServerClose!: () => void
+            session = { close: vi.fn(), destroy: vi.fn(() => finishServerClose()) }
+            const server = {
+                close: vi.fn((done: () => void) => {
+                    finishServerClose = done
+                })
+            }
+            const internals = endpoint as unknown as {
+                server: typeof server
+                sessions: Set<typeof session>
+            }
+            internals.server = server
+            internals.sessions.add(session)
+        })
+        it('종료를 요청하고 5초가 지나면 남은 연결을 강제로 닫는다', async () => {
+            try {
+                const shutdown = endpoint.onApplicationShutdown()
+                expect(session.close).toHaveBeenCalledTimes(1)
+                await vi.advanceTimersByTimeAsync(5_000)
+                await shutdown
+                expect(session.destroy).toHaveBeenCalledTimes(1)
+            } finally {
+                vi.useRealTimers()
+            }
+        })
     })
 
-    it('Restate 로그 레벨을 애플리케이션 로거에 대응시킨다', () => {
-        const logger = createLogger()
-        const endpoint = createEndpoint(9080, logger)
-        const transport = (endpoint as unknown as { restateLogger: LoggerTransport }).restateLogger
-        const mappings = [
+    describe('애플리케이션 로거를 연결했으면', () => {
+        let logger: AppLoggerService
+        let transport: LoggerTransport
+        beforeEach(() => {
+            logger = createLogger()
+            const endpoint = createEndpoint(9080, logger)
+            transport = (endpoint as unknown as { restateLogger: LoggerTransport }).restateLogger
+        })
+        it.each([
             ['trace', 'verbose'],
             ['debug', 'debug'],
             ['info', 'log'],
             ['warn', 'warn'],
             ['error', 'error']
-        ] as const
-
-        for (const [level, loggerMethod] of mappings) {
+        ] as const)('%s 로그를 전달하면 로거의 %s 메서드를 호출한다', (level, loggerMethod) => {
             const message = `${level} message`
             transport(
                 {
@@ -93,12 +100,11 @@ describe('RestateEndpoint', () => {
                 message,
                 `${level} detail`
             )
-
             expect(logger[loggerMethod]).toHaveBeenCalledWith(
                 message,
                 expect.objectContaining({ parameters: [`${level} detail`] })
             )
-        }
+        })
     })
 
     function createEndpoint(servicePort = 0, logger = createLogger()) {

@@ -22,7 +22,7 @@ describe('AdminManagement', () => {
     })
     afterEach(() => teardown?.())
 
-    describe('HTTP로 관리자를 생성하거나 삭제하려 할 때', () => {
+    describe('관리자 생성·삭제 HTTP 경로', () => {
         it('POST /admins는 404를 반환한다', async () => {
             await fix.httpClient
                 .post('/admins')
@@ -36,7 +36,7 @@ describe('AdminManagement', () => {
     })
 
     describe('AdminsService.create', () => {
-        it('admin을 생성한다', async () => {
+        it('생성된 관리자를 반환한다', async () => {
             await expect(createAdmin(fix, adminCredentials)).resolves.toEqual(
                 expect.objectContaining({
                     id: expect.any(String),
@@ -46,30 +46,35 @@ describe('AdminManagement', () => {
             )
         })
 
-        describe('email이 이미 존재하면', () => {
+        describe('관리자가 존재하면', () => {
             beforeEach(async () => {
                 await createAdmin(fix, adminCredentials)
             })
 
-            it('409 Conflict를 던진다', async () => {
+            it('그 관리자의 이메일로 생성을 요청하면 409 예외를 던진다', async () => {
                 await expect(createAdmin(fix, adminCredentials)).rejects.toMatchObject({
                     status: 409
                 })
             })
         })
 
-        it('중복 키 외의 저장 오류는 ConflictException으로 바꾸지 않고 그대로 던진다', async () => {
-            const service = fix.module.get(AdminsService)
-            const repository = fix.module.get(AdminsRepository)
-            const failure = new Error('storage unavailable')
-            vi.spyOn(repository.collection, 'insertOne').mockRejectedValueOnce(failure)
-
-            await expect(service.create({ ...adminCredentials, name: 'admin' })).rejects.toBe(
-                failure
-            )
+        describe('저장소에서 중복 키 이외의 오류가 발생하면', () => {
+            let service: AdminsService
+            let failure: Error
+            beforeEach(() => {
+                service = fix.module.get(AdminsService)
+                const repository = fix.module.get(AdminsRepository)
+                failure = new Error('storage unavailable')
+                vi.spyOn(repository.collection, 'insertOne').mockRejectedValueOnce(failure)
+            })
+            it('저장 오류를 그대로 던진다', async () => {
+                await expect(service.create({ ...adminCredentials, name: 'admin' })).rejects.toBe(
+                    failure
+                )
+            })
         })
 
-        it('저장할 값이 스키마를 위반하면 검증 오류를 그대로 던진다', async () => {
+        it('필수 필드가 null이면 ConflictException이 아닌 예외를 던진다', async () => {
             const service = fix.module.get(AdminsService)
 
             // required 필드를 null로 보내 저장 경계 검증 오류를 유도한다.
@@ -84,43 +89,17 @@ describe('AdminManagement', () => {
     })
 
     describe('AdminsService.remove', () => {
-        it('존재하지 않는 관리자이면 404 예외를 던진다', async () => {
+        it('존재하지 않는 ID로 삭제하면 관리자가 없다는 예외를 던진다', async () => {
             const service = fix.module.get(AdminsService)
 
             await expect(service.remove(nullObjectId)).rejects.toThrow(
                 Errors.Mongo.DocumentNotFound(nullObjectId).message
             )
         })
-
-        it('제거된 admin의 이메일로 다시 admin을 만들 수 있다', async () => {
-            const created = await createAdmin(fix, adminCredentials)
-
-            const service = fix.module.get(AdminsService)
-
-            await service.remove(created.id)
-
-            await expect(createAdmin(fix, adminCredentials)).resolves.toEqual(
-                expect.objectContaining({ email: adminCredentials.email })
-            )
-        })
-
-        it('제거된 admin의 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
-            const created = await createAdmin(fix, adminCredentials)
-            const { refreshToken } = await loginAdmin(fix, adminCredentials)
-
-            const service = fix.module.get(AdminsService)
-
-            await service.remove(created.id)
-
-            await fix.httpClient
-                .post('/admins/refresh')
-                .body({ refreshToken })
-                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
-        })
     })
 
-    describe('PATCH /admins/me (admin 본인 수정)', () => {
-        describe('로그인했을 때', () => {
+    describe('PATCH /admins/me', () => {
+        describe('관리자로 로그인했으면', () => {
             let admin: AdminDto
             let accessToken: string
             let refreshToken: string
@@ -130,7 +109,7 @@ describe('AdminManagement', () => {
                 ;({ accessToken, admin, refreshToken } = await loginAdmin(fix, adminCredentials))
             })
 
-            it('이름을 수정하면 수정된 admin을 반환한다', async () => {
+            it('이름을 수정하면 수정된 관리자를 반환한다', async () => {
                 await fix.httpClient
                     .patch('/admins/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
@@ -151,7 +130,7 @@ describe('AdminManagement', () => {
                     .ok({ expected: { ...admin, name: 'renamed' } })
             })
 
-            describe('password를 변경하면', () => {
+            describe('비밀번호가 변경되었으면', () => {
                 const newPassword = 'newPassword'
 
                 beforeEach(async () => {
@@ -162,7 +141,7 @@ describe('AdminManagement', () => {
                         .ok()
                 })
 
-                it('새 password로 로그인할 수 있다', async () => {
+                it('새 비밀번호로 로그인할 수 있다', async () => {
                     await fix.httpClient
                         .post('/admins/login')
                         .body({ email: adminCredentials.email, password: newPassword })
@@ -174,14 +153,14 @@ describe('AdminManagement', () => {
                         })
                 })
 
-                it('기존 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
+                it('기존 리프레시 토큰으로 갱신을 요청하면 401을 반환한다', async () => {
                     await fix.httpClient
                         .post('/admins/refresh')
                         .body({ refreshToken })
                         .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
                 })
 
-                it('기존 액세스 토큰은 만료 전까지 인증을 통과한다', async () => {
+                it('기존 액세스 토큰으로 본인 정보를 조회할 수 있다', async () => {
                     await fix.httpClient
                         .get('/admins/me')
                         .headers({ Authorization: `Bearer ${accessToken}` })
@@ -189,7 +168,7 @@ describe('AdminManagement', () => {
                 })
             })
 
-            it('email을 변경하면 변경된 email을 반환한다', async () => {
+            it('이메일을 변경하면 변경된 이메일을 반환한다', async () => {
                 await fix.httpClient
                     .patch('/admins/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
@@ -197,41 +176,44 @@ describe('AdminManagement', () => {
                     .ok({ expected: { ...admin, email: 'renamed@mail.com' } })
             })
 
-            it('다른 admin과 같은 email로 바꾸려 하면 409를 반환한다', async () => {
-                await createAdmin(fix, { email: 'a@mail.com', password: 'p' })
-
-                await fix.httpClient
-                    .patch('/admins/me')
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body({ email: 'a@mail.com' })
-                    .conflict()
-            })
-
-            it('삭제 후에도 인증은 통과하지만 본인 수정은 자원이 없어 404를 반환한다', async () => {
-                await fix.module.get(AdminsService).remove(admin.id)
-                await fix.httpClient
-                    .patch('/admins/me')
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body({ name: 'x' })
-                    .notFound({ expected: Errors.Mongo.DocumentNotFound(admin.id) })
+            describe('다른 관리자가 존재하면', () => {
+                beforeEach(async () => {
+                    await createAdmin(fix, { email: 'a@mail.com', password: 'p' })
+                })
+                it('그 관리자의 이메일로 변경을 요청하면 409를 반환한다', async () => {
+                    await fix.httpClient
+                        .patch('/admins/me')
+                        .headers({ Authorization: `Bearer ${accessToken}` })
+                        .body({ email: 'a@mail.com' })
+                        .conflict()
+                })
             })
         })
 
         it('토큰이 없으면 401을 반환한다', async () => {
             await fix.httpClient.patch('/admins/me').body({ name: 'x' }).unauthorized()
         })
+    })
 
-        it('중복 키 외의 저장 오류는 ConflictException으로 바꾸지 않고 그대로 던진다', async () => {
-            const created = await createAdmin(fix, adminCredentials)
+    describe('AdminsService.update', () => {
+        describe('관리자가 존재하고 저장소 갱신이 실패하도록 설정하면', () => {
+            let created: AdminDto
+            let service: AdminsService
+            beforeEach(async () => {
+                created = await createAdmin(fix, adminCredentials)
 
-            const service = fix.module.get(AdminsService)
-            const repo = fix.module.get(AdminsRepository)
-            vi.spyOn(repo.collection, 'findOneAndUpdate').mockRejectedValueOnce(new Error('boom'))
-
-            await expect(service.update(created.id, { name: 'x' })).rejects.toThrow('boom')
+                service = fix.module.get(AdminsService)
+                const repo = fix.module.get(AdminsRepository)
+                vi.spyOn(repo.collection, 'findOneAndUpdate').mockRejectedValueOnce(
+                    new Error('boom')
+                )
+            })
+            it('수정을 요청하면 저장 오류를 전달한다', async () => {
+                await expect(service.update(created.id, { name: 'x' })).rejects.toThrow('boom')
+            })
         })
 
-        it('존재하지 않는 admin을 수정하면 404를 던진다', async () => {
+        it('존재하지 않는 ID로 수정하면 관리자가 없다는 예외를 던진다', async () => {
             const service = fix.module.get(AdminsService)
 
             await expect(service.update(nullObjectId, { name: 'x' })).rejects.toThrow(
@@ -240,15 +222,43 @@ describe('AdminManagement', () => {
         })
     })
 
-    describe('GET /admins/me', () => {
-        it('삭제 후에도 인증은 통과하지만 본인 조회는 자원이 없어 404를 반환한다', async () => {
-            const created = await createAdmin(fix, adminCredentials)
-            const { accessToken } = await loginAdmin(fix, adminCredentials)
-            await fix.module.get(AdminsService).remove(created.id)
+    describe('로그인한 관리자 계정이 삭제되었으면', () => {
+        let admin: AdminDto
+        let accessToken: string
+        let refreshToken: string
+
+        beforeEach(async () => {
+            admin = await createAdmin(fix, adminCredentials)
+            ;({ accessToken, refreshToken } = await loginAdmin(fix, adminCredentials))
+            await fix.module.get(AdminsService).remove(admin.id)
+        })
+
+        it('같은 이메일로 관리자를 다시 생성할 수 있다', async () => {
+            await expect(createAdmin(fix, adminCredentials)).resolves.toEqual(
+                expect.objectContaining({ email: adminCredentials.email })
+            )
+        })
+
+        it('기존 리프레시 토큰으로 갱신을 요청하면 401을 반환한다', async () => {
+            await fix.httpClient
+                .post('/admins/refresh')
+                .body({ refreshToken })
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+        })
+
+        it('기존 액세스 토큰으로 본인 수정을 요청하면 404를 반환한다', async () => {
+            await fix.httpClient
+                .patch('/admins/me')
+                .headers({ Authorization: `Bearer ${accessToken}` })
+                .body({ name: 'x' })
+                .notFound({ expected: Errors.Mongo.DocumentNotFound(admin.id) })
+        })
+
+        it('기존 액세스 토큰으로 본인 조회를 요청하면 404를 반환한다', async () => {
             await fix.httpClient
                 .get('/admins/me')
                 .headers({ Authorization: `Bearer ${accessToken}` })
-                .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([created.id]) })
+                .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([admin.id]) })
         })
     })
 })

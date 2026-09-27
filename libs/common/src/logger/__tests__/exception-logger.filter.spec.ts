@@ -37,7 +37,7 @@ describe('HttpExceptionLoggerFilter', () => {
             )
         })
 
-        it('4xx HttpException이 발생하면 Logger.warn으로 로그를 남긴다', async () => {
+        it('404 예외가 발생하는 경로로 요청하면 Logger.warn으로 로그를 남긴다', async () => {
             await fix.httpClient
                 .get('/exception')
                 .notFound({ expected: { code: 'ERR_CODE', message: 'message' } })
@@ -80,7 +80,7 @@ describe('HttpExceptionLoggerFilter', () => {
             )
         })
 
-        it('HttpException 응답이 문자열이어도 안정적인 오류 정보만 기록한다', async () => {
+        it('HttpException 응답이 문자열이면 오류 이름과 상태 코드를 기록한다', async () => {
             await fix.httpClient.get('/string-response').badRequest()
 
             expect(fix.spyWarn).toHaveBeenCalledWith(
@@ -136,7 +136,7 @@ describe('HttpExceptionLoggerFilter', () => {
         })
     })
 
-    describe('HTTP가 아닌 컨텍스트에서 실행되면', () => {
+    describe('컨텍스트 유형이 RPC이면', () => {
         let filter: HttpExceptionLoggerFilter
         let fakeHost: ArgumentsHost
 
@@ -152,7 +152,7 @@ describe('HttpExceptionLoggerFilter', () => {
             } as any
         })
 
-        it('알 수 없는 컨텍스트 메시지를 Logger.error로 남긴다', () => {
+        it('예외를 처리하면 지원하지 않는 컨텍스트 유형을 Logger.error로 남긴다', () => {
             try {
                 filter.catch(new Error('boom'), fakeHost)
             } catch {

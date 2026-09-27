@@ -42,70 +42,98 @@ describe('RestateWorkflowClient', () => {
         status: 'Accepted'
     }
 
-    it('지정한 키와 60초 제한으로 작업을 제출하고 완료를 기다리지 않는다', async () => {
-        const fix = createFixture({ result: vi.fn() })
-
-        await expect(fix.client.submit(input, input.sagaId)).resolves.toBe(submission)
-        expect(fix.workflowClient).toHaveBeenCalledWith(fix.definition, input.sagaId)
-        expect(fix.workflowSubmit).toHaveBeenCalledTimes(1)
-        expect(fix.workflowSubmit.mock.calls[0]?.[0]).toEqual(input)
-        expect(fix.workflowSubmit.mock.calls[0]?.[1].opts).toEqual({ timeout: 60_000 })
-        expect(fix.result).not.toHaveBeenCalled()
-        expect(restateMocks.connect).toHaveBeenCalledWith({
-            retry: {
-                initialInterval: 250,
-                maxAttempts: 6,
-                maxDuration: 60_000,
-                maxInterval: 3_000
-            },
-            serde: TemporalJsonSerde,
-            url: 'http://restate.test:8080'
+    describe('작업 제출이 접수되도록 설정하면', () => {
+        let fix: ReturnType<typeof createFixture>
+        beforeEach(() => {
+            fix = createFixture({ result: vi.fn() })
+        })
+        it('지정한 키와 60초 제한으로 제출하고 완료 결과를 기다리지 않는다', async () => {
+            await expect(fix.client.submit(input, input.sagaId)).resolves.toBe(submission)
+            expect(fix.workflowClient).toHaveBeenCalledWith(fix.definition, input.sagaId)
+            expect(fix.workflowSubmit).toHaveBeenCalledTimes(1)
+            expect(fix.workflowSubmit.mock.calls[0]?.[0]).toEqual(input)
+            expect(fix.workflowSubmit.mock.calls[0]?.[1].opts).toEqual({ timeout: 60_000 })
+            expect(fix.result).not.toHaveBeenCalled()
+            expect(restateMocks.connect).toHaveBeenCalledWith({
+                retry: {
+                    initialInterval: 250,
+                    maxAttempts: 6,
+                    maxDuration: 60_000,
+                    maxInterval: 3_000
+                },
+                serde: TemporalJsonSerde,
+                url: 'http://restate.test:8080'
+            })
         })
     })
 
-    it('호출자가 요청할 때만 workflow 완료를 기다린다', async () => {
-        const result = vi.fn().mockResolvedValue(terminal)
-        const fix = createFixture({ result })
-
-        await expect(fix.client.waitForCompletion(submission)).resolves.toEqual(terminal)
-
-        expect(result).toHaveBeenCalledWith(submission)
-    })
-
-    it('작업 완료를 기다리다 실패하면 호출자에게 오류를 전달한다', async () => {
-        const fix = createFixture({
-            result: vi.fn().mockRejectedValue(new Error('workflow failed'))
+    describe('완료 결과가 준비되어 있으면', () => {
+        let fix: ReturnType<typeof createFixture>
+        let result: Mock
+        beforeEach(() => {
+            result = vi.fn().mockResolvedValue(terminal)
+            fix = createFixture({ result })
         })
+        it('완료를 기다리면 SDK의 결과 조회를 호출해 그 결과를 반환한다', async () => {
+            await expect(fix.client.waitForCompletion(submission)).resolves.toEqual(terminal)
 
-        await expect(fix.client.waitForCompletion(submission)).rejects.toThrow('workflow failed')
-    })
-
-    it('작업 제출이 실패하면 오류를 전달하고 완료를 기다리지 않는다', async () => {
-        const fix = createFixture({
-            result: vi.fn(),
-            workflowSubmit: vi.fn().mockRejectedValue(new Error('ingress unavailable'))
+            expect(result).toHaveBeenCalledWith(submission)
         })
-
-        await expect(fix.client.submit(input, input.sagaId)).rejects.toThrow('ingress unavailable')
-        expect(fix.result).not.toHaveBeenCalled()
     })
 
-    it('workflow 출력 준비 여부를 반환한다', async () => {
-        const workflowOutput = vi.fn().mockResolvedValue({ ready: false })
-        const fix = createFixture({ result: vi.fn(), workflowOutput })
-
-        await expect(fix.client.output(input.sagaId)).resolves.toEqual({ ready: false })
-        expect(fix.workflowClient).toHaveBeenCalledWith(fix.definition, input.sagaId)
-        expect(workflowOutput.mock.calls[0]?.[0].opts).toEqual({ timeout: 60_000 })
+    describe('완료 결과 조회가 실패하도록 설정하면', () => {
+        let fix: ReturnType<typeof createFixture>
+        beforeEach(() => {
+            fix = createFixture({ result: vi.fn().mockRejectedValue(new Error('workflow failed')) })
+        })
+        it('완료를 기다리면 조회 오류를 던진다', async () => {
+            await expect(fix.client.waitForCompletion(submission)).rejects.toThrow(
+                'workflow failed'
+            )
+        })
     })
 
-    it('workflow 출력이 준비됐으면 결과를 반환한다', async () => {
-        const workflowOutput = vi.fn().mockResolvedValue({ ready: true, result: terminal })
-        const fix = createFixture({ result: vi.fn(), workflowOutput })
+    describe('작업 제출이 실패하도록 설정하면', () => {
+        let fix: ReturnType<typeof createFixture>
+        beforeEach(() => {
+            fix = createFixture({
+                result: vi.fn(),
+                workflowSubmit: vi.fn().mockRejectedValue(new Error('ingress unavailable'))
+            })
+        })
+        it('제출 시 오류를 던지고 완료 결과는 조회하지 않는다', async () => {
+            await expect(fix.client.submit(input, input.sagaId)).rejects.toThrow(
+                'ingress unavailable'
+            )
+            expect(fix.result).not.toHaveBeenCalled()
+        })
+    })
 
-        await expect(fix.client.output(input.sagaId)).resolves.toEqual({
-            ready: true,
-            result: terminal
+    describe('워크플로 출력이 준비되지 않았으면', () => {
+        let fix: ReturnType<typeof createFixture>
+        let workflowOutput: Mock
+        beforeEach(() => {
+            workflowOutput = vi.fn().mockResolvedValue({ ready: false })
+            fix = createFixture({ result: vi.fn(), workflowOutput })
+        })
+        it('출력을 조회하면 지정한 키와 60초 제한을 사용하고 ready: false를 반환한다', async () => {
+            await expect(fix.client.output(input.sagaId)).resolves.toEqual({ ready: false })
+            expect(fix.workflowClient).toHaveBeenCalledWith(fix.definition, input.sagaId)
+            expect(workflowOutput.mock.calls[0]?.[0].opts).toEqual({ timeout: 60_000 })
+        })
+    })
+
+    describe('워크플로 출력이 준비되었으면', () => {
+        let fix: ReturnType<typeof createFixture>
+        beforeEach(() => {
+            const workflowOutput = vi.fn().mockResolvedValue({ ready: true, result: terminal })
+            fix = createFixture({ result: vi.fn(), workflowOutput })
+        })
+        it('출력을 조회하면 ready: true와 완료 결과를 반환한다', async () => {
+            await expect(fix.client.output(input.sagaId)).resolves.toEqual({
+                ready: true,
+                result: terminal
+            })
         })
     })
 

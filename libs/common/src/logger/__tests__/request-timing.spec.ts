@@ -2,34 +2,42 @@ import type { Request } from 'express'
 import { elapsedSinceRequestStart, markRequestStart } from '../index.js'
 
 describe('request-timing', () => {
-    it('동시에 진행되는 두 요청은 각자의 시작 시각을 독립적으로 갖는다', async () => {
+    let now: number
+    beforeEach(() => {
+        now = 0
+        vi.spyOn(performance, 'now').mockImplementation(() => now)
+    })
+    it('서로 다른 시각에 시작한 요청은 각자의 경과 시간을 유지한다', () => {
         const reqA = {} as Request
         const reqB = {} as Request
 
         markRequestStart(reqA)
-        await new Promise((r) => setTimeout(r, 50))
+        now = 50
         markRequestStart(reqB)
 
-        // 두 요청이 시작 시각을 공유하면 reqB의 기록이 reqA의 기록을 덮어써, 두 elapsed의 차이가 대기 시간만큼 나지 않는다.
-        // elapsedB를 먼저 측정하면 측정 간 시차가 차이를 키우는 쪽으로만 작용해 하한 단언이 부하와 무관하게 성립한다.
         const elapsedB = elapsedSinceRequestStart(reqB)
         const elapsedA = elapsedSinceRequestStart(reqA)
 
-        expect(elapsedA - elapsedB).toBeGreaterThanOrEqual(40)
+        expect(elapsedA - elapsedB).toBe(50)
     })
 
-    it('같은 요청에 markRequestStart를 두 번 호출하면 두 번째 시각으로 덮어쓴다', async () => {
-        const req = {} as Request
+    describe('요청의 시작 시각을 기록하고 30ms가 지났으면', () => {
+        let req: Request
+        let elapsedBefore: number
+        beforeEach(() => {
+            req = {} as Request
 
-        markRequestStart(req)
-        await new Promise((r) => setTimeout(r, 30))
+            markRequestStart(req)
+            now = 30
 
-        const elapsedBefore = elapsedSinceRequestStart(req)
-        expect(elapsedBefore).toBeGreaterThanOrEqual(20)
-
-        markRequestStart(req)
-        const elapsedAfter = elapsedSinceRequestStart(req)
-        expect(elapsedAfter).toBeLessThan(elapsedBefore)
+            elapsedBefore = elapsedSinceRequestStart(req)
+            expect(elapsedBefore).toBe(30)
+        })
+        it('시작 시각을 다시 기록하면 경과 시간이 줄어든다', async () => {
+            markRequestStart(req)
+            const elapsedAfter = elapsedSinceRequestStart(req)
+            expect(elapsedAfter).toBeLessThan(elapsedBefore)
+        })
     })
 
     it('시작 시각을 기록하지 않은 요청은 경과 시간으로 0을 반환한다', () => {

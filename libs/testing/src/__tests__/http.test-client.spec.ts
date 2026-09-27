@@ -14,15 +14,10 @@ describe('HttpTestClient', () => {
     afterEach(() => fix.teardown())
 
     describe('JSON 응답 파싱', () => {
-        it('큰 정수도 기본 JSON 파싱 결과를 그대로 반환한다', async () => {
+        it('JSON의 큰 정수는 기본 파싱 결과를 따르고 문자열 안의 숫자는 유지한다', async () => {
             const { body } = await fix.httpClient.get('/big-int').ok()
 
             expect(body.v).toBe(Number('9223372036854775807'))
-        })
-
-        it('문자열 리터럴 안의 숫자는 변형하지 않는다', async () => {
-            const { body } = await fix.httpClient.get('/big-int').ok()
-
             expect(body.note).toBe('id: 9223372036854775807')
         })
 
@@ -135,66 +130,88 @@ describe('HttpTestClient', () => {
             })
         })
 
-        it.each([
+        describe.each([
             {
                 name: '여러 data 줄을 개행으로 연결한다',
+                condition: 'data 줄이 여러 개인 응답이면',
                 content: 'data: first\ndata: second\n\n',
                 expected: ['first\nsecond']
             },
             {
                 name: '여러 줄 JSON을 그대로 전달한다',
+                condition: 'JSON이 여러 data 줄에 나뉜 응답이면',
                 content: 'data: {\ndata: "status": "succeeded"\ndata: }\n\n',
                 expected: ['{\n"status": "succeeded"\n}']
             },
-            { name: '빈 data 값도 전달한다', content: 'data:\n\n', expected: [''] },
-            { name: '콜론이 없는 data도 빈 값으로 전달한다', content: 'data\n\n', expected: [''] },
+            {
+                name: '빈 data 값도 전달한다',
+                condition: 'data 값이 비어 있는 응답이면',
+                content: 'data:\n\n',
+                expected: ['']
+            },
+            {
+                name: '콜론이 없는 data도 빈 값으로 전달한다',
+                condition: 'data 뒤에 콜론이 없는 응답이면',
+                content: 'data\n\n',
+                expected: ['']
+            },
             {
                 name: '중간과 마지막의 빈 data 줄도 보존한다',
+                condition: '중간과 마지막 data 줄이 빈 응답이면',
                 content: 'data: first\ndata:\ndata: second\ndata:\n\n',
                 expected: ['first\n\nsecond\n']
             },
             {
                 name: '주석을 무시하고 다음 이벤트를 전달한다',
+                condition: '주석과 데이터가 섞인 응답이면',
                 content: ': heartbeat\n\n: another heartbeat\ndata: next\n\n',
                 expected: ['next']
             },
             {
                 name: 'data가 없는 일반 이벤트와 알 수 없는 필드를 무시한다',
+                condition: 'data 없이 이벤트 정보와 알 수 없는 필드만 있는 응답이면',
                 content: 'event: update\nid: 17\nretry: 1000\nunknown: value\n\n',
                 expected: []
             },
             {
                 name: '콜론 뒤 공백이 없어도 데이터를 전달한다',
+                condition: '콜론 뒤 공백이 없는 응답이면',
                 content: 'data:first:second\n\n',
                 expected: ['first:second']
             },
             {
                 name: '콜론 뒤 첫 공백만 제거하고 나머지 공백을 보존한다',
+                condition: '콜론 뒤와 값 뒤에 공백이 있는 응답이면',
                 content: 'data:  first  \n\n',
                 expected: [' first  ']
             },
             {
                 name: 'CRLF 빈 줄로 이벤트를 구분한다',
+                condition: 'CRLF 빈 줄로 이벤트를 구분한 응답이면',
                 content: 'data: first\r\n\r\ndata: second\r\n\r\n',
                 expected: ['first', 'second']
             },
             {
                 name: 'CR 빈 줄로 이벤트를 구분한다',
+                condition: 'CR 빈 줄로 이벤트를 구분한 응답이면',
                 content: 'data: first\r\rdata: second\r\r',
                 expected: ['first', 'second']
             },
             {
                 name: '서로 다른 줄바꿈이 섞여도 데이터 줄을 연결한다',
+                condition: '여러 줄바꿈 형식이 섞인 응답이면',
                 content: 'data: first\r\ndata: second\rdata: third\n\n',
                 expected: ['first\nsecond\nthird']
             }
-        ])('$name', async ({ content, expected }) => {
-            const result = await receiveRawEvents(fix, { content })
-
-            expect(result).toEqual({ events: expected, errors: [] })
+        ])('$condition', ({ content, expected, name }) => {
+            beforeEach(() => fix.setRawEvents({ content, contentType: 'text/event-stream' }))
+            it('구독하면 ' + name, async () => {
+                const result = await receiveRawEvents(fix)
+                expect(result).toEqual({ events: expected, errors: [] })
+            })
         })
 
-        it.each([
+        describe.each([
             { name: 'data 필드 중간', first: 'da', continuation: 'ta: first\ndata: second\n\n' },
             {
                 name: 'LF 이벤트 구분자 중간',
@@ -216,35 +233,40 @@ describe('HttpTestClient', () => {
                 first: 'data: first\rdata: second\r',
                 continuation: '\r'
             }
-        ])(
-            '$name 경계에서 청크가 나뉘어도 한 이벤트를 전달한다',
-            async ({ first, continuation }) => {
-                const result = await receiveRawEvents(fix, { content: first, continuation })
-
+        ])('$name 경계에서 나뉜 응답이 준비되어 있으면', ({ first, continuation }) => {
+            beforeEach(() =>
+                fix.setRawEvents({ content: first, contentType: 'text/event-stream', continuation })
+            )
+            it('구독하면 나뉜 데이터를 한 이벤트로 연결한다', async () => {
+                const result = await receiveRawEvents(fix)
                 expect(result).toEqual({ events: ['first\nsecond'], errors: [] })
-            }
-        )
+            })
+        })
 
-        it.each([
+        describe.each([
             { name: '대소문자가 섞인 MIME', contentType: 'Text/Event-Stream' },
             {
                 name: '공백과 매개변수가 있는 MIME',
                 contentType: ' text/event-stream ; charset=utf-8 '
             }
-        ])('$name 형식도 이벤트 스트림으로 읽는다', async ({ contentType }) => {
-            fix.setRawEvents({ content: 'data: first\n\n', contentType })
-            try {
-                const result = await new Promise((resolve) => {
-                    fix.httpClient.post('/raw-events').sse(
-                        (data) => resolve({ data }),
-                        (error) => resolve({ error })
-                    )
-                })
+        ])('$name 형식으로 응답하도록 설정하면', ({ contentType }) => {
+            beforeEach(() => {
+                fix.setRawEvents({ content: 'data: first\n\n', contentType })
+            })
+            it('구독하면 이벤트 스트림으로 읽는다', async () => {
+                try {
+                    const result = await new Promise((resolve) => {
+                        fix.httpClient.post('/raw-events').sse(
+                            (data) => resolve({ data }),
+                            (error) => resolve({ error })
+                        )
+                    })
 
-                expect(result).toEqual({ data: 'first' })
-            } finally {
-                fix.httpClient.abort()
-            }
+                    expect(result).toEqual({ data: 'first' })
+                } finally {
+                    fix.httpClient.abort()
+                }
+            })
         })
 
         it('한글 바이트가 청크 사이에 나뉘어도 원문을 전달한다', async () => {

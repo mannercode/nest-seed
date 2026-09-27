@@ -41,7 +41,7 @@ TEST "선점한 티켓 묶음을 구매한다" \
 			]
 		}'
 
-TEST "같은 멱등성 키와 본문으로 재시도하면 최초 구매 응답을 반환한다" \
+TEST "같은 멱등성 키와 본문으로 다시 구매를 요청하면 201을 반환한다" \
 	201 POST /purchases \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}" \
 	-H 'Content-Type: application/json' \

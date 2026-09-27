@@ -23,7 +23,7 @@ describe('LatLong', () => {
             expect(actualDistance).toBeLessThan(expectedDistance + tolerance)
         })
 
-        it('극점(위도 ±90) 좌표끼리의 거리를 정확히 계산한다', () => {
+        it('북극과 남극 사이의 거리는 지구 둘레의 절반에 가깝다', () => {
             const northPole = { latitude: 90, longitude: 0 }
             const southPole = { latitude: -90, longitude: 0 }
 
@@ -55,7 +55,7 @@ describe('LatLong', () => {
             expect(LatLong.distanceInMeters(from, from)).toBe(0)
         })
 
-        it('1m 미만 정밀도가 필요한 매우 가까운 좌표 차이도 안정적으로 계산한다', () => {
+        it('위도 차이가 0.0000001도인 좌표 사이의 거리는 0m보다 크고 1m보다 작다', () => {
             const a = { latitude: 37.5, longitude: 127.0 }
             const b = { latitude: 37.5 + 1e-7, longitude: 127.0 }
 

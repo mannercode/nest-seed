@@ -3,13 +3,6 @@ import { DateUtil } from '../index.js'
 
 describe('DateUtil', () => {
     describe('fromYMD', () => {
-        it('YYYYMMDDHHmm 형식 문자열을 PlainDateTime으로 변환한다', () => {
-            const dateTime = DateUtil.fromYMDHM('199901020930')
-
-            expect(dateTime).toBeInstanceOf(Temporal.PlainDateTime)
-            expect(dateTime.toString()).toBe('1999-01-02T09:30:00')
-        })
-
         it('YYYYMMDD 형식 문자열을 PlainDate로 변환한다', () => {
             const date = DateUtil.fromYMD('19990102')
 
@@ -17,11 +10,12 @@ describe('DateUtil', () => {
             expect(date.toString()).toBe('1999-01-02')
         })
 
-        it('형식이나 달력 값이 잘못되면 예외를 던진다', () => {
-            expect(() => DateUtil.fromYMD('')).toThrow()
-            expect(() => DateUtil.fromYMD('20201301')).toThrow()
-            expect(() => DateUtil.fromYMD('20230230')).toThrow()
-            expect(() => DateUtil.fromYMDHM('19990102')).toThrow()
+        it.each([
+            { label: '빈 문자열', input: '' },
+            { label: '13월', input: '20201301' },
+            { label: '2월 30일', input: '20230230' }
+        ])('$label 입력으로 변환하면 예외를 던진다', ({ input }) => {
+            expect(() => DateUtil.fromYMD(input)).toThrow()
         })
     })
 
@@ -40,14 +34,14 @@ describe('DateUtil', () => {
             expect(DateUtil.toYMD(Temporal.PlainDate.from('1999-01-02'))).toBe('19990102')
         })
 
-        it('YYYYMMDD로 표현할 수 없는 확장 연도는 거부한다', () => {
-            expect(() => DateUtil.toYMD(Temporal.PlainDate.from('-000001-01-02'))).toThrow(
-                InternalServerErrorException
-            )
-            expect(() => DateUtil.toYMD(Temporal.PlainDate.from('+010000-01-02'))).toThrow(
-                InternalServerErrorException
-            )
-        })
+        it.each(['-000001-01-02', '+010000-01-02'])(
+            '%s를 YYYYMMDD로 변환하면 예외를 던진다',
+            (value) => {
+                expect(() => DateUtil.toYMD(Temporal.PlainDate.from(value))).toThrow(
+                    InternalServerErrorException
+                )
+            }
+        )
     })
 
     describe('earliest, latest', () => {
@@ -61,7 +55,7 @@ describe('DateUtil', () => {
             expect(DateUtil.latest(instants).equals(latest)).toBe(true)
         })
 
-        it('빈 배열이면 잘못된 시각 대신 명시적으로 예외를 던진다', () => {
+        it('빈 배열에서 가장 이른 시각이나 늦은 시각을 찾으면 예외를 던진다', () => {
             expect(() => DateUtil.earliest([])).toThrow(InternalServerErrorException)
             expect(() => DateUtil.latest([])).toThrow(InternalServerErrorException)
         })
@@ -139,7 +133,7 @@ describe('DateUtil', () => {
             ).toBe(true)
         })
 
-        it('0~99년도 1900년대로 보정하지 않고 그대로 보존한다', () => {
+        it('0년의 날짜를 Date로 변환하고 복원해도 연도를 유지한다', () => {
             const plainDate = Temporal.PlainDate.from('0000-01-01')
 
             expect(DateUtil.plainDateToDate(plainDate).toISOString()).toBe(
@@ -152,28 +146,45 @@ describe('DateUtil', () => {
     })
 
     describe('입력 정규화', () => {
-        it('지원 입력을 밀리초 Instant로 정규화한다', () => {
-            const instant = Temporal.Instant.from('2023-06-18T12:12:34.123456789Z')
-
-            expect(DateUtil.instantFromInput(instant).toString()).toBe('2023-06-18T12:12:34.123Z')
-            expect(DateUtil.instantFromInput(new Date(1)).epochMilliseconds).toBe(1)
-            expect(DateUtil.instantFromInput('1970-01-01T00:00:00.002Z').epochMilliseconds).toBe(2)
-            expect(() => DateUtil.instantFromInput('1970-01-01T00:00:00+09:00')).toThrow()
-            expect(() => DateUtil.instantFromInput('1970-01-01T00:00Z')).toThrow()
+        it.each([
+            {
+                label: '나노초 정밀도의 Instant',
+                input: Temporal.Instant.from('2023-06-18T12:12:34.123456789Z'),
+                expected: '2023-06-18T12:12:34.123Z'
+            },
+            { label: 'Date 객체', input: new Date(1), expected: '1970-01-01T00:00:00.001Z' },
+            {
+                label: 'UTC 시각 문자열',
+                input: '1970-01-01T00:00:00.002Z',
+                expected: '1970-01-01T00:00:00.002Z'
+            }
+        ])('$label 입력을 밀리초 Instant로 변환한다', ({ input, expected }) => {
+            expect(DateUtil.instantFromInput(input).toString()).toBe(expected)
+        })
+        it.each([
+            { label: 'UTC가 아닌', input: '1970-01-01T00:00:00+09:00' },
+            { label: '초가 없는', input: '1970-01-01T00:00Z' }
+        ])('$label 시각 문자열을 Instant로 변환하면 예외를 던진다', ({ input }) => {
+            expect(() => DateUtil.instantFromInput(input)).toThrow()
         })
 
-        it('지원 입력을 PlainDate로 정규화한다', () => {
+        it('PlainDate 입력은 같은 객체를 반환한다', () => {
             const date = Temporal.PlainDate.from('2023-06-18')
-
             expect(DateUtil.plainDateFromInput(date)).toBe(date)
-            expect(DateUtil.plainDateFromInput(new Date('2023-06-18T23:00:00Z')).toString()).toBe(
-                '2023-06-18'
-            )
-            expect(DateUtil.plainDateFromInput('2023-06-18').toString()).toBe('2023-06-18')
-            expect(DateUtil.plainDateFromInput('+010000-01-02').toString()).toBe('+010000-01-02')
-            expect(() => DateUtil.plainDateFromInput('2023-06-18T23:00:00Z')).toThrow()
-            expect(() => DateUtil.plainDateFromInput('2023-06-18T23:00:00')).toThrow()
         })
+        it.each([
+            { label: 'Date 객체', input: new Date('2023-06-18T23:00:00Z'), expected: '2023-06-18' },
+            { label: '날짜 문자열', input: '2023-06-18', expected: '2023-06-18' },
+            { label: '확장 연도 문자열', input: '+010000-01-02', expected: '+010000-01-02' }
+        ])('$label 입력을 PlainDate로 변환한다', ({ input, expected }) => {
+            expect(DateUtil.plainDateFromInput(input).toString()).toBe(expected)
+        })
+        it.each(['2023-06-18T23:00:00Z', '2023-06-18T23:00:00'])(
+            '시각이 포함된 %s를 PlainDate로 변환하면 예외를 던진다',
+            (input) => {
+                expect(() => DateUtil.plainDateFromInput(input)).toThrow()
+            }
+        )
     })
 
     it('UTC 날짜 범위의 양끝을 밀리초 정밀도로 만든다', () => {
@@ -195,4 +206,16 @@ describe('DateUtil', () => {
             expect(DateUtil.endOfUtcDay(date).toString()).toBe('2025-01-01T23:59:59.999Z')
         }
     )
+
+    describe('fromYMDHM', () => {
+        it('YYYYMMDDHHmm 형식 문자열을 PlainDateTime으로 변환한다', () => {
+            const dateTime = DateUtil.fromYMDHM('199901020930')
+
+            expect(dateTime).toBeInstanceOf(Temporal.PlainDateTime)
+            expect(dateTime.toString()).toBe('1999-01-02T09:30:00')
+        })
+        it('날짜만 입력하면 예외를 던진다', () => {
+            expect(() => DateUtil.fromYMDHM('19990102')).toThrow()
+        })
+    })
 })

@@ -7,7 +7,7 @@ setup_showtime_resources
 
 create_and_login_user
 
-TEST "영화 주변 극장을 거리순으로 조회한다" \
+TEST "해당 영화를 상영하는 주변 극장 목록을 조회한다" \
 	200 GET "/booking/movies/${MOVIE_ID}/theaters?latLong=37.5665,126.9780"
 
 TEST "극장의 상영 날짜를 조회한다" \

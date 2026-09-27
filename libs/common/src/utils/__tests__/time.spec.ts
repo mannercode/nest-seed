@@ -6,16 +6,17 @@ describe('TimeUtil', () => {
             expect(TimeUtil.toMs('500ms')).toEqual(500)
         })
 
-        it('s, m, h, d 단위를 ms로 변환한다', () => {
-            expect(TimeUtil.toMs('45s')).toEqual(45 * 1000)
-            expect(TimeUtil.toMs('30m')).toEqual(30 * 60 * 1000)
-            expect(TimeUtil.toMs('2h')).toEqual(2 * 60 * 60 * 1000)
-            expect(TimeUtil.toMs('1d')).toEqual(24 * 60 * 60 * 1000)
+        it.each([
+            ['45s', 45 * 1000],
+            ['30m', 30 * 60 * 1000],
+            ['2h', 2 * 60 * 60 * 1000],
+            ['1d', 24 * 60 * 60 * 1000]
+        ] as const)('%s를 밀리초로 변환한다', (input, expected) => {
+            expect(TimeUtil.toMs(input)).toEqual(expected)
         })
 
-        it('여러 단위는 공백 유무 관계없이 합산한다', () => {
-            expect(TimeUtil.toMs('1d 2h')).toEqual((24 + 2) * 60 * 60 * 1000)
-            expect(TimeUtil.toMs('1d2h')).toEqual((24 + 2) * 60 * 60 * 1000)
+        it.each(['1d 2h', '1d2h'])('%s의 각 단위를 합산해 밀리초로 변환한다', (input) => {
+            expect(TimeUtil.toMs(input)).toEqual((24 + 2) * 60 * 60 * 1000)
         })
 
         it('소수점 값도 변환한다', () => {
@@ -30,10 +31,12 @@ describe('TimeUtil', () => {
             expect(() => TimeUtil.toMs('2z')).toThrow(InternalServerErrorException)
         })
 
-        it('지수 표기의 부호와 단위를 함께 읽는다', () => {
-            expect(TimeUtil.toMs('1s1e-7ms')).toBe(1000.0000001)
-            expect(TimeUtil.toMs('-1s-1e-7ms')).toBe(-1000.0000001)
-            expect(TimeUtil.toMs('1E+2ms')).toBe(100)
+        it.each([
+            ['1s1e-7ms', 1000.0000001],
+            ['-1s-1e-7ms', -1000.0000001],
+            ['1E+2ms', 100]
+        ] as const)('지수 표기가 포함된 %s를 밀리초로 변환한다', (input, expected) => {
+            expect(TimeUtil.toMs(input)).toBe(expected)
         })
 
         it.each(['1ems', '1e-ms', '1e+ms', '1e1e2ms'])(
@@ -43,13 +46,18 @@ describe('TimeUtil', () => {
     })
 
     describe('fromMs', () => {
-        it('가장 큰 적합한 단위 하나로 표시한다', () => {
-            expect(TimeUtil.fromMs(30 * 60 * 1000)).toEqual('30m')
-            expect(TimeUtil.fromMs(45 * 1000)).toEqual('45s')
-            expect(TimeUtil.fromMs(24 * 60 * 60 * 1000)).toEqual('1d')
-            expect(TimeUtil.fromMs(2 * 60 * 60 * 1000)).toEqual('2h')
-            expect(TimeUtil.fromMs(500)).toEqual('500ms')
-        })
+        it.each([
+            [30 * 60 * 1000, '30m'],
+            [45 * 1000, '45s'],
+            [24 * 60 * 60 * 1000, '1d'],
+            [2 * 60 * 60 * 1000, '2h'],
+            [500, '500ms']
+        ] as const)(
+            '%s 밀리초를 나머지 없이 표현할 수 있는 가장 큰 단위로 표시한다',
+            (input, expected) => {
+                expect(TimeUtil.fromMs(input)).toEqual(expected)
+            }
+        )
 
         it('여러 단위가 섞이면 단위를 붙여 표시한다', () => {
             expect(TimeUtil.fromMs((24 + 2) * 60 * 60 * 1000)).toEqual('1d2h')
@@ -63,12 +71,15 @@ describe('TimeUtil', () => {
             expect(TimeUtil.fromMs(-30 * 1000)).toEqual('-30s')
         })
 
-        it('음수 복합 시간도 표시한 뒤 파싱하면 원래 밀리초가 된다', () => {
+        it('음수 복합 시간은 각 단위에 부호를 표시한다', () => {
             expect(TimeUtil.fromMs(-5_400_000)).toBe('-1h-30m')
-            for (const value of [-5_400_000, -93_784_005, -0.5, 93_784_005]) {
+        })
+        it.each([-5_400_000, -93_784_005, -0.5, 93_784_005])(
+            '%s 밀리초를 표시한 뒤 읽으면 원래 값으로 돌아온다',
+            (value) => {
                 expect(TimeUtil.toMs(TimeUtil.fromMs(value))).toBe(value)
             }
-        })
+        )
 
         it.each([
             1e-7,

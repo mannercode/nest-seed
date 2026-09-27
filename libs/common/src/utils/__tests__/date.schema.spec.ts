@@ -14,19 +14,27 @@ describe('InstantFromInputSchema, PlainDateFromInputSchema', () => {
         }
     )
 
-    it('지원 입력을 의미에 맞는 Temporal 타입으로 변환한다', () => {
+    it('UTC 시각 문자열을 Instant로 변환한다', () => {
         expect(InstantFromInputSchema.parse('2023-06-18T12:12:34.567Z')).toBeInstanceOf(
             Temporal.Instant
         )
+    })
+    it('날짜 문자열을 PlainDate로 변환한다', () => {
         expect(PlainDateFromInputSchema.parse('2023-06-18')).toBeInstanceOf(Temporal.PlainDate)
     })
 
-    it('잘못된 날짜 입력을 validation issue로 반환한다', () => {
-        expect(InstantFromInputSchema.safeParse('not-an-instant').success).toBe(false)
-        expect(PlainDateFromInputSchema.safeParse('not-a-date').success).toBe(false)
-        expect(InstantFromInputSchema.safeParse('2023-06-18T12:12:34+09:00').success).toBe(false)
-        expect(PlainDateFromInputSchema.safeParse('2023-06-18T00:00:00Z').success).toBe(false)
-        expect(InstantFromInputSchema.safeParse(0).success).toBe(false)
-        expect(PlainDateFromInputSchema.safeParse(false).success).toBe(false)
+    it.each([
+        { label: '시각이 아닌 문자열', input: 'not-an-instant' },
+        { label: 'UTC가 아닌 시각 문자열', input: '2023-06-18T12:12:34+09:00' },
+        { label: '숫자', input: 0 }
+    ])('$label 입력은 Instant 검증에 실패한다', ({ input }) => {
+        expect(InstantFromInputSchema.safeParse(input).success).toBe(false)
+    })
+    it.each([
+        { label: '날짜가 아닌 문자열', input: 'not-a-date' },
+        { label: '시각이 포함된 문자열', input: '2023-06-18T00:00:00Z' },
+        { label: '불리언', input: false }
+    ])('$label 입력은 PlainDate 검증에 실패한다', ({ input }) => {
+        expect(PlainDateFromInputSchema.safeParse(input).success).toBe(false)
     })
 })
