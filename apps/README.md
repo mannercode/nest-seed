@@ -29,7 +29,7 @@ View는 데이터를 읽어 화면에 반환할 DTO와 항목의 순서·개수�
 
 컨트롤러가 다른 모듈의 서비스를 주입받으려면 그 서비스가 export되어 있어야 한다. 컨트롤러를 등록한 모듈은 서비스를 제공하는 모듈을 import해야 한다. 현재 컨트롤러는 `services/gateway`에 두고 `AppModule`에 등록한다.
 
-컨트롤러를 각 업무 모듈에 등록하는 배치도 SoLA의 의존 방향을 지킬 수 있다. 영화 조회·생성·수정은 `MoviesModule`에, 삭제는 `MovieDeletionModule`에 컨트롤러를 나누어 등록하면 된다. 현재 배치에서는 하나의 `MoviesHttpController`가 `MoviesService`와 `MovieDeletionService`를 사용한다.
+컨트롤러를 각 업무 모듈에 두려면 영화 조회·생성·수정은 `MoviesModule`에, 삭제는 `MovieDeletionModule`에 나누어 등록한다. 현재 배치에서는 하나의 `MoviesHttpController`가 `MoviesService`와 `MovieDeletionService`를 사용한다.
 
 ```mermaid
 flowchart LR
@@ -53,7 +53,7 @@ flowchart LR
     end
 ```
 
-두 배치 모두 MovieDeletion → Movies의 단방향이다. 모듈 간 순환 의존을 피하는 기준은 SoLA의 의존 규칙이다. HTTP 진입점을 Gateway에 모으기로 한 이유와 모듈별 배치의 장단점은 [설계 결정](../docs/decisions.md#nestjs와-모듈-경계)에 있다.
+컨트롤러를 Gateway에 모으기로 한 이유는 [설계 결정](../docs/decisions.md#nestjs와-모듈-경계)에 있다.
 
 기존 `MoviesHttpController`를 나누지 않고 `MoviesModule`에 등록하면 `MovieDeletionModule`을 import하게 되어 SoLA의 방향을 위반한다. 이때는 Movies → MovieDeletion → Movies의 순환이 생긴다. 폴더만 옮기지 말고 컨트롤러 등록과 모듈 import도 함께 확인해야 한다. `forwardRef`로 주입을 가능하게 해도 잘못된 의존 방향은 남는다.
 
