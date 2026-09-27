@@ -1,8 +1,8 @@
 1. movies 등 테스트 설명 다시 봐야한다. codex가 크게 고쳤다.
 2. sola를 아예 폴더 중첩구조로 만들까?
-   app/
-   core/
-   infra/
+    - app/
+    - core/
+    -      infra/
 
 이렇게?
 
