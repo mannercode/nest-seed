@@ -92,13 +92,15 @@ MongoDB는 데이터 저장과 트랜잭션, Redis는 좌석 선점과 리프레
 
 ### 저장소 루트의 주요 폴더
 
-| 폴더                             | 안내                                                       |
-| -------------------------------- | ---------------------------------------------------------- |
-| [.devcontainer/](.devcontainer/) | [개발 환경과 env 주입](.devcontainer/README.md)            |
-| [apps/](apps/)                   | [모듈 경계, 업무 흐름, 인증과 DTO](apps/README.md)         |
-| [infra/](infra/)                 | [개발 인프라 구성과 reset의 범위](infra/README.md)         |
-| [libs/](libs/)                   | [공통화 기준과 공개 계약](libs/README.md)                  |
-| [tests/](tests/)                 | [다중 프로세스·브라우저·성능 검증의 범위](tests/README.md) |
-| [tools/](tools/)                 | [개발·테스트 실행 도구](tools/README.md)                   |
+```text
+nest-seed/
+├── .devcontainer/  # 개발 환경 설정
+├── apps/           # API와 연결 데모
+├── docs/           # 개발 규칙·설계 결정·검토 기준
+├── infra/          # 개발 인프라
+├── libs/           # 공통 코드와 테스트 도구
+├── tests/          # 다중 프로세스·브라우저·성능 검증
+└── tools/          # 개발·테스트 실행 도구
+```
 
 작성 방법은 [개발 규칙](docs/conventions.md), 변경과 리뷰의 판단 기준은 [프로젝트 변경·검토 기준](docs/project-review.md)을 따른다. 할 일과 미결 검토는 루트 `_todo/`에서 관리한다.

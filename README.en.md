@@ -100,13 +100,15 @@ MongoDB handles data storage and transactions; Redis handles seat holds and refr
 
 ### Main directories at the repository root
 
-| Directory                        | Guide                                                                            |
-| -------------------------------- | -------------------------------------------------------------------------------- |
-| [.devcontainer/](.devcontainer/) | [Development environment and env injection](.devcontainer/README.md)             |
-| [apps/](apps/)                   | [Module boundaries, business flows, authentication, and DTOs](apps/README.md)    |
-| [infra/](infra/)                 | [Development infrastructure and what reset removes](infra/README.md)             |
-| [libs/](libs/)                   | [Shared code and public contracts](libs/README.md)                               |
-| [tests/](tests/)                 | [Scope of multi-process, browser, and performance verification](tests/README.md) |
-| [tools/](tools/)                 | [Development and test execution tools](tools/README.md)                          |
+```text
+nest-seed/
+├── .devcontainer/  # Development environment configuration
+├── apps/           # API and connected demos
+├── docs/           # Development conventions, design decisions, and review criteria
+├── infra/          # Development infrastructure
+├── libs/           # Shared code and test utilities
+├── tests/          # Multi-process, browser, and performance verification
+└── tools/          # Development and test execution tools
+```
 
 Follow the [development conventions](docs/conventions.md) when writing code and the [project change and review criteria](docs/project-review.md) when assessing changes. Keep tasks and unresolved reviews in the root `_todo/` directory.
