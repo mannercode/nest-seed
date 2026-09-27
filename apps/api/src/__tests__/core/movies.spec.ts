@@ -50,7 +50,7 @@ describe('MoviesService', () => {
             })
         })
 
-        it('생성된 영화를 반환한다', async () => {
+        it('영화를 생성하면 생성된 정보를 반환한다', async () => {
             const createDto = buildCreateMovieDto()
 
             const response = await fix.httpClient
@@ -148,7 +148,7 @@ describe('MoviesService', () => {
             movie = await createMovie(fix, { title: 'original-title' })
         })
 
-        it('수정된 영화를 반환한다', async () => {
+        it('영화를 수정하면 수정된 정보를 반환한다', async () => {
             const updateDto = {
                 director: 'Steven Spielberg',
                 durationInSeconds: 10 * 60,
@@ -193,7 +193,7 @@ describe('MoviesService', () => {
             })
         })
 
-        it('수정 내용이 DB에 저장된다', async () => {
+        it('영화 정보를 수정하면 DB에 저장한다', async () => {
             const updateDto = { title: 'update title' }
             await fix.httpClient
                 .patch(`/movies/${movie.id}`)
@@ -222,7 +222,7 @@ describe('MoviesService', () => {
             beforeEach(async () => {
                 movie = await createMovie(fix)
             })
-            it('204를 반환하고 삭제 후 조회에는 404를 반환한다', async () => {
+            it('영화를 삭제하면 204를 반환하고 이후 조회에는 404를 반환한다', async () => {
                 await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
 
                 await fix.httpClient
@@ -255,7 +255,7 @@ describe('MoviesService', () => {
                 movie = ensure((await moviesService.getMany([createdMovie.id]))[0])
             })
 
-            it('204를 반환하고 이미지 URL을 무효화한다', async () => {
+            it('영화를 삭제하면 204를 반환하고 연결된 이미지 URL을 무효화한다', async () => {
                 await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
 
                 const response = await fetch(ensure(movie.imageUrls[0]))
@@ -341,7 +341,7 @@ describe('MoviesService', () => {
             beforeEach(() => {
                 request = fix.httpClient.get('/movies')
             })
-            it('영화 목록을 조회하면 전체 영화 페이지를 반환한다', async () => {
+            it('영화 목록을 조회하면 등록된 영화와 페이지 정보·전체 개수를 반환한다', async () => {
                 const expected = buildExpectedPage([movieA1, movieA2, movieB1, movieB2])
 
                 await request.ok({ schema: paginationResultSchema(MovieSchema), expected })

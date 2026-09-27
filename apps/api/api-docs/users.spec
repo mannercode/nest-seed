@@ -30,7 +30,7 @@ TEST "빈 요청 본문으로 가입하면 400을 반환한다" \
 	-H 'Content-Type: application/json' \
 	-d '{}'
 
-TEST "이메일 형식이 올바르지 않으면 400을 반환한다" \
+TEST "올바르지 않은 이메일 형식으로 가입하면 400을 반환한다" \
 	400 POST /users \
 	-H 'Content-Type: application/json' \
 	-d '{
@@ -75,7 +75,7 @@ TEST "리프레시 토큰으로 액세스 토큰을 재발급한다" \
 USER_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
 USER_REFRESH_TOKEN=$(echo "${BODY}" | jq -r '.refreshToken')
 
-TEST "형식이 잘못된 리프레시 토큰이면 401을 반환한다" \
+TEST "형식이 잘못된 리프레시 토큰으로 갱신하면 401을 반환한다" \
 	401 POST /users/refresh \
 	-H 'Content-Type: application/json' \
 	-d '{ "refreshToken": "invalid-token" }'
@@ -147,7 +147,7 @@ TEST "본인 구매 기록을 조회한다" \
 TEST "인증 없이 본인 구매 기록을 조회하면 401을 반환한다" \
 	401 GET /users/me/purchases
 
-TEST "리프레시 토큰을 로그아웃 처리한다" \
+TEST "로그아웃을 요청하면 204를 반환한다" \
 	204 POST /users/logout \
 	-H 'Content-Type: application/json' \
 	-d '{ "refreshToken": "'${USER_REFRESH_TOKEN}'" }'

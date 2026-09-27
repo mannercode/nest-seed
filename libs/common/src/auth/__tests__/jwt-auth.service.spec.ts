@@ -180,7 +180,7 @@ describe('JwtAuthService', () => {
             })
         })
 
-        it('동시 갱신은 하나만 성공하고 승자의 새 토큰을 유지한다', async () => {
+        it('같은 토큰으로 동시에 갱신하면 한 요청만 성공하고 새 토큰으로 다시 갱신할 수 있다', async () => {
             const results = await Promise.allSettled(
                 Array.from({ length: 8 }, () =>
                     fix.jwtService.refreshAuthTokens(original.refreshToken)
@@ -409,7 +409,7 @@ describe('JwtAuthService', () => {
                 token = 'garbage'
             })
             it.each(['refreshAuthTokens', 'revokeRefreshToken'] as const)(
-                '%s를 호출하면 401 예외를 던진다',
+                '%s 메서드를 호출하면 401 예외를 던진다',
                 async (operation) => {
                     await expect(fix.jwtService[operation](token)).rejects.toMatchObject({
                         status: 401
@@ -424,7 +424,7 @@ describe('JwtAuthService', () => {
                 token = await signedRefresh({ sub: 'u1', sessionId: 's1' }, { expiresIn: '-1s' })
             })
             it.each(['refreshAuthTokens', 'revokeRefreshToken'] as const)(
-                '%s를 호출하면 401 예외를 던진다',
+                '%s 메서드를 호출하면 401 예외를 던진다',
                 async (operation) => {
                     await expect(fix.jwtService[operation](token)).rejects.toMatchObject({
                         status: 401,

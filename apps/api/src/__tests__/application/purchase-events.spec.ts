@@ -119,7 +119,7 @@ describe('PurchaseNotificationService', () => {
                 }
             })
 
-            it('구매 이벤트 한 건을 한 번 처리한다', async () => {
+            it('구매 이벤트를 한 건 발행하면 알림을 한 번 처리한다', async () => {
                 await events.emitTicketPurchased({
                     purchaseRecordId: 'purchase-replicas',
                     ticketIds: ['t1', 't2'],
@@ -177,7 +177,7 @@ describe('PurchaseNotificationService', () => {
                 })
             })
 
-            it('이벤트를 재전달받아 알림을 처리한다', async () => {
+            it('구매 이벤트를 발행하면 실패한 이벤트를 재전달받아 알림을 처리한다', async () => {
                 await events.emitTicketPurchased({
                     purchaseRecordId: 'purchase-retry',
                     ticketIds: ['t1'],
@@ -243,7 +243,7 @@ describe('PurchaseNotificationService', () => {
                 messages = mockNotificationMessages(fix, async function* () {})
             })
 
-            it('예기치 않은 종료를 기록하고 스트림을 정리한다', async () => {
+            it('소비를 시작하면 예기치 않은 종료를 기록하고 스트림을 정리한다', async () => {
                 await notification.onModuleInit()
                 await waitFor(() => errorSpy.mock.calls.length > 0)
                 await notification.onModuleDestroy()
@@ -265,7 +265,7 @@ describe('PurchaseNotificationService', () => {
                 })
             })
 
-            it('원인을 기록하고 종료 시 오류를 다시 던지지 않는다', async () => {
+            it('소비를 시작하면 실패 원인을 기록하고 종료 시 오류를 다시 던지지 않는다', async () => {
                 await notification.onModuleInit()
                 await waitFor(() => errorSpy.mock.calls.length > 0)
 
@@ -297,7 +297,7 @@ describe('PurchaseNotificationService', () => {
                 await notification.onModuleInit()
             })
 
-            it('종료 중인 스트림의 오류를 장애로 기록하지 않는다', async () => {
+            it('서비스를 종료하면 스트림의 종료 오류를 장애로 기록하지 않는다', async () => {
                 await notification.onModuleDestroy()
 
                 expect(messages.close).toHaveBeenCalledOnce()
@@ -314,7 +314,7 @@ describe('PurchaseNotificationService', () => {
                 consume = vi.spyOn(events, 'consumeNotifications')
             })
 
-            it('소비를 시작하지 않고 종료한다', async () => {
+            it('서비스 종료를 요청하면 소비를 시작하지 않고 종료한다', async () => {
                 await expect(uninitialized.onModuleDestroy()).resolves.toBeUndefined()
 
                 expect(consume).not.toHaveBeenCalled()

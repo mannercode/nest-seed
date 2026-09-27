@@ -22,7 +22,7 @@ SHOWTIME_ID=$(echo "${BODY}" | jq -r '.[0].id')
 
 get_created_tickets
 
-TEST "상영 시간의 좌석 티켓을 조회한다" \
+TEST "선택한 상영의 좌석 티켓을 조회한다" \
 	200 GET /booking/showtimes/${SHOWTIME_ID}/tickets
 
 TICKET_ID_1=$(echo "${BODY}" | jq -r '.[0].id')

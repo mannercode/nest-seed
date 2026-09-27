@@ -83,9 +83,9 @@ describe('MongoModule', () => {
 
 describe('MongoConnection.connect', () => {
     describe.each([
-        { label: '정상 종료되면', cleanupFails: false },
-        { label: '종료도 실패하면', cleanupFails: true }
-    ])('연결이 실패하고 정리할 때 $label', ({ cleanupFails }) => {
+        { condition: '연결은 실패하고 client 정리는 성공하도록 설정하면', cleanupFails: false },
+        { condition: '연결과 client 정리가 모두 실패하도록 설정하면', cleanupFails: true }
+    ])('$condition', ({ cleanupFails }) => {
         let failure: Error
         let close: MockInstance<MongoClient['close']>
         beforeEach(() => {
@@ -94,7 +94,7 @@ describe('MongoConnection.connect', () => {
             close = vi.spyOn(MongoClient.prototype, 'close')
             if (cleanupFails) close.mockRejectedValueOnce(new Error('cleanup failed'))
         })
-        it('연결을 요청하면 client를 닫고 최초 연결 오류를 던진다', async () => {
+        it('연결을 요청하면 client 정리를 시도하고 최초 연결 오류를 던진다', async () => {
             await expect(
                 MongoConnection.connect({ uri: 'mongodb://localhost:27017', dbName: 'unused' })
             ).rejects.toBe(failure)

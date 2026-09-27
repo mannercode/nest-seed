@@ -24,7 +24,7 @@ describe('TheatersService', () => {
     afterEach(() => teardown?.())
 
     describe('POST /theaters', () => {
-        it('생성된 극장을 반환한다', async () => {
+        it('극장을 생성하면 생성된 정보를 반환한다', async () => {
             const createDto = buildCreateTheaterDto()
 
             await fix.httpClient
@@ -107,7 +107,7 @@ describe('TheatersService', () => {
             theater = await createTheater(fix, { name: 'original-name' })
         })
 
-        it('수정된 극장을 반환한다', async () => {
+        it('극장을 수정하면 수정된 정보를 반환한다', async () => {
             const updateDto = {
                 location: { latitude: 30.0, longitude: 120.0 },
                 seatmap: { blocks: [] }
@@ -119,7 +119,7 @@ describe('TheatersService', () => {
                 .ok({ schema: TheaterSchema, expected: { ...theater, ...updateDto } })
         })
 
-        it('수정 내용이 DB에 저장된다', async () => {
+        it('극장 정보를 수정하면 DB에 저장한다', async () => {
             const updateDto = { name: 'update-name' }
             await fix.httpClient
                 .patch(`/theaters/${theater.id}`)
@@ -171,7 +171,7 @@ describe('TheatersService', () => {
             beforeEach(async () => {
                 theater = await createTheater(fix)
             })
-            it('204를 반환하고 삭제 후 조회에는 404를 반환한다', async () => {
+            it('극장을 삭제하면 204를 반환하고 이후 조회에는 404를 반환한다', async () => {
                 await fix.httpClient.delete(`/theaters/${theater.id}`).noContent()
 
                 await fix.httpClient
@@ -235,7 +235,7 @@ describe('TheatersService', () => {
             beforeEach(() => {
                 request = fix.httpClient.get('/theaters')
             })
-            it('극장 목록을 조회하면 전체 극장 페이지를 반환한다', async () => {
+            it('극장 목록을 조회하면 등록된 극장과 페이지 정보·전체 개수를 반환한다', async () => {
                 const expected = buildExpectedPage([theaterA1, theaterA2, theaterB1, theaterB2])
 
                 await request.ok({ schema: paginationResultSchema(TheaterSchema), expected })

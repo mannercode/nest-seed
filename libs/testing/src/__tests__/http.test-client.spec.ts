@@ -19,7 +19,7 @@ describe('HttpTestClient', () => {
             beforeEach(() => {
                 request = fix.httpClient.get('/big-int')
             })
-            it('응답을 읽으면 큰 정수는 기본 파싱 결과를 따르고 문자열은 유지한다', async () => {
+            it('응답을 읽으면 JSON 숫자는 JavaScript number로 변환하고 문자열은 유지한다', async () => {
                 const { body } = await request.ok()
 
                 expect(body.v).toBe(Number('9223372036854775807'))
@@ -430,7 +430,7 @@ describe('HttpTestClient', () => {
     })
 
     describe('체인 메서드', () => {
-        it('body()를 두 번 호출하면 두 번째 호출까지 결과에 포함된다', async () => {
+        it('body()를 두 번 호출하면 두 본문의 필드를 합쳐 전송한다', async () => {
             const response = await fix.httpClient
                 .post('/body-merging')
                 .body({ first: true, untrusted: '<script>alert(1)</script>' })

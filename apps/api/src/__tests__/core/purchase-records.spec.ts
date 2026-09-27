@@ -27,7 +27,7 @@ describe('PurchaseRecordsService', () => {
     afterEach(() => teardown?.())
 
     describe('create', () => {
-        it('생성된 구매 기록을 반환한다', async () => {
+        it('구매 기록을 생성하면 생성된 정보를 반환한다', async () => {
             const createDto = buildCreatePurchaseRecordDto()
             const purchaseRecord = await purchaseRecordsService.create(createDto)
 
@@ -106,7 +106,7 @@ describe('PurchaseRecordsService', () => {
                 await createPurchaseRecord(fix, { userId: oid(0x2) })
             })
 
-            it('지정한 사용자의 구매 기록만 반환한다', async () => {
+            it('완료된 구매를 조회하면 지정한 사용자의 기록만 반환한다', async () => {
                 const records = await purchaseRecordsService.findCompleted({ userId })
 
                 expect(records).toEqual(expect.arrayContaining([mine1, mine2]))
@@ -114,7 +114,7 @@ describe('PurchaseRecordsService', () => {
                 expect(records.every((record) => record.userId === userId)).toBe(true)
             })
 
-            it('최근 구매 기록부터 반환한다', async () => {
+            it('완료된 구매를 조회하면 최근 구매 기록부터 반환한다', async () => {
                 const records = await purchaseRecordsService.findCompleted({ userId })
 
                 expect(pickIds(records)).toEqual([mine2.id, mine1.id])
@@ -135,7 +135,7 @@ describe('PurchaseRecordsService', () => {
     })
 
     describe('PurchaseRecordStatus', () => {
-        describe('멱등성 키가 있는 구매 기록이 존재하면', () => {
+        describe('멱등성 키가 있는 처리 중인 구매 기록이 존재하면', () => {
             const createDto = buildCreatePurchaseRecordDto({ paymentId: null })
             const idempotency = { fingerprint: 'fingerprint', key: 'purchase-key' }
             let pending: PurchaseRecordDto
@@ -147,7 +147,7 @@ describe('PurchaseRecordsService', () => {
                 })
             })
 
-            it('처리 중인 구매는 완료된 구매 이력에서 제외한다', async () => {
+            it('완료된 구매 이력을 조회하면 처리 중인 구매를 제외한다', async () => {
                 expect(
                     await purchaseRecordsService.findCompleted({ userId: createDto.userId })
                 ).toEqual([])

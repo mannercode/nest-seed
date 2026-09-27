@@ -11,7 +11,7 @@ describe('PathUtil', () => {
             beforeEach(() => {
                 relativePath = `.${PathUtil.sep()}file.txt`
             })
-            it('절대 경로로 변환하면 절대 경로를 반환한다', () => {
+            it('경로를 변환하면 절대 경로를 반환한다', () => {
                 const absolutePath = PathUtil.getAbsolute(relativePath)
 
                 expect(p.isAbsolute(absolutePath)).toBe(true)

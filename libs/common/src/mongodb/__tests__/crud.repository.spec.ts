@@ -571,12 +571,18 @@ describe('CrudRepository', () => {
             })
         })
 
-        it('hard-delete 문서에는 deletedAt을 만들지 않는다', async () => {
-            const created = await fix.hard.create('hard')
-            const raw = await fix.hard.collection.findOne({ _id: objectId(created.id) })
+        describe('hard delete 저장소이면', () => {
+            let repository: SamplesRepository
+            beforeEach(() => {
+                repository = fix.hard
+            })
+            it('문서를 생성하면 deletedAt 필드를 만들지 않는다', async () => {
+                const created = await repository.create('hard')
+                const raw = await repository.collection.findOne({ _id: objectId(created.id) })
 
-            expect(created).not.toHaveProperty('deletedAt')
-            expect(raw).not.toHaveProperty('deletedAt')
+                expect(created).not.toHaveProperty('deletedAt')
+                expect(raw).not.toHaveProperty('deletedAt')
+            })
         })
     })
 
@@ -807,7 +813,7 @@ describe('CrudRepository', () => {
     })
 
     describe('findWithPagination', () => {
-        describe('저장된 문서가 있고 목록·개수 조회 순서를 기록하면', () => {
+        describe('저장된 문서가 존재하면', () => {
             let committed: Sample
             let count: MockInstance<MongoRepositoryFixture['soft']['collection']['countDocuments']>
             beforeEach(async () => {
@@ -833,7 +839,7 @@ describe('CrudRepository', () => {
                         return countDocuments(...args)
                     })
             })
-            it('트랜잭션의 페이지 조회는 미커밋 변경을 반영하고 롤백 후에는 기존 문서를 반환한다', async () => {
+            it('트랜잭션에서 페이지를 조회하면 미커밋 변경을 반영하고 롤백 후에는 기존 문서를 반환한다', async () => {
                 await expect(
                     fix.soft.withTransaction(async (transaction) => {
                         const created = await fix.soft.create('uncommitted', { transaction })
@@ -978,28 +984,58 @@ describe('CrudRepository', () => {
     })
 
     describe('activeFilter, timestamped', () => {
-        it('soft/hard active filter를 구분한다', () => {
-            const filter = { name: 'sample' }
-
-            expect(fix.soft.toActiveFilter(filter)).toEqual({ $and: [filter, { deletedAt: null }] })
-            expect(fix.hard.toActiveFilter(filter)).toEqual(filter)
+        describe('soft delete 저장소이면', () => {
+            let repository: SamplesRepository
+            let filter: { name: string }
+            beforeEach(() => {
+                repository = fix.soft
+                filter = { name: 'sample' }
+            })
+            it('조회 필터를 만들면 삭제되지 않은 문서만 찾는 조건을 추가한다', () => {
+                expect(repository.toActiveFilter(filter)).toEqual({
+                    $and: [filter, { deletedAt: null }]
+                })
+            })
         })
 
-        it('갱신에 timestamp와 version 증가를 합친다', () => {
-            const update = fix.soft.toTimestamped({
-                $inc: { count: 2 },
-                $set: { name: 'changed' },
-                $unset: { old: 1 }
+        describe('hard delete 저장소이면', () => {
+            let repository: SamplesRepository
+            let filter: { name: string }
+            beforeEach(() => {
+                repository = fix.hard
+                filter = { name: 'sample' }
             })
+            it('조회 필터를 만들면 입력한 조건을 그대로 반환한다', () => {
+                expect(repository.toActiveFilter(filter)).toEqual(filter)
+            })
+        })
 
-            expect(update).toMatchObject({
-                $inc: { __v: 1, count: 2 },
-                $set: { name: 'changed', updatedAt: expect.any(Date) },
-                $unset: { old: 1 }
+        describe('수정 조건에 증가·설정·삭제 연산이 있으면', () => {
+            let input: Parameters<typeof fix.soft.toTimestamped>[0]
+            beforeEach(() => {
+                input = { $inc: { count: 2 }, $set: { name: 'changed' }, $unset: { old: 1 } }
             })
-            expect(fix.soft.toTimestamped({})).toMatchObject({
-                $inc: { __v: 1 },
-                $set: { updatedAt: expect.any(Date) }
+            it('수정 조건을 만들면 갱신 시각과 버전 증가를 추가하고 기존 연산을 유지한다', () => {
+                const update = fix.soft.toTimestamped(input)
+
+                expect(update).toMatchObject({
+                    $inc: { __v: 1, count: 2 },
+                    $set: { name: 'changed', updatedAt: expect.any(Date) },
+                    $unset: { old: 1 }
+                })
+            })
+        })
+
+        describe('수정 조건이 비어 있으면', () => {
+            let input: Parameters<typeof fix.soft.toTimestamped>[0]
+            beforeEach(() => {
+                input = {}
+            })
+            it('수정 조건을 만들면 갱신 시각과 버전 증가를 추가한다', () => {
+                expect(fix.soft.toTimestamped(input)).toMatchObject({
+                    $inc: { __v: 1 },
+                    $set: { updatedAt: expect.any(Date) }
+                })
             })
         })
     })

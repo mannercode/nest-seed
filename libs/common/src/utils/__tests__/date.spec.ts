@@ -12,8 +12,8 @@ describe('DateUtil', () => {
 
         describe.each([
             { condition: 'YYYYMMDD 입력이 빈 문자열이면', input: '' },
-            { condition: 'YYYYMMDD 입력이 13월이면', input: '20201301' },
-            { condition: 'YYYYMMDD 입력이 2월 30일이면', input: '20230230' }
+            { condition: '입력 날짜의 월이 13이면', input: '20201301' },
+            { condition: '입력 날짜가 2월 30일이면', input: '20230230' }
         ])('$condition', ({ input }) => {
             let value: string
             beforeEach(() => {

@@ -53,7 +53,7 @@ describe('MoviesPublish', () => {
                     .ok({ schema: MovieSchema })
             })
 
-            it('공개된 영화를 반환한다', async () => {
+            it('영화 공개를 요청하면 공개된 영화를 반환한다', async () => {
                 await fix.httpClient
                     .post(`/movies/${movie.id}/publish`)
                     .ok({
@@ -147,14 +147,34 @@ describe('MoviesPublish', () => {
         })
 
         describe.each([
-            ['genres', { genres: [] }],
-            ['durationInSeconds', { durationInSeconds: 0 }],
-            ['rating', { rating: MovieRating.Unrated }],
-            ['releaseDate', { releaseDate: MovieDefaults.releaseDate }],
-            ['director', { director: '' }],
-            ['plot', { plot: '' }],
-            ['title', { title: '' }]
-        ])('수정할 %s 값이 비어 있으면', (field, update) => {
+            {
+                condition: '수정할 장르 목록이 비어 있으면',
+                field: 'genres',
+                update: { genres: [] }
+            },
+            {
+                condition: '수정할 상영 시간이 0초이면',
+                field: 'durationInSeconds',
+                update: { durationInSeconds: 0 }
+            },
+            {
+                condition: '수정할 관람 등급이 미지정 값이면',
+                field: 'rating',
+                update: { rating: MovieRating.Unrated }
+            },
+            {
+                condition: '수정할 개봉일이 기본값인 0000-01-01이면',
+                field: 'releaseDate',
+                update: { releaseDate: MovieDefaults.releaseDate }
+            },
+            {
+                condition: '수정할 감독 이름이 빈 문자열이면',
+                field: 'director',
+                update: { director: '' }
+            },
+            { condition: '수정할 줄거리가 빈 문자열이면', field: 'plot', update: { plot: '' } },
+            { condition: '수정할 제목이 빈 문자열이면', field: 'title', update: { title: '' } }
+        ])('$condition', ({ field, update }) => {
             let request: typeof fix.httpClient
             beforeEach(() => {
                 request = fix.httpClient.patch(`/movies/${movie.id}`).body(update)
@@ -208,7 +228,7 @@ describe('MoviesPublish', () => {
             movie = await createMovie(fix)
             update = vi.spyOn(repository.collection, 'findOneAndUpdate').mockResolvedValueOnce(null)
         })
-        it('수정을 재시도해 저장하고 수정된 영화를 반환한다', async () => {
+        it('영화 수정을 요청하면 저장을 재시도하고 수정된 영화를 반환한다', async () => {
             await expect(
                 moviesService.update(movie.id, { title: 'retried title' })
             ).resolves.toEqual(expect.objectContaining({ title: 'retried title' }))
@@ -228,7 +248,7 @@ describe('MoviesPublish', () => {
                 return save(...args)
             })
         })
-        it('필수 정보를 비우는 수정에 422를 반환하고 공개된 값을 유지한다', async () => {
+        it('필수 정보를 비우는 수정을 요청하면 422를 반환하고 공개된 값을 유지한다', async () => {
             await fix.httpClient
                 .patch(`/movies/${movie.id}`)
                 .body({ genres: [] })
@@ -248,7 +268,7 @@ describe('MoviesPublish', () => {
             movie = await createMovie(fix)
             update = vi.spyOn(repository.collection, 'findOneAndUpdate').mockResolvedValue(null)
         })
-        it('수정을 다섯 번 시도한 뒤 409를 반환한다', async () => {
+        it('영화 수정을 요청하면 저장을 다섯 번 시도한 뒤 409를 반환한다', async () => {
             await fix.httpClient
                 .patch(`/movies/${movie.id}`)
                 .body({ title: 'never written' })

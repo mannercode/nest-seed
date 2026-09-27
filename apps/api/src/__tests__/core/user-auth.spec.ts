@@ -148,7 +148,7 @@ describe('UserAuthentication', () => {
                     .body(credentials)
                     .ok()
             })
-            it('다음 실패는 401, 그 다음 요청은 429를 반환한다', async () => {
+            it('같은 IP에서 잘못된 정보로 로그인을 두 번 요청하면 차례로 401과 429를 반환한다', async () => {
                 await fix.httpClient
                     .post('/users/login')
                     .headers({ 'X-Forwarded-For': ip })
@@ -163,7 +163,7 @@ describe('UserAuthentication', () => {
             })
         })
 
-        describe('같은 Redis를 쓰는 다른 앱에 IP 실패 한도가 쌓여 있으면', () => {
+        describe('같은 Redis를 쓰는 다른 앱에서 해당 IP의 로그인 실패 횟수가 한도에 도달했으면', () => {
             let replica: AppTestContext | undefined
             beforeEach(async () => {
                 replica = undefined
@@ -191,7 +191,7 @@ describe('UserAuthentication', () => {
             beforeEach(async () => {
                 authTokens = await loginUser(fix, credentials)
             })
-            it('로그인한 사용자 정보를 반환한다', async () => {
+            it('본인 정보를 조회하면 로그인한 사용자 정보를 반환한다', async () => {
                 await fix.httpClient
                     .get('/users/me')
                     .headers({ Authorization: `Bearer ${authTokens.accessToken}` })
@@ -269,7 +269,7 @@ describe('UserAuthentication', () => {
                 ;({ accessToken } = await loginUser(fix, credentials))
             })
 
-            it('204를 반환한다', async () => {
+            it('계정 삭제를 요청하면 204를 반환한다', async () => {
                 await fix.httpClient
                     .delete('/users/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
@@ -298,7 +298,7 @@ describe('UserAuthentication', () => {
                 ;({ accessToken, user } = await loginUser(fix, credentials))
             })
 
-            it('수정된 DTO를 반환한다', async () => {
+            it('본인 정보를 수정하면 수정된 사용자 정보를 반환한다', async () => {
                 await fix.httpClient
                     .patch('/users/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
@@ -306,7 +306,7 @@ describe('UserAuthentication', () => {
                     .ok({ schema: UserSchema, expected: { ...user, ...updateDto } })
             })
 
-            it('수정 내용이 DB에 저장된다', async () => {
+            it('본인 정보를 수정하면 DB에 저장한다', async () => {
                 await fix.httpClient
                     .patch('/users/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
@@ -369,7 +369,7 @@ describe('UserAuthentication', () => {
                     mine2 = await createPurchaseRecord(fix, { userId: user.id })
                     await createPurchaseRecord(fix, { userId: oid(0xff) })
                 })
-                it('로그인한 사용자의 구매 기록만 반환한다', async () => {
+                it('구매 이력을 조회하면 로그인한 사용자의 기록만 반환한다', async () => {
                     const { body } = await fix.httpClient
                         .get('/users/me/purchases')
                         .headers({ Authorization: `Bearer ${accessToken}` })
@@ -404,7 +404,7 @@ describe('UserAuthentication', () => {
                 tokens = await loginUser(fix, credentials)
             })
 
-            it('새 액세스 토큰과 리프레시 토큰을 반환한다', async () => {
+            it('토큰 갱신을 요청하면 새 액세스 토큰과 리프레시 토큰을 반환한다', async () => {
                 const { body } = await fix.httpClient
                     .post('/users/refresh')
                     .body({ refreshToken: tokens.refreshToken })

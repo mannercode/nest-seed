@@ -95,7 +95,7 @@ test.describe('사용자로 로그인했으면', () => {
         refreshCookieBefore = await getSessionCookie(context, REFRESH_COOKIE)
         loginHeaders = await (await response).headersArray()
     })
-    test('로그인 쿠키에 HttpOnly·SameSite와 토큰 만료 시각을 설정한다', async () => {
+    test('로그인 응답은 쿠키에 HttpOnly·SameSite=Lax와 토큰의 만료 시각을 지정한다', async () => {
         expect(accessCookie).toMatchObject({ httpOnly: true, sameSite: 'Lax' })
         expect(refreshCookieBefore).toMatchObject({ httpOnly: true, sameSite: 'Lax' })
         // Chromium은 Date 헤더로 시계 차이를 보정하므로 서버가 보낸 Expires 자체를 검증한다.

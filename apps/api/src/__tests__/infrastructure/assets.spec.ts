@@ -137,7 +137,7 @@ describe('AssetsService', () => {
                 assetId = await uploadFile(fix, file)
             })
 
-            it('다운로드 정보를 반환하고 내려받은 파일은 원본 체크섬과 일치한다', async () => {
+            it('업로드 완료 처리를 요청하면 다운로드 정보를 반환하고 파일의 체크섬을 유지한다', async () => {
                 const finalizeDto = buildFinalizeAssetDto()
 
                 const asset = await assetsService.finalizeUpload(assetId, finalizeDto)
@@ -247,7 +247,7 @@ describe('AssetsService', () => {
                 ])
             })
 
-            it('에셋과 다운로드 정보를 반환하고 내려받은 파일은 원본 체크섬과 일치한다', async () => {
+            it('에셋을 조회하면 다운로드 정보를 반환하고 파일의 체크섬을 유지한다', async () => {
                 const fetchedAssets = await assetsService.getMany(pickIds(assets))
 
                 expect(fetchedAssets).toEqual(
@@ -345,7 +345,7 @@ describe('AssetsService', () => {
 
                 warnSpy = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
             })
-            it('경고를 기록하고 S3 오류를 던지며 DB 기록을 유지한다', async () => {
+            it('에셋 삭제를 요청하면 경고를 기록하고 S3 오류를 던지며 DB 기록을 유지한다', async () => {
                 await expect(assetsService.deleteMany([asset.id])).rejects.toThrow('s3 down')
 
                 expect(warnSpy).toHaveBeenCalledWith(

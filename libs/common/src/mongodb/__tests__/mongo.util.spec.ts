@@ -167,13 +167,18 @@ describe('mongoToPublic, mongoArrayToPublic, withoutPublicId, encodeMongoValues,
         expect(input).toEqual({ id: 'public', name: 'sample' })
     })
 
-    it('Instant와 PlainDate를 의미에 맞는 BSON Date로 저장한다', () => {
-        const at = Temporal.Instant.from('2025-01-01T12:34:56.789Z')
-        const date = Temporal.PlainDate.from('2025-01-01')
-
-        expect(encodeMongoValues({ at, date })).toEqual({
-            at: new Date('2025-01-01T12:34:56.789Z'),
-            date: new Date('2025-01-01T00:00:00.000Z')
+    describe('저장할 객체에 Instant와 PlainDate가 있으면', () => {
+        let at: Temporal.Instant
+        let date: Temporal.PlainDate
+        beforeEach(() => {
+            at = Temporal.Instant.from('2025-01-01T12:34:56.789Z')
+            date = Temporal.PlainDate.from('2025-01-01')
+        })
+        it('BSON Date로 변환하면 Instant의 시각을 유지하고 PlainDate는 UTC 자정으로 저장한다', () => {
+            expect(encodeMongoValues({ at, date })).toEqual({
+                at: new Date('2025-01-01T12:34:56.789Z'),
+                date: new Date('2025-01-01T00:00:00.000Z')
+            })
         })
     })
 
@@ -446,12 +451,12 @@ describe('QueryBuilder', () => {
 
 describe('isDuplicateKeyError', () => {
     describe.each([
-        { label: '중복 키 코드 11000', input: { code: 11000 }, expected: true },
-        { label: '다른 오류 코드', input: { code: 121 }, expected: false },
-        { label: '코드 없는 객체', input: { message: 'error' }, expected: false },
-        { label: 'null', input: null, expected: false },
-        { label: '문자열', input: 'error', expected: false }
-    ])('오류가 $label 값이면', ({ input, expected }) => {
+        { condition: '오류 코드가 11000이면', input: { code: 11000 }, expected: true },
+        { condition: '오류 코드가 11000이 아니면', input: { code: 121 }, expected: false },
+        { condition: '오류 객체에 code가 없으면', input: { message: 'error' }, expected: false },
+        { condition: '오류 값이 null이면', input: null, expected: false },
+        { condition: '오류 값이 문자열이면', input: 'error', expected: false }
+    ])('$condition', ({ input, expected }) => {
         let error: typeof input
         beforeEach(() => {
             error = input
@@ -469,28 +474,76 @@ describe('assignIfDefined, mapDocToDto', () => {
         optional: z.boolean().optional()
     })
 
-    it('정의된 값과 null을 복사하고 undefined는 생략하며 transform을 지원한다', () => {
-        const target = { email: 'old' as null | string, id: 'old', name: 'old' }
+    describe.each([
+        {
+            condition: '복사할 값이 문자열이면',
+            value: 'new',
+            initial: 'old',
+            expected: 'new',
+            result: '새 문자열로 바꾼다'
+        },
+        {
+            condition: '복사할 값이 null이면',
+            value: null,
+            initial: 'old',
+            expected: null,
+            result: 'null로 바꾼다'
+        },
+        {
+            condition: '복사할 값이 undefined이면',
+            value: undefined,
+            initial: 'new',
+            expected: 'new',
+            result: '기존 값을 유지한다'
+        }
+    ])('$condition', ({ value, initial, expected, result }) => {
+        let source: { name: string | null | undefined }
+        let target: { email: string; id: string; name: string | null }
+        beforeEach(() => {
+            source = { name: value }
+            target = { email: 'old', id: 'old', name: initial }
+        })
+        it(`필드를 복사하면 ${result}`, () => {
+            assignIfDefined(target, source, 'name')
 
-        assignIfDefined(target, { name: 'new' }, 'name')
-        assignIfDefined(target, { email: null as null | string | undefined }, 'email')
-        assignIfDefined(target, { id: '123' }, 'id', (id) => `obj:${id}`)
-        assignIfDefined(target, { name: undefined as string | undefined }, 'name')
-
-        expect(target).toEqual({ email: null, id: 'obj:123', name: 'new' })
+            expect(target).toEqual({ email: 'old', id: 'old', name: expected })
+        })
     })
 
-    it('transform의 인자 타입과 실제 전달 값에 null을 포함한다', () => {
-        const source = { name: null as string | null | undefined }
-        const target = { name: 'old' }
-
-        assignIfDefined(target, source, 'name', (value) => {
-            expectTypeOf(value).toEqualTypeOf<string | null>()
-            expect(value).toBeNull()
-            return value === null ? 'empty' : value.toUpperCase()
+    describe('복사할 값이 문자열이고 변환 함수를 지정했으면', () => {
+        let source: { id: string }
+        let target: { email: string; id: string; name: string }
+        let transform: (id: string) => string
+        beforeEach(() => {
+            source = { id: '123' }
+            target = { email: 'old', id: 'old', name: 'old' }
+            transform = (id) => `obj:${id}`
         })
+        it('필드를 복사하면 변환한 값을 저장한다', () => {
+            assignIfDefined(target, source, 'id', transform)
 
-        expect(target.name).toBe('empty')
+            expect(target).toEqual({ email: 'old', id: 'obj:123', name: 'old' })
+        })
+    })
+
+    describe('복사할 값이 null이고 변환 함수를 지정했으면', () => {
+        let source: { name: string | null | undefined }
+        let target: { name: string }
+        let transform: (value: string | null) => string
+        beforeEach(() => {
+            source = { name: null }
+            target = { name: 'old' }
+            transform = (value) => (value === null ? 'empty' : value.toUpperCase())
+        })
+        it('필드를 복사하면 null을 변환 함수에 전달하고 변환한 값을 저장한다', () => {
+            assignIfDefined(target, source, 'name', (value) => {
+                expectTypeOf(value).toEqualTypeOf<string | null>()
+                expect(value).toBeNull()
+                return transform(value)
+            })
+
+            expect(target.name).toBe('empty')
+        })
     })
 
     it('스키마에 선언한 필드만 DTO로 매핑한다', () => {

@@ -146,7 +146,7 @@ describe('TicketHoldingService', () => {
                 holdDto = buildHoldTicketsDto()
                 await ticketHoldingService.holdTickets(holdDto)
             })
-            it('그 사용자의 선점 티켓 ID를 반환한다', async () => {
+            it('선점 목록을 조회하면 해당 사용자의 선점 티켓 ID를 반환한다', async () => {
                 const heldTicketIds = await ticketHoldingService.searchHeldTicketIds(
                     holdDto.showtimeId,
                     holdDto.userId
@@ -167,7 +167,7 @@ describe('TicketHoldingService', () => {
             await sleep(1000 + 500)
         })
 
-        it('빈 선점 목록을 반환한다', async () => {
+        it('선점 목록을 조회하면 빈 목록을 반환한다', async () => {
             const heldTicketIds = await ticketHoldingService.searchHeldTicketIds(
                 holdDto.showtimeId,
                 holdDto.userId

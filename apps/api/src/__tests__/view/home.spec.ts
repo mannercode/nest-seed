@@ -41,7 +41,7 @@ describe('UserHomeView', () => {
             beforeEach(async () => {
                 await createMovie(fix, { title: 'Home Only Movie' })
             })
-            it('홈의 영화 목록과 추천 목록에서 제외한다', async () => {
+            it('홈을 조회하면 해당 영화를 영화 목록과 추천 목록에서 제외한다', async () => {
                 const { body } = await fix.httpClient
                     .get('/views/user-app/home')
                     .ok({ schema: UserHomeViewSchema })
@@ -67,7 +67,7 @@ describe('UserHomeView', () => {
                     }
                 ])
             })
-            it('공개된 영화만 홈과 추천 목록에 포함한다', async () => {
+            it('홈을 조회하면 공개된 영화만 영화 목록과 추천 목록에 포함한다', async () => {
                 const { body } = await fix.httpClient
                     .get('/views/user-app/home')
                     .ok({ schema: UserHomeViewSchema })
@@ -135,7 +135,7 @@ describe('UserHomeView', () => {
                 )
             })
 
-            it('예정된 상영을 시작 시각이 빠른 순서로 반환한다', async () => {
+            it('홈을 조회하면 예정된 상영을 시작 시각이 빠른 순서로 반환한다', async () => {
                 const { body } = await fix.httpClient
                     .get('/views/user-app/home')
                     .ok({ schema: UserHomeViewSchema })
@@ -148,7 +148,7 @@ describe('UserHomeView', () => {
                 ])
             })
 
-            it('영화당 상영을 최대 3개까지만 포함한다', async () => {
+            it('홈을 조회하면 영화당 상영을 최대 3개까지만 포함한다', async () => {
                 const { body } = await fix.httpClient
                     .get('/views/user-app/home')
                     .ok({ schema: UserHomeViewSchema })
@@ -159,7 +159,7 @@ describe('UserHomeView', () => {
                 expect(card.upcomingShowtimes.map((s) => s.id)).not.toContain(s4.id)
             })
 
-            it('이미 지난 상영은 카드에서 제외한다', async () => {
+            it('홈을 조회하면 이미 지난 상영은 카드에서 제외한다', async () => {
                 const { body } = await fix.httpClient
                     .get('/views/user-app/home')
                     .ok({ schema: UserHomeViewSchema })

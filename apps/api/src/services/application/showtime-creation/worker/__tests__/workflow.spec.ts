@@ -41,7 +41,7 @@ describe('createShowtimeCreationWorkflow', () => {
             fix = createFixture({ failure })
         })
 
-        it('오류 메시지를 포함한 error 이벤트를 발행하고 같은 실행 결과를 반환한다', async () => {
+        it('워크플로를 실행하면 오류 메시지를 담은 error 이벤트를 발행하고 같은 내용을 결과로 반환한다', async () => {
             const terminal = await run(fix)
 
             expect(fix.events.at(-1)).toEqual({ message, sagaId: input.sagaId, status: 'error' })
@@ -56,7 +56,7 @@ describe('createShowtimeCreationWorkflow', () => {
             failure = new CancelledError()
             fix = createFixture({ failure })
         })
-        it('error 이벤트를 발행하지 않고 취소 오류를 다시 던진다', async () => {
+        it('워크플로를 실행하면 error 이벤트를 발행하지 않고 취소 오류를 다시 던진다', async () => {
             await expect(run(fix)).rejects.toBe(failure)
             expect(fix.events.map(({ status }) => status)).toEqual(['waiting', 'processing'])
         })
@@ -72,7 +72,7 @@ describe('createShowtimeCreationWorkflow', () => {
                 failure: new Error('database unavailable')
             })
         })
-        it('상영 저장의 실패 원인을 실행 결과에 담아 반환한다', async () => {
+        it('워크플로를 실행하면 상영 저장의 실패 원인을 실행 결과에 담아 반환한다', async () => {
             await expect(run(fix)).resolves.toEqual({
                 sagaId: input.sagaId,
                 status: 'error',
@@ -92,7 +92,7 @@ describe('createShowtimeCreationWorkflow', () => {
                 }
             })
         })
-        it('상영 저장을 시작하지 않고 취소 오류를 다시 던진다', async () => {
+        it('워크플로를 실행하면 상영 저장을 시작하지 않고 취소 오류를 다시 던진다', async () => {
             await expect(run(fix)).rejects.toBe(failure)
             expect(fix.persistence).not.toHaveBeenCalled()
         })

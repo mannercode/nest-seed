@@ -39,7 +39,7 @@ describe('Health', () => {
                 vi.spyOn(mongo.db, 'command').mockRejectedValueOnce(new Error('mongo down'))
             })
 
-            it('503과 MongoDB의 실패 정보를 반환한다', async () => {
+            it('상태 확인을 요청하면 503과 MongoDB의 실패 정보를 반환한다', async () => {
                 const { body } = await fix.httpClient.get('/health').send(503)
                 const info = {
                     redis: { status: 'up' },

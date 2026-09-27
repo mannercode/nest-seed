@@ -29,7 +29,7 @@ describe('UsersService', () => {
     afterEach(() => teardown?.())
 
     describe('POST /users', () => {
-        it('생성된 사용자를 반환한다', async () => {
+        it('사용자를 생성하면 생성된 정보를 반환한다', async () => {
             const createDto = buildCreateUserDto({ name: '2000-01-02' })
 
             await fix.httpClient
@@ -140,7 +140,7 @@ describe('UsersService', () => {
                 user = await createUser(fix)
             })
 
-            it('해당 사용자를 반환한다', async () => {
+            it('ID로 조회하면 해당 사용자를 반환한다', async () => {
                 await fix.httpClient
                     .get(`/users/${user.id}`)
                     .headers(adminAuth)
@@ -168,7 +168,7 @@ describe('UsersService', () => {
             user = await createUser(fix, { name: 'original-name' })
         })
 
-        it('수정된 사용자를 반환한다', async () => {
+        it('사용자를 수정하면 수정된 정보를 반환한다', async () => {
             const updateDto = { birthDate: plainDate('1900-12-31'), email: 'new@mail.com' }
 
             await fix.httpClient
@@ -191,7 +191,7 @@ describe('UsersService', () => {
             })
         })
 
-        it('수정 내용이 DB에 저장된다', async () => {
+        it('사용자 정보를 수정하면 DB에 저장한다', async () => {
             const updateDto = { name: 'update-name' }
             await fix.httpClient
                 .patch(`/users/${user.id}`)
@@ -276,7 +276,7 @@ describe('UsersService', () => {
                 user = await createUser(fix)
             })
 
-            it('204를 반환하고 삭제 후 조회에는 404를 반환한다', async () => {
+            it('사용자를 삭제하면 204를 반환하고 이후 조회에는 404를 반환한다', async () => {
                 await fix.httpClient.delete(`/users/${user.id}`).headers(adminAuth).noContent()
 
                 await fix.httpClient
@@ -404,7 +404,7 @@ describe('UsersService', () => {
             beforeEach(() => {
                 request = fix.httpClient.get('/users').headers(adminAuth)
             })
-            it('사용자 목록을 조회하면 전체 사용자 페이지를 반환한다', async () => {
+            it('사용자 목록을 조회하면 등록된 사용자와 페이지 정보·전체 개수를 반환한다', async () => {
                 const expected = buildExpectedPage([userA1, userA2, userB1, userB2])
 
                 await request.ok({ schema: paginationResultSchema(UserSchema), expected })
@@ -493,7 +493,7 @@ describe('UsersService', () => {
                 vi.spyOn(repository.collection, 'insertOne').mockRejectedValueOnce(failure)
             })
 
-            it('저장 오류를 그대로 던진다', async () => {
+            it('사용자 생성을 요청하면 저장 오류를 그대로 던진다', async () => {
                 const promise = service.create(buildCreateUserDto())
                 await expect(promise).rejects.toBe(failure)
                 await expect(promise).rejects.not.toBeInstanceOf(ConflictException)
@@ -511,7 +511,7 @@ describe('UsersService', () => {
                 userId = nullObjectId
             })
 
-            it('오류 없이 완료한다', async () => {
+            it('사용자의 전체 세션 폐기를 요청하면 오류 없이 완료한다', async () => {
                 await expect(service.revokeAllForUser(userId)).resolves.toBeUndefined()
             })
         })

@@ -117,7 +117,7 @@ describe('AdminAuthentication', () => {
                     .body(credentials)
                     .ok()
             })
-            it('다음 실패는 401, 그 다음 요청은 429를 반환한다', async () => {
+            it('같은 IP에서 잘못된 정보로 로그인을 두 번 요청하면 차례로 401과 429를 반환한다', async () => {
                 await fix.httpClient
                     .post('/admins/login')
                     .headers({ 'X-Forwarded-For': ip })
@@ -139,7 +139,7 @@ describe('AdminAuthentication', () => {
             beforeEach(async () => {
                 tokens = await loginAdmin(fix, credentials)
             })
-            it('로그인한 관리자 정보를 반환한다', async () => {
+            it('본인 정보를 조회하면 로그인한 관리자 정보를 반환한다', async () => {
                 await fix.httpClient
                     .get('/admins/me')
                     .headers({ Authorization: `Bearer ${tokens.accessToken}` })
@@ -201,7 +201,7 @@ describe('AdminAuthentication', () => {
                 tokens = await loginAdmin(fix, credentials)
             })
 
-            it('새 액세스 토큰과 리프레시 토큰을 반환한다', async () => {
+            it('토큰 갱신을 요청하면 새 액세스 토큰과 리프레시 토큰을 반환한다', async () => {
                 const { body } = await fix.httpClient
                     .post('/admins/refresh')
                     .body({ refreshToken: tokens.refreshToken })

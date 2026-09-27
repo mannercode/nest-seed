@@ -43,7 +43,7 @@ describe('MoviesAssets', () => {
             movie = await createUnpublishedMovie(fix)
         })
 
-        it('업로드 URL이 포함된 에셋 업로드 정보를 반환한다', async () => {
+        it('에셋 생성을 요청하면 업로드 URL이 포함된 정보를 반환한다', async () => {
             const createDto = buildCreateAssetDto(testAssets.image)
 
             const { body } = await fix.httpClient
@@ -115,7 +115,7 @@ describe('MoviesAssets', () => {
                 downloadUrl = asset.download.url
             })
 
-            it('204를 반환하고 에셋 URL을 무효화한다', async () => {
+            it('에셋을 삭제하면 204를 반환하고 에셋 URL을 무효화한다', async () => {
                 await fix.httpClient.delete(`/movies/${movie.id}/assets/${assetId}`).noContent()
 
                 const response = await fetch(downloadUrl)
@@ -262,7 +262,7 @@ describe('MoviesAssets', () => {
                 return found?.imageUrls
             }
 
-            it('204를 반환하고 영화의 imageUrls에 에셋을 추가한다', async () => {
+            it('업로드 완료 처리를 요청하면 204를 반환하고 영화의 imageUrls에 에셋을 추가한다', async () => {
                 await fix.httpClient
                     .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
                     .noContent()

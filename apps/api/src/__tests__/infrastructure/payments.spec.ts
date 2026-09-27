@@ -59,7 +59,7 @@ describe('PaymentsService', () => {
     })
 
     describe('create', () => {
-        it('생성된 결제를 반환한다', async () => {
+        it('결제를 생성하면 생성된 결제 정보를 반환한다', async () => {
             const createDto = buildCreatePaymentDto()
 
             const payment = await paymentsService.create(createDto)

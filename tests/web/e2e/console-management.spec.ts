@@ -128,7 +128,7 @@ test.describe('관리자로 로그인했으면', () => {
             expect(partialSuccessMessage).toContain('초안은 저장되었습니다')
         })
     })
-    test('극장을 등록한 뒤 극장 목록에서 확인한다', async ({ page }) => {
+    test('극장을 등록하면 극장 목록에 등록한 이름이 표시된다', async ({ page }) => {
         const name = `E2E 극장 ${randomUUID()}`
 
         await page.goto('/theaters/new')

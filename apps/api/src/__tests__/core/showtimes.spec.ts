@@ -25,7 +25,7 @@ describe('ShowtimesService', () => {
     afterEach(() => teardown?.())
 
     describe('createMany', () => {
-        it('생성된 상영 시간 수를 반환한다', async () => {
+        it('상영을 생성하면 생성한 상영 수를 반환한다', async () => {
             const createDtos = [buildCreateShowtimeDto({ sagaId: oid(0x1) })]
 
             const { count } = await showtimesService.createMany(createDtos)
@@ -33,7 +33,7 @@ describe('ShowtimesService', () => {
             expect(count).toBe(createDtos.length)
         })
 
-        it('입력한 상영 시간을 DB에 저장한다', async () => {
+        it('상영을 생성하면 입력한 상영 정보를 DB에 저장한다', async () => {
             const createDtos = [
                 buildCreateShowtimeDto({
                     sagaId: oid(0x1),
@@ -194,7 +194,7 @@ describe('ShowtimesService', () => {
                     buildCreateShowtimeDto({ sagaId, startTime: instant('2000-01-01T13:00Z') })
                 ])
             })
-            it('시작 시각이 빠른 순서로 반환한다', async () => {
+            it('상영을 검색하면 시작 시각이 빠른 순서로 반환한다', async () => {
                 const showtimes = await showtimesService.search({ sagaIds: [sagaId] })
 
                 expect(showtimes.map((showtime) => showtime.startTime)).toEqual([

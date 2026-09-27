@@ -23,7 +23,7 @@ describe('WatchRecordsService', () => {
     afterEach(() => teardown?.())
 
     describe('create', () => {
-        it('생성된 시청 기록을 반환한다', async () => {
+        it('시청 기록을 생성하면 생성된 정보를 반환한다', async () => {
             const createDto = buildCreateWatchRecordDto()
             const watchRecord = await watchRecordsService.create(createDto)
 
@@ -51,7 +51,7 @@ describe('WatchRecordsService', () => {
             total: expectedRecords.length
         })
 
-        it('userId가 일치하는 기록만 반환한다', async () => {
+        it('시청 기록을 조회하면 userId가 일치하는 기록만 반환한다', async () => {
             const recordsPage = await watchRecordsService.searchPage({ userId })
 
             expect(recordsPage.items).toHaveLength(2)

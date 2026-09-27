@@ -26,7 +26,7 @@ describe('TicketsService', () => {
     afterEach(() => teardown?.())
 
     describe('createMany', () => {
-        it('생성된 티켓 수를 반환한다', async () => {
+        it('티켓을 생성하면 생성한 티켓 수를 반환한다', async () => {
             const createDtos = [buildCreateTicketDto({ sagaId: oid(0x1) })]
 
             const { count } = await ticketsService.createMany(createDtos)
@@ -34,7 +34,7 @@ describe('TicketsService', () => {
             expect(count).toBe(createDtos.length)
         })
 
-        it('티켓을 DB에 저장한다', async () => {
+        it('티켓을 생성하면 DB에 저장한다', async () => {
             const sagaId = oid(0x1)
             const createDto = buildCreateTicketDto({
                 sagaId,
@@ -264,7 +264,7 @@ describe('TicketsService', () => {
                 const soldTickets = createdTickets.slice(0, soldCount)
                 await ticketsService.sellForPurchase(pickIds(soldTickets), oid(0x20))
             })
-            it('판매 집계와 티켓이 없는 상영의 0건 집계를 함께 반환한다', async () => {
+            it('여러 상영을 집계하면 판매 건수와 티켓이 없는 상영의 0건 집계를 함께 반환한다', async () => {
                 const ticketSales = await ticketsService.aggregateSales({
                     showtimeIds: [showtimeId, emptyShowtimeId]
                 })

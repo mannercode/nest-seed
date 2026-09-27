@@ -391,7 +391,7 @@ describe('CacheService', () => {
     })
 
     describe('withLockBlocking', () => {
-        describe('경과 시간을 조절할 수 있으면', () => {
+        describe('락 획득 대기 기한', () => {
             let now: number
 
             beforeEach(() => {

@@ -101,7 +101,9 @@ test.describe('로그인하지 않았으면', () => {
 
         expect(result).toEqual({ exposesToken: false, status: 404 })
     })
-    test('BFF가 전달한 클라이언트 IP별로 로그인 실패 한도를 격리한다', async ({ page }) => {
+    test('로그인 요청을 반복하면 BFF가 전달한 IP별로 실패 횟수를 따로 계산한다', async ({
+        page
+    }) => {
         const stamp = randomUUID()
         const addressSeed = randomBytes(4).toString('hex')
         const firstIp = `2001:db8:${addressSeed.slice(0, 4)}:${addressSeed.slice(4)}::10`
@@ -170,7 +172,7 @@ test.describe('관리자로 로그인했으면', () => {
         refreshCookieBefore = await getSessionCookie(context, REFRESH_COOKIE)
         loginHeaders = await (await response).headersArray()
     })
-    test('로그인 쿠키에 HttpOnly·SameSite와 토큰 만료 시각을 설정한다', async () => {
+    test('로그인 응답은 쿠키에 HttpOnly·SameSite=Lax와 토큰의 만료 시각을 지정한다', async () => {
         expect(accessCookie).toMatchObject({ httpOnly: true, sameSite: 'Lax' })
         expect(refreshCookieBefore).toMatchObject({ httpOnly: true, sameSite: 'Lax' })
         // Chromium은 Date 헤더로 시계 차이를 보정하므로 서버가 보낸 Expires 자체를 검증한다.

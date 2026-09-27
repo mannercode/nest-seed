@@ -235,7 +235,7 @@ describe('PurchaseService', () => {
                 })
             })
 
-            describe('두 구매 기록의 저장 순서를 제어할 수 있으면', () => {
+            describe('첫 구매 기록의 저장이 두 번째 저장 요청까지 지연되면', () => {
                 let createCallCount: number
                 let didEnterFirstCreate: Promise<void>
                 beforeEach(async () => {
@@ -475,7 +475,7 @@ describe('PurchaseService', () => {
                 })
             })
 
-            it('구매를 반환하고 결제 기록과 티켓 판매 상태를 저장한다', async () => {
+            it('구매를 요청하면 구매 기록을 반환하고 결제 금액과 티켓 판매 상태를 저장한다', async () => {
                 const createDto = buildCreatePurchaseDto(heldTickets)
 
                 const { body: purchaseRecord } = await fix.httpClient
@@ -664,7 +664,7 @@ describe('PurchaseService', () => {
                     )
                 })
 
-                it('결제를 중복 생성하지 않고 최초 구매 결과와 판매 상태를 유지한다', async () => {
+                it('구매를 요청하면 결제를 중복 생성하지 않고 최초 구매 결과와 판매 상태를 유지한다', async () => {
                     const idempotencyKey = randomUUID()
                     const createDto = buildCreatePurchaseDto(heldTickets)
                     const send = () =>

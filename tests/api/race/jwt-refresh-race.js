@@ -114,7 +114,7 @@ async function runInner(iteration) {
     return { groups: USER_GROUPS, total: results.length, replicas: replicaSet.size }
 }
 
-test('같은 refresh token의 동시 회전은 하나만 성공하고 현재 로그인 세션을 유지한다', async () => {
+test('같은 리프레시 토큰으로 동시에 갱신하면 한 요청만 성공하고 세션을 유지한다', async () => {
     console.log(
         `[race] server=${SERVER_URL} groups=${USER_GROUPS} clients/user=${CLIENTS_PER_USER} inner=${INNER_ITERATIONS}`
     )

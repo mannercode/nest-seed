@@ -170,7 +170,7 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
     return { total: results.length, replicas: replicaSet.size }
 }
 
-test('겹치는 티켓 묶음의 동시 구매는 하나만 성공하고 승자의 티켓만 판매된다', async () => {
+test('겹치는 티켓 묶음을 동시에 구매하면 한 요청만 성공하고 해당 구매의 티켓만 판매된다', async () => {
     console.log(`[overlap] server=${SERVER_URL} groups=${USER_GROUPS} inner=${INNER_ITERATIONS}`)
 
     const { movieId, theaterId } = await createPublishedMovieAndTheater({

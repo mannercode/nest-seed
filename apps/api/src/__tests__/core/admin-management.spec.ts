@@ -23,20 +23,20 @@ describe('AdminManagement', () => {
     afterEach(() => teardown?.())
 
     describe('관리자 생성·삭제 HTTP 경로', () => {
-        it('POST /admins는 404를 반환한다', async () => {
+        it('POST /admins로 관리자 생성을 요청하면 404를 반환한다', async () => {
             await fix.httpClient
                 .post('/admins')
                 .body({ email: 'new-admin@mail.com', name: 'new', password: 'password' })
                 .notFound()
         })
 
-        it('DELETE /admins/:id는 404를 반환한다', async () => {
+        it('DELETE /admins/:id로 관리자 삭제를 요청하면 404를 반환한다', async () => {
             await fix.httpClient.delete(`/admins/${nullObjectId}`).notFound()
         })
     })
 
     describe('AdminsService.create', () => {
-        it('생성된 관리자를 반환한다', async () => {
+        it('관리자를 생성하면 생성된 정보를 반환한다', async () => {
             await expect(createAdmin(fix, adminCredentials)).resolves.toEqual(
                 expect.objectContaining({
                     id: expect.any(String),
@@ -67,7 +67,7 @@ describe('AdminManagement', () => {
                 failure = new Error('storage unavailable')
                 vi.spyOn(repository.collection, 'insertOne').mockRejectedValueOnce(failure)
             })
-            it('저장 오류를 그대로 던진다', async () => {
+            it('관리자 생성을 요청하면 저장 오류를 그대로 던진다', async () => {
                 await expect(service.create({ ...adminCredentials, name: 'admin' })).rejects.toBe(
                     failure
                 )
@@ -84,7 +84,7 @@ describe('AdminManagement', () => {
                 // 요청 스키마 검증은 컨트롤러에만 적용되므로 service를 직접 호출한다.
                 invalidDto = { email: 'x@y.com', name: null as unknown as string, password: 'p' }
             })
-            it('관리자를 생성하면 ConflictException이 아닌 예외를 던진다', async () => {
+            it('관리자 생성을 요청하면 오류를 던지고 중복 이메일 충돌로 분류하지 않는다', async () => {
                 // "그대로 던진다"의 핵심은 409로 변환되지 않는 것이므로 예외 타입까지 확인한다.
                 const promise = service.create(invalidDto)
                 await expect(promise).rejects.toThrow()
@@ -128,7 +128,7 @@ describe('AdminManagement', () => {
                     .ok({ expected: { ...admin, name: 'renamed' } })
             })
 
-            it('수정 내용이 DB에 저장된다', async () => {
+            it('본인 정보를 수정하면 DB에 저장한다', async () => {
                 await fix.httpClient
                     .patch('/admins/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })

@@ -79,7 +79,7 @@ describe('ShowtimeCreationService', () => {
                     .get('/showtime-creation/movies')
                     .headers({ Authorization: `Bearer ${adminAccessToken}` })
             })
-            it('영화 목록을 조회하면 전체 영화 페이지를 반환한다', async () => {
+            it('영화 목록을 조회하면 등록된 영화와 페이지 정보·전체 개수를 반환한다', async () => {
                 await request.ok({
                     schema: paginationResultSchema(MovieSchema),
                     expected: {
@@ -101,7 +101,7 @@ describe('ShowtimeCreationService', () => {
                     .get('/showtime-creation/theaters')
                     .headers({ Authorization: `Bearer ${adminAccessToken}` })
             })
-            it('극장 목록을 조회하면 전체 극장 페이지를 반환한다', async () => {
+            it('극장 목록을 조회하면 등록된 극장과 페이지 정보·전체 개수를 반환한다', async () => {
                 await request.ok({
                     schema: paginationResultSchema(TheaterSchema),
                     expected: {
@@ -128,7 +128,7 @@ describe('ShowtimeCreationService', () => {
                     ].map((startTime) => ({ startTime, theaterId: theater.id }))
                 )
             })
-            it('극장 ID로 검색하면 상영 목록을 반환하고 시각을 UTC 밀리초 문자열로 전송한다', async () => {
+            it('극장 ID로 검색하면 상영 목록을 반환하고 시각은 밀리초 세 자리의 UTC 문자열로 표현한다', async () => {
                 const response = await fix.httpClient
                     .post('/showtime-creation/showtimes/search')
                     .headers({ Authorization: `Bearer ${adminAccessToken}` })
@@ -144,7 +144,7 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('GET /showtime-creation/event-stream', () => {
-        it('SSE의 시각을 UTC 밀리초 3자리 문자열로 전송한다', async () => {
+        it('이벤트를 발행하면 시각을 밀리초 세 자리의 UTC 문자열로 전송한다', async () => {
             const events = fix.module.get(ShowtimeCreationEventService)
             const sseClient = new HttpTestClient(fix.httpClient.serverUrl)
             const sagaId = newObjectIdString()
@@ -592,7 +592,7 @@ describe('ShowtimeCreationService', () => {
                     .ok({ schema: TheaterSchema })
             })
 
-            it('상영은 생성하지만 티켓 수와 판매 집계는 0이다', async () => {
+            it('상영 생성을 요청하면 상영을 저장하고 티켓 수와 판매 집계는 0이다', async () => {
                 const { response, completion } = await submitAndWaitForCompletion(
                     fix,
                     adminAccessToken,
@@ -626,7 +626,7 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        it('상영 생성 상태를 waiting → processing → succeeded 순서로 발행한다', async () => {
+        it('상영 생성을 요청하면 상태를 waiting → processing → succeeded 순서로 발행한다', async () => {
             const {
                 response: { body },
                 events

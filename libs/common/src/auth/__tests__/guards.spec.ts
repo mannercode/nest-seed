@@ -229,18 +229,34 @@ describe('AuthGuard', () => {
 })
 
 describe('PasswordHasher', () => {
-    it('해시를 만든 비밀번호만 검증에 성공한다', async () => {
+    it('비밀번호를 해시하면 비용 계수가 10인 bcrypt 해시를 반환한다', async () => {
         const hashed = await PasswordHasher.hash('password')
         expect(hashed).toMatch(/^\$2[aby]\$10\$/)
-        expect(await PasswordHasher.verify('password', hashed)).toBe(true)
-        expect(await PasswordHasher.verify('wrong', hashed)).toBe(false)
+    })
+    describe.each([
+        {
+            condition: '입력한 비밀번호가 저장된 해시와 일치하면',
+            input: 'password',
+            expected: true
+        },
+        { condition: '입력한 비밀번호가 저장된 해시와 다르면', input: 'wrong', expected: false }
+    ])('$condition', ({ input, expected }) => {
+        let hash: string
+        let password: string
+        beforeEach(async () => {
+            hash = await PasswordHasher.hash('password')
+            password = input
+        })
+        it(`비밀번호를 검증하면 ${expected}를 반환한다`, async () => {
+            expect(await PasswordHasher.verify(password, hash)).toBe(expected)
+        })
     })
     describe('계정에 저장된 비밀번호 해시가 없으면', () => {
         let hash: undefined
         beforeEach(() => {
             hash = undefined
         })
-        it('비밀번호를 검증하면 일반·dummy 비밀번호 모두 실패한다', async () => {
+        it('비밀번호를 검증하면 false를 반환한다', async () => {
             expect(await PasswordHasher.verify('wrong', hash)).toBe(false)
             expect(await PasswordHasher.verify('timing-equalization-only', hash)).toBe(false)
         })

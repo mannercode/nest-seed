@@ -17,13 +17,19 @@ describe('Checksum', () => {
         })
 
         describe.each([
-            { label: '지원하지 않는 알고리즘', input: { algorithm: 'md5', base64: 'value' } },
-            { label: '빈 체크섬', input: { algorithm: 'sha256', base64: '' } },
             {
-                label: '알 수 없는 필드',
+                condition: '지원하지 않는 알고리즘을 지정했으면',
+                input: { algorithm: 'md5', base64: 'value' }
+            },
+            {
+                condition: '체크섬 문자열이 비어 있으면',
+                input: { algorithm: 'sha256', base64: '' }
+            },
+            {
+                condition: '입력에 정의하지 않은 필드가 있으면',
                 input: { algorithm: 'sha256', base64: 'value', unknown: true }
             }
-        ])('체크섬 입력에 $label 오류가 있으면', ({ input }) => {
+        ])('$condition', ({ input }) => {
             let value: typeof input
             beforeEach(() => {
                 value = input

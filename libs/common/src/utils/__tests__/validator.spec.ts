@@ -145,7 +145,7 @@ describe('Require', () => {
 
                 second = 2n
             })
-            it('값을 비교하면 불변식 오류와 진단을 보존한다', () => {
+            it('값을 비교하면 두 값과 원인 메시지를 담은 500 예외를 던진다', () => {
                 expect(() => Require.equals(first, second, 'bigint mismatch')).toThrow(
                     expect.objectContaining({ status: 500, cause: '1n !== 2n, bigint mismatch' })
                 )
@@ -161,7 +161,7 @@ describe('Require', () => {
                 second = { value: 2 }
                 second.self = second
             })
-            it('값을 비교하면 불변식 오류와 원인 메시지를 보존한다', () => {
+            it('값을 비교하면 순환 참조 표시와 원인 메시지를 담은 500 예외를 던진다', () => {
                 expect(() => Require.equals(first, second, 'cycle mismatch')).toThrow(
                     expect.objectContaining({
                         status: 500,

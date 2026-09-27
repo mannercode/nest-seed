@@ -57,7 +57,7 @@ describe('AppLoggerService', () => {
         ['fatal', 'error'],
         ['debug', 'debug'],
         ['verbose', 'verbose']
-    ] as const)('AppLoggerService.%s는 %s 레벨의 ECS JSON 한 줄을 출력한다', (method, level) => {
+    ] as const)('%s 메서드를 호출하면 %s 레벨의 ECS JSON 한 줄을 출력한다', (method, level) => {
         appLogger[method]('structured message', { contextType: 'service', nested: { value: 1 } })
 
         const output = consoleSpy.getOutput()
