@@ -27,60 +27,133 @@ const temporal = (
 ).Temporal
 
 describe('defaultTo', () => {
-    it('null이면 기본값을 반환한다', () => {
-        expect(defaultTo(null, '기본값')).toBe('기본값')
+    describe('값이 null이면', () => {
+        let input: null
+        beforeEach(() => {
+            input = null
+        })
+        it('기본값을 적용하면 지정한 기본값을 반환한다', () => {
+            expect(defaultTo(input, '기본값')).toBe('기본값')
+        })
     })
 
-    it('undefined이면 기본값을 반환한다', () => {
-        expect(defaultTo(undefined, '기본값')).toBe('기본값')
+    describe('값이 undefined이면', () => {
+        let input: undefined
+        beforeEach(() => {
+            input = undefined
+        })
+        it('기본값을 적용하면 지정한 기본값을 반환한다', () => {
+            expect(defaultTo(input, '기본값')).toBe('기본값')
+        })
     })
 
-    it('NaN이면 기본값을 반환한다', () => {
-        expect(defaultTo(NaN, 1)).toBe(1)
+    describe('값이 NaN이면', () => {
+        let input: number
+        beforeEach(() => {
+            input = NaN
+        })
+        it('기본값을 적용하면 지정한 기본값을 반환한다', () => {
+            expect(defaultTo(input, 1)).toBe(1)
+        })
     })
 
-    it('0이면 그대로 반환한다', () => {
-        expect(defaultTo(0, 1)).toBe(0)
+    describe('값이 0이면', () => {
+        let input: number
+        beforeEach(() => {
+            input = 0
+        })
+        it('기본값을 적용해도 0을 유지한다', () => {
+            expect(defaultTo(input, 1)).toBe(0)
+        })
     })
 
-    it('빈 문자열이면 그대로 반환한다', () => {
-        expect(defaultTo('', '기본값')).toBe('')
+    describe('값이 빈 문자열이면', () => {
+        let input: string
+        beforeEach(() => {
+            input = ''
+        })
+        it('기본값을 적용해도 빈 문자열을 유지한다', () => {
+            expect(defaultTo(input, '기본값')).toBe('')
+        })
     })
 
-    it('일반 값이면 그대로 반환한다', () => {
-        expect(defaultTo('값', '기본값')).toBe('값')
+    describe('값이 비어 있지 않은 문자열이면', () => {
+        let input: string
+        beforeEach(() => {
+            input = '값'
+        })
+        it('기본값을 적용해도 원래 값을 유지한다', () => {
+            expect(defaultTo(input, '기본값')).toBe('값')
+        })
     })
 })
 
 describe('getByPath', () => {
     const obj = { a: { b: { c: 3 } }, arr: [{ id: 1 }] }
 
-    it('점 표기법으로 값을 가져온다', () => {
-        expect(getByPath(obj, 'a.b.c')).toBe(3)
+    describe('조회 경로가 점 표기법이면', () => {
+        let path: string
+        beforeEach(() => {
+            path = 'a.b.c'
+        })
+        it('경로로 조회하면 해당 값을 반환한다', () => {
+            expect(getByPath(obj, path)).toBe(3)
+        })
     })
 
-    it('대괄호 인덱스 표기법도 처리한다', () => {
-        expect(getByPath(obj, 'arr[0].id')).toBe(1)
+    describe('조회 경로에 대괄호 인덱스가 있으면', () => {
+        let path: string
+        beforeEach(() => {
+            path = 'arr[0].id'
+        })
+        it('경로로 조회하면 해당 값을 반환한다', () => {
+            expect(getByPath(obj, path)).toBe(1)
+        })
     })
 
-    it('경로가 닿지 않으면 기본값을 반환한다', () => {
-        expect(getByPath(obj, 'a.b.d', 'fallback')).toBe('fallback')
+    describe('지정한 경로에 값이 없으면', () => {
+        let input: string
+        beforeEach(() => {
+            input = 'a.b.d'
+        })
+        it('경로로 조회하면 기본값을 반환한다', () => {
+            expect(getByPath(obj, input, 'fallback')).toBe('fallback')
+        })
     })
 
-    it('대상이 null이면 기본값을 반환한다', () => {
-        expect(getByPath(null, 'a.b', 'default')).toBe('default')
+    describe('대상 객체가 null이면', () => {
+        let input: null
+        beforeEach(() => {
+            input = null
+        })
+        it('경로로 조회하면 기본값을 반환한다', () => {
+            expect(getByPath(input, 'a.b', 'default')).toBe('default')
+        })
     })
 
-    it('중간 경로에 null/undefined가 있으면 기본값을 반환한다', () => {
-        expect(getByPath({ a: null }, 'a.b.c', 'fallback')).toBe('fallback')
-        expect(getByPath({ a: { b: undefined } }, 'a.b.c', 'fallback')).toBe('fallback')
+    describe.each([
+        { condition: '경로 중간의 a가 null이면', input: { a: null } },
+        { condition: '경로 중간의 b가 undefined이면', input: { a: { b: undefined } } }
+    ])('$condition', ({ input }) => {
+        let object: typeof input
+        beforeEach(() => {
+            object = input
+        })
+        it('경로로 값을 조회하면 기본값을 반환한다', () => {
+            expect(getByPath(object, 'a.b.c', 'fallback')).toBe('fallback')
+        })
     })
 })
 
 describe('omit', () => {
-    it('입력이 null이나 undefined면 undefined를 반환한다', () => {
-        expect(omit(null as any, ['a'])).toBeUndefined()
-        expect(omit(undefined as any, ['a'])).toBeUndefined()
+    describe.each([null, undefined])('입력이 %s이면', (input) => {
+        let object: any
+        beforeEach(() => {
+            object = input as any
+        })
+        it('키를 제외하면 undefined를 반환한다', () => {
+            expect(omit(object, ['a'])).toBeUndefined()
+        })
     })
 
     it('지정된 키를 제외한 객체를 반환한다', () => {
@@ -99,23 +172,35 @@ describe('pick', () => {
         expect(pick({ a: 1, b: 2, c: 3 }, ['a', 'c'])).toEqual({ a: 1, c: 3 })
     })
 
-    it('존재하지 않는 키는 무시한다', () => {
-        expect(pick({ a: 1 } as any, ['a', 'b'])).toEqual({ a: 1 })
+    describe('선택할 키 중 객체에 없는 키가 있으면', () => {
+        let input: any
+        beforeEach(() => {
+            input = { a: 1 } as any
+        })
+        it('키를 선택하면 존재하는 키만 반환한다', () => {
+            expect(pick(input, ['a', 'b'])).toEqual({ a: 1 })
+        })
     })
 
-    it('특수 이름과 symbol을 일반 데이터 키로 보존한다', () => {
-        const symbol = Symbol('field')
-        const source = {
-            ...JSON.parse('{"__proto__":{"value":1},"constructor":"data"}'),
-            [symbol]: 2
-        }
-        const result = pick(source, ['__proto__', 'constructor', symbol])
+    describe('객체에 __proto__·constructor·symbol 키가 있으면', () => {
+        let symbol: symbol
+        let source: Record<PropertyKey, unknown>
+        beforeEach(() => {
+            symbol = Symbol('field')
+            source = {
+                ...JSON.parse('{"__proto__":{"value":1},"constructor":"data"}'),
+                [symbol]: 2
+            }
+        })
+        it('키를 선택하면 prototype을 바꾸지 않고 해당 키와 값을 보존한다', () => {
+            const result = pick(source, ['__proto__', 'constructor', symbol])
 
-        expect(Object.keys(result)).toEqual(['__proto__', 'constructor'])
-        expect(Object.getPrototypeOf(result)).toBe(Object.prototype)
-        expect(result.__proto__).toEqual({ value: 1 })
-        expect(result.constructor).toBe('data')
-        expect(result[symbol]).toBe(2)
+            expect(Object.keys(result)).toEqual(['__proto__', 'constructor'])
+            expect(Object.getPrototypeOf(result)).toBe(Object.prototype)
+            expect(result.__proto__).toEqual({ value: 1 })
+            expect(result.constructor).toBe('data')
+            expect(result[symbol]).toBe(2)
+        })
     })
 })
 
@@ -140,12 +225,30 @@ describe('sortBy', () => {
         expect(sortBy(items, (i) => i.name)).toEqual([{ name: 'a' }, { name: 'b' }, { name: 'c' }])
     })
 
-    it('동일한 값은 순서를 유지한다', () => {
-        expect(sortBy([{ v: 1 }, { v: 1 }], 'v')).toEqual([{ v: 1 }, { v: 1 }])
+    describe('정렬할 키의 값이 같은 항목들이 있으면', () => {
+        let input: { id: string; v: number }[]
+        beforeEach(() => {
+            input = [
+                { id: 'first', v: 1 },
+                { id: 'second', v: 1 }
+            ]
+        })
+        it('정렬하면 항목의 원래 순서를 유지한다', () => {
+            expect(sortBy(input, 'v')).toEqual([
+                { id: 'first', v: 1 },
+                { id: 'second', v: 1 }
+            ])
+        })
     })
 
-    it('빈 배열을 받으면 빈 배열을 반환한다', () => {
-        expect(sortBy([] as { name: string }[], 'name')).toEqual([])
+    describe('입력 배열이 비어 있으면', () => {
+        let input: { name: string }[]
+        beforeEach(() => {
+            input = [] as { name: string }[]
+        })
+        it('정렬하면 빈 배열을 반환한다', () => {
+            expect(sortBy(input, 'name')).toEqual([])
+        })
     })
 })
 
@@ -162,9 +265,15 @@ describe('orderBy', () => {
         expect(result[2]?.age).toBe(20)
     })
 
-    it('방향을 지정하지 않으면 오름차순으로 정렬한다', () => {
-        const result = orderBy([{ v: 3 }, { v: 1 }, { v: 2 }], ['v'])
-        expect(result).toEqual([{ v: 1 }, { v: 2 }, { v: 3 }])
+    describe('정렬 방향을 지정하지 않았으면', () => {
+        let input: { v: number }[]
+        beforeEach(() => {
+            input = [{ v: 3 }, { v: 1 }, { v: 2 }]
+        })
+        it('정렬하면 오름차순으로 반환한다', () => {
+            const result = orderBy(input, ['v'])
+            expect(result).toEqual([{ v: 1 }, { v: 2 }, { v: 3 }])
+        })
     })
 
     it('여러 키 이름과 여러 방향으로 정렬한다', () => {
@@ -176,239 +285,609 @@ describe('orderBy', () => {
         ])
     })
 
-    it('방향 배열이 비어 있으면 모두 오름차순으로 정렬한다', () => {
-        const result = orderBy([{ v: 3 }, { v: 1 }, { v: 2 }], ['v'], [])
-        expect(result).toEqual([{ v: 1 }, { v: 2 }, { v: 3 }])
+    describe('정렬 방향 배열이 비어 있으면', () => {
+        let input: []
+        beforeEach(() => {
+            input = []
+        })
+        it('정렬하면 모든 키를 오름차순으로 정렬한다', () => {
+            const result = orderBy([{ v: 3 }, { v: 1 }, { v: 2 }], ['v'], input)
+            expect(result).toEqual([{ v: 1 }, { v: 2 }, { v: 3 }])
+        })
     })
 })
 
 describe('isEqual', () => {
-    it('동일 객체는 getter를 실행하지 않고 같다고 판정한다', () => {
-        let reads = 0
-        const getter = vi.fn(() => ++reads)
-        const value = {
-            get value() {
-                return getter()
+    describe('비교할 두 값이 getter를 가진 동일 객체이면', () => {
+        let getter: ReturnType<typeof vi.fn<() => number>>
+        let value: { readonly value: number }
+        beforeEach(() => {
+            let reads = 0
+            getter = vi.fn(() => ++reads)
+            value = {
+                get value() {
+                    return getter()
+                }
             }
-        }
-
-        expect(isEqual(value, value)).toBe(true)
-        expect(getter).not.toHaveBeenCalled()
-        expect(isEqual(NaN, NaN)).toBe(true)
-        expect(isEqual(0, -0)).toBe(false)
+        })
+        it('값을 비교하면 getter 실행 없이 true를 반환한다', () => {
+            expect(isEqual(value, value)).toBe(true)
+            expect(getter).not.toHaveBeenCalled()
+        })
     })
 
-    it('두 수가 같으면 true를 반환한다', () => {
-        expect(isEqual(1, 1)).toBe(true)
+    describe('두 수가 같으면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = 1
+
+            second = 1
+        })
+        it('값을 비교하면 true를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(true)
+        })
     })
 
-    it('양쪽이 null이면 true를 반환한다', () => {
-        expect(isEqual(null, null)).toBe(true)
+    describe('두 값이 모두 null이면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = null
+
+            second = null
+        })
+        it('값을 비교하면 true를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(true)
+        })
     })
 
-    it('배열 요소가 모두 같으면 true를 반환한다', () => {
-        expect(isEqual([1, 2], [1, 2])).toBe(true)
+    describe('두 배열의 요소가 모두 같으면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = [1, 2]
+
+            second = [1, 2]
+        })
+        it('값을 비교하면 true를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(true)
+        })
     })
 
-    it('객체 키와 값이 모두 같으면 true를 반환한다', () => {
-        expect(isEqual({ a: 1 }, { a: 1 })).toBe(true)
+    describe('두 객체의 키와 값이 모두 같으면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = { a: 1 }
+
+            second = { a: 1 }
+        })
+        it('값을 비교하면 true를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(true)
+        })
     })
 
-    it('중첩 배열까지 모두 같으면 true를 반환한다', () => {
-        expect(isEqual({ a: [1] }, { a: [1] })).toBe(true)
+    describe('두 객체의 중첩 배열까지 같으면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = { a: [1] }
+
+            second = { a: [1] }
+        })
+        it('값을 비교하면 true를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(true)
+        })
     })
 
-    it('두 수가 다르면 false를 반환한다', () => {
-        expect(isEqual(1, 2)).toBe(false)
+    describe('두 수가 다르면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = 1
+
+            second = 2
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(false)
+        })
     })
 
-    it('두 문자열이 다르면 false를 반환한다', () => {
-        expect(isEqual('a', 'b')).toBe(false)
+    describe('두 문자열이 다르면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = 'a'
+
+            second = 'b'
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(false)
+        })
     })
 
-    it('null과 undefined를 비교하면 false를 반환한다', () => {
-        expect(isEqual(null, undefined)).toBe(false)
+    describe('한 값이 null이고 다른 값이 undefined이면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = null
+
+            second = undefined
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(false)
+        })
     })
 
-    it('수와 문자열을 비교하면 false를 반환한다', () => {
-        expect(isEqual(1, '1')).toBe(false)
+    describe('한 값이 수이고 다른 값이 문자열이면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = 1
+
+            second = '1'
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(false)
+        })
     })
 
-    it('수와 null을 비교하면 false를 반환한다', () => {
-        expect(isEqual(1, null)).toBe(false)
+    describe('한 값이 수이고 다른 값이 null이면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = 1
+
+            second = null
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(false)
+        })
     })
 
-    it('배열 요소가 하나라도 다르면 false를 반환한다', () => {
-        expect(isEqual([1, 2], [1, 3])).toBe(false)
+    describe('두 배열의 요소가 하나라도 다르면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = [1, 2]
+
+            second = [1, 3]
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(false)
+        })
     })
 
-    it('배열 길이가 다르면 false를 반환한다', () => {
-        expect(isEqual([1], [1, 2])).toBe(false)
+    describe('두 배열의 길이가 다르면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = [1]
+
+            second = [1, 2]
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(false)
+        })
     })
 
-    it('객체 값이 다르면 false를 반환한다', () => {
-        expect(isEqual({ a: 1 }, { a: 2 })).toBe(false)
+    describe('두 객체의 값이 다르면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = { a: 1 }
+
+            second = { a: 2 }
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(false)
+        })
     })
 
-    it('객체 키 개수가 다르면 false를 반환한다', () => {
-        expect(isEqual({ a: 1 }, { a: 1, b: 2 })).toBe(false)
+    describe('두 객체의 키 개수가 다르면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = { a: 1 }
+
+            second = { a: 1, b: 2 }
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(false)
+        })
     })
 
-    it('빈 배열과 빈 객체를 비교하면 false를 반환한다', () => {
-        expect(isEqual([], {})).toBe(false)
+    describe('첫 값이 빈 배열이고 둘째 값이 빈 객체이면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = []
+
+            second = {}
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(false)
+        })
     })
 
-    it('빈 객체와 빈 배열을 비교하면 false를 반환한다', () => {
-        expect(isEqual({}, [])).toBe(false)
+    describe('첫 값이 빈 객체이고 둘째 값이 빈 배열이면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = {}
+
+            second = []
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(false)
+        })
     })
 
-    it('같은 구조의 순환 참조 객체를 비교한다', () => {
-        const a: any = { x: 1 }
-        a.self = a
-        const b: any = { x: 1 }
-        b.self = b
-
-        expect(isEqual(a, b)).toBe(true)
+    describe('두 순환 참조 객체의 구조와 값이 같으면', () => {
+        let a: any
+        let b: any
+        beforeEach(() => {
+            a = { x: 1 }
+            a.self = a
+            b = { x: 1 }
+            b.self = b
+        })
+        it('값을 비교하면 true를 반환한다', () => {
+            expect(isEqual(a, b)).toBe(true)
+        })
     })
 
-    it('두 Date의 시각을 비교한다', () => {
-        expect(isEqual(new Date(0), new Date(1))).toBe(false)
+    describe('두 Date의 시각이 다르면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = new Date(0)
+
+            second = new Date(1)
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(false)
+        })
     })
 
-    it('두 Map의 내용을 비교한다', () => {
-        expect(isEqual(new Map([['a', 1]]), new Map([['b', 2]]))).toBe(false)
+    describe('두 Map의 키와 값이 다르면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = new Map([['a', 1]])
+
+            second = new Map([['b', 2]])
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(false)
+        })
     })
 
-    it('두 Temporal.Instant의 시각을 비교한다', () => {
-        expect(
-            isEqual(
-                temporal.Instant.from('2026-08-30T00:00:00Z'),
-                temporal.Instant.from('2026-08-31T00:00:00Z')
-            )
-        ).toBe(false)
+    describe('두 Temporal.Instant의 시각이 다르면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = temporal.Instant.from('2026-08-30T00:00:00Z')
+
+            second = temporal.Instant.from('2026-08-31T00:00:00Z')
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(false)
+        })
     })
 
-    it('두 Temporal.PlainDate의 날짜를 비교한다', () => {
-        expect(
-            isEqual(temporal.PlainDate.from('2026-08-30'), temporal.PlainDate.from('2026-08-31'))
-        ).toBe(false)
+    describe('두 Temporal.PlainDate의 날짜가 다르면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = temporal.PlainDate.from('2026-08-30')
+
+            second = temporal.PlainDate.from('2026-08-31')
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(false)
+        })
     })
 
-    it('서로 다른 Temporal 타입을 비교하면 false를 반환한다', () => {
-        expect(
-            isEqual(
-                temporal.Instant.from('2026-08-30T00:00:00Z'),
-                temporal.PlainDate.from('2026-08-30')
-            )
-        ).toBe(false)
+    describe('한 값이 Temporal.Instant이고 다른 값이 Temporal.PlainDate이면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = temporal.Instant.from('2026-08-30T00:00:00Z')
+
+            second = temporal.PlainDate.from('2026-08-30')
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(false)
+        })
     })
 
-    it('Temporal 값과 일반 객체를 양방향으로 비교하면 false를 반환한다', () => {
-        const date = temporal.PlainDate.from('2026-08-30')
-
-        expect(isEqual(date, {})).toBe(false)
-        expect(isEqual({}, date)).toBe(false)
+    describe('비교할 값이 Temporal.PlainDate와 빈 객체이면', () => {
+        let date: unknown
+        beforeEach(() => {
+            date = temporal.PlainDate.from('2026-08-30')
+        })
+        it('순서를 바꿔 비교해도 false를 반환한다', () => {
+            expect(isEqual(date, {})).toBe(false)
+            expect(isEqual({}, date)).toBe(false)
+        })
     })
 
-    it('Temporal.Duration은 정규화된 문자열로 비교한다', () => {
-        expect(isEqual(temporal.Duration.from('P1D'), temporal.Duration.from('P1D'))).toBe(true)
-        expect(isEqual(temporal.Duration.from('P1D'), temporal.Duration.from('P2D'))).toBe(false)
+    describe.each([
+        { label: '기간이 같으면', other: 'P1D', expected: true },
+        { label: '기간이 다르면', other: 'P2D', expected: false }
+    ])('두 Temporal.Duration의 $label', ({ other, expected }) => {
+        let duration: Temporal.Duration
+        beforeEach(() => {
+            duration = temporal.Duration.from(other)
+        })
+        it(`기간을 비교하면 ${expected}를 반환한다`, () => {
+            expect(isEqual(temporal.Duration.from('P1D'), duration)).toBe(expected)
+        })
     })
 
-    it('객체와 배열 안의 Temporal도 값과 타입을 비교한다', () => {
-        const first = temporal.Instant.fromEpochMilliseconds(0)
-        const same = temporal.Instant.fromEpochMilliseconds(0)
-        const later = temporal.Instant.fromEpochMilliseconds(1)
-        expect(isEqual({ at: [first] }, { at: [same] })).toBe(true)
-        expect(isEqual({ at: [first] }, { at: [later] })).toBe(false)
-        expect(isEqual([first], [first.toString()])).toBe(false)
+    describe('객체 안 배열의 Instant가 같은 시각이면', () => {
+        let firstInput: unknown
+        let secondInput: unknown
+        beforeEach(() => {
+            const first = temporal.Instant.fromEpochMilliseconds(0)
+            const same = temporal.Instant.fromEpochMilliseconds(0)
+
+            firstInput = { at: [first] }
+            secondInput = { at: [same] }
+        })
+        it('값을 비교하면 true를 반환한다', () => {
+            expect(isEqual(firstInput, secondInput)).toBe(true)
+        })
+    })
+    describe('객체 안 배열의 Instant가 서로 다른 시각이면', () => {
+        let firstInput: unknown
+        let secondInput: unknown
+        beforeEach(() => {
+            const first = temporal.Instant.fromEpochMilliseconds(0)
+
+            const later = temporal.Instant.fromEpochMilliseconds(1)
+            firstInput = { at: [first] }
+            secondInput = { at: [later] }
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(firstInput, secondInput)).toBe(false)
+        })
+    })
+    describe('한 배열에는 Instant가 있고 다른 배열에는 시각 문자열이 있으면', () => {
+        let firstInput: unknown
+        let secondInput: unknown
+        beforeEach(() => {
+            const first = temporal.Instant.fromEpochMilliseconds(0)
+
+            firstInput = [first]
+            secondInput = [first.toString()]
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(firstInput, secondInput)).toBe(false)
+        })
     })
 
-    it('Map과 Set의 순서는 무시하고 내부 Temporal 값은 구분한다', () => {
-        const first = temporal.Instant.fromEpochMilliseconds(0)
-        const later = temporal.Instant.fromEpochMilliseconds(1)
-        expect(isEqual(new Set([first, later]), new Set([later, first]))).toBe(true)
-        expect(isEqual(new Set([first]), new Set([later]))).toBe(false)
-        expect(isEqual(new Map([[first, { at: later }]]), new Map([[later, { at: first }]]))).toBe(
-            false
-        )
-        expect(
-            isEqual(
-                new Map([[first, later]]),
-                new Map([
-                    [
-                        temporal.Instant.fromEpochMilliseconds(0),
-                        temporal.Instant.fromEpochMilliseconds(1)
-                    ]
-                ])
-            )
-        ).toBe(true)
+    describe('두 Set에 같은 Instant들이 서로 다른 순서로 들어 있으면', () => {
+        let firstInput: unknown
+        let secondInput: unknown
+        beforeEach(() => {
+            const first = temporal.Instant.fromEpochMilliseconds(0)
+            const later = temporal.Instant.fromEpochMilliseconds(1)
+            firstInput = new Set([first, later])
+            secondInput = new Set([later, first])
+        })
+        it('값을 비교하면 true를 반환한다', () => {
+            expect(isEqual(firstInput, secondInput)).toBe(true)
+        })
+    })
+    describe('두 Set의 Instant 시각이 다르면', () => {
+        let firstInput: unknown
+        let secondInput: unknown
+        beforeEach(() => {
+            const first = temporal.Instant.fromEpochMilliseconds(0)
+            const later = temporal.Instant.fromEpochMilliseconds(1)
+            firstInput = new Set([first])
+            secondInput = new Set([later])
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(firstInput, secondInput)).toBe(false)
+        })
+    })
+    describe('두 Map의 Instant 키와 중첩된 Instant 값이 다르면', () => {
+        let firstInput: unknown
+        let secondInput: unknown
+        beforeEach(() => {
+            const first = temporal.Instant.fromEpochMilliseconds(0)
+            const later = temporal.Instant.fromEpochMilliseconds(1)
+            firstInput = new Map([[first, { at: later }]])
+            secondInput = new Map([[later, { at: first }]])
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(firstInput, secondInput)).toBe(false)
+        })
+    })
+    describe('두 Map의 Instant 키와 값이 별개 객체이지만 시각은 같으면', () => {
+        let firstInput: unknown
+        let secondInput: unknown
+        beforeEach(() => {
+            const first = temporal.Instant.fromEpochMilliseconds(0)
+            const later = temporal.Instant.fromEpochMilliseconds(1)
+            firstInput = new Map([[first, later]])
+            secondInput = new Map([
+                [
+                    temporal.Instant.fromEpochMilliseconds(0),
+                    temporal.Instant.fromEpochMilliseconds(1)
+                ]
+            ])
+        })
+        it('값을 비교하면 true를 반환한다', () => {
+            expect(isEqual(firstInput, secondInput)).toBe(true)
+        })
     })
 
-    it('같은 Temporal 값을 가진 별개 Map 키와 Set 원소를 합치지 않는다', () => {
-        const instant = (milliseconds: number) =>
-            temporal.Instant.fromEpochMilliseconds(milliseconds)
-        expect(
-            isEqual(
-                new Set([instant(0), instant(0), instant(1)]),
-                new Set([instant(0), instant(1), instant(1)])
-            )
-        ).toBe(false)
-        expect(
-            isEqual(
-                new Map([
-                    [instant(0), instant(0)],
-                    [instant(0), instant(1)]
-                ]),
-                new Map([
-                    [instant(0), instant(2)],
-                    [instant(0), instant(1)]
-                ])
-            )
-        ).toBe(false)
-        expect(
-            isEqual(
-                new Map([
-                    [instant(0), 'first'],
-                    [instant(0), 'second']
-                ]),
-                new Map([
-                    [instant(0), 'second'],
-                    [instant(0), 'first']
-                ])
-            )
-        ).toBe(true)
+    describe('같은 시각의 별개 Instant를 담은 두 Set에서 시각별 원소 수가 다르면', () => {
+        let firstInput: unknown
+        let secondInput: unknown
+        beforeEach(() => {
+            const instant = (milliseconds: number) =>
+                temporal.Instant.fromEpochMilliseconds(milliseconds)
+            firstInput = new Set([instant(0), instant(0), instant(1)])
+            secondInput = new Set([instant(0), instant(1), instant(1)])
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(firstInput, secondInput)).toBe(false)
+        })
+    })
+    describe('같은 시각의 별개 Instant 키를 담은 두 Map에서 연결된 값이 다르면', () => {
+        let firstInput: unknown
+        let secondInput: unknown
+        beforeEach(() => {
+            const instant = (milliseconds: number) =>
+                temporal.Instant.fromEpochMilliseconds(milliseconds)
+            firstInput = new Map([
+                [instant(0), instant(0)],
+                [instant(0), instant(1)]
+            ])
+            secondInput = new Map([
+                [instant(0), instant(2)],
+                [instant(0), instant(1)]
+            ])
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(firstInput, secondInput)).toBe(false)
+        })
+    })
+    describe('같은 시각의 별개 Instant 키를 담은 두 Map에서 값의 삽입 순서만 다르면', () => {
+        let firstInput: unknown
+        let secondInput: unknown
+        beforeEach(() => {
+            const instant = (milliseconds: number) =>
+                temporal.Instant.fromEpochMilliseconds(milliseconds)
+            firstInput = new Map([
+                [instant(0), 'first'],
+                [instant(0), 'second']
+            ])
+            secondInput = new Map([
+                [instant(0), 'second'],
+                [instant(0), 'first']
+            ])
+        })
+        it('값을 비교하면 true를 반환한다', () => {
+            expect(isEqual(firstInput, secondInput)).toBe(true)
+        })
     })
 
-    it('순환 객체의 symbol 속성 안에 있는 Temporal도 비교한다', () => {
-        const at = Symbol('at')
-        const first: any = { [at]: temporal.Instant.fromEpochMilliseconds(0) }
-        first.self = first
-        const second: any = { [at]: temporal.Instant.fromEpochMilliseconds(1) }
-        second.self = second
-        expect(isEqual(first, second)).toBe(false)
-        second[at] = temporal.Instant.fromEpochMilliseconds(0)
-        expect(isEqual(first, second)).toBe(true)
+    describe('두 순환 객체의 symbol 속성에 다른 시각의 Instant가 있으면', () => {
+        let firstInput: unknown
+        let secondInput: unknown
+        beforeEach(() => {
+            const at = Symbol('at')
+            const first: any = { [at]: temporal.Instant.fromEpochMilliseconds(0) }
+            first.self = first
+            const second: any = { [at]: temporal.Instant.fromEpochMilliseconds(1) }
+            second.self = second
+            firstInput = first
+            secondInput = second
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(firstInput, secondInput)).toBe(false)
+        })
+    })
+    describe('두 순환 객체의 symbol 속성에 같은 시각의 Instant가 있으면', () => {
+        let firstInput: unknown
+        let secondInput: unknown
+        beforeEach(() => {
+            const at = Symbol('at')
+            const first: any = { [at]: temporal.Instant.fromEpochMilliseconds(0) }
+            first.self = first
+            const second: any = { [at]: temporal.Instant.fromEpochMilliseconds(1) }
+            second.self = second
+            second[at] = temporal.Instant.fromEpochMilliseconds(0)
+            firstInput = first
+            secondInput = second
+        })
+        it('값을 비교하면 true를 반환한다', () => {
+            expect(isEqual(firstInput, secondInput)).toBe(true)
+        })
     })
 
-    it('월일과 연월의 참조 날짜도 보존하고 일반 객체의 프로토타입은 구분한다', () => {
-        expect(
-            isEqual(
-                [new temporal.PlainMonthDay(2, 29, 'iso8601', 2000)],
-                [new temporal.PlainMonthDay(2, 29, 'iso8601', 1972)]
-            )
-        ).toBe(false)
-        expect(isEqual(Object.create(null), {})).toBe(false)
-        expect(isEqual(new Date(0), new Date(0))).toBe(true)
+    describe('두 PlainMonthDay의 월일은 같지만 참조 연도가 다르면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = [new temporal.PlainMonthDay(2, 29, 'iso8601', 2000)]
+
+            second = [new temporal.PlainMonthDay(2, 29, 'iso8601', 1972)]
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(false)
+        })
+    })
+    describe('두 객체의 프로토타입이 다르면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = Object.create(null)
+
+            second = {}
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(false)
+        })
+    })
+    describe('두 Date의 시각이 같으면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = new Date(0)
+
+            second = new Date(0)
+        })
+        it('값을 비교하면 true를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(true)
+        })
     })
 
-    it('ZonedDateTime의 별칭 시간대는 native equals와 같은 결과를 낸다', () => {
-        const alias = temporal.ZonedDateTime.from('2026-01-01T10:00-05:00[US/Eastern]')
-        const primary = temporal.ZonedDateTime.from('2026-01-01T10:00-05:00[America/New_York]')
-        expect(alias.equals(primary)).toBe(true)
-        expect(isEqual(alias, primary)).toBe(true)
-        expect(isEqual({ at: alias }, { at: primary })).toBe(true)
-        expect(isEqual({ at: alias }, { at: primary.withTimeZone('UTC') })).toBe(false)
+    describe('같은 시각의 ZonedDateTime에 별칭과 대표 시간대가 각각 지정되어 있으면', () => {
+        let alias: Temporal.ZonedDateTime
+        let primary: Temporal.ZonedDateTime
+        beforeEach(() => {
+            alias = temporal.ZonedDateTime.from('2026-01-01T10:00-05:00[US/Eastern]')
+            primary = temporal.ZonedDateTime.from('2026-01-01T10:00-05:00[America/New_York]')
+        })
+        it('값을 비교하면 native equals와 같은 결과를 반환한다', () => {
+            expect(alias.equals(primary)).toBe(true)
+            expect(isEqual(alias, primary)).toBe(true)
+            expect(isEqual({ at: alias }, { at: primary })).toBe(true)
+            expect(isEqual({ at: alias }, { at: primary.withTimeZone('UTC') })).toBe(false)
+        })
+    })
+
+    describe('두 값이 모두 NaN이면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = NaN
+
+            second = NaN
+        })
+        it('값을 비교하면 true를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(true)
+        })
+    })
+    describe('첫 값이 0이고 둘째 값이 -0이면', () => {
+        let first: unknown
+        let second: unknown
+        beforeEach(() => {
+            first = 0
+
+            second = -0
+        })
+        it('값을 비교하면 false를 반환한다', () => {
+            expect(isEqual(first, second)).toBe(false)
+        })
     })
 })
 
@@ -430,8 +909,14 @@ describe('maxBy', () => {
         expect(maxBy([{ v: 1 }, { v: 3 }, { v: 2 }], (i) => i.v)).toEqual({ v: 3 })
     })
 
-    it('빈 배열이면 undefined를 반환한다', () => {
-        expect(maxBy([], (i: any) => i.v)).toBeUndefined()
+    describe('입력 배열이 비어 있으면', () => {
+        let input: number[]
+        beforeEach(() => {
+            input = []
+        })
+        it('최대값 항목을 찾으면 undefined를 반환한다', () => {
+            expect(maxBy(input, (i: any) => i.v)).toBeUndefined()
+        })
     })
 })
 
@@ -440,28 +925,52 @@ describe('minBy', () => {
         expect(minBy([{ v: 3 }, { v: 1 }, { v: 2 }], (i) => i.v)).toEqual({ v: 1 })
     })
 
-    it('빈 배열이면 undefined를 반환한다', () => {
-        expect(minBy([], (i: any) => i.v)).toBeUndefined()
+    describe('입력 배열이 비어 있으면', () => {
+        let input: number[]
+        beforeEach(() => {
+            input = []
+        })
+        it('최소값 항목을 찾으면 undefined를 반환한다', () => {
+            expect(minBy(input, (i: any) => i.v)).toBeUndefined()
+        })
     })
 })
 
 describe('countBy', () => {
-    it('상속된 속성 이름도 데이터 키로 사용해 개수를 센다', () => {
-        const counts = countBy(['constructor', 'constructor', '__proto__', 'toString'])
-        expect(counts).toEqual({ constructor: 2, ['__proto__']: 1, toString: 1 })
-        expect(Object.getPrototypeOf(counts)).toBe(Object.prototype)
+    describe('배열에 __proto__·constructor·toString 문자열이 있으면', () => {
+        let input: string[]
+        beforeEach(() => {
+            input = ['constructor', 'constructor', '__proto__', 'toString']
+        })
+        it('개수를 세면 prototype을 바꾸지 않고 각 문자열을 키로 사용한다', () => {
+            const counts = countBy(input)
+            expect(counts).toEqual({ constructor: 2, ['__proto__']: 1, toString: 1 })
+            expect(Object.getPrototypeOf(counts)).toBe(Object.prototype)
+        })
     })
 
     it('키 함수로 그룹별 개수를 센다', () => {
         expect(countBy([6.1, 4.2, 6.3], (n) => String(Math.floor(n)))).toEqual({ '4': 1, '6': 2 })
     })
 
-    it('키 함수 없이 호출하면 값을 문자열로 변환해 그룹별 개수를 센다', () => {
-        expect(countBy(['a', 'b', 'a'])).toEqual({ a: 2, b: 1 })
+    describe('키 함수를 지정하지 않았으면', () => {
+        let input: [string[]]
+        beforeEach(() => {
+            input = [['a', 'b', 'a']]
+        })
+        it('그룹별 개수를 세면 각 값을 키로 사용한다', () => {
+            expect(countBy(...input)).toEqual({ a: 2, b: 1 })
+        })
     })
 
-    it('빈 배열이면 빈 객체를 반환한다', () => {
-        expect(countBy([])).toEqual({})
+    describe('입력 배열이 비어 있으면', () => {
+        let input: number[]
+        beforeEach(() => {
+            input = []
+        })
+        it('그룹별 개수를 세면 빈 객체를 반환한다', () => {
+            expect(countBy(input)).toEqual({})
+        })
     })
 })
 
@@ -470,8 +979,14 @@ describe('sumBy', () => {
         expect(sumBy([{ v: 1 }, { v: 2 }, { v: 3 }], (i) => i.v)).toBe(6)
     })
 
-    it('빈 배열이면 0을 반환한다', () => {
-        expect(sumBy([], (i: { v: number }) => i.v)).toBe(0)
+    describe('입력 배열이 비어 있으면', () => {
+        let input: { v: number }[]
+        beforeEach(() => {
+            input = []
+        })
+        it('값을 합산하면 0을 반환한다', () => {
+            expect(sumBy(input, (i: { v: number }) => i.v)).toBe(0)
+        })
     })
 })
 
@@ -480,12 +995,17 @@ describe('pickBy', () => {
         expect(pickBy({ a: 1, b: null, c: 3 }, (v) => v != null)).toEqual({ a: 1, c: 3 })
     })
 
-    it('선택한 특수 이름을 prototype 변경 없이 데이터 키로 보존한다', () => {
-        const source = JSON.parse('{"__proto__":{"value":1},"constructor":"data","omit":null}')
-        const result = pickBy(source, (value) => value !== null)
+    describe('객체에 __proto__·constructor 키와 null 값이 있으면', () => {
+        let source: Record<string, unknown>
+        beforeEach(() => {
+            source = JSON.parse('{"__proto__":{"value":1},"constructor":"data","omit":null}')
+        })
+        it('null이 아닌 값을 선택하면 prototype을 바꾸지 않고 해당 키를 보존한다', () => {
+            const result = pickBy(source, (value) => value !== null)
 
-        expect(Object.keys(result)).toEqual(['__proto__', 'constructor'])
-        expect(Object.getPrototypeOf(result)).toBe(Object.prototype)
-        expect(result).toEqual(JSON.parse('{"__proto__":{"value":1},"constructor":"data"}'))
+            expect(Object.keys(result)).toEqual(['__proto__', 'constructor'])
+            expect(Object.getPrototypeOf(result)).toBe(Object.prototype)
+            expect(result).toEqual(JSON.parse('{"__proto__":{"value":1},"constructor":"data"}'))
+        })
     })
 })

@@ -61,7 +61,7 @@ describe('RecommendationService', () => {
                 ]))
             })
 
-            it('시청 기록 기반 추천을 반환한다', async () => {
+            it('많이 시청한 장르를 먼저 추천하고 같은 장르는 최신 개봉일부터 추천한다', async () => {
                 const { body } = await fix.httpClient
                     .get('/views/user-app/home')
                     .headers({ Authorization: `Bearer ${accessToken}` })
@@ -77,8 +77,8 @@ describe('RecommendationService', () => {
             })
         })
 
-        describe('게스트 추천', () => {
-            it('개봉일 내림차순 기본 추천을 반환한다', async () => {
+        describe('로그인 정보가 없으면', () => {
+            it('개봉일이 최신인 순서로 추천한다', async () => {
                 const { body } = await fix.httpClient
                     .get('/views/user-app/home')
                     .ok({ schema: UserHomeViewSchema })
@@ -92,29 +92,36 @@ describe('RecommendationService', () => {
                 ])
             })
 
-            it('구매 마감 안에 시작하는 상영만 남은 영화는 추천에서 제외한다', async () => {
-                const config = fix.module.get(AppConfigService)
+            describe('구매가 마감된 상영만 있는 영화가 존재하면', () => {
+                beforeEach(async () => {
+                    const config = fix.module.get(AppConfigService)
 
-                // releaseDate를 가장 최신으로 둬, 필터 회귀 시 목록 맨 앞에 나타나 바로 드러난다.
-                const nearMovie = await createMovie(fix, { releaseDate: plainDate('2900-06-01') })
-                const theater = await createTheater(fix)
-                // 마감 창의 절반 지점이라 테스트 소요 시간과 무관하게 항상 마감 안쪽이다.
-                const startTime = DateUtil.add({ minutes: config.ticket.purchaseCutoffMinutes / 2 })
-                await createShowtimes(fix, [
-                    { movieId: nearMovie.id, theaterId: theater.id, startTime }
-                ])
+                    // releaseDate를 가장 최신으로 둬, 필터 회귀 시 목록 맨 앞에 나타나 바로 드러난다.
+                    const nearMovie = await createMovie(fix, {
+                        releaseDate: plainDate('2900-06-01')
+                    })
+                    const theater = await createTheater(fix)
+                    // 상영 시작까지 남은 시간을 구매 마감 기준의 절반으로 잡아, 요청 시점에는 이미 구매가 마감되게 한다.
+                    const startTime = DateUtil.add({
+                        minutes: config.ticket.purchaseCutoffMinutes / 2
+                    })
+                    await createShowtimes(fix, [
+                        { movieId: nearMovie.id, theaterId: theater.id, startTime }
+                    ])
+                })
+                it('홈 조회 시 해당 영화를 추천에서 제외한다', async () => {
+                    const { body } = await fix.httpClient
+                        .get('/views/user-app/home')
+                        .ok({ schema: UserHomeViewSchema })
 
-                const { body } = await fix.httpClient
-                    .get('/views/user-app/home')
-                    .ok({ schema: UserHomeViewSchema })
-
-                expect(body.recommendedMovies).toEqual([
-                    dramaMovie,
-                    actionMovie,
-                    comedy2Movie,
-                    comedy1Movie,
-                    fantasyMovie
-                ])
+                    expect(body.recommendedMovies).toEqual([
+                        dramaMovie,
+                        actionMovie,
+                        comedy2Movie,
+                        comedy1Movie,
+                        fantasyMovie
+                    ])
+                })
             })
         })
     })

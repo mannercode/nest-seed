@@ -1,6 +1,6 @@
 import type { connect, NodeConnectionOptions } from '@nats-io/transport-node'
 
-// Node transport의 공개 factory에서 타입을 유도해 transitive nats-core에 직접 결합하지 않는다.
+// 직접 설치하지 않은 nats-core에서 타입을 가져오는 대신, 공개 connect 함수의 반환 타입을 사용한다.
 export type NatsConnection = Awaited<ReturnType<typeof connect>>
 
 export type NatsModuleOptions = NodeConnectionOptions

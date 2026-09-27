@@ -4,7 +4,7 @@ import { defaultTo } from '../utils/index.js'
 import { getRedisConnectionToken } from './redis.tokens.js'
 import { RedisConnection, RedisModuleAsyncOptions, RedisModuleOptions } from './redis.types.js'
 
-// 모듈이 만든 연결은 모듈이 닫는다. 닫지 않으면 app.close() 뒤에도 소켓이 남아 프로세스가 매달린다.
+// 모듈이 만든 연결은 모듈이 닫는다. 닫지 않으면 app.close() 뒤에도 소켓이 남아 프로세스가 종료되지 않는다.
 @Injectable()
 export class RedisConnectionRegistry implements OnModuleDestroy {
     private connections: RedisConnection[] = []

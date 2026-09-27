@@ -30,7 +30,7 @@ TEST "빈 요청 본문으로 가입하면 400을 반환한다" \
 	-H 'Content-Type: application/json' \
 	-d '{}'
 
-TEST "이메일 형식이 올바르지 않으면 400을 반환한다" \
+TEST "올바르지 않은 이메일 형식으로 가입하면 400을 반환한다" \
 	400 POST /users \
 	-H 'Content-Type: application/json' \
 	-d '{
@@ -75,7 +75,7 @@ TEST "리프레시 토큰으로 액세스 토큰을 재발급한다" \
 USER_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
 USER_REFRESH_TOKEN=$(echo "${BODY}" | jq -r '.refreshToken')
 
-TEST "형식이 잘못된 리프레시 토큰이면 401을 반환한다" \
+TEST "형식이 잘못된 리프레시 토큰으로 갱신하면 401을 반환한다" \
 	401 POST /users/refresh \
 	-H 'Content-Type: application/json' \
 	-d '{ "refreshToken": "invalid-token" }'
@@ -124,7 +124,7 @@ TEST "관리자가 존재하지 않는 사용자를 수정하면 404를 반환�
 	-d '{ "name": "수정된 사용자 이름" }'
 
 # user 토큰은 admin 가드와 secret이 달라 임의 사용자 조회에서 통과하지 못한다(서명 검증 실패 → 401).
-TEST "사용자 토큰으로 임의 사용자를 조회하면 통과하지 못한다" \
+TEST "사용자 토큰으로 관리자 전용 사용자 조회를 요청하면 401을 반환한다" \
 	401 GET /users/${USER_ID} \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
 
@@ -147,7 +147,7 @@ TEST "본인 구매 기록을 조회한다" \
 TEST "인증 없이 본인 구매 기록을 조회하면 401을 반환한다" \
 	401 GET /users/me/purchases
 
-TEST "리프레시 토큰을 로그아웃 처리한다" \
+TEST "로그아웃을 요청하면 204를 반환한다" \
 	204 POST /users/logout \
 	-H 'Content-Type: application/json' \
 	-d '{ "refreshToken": "'${USER_REFRESH_TOKEN}'" }'
@@ -167,12 +167,12 @@ TEST "사용자가 자신의 모든 세션을 로그아웃 처리한다" \
 	204 POST /users/me/logout-all \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
 
-TEST "전체 로그아웃 뒤 리프레시 토큰은 거부한다" \
+TEST "전체 로그아웃 뒤 리프레시 토큰으로 재발급하면 401을 반환한다" \
 	401 POST /users/refresh \
 	-H 'Content-Type: application/json' \
 	-d '{ "refreshToken": "'${USER_REFRESH_TOKEN}'" }'
 
-TEST "전체 로그아웃 뒤에도 만료 전 액세스 토큰은 유효하다" \
+TEST "전체 로그아웃 뒤 기존 액세스 토큰으로 본인 정보를 조회하면 200을 반환한다" \
 	200 GET /users/me \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
 

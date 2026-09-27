@@ -2,112 +2,259 @@ import { ByteUtil } from '../index.js'
 
 describe('ByteUtil', () => {
     describe('fromString', () => {
-        it('"1024B"는 1024를 반환한다', () => {
-            expect(ByteUtil.fromString('1024B')).toBe(1024)
+        describe('입력이 "1024B"이면', () => {
+            let input: string
+            beforeEach(() => {
+                input = '1024B'
+            })
+            it('바이트로 변환하면 1024를 반환한다', () => {
+                expect(ByteUtil.fromString(input)).toBe(1024)
+            })
         })
 
-        it('1KB는 1024를 반환한다', () => {
-            expect(ByteUtil.fromString('1KB')).toBe(1024)
+        describe('입력이 "1KB"이면', () => {
+            let input: string
+            beforeEach(() => {
+                input = '1KB'
+            })
+            it('바이트로 변환하면 1024를 반환한다', () => {
+                expect(ByteUtil.fromString(input)).toBe(1024)
+            })
         })
 
-        it('1MB는 1024^2를 반환한다', () => {
-            expect(ByteUtil.fromString('1MB')).toBe(1024 * 1024)
+        describe('입력이 "1MB"이면', () => {
+            let input: string
+            beforeEach(() => {
+                input = '1MB'
+            })
+            it('바이트로 변환하면 1024의 제곱을 반환한다', () => {
+                expect(ByteUtil.fromString(input)).toBe(1024 * 1024)
+            })
         })
 
-        it('1GB는 1024^3을 반환한다', () => {
-            expect(ByteUtil.fromString('1GB')).toBe(1024 ** 3)
+        describe('입력이 "1GB"이면', () => {
+            let input: string
+            beforeEach(() => {
+                input = '1GB'
+            })
+            it('바이트로 변환하면 1024의 세제곱을 반환한다', () => {
+                expect(ByteUtil.fromString(input)).toBe(1024 ** 3)
+            })
         })
 
-        it('1TB는 1024^4를 반환한다', () => {
-            expect(ByteUtil.fromString('1TB')).toBe(1024 ** 4)
+        describe('입력이 "1TB"이면', () => {
+            let input: string
+            beforeEach(() => {
+                input = '1TB'
+            })
+            it('바이트로 변환하면 1024의 네제곱을 반환한다', () => {
+                expect(ByteUtil.fromString(input)).toBe(1024 ** 4)
+            })
         })
 
-        it('여러 단위를 공백으로 구분해 합산한다', () => {
-            expect(ByteUtil.fromString('1KB 512B')).toBe(1536)
+        describe('여러 단위가 공백으로 구분되어 있으면', () => {
+            let input: string
+            beforeEach(() => {
+                input = '1KB 512B'
+            })
+            it('바이트로 변환하면 각 단위의 값을 합산한다', () => {
+                expect(ByteUtil.fromString(input)).toBe(1536)
+            })
         })
 
-        it('소수점 단위도 허용한다', () => {
-            expect(ByteUtil.fromString('1.5KB')).toBe(1536)
+        describe('단위 앞의 값이 소수이면', () => {
+            let input: string
+            beforeEach(() => {
+                input = '1.5KB'
+            })
+            it('바이트로 변환하면 소수 값을 반영한다', () => {
+                expect(ByteUtil.fromString(input)).toBe(1536)
+            })
         })
 
-        it('음수 단위도 허용한다', () => {
-            expect(ByteUtil.fromString('-1KB')).toBe(-1024)
+        describe('단위 앞의 값이 음수이면', () => {
+            let input: string
+            beforeEach(() => {
+                input = '-1KB'
+            })
+            it('바이트로 변환하면 음수를 반환한다', () => {
+                expect(ByteUtil.fromString(input)).toBe(-1024)
+            })
         })
 
-        it('GB/MB/KB가 섞여 있어도 합산한다', () => {
-            expect(ByteUtil.fromString('1GB 256MB 128KB')).toBe(
-                1024 ** 3 + 256 * 1024 ** 2 + 128 * 1024
-            )
+        describe('GB·MB·KB가 함께 있으면', () => {
+            let input: string
+            beforeEach(() => {
+                input = '1GB 256MB 128KB'
+            })
+            it('바이트로 변환하면 각 단위의 값을 합산한다', () => {
+                expect(ByteUtil.fromString(input)).toBe(1024 ** 3 + 256 * 1024 ** 2 + 128 * 1024)
+            })
         })
 
-        it('소문자 단위도 인식한다', () => {
-            expect(ByteUtil.fromString('1kb')).toBe(1024)
-            expect(ByteUtil.fromString('1mb')).toBe(1024 * 1024)
-            expect(ByteUtil.fromString('1gb')).toBe(1024 ** 3)
+        describe.each([
+            ['1kb', 1024],
+            ['1mb', 1024 * 1024],
+            ['1gb', 1024 ** 3]
+        ] as const)('소문자 단위를 사용한 %s 문자열이면', (input, expected) => {
+            let value: string
+            beforeEach(() => {
+                value = input
+            })
+            it('바이트로 변환하면 해당 단위의 값을 반환한다', () => {
+                expect(ByteUtil.fromString(value)).toBe(expected)
+            })
         })
 
         describe('유효하지 않은 형식', () => {
-            it('알 수 없는 단어는 예외를 던진다', () => {
-                expect(() => ByteUtil.fromString('invalid')).toThrow()
+            describe('입력이 알 수 없는 단어이면', () => {
+                let input: string
+                beforeEach(() => {
+                    input = 'invalid'
+                })
+                it('바이트로 변환하면 예외를 던진다', () => {
+                    expect(() => ByteUtil.fromString(input)).toThrow()
+                })
             })
 
-            it('단위 없는 숫자는 예외를 던진다', () => {
-                expect(() => ByteUtil.fromString('123')).toThrow()
+            describe('입력에 숫자만 있고 단위가 없으면', () => {
+                let input: string
+                beforeEach(() => {
+                    input = '123'
+                })
+                it('바이트로 변환하면 예외를 던진다', () => {
+                    expect(() => ByteUtil.fromString(input)).toThrow()
+                })
             })
 
-            it('정의되지 않은 단위는 예외를 던진다', () => {
-                expect(() => ByteUtil.fromString('123XB')).toThrow()
+            describe('입력에 지원하지 않는 단위가 있으면', () => {
+                let input: string
+                beforeEach(() => {
+                    input = '123XB'
+                })
+                it('바이트로 변환하면 예외를 던진다', () => {
+                    expect(() => ByteUtil.fromString(input)).toThrow()
+                })
             })
 
-            it('형식이 깨진 입력은 예외를 던진다', () => {
-                expect(() => ByteUtil.fromString('1KB -')).toThrow()
+            describe('입력이 불완전한 부호로 끝나면', () => {
+                let input: string
+                beforeEach(() => {
+                    input = '1KB -'
+                })
+                it('바이트로 변환하면 예외를 던진다', () => {
+                    expect(() => ByteUtil.fromString(input)).toThrow()
+                })
             })
 
-            it('빈 문자열은 예외를 던진다', () => {
-                expect(() => ByteUtil.fromString('')).toThrow()
+            describe('입력이 빈 문자열이면', () => {
+                let input: string
+                beforeEach(() => {
+                    input = ''
+                })
+                it('바이트로 변환하면 예외를 던진다', () => {
+                    expect(() => ByteUtil.fromString(input)).toThrow()
+                })
             })
         })
     })
 
     describe('toString', () => {
-        it('0은 "0B"를 반환한다', () => {
-            expect(ByteUtil.toString(0)).toBe('0B')
+        describe('바이트 수가 0이면', () => {
+            let input: number
+            beforeEach(() => {
+                input = 0
+            })
+            it('문자열로 변환하면 "0B"를 반환한다', () => {
+                expect(ByteUtil.toString(input)).toBe('0B')
+            })
         })
 
-        it('1024는 "1KB"를 반환한다', () => {
-            expect(ByteUtil.toString(1024)).toBe('1KB')
+        describe('바이트 수가 1024이면', () => {
+            let input: number
+            beforeEach(() => {
+                input = 1024
+            })
+            it('문자열로 변환하면 "1KB"를 반환한다', () => {
+                expect(ByteUtil.toString(input)).toBe('1KB')
+            })
         })
 
-        it('1024 * 1024는 "1MB"를 반환한다', () => {
-            expect(ByteUtil.toString(1024 * 1024)).toBe('1MB')
+        describe('바이트 수가 1024의 제곱이면', () => {
+            let input: number
+            beforeEach(() => {
+                input = 1024 * 1024
+            })
+            it('문자열로 변환하면 "1MB"를 반환한다', () => {
+                expect(ByteUtil.toString(input)).toBe('1MB')
+            })
         })
 
-        it('1536은 "1KB 512B"로 분할 표시한다', () => {
-            expect(ByteUtil.toString(1536)).toBe('1KB 512B')
+        describe('바이트 수가 1536이면', () => {
+            let input: number
+            beforeEach(() => {
+                input = 1536
+            })
+            it('문자열로 변환하면 "1KB 512B"를 반환한다', () => {
+                expect(ByteUtil.toString(input)).toBe('1KB 512B')
+            })
+
+            it('문자열로 변환한 뒤 읽으면 원래 값으로 돌아온다', () => {
+                expect(ByteUtil.fromString(ByteUtil.toString(input))).toBe(1536)
+            })
         })
 
-        it('1024 * 1024 * 1.5는 "1MB 512KB"로 분할 표시한다', () => {
-            expect(ByteUtil.toString(1024 * 1024 * 1.5)).toBe('1MB 512KB')
+        describe('바이트 수가 1.5MB에 해당하면', () => {
+            let input: number
+            beforeEach(() => {
+                input = 1024 * 1024 * 1.5
+            })
+            it('문자열로 변환하면 "1MB 512KB"를 반환한다', () => {
+                expect(ByteUtil.toString(input)).toBe('1MB 512KB')
+            })
+
+            it('문자열로 변환한 뒤 읽으면 원래 값으로 돌아온다', () => {
+                expect(ByteUtil.fromString(ByteUtil.toString(input))).toBe(1024 ** 2 * 1.5)
+            })
         })
 
-        it('-1024는 "-1KB"를 반환한다', () => {
-            expect(ByteUtil.toString(-1024)).toBe('-1KB')
+        describe('바이트 수가 -1024이면', () => {
+            let input: number
+            beforeEach(() => {
+                input = -1024
+            })
+            it('문자열로 변환하면 "-1KB"를 반환한다', () => {
+                expect(ByteUtil.toString(input)).toBe('-1KB')
+            })
         })
 
-        it('큰 값도 GB/MB/KB로 분할 표시한다', () => {
-            expect(ByteUtil.toString(1024 ** 3 + 256 * 1024 ** 2 + 128 * 1024)).toBe(
-                '1GB 256MB 128KB'
-            )
+        describe('바이트 수에 GB·MB·KB 단위의 나머지가 있으면', () => {
+            let input: number
+            beforeEach(() => {
+                input = 1024 ** 3 + 256 * 1024 ** 2 + 128 * 1024
+            })
+            it('문자열로 변환하면 GB·MB·KB로 나누어 표시한다', () => {
+                expect(ByteUtil.toString(input)).toBe('1GB 256MB 128KB')
+            })
+
+            it('문자열로 변환한 뒤 읽으면 원래 값으로 돌아온다', () => {
+                expect(ByteUtil.fromString(ByteUtil.toString(input))).toBe(
+                    1024 ** 3 + 256 * 1024 ** 2 + 128 * 1024
+                )
+            })
         })
 
-        it('toString 결과를 fromString이 같은 값으로 되돌린다 (왕복)', () => {
-            const values = [1536, 1024 ** 2 * 1.5, -1536, 1024 ** 3 + 256 * 1024 ** 2 + 128 * 1024]
-            for (const value of values) {
-                expect(ByteUtil.fromString(ByteUtil.toString(value))).toBe(value)
-            }
+        describe('바이트 수가 -1536이면', () => {
+            let input: number
+            beforeEach(() => {
+                input = -1536
+            })
+            it('문자열로 변환한 뒤 읽으면 원래 값으로 돌아온다', () => {
+                expect(ByteUtil.fromString(ByteUtil.toString(input))).toBe(-1536)
+            })
         })
 
-        it.each([
+        describe.each([
             [0.5, '0.5B'],
             [-0.5, '-0.5B'],
             [1.5, '1.5B'],
@@ -117,9 +264,15 @@ describe('ByteUtil', () => {
             [1e-7, '1e-7B'],
             [-1e-7, '-1e-7B'],
             [Number.MIN_VALUE, '5e-324B']
-        ] as const)('%s 바이트의 소수 부분을 표시하고 다시 읽는다', (value, formatted) => {
-            expect(ByteUtil.toString(value)).toBe(formatted)
-            expect(ByteUtil.fromString(formatted)).toBe(value)
+        ] as const)('바이트 수가 소수 부분을 포함한 %s이면', (value, formatted) => {
+            let bytes: number
+            beforeEach(() => {
+                bytes = value
+            })
+            it('문자열로 변환하면 소수 부분을 표시하고 다시 읽을 수 있다', () => {
+                expect(ByteUtil.toString(bytes)).toBe(formatted)
+                expect(ByteUtil.fromString(formatted)).toBe(value)
+            })
         })
     })
 })

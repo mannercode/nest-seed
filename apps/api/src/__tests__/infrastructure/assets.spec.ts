@@ -1,3 +1,4 @@
+import type { MockInstance } from 'vitest'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { Checksum, ensure, pickIds, S3ObjectService, sleep } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
@@ -64,20 +65,25 @@ describe('AssetsService', () => {
             expect(uploadRes.ok).toBe(true)
         })
 
-        it('신고한 체크섬과 다른 본문은 스토리지가 업로드를 거부한다', async () => {
-            const createDto = buildCreateAssetDto(file)
-            const uploadRequest = await assetsService.create(createDto)
+        describe('업로드할 파일의 체크섬이 발급 시 지정한 값과 다르면', () => {
+            let uploadRequest: AssetPresignedUploadDto
+            let form: FormData
+            beforeEach(async () => {
+                const createDto = buildCreateAssetDto(file)
+                uploadRequest = await assetsService.create(createDto)
 
-            // size 검증(content-length-range)에 걸리지 않도록 길이는 같고 내용만 다른 본문을 쓴다.
-            const tampered = Buffer.alloc(createDto.size, 'x')
-            const form = new FormData()
-            Object.entries(uploadRequest.fields).forEach(([key, value]) => {
-                form.append(key, value)
+                // size 검증(content-length-range)에 걸리지 않도록 길이는 같고 내용만 다른 본문을 쓴다.
+                const tampered = Buffer.alloc(createDto.size, 'x')
+                form = new FormData()
+                Object.entries(uploadRequest.fields).forEach(([key, value]) => {
+                    form.append(key, value)
+                })
+                form.append('file', new Blob([tampered], { type: createDto.mimeType }), 'tampered')
             })
-            form.append('file', new Blob([tampered], { type: createDto.mimeType }), 'tampered')
-
-            const uploadRes = await fetch(uploadRequest.url, { body: form, method: 'POST' })
-            expect(uploadRes.ok).toBe(false)
+            it('업로드를 요청하면 거절한다', async () => {
+                const uploadRes = await fetch(uploadRequest.url, { body: form, method: 'POST' })
+                expect(uploadRes.ok).toBe(false)
+            })
         })
 
         describe('업로드 URL이 만료되었을 때', () => {
@@ -100,18 +106,26 @@ describe('AssetsService', () => {
     })
 
     describe('isUploadComplete', () => {
-        it('업로드가 완료되었으면 true를 반환한다', async () => {
-            const assetId = await uploadFile(fix, file)
-
-            const isCompleted = await assetsService.isUploadComplete(assetId)
-            expect(isCompleted).toBe(true)
+        describe('S3에 업로드한 에셋이 존재하면', () => {
+            let assetId: string
+            beforeEach(async () => {
+                assetId = await uploadFile(fix, file)
+            })
+            it('업로드 완료 여부를 조회하면 true를 반환한다', async () => {
+                const isCompleted = await assetsService.isUploadComplete(assetId)
+                expect(isCompleted).toBe(true)
+            })
         })
 
-        it('업로드가 완료되지 않았으면 false를 반환한다', async () => {
-            const asset = await createAsset(fix, file)
-
-            const isCompleted = await assetsService.isUploadComplete(asset.assetId)
-            expect(isCompleted).toBe(false)
+        describe('업로드 대기 중인 에셋이 존재하면', () => {
+            let asset: AssetPresignedUploadDto
+            beforeEach(async () => {
+                asset = await createAsset(fix, file)
+            })
+            it('업로드 완료 여부를 조회하면 false를 반환한다', async () => {
+                const isCompleted = await assetsService.isUploadComplete(asset.assetId)
+                expect(isCompleted).toBe(false)
+            })
         })
     })
 
@@ -123,7 +137,7 @@ describe('AssetsService', () => {
                 assetId = await uploadFile(fix, file)
             })
 
-            it('다운로드 정보를 반환하고 내려받은 파일은 원본 체크섬과 일치한다', async () => {
+            it('업로드 완료 처리를 요청하면 다운로드 정보를 반환하고 파일의 체크섬을 유지한다', async () => {
                 const finalizeDto = buildFinalizeAssetDto()
 
                 const asset = await assetsService.finalizeUpload(assetId, finalizeDto)
@@ -157,7 +171,7 @@ describe('AssetsService', () => {
                 await sleep(1500)
             })
 
-            it('404를 던지고 정리 cron이 찾을 DB 행을 남긴다', async () => {
+            it('완료 처리에 404 예외를 던지고 남겨 둔 기록은 만료 정리로 삭제한다', async () => {
                 const finalizeDto = buildFinalizeAssetDto()
                 await expect(
                     assetsService.finalizeUpload(assetId, finalizeDto)
@@ -172,49 +186,52 @@ describe('AssetsService', () => {
             })
         })
 
-        it('만료된 미완료 에셋의 S3 객체는 정리 cron이 삭제한다', async () => {
-            const assetId = await uploadFile(fix, file)
-            await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
-            await expect(
-                assetsService.finalizeUpload(assetId, buildFinalizeAssetDto())
-            ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
-            const s3Service = fix.module.get<S3ObjectService>(S3ObjectService.getName())
-            await expect(s3Service.isUploadComplete({ key: assetId })).resolves.toBe(true)
-            await assetsService.cleanupExpiredUploads()
-            await expect(s3Service.isUploadComplete({ key: assetId })).resolves.toBe(false)
-            await expect(assetsService.getMany([assetId])).rejects.toMatchObject({
-                status: HttpStatus.NOT_FOUND
+        describe('소유자가 확정된 에셋의 업로드 기한이 지났으면', () => {
+            let assetId: string
+            let finalizeDto: ReturnType<typeof buildFinalizeAssetDto>
+            beforeEach(async () => {
+                assetId = await uploadFile(fix, file)
+                finalizeDto = buildFinalizeAssetDto()
+                await assetsService.finalizeUpload(assetId, finalizeDto)
+                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
+            })
+            it('같은 소유자로 완료 처리를 재요청해도 소유권을 유지하고 만료 정리에서 파일을 보존한다', async () => {
+                await expect(
+                    assetsService.finalizeUpload(assetId, finalizeDto)
+                ).resolves.toMatchObject({ id: assetId, owner: finalizeDto.owner })
+                await assetsService.cleanupExpiredUploads()
+                await expect(assetsService.isUploadComplete(assetId)).resolves.toBe(true)
             })
         })
 
-        it('이미 같은 소유자에게 완료한 에셋은 만료 후에도 재시도할 수 있다', async () => {
-            const assetId = await uploadFile(fix, file)
-            const finalizeDto = buildFinalizeAssetDto()
-            await assetsService.finalizeUpload(assetId, finalizeDto)
-            await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
-            await expect(assetsService.finalizeUpload(assetId, finalizeDto)).resolves.toMatchObject(
-                { id: assetId, owner: finalizeDto.owner }
-            )
-            await assetsService.cleanupExpiredUploads()
-            await expect(assetsService.isUploadComplete(assetId)).resolves.toBe(true)
-        })
-
-        it('다른 소유자의 완료 요청은 기존 소유권과 파일을 바꾸지 않는다', async () => {
-            const assetId = await uploadFile(fix, file)
-            const original = buildFinalizeAssetDto()
-            await assetsService.finalizeUpload(assetId, original)
-            const other = { owner: { ...original.owner, entityId: nullObjectId } }
-            await expect(assetsService.finalizeUpload(assetId, other)).rejects.toMatchObject({
-                status: HttpStatus.CONFLICT
+        describe('소유자가 확정된 에셋이 존재하면', () => {
+            let assetId: string
+            let original: ReturnType<typeof buildFinalizeAssetDto>
+            beforeEach(async () => {
+                assetId = await uploadFile(fix, file)
+                original = buildFinalizeAssetDto()
+                await assetsService.finalizeUpload(assetId, original)
             })
-            await expect(assetsService.findOwner(assetId)).resolves.toEqual(original.owner)
-            await expect(assetsService.isUploadComplete(assetId)).resolves.toBe(true)
+            it('다른 소유자로 완료 처리를 요청하면 409 예외를 던지고 기존 소유권과 파일을 유지한다', async () => {
+                const other = { owner: { ...original.owner, entityId: nullObjectId } }
+                await expect(assetsService.finalizeUpload(assetId, other)).rejects.toMatchObject({
+                    status: HttpStatus.CONFLICT
+                })
+                await expect(assetsService.findOwner(assetId)).resolves.toEqual(original.owner)
+                await expect(assetsService.isUploadComplete(assetId)).resolves.toBe(true)
+            })
         })
 
-        it('존재하지 않는 에셋의 업로드를 완료 처리하면 404 예외를 던진다', async () => {
-            await expect(
-                assetsService.finalizeUpload(nullObjectId, buildFinalizeAssetDto())
-            ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
+        describe('ID에 해당하는 에셋이 없으면', () => {
+            let assetId: Parameters<typeof assetsService.finalizeUpload>[0]
+            beforeEach(() => {
+                assetId = nullObjectId
+            })
+            it('업로드를 완료 처리하면 404 예외를 던진다', async () => {
+                await expect(
+                    assetsService.finalizeUpload(assetId, buildFinalizeAssetDto())
+                ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
+            })
         })
     })
 
@@ -230,7 +247,7 @@ describe('AssetsService', () => {
                 ])
             })
 
-            it('에셋과 다운로드 정보를 반환하고 내려받은 파일은 원본 체크섬과 일치한다', async () => {
+            it('에셋을 조회하면 다운로드 정보를 반환하고 파일의 체크섬을 유지한다', async () => {
                 const fetchedAssets = await assetsService.getMany(pickIds(assets))
 
                 expect(fetchedAssets).toEqual(
@@ -251,15 +268,21 @@ describe('AssetsService', () => {
             })
         })
 
-        it('에셋 ID 목록 중 하나라도 없으면 404를 던진다', async () => {
-            await expect(assetsService.getMany([nullObjectId])).rejects.toMatchObject({
-                status: HttpStatus.NOT_FOUND
+        describe('ID에 해당하는 에셋이 없으면', () => {
+            let assetIds: Parameters<typeof assetsService.getMany>[0]
+            beforeEach(() => {
+                assetIds = [nullObjectId]
+            })
+            it('에셋을 조회하면 404 예외를 던진다', async () => {
+                await expect(assetsService.getMany(assetIds)).rejects.toMatchObject({
+                    status: HttpStatus.NOT_FOUND
+                })
             })
         })
     })
 
     describe('deleteMany', () => {
-        describe('에셋이 존재할 때', () => {
+        describe('완료 처리된 에셋 세 개가 존재하면', () => {
             let assets: AssetDto[]
 
             beforeEach(async () => {
@@ -270,7 +293,7 @@ describe('AssetsService', () => {
                 ])
             })
 
-            it('반환값 없이 삭제하고 DB 조회와 다운로드는 404를 반환한다', async () => {
+            it('에셋을 삭제하면 저장 기록과 다운로드 파일이 함께 사라진다', async () => {
                 await expect(assetsService.deleteMany(pickIds(assets))).resolves.toBeUndefined()
 
                 for (const asset of assets) {
@@ -284,37 +307,53 @@ describe('AssetsService', () => {
                     expect(response.status).toBe(404)
                 }
             })
-        })
 
-        it('에셋 ID 목록에 없는 ID가 섞여 있어도 예외 없이 존재하는 에셋을 삭제한다', async () => {
-            const asset = await uploadAndFinalizeAsset(fix, file)
+            describe('삭제할 에셋 ID에 존재하지 않는 ID가 섞여 있으면', () => {
+                let assetIds: Parameters<typeof assetsService.deleteMany>[0]
+                beforeEach(() => {
+                    assetIds = [ensure(assets[0]).id, nullObjectId]
+                })
+                it('에셋 삭제를 요청하면 오류 없이 존재하는 에셋을 삭제한다', async () => {
+                    const asset = ensure(assets[0])
 
-            const mixedIds = [asset.id, nullObjectId]
-            await expect(assetsService.deleteMany(mixedIds)).resolves.toBeUndefined()
+                    await expect(assetsService.deleteMany(assetIds)).resolves.toBeUndefined()
 
-            await expect(assetsService.getMany([asset.id])).rejects.toMatchObject({
-                status: HttpStatus.NOT_FOUND
+                    await expect(assetsService.getMany([asset.id])).rejects.toMatchObject({
+                        status: HttpStatus.NOT_FOUND
+                    })
+                })
             })
         })
 
-        it('빈 배열을 넘기면 즉시 반환한다', async () => {
-            await expect(assetsService.deleteMany([])).resolves.toBeUndefined()
+        describe('삭제할 에셋 ID 목록이 비어 있으면', () => {
+            let assetIds: Parameters<typeof assetsService.deleteMany>[0]
+            beforeEach(() => {
+                assetIds = []
+            })
+            it('에셋 삭제를 요청하면 오류 없이 완료한다', async () => {
+                await expect(assetsService.deleteMany(assetIds)).resolves.toBeUndefined()
+            })
         })
 
-        it('S3 객체 일부를 삭제하지 못하면 경고를 남기고 첫 오류를 던진다', async () => {
-            const asset = await uploadAndFinalizeAsset(fix, file)
-            const s3Service = fix.module.get<S3ObjectService>(S3ObjectService.getName())
-            vi.spyOn(s3Service, 'deleteObject').mockRejectedValueOnce(new Error('s3 down'))
+        describe('에셋의 S3 객체를 삭제하는 중 오류가 발생하면', () => {
+            let asset: AssetDto
+            let warnSpy: MockInstance<Logger['warn']>
+            beforeEach(async () => {
+                asset = await uploadAndFinalizeAsset(fix, file)
+                const s3Service = fix.module.get<S3ObjectService>(S3ObjectService.getName())
+                vi.spyOn(s3Service, 'deleteObject').mockRejectedValueOnce(new Error('s3 down'))
 
-            const warnSpy = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
+                warnSpy = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
+            })
+            it('에셋 삭제를 요청하면 경고를 기록하고 S3 오류를 던지며 DB 기록을 유지한다', async () => {
+                await expect(assetsService.deleteMany([asset.id])).rejects.toThrow('s3 down')
 
-            await expect(assetsService.deleteMany([asset.id])).rejects.toThrow('s3 down')
-
-            expect(warnSpy).toHaveBeenCalledWith(
-                'partial S3 delete failure; DB rows retained for retry',
-                expect.objectContaining({ failedCount: 1 })
-            )
-            await expect(assetsService.getMany([asset.id])).resolves.toHaveLength(1)
+                expect(warnSpy).toHaveBeenCalledWith(
+                    'partial S3 delete failure; DB rows retained for retry',
+                    expect.objectContaining({ failedCount: 1 })
+                )
+                await expect(assetsService.getMany([asset.id])).resolves.toHaveLength(1)
+            })
         })
     })
 
@@ -330,32 +369,63 @@ describe('AssetsService', () => {
             assetId = createdAsset.assetId
         })
 
-        it('업로드가 만료되지 않은 에셋은 유지한다', async () => {
-            await assetsService.cleanupExpiredUploads()
+        describe('미완료 에셋의 업로드 기한이 남아 있으면', () => {
+            it('만료 정리를 실행해도 에셋을 유지한다', async () => {
+                await assetsService.cleanupExpiredUploads()
 
-            await expect(assetsService.getMany([assetId])).resolves.toHaveLength(1)
-        })
-
-        it('업로드가 만료된 에셋은 제거한다', async () => {
-            const config = fix.module.get(AppConfigService)
-            await sleep(config.asset.uploadExpiresInSec * 1000 + 500)
-
-            await assetsService.cleanupExpiredUploads()
-
-            await expect(assetsService.getMany([assetId])).rejects.toMatchObject({
-                status: HttpStatus.NOT_FOUND
+                await expect(assetsService.getMany([assetId])).resolves.toHaveLength(1)
             })
         })
 
-        it('업로드가 만료되어도 소유자가 부여된 에셋은 유지한다', async () => {
-            // finalize가 만료 창 안에 끝나야 하므로 beforeEach의 1초 설정을 2초로 늘린다.
-            await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 2 })
-            const finalizedAsset = await uploadAndFinalizeAsset(fix, file)
+        describe('미완료 에셋의 업로드 기한이 지났으면', () => {
+            beforeEach(async () => {
+                const config = fix.module.get(AppConfigService)
+                await sleep(config.asset.uploadExpiresInSec * 1000 + 500)
+            })
+            it('만료 정리로 에셋을 삭제한다', async () => {
+                await assetsService.cleanupExpiredUploads()
 
-            await sleep(2500)
-            await assetsService.cleanupExpiredUploads()
+                await expect(assetsService.getMany([assetId])).rejects.toMatchObject({
+                    status: HttpStatus.NOT_FOUND
+                })
+            })
+        })
 
-            await expect(assetsService.getMany([finalizedAsset.id])).resolves.toHaveLength(1)
+        describe('소유자가 확정된 에셋의 업로드 기한이 지났으면', () => {
+            let finalizedAsset: AssetDto
+            beforeEach(async () => {
+                // finalize가 만료 창 안에 끝나야 하므로 beforeEach의 1초 설정을 2초로 늘린다.
+                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 2 })
+                finalizedAsset = await uploadAndFinalizeAsset(fix, file)
+
+                await sleep(2500)
+            })
+            it('만료 정리를 실행해도 에셋을 유지한다', async () => {
+                await assetsService.cleanupExpiredUploads()
+
+                await expect(assetsService.getMany([finalizedAsset.id])).resolves.toHaveLength(1)
+            })
+        })
+
+        describe('S3 업로드 후 완료 처리 전에 기한이 지난 에셋이 존재하면', () => {
+            let assetId: string
+            let s3Service: S3ObjectService
+            beforeEach(async () => {
+                assetId = await uploadFile(fix, file)
+                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
+                await expect(
+                    assetsService.finalizeUpload(assetId, buildFinalizeAssetDto())
+                ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
+                s3Service = fix.module.get<S3ObjectService>(S3ObjectService.getName())
+                await expect(s3Service.isUploadComplete({ key: assetId })).resolves.toBe(true)
+            })
+            it('만료 정리로 S3 객체와 DB 기록을 모두 삭제한다', async () => {
+                await assetsService.cleanupExpiredUploads()
+                await expect(s3Service.isUploadComplete({ key: assetId })).resolves.toBe(false)
+                await expect(assetsService.getMany([assetId])).rejects.toMatchObject({
+                    status: HttpStatus.NOT_FOUND
+                })
+            })
         })
     })
 })

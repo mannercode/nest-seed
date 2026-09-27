@@ -8,7 +8,7 @@ describe('createTestContext', () => {
     })
     afterEach(() => fix.teardown())
 
-    it('override로 지정한 제공자가 모의 서비스로 교체된다', async () => {
+    it('주입받은 서비스를 호출하면 override로 지정한 모의 응답을 반환한다', async () => {
         const message = fix.sampleService.getMessage()
         expect(message).toEqual({ message: 'This is Mock' })
     })

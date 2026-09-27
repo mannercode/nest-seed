@@ -37,7 +37,7 @@ export function withoutPublicId<T extends object>(doc: T & { id?: string }): Doc
     return encodeMongoDocument(stored)
 }
 
-/** MongoDB driver 경계에서 Temporal 값을 BSON이 이해하는 값으로 변환한다. */
+/** MongoDB driver에 전달하기 전에 Temporal 값을 BSON으로 저장할 수 있는 값으로 바꾼다. */
 export function encodeMongoValues(value: unknown): unknown {
     if (value instanceof Temporal.Instant) return DateUtil.toDate(value)
     if (value instanceof Temporal.PlainDate) return DateUtil.plainDateToDate(value)
@@ -49,7 +49,7 @@ export function encodeMongoValues(value: unknown): unknown {
     )
 }
 
-/** Mongo driver가 받는 document 형태라는 단언을 Temporal 변환 경계 한 곳에 모은다. */
+/** Temporal 값을 변환한 결과에만 MongoDB의 Document 타입을 적용한다. */
 export function encodeMongoDocument(value: object): Document {
     return encodeMongoValues(value) as Document
 }

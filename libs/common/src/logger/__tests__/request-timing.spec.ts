@@ -2,38 +2,56 @@ import type { Request } from 'express'
 import { elapsedSinceRequestStart, markRequestStart } from '../index.js'
 
 describe('request-timing', () => {
-    it('동시에 진행되는 두 요청은 각자의 시작 시각을 독립적으로 갖는다', async () => {
-        const reqA = {} as Request
-        const reqB = {} as Request
+    let now: number
+    beforeEach(() => {
+        now = 0
+        vi.spyOn(performance, 'now').mockImplementation(() => now)
+    })
+    describe('두 요청이 50ms 간격으로 시작되었으면', () => {
+        let reqA: Request
+        let reqB: Request
+        beforeEach(() => {
+            reqA = {} as Request
+            reqB = {} as Request
 
-        markRequestStart(reqA)
-        await new Promise((r) => setTimeout(r, 50))
-        markRequestStart(reqB)
+            markRequestStart(reqA)
+            now = 50
+            markRequestStart(reqB)
+        })
+        it('경과 시간을 조회하면 두 요청의 차이가 50ms이다', () => {
+            const elapsedB = elapsedSinceRequestStart(reqB)
+            const elapsedA = elapsedSinceRequestStart(reqA)
 
-        // 시작 시각이 공유된다면 reqB 마크가 reqA의 시각을 덮어써 두 elapsed의 차이가 대기 시간만큼 벌어질 수 없다.
-        // elapsedB를 먼저 측정하면 측정 간 시차가 차이를 키우는 쪽으로만 작용해 하한 단언이 부하와 무관하게 성립한다.
-        const elapsedB = elapsedSinceRequestStart(reqB)
-        const elapsedA = elapsedSinceRequestStart(reqA)
-
-        expect(elapsedA - elapsedB).toBeGreaterThanOrEqual(40)
+            expect(elapsedA - elapsedB).toBe(50)
+        })
     })
 
-    it('같은 요청에 markRequestStart를 두 번 호출하면 두 번째 시각으로 덮어쓴다', async () => {
-        const req = {} as Request
+    describe('요청의 시작 시각을 기록하고 30ms가 지났으면', () => {
+        let req: Request
+        let elapsedBefore: number
+        beforeEach(() => {
+            req = {} as Request
 
-        markRequestStart(req)
-        await new Promise((r) => setTimeout(r, 30))
+            markRequestStart(req)
+            now = 30
 
-        const elapsedBefore = elapsedSinceRequestStart(req)
-        expect(elapsedBefore).toBeGreaterThanOrEqual(20)
-
-        markRequestStart(req)
-        const elapsedAfter = elapsedSinceRequestStart(req)
-        expect(elapsedAfter).toBeLessThan(elapsedBefore)
+            elapsedBefore = elapsedSinceRequestStart(req)
+            expect(elapsedBefore).toBe(30)
+        })
+        it('시작 시각을 다시 기록하면 경과 시간이 줄어든다', async () => {
+            markRequestStart(req)
+            const elapsedAfter = elapsedSinceRequestStart(req)
+            expect(elapsedAfter).toBeLessThan(elapsedBefore)
+        })
     })
 
-    it('마크되지 않은 요청에 대해서는 0을 반환한다', () => {
-        const req = {} as Request
-        expect(elapsedSinceRequestStart(req)).toBe(0)
+    describe('요청의 시작 시각을 기록하지 않았으면', () => {
+        let req: Request
+        beforeEach(() => {
+            req = {} as Request
+        })
+        it('경과 시간을 조회하면 0을 반환한다', () => {
+            expect(elapsedSinceRequestStart(req)).toBe(0)
+        })
     })
 })

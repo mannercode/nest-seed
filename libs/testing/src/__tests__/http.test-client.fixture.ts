@@ -15,32 +15,42 @@ import {
 import { Observable, Subject } from 'rxjs'
 import { createHttpTestContext, HttpTestClient } from '../index.js'
 
-export type HttpTestClientFixture = { httpClient: HttpTestClient; teardown: () => Promise<void> }
+type RawEvents = { content: string; contentType: string; continuation?: string }
+
+export type HttpTestClientFixture = {
+    httpClient: HttpTestClient
+    setRawEvents: (events: RawEvents) => void
+    teardown: () => Promise<void>
+}
 
 @Controller()
 class HttpTestClientController {
     private readonly pendingEvents = new Subject<{ data: { status: string } }>()
     private splitEventResponse: Response
     private rawEventResponse: Response
+    private rawEventData: RawEvents
+
+    setRawEvents(events: RawEvents) {
+        // 응답할 테스트 데이터는 HTTP 요청이 아니라 fixture에서 설정한다.
+        this.rawEventData = events
+    }
 
     @Post('raw-events')
     @HttpCode(200)
-    rawEvents(
-        @Body() body: { content: string; contentType: string; split: boolean },
-        @Res() res: Response
-    ) {
-        res.set('Content-Type', body.contentType)
-        if (body.split) {
+    rawEvents(@Res() res: Response) {
+        const { content, contentType, continuation } = this.rawEventData
+        res.set('Content-Type', contentType)
+        if (continuation !== undefined) {
             this.rawEventResponse = res
-            res.write(`data: fixture-ready\n\n${body.content}`)
+            res.write(`data: fixture-ready\n\n${content}`)
         } else {
-            res.end(`${body.content}\n\ndata: fixture-complete\n\n`)
+            res.end(`${content}\n\ndata: fixture-complete\n\n`)
         }
     }
 
     @Post('complete-raw-events')
-    completeRawEvents(@Body() body: { content: string }) {
-        this.rawEventResponse.end(`${body.content}\n\ndata: fixture-complete\n\n`)
+    completeRawEvents() {
+        this.rawEventResponse.end(`${this.rawEventData.continuation}\n\ndata: fixture-complete\n\n`)
     }
 
     @Get('split-utf8-event')
@@ -157,35 +167,30 @@ class HttpTestClientController {
     }
 }
 
-export async function receiveRawEvents(
-    httpClient: HttpTestClient,
-    { content, continuation }: { content: string; continuation?: string }
-): Promise<{ events: string[]; errors: unknown[] }> {
+export async function receiveRawEvents({
+    httpClient
+}: HttpTestClientFixture): Promise<{ events: string[]; errors: unknown[] }> {
     const completion = Promise.withResolvers<void>()
     const events: string[] = []
     const errors: unknown[] = []
     let continuationRequest: Promise<unknown> | undefined
 
-    httpClient
-        .post('/raw-events')
-        .body({ content, contentType: 'text/event-stream', split: continuation !== undefined })
-        .sse(
-            (data) => {
-                if (data === 'fixture-ready') {
-                    // 첫 청크를 실제로 수신한 뒤 나머지를 보내 TCP 분할을 보장한다.
-                    continuationRequest = new HttpTestClient(httpClient.serverUrl)
-                        .post('/complete-raw-events')
-                        .body({ content: continuation })
-                        .created()
-                    void continuationRequest.catch(completion.reject)
-                } else if (data === 'fixture-complete') {
-                    completion.resolve()
-                } else {
-                    events.push(data)
-                }
-            },
-            (reason) => errors.push(reason)
-        )
+    httpClient.post('/raw-events').sse(
+        (data) => {
+            if (data === 'fixture-ready') {
+                // 첫 청크를 실제로 수신한 뒤 나머지를 보내 TCP 분할을 보장한다.
+                continuationRequest = new HttpTestClient(httpClient.serverUrl)
+                    .post('/complete-raw-events')
+                    .created()
+                void continuationRequest.catch(completion.reject)
+            } else if (data === 'fixture-complete') {
+                completion.resolve()
+            } else {
+                events.push(data)
+            }
+        },
+        (reason) => errors.push(reason)
+    )
 
     try {
         await completion.promise
@@ -205,5 +210,6 @@ export async function createHttpTestClientFixture(): Promise<HttpTestClientFixtu
         await ctx.close()
     }
 
-    return { httpClient, teardown }
+    const controller = ctx.module.get(HttpTestClientController)
+    return { httpClient, setRawEvents: (events) => controller.setRawEvents(events), teardown }
 }

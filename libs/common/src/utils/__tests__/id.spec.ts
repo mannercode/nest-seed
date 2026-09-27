@@ -8,15 +8,21 @@ describe('generateShortId', () => {
         expect(id).toMatch(regex)
     })
 
-    it('매번 다른 ID를 생성한다', () => {
+    it('연속한 두 호출에서 서로 다른 ID를 생성한다', () => {
         const id1 = generateShortId()
         const id2 = generateShortId()
 
         expect(id1).not.toEqual(id2)
     })
 
-    it('length가 0이면 빈 문자열을 반환한다', () => {
-        expect(generateShortId(0)).toBe('')
+    describe('ID 길이가 0이면', () => {
+        let length: number
+        beforeEach(() => {
+            length = 0
+        })
+        it('ID를 생성하면 빈 문자열을 반환한다', () => {
+            expect(generateShortId(length)).toBe('')
+        })
     })
 })
 
@@ -32,14 +38,20 @@ describe('pickIds', () => {
         expect(result).toEqual(['1', '2', '3'])
     })
 
-    it('빈 배열이면 빈 배열을 반환한다', () => {
-        const result = pickIds([])
-        expect(result).toEqual([])
+    describe('항목 목록이 비어 있으면', () => {
+        let items: { id: string }[]
+        beforeEach(() => {
+            items = []
+        })
+        it('ID를 추출하면 빈 배열을 반환한다', () => {
+            const result = pickIds(items)
+            expect(result).toEqual([])
+        })
     })
 })
 
 describe('generateUuid', () => {
-    it('매번 다른 UUID v4를 생성한다', () => {
+    it('UUID v4 형식을 사용하고 연속한 두 호출에서 서로 다른 값을 생성한다', () => {
         const first = generateUuid()
         expect(first).toMatch(
             /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
@@ -49,10 +61,16 @@ describe('generateUuid', () => {
 })
 
 describe('sha256', () => {
-    it('같은 입력을 요청한 인코딩으로 해시한다', () => {
-        expect(sha256('abc', 'hex')).toBe(
-            'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'
-        )
-        expect(sha256('abc', 'base64url')).toBe('ungWv48Bz-pBQUDeXa4iI7ADYaOWF3qctBD_YfIAFa0')
+    describe.each([
+        ['hex', 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'],
+        ['base64url', 'ungWv48Bz-pBQUDeXa4iI7ADYaOWF3qctBD_YfIAFa0']
+    ] as const)('출력 인코딩이 %s이면', (encoding, expected) => {
+        let outputEncoding: typeof encoding
+        beforeEach(() => {
+            outputEncoding = encoding
+        })
+        it('SHA-256 해시를 계산하면 지정한 인코딩으로 반환한다', () => {
+            expect(sha256('abc', outputEncoding)).toBe(expected)
+        })
     })
 })

@@ -34,8 +34,8 @@ export class TicketPurchaseService {
 
         this.logger.log('claimPurchase', { userId, ticketCount: ticketIds.length })
 
-        // 사전 hold 검증 이후 TTL이 만료될 수 있으므로 결제 전에 실제 ticket 키 owner를
-        // purchaseRecordId로 claim한다. 한 상영의 티켓 전체를 같은 Lua에서 처리한다.
+        // 사전 선점 확인 이후에도 TTL이 만료될 수 있으므로, 결제 전에 티켓 키의 소유자를
+        // 사용자 ID에서 purchaseRecordId로 바꾼다. 같은 상영의 요청 티켓을 Lua 한 번으로 처리한다.
         const claimed = await this.ticketHoldingService.claimTicketsForPurchase({
             purchaseRecordId,
             showtimeId: this.getShowtimeId(tickets),
@@ -56,15 +56,14 @@ export class TicketPurchaseService {
 
         this.logger.log('completePurchase', { ticketCount: ticketIds.length })
 
-        // 결제가 진행되는 동안 claim TTL이 만료됐을 수 있다. 판매 직전 owner를 Lua에서
-        // 확인하면서 TTL을 연장해, 다른 고객의 새 hold를 Mongo sale이 빼앗지 않게 한다.
+        // 결제 중 선점 기한이 만료됐을 수 있으므로 판매 직전에 소유자를 확인하고 TTL을 연장한다.
+        // 다른 고객이 새로 선점한 티켓을 기존 구매가 판매 처리하지 않도록 Lua에서 한 번에 확인한다.
         const claim = { purchaseRecordId, showtimeId: this.getShowtimeId(tickets), ticketIds }
         const confirmed = await this.ticketHoldingService.confirmPurchaseClaims(claim)
         if (!confirmed) throw new BadRequestException(PurchaseErrors.NotHeld())
 
-        // 티켓 판매와 구매 상태 CAS는 호출자가 같은 Mongo 트랜잭션으로 묶는다.
-        // Redis 확인·정리를 callback 밖에 둬 MongoDB의 transaction callback 재시도에
-        // 비트랜잭션 부수 효과가 반복되지 않게 한다.
+        // 호출자는 티켓 판매와 구매 상태의 조건부 갱신을 같은 MongoDB 트랜잭션으로 묶는다.
+        // Redis 확인·정리는 트랜잭션 콜백 밖에서 실행해, 드라이버가 콜백을 재시도해도 반복되지 않게 한다.
         const completed = await completeDurably(ticketIds)
 
         try {

@@ -1,4 +1,4 @@
-// 여러 복제본의 모든 SSE 클라이언트가 동시에 시작한 모든 사가의 succeeded 이벤트를 받는지 검증한다.
+// 여러 복제본에 연결한 모든 SSE 클라이언트가 동시에 시작한 모든 사가의 succeeded 이벤트를 받는지 검증한다.
 
 const { test } = require('node:test')
 const {
@@ -133,7 +133,7 @@ async function runInner(movieId, theaterId, iteration, baseOffsetMs) {
     }
 }
 
-test('모든 SSE client는 여러 복제본에서 완료된 모든 saga event를 받는다', async () => {
+test('여러 복제본에 연결한 모든 SSE 클라이언트가 각 상영 생성 작업의 성공 이벤트를 받는다', async () => {
     console.log(
         `[sse] server=${SERVER_URL} clients=${SSE_CLIENT_COUNT} sagas=${SAGAS_PER_INNER} inner=${INNER_ITERATIONS}`
     )

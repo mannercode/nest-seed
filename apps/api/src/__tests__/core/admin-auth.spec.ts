@@ -37,121 +37,160 @@ describe('AdminAuthentication', () => {
     afterEach(() => teardown?.())
 
     describe('POST /admins/login', () => {
-        it('자격 증명이 유효하면 인증 토큰을 반환한다', async () => {
-            const { body } = await fix.httpClient
-                .post('/admins/login')
-                .body(credentials)
-                .ok({
+        describe('이메일과 비밀번호가 등록된 관리자 정보와 일치하면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.post('/admins/login').body(credentials)
+            })
+            it('로그인하면 인증 토큰을 반환한다', async () => {
+                const { body } = await request.ok({
                     expected: { accessToken: expect.any(String), refreshToken: expect.any(String) }
                 })
 
-            const { exp, iat } = new JwtService().decode<{ exp: number; iat: number }>(
-                body.accessToken
-            )
-            const { adminAuth } = fix.module.get(AppConfigService)
-            expect(exp - iat).toBe(TimeUtil.toMs(adminAuth.accessTokenExpiration) / 1000)
+                const { exp, iat } = new JwtService().decode<{ exp: number; iat: number }>(
+                    body.accessToken
+                )
+                const { adminAuth } = fix.module.get(AppConfigService)
+                expect(exp - iat).toBe(TimeUtil.toMs(adminAuth.accessTokenExpiration) / 1000)
+            })
         })
 
-        it('비밀번호가 틀리면 401을 반환한다', async () => {
-            await fix.httpClient
-                .post('/admins/login')
-                .body({ ...credentials, password: 'wrong password' })
-                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+        describe('비밀번호가 틀리면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post('/admins/login')
+                    .body({ ...credentials, password: 'wrong password' })
+            })
+            it('로그인을 요청하면 401을 반환한다', async () => {
+                await request.unauthorized({ expected: Errors.Auth.Unauthorized() })
+            })
         })
 
-        it('등록되지 않은 이메일이면 401을 반환한다', async () => {
-            await fix.httpClient
-                .post('/admins/login')
-                .body({ ...credentials, email: 'unknown@mail.com' })
-                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+        describe('등록되지 않은 이메일이면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post('/admins/login')
+                    .body({ ...credentials, email: 'unknown@mail.com' })
+            })
+            it('로그인을 요청하면 401을 반환한다', async () => {
+                await request.unauthorized({ expected: Errors.Auth.Unauthorized() })
+            })
         })
 
-        it('다른 IP의 실패가 정상 계정의 로그인을 잠그지 않는다', async () => {
-            for (let index = 0; index < 6; index++) {
+        describe('여러 IP에서 같은 계정으로 로그인에 실패한 기록이 있으면', () => {
+            beforeEach(async () => {
+                for (let index = 0; index < 6; index++) {
+                    await fix.httpClient
+                        .post('/admins/login')
+                        .headers({ 'X-Forwarded-For': `198.51.100.${index + 1}` })
+                        .body({ ...credentials, password: 'wrong password' })
+                        .unauthorized({ expected: Errors.Auth.Unauthorized() })
+                }
+            })
+            it('다른 IP에서 올바른 비밀번호로 로그인할 수 있다', async () => {
                 await fix.httpClient
                     .post('/admins/login')
-                    .headers({ 'X-Forwarded-For': `198.51.100.${index + 1}` })
-                    .body({ ...credentials, password: 'wrong password' })
-                    .unauthorized({ expected: Errors.Auth.Unauthorized() })
-            }
-            await fix.httpClient
-                .post('/admins/login')
-                .headers({ 'X-Forwarded-For': '198.51.100.7' })
-                .body(credentials)
-                .ok()
+                    .headers({ 'X-Forwarded-For': '198.51.100.7' })
+                    .body(credentials)
+                    .ok()
+            })
         })
 
-        it('성공해도 IP 실패 횟수는 초기화하지 않고 51번째 요청부터 429를 반환한다', async () => {
-            const ip = '198.51.100.100'
+        describe('같은 IP에서 49회 로그인 실패 후 한 번 성공했으면', () => {
+            let ip: string
+            beforeEach(async () => {
+                ip = '198.51.100.100'
 
-            for (let index = 0; index < IP_FAILURE_LIMIT - 1; index++) {
+                for (let index = 0; index < IP_FAILURE_LIMIT - 1; index++) {
+                    await fix.httpClient
+                        .post('/admins/login')
+                        .headers({ 'X-Forwarded-For': ip })
+                        .body({ email: `unknown-${index}@mail.com`, password: 'wrong password' })
+                        .unauthorized({ expected: Errors.Auth.Unauthorized() })
+                }
+
                 await fix.httpClient
                     .post('/admins/login')
                     .headers({ 'X-Forwarded-For': ip })
-                    .body({ email: `unknown-${index}@mail.com`, password: 'wrong password' })
+                    .body(credentials)
+                    .ok()
+            })
+            it('같은 IP에서 잘못된 정보로 로그인을 두 번 요청하면 차례로 401과 429를 반환한다', async () => {
+                await fix.httpClient
+                    .post('/admins/login')
+                    .headers({ 'X-Forwarded-For': ip })
+                    .body({ email: 'unknown-50@mail.com', password: 'wrong password' })
                     .unauthorized({ expected: Errors.Auth.Unauthorized() })
-            }
 
-            await fix.httpClient
-                .post('/admins/login')
-                .headers({ 'X-Forwarded-For': ip })
-                .body(credentials)
-                .ok()
-
-            await fix.httpClient
-                .post('/admins/login')
-                .headers({ 'X-Forwarded-For': ip })
-                .body({ email: 'unknown-50@mail.com', password: 'wrong password' })
-                .unauthorized({ expected: Errors.Auth.Unauthorized() })
-
-            await fix.httpClient
-                .post('/admins/login')
-                .headers({ 'X-Forwarded-For': ip })
-                .body({ email: 'unknown-51@mail.com', password: 'wrong password' })
-                .send(HttpStatus.TOO_MANY_REQUESTS, { expected: LOGIN_RATE_LIMITED_ERROR })
+                await fix.httpClient
+                    .post('/admins/login')
+                    .headers({ 'X-Forwarded-For': ip })
+                    .body({ email: 'unknown-51@mail.com', password: 'wrong password' })
+                    .send(HttpStatus.TOO_MANY_REQUESTS, { expected: LOGIN_RATE_LIMITED_ERROR })
+            })
         })
     })
 
     describe('GET /admins/me', () => {
-        it('유효한 액세스 토큰이면 admin DTO를 반환한다', async () => {
-            const tokens = await loginAdmin(fix, credentials)
-
-            await fix.httpClient
-                .get('/admins/me')
-                .headers({ Authorization: `Bearer ${tokens.accessToken}` })
-                .ok({
-                    expected: expect.objectContaining({
-                        id: expect.any(String),
-                        email: credentials.email,
-                        name: expect.any(String)
+        describe('관리자로 로그인했으면', () => {
+            let tokens: Awaited<ReturnType<typeof loginAdmin>>
+            beforeEach(async () => {
+                tokens = await loginAdmin(fix, credentials)
+            })
+            it('본인 정보를 조회하면 로그인한 관리자 정보를 반환한다', async () => {
+                await fix.httpClient
+                    .get('/admins/me')
+                    .headers({ Authorization: `Bearer ${tokens.accessToken}` })
+                    .ok({
+                        expected: expect.objectContaining({
+                            id: expect.any(String),
+                            email: credentials.email,
+                            name: expect.any(String)
+                        })
                     })
-                })
+            })
         })
 
-        it('액세스 토큰이 검증되지 않으면 401을 반환한다', async () => {
-            await fix.httpClient
-                .get('/admins/me')
-                .headers({ Authorization: 'Bearer invalid-token' })
-                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+        describe('액세스 토큰이 유효하지 않으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .get('/admins/me')
+                    .headers({ Authorization: 'Bearer invalid-token' })
+            })
+            it('본인 정보를 조회하면 401을 반환한다', async () => {
+                await request.unauthorized({ expected: Errors.Auth.Unauthorized() })
+            })
         })
 
-        it.each([{ email: 'admin@mail.com' }, { email: 'invalid', sub: 'admin-id' }])(
-            '서명이 유효해도 필수 claim이 올바르지 않으면 401을 반환한다: %j',
-            async (payload) => {
+        describe.each([
+            { condition: '사용자 ID가 빠진 토큰이 있으면', payload: { email: 'admin@mail.com' } },
+            {
+                condition: '이메일 형식이 잘못된 토큰이 있으면',
+                payload: { email: 'invalid', sub: 'admin-id' }
+            }
+        ])('올바르게 서명했지만 $condition', ({ payload }) => {
+            let token: string
+
+            beforeEach(async () => {
                 const { adminAuth } = fix.module.get(AppConfigService)
-                const token = await new JwtService().signAsync(payload, {
+                token = await new JwtService().signAsync(payload, {
                     audience: adminAuth.audience,
                     issuer: adminAuth.issuer,
                     secret: adminAuth.accessSecret,
                     expiresIn: '5m'
                 })
+            })
 
+            it('본인 조회 요청에 401을 반환한다', async () => {
                 await fix.httpClient
                     .get('/admins/me')
                     .headers({ Authorization: `Bearer ${token}` })
                     .unauthorized({ expected: Errors.Auth.Unauthorized() })
-            }
-        )
+            })
+        })
     })
 
     describe('POST /admins/refresh', () => {
@@ -162,7 +201,7 @@ describe('AdminAuthentication', () => {
                 tokens = await loginAdmin(fix, credentials)
             })
 
-            it('새 액세스 토큰과 리프레시 토큰을 반환한다', async () => {
+            it('토큰 갱신을 요청하면 새 액세스 토큰과 리프레시 토큰을 반환한다', async () => {
                 const { body } = await fix.httpClient
                     .post('/admins/refresh')
                     .body({ refreshToken: tokens.refreshToken })
@@ -192,7 +231,7 @@ describe('AdminAuthentication', () => {
             await fix.httpClient.post('/admins/logout').body({ refreshToken }).noContent()
         })
 
-        it('로그아웃 후 리프레시는 차단하고 액세스 토큰은 만료 전까지 허용한다', async () => {
+        it('로그아웃하면 리프레시 갱신은 거절하고 기존 액세스 토큰으로 본인 조회는 허용한다', async () => {
             await fix.httpClient.post('/admins/logout').body({ refreshToken }).noContent()
 
             await fix.httpClient

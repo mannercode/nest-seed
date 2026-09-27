@@ -159,7 +159,8 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
         await verifyGroup(iteration, g, users[g], triples[g], responses, showtimeId)
     }
 
-    // 복제본 분산은 충돌 키별이 아니라 이번 회차 전체의 응답에서 확인한다.
+    // 이번 회차의 전체 응답에 여러 복제본이 참여했는지만 확인한다.
+    // 같은 대상을 두고 경쟁한 각 요청 묶음이 여러 복제본에 분산됐는지까지 확인하지는 않는다.
     if (replicaSet.size < 2) {
         throw new Error(
             `iter ${iteration}: only 1 replica (got ${[...replicaSet]}) — cross-replica unverified`
@@ -169,7 +170,7 @@ async function runInner(iteration, movieId, theaterId, users, startTimeOffsetMs)
     return { total: results.length, replicas: replicaSet.size }
 }
 
-test('겹치는 티켓 묶음의 동시 구매는 하나만 성공하고 승자의 티켓만 판매된다', async () => {
+test('겹치는 티켓 묶음을 동시에 구매하면 한 요청만 성공하고 해당 구매의 티켓만 판매된다', async () => {
     console.log(`[overlap] server=${SERVER_URL} groups=${USER_GROUPS} inner=${INNER_ITERATIONS}`)
 
     const { movieId, theaterId } = await createPublishedMovieAndTheater({

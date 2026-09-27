@@ -80,8 +80,8 @@ const CLAIM_TICKETS_SCRIPT = `
         redis.call('SET', KEYS[i], purchaseOwner, 'PX', ttlMs)
     end
 
-    -- 부분 구매에서는 구매하지 않은 티켓을 원 사용자의 목록과 기존 TTL에 남긴다.
-    -- 그 사이 owner가 바뀐 항목은 목록에서 제거해 ghost hold를 만들지 않는다.
+-- 일부 티켓만 구매하면 나머지는 기존 사용자의 선점 목록과 기존 TTL을 유지한다.
+-- 이미 다른 소유자로 바뀐 티켓은 그 사용자의 선점 목록에서 제거한다.
     local remainingTicketIds = {}
     if heldTicketIdsJson then
         local heldTicketIds = cjson.decode(heldTicketIdsJson)

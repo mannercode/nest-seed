@@ -91,7 +91,8 @@ export class NatsPubSubService implements OnModuleDestroy {
     }
 
     private startConsumeLoop(state: SubscriptionState) {
-        // 비정상 종료는 무트래픽과 구분하기 어려우므로 기록하고, 외곽 catch로 rejection을 막는다.
+        // 수신 루프가 실패해 멈춘 상태를 메시지가 없는 상태와 구분할 수 있도록 오류를 기록한다.
+        // 작업 Promise의 오류도 처리해 처리되지 않은 rejection이 남지 않게 한다.
         const task = (async () => {
             try {
                 for await (const msg of state.sub) {

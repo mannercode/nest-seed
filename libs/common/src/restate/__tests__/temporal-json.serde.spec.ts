@@ -18,11 +18,17 @@ describe('TemporalJsonSerde', () => {
         })
     })
 
-    it('undefined를 빈 데이터로 저장하고 다시 읽으면 undefined를 반환한다', () => {
-        const serialized = TemporalJsonSerde.serialize(undefined)
+    describe('직렬화할 값이 undefined이면', () => {
+        let value: undefined
+        beforeEach(() => {
+            value = undefined
+        })
+        it('직렬화하면 빈 데이터를 만들고 복원하면 undefined를 반환한다', () => {
+            const serialized = TemporalJsonSerde.serialize(value)
 
-        expect(serialized).toHaveLength(0)
-        expect(TemporalJsonSerde.deserialize(serialized)).toBeUndefined()
+            expect(serialized).toHaveLength(0)
+            expect(TemporalJsonSerde.deserialize(serialized)).toBeUndefined()
+        })
     })
 })
 
@@ -75,18 +81,42 @@ describe('defineWorkflow', () => {
             message: 'terminal',
             code: 409
         })
-
-        const retrying = defineWorkflow({
-            name: 'retrying-workflow',
-            input: z.void(),
-            run: execute,
-            options: { abortTimeout: 100, inactivityTimeout: 1000, workflowRetention: 5000 }
-        }) as unknown as { options: { asTerminalError?: unknown } }
-        expect(retrying.options.asTerminalError).toBeUndefined()
     })
 
-    it('워크플로 취소 오류만 취소로 분류한다', () => {
-        expect(isWorkflowCancellation(new CancelledError())).toBe(true)
-        expect(isWorkflowCancellation(new Error('temporary'))).toBe(false)
+    describe('워크플로 정의에 오류 분류 함수가 없으면', () => {
+        let definition: Parameters<typeof defineWorkflow>[0]
+        beforeEach(() => {
+            definition = {
+                name: 'retrying-workflow',
+                input: z.void(),
+                run: async () => undefined,
+                options: { abortTimeout: 100, inactivityTimeout: 1000, workflowRetention: 5000 }
+            }
+        })
+        it('워크플로를 정의하면 asTerminalError를 설정하지 않는다', () => {
+            const retrying = defineWorkflow(definition) as unknown as {
+                options: { asTerminalError?: unknown }
+            }
+            expect(retrying.options.asTerminalError).toBeUndefined()
+        })
+    })
+})
+
+describe('isWorkflowCancellation', () => {
+    describe.each([
+        {
+            condition: '워크플로 취소 오류가 발생했으면',
+            error: new CancelledError(),
+            expected: true
+        },
+        { condition: '일반 오류가 발생했으면', error: new Error('temporary'), expected: false }
+    ])('$condition', ({ error, expected }) => {
+        let failure: typeof error
+        beforeEach(() => {
+            failure = error
+        })
+        it(`취소 오류인지 판별하면 ${expected}를 반환한다`, () => {
+            expect(isWorkflowCancellation(failure)).toBe(expected)
+        })
     })
 })

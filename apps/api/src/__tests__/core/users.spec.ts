@@ -29,7 +29,7 @@ describe('UsersService', () => {
     afterEach(() => teardown?.())
 
     describe('POST /users', () => {
-        it('생성된 고객을 반환한다', async () => {
+        it('사용자를 생성하면 생성된 정보를 반환한다', async () => {
             const createDto = buildCreateUserDto({ name: '2000-01-02' })
 
             await fix.httpClient
@@ -41,26 +41,50 @@ describe('UsersService', () => {
                 })
         })
 
-        it.each([{ name: false }, { password: 1234 }])(
-            '문자열 필드의 잘못된 타입 %j는 400을 반환한다',
-            async (invalid) => {
-                await fix.httpClient
+        describe.each([
+            { condition: 'name이 문자열이 아니면', invalid: { name: false } },
+            { condition: 'password가 문자열이 아니면', invalid: { password: 1234 } }
+        ])('$condition', ({ invalid }) => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
                     .post('/users')
                     .body({ ...buildCreateUserDto(), ...invalid })
-                    .badRequest()
-            }
-        )
+            })
+            it('가입을 요청하면 400을 반환한다', async () => {
+                await request.badRequest()
+            })
+        })
 
-        it('이미 존재하는 이메일이면 409를 반환한다', async () => {
+        describe('사용자가 존재하면', () => {
             const email = 'user@mail.com'
-            await createUser(fix, { email })
 
-            const createDto = buildCreateUserDto({ email })
+            beforeEach(async () => {
+                await createUser(fix, { email })
+            })
 
-            await fix.httpClient
-                .post('/users')
-                .body(createDto)
-                .conflict({ expected: Errors.Users.EmailAlreadyExists(createDto.email) })
+            it('그 사용자의 이메일로 가입을 요청하면 409를 반환한다', async () => {
+                await fix.httpClient
+                    .post('/users')
+                    .body(buildCreateUserDto({ email }))
+                    .conflict({ expected: Errors.Users.EmailAlreadyExists(email) })
+            })
+        })
+
+        describe('탈퇴한 사용자가 있으면', () => {
+            const email = 'rejoin@mail.com'
+
+            beforeEach(async () => {
+                const user = await createUser(fix, { email })
+                await fix.httpClient.delete(`/users/${user.id}`).headers(adminAuth).noContent()
+            })
+
+            it('같은 이메일로 다시 가입할 수 있다', async () => {
+                await fix.httpClient
+                    .post('/users')
+                    .body(buildCreateUserDto({ email }))
+                    .created({ schema: UserSchema })
+            })
         })
 
         it(
@@ -95,41 +119,45 @@ describe('UsersService', () => {
             30 * 1000
         )
 
-        it('필수 필드가 누락되면 400을 반환한다', async () => {
-            await fix.httpClient
-                .post('/users')
-                .body({})
-                .badRequest({ expected: Errors.RequestValidation.Failed(expect.any(Array)) })
-        })
-
-        it('중복 키가 아닌 저장 오류는 ConflictException으로 바꾸지 않고 그대로 던진다', async () => {
-            const service = fix.module.get(UsersService)
-            const repository = fix.module.get(UsersRepository)
-            const failure = new Error('storage unavailable')
-            vi.spyOn(repository.collection, 'insertOne').mockRejectedValueOnce(failure)
-
-            // "그대로 던진다"의 핵심은 409로 변환되지 않는 것이므로 예외 타입까지 확인한다.
-            const promise = service.create(buildCreateUserDto())
-            await expect(promise).rejects.toBe(failure)
-            await expect(promise).rejects.not.toBeInstanceOf(ConflictException)
+        describe('요청 본문에 필수 필드가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.post('/users').body({})
+            })
+            it('가입을 요청하면 400을 반환한다', async () => {
+                await request.badRequest({
+                    expected: Errors.RequestValidation.Failed(expect.any(Array))
+                })
+            })
         })
     })
 
     describe('GET /users/:id', () => {
-        it('ID에 해당하는 고객을 반환한다', async () => {
-            const user = await createUser(fix)
+        describe('사용자가 존재하면', () => {
+            let user: UserDto
 
-            await fix.httpClient
-                .get(`/users/${user.id}`)
-                .headers(adminAuth)
-                .ok({ schema: UserSchema, expected: user })
+            beforeEach(async () => {
+                user = await createUser(fix)
+            })
+
+            it('ID로 조회하면 해당 사용자를 반환한다', async () => {
+                await fix.httpClient
+                    .get(`/users/${user.id}`)
+                    .headers(adminAuth)
+                    .ok({ schema: UserSchema, expected: user })
+            })
         })
 
-        it('ID에 해당하는 고객이 없으면 404를 반환한다', async () => {
-            await fix.httpClient
-                .get(`/users/${nullObjectId}`)
-                .headers(adminAuth)
-                .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]) })
+        describe('ID에 해당하는 사용자가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get(`/users/${nullObjectId}`).headers(adminAuth)
+            })
+            it('사용자를 조회하면 404를 반환한다', async () => {
+                await request.notFound({
+                    expected: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId])
+                })
+            })
         })
     })
 
@@ -140,7 +168,7 @@ describe('UsersService', () => {
             user = await createUser(fix, { name: 'original-name' })
         })
 
-        it('수정된 고객을 반환한다', async () => {
+        it('사용자를 수정하면 수정된 정보를 반환한다', async () => {
             const updateDto = { birthDate: plainDate('1900-12-31'), email: 'new@mail.com' }
 
             await fix.httpClient
@@ -150,15 +178,20 @@ describe('UsersService', () => {
                 .ok({ schema: UserSchema, expected: { ...user, ...updateDto } })
         })
 
-        it('필수 필드를 null로 바꾸는 요청은 400을 반환한다', async () => {
-            await fix.httpClient
-                .patch(`/users/${user.id}`)
-                .headers(adminAuth)
-                .body({ name: null })
-                .badRequest()
+        describe('수정할 필수 필드 값이 null이면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .patch(`/users/${user.id}`)
+                    .headers(adminAuth)
+                    .body({ name: null })
+            })
+            it('사용자 수정을 요청하면 400을 반환한다', async () => {
+                await request.badRequest()
+            })
         })
 
-        it('수정 내용이 DB에 저장된다', async () => {
+        it('사용자 정보를 수정하면 DB에 저장한다', async () => {
             const updateDto = { name: 'update-name' }
             await fix.httpClient
                 .patch(`/users/${user.id}`)
@@ -172,15 +205,17 @@ describe('UsersService', () => {
                 .ok({ schema: UserSchema, expected: { ...user, ...updateDto } })
         })
 
-        it('ID에 해당하는 고객이 없으면 404를 반환한다', async () => {
-            await fix.httpClient
-                .patch(`/users/${nullObjectId}`)
-                .headers(adminAuth)
-                .body({})
-                .notFound({ expected: Errors.Mongo.DocumentNotFound(nullObjectId) })
+        describe('ID에 해당하는 사용자가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.patch(`/users/${nullObjectId}`).headers(adminAuth).body({})
+            })
+            it('사용자 수정을 요청하면 404를 반환한다', async () => {
+                await request.notFound({ expected: Errors.Mongo.DocumentNotFound(nullObjectId) })
+            })
         })
 
-        describe('password를 변경하면', () => {
+        describe('사용자의 비밀번호가 변경되었으면', () => {
             const newPassword = 'newPassword'
             let refreshToken: string
 
@@ -196,7 +231,7 @@ describe('UsersService', () => {
                     .ok({ schema: UserSchema })
             })
 
-            it('새 password로 로그인할 수 있다', async () => {
+            it('새 비밀번호로 로그인할 수 있다', async () => {
                 await fix.httpClient
                     .post('/users/login')
                     .body({ email: user.email, password: newPassword })
@@ -208,7 +243,7 @@ describe('UsersService', () => {
                     })
             })
 
-            it('기존 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
+            it('기존 리프레시 토큰으로 갱신을 요청하면 401을 반환한다', async () => {
                 await fix.httpClient
                     .post('/users/refresh')
                     .body({ refreshToken })
@@ -216,65 +251,75 @@ describe('UsersService', () => {
             })
         })
 
-        it('다른 고객의 이메일로 변경하면 409를 반환한다', async () => {
+        describe('다른 사용자가 존재하면', () => {
             const existingEmail = 'taken@mail.com'
-            await createUser(fix, { email: existingEmail })
-            const target = await createUser(fix, { email: 'mine@mail.com' })
 
-            await fix.httpClient
-                .patch(`/users/${target.id}`)
-                .headers(adminAuth)
-                .body({ email: existingEmail })
-                .conflict({ expected: Errors.Users.EmailAlreadyExists(existingEmail) })
+            beforeEach(async () => {
+                await createUser(fix, { email: existingEmail })
+            })
+
+            it('그 사용자의 이메일로 변경을 요청하면 409를 반환한다', async () => {
+                await fix.httpClient
+                    .patch(`/users/${user.id}`)
+                    .headers(adminAuth)
+                    .body({ email: existingEmail })
+                    .conflict({ expected: Errors.Users.EmailAlreadyExists(existingEmail) })
+            })
         })
     })
 
     describe('DELETE /users/:id', () => {
-        it('204를 반환하고 삭제 후 조회에는 404를 반환한다', async () => {
-            const user = await createUser(fix)
+        describe('사용자가 존재하면', () => {
+            let user: UserDto
 
-            await fix.httpClient.delete(`/users/${user.id}`).headers(adminAuth).noContent()
+            beforeEach(async () => {
+                user = await createUser(fix)
+            })
 
-            await fix.httpClient
-                .get(`/users/${user.id}`)
-                .headers(adminAuth)
-                .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([user.id]) })
+            it('사용자를 삭제하면 204를 반환하고 이후 조회에는 404를 반환한다', async () => {
+                await fix.httpClient.delete(`/users/${user.id}`).headers(adminAuth).noContent()
+
+                await fix.httpClient
+                    .get(`/users/${user.id}`)
+                    .headers(adminAuth)
+                    .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([user.id]) })
+            })
         })
 
-        it('고객이 없어도 204를 반환한다', async () => {
-            await fix.httpClient.delete(`/users/${nullObjectId}`).headers(adminAuth).noContent()
-        })
-
-        it('탈퇴한 고객의 이메일로 다시 가입할 수 있다', async () => {
-            const email = 'rejoin@mail.com'
-            const user = await createUser(fix, { email })
-
-            await fix.httpClient.delete(`/users/${user.id}`).headers(adminAuth).noContent()
-
-            await fix.httpClient
-                .post('/users')
-                .body(buildCreateUserDto({ email }))
-                .created({ schema: UserSchema })
-        })
-
-        it('삭제된 고객의 리프레시 토큰은 더 이상 갱신되지 않는다', async () => {
-            const { user, refreshToken } = await createAndLoginUser(fix)
-
-            await fix.httpClient.delete(`/users/${user.id}`).headers(adminAuth).noContent()
-
-            await fix.httpClient
-                .post('/users/refresh')
-                .body({ refreshToken })
-                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
-        })
-
-        it('회수할 세션이 없으면 계정 존재 여부와 무관하게 완료한다', async () => {
-            const service = fix.module.get(UsersService)
-            await expect(service.revokeAllForUser(nullObjectId)).resolves.toBeUndefined()
+        describe('ID에 해당하는 사용자가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.delete(`/users/${nullObjectId}`).headers(adminAuth)
+            })
+            it('사용자 삭제를 요청하면 204를 반환한다', async () => {
+                await request.noContent()
+            })
         })
     })
 
-    describe('인가 경계', () => {
+    describe('POST /users/refresh', () => {
+        describe('로그인한 사용자가 탈퇴했으면', () => {
+            let refreshToken: string
+
+            beforeEach(async () => {
+                const session = await createAndLoginUser(fix)
+                refreshToken = session.refreshToken
+                await fix.httpClient
+                    .delete(`/users/${session.user.id}`)
+                    .headers(adminAuth)
+                    .noContent()
+            })
+
+            it('기존 리프레시 토큰으로 갱신을 요청하면 401을 반환한다', async () => {
+                await fix.httpClient
+                    .post('/users/refresh')
+                    .body({ refreshToken })
+                    .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+            })
+        })
+    })
+
+    describe('일반 사용자로 로그인했으면', () => {
         let userAuth: { Authorization: string }
         let target: UserDto
 
@@ -284,14 +329,14 @@ describe('UsersService', () => {
             target = await createUser(fix, { email: 'target@mail.com' })
         })
 
-        it('user 토큰으로 GET /users/:id에 접근하면 401을 반환한다', async () => {
+        it('GET /users/:id 요청에 401을 반환한다', async () => {
             await fix.httpClient
                 .get(`/users/${target.id}`)
                 .headers(userAuth)
                 .unauthorized({ expected: Errors.Auth.Unauthorized() })
         })
 
-        it('user 토큰으로 PATCH /users/:id에 접근하면 401을 반환한다', async () => {
+        it('PATCH /users/:id 요청에 401을 반환한다', async () => {
             await fix.httpClient
                 .patch(`/users/${target.id}`)
                 .headers(userAuth)
@@ -299,21 +344,29 @@ describe('UsersService', () => {
                 .unauthorized({ expected: Errors.Auth.Unauthorized() })
         })
 
-        it('user 토큰으로 DELETE /users/:id에 접근하면 401을 반환한다', async () => {
+        it('DELETE /users/:id 요청에 401을 반환한다', async () => {
             await fix.httpClient
                 .delete(`/users/${target.id}`)
                 .headers(userAuth)
                 .unauthorized({ expected: Errors.Auth.Unauthorized() })
         })
 
-        it('user 토큰으로 GET /users 목록에 접근하면 401을 반환한다', async () => {
+        it('GET /users 요청에 401을 반환한다', async () => {
             await fix.httpClient
                 .get('/users')
                 .headers(userAuth)
                 .unauthorized({ expected: Errors.Auth.Unauthorized() })
         })
+    })
 
-        it('Authorization 헤더가 없으면 401을 반환한다', async () => {
+    describe('인증 정보가 없으면', () => {
+        let target: UserDto
+
+        beforeEach(async () => {
+            target = await createUser(fix, { email: 'target@mail.com' })
+        })
+
+        it('GET /users/:id 요청에 401을 반환한다', async () => {
             await fix.httpClient
                 .get(`/users/${target.id}`)
                 .unauthorized({ expected: Errors.Auth.Unauthorized() })
@@ -346,67 +399,121 @@ describe('UsersService', () => {
             total: users.length
         })
 
-        it('쿼리가 없으면 전체 고객 페이지를 반환한다', async () => {
-            const expected = buildExpectedPage([userA1, userA2, userB1, userB2])
+        describe('검색 조건이 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/users').headers(adminAuth)
+            })
+            it('사용자 목록을 조회하면 등록된 사용자와 페이지 정보·전체 개수를 반환한다', async () => {
+                const expected = buildExpectedPage([userA1, userA2, userB1, userB2])
 
-            await fix.httpClient
-                .get('/users')
-                .headers(adminAuth)
-                .ok({ schema: paginationResultSchema(UserSchema), expected })
+                await request.ok({ schema: paginationResultSchema(UserSchema), expected })
+            })
         })
 
-        it('정렬과 페이지 조건에 맞는 고객을 반환한다', async () => {
-            await fix.httpClient
-                .get('/users')
-                .headers(adminAuth)
-                .query({ orderby: 'email:asc', page: '2', size: '2' })
-                .ok({
+        describe('정렬이 이메일 오름차순이고 page와 size가 2이면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .get('/users')
+                    .headers(adminAuth)
+                    .query({ orderby: 'email:asc', page: '2', size: '2' })
+            })
+            it('목록을 조회하면 정렬과 페이지 조건에 맞는 사용자를 반환한다', async () => {
+                await request.ok({
                     schema: paginationResultSchema(UserSchema),
                     expected: { items: [userB1, userB2], page: 2, size: 2, total: 4 }
                 })
+            })
         })
 
-        it('name 부분 일치로 필터링한다', async () => {
-            await fix.httpClient
-                .get('/users')
-                .headers(adminAuth)
-                .query({ name: 'user-a' })
-                .ok({
+        describe('사용자 이름의 일부를 검색 조건으로 지정했으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/users').headers(adminAuth).query({ name: 'user-a' })
+            })
+            it('목록을 조회하면 이름에 해당 문자열이 포함된 사용자를 반환한다', async () => {
+                await request.ok({
                     schema: paginationResultSchema(UserSchema),
                     expected: buildExpectedPage([userA1, userA2])
                 })
+            })
         })
 
-        it('name 검색은 대소문자를 무시한 부분 문자열로 일치시킨다', async () => {
-            // 'SER-A'는 'user-a1'의 비접두어 부분 문자열 + 대문자라, 접두어·대소문자 구분
-            // 매칭으로 바꾸는 회귀를 한 번에 잡는다.
-            await fix.httpClient
-                .get('/users')
-                .headers(adminAuth)
-                .query({ name: 'SER-A' })
-                .ok({
+        describe('검색할 이름에 대소문자가 다르고 접두어가 아닌 부분 문자열이 있으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/users').headers(adminAuth).query({ name: 'SER-A' })
+            })
+            it('목록을 조회하면 대소문자를 무시하고 이름이 부분 일치하는 사용자를 반환한다', async () => {
+                // 'SER-A'는 'user-a1'의 비접두어 부분 문자열 + 대문자라, 접두어·대소문자 구분
+                // 매칭으로 바꾸는 회귀를 한 번에 잡는다.
+                await request.ok({
                     schema: paginationResultSchema(UserSchema),
                     expected: buildExpectedPage([userA1, userA2])
                 })
+            })
         })
 
-        it('email 부분 일치로 필터링한다', async () => {
-            await fix.httpClient
-                .get('/users')
-                .headers(adminAuth)
-                .query({ email: 'user-b' })
-                .ok({
+        describe('이메일의 일부를 검색 조건으로 지정했으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/users').headers(adminAuth).query({ email: 'user-b' })
+            })
+            it('목록을 조회하면 이메일에 해당 문자열이 포함된 사용자를 반환한다', async () => {
+                await request.ok({
                     schema: paginationResultSchema(UserSchema),
                     expected: buildExpectedPage([userB1, userB2])
                 })
+            })
         })
 
-        it('알 수 없는 쿼리 파라미터는 400을 반환한다', async () => {
-            await fix.httpClient
-                .get('/users')
-                .headers(adminAuth)
-                .query({ wrong: 'value' })
-                .badRequest({ expected: Errors.RequestValidation.Failed(expect.any(Array)) })
+        describe('정의하지 않은 쿼리 파라미터가 있으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/users').headers(adminAuth).query({ wrong: 'value' })
+            })
+            it('사용자 목록을 조회하면 400을 반환한다', async () => {
+                await request.badRequest({
+                    expected: Errors.RequestValidation.Failed(expect.any(Array))
+                })
+            })
+        })
+    })
+
+    describe('create', () => {
+        describe('중복 키가 아닌 오류로 저장에 실패하면', () => {
+            let service: UsersService
+            let failure: Error
+
+            beforeEach(() => {
+                service = fix.module.get(UsersService)
+                const repository = fix.module.get(UsersRepository)
+                failure = new Error('storage unavailable')
+                vi.spyOn(repository.collection, 'insertOne').mockRejectedValueOnce(failure)
+            })
+
+            it('사용자 생성을 요청하면 저장 오류를 그대로 던진다', async () => {
+                const promise = service.create(buildCreateUserDto())
+                await expect(promise).rejects.toBe(failure)
+                await expect(promise).rejects.not.toBeInstanceOf(ConflictException)
+            })
+        })
+    })
+
+    describe('revokeAllForUser', () => {
+        describe('사용자와 리프레시 세션이 없으면', () => {
+            let service: UsersService
+            let userId: string
+
+            beforeEach(() => {
+                service = fix.module.get(UsersService)
+                userId = nullObjectId
+            })
+
+            it('사용자의 전체 세션 폐기를 요청하면 오류 없이 완료한다', async () => {
+                await expect(service.revokeAllForUser(userId)).resolves.toBeUndefined()
+            })
         })
     })
 })

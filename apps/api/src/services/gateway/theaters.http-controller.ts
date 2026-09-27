@@ -11,7 +11,7 @@ import {
     Query,
     UseGuards
 } from '@nestjs/common'
-import { CatalogManagementService } from '#application'
+import { TheaterDeletionService } from '#application'
 import {
     CreateTheaterSchema,
     SearchTheatersPageSchema,
@@ -27,7 +27,7 @@ import { AdminAuthGuard } from './guards/index.js'
 export class TheatersHttpController {
     constructor(
         private readonly theatersService: TheatersService,
-        private readonly catalogManagementService: CatalogManagementService
+        private readonly theaterDeletionService: TheaterDeletionService
     ) {}
 
     @Post()
@@ -40,7 +40,7 @@ export class TheatersHttpController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @UseGuards(AdminAuthGuard)
     async delete(@Param('theaterId') theaterId: string) {
-        await this.catalogManagementService.deleteTheater(theaterId)
+        await this.theaterDeletionService.deleteTheater(theaterId)
     }
 
     @Get(':theaterId')

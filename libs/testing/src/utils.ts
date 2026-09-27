@@ -3,21 +3,21 @@ import inspector from 'node:inspector'
 export type InstantInput = Temporal.Instant | number | string
 export type PlainDateInput = Temporal.PlainDate | string
 
-/** Legacy Date fixture for schemas and adapters whose public contract is still Date. */
+/** Date 객체를 받는 스키마·어댑터의 테스트에 사용할 기준 시각이다. */
 export const nullDate = new Date(0)
 export const nullInstant = Temporal.Instant.fromEpochMilliseconds(0)
 export const nullPlainDate = Temporal.PlainDate.from('1970-01-01')
 export const nullObjectId = '000000000000000000000000'
 export const oid = (value: number) => value.toString(16).padStart(24, '0')
 
-/** Creates an instant from an explicit ISO offset or epoch milliseconds. */
+/** 오프셋이 포함된 ISO 시각 문자열이나 epoch 밀리초로 Instant를 만든다. */
 export function instant(value: InstantInput = 0): Temporal.Instant {
     if (value instanceof Temporal.Instant) return value
     if (typeof value === 'number') return Temporal.Instant.fromEpochMilliseconds(value)
     return Temporal.Instant.from(value)
 }
 
-/** Creates a calendar date without carrying a time zone into domain fixtures. */
+/** 시간대 없는 날짜를 테스트에 사용할 수 있도록 PlainDate로 만든다. */
 export function plainDate(value: PlainDateInput): Temporal.PlainDate {
     if (value instanceof Temporal.PlainDate) return value
     if (!/^(?:[+-]\d{6}|\d{4})-\d{2}-\d{2}$/.test(value)) {

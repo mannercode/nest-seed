@@ -1,3 +1,4 @@
+import type { MockInstance } from 'vitest'
 import { paginationResultSchema } from '@mannercode/common'
 import { nullObjectId, nullPlainDate } from '@mannercode/testing'
 import {
@@ -32,7 +33,7 @@ describe('MoviesPublish', () => {
     afterEach(() => teardown?.())
 
     describe('POST /movies/:movieId/publish', () => {
-        describe('미발행 영화에 필수 필드가 모두 채워졌을 때', () => {
+        describe('필수 정보가 모두 채워진 미공개 영화가 존재하면', () => {
             let movie: MovieDto
             const updateDto = {
                 director: 'Quentin Tarantino',
@@ -52,7 +53,7 @@ describe('MoviesPublish', () => {
                     .ok({ schema: MovieSchema })
             })
 
-            it('공개된 영화를 반환한다', async () => {
+            it('영화 공개를 요청하면 공개된 영화를 반환한다', async () => {
                 await fix.httpClient
                     .post(`/movies/${movie.id}/publish`)
                     .ok({
@@ -65,7 +66,7 @@ describe('MoviesPublish', () => {
                     })
             })
 
-            it('공개된 영화는 검색에서 노출된다', async () => {
+            it('영화를 공개하면 검색 결과에 포함된다', async () => {
                 const { body: publishedMovie } = await fix.httpClient
                     .post(`/movies/${movie.id}/publish`)
                     .ok({ schema: MovieSchema })
@@ -77,7 +78,7 @@ describe('MoviesPublish', () => {
                 expect(moviePage.items[0]).toEqual(publishedMovie)
             })
 
-            it('공개 전에는 검색에서 노출되지 않는다', async () => {
+            it('공개하지 않고 검색하면 결과에 포함되지 않는다', async () => {
                 const { body: moviePage } = await fix.httpClient
                     .get('/movies')
                     .query({ title: 'MovieTitle' })
@@ -86,115 +87,194 @@ describe('MoviesPublish', () => {
             })
         })
 
-        it('미발행 영화의 필수 필드가 누락되어 있으면 422를 반환한다', async () => {
-            const movie = await createUnpublishedMovie(fix)
-
-            await fix.httpClient
-                .post(`/movies/${movie.id}/publish`)
-                .unprocessableEntity({
-                    expected: Errors.Movies.InvalidForPublish(expect.any(Array))
-                })
+        describe('필수 정보가 비어 있는 미공개 영화가 있으면', () => {
+            let movie: MovieDto
+            beforeEach(async () => {
+                movie = await createUnpublishedMovie(fix)
+            })
+            it('공개 요청에 422를 반환한다', async () => {
+                await fix.httpClient
+                    .post(`/movies/${movie.id}/publish`)
+                    .unprocessableEntity({
+                        expected: Errors.Movies.InvalidForPublish(expect.any(Array))
+                    })
+            })
         })
 
-        it('필수 필드가 하나만 누락되어 있으면 missingFields에 그 필드만 담아 422를 반환한다', async () => {
-            const movie = await createUnpublishedMovie(fix)
+        describe('감독 정보만 비어 있는 미공개 영화가 있으면', () => {
+            let movie: MovieDto
+            beforeEach(async () => {
+                movie = await createUnpublishedMovie(fix)
 
-            // director만 기본값(미설정)으로 남겨 missingFields가 실제 누락 필드만 담는지 고정한다
+                // director만 기본값(미설정)으로 남겨 missingFields가 실제 누락 필드만 담는지 고정한다
+                await fix.httpClient
+                    .patch(`/movies/${movie.id}`)
+                    .body({
+                        durationInSeconds: 90 * 60,
+                        genres: [MovieGenre.Action],
+                        plot: `MoviePlot`,
+                        rating: MovieRating.PG,
+                        releaseDate: nullPlainDate,
+                        title: `MovieTitle`
+                    })
+                    .ok({ schema: MovieSchema })
+            })
+            it('공개 요청에 director만 누락 필드로 담은 422를 반환한다', async () => {
+                await fix.httpClient
+                    .post(`/movies/${movie.id}/publish`)
+                    .unprocessableEntity({
+                        expected: Errors.Movies.InvalidForPublish(['director'])
+                    })
+            })
+        })
+
+        describe('영화가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.post(`/movies/${nullObjectId}/publish`)
+            })
+            it('공개를 요청하면 404를 반환한다', async () => {
+                await request.notFound({ expected: Errors.Mongo.DocumentNotFound(nullObjectId) })
+            })
+        })
+    })
+
+    describe('공개된 영화가 존재하면', () => {
+        let movie: MovieDto
+
+        beforeEach(async () => {
+            movie = await createMovie(fix)
+        })
+
+        describe.each([
+            {
+                condition: '수정할 장르 목록이 비어 있으면',
+                field: 'genres',
+                update: { genres: [] }
+            },
+            {
+                condition: '수정할 상영 시간이 0초이면',
+                field: 'durationInSeconds',
+                update: { durationInSeconds: 0 }
+            },
+            {
+                condition: '수정할 관람 등급이 미지정 값이면',
+                field: 'rating',
+                update: { rating: MovieRating.Unrated }
+            },
+            {
+                condition: '수정할 개봉일이 기본값인 0000-01-01이면',
+                field: 'releaseDate',
+                update: { releaseDate: MovieDefaults.releaseDate }
+            },
+            {
+                condition: '수정할 감독 이름이 빈 문자열이면',
+                field: 'director',
+                update: { director: '' }
+            },
+            { condition: '수정할 줄거리가 빈 문자열이면', field: 'plot', update: { plot: '' } },
+            { condition: '수정할 제목이 빈 문자열이면', field: 'title', update: { title: '' } }
+        ])('$condition', ({ field, update }) => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.patch(`/movies/${movie.id}`).body(update)
+            })
+            it('영화 수정을 요청하면 422를 반환하고 기존 값을 유지한다', async () => {
+                await request.unprocessableEntity({
+                    expected: Errors.Movies.InvalidForPublish([field])
+                })
+
+                await fix.httpClient
+                    .get(`/movies/${movie.id}`)
+                    .ok({ schema: MovieSchema, expected: movie })
+            })
+        })
+    })
+
+    describe('MoviesService.update', () => {
+        describe('미공개 영화가 존재하면', () => {
+            let moviesService: MoviesService
+            let movie: MovieDto
+
+            beforeEach(async () => {
+                moviesService = fix.module.get(MoviesService)
+                movie = await createUnpublishedMovie(fix)
+            })
+
+            describe.each([
+                { field: 'genres', update: { genres: null } },
+                { field: 'rating', update: { rating: null } },
+                { field: 'releaseDate', update: { releaseDate: null } }
+            ])('수정할 $field 값이 null이면', ({ update }) => {
+                let updateDto: typeof update
+                beforeEach(() => {
+                    updateDto = update
+                })
+                it('영화를 수정하면 예외를 던진다', async () => {
+                    // @ts-expect-error 런타임 호출이 타입 계약을 어긴 경우를 검증한다.
+                    await expect(moviesService.update(movie.id, updateDto)).rejects.toThrow()
+                })
+            })
+        })
+    })
+
+    describe('공개된 영화의 첫 저장이 충돌하도록 설정하면', () => {
+        let moviesService: MoviesService
+        let movie: MovieDto
+        let update: MockInstance<MoviesRepository['collection']['findOneAndUpdate']>
+        beforeEach(async () => {
+            moviesService = fix.module.get(MoviesService)
+            const repository = fix.module.get(MoviesRepository)
+            movie = await createMovie(fix)
+            update = vi.spyOn(repository.collection, 'findOneAndUpdate').mockResolvedValueOnce(null)
+        })
+        it('영화 수정을 요청하면 저장을 재시도하고 수정된 영화를 반환한다', async () => {
+            await expect(
+                moviesService.update(movie.id, { title: 'retried title' })
+            ).resolves.toEqual(expect.objectContaining({ title: 'retried title' }))
+            expect(update).toHaveBeenCalledTimes(2)
+        })
+    })
+
+    describe('수정 내용을 저장하기 직전에 다른 요청이 영화를 공개하도록 설정하면', () => {
+        let movie: MovieDto
+        beforeEach(async () => {
+            const moviesService = fix.module.get(MoviesService)
+            const repository = fix.module.get(MoviesRepository)
+            movie = await moviesService.create(buildCreateMovieDto())
+            const save = repository.update.bind(repository)
+            vi.spyOn(repository, 'update').mockImplementationOnce(async (...args) => {
+                await moviesService.publish(movie.id)
+                return save(...args)
+            })
+        })
+        it('필수 정보를 비우는 수정을 요청하면 422를 반환하고 공개된 값을 유지한다', async () => {
             await fix.httpClient
                 .patch(`/movies/${movie.id}`)
-                .body({
-                    durationInSeconds: 90 * 60,
-                    genres: [MovieGenre.Action],
-                    plot: `MoviePlot`,
-                    rating: MovieRating.PG,
-                    releaseDate: nullPlainDate,
-                    title: `MovieTitle`
-                })
-                .ok({ schema: MovieSchema })
+                .body({ genres: [] })
+                .unprocessableEntity({ expected: Errors.Movies.InvalidForPublish(['genres']) })
 
             await fix.httpClient
-                .post(`/movies/${movie.id}/publish`)
-                .unprocessableEntity({ expected: Errors.Movies.InvalidForPublish(['director']) })
+                .get(`/movies/${movie.id}`)
+                .ok({ schema: MovieSchema, expected: movie })
         })
+    })
 
-        it('영화가 없으면 404를 반환한다', async () => {
+    describe('공개된 영화의 저장이 계속 충돌하도록 설정하면', () => {
+        let movie: MovieDto
+        let update: MockInstance<MoviesRepository['collection']['findOneAndUpdate']>
+        beforeEach(async () => {
+            const repository = fix.module.get(MoviesRepository)
+            movie = await createMovie(fix)
+            update = vi.spyOn(repository.collection, 'findOneAndUpdate').mockResolvedValue(null)
+        })
+        it('영화 수정을 요청하면 저장을 다섯 번 시도한 뒤 409를 반환한다', async () => {
             await fix.httpClient
-                .post(`/movies/${nullObjectId}/publish`)
-                .notFound({ expected: Errors.Mongo.DocumentNotFound(nullObjectId) })
+                .patch(`/movies/${movie.id}`)
+                .body({ title: 'never written' })
+                .conflict({ expected: Errors.Movies.UpdateConflict(movie.id) })
+
+            expect(update).toHaveBeenCalledTimes(5)
         })
-    })
-
-    it.each([
-        ['genres', { genres: [] }],
-        ['durationInSeconds', { durationInSeconds: 0 }],
-        ['rating', { rating: MovieRating.Unrated }],
-        ['releaseDate', { releaseDate: MovieDefaults.releaseDate }],
-        ['director', { director: '' }],
-        ['plot', { plot: '' }],
-        ['title', { title: '' }]
-    ])('공개된 영화의 %s 필수값을 비우면 422를 반환하고 저장하지 않는다', async (field, update) => {
-        const movie = await createMovie(fix)
-
-        await fix.httpClient
-            .patch(`/movies/${movie.id}`)
-            .body(update)
-            .unprocessableEntity({ expected: Errors.Movies.InvalidForPublish([field]) })
-
-        await fix.httpClient.get(`/movies/${movie.id}`).ok({ schema: MovieSchema, expected: movie })
-    })
-
-    it('공개 여부와 무관하게 저장 타입을 깨뜨리는 null 수정은 거부한다', async () => {
-        const moviesService = fix.module.get(MoviesService)
-        const movie = await createUnpublishedMovie(fix)
-
-        for (const update of [{ genres: null }, { rating: null }, { releaseDate: null }]) {
-            // @ts-expect-error 런타임 호출이 타입 계약을 어긴 경우를 검증한다.
-            await expect(moviesService.update(movie.id, update)).rejects.toThrow()
-        }
-    })
-
-    it('다른 수정과 충돌하면 최신 영화를 다시 읽어 수정을 재시도한다', async () => {
-        const moviesService = fix.module.get(MoviesService)
-        const repository = fix.module.get(MoviesRepository)
-        const movie = await createMovie(fix)
-        const update = vi
-            .spyOn(repository.collection, 'findOneAndUpdate')
-            .mockResolvedValueOnce(null)
-
-        await expect(moviesService.update(movie.id, { title: 'retried title' })).resolves.toEqual(
-            expect.objectContaining({ title: 'retried title' })
-        )
-        expect(update).toHaveBeenCalledTimes(2)
-    })
-
-    it('초안 수정 중 영화가 공개되면 최신 공개 조건을 다시 검증해 422를 반환한다', async () => {
-        const moviesService = fix.module.get(MoviesService)
-        const repository = fix.module.get(MoviesRepository)
-        const movie = await moviesService.create(buildCreateMovieDto())
-        const save = repository.update.bind(repository)
-        vi.spyOn(repository, 'update').mockImplementationOnce(async (...args) => {
-            await moviesService.publish(movie.id)
-            return save(...args)
-        })
-
-        await fix.httpClient
-            .patch(`/movies/${movie.id}`)
-            .body({ genres: [] })
-            .unprocessableEntity({ expected: Errors.Movies.InvalidForPublish(['genres']) })
-
-        await fix.httpClient.get(`/movies/${movie.id}`).ok({ schema: MovieSchema, expected: movie })
-    })
-
-    it('영화 수정이 계속 충돌하면 정해진 횟수만 재시도하고 409를 반환한다', async () => {
-        const repository = fix.module.get(MoviesRepository)
-        const movie = await createMovie(fix)
-        const update = vi.spyOn(repository.collection, 'findOneAndUpdate').mockResolvedValue(null)
-
-        await fix.httpClient
-            .patch(`/movies/${movie.id}`)
-            .body({ title: 'never written' })
-            .conflict({ expected: Errors.Movies.UpdateConflict(movie.id) })
-
-        expect(update).toHaveBeenCalledTimes(5)
     })
 })

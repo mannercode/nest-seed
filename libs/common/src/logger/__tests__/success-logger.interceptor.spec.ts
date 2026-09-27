@@ -8,12 +8,12 @@ describe('HttpSuccessLoggerInterceptor', () => {
 
     afterEach(() => fix.teardown())
 
-    describe('요청이 성공하면', () => {
+    describe('제외 경로를 설정하지 않았으면', () => {
         beforeEach(async () => {
             fix = await createSuccessLoggerInterceptorFixture([])
         })
 
-        it('Logger.verbose로 로그를 남긴다', async () => {
+        it('성공하는 경로로 요청하면 Logger.verbose로 로그를 남긴다', async () => {
             await fix.httpClient
                 .post('/success?token=query-secret')
                 .body({ password: 'request-secret' })
@@ -28,7 +28,7 @@ describe('HttpSuccessLoggerInterceptor', () => {
             })
         })
 
-        it('요청·응답 본문을 로그에 포함하지 않는다', async () => {
+        it('성공한 요청의 로그에는 요청·응답 본문을 포함하지 않는다', async () => {
             await fix.httpClient
                 .post('/success')
                 .body({ password: 'request-secret' })
@@ -39,43 +39,35 @@ describe('HttpSuccessLoggerInterceptor', () => {
             expect(log.request).not.toHaveProperty('body')
             expect(JSON.stringify(log)).not.toContain('request-secret')
         })
-    })
 
-    describe('요청 처리 중 에러가 발생하면', () => {
-        beforeEach(async () => {
-            fix = await createSuccessLoggerInterceptorFixture([])
-        })
+        describe('오류를 반환하는 경로이면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/failure')
+            })
+            it('요청하면 success 로그를 남기지 않는다', async () => {
+                await request.internalServerError()
 
-        it('success 로그를 남기지 않는다', async () => {
-            await fix.httpClient.get('/failure').internalServerError()
-
-            expect(fix.spyVerbose).not.toHaveBeenCalled()
+                expect(fix.spyVerbose).not.toHaveBeenCalled()
+            })
         })
     })
 
     describe('LOGGING_EXCLUDE_HTTP_PATHS', () => {
-        describe('제외 목록에 요청 경로가 포함되면', () => {
+        describe('제외 목록에 /exclude-path가 있으면', () => {
             beforeEach(async () => {
                 fix = await createSuccessLoggerInterceptorFixture([
                     { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: ['/exclude-path'] }
                 ])
             })
 
-            it('로깅을 건너뛴다', async () => {
+            it('제외 경로로 요청하면 로그를 남기지 않는다', async () => {
                 await fix.httpClient.get('/exclude-path').ok({ expected: { result: 'success' } })
 
                 expect(fix.spyVerbose).toHaveBeenCalledTimes(0)
             })
-        })
 
-        describe('제외 경로의 하위 경로를 요청하면', () => {
-            beforeEach(async () => {
-                fix = await createSuccessLoggerInterceptorFixture([
-                    { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: ['/exclude-path'] }
-                ])
-            })
-
-            it('경로가 정확히 일치하지 않으므로 로그를 남긴다', async () => {
+            it('제외 경로의 하위 경로로 요청하면 로그를 남긴다', async () => {
                 await fix.httpClient
                     .get('/exclude-path/sub')
                     .ok({ expected: { result: 'success' } })
@@ -91,14 +83,14 @@ describe('HttpSuccessLoggerInterceptor', () => {
                 ])
             })
 
-            it('어떤 경로도 제외하지 않는다', async () => {
+            it('/exclude-path로 요청하면 로그를 남긴다', async () => {
                 await fix.httpClient.get('/exclude-path').ok({ expected: { result: 'success' } })
 
                 expect(fix.spyVerbose).toHaveBeenCalledTimes(1)
             })
         })
 
-        describe('제외 목록에 일치하지 않는 경로가 섞여 있으면', () => {
+        describe('제외 목록에 두 경로가 있으면', () => {
             beforeEach(async () => {
                 fix = await createSuccessLoggerInterceptorFixture([
                     {
@@ -108,7 +100,7 @@ describe('HttpSuccessLoggerInterceptor', () => {
                 ])
             })
 
-            it('경로가 정확히 일치하는 요청은 로깅을 건너뛴다', async () => {
+            it('목록의 두 번째 경로로 요청해도 로그를 남기지 않는다', async () => {
                 await fix.httpClient.get('/exclude-path').ok({ expected: { result: 'success' } })
 
                 expect(fix.spyVerbose).toHaveBeenCalledTimes(0)

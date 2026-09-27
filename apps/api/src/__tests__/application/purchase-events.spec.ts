@@ -119,7 +119,7 @@ describe('PurchaseNotificationService', () => {
                 }
             })
 
-            it('구매 이벤트 한 건을 한 번 처리한다', async () => {
+            it('구매 이벤트를 한 건 발행하면 알림을 한 번 처리한다', async () => {
                 await events.emitTicketPurchased({
                     purchaseRecordId: 'purchase-replicas',
                     ticketIds: ['t1', 't2'],
@@ -177,7 +177,7 @@ describe('PurchaseNotificationService', () => {
                 })
             })
 
-            it('이벤트를 재전달받아 알림을 처리한다', async () => {
+            it('구매 이벤트를 발행하면 실패한 이벤트를 재전달받아 알림을 처리한다', async () => {
                 await events.emitTicketPurchased({
                     purchaseRecordId: 'purchase-retry',
                     ticketIds: ['t1'],
@@ -196,32 +196,39 @@ describe('PurchaseNotificationService', () => {
             })
         })
 
-        describe.each([
-            [
-                '필수 필드가 잘못된',
-                JSON.stringify({ purchaseRecordId: '', ticketIds: [], userId: 'user-1' })
-            ],
-            ['JSON이 아닌', 'not-json']
-        ])('%s 이벤트를 받았을 때', (_, payload) => {
+        describe('구매 이벤트 검증', () => {
             let stream: Awaited<ReturnType<typeof getJetStream>>
-
             beforeEach(async () => {
                 stream = await getJetStream(fix)
             })
-
-            it('오류를 기록하고 소비 대기 목록에서 제거한다', async () => {
-                const { connection, streamName } = stream
-                await jetstream(connection).publish(events.subjects.purchased, payload, {
-                    expect: { streamName },
-                    msgID: 'invalid-purchase-event'
+            describe.each([
+                {
+                    label: '필수 필드가 잘못된',
+                    payload: JSON.stringify({
+                        purchaseRecordId: '',
+                        ticketIds: [],
+                        userId: 'user-1'
+                    })
+                },
+                { label: 'JSON이 아닌', payload: 'not-json' }
+            ])('$label 구매 이벤트가 있으면', ({ payload }) => {
+                let eventPayload: string
+                beforeEach(() => {
+                    eventPayload = payload
                 })
-                await waitForNotifications(fix)
-
-                expect(getNotificationLogs(logSpy)).toHaveLength(0)
-                expect(errorSpy).toHaveBeenCalledWith(
-                    'invalid purchase notification event',
-                    expect.objectContaining({ error: expect.anything(), streamSequence: 1 })
-                )
+                it('이벤트를 발행하면 오류를 기록하고 소비 대기 목록에서 제거한다', async () => {
+                    const { connection, streamName } = stream
+                    await jetstream(connection).publish(events.subjects.purchased, eventPayload, {
+                        expect: { streamName },
+                        msgID: 'invalid-purchase-event'
+                    })
+                    await waitForNotifications(fix)
+                    expect(getNotificationLogs(logSpy)).toHaveLength(0)
+                    expect(errorSpy).toHaveBeenCalledWith(
+                        'invalid purchase notification event',
+                        expect.objectContaining({ error: expect.anything(), streamSequence: 1 })
+                    )
+                })
             })
         })
     })
@@ -236,7 +243,7 @@ describe('PurchaseNotificationService', () => {
                 messages = mockNotificationMessages(fix, async function* () {})
             })
 
-            it('예기치 않은 종료를 기록하고 스트림을 정리한다', async () => {
+            it('소비를 시작하면 예기치 않은 종료를 기록하고 스트림을 정리한다', async () => {
                 await notification.onModuleInit()
                 await waitFor(() => errorSpy.mock.calls.length > 0)
                 await notification.onModuleDestroy()
@@ -258,7 +265,7 @@ describe('PurchaseNotificationService', () => {
                 })
             })
 
-            it('원인을 기록하고 종료 시 오류를 다시 던지지 않는다', async () => {
+            it('소비를 시작하면 실패 원인을 기록하고 종료 시 오류를 다시 던지지 않는다', async () => {
                 await notification.onModuleInit()
                 await waitFor(() => errorSpy.mock.calls.length > 0)
 
@@ -290,7 +297,7 @@ describe('PurchaseNotificationService', () => {
                 await notification.onModuleInit()
             })
 
-            it('종료 중인 스트림의 오류를 장애로 기록하지 않는다', async () => {
+            it('서비스를 종료하면 스트림의 종료 오류를 장애로 기록하지 않는다', async () => {
                 await notification.onModuleDestroy()
 
                 expect(messages.close).toHaveBeenCalledOnce()
@@ -307,7 +314,7 @@ describe('PurchaseNotificationService', () => {
                 consume = vi.spyOn(events, 'consumeNotifications')
             })
 
-            it('소비를 시작하지 않고 종료한다', async () => {
+            it('서비스 종료를 요청하면 소비를 시작하지 않고 종료한다', async () => {
                 await expect(uninitialized.onModuleDestroy()).resolves.toBeUndefined()
 
                 expect(consume).not.toHaveBeenCalled()

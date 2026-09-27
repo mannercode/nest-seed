@@ -60,7 +60,7 @@ class TestController {
 
     @Get('slow-exception')
     async getSlowException() {
-        // 인터셉터가 마크한 진입 시각부터 duration을 재는지 확인하려고 던지기 전에 지연을 둔다.
+        // 인터셉터가 기록한 요청 시작 시각부터 duration을 계산하는지 확인하려고, 예외를 던지기 전에 기다린다.
         await sleep(50)
         throw new NotFoundException({ code: 'ERR_CODE', message: 'message' })
     }

@@ -46,8 +46,8 @@ export class TheatersRepository extends CrudRepository<Theater> {
         transaction: TransactionContext,
         signal: AbortSignal | undefined = undefined
     ) {
-        // 실제 Theater 문서를 쓰기 충돌 지점으로 사용한다. 같은 극장을 포함하는 두 트랜잭션은
-        // 이 갱신에서 직렬화되고, 드라이버는 TransientTransactionError를 새 snapshot으로 재시도한다.
+        // 같은 극장을 갱신하는 동시 트랜잭션 중 하나가 쓰기 충돌로 실패하도록 Theater 문서를 갱신한다.
+        // 드라이버는 TransientTransactionError를 받으면 새 snapshot으로 트랜잭션을 재시도한다.
         const ids = uniq(theaterIds)
         const options = { transaction, signal }
         const result = await this.updateDocuments(

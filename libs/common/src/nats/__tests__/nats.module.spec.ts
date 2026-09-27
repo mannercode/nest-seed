@@ -19,25 +19,42 @@ class SiblingConsumer {
 class SiblingModule {}
 
 describe('getNatsConnectionToken', () => {
-    it('이름이 없으면 기본 이름으로 토큰을 만든다', () => {
-        expect(getNatsConnectionToken(undefined)).toBe(
-            `NatsConnection:${DEFAULT_NATS_CONNECTION_NAME}`
-        )
+    describe('연결 이름이 없으면', () => {
+        let name: Parameters<typeof getNatsConnectionToken>[0]
+        beforeEach(() => {
+            name = undefined
+        })
+        it('주입 토큰을 만들면 기본 이름을 사용한다', () => {
+            expect(getNatsConnectionToken(name)).toBe(
+                `NatsConnection:${DEFAULT_NATS_CONNECTION_NAME}`
+            )
+        })
     })
 
-    it('이름이 있으면 해당 이름으로 토큰을 만든다', () => {
-        expect(getNatsConnectionToken('foo')).toBe('NatsConnection:foo')
+    describe('연결 이름이 지정되어 있으면', () => {
+        let name: Parameters<typeof getNatsConnectionToken>[0]
+        beforeEach(() => {
+            name = 'foo'
+        })
+        it('주입 토큰을 만들면 지정한 이름을 사용한다', () => {
+            expect(getNatsConnectionToken(name)).toBe('NatsConnection:foo')
+        })
     })
 })
 
 describe('NatsConnectionRegistry', () => {
-    it('drain이 실패한 연결이 있어도 onModuleDestroy는 예외를 전파하지 않는다', async () => {
-        const registry = new NatsConnectionRegistry()
-        const connection = { drain: vi.fn().mockRejectedValue(new Error('boom')) }
-        registry.add(connection as any)
-
-        await expect(registry.onModuleDestroy()).resolves.toBeUndefined()
-        expect(connection.drain).toHaveBeenCalled()
+    describe('drain이 실패하는 연결이 등록되어 있으면', () => {
+        let registry: NatsConnectionRegistry
+        let connection: { drain: ReturnType<typeof vi.fn> }
+        beforeEach(() => {
+            registry = new NatsConnectionRegistry()
+            connection = { drain: vi.fn().mockRejectedValue(new Error('boom')) }
+            registry.add(connection as any)
+        })
+        it('종료 시 연결의 drain을 호출하고 오류는 전파하지 않는다', async () => {
+            await expect(registry.onModuleDestroy()).resolves.toBeUndefined()
+            expect(connection.drain).toHaveBeenCalled()
+        })
     })
 })
 

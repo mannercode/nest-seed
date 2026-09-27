@@ -110,8 +110,8 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<NextR
             return response
         }
 
-        // 다른 BFF 인스턴스가 같은 토큰을 막 회전한 경우에는 winner가 내려 준 쿠키를
-        // 뒤늦은 loser 응답이 지우지 않도록 409만 전달한다.
+        // 다른 BFF 인스턴스가 먼저 갱신해 발급한 새 쿠키를, 늦게 도착한 실패 응답이 지우면 안 된다.
+        // 토큰이 이미 교체됐다는 409만 전달하고 쿠키는 유지한다.
         if (refreshed.status === 409) {
             return jsonResponse(REFRESH_REPLACED_ERROR, 409)
         }
@@ -201,7 +201,7 @@ async function callApi(
     if (accept) headers.set('Accept', accept)
     if (contentType) headers.set('Content-Type', contentType)
     if (idempotencyKey) headers.set('Idempotency-Key', idempotencyKey)
-    // 명시적으로 신뢰한 ingress가 연결 IP를 체인 오른쪽에 append하는 배포에서만 전달한다.
+    // 신뢰하도록 설정한 프록시가 실제 접속 IP를 X-Forwarded-For의 맨 뒤에 넣는 환경에서만 전달한다.
     if (clientIp) headers.set('X-Forwarded-For', clientIp)
     if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`)
 

@@ -18,7 +18,7 @@ TEST "영화를 생성한다" \
 
 MOVIE_ID=$(echo "${BODY}" | jq -r '.id')
 
-TEST "빈 요청 본문으로 영화 생성 기본값을 확인한다" \
+TEST "빈 요청 본문으로 영화를 생성하면 201을 반환한다" \
 	201 POST /movies \
 	-H 'Content-Type: application/json' \
 	-d '{}'

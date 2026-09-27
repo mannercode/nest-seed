@@ -53,7 +53,7 @@ export class JwtAuthService {
         const tokens = await this.createTokens(payload, sessionId)
         const ttlMs = this.config.refreshTokenTtlMs
 
-        // 세션과 사용자 목록은 같은 hash slot에 둬 함께 생성한다.
+        // 세션 데이터와 해당 사용자의 세션 ID 목록을 같은 hash slot에 둬 함께 생성한다.
         const results = await this.redis
             .multi()
             .set(
