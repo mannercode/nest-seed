@@ -8,7 +8,11 @@
 
 _This is a translation of [README.md](README.md). The Korean original is authoritative; the other guides and code comments are in Korean._
 
-A starter template for NestJS backend projects. `apps/api` is the main API, and `libs/` contains common code for use in other NestJS projects. The [movie-booking example](apps/api/README.md#예제-살펴보기) demonstrates cooperation between modules, data consistency, and external service integration. `console` and `user-app` are small Next.js demos connected to the API.
+A starter template for NestJS backend projects.
+
+`apps/api` is the main API, and `libs/` contains common code for use in other NestJS projects. `console` and `user-app` are small Next.js demos connected to the API.
+
+The [movie-booking example](apps/api/README.md#예제-살펴보기) demonstrates cooperation between modules, data consistency, and external service integration.
 
 ## Getting started
 

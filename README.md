@@ -1,6 +1,10 @@
 # nest-seed
 
-NestJS 기반 백엔드 프로젝트를 위한 시작 템플릿이다. `apps/api`가 중심 API이고 `libs/`에는 다른 NestJS 프로젝트에서도 사용할 공통 코드가 있다. [영화 예매 예제](apps/api/README.md#예제-살펴보기)로 모듈 간 협력, 데이터 정합성, 외부 서비스 연동을 설명한다. `console`과 `user-app`은 API에 연결하는 작은 Next.js 데모다.
+NestJS 기반 백엔드 프로젝트를 위한 시작 템플릿이다.
+
+`apps/api`가 중심 API이고 `libs/`에는 다른 NestJS 프로젝트에서도 사용할 공통 코드가 있다. `console`과 `user-app`은 API에 연결하는 작은 Next.js 데모다.
+
+[영화 예매 예제](apps/api/README.md#예제-살펴보기)로 모듈 간 협력, 데이터 정합성, 외부 서비스 연동을 설명한다.
 
 ## 시작하기
 
