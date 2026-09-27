@@ -8,6 +8,8 @@
 
 _This is a translation of [README.md](README.md). The Korean original is authoritative; the other guides and code comments are in Korean._
 
+A starter template for NestJS backend projects. `apps/api` is the main API, and `libs/` contains common code for use in other NestJS projects. The movie-booking example demonstrates cooperation between modules, data consistency, and external service integration. `console` and `user-app` are small Next.js demos connected to the API.
+
 ## Getting started
 
 The provided infrastructure and execution setup are for development and verification.
@@ -26,9 +28,7 @@ Dev Container startup, `bash infra/reset.sh`, and `pnpm run atoz` delete develop
 
 The root `.env.api` and `.env.infra` files contain committed development and verification settings. After editing either file, recreate the Dev Container to apply the changes. Inject production secrets outside the repository. The [development environment guide](.devcontainer/README.md) explains each file's role and how its values are injected.
 
-## Project overview
-
-A starter template for NestJS backend projects. `apps/api` is the main API, and `libs/` contains common code for use in other NestJS projects. The movie-booking example demonstrates cooperation between modules, data consistency, and external service integration. `console` and `user-app` are small Next.js demos connected to the API.
+## Exploring the example
 
 Start with simple CRUD, then explore module composition and asynchronous processing.
 

@@ -1,5 +1,7 @@
 # nest-seed
 
+NestJS 기반 백엔드 프로젝트를 위한 시작 템플릿이다. `apps/api`가 중심 API이고 `libs/`에는 다른 NestJS 프로젝트에서도 사용할 공통 코드가 있다. 영화 예매 예제로 모듈 간 협력, 데이터 정합성, 외부 서비스 연동을 설명한다. `console`과 `user-app`은 API에 연결하는 작은 Next.js 데모다.
+
 ## 시작하기
 
 제공하는 인프라와 실행 구성은 개발·검증용이다.
@@ -18,9 +20,7 @@ Dev Container 시작, `bash infra/reset.sh`, `pnpm run atoz`는 개발 데이터
 
 루트 `.env.api`와 `.env.infra`에는 개발·검증용 설정값이 커밋되어 있다. 이 파일을 수정한 뒤에는 Dev Container를 재생성해야 변경한 값이 반영된다. 운영 secret은 저장소 밖에서 주입한다. 파일별 역할과 주입 방법은 [개발 환경](.devcontainer/README.md)에 있다.
 
-## 프로젝트 소개
-
-NestJS 기반 백엔드 프로젝트를 위한 시작 템플릿이다. `apps/api`가 중심 API이고 `libs/`에는 다른 NestJS 프로젝트에서도 사용할 공통 코드가 있다. 영화 예매 예제로 모듈 간 협력, 데이터 정합성, 외부 서비스 연동을 설명한다. `console`과 `user-app`은 API에 연결하는 작은 Next.js 데모다.
+## 예제 살펴보기
 
 단순 CRUD부터 시작해 모듈 조합과 비동기 처리를 차례로 살펴본다.
 
