@@ -29,13 +29,15 @@ View는 데이터를 읽어 화면에 반환할 DTO와 항목의 순서·개수�
 
 ## 컨트롤러의 배치와 등록
 
-REST API 컨트롤러는 `services/gateway`에 두고 `AppModule`에 등록한다. `MoviesHttpController`는 영화 조회·생성·수정을 `MoviesService`에, 삭제를 `MovieDeletionService`에 맡긴다.
+Gateway는 REST API 컨트롤러와 HTTP 전용 기능을 모아 둔 계층이다. 컨트롤러는 `services/gateway`에 두고 `AppModule`에 등록한다.
 
-추천 기능에서 `MoviesModule`을 import해도 `/movies` API가 함께 등록되지 않는다. 업무 모듈을 사용하는 것과 HTTP API를 등록하는 것을 따로 결정하기 위해서다. 조회와 삭제를 서로 다른 서비스가 처리해도 영화 API의 URL·요청값 검사·인증 설정은 한곳에서 관리한다.
+NestJS의 [기능 모듈 예시](https://docs.nestjs.com/modules#feature-modules)처럼 각 업무 모듈에 컨트롤러를 두면 API·서비스·테스트를 함께 관리하기 쉽다. 현재 `src/__tests__`에 있는 기능별 HTTP 테스트도 해당 모듈에 두고, `AppModule` 전체 대신 대상 모듈과 필요한 의존성·공통 HTTP 설정으로 구성할 수 있다.
 
-컨트롤러가 다른 모듈의 서비스를 주입받으려면 그 서비스가 export되어 있어야 한다. 컨트롤러를 등록한 모듈은 서비스를 제공하는 모듈을 import해야 한다.
+다만 이 구조에서는 영화 조회·생성·수정 API는 `MoviesModule`에, 삭제 API는 `MovieDeletionModule`에 놓인다. `/movies`를 하나의 영화 API로 설계해도 내부 서비스가 나뉜다는 이유로 API 정의부터 두 모듈로 갈라진다.
 
-컨트롤러를 각 업무 모듈에 두면 해당 기능의 API와 서비스 코드를 가까이에서 읽을 수 있다. 이 방식에서는 영화 조회·생성·수정은 `MoviesModule`에, 삭제는 `MovieDeletionModule`에 나누어 등록하므로 `/movies` 관련 API가 두 모듈에 나뉜다. 현재 Gateway 배치에서는 영화 API를 한곳에서 관리하는 대신 서비스 구현을 따라갈 때 폴더를 오가야 한다.
+이 프로젝트는 본질기반해석에 따라 영화 API를 먼저 정의하고 그 동작을 구현하는 책임을 나누는 탑다운 설계에 맞춰 Gateway 배치를 선택했다. `MoviesHttpController`에서 `/movies`의 URL·요청값 검사·인증 설정을 함께 관리하고, 조회·생성·수정은 `MoviesService`에, 삭제는 `MovieDeletionService`에 맡긴다. API를 한곳에서 이해한 뒤 서비스를 호출하는 단계에서 구현 책임이 나뉘므로 설계 순서대로 코드를 읽기 자연스럽다.
+
+HTTP에서만 공유하는 인증 Guard·입력 변환 Pipe를 Gateway에 모으고, 도메인 서비스 모듈을 컨트롤러·URL·HTTP 인증 설정과 분리하는 것도 모듈화다. 추천 기능에서 `MoviesModule`을 import해도 `/movies` API가 함께 등록되지 않는다. 다만 서비스 구현을 따라갈 때는 Gateway와 업무 모듈의 폴더를 오가야 한다.
 
 ```mermaid
 flowchart LR
@@ -59,7 +61,7 @@ flowchart LR
     end
 ```
 
-기존 `MoviesHttpController`를 나누지 않고 `MoviesModule`에 등록하면 `MovieDeletionModule`을 import하게 되어 SoLA의 방향을 위반한다. 이때는 Movies → MovieDeletion → Movies의 순환이 생긴다. 폴더만 옮기지 말고 컨트롤러 등록과 모듈 import도 함께 확인해야 한다. `forwardRef`로 주입을 가능하게 해도 잘못된 의존 방향은 남는다.
+기존 `MoviesHttpController`를 나누지 않고 `MoviesModule`에 등록하면 삭제 서비스를 쓰기 위해 `MovieDeletionModule`을 import하게 되어 Movies → MovieDeletion → Movies의 순환이 생긴다. 위의 모듈별 배치가 성립하려면 컨트롤러도 각 모듈의 책임에 맞게 나누어야 한다.
 
 ## 이름은 동작과 계약을 설명한다
 
