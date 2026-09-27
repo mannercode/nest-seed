@@ -16,6 +16,8 @@ NestJS 프로젝트를 시작할 때 가져다 쓰고 고칠 수 있는 시드�
 
 ## 시작하기
 
+제공하는 인프라와 실행 구성은 개발·검증용이다.
+
 새 프로젝트로 포크할 때는 프로젝트명 `nest-seed`와 조직명 `mannercode`(`@mannercode/*` 패키지 scope 포함)를 사용할 이름으로 바꾼다.
 
 지원하는 개발 환경은 Dev Container다. Docker가 있는 호스트의 저장소를 VS Code Remote SSH로 열고 Dev Containers 확장을 사용한다. 호스트와 컨테이너에서 workspace의 절대경로가 같아야 하는 이유는 [개발 환경](docs/devcontainer.md)에 있다.
@@ -98,10 +100,3 @@ MongoDB는 데이터 저장과 트랜잭션, Redis는 좌석 선점과 리프레
 | `.devcontainer/` | [개발 환경과 env 주입](docs/devcontainer.md)             |
 
 작성 방법은 [개발 규칙](docs/reference/conventions.md), 변경과 리뷰의 판단 기준은 [프로젝트 변경·검토 기준](docs/reference/project-review.md)을 따른다. 할 일과 미결 검토는 루트 `_todo/`에서 관리한다.
-
-## 운영 적용 범위
-
-제공하는 인프라와 실행 구성은 개발·검증용이다. 운영 환경의 TLS·백업·모니터링·무중단 배포 구성은 포함하지 않는다.
-
-- 데모에서 사용자 IP를 전달받도록 설정하려면 프록시가 실제 접속 IP를 넣고, 이를 우회한 직접 접속을 막아야 한다. [사용자 IP 전달 설정](docs/apps.md#데모와-bff)을 따른다.
-- 진행 중인 구매·상영 작업이 있을 때 workflow 코드를 배포하려면 기존 작업이 끝날 때까지 이전 코드를 유지해야 한다. [진행 중인 작업을 보존하는 배포](docs/reference/decisions.md#배포-revision)를 따른다.
