@@ -25,33 +25,37 @@ View는 데이터를 읽어 화면에 반환할 DTO와 항목의 순서·개수�
 
 `config/`는 주입받은 env를 검증하고, `modules/`와 `app.module.ts`는 외부 연결과 Nest provider를 구성한다. 도메인 규칙은 이곳에 넣지 않는다. `ConfigModule`은 `ignoreEnvFile: true`로 실행 환경에 주입된 값을 사용한다. env 파일의 주입과 변경 반영 방법은 [Dev Container](../.devcontainer/README.md)를 따른다.
 
-### 컨트롤러를 Gateway로 분리하는 이유
+### 컨트롤러의 배치와 등록
 
-컨트롤러가 다른 모듈의 서비스를 주입받으려면 그 서비스가 export되어 있어야 한다. 컨트롤러를 등록한 모듈은 서비스를 제공하는 모듈을 import해야 한다. 따라서 컨트롤러를 도메인 모듈에 등록하면 도메인 모듈이 상위 유스케이스 모듈까지 import하게 될 수 있다.
+컨트롤러가 다른 모듈의 서비스를 주입받으려면 그 서비스가 export되어 있어야 한다. 컨트롤러를 등록한 모듈은 서비스를 제공하는 모듈을 import해야 한다. 현재 컨트롤러는 `services/gateway`에 두고 `AppModule`에 등록한다.
 
-예를 들어 현재 `MoviesHttpController`는 `MoviesService`와 `MovieDeletionService`를 사용한다. 이 컨트롤러를 `MoviesModule`에 등록하면 `MovieDeletionModule`을 import해야 하는데, `MovieDeletionModule`도 영화 삭제를 위해 `MoviesModule`을 import한다. 서비스 호출은 MovieDeletion → Movies의 단방향이어도 모듈은 서로 참조하게 된다.
+컨트롤러를 각 업무 모듈에 등록하는 배치도 SoLA의 의존 방향을 지킬 수 있다. 영화 조회·생성·수정은 `MoviesModule`에, 삭제는 `MovieDeletionModule`에 컨트롤러를 나누어 등록하면 된다. 현재 배치에서는 하나의 `MoviesHttpController`가 `MoviesService`와 `MovieDeletionService`를 사용한다.
 
 ```mermaid
 flowchart LR
-    subgraph coupled["도메인 모듈에 컨트롤러를 등록한 경우"]
+    subgraph distributed["각 업무 모듈에 컨트롤러를 나누어 등록"]
         direction TB
-        M1["MoviesModule<br/>MoviesHttpController · MoviesService"]
-        D1["MovieDeletionModule"]
-        M1 -->|컨트롤러의 삭제 호출| D1
-        D1 -->|영화 삭제| M1
+        A1["AppModule"]
+        M1["MoviesModule<br/>조회·생성·수정 컨트롤러 · MoviesService"]
+        D1["MovieDeletionModule<br/>삭제 컨트롤러 · MovieDeletionService"]
+        A1 --> M1
+        A1 --> D1
+        D1 --> M1
     end
-    subgraph separated["Gateway로 컨트롤러를 분리"]
+    subgraph gateway["현재 Gateway 배치"]
         direction TB
-        A["AppModule<br/>Gateway 컨트롤러"]
-        D2["MovieDeletionModule"]
-        M2["MoviesModule"]
-        A --> D2
-        A --> M2
+        A2["AppModule<br/>MoviesHttpController"]
+        D2["MovieDeletionModule<br/>MovieDeletionService"]
+        M2["MoviesModule<br/>MoviesService"]
+        A2 --> D2
+        A2 --> M2
         D2 --> M2
     end
 ```
 
-그래서 이 시드는 컨트롤러를 `services/gateway`에 두고 `AppModule`에 등록한다. 필요한 모듈은 상위의 `AppModule`에서 import하므로 `MoviesModule`이 컨트롤러의 유스케이스에 의존하지 않고, MovieDeletion → Movies의 단방향을 유지한다. 폴더만 옮기지 말고 컨트롤러 등록과 모듈 import도 함께 분리해야 한다. `forwardRef`로 순환 의존을 주입할 수 있게 해도 모듈 간 결합은 남는다.
+두 배치 모두 MovieDeletion → Movies의 단방향이다. 모듈 간 순환 의존을 피하는 기준은 SoLA의 의존 규칙이다. HTTP 진입점을 Gateway에 모으기로 한 이유와 모듈별 배치의 장단점은 [설계 결정](../docs/decisions.md#nestjs와-모듈-경계)에 있다.
+
+기존 `MoviesHttpController`를 나누지 않고 `MoviesModule`에 등록하면 `MovieDeletionModule`을 import하게 되어 SoLA의 방향을 위반한다. 이때는 Movies → MovieDeletion → Movies의 순환이 생긴다. 폴더만 옮기지 말고 컨트롤러 등록과 모듈 import도 함께 확인해야 한다. `forwardRef`로 주입을 가능하게 해도 잘못된 의존 방향은 남는다.
 
 ## 데이터와 DTO
 
