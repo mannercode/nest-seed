@@ -16,7 +16,7 @@ flowchart TB
 
 이 스택은 운영 배포 예제가 아니다. TLS·secret 관리·백업/복구·관측 시스템·프론트엔드 배포·무중단 revision 전환은 제공하지 않는다.
 
-환경 변수는 [개발 환경의 주입 방식](../.devcontainer/README.md#1-환경-변수는-재생성해야-반영된다)을 따른다. 실행기는 Dev Container에 설정된 고정 개발 관리자 계정으로 로그인하므로, infra reset이 생성한 계정이 준비되어 있어야 한다. 스택을 종료하면 API·NGINX만 정리한다. DB·bucket·journal은 별도 [infra reset](../infra/README.md)으로 초기화하며, benchmark가 만든 데이터도 스택 종료 후 남는다.
+환경 변수는 [개발 환경의 주입 방식](../.devcontainer/README.md#1-환경-변수-파일-변경-후-dev-container-재생성)을 따른다. 실행기는 Dev Container에 설정된 고정 개발 관리자 계정으로 로그인하므로, infra reset이 생성한 계정이 준비되어 있어야 한다. 스택을 종료하면 API·NGINX만 정리한다. DB·bucket·journal은 별도 [infra reset](../infra/README.md)으로 초기화하며, benchmark가 만든 데이터도 스택 종료 후 남는다.
 
 API 문서·benchmark·web 실행기는 검증 명령이 실패하면 그 종료 코드를 반환한다. 검증이 성공해도 스택 정리에 실패하면 실행 전체를 실패로 처리한다.
 

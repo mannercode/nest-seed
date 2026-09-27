@@ -22,7 +22,7 @@
 
 인프라가 준비되면 [독립 스크립트](../apps/api/scripts/admin-create.cjs)로 `.env.infra`에 지정한 개발 관리자 계정을 생성한다. common을 빌드하기 전에도 실행할 수 있도록 MongoDB와 bcrypt를 직접 사용한다. 인프라 준비나 계정 생성이 실패하면 reset도 실패한다.
 
-reset은 루트 env 파일을 새로 읽지 않는다. 값을 바꿨다면 먼저 [Dev Container를 재생성](../.devcontainer/README.md#1-환경-변수는-재생성해야-반영된다)해 실행 환경을 맞춘다.
+reset은 루트 env 파일을 새로 읽지 않는다. 값을 바꿨다면 먼저 [Dev Container를 재생성](../.devcontainer/README.md#1-환경-변수-파일-변경-후-dev-container-재생성)해 실행 환경을 맞춘다.
 
 ## 3. 공유 네트워크와 복구의 한계
 

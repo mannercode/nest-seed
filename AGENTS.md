@@ -8,7 +8,7 @@
 
 - `.devcontainer/`: [개발 환경](.devcontainer/README.md)
 - `apps/`: [애플리케이션](apps/README.md), [설계 결정](docs/decisions.md)
-- `infra/`: [개발 인프라](infra/README.md), [개발 환경의 env 주입](.devcontainer/README.md#1-환경-변수는-재생성해야-반영된다)
+- `infra/`: [개발 인프라](infra/README.md), [개발 환경의 env 주입](.devcontainer/README.md#1-환경-변수-파일-변경-후-dev-container-재생성)
 - `libs/`: [공유 패키지](libs/README.md), [개발 규칙](docs/conventions.md)
 - `tests/`: [외부 스택 테스트와 API 스택](tests/README.md), [실행 방법](README.md#실행과-검증)
 - `tools/`: [개발·테스트 실행 도구](tools/README.md)

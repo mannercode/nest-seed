@@ -2,7 +2,7 @@
 
 앱·테스트·실행 도구가 같은 인프라 구성을 사용하도록 Dev Container만 공식 개발 환경으로 지원한다.
 
-## 1. 환경 변수는 재생성해야 반영된다
+## 1. 환경 변수 파일 변경 후 Dev Container 재생성
 
 루트 [.env.infra](../.env.infra)에는 인프라 접속 정보·이미지·포트·개발 관리자 계정을, [.env.api](../.env.api)에는 인증·HTTP·업무 설정을 둔다.
 
@@ -13,7 +13,7 @@ flowchart TB
     Files -->|"API/web Compose · env_file (format: raw)"| API["검증 스택의 API 컨테이너"]
 ```
 
-값을 바꿨다면 **Rebuild Container로 재생성한다.** 앱이나 컨테이너를 재시작하는 것만으로는 반영되지 않는다. API와 reset·API 테스트 실행기는 루트 env 파일을 다시 읽지 않는다. API는 전달받은 환경 변수를 검증한다.
+루트 `.env.infra`나 `.env.api`를 수정한 뒤에는 VS Code의 **`Rebuild Container`로 Dev Container를 다시 만든다.** 환경 변수는 컨테이너를 만들 때 전달되므로 앱이나 컨테이너를 재시작하는 것만으로는 변경한 값이 반영되지 않는다. API와 reset·API 테스트 실행기는 루트 env 파일을 다시 읽지 않는다. API는 전달받은 환경 변수를 검증한다.
 
 이 방식에서는 `$`와 따옴표도 값의 일부다. 셸 문법처럼 다른 변수를 참조하거나 값을 따옴표로 감싸지 않는다.
 
