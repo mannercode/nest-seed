@@ -19,14 +19,26 @@ class SiblingConsumer {
 class SiblingModule {}
 
 describe('getNatsConnectionToken', () => {
-    it('이름이 없으면 기본 이름으로 토큰을 만든다', () => {
-        expect(getNatsConnectionToken(undefined)).toBe(
-            `NatsConnection:${DEFAULT_NATS_CONNECTION_NAME}`
-        )
+    describe('연결 이름이 없으면', () => {
+        let name: Parameters<typeof getNatsConnectionToken>[0]
+        beforeEach(() => {
+            name = undefined
+        })
+        it('주입 토큰을 만들면 기본 이름을 사용한다', () => {
+            expect(getNatsConnectionToken(name)).toBe(
+                `NatsConnection:${DEFAULT_NATS_CONNECTION_NAME}`
+            )
+        })
     })
 
-    it('이름이 있으면 해당 이름으로 토큰을 만든다', () => {
-        expect(getNatsConnectionToken('foo')).toBe('NatsConnection:foo')
+    describe('연결 이름이 지정되어 있으면', () => {
+        let name: Parameters<typeof getNatsConnectionToken>[0]
+        beforeEach(() => {
+            name = 'foo'
+        })
+        it('주입 토큰을 만들면 지정한 이름을 사용한다', () => {
+            expect(getNatsConnectionToken(name)).toBe('NatsConnection:foo')
+        })
     })
 })
 

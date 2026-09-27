@@ -23,12 +23,16 @@ describe('TicketHoldingService', () => {
     afterEach(() => teardown?.())
 
     describe('holdTickets', () => {
-        it('아무도 선점하지 않은 티켓을 선점하면 true를 반환한다', async () => {
-            const holdDto = buildHoldTicketsDto()
+        describe('요청할 티켓을 아무도 선점하지 않았으면', () => {
+            let holdDto: ReturnType<typeof buildHoldTicketsDto>
+            beforeEach(() => {
+                holdDto = buildHoldTicketsDto()
+            })
+            it('티켓 선점을 요청하면 true를 반환한다', async () => {
+                const isHeld = await ticketHoldingService.holdTickets(holdDto)
 
-            const isHeld = await ticketHoldingService.holdTickets(holdDto)
-
-            expect(isHeld).toBe(true)
+                expect(isHeld).toBe(true)
+            })
         })
 
         describe('사용자가 이미 티켓을 선점하고 있을 때', () => {

@@ -68,33 +68,46 @@ describe('UserAuthentication', () => {
     afterEach(() => teardown?.())
 
     describe('POST /users/login', () => {
-        it('자격 증명이 유효하면 인증 토큰을 반환한다', async () => {
-            const { body } = await fix.httpClient
-                .post('/users/login')
-                .body(credentials)
-                .ok({
+        describe('이메일과 비밀번호가 등록된 사용자 정보와 일치하면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.post('/users/login').body(credentials)
+            })
+            it('로그인하면 인증 토큰을 반환한다', async () => {
+                const { body } = await request.ok({
                     expected: { accessToken: expect.any(String), refreshToken: expect.any(String) }
                 })
 
-            const { exp, iat } = new JwtService().decode<{ exp: number; iat: number }>(
-                body.accessToken
-            )
-            const { auth } = fix.module.get(AppConfigService)
-            expect(exp - iat).toBe(TimeUtil.toMs(auth.accessTokenExpiration) / 1000)
+                const { exp, iat } = new JwtService().decode<{ exp: number; iat: number }>(
+                    body.accessToken
+                )
+                const { auth } = fix.module.get(AppConfigService)
+                expect(exp - iat).toBe(TimeUtil.toMs(auth.accessTokenExpiration) / 1000)
+            })
         })
 
-        it('비밀번호가 틀리면 401을 반환한다', async () => {
-            await fix.httpClient
-                .post('/users/login')
-                .body({ ...credentials, password: 'wrong password' })
-                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+        describe('비밀번호가 틀리면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post('/users/login')
+                    .body({ ...credentials, password: 'wrong password' })
+            })
+            it('로그인을 요청하면 401을 반환한다', async () => {
+                await request.unauthorized({ expected: Errors.Auth.Unauthorized() })
+            })
         })
 
-        it('등록되지 않은 이메일이면 401을 반환한다', async () => {
-            await fix.httpClient
-                .post('/users/login')
-                .body({ ...credentials, email: 'unknown@mail.com' })
-                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+        describe('등록되지 않은 이메일이면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post('/users/login')
+                    .body({ ...credentials, email: 'unknown@mail.com' })
+            })
+            it('로그인을 요청하면 401을 반환한다', async () => {
+                await request.unauthorized({ expected: Errors.Auth.Unauthorized() })
+            })
         })
 
         describe('여러 IP에서 같은 계정으로 로그인에 실패한 기록이 있으면', () => {
@@ -192,23 +205,32 @@ describe('UserAuthentication', () => {
                     })
             })
 
-            it('리프레시 토큰을 액세스 토큰 자리에 쓰면 401을 반환한다', async () => {
-                // 두 토큰은 iss/aud가 같아 secret 분리만이 방벽이다 — 이 검증이 무너지면
-                // 수명이 긴 리프레시 토큰이 로그아웃으로도 회수되지 않는 액세스 토큰으로 동작한다.
-                const { refreshToken } = authTokens
+            describe('Authorization 헤더에 리프레시 토큰이 있으면', () => {
+                let request: typeof fix.httpClient
+                beforeEach(() => {
+                    request = fix.httpClient
+                        .get('/users/me')
+                        .headers({ Authorization: `Bearer ${authTokens.refreshToken}` })
+                })
+                it('본인 정보를 조회하면 401을 반환한다', async () => {
+                    // 두 토큰은 iss/aud가 같아 secret 분리만이 방벽이다 — 이 검증이 무너지면
+                    // 수명이 긴 리프레시 토큰이 로그아웃으로도 회수되지 않는 액세스 토큰으로 동작한다.
 
-                await fix.httpClient
-                    .get('/users/me')
-                    .headers({ Authorization: `Bearer ${refreshToken}` })
-                    .unauthorized({ expected: Errors.Auth.Unauthorized() })
+                    await request.unauthorized({ expected: Errors.Auth.Unauthorized() })
+                })
             })
         })
 
-        it('액세스 토큰이 검증되지 않으면 401을 반환한다', async () => {
-            await fix.httpClient
-                .get('/users/me')
-                .headers({ Authorization: 'Bearer invalid-token' })
-                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+        describe('액세스 토큰이 유효하지 않으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .get('/users/me')
+                    .headers({ Authorization: 'Bearer invalid-token' })
+            })
+            it('본인 정보를 조회하면 401을 반환한다', async () => {
+                await request.unauthorized({ expected: Errors.Auth.Unauthorized() })
+            })
         })
 
         describe.each([
@@ -255,8 +277,14 @@ describe('UserAuthentication', () => {
             })
         })
 
-        it('인증 없이 호출하면 401을 반환한다', async () => {
-            await fix.httpClient.delete('/users/me').unauthorized()
+        describe('인증 정보가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.delete('/users/me')
+            })
+            it('계정 삭제를 요청하면 401을 반환한다', async () => {
+                await request.unauthorized()
+            })
         })
     })
 
@@ -304,14 +332,26 @@ describe('UserAuthentication', () => {
             })
         })
 
-        it('인증 없이 호출하면 401을 반환한다', async () => {
-            await fix.httpClient.patch('/users/me').body({ name: 'x' }).unauthorized()
+        describe('인증 정보가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.patch('/users/me').body({ name: 'x' })
+            })
+            it('본인 정보 수정을 요청하면 401을 반환한다', async () => {
+                await request.unauthorized()
+            })
         })
     })
 
     describe('GET /users/me/purchases', () => {
-        it('인증 없이 호출하면 401을 반환한다', async () => {
-            await fix.httpClient.get('/users/me/purchases').unauthorized()
+        describe('인증 정보가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/users/me/purchases')
+            })
+            it('구매 내역 조회를 요청하면 401을 반환한다', async () => {
+                await request.unauthorized()
+            })
         })
 
         describe('사용자로 로그인했으면', () => {
@@ -342,11 +382,16 @@ describe('UserAuthentication', () => {
                     ).toBe(true)
                 })
             })
-            it('구매 기록이 없으면 빈 배열을 반환한다', async () => {
-                await fix.httpClient
-                    .get('/users/me/purchases')
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .ok({ schema: PurchaseRecordSchema.array(), expected: [] })
+            describe('구매 기록이 없으면', () => {
+                let request: typeof fix.httpClient
+                beforeEach(() => {
+                    request = fix.httpClient
+                        .get('/users/me/purchases')
+                        .headers({ Authorization: `Bearer ${accessToken}` })
+                })
+                it('구매 내역을 조회하면 빈 배열을 반환한다', async () => {
+                    await request.ok({ schema: PurchaseRecordSchema.array(), expected: [] })
+                })
             })
         })
     })
@@ -375,11 +420,16 @@ describe('UserAuthentication', () => {
             })
         })
 
-        it('리프레시 토큰이 검증되지 않으면 401을 반환한다', async () => {
-            await fix.httpClient
-                .post('/users/refresh')
-                .body({ refreshToken: 'invalid-token' })
-                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+        describe('리프레시 토큰이 유효하지 않으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post('/users/refresh')
+                    .body({ refreshToken: 'invalid-token' })
+            })
+            it('토큰 갱신을 요청하면 401을 반환한다', async () => {
+                await request.unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+            })
         })
     })
 
@@ -410,17 +460,26 @@ describe('UserAuthentication', () => {
                 .ok({ schema: UserSchema, expected: user })
         })
 
-        it('잘못된 토큰으로 로그아웃하면 401을 반환한다', async () => {
-            await fix.httpClient
-                .post('/users/logout')
-                .body({ refreshToken: 'garbage' })
-                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+        describe('리프레시 토큰이 유효하지 않으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.post('/users/logout').body({ refreshToken: 'garbage' })
+            })
+            it('로그아웃을 요청하면 401을 반환한다', async () => {
+                await request.unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+            })
         })
     })
 
     describe('POST /users/me/logout-all', () => {
-        it('인증 없이 호출하면 401을 반환한다', async () => {
-            await fix.httpClient.post('/users/me/logout-all').unauthorized()
+        describe('인증 정보가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.post('/users/me/logout-all')
+            })
+            it('전체 로그아웃을 요청하면 401을 반환한다', async () => {
+                await request.unauthorized()
+            })
         })
 
         describe('두 로그인 세션이 존재하면', () => {

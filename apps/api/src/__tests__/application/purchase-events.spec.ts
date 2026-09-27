@@ -201,7 +201,7 @@ describe('PurchaseNotificationService', () => {
             beforeEach(async () => {
                 stream = await getJetStream(fix)
             })
-            it.each([
+            describe.each([
                 {
                     label: '필수 필드가 잘못된',
                     payload: JSON.stringify({
@@ -211,11 +211,14 @@ describe('PurchaseNotificationService', () => {
                     })
                 },
                 { label: 'JSON이 아닌', payload: 'not-json' }
-            ])(
-                '$label 이벤트를 발행하면 오류를 기록하고 소비 대기 목록에서 제거한다',
-                async ({ payload }) => {
+            ])('$label 구매 이벤트가 있으면', ({ payload }) => {
+                let eventPayload: string
+                beforeEach(() => {
+                    eventPayload = payload
+                })
+                it('이벤트를 발행하면 오류를 기록하고 소비 대기 목록에서 제거한다', async () => {
                     const { connection, streamName } = stream
-                    await jetstream(connection).publish(events.subjects.purchased, payload, {
+                    await jetstream(connection).publish(events.subjects.purchased, eventPayload, {
                         expect: { streamName },
                         msgID: 'invalid-purchase-event'
                     })
@@ -225,8 +228,8 @@ describe('PurchaseNotificationService', () => {
                         'invalid purchase notification event',
                         expect.objectContaining({ error: expect.anything(), streamSequence: 1 })
                     )
-                }
-            )
+                })
+            })
         })
     })
 

@@ -253,8 +253,14 @@ describe('NatsPubSubService', () => {
         )
     })
 
-    it('구독한 적 없는 subject를 해제해도 오류 없이 끝난다', async () => {
-        await expect(fix.pubSubB.unsubscribe('never-subscribed', () => {})).resolves.toBeUndefined()
+    describe('subject를 구독한 적이 없으면', () => {
+        let subject: string
+        beforeEach(() => {
+            subject = 'never-subscribed'
+        })
+        it('구독 해제를 요청하면 오류 없이 완료한다', async () => {
+            await expect(fix.pubSubB.unsubscribe(subject, () => {})).resolves.toBeUndefined()
+        })
     })
 
     describe('다른 subject에만 구독자가 등록되어 있으면', () => {
@@ -496,12 +502,24 @@ describe('createNatsPubSubServiceFixture', () => {
 })
 
 describe('InjectNatsPubSub', () => {
-    it('이름 없이 호출하면 파라미터 데코레이터를 반환한다', async () => {
-        expect(typeof InjectNatsPubSub(undefined)).toBe('function')
+    describe('연결 이름을 지정하지 않았으면', () => {
+        let name: Parameters<typeof InjectNatsPubSub>[0]
+        beforeEach(() => {
+            name = undefined
+        })
+        it('주입 데코레이터를 만들면 파라미터 데코레이터를 반환한다', async () => {
+            expect(typeof InjectNatsPubSub(name)).toBe('function')
+        })
     })
 
-    it('이름과 함께 호출해도 파라미터 데코레이터를 반환한다', async () => {
-        expect(typeof InjectNatsPubSub('my-bus')).toBe('function')
+    describe('연결 이름이 지정되어 있으면', () => {
+        let name: Parameters<typeof InjectNatsPubSub>[0]
+        beforeEach(() => {
+            name = 'my-bus'
+        })
+        it('주입 데코레이터를 만들면 파라미터 데코레이터를 반환한다', async () => {
+            expect(typeof InjectNatsPubSub(name)).toBe('function')
+        })
     })
 })
 

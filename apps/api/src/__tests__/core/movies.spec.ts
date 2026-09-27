@@ -35,13 +35,19 @@ describe('MoviesService', () => {
     afterEach(() => teardown?.())
 
     describe('POST /movies', () => {
-        it.each([
+        describe.each([
             { condition: '상영 시간이 문자열이면', invalid: { durationInSeconds: '90' } },
             { condition: '제목이 불리언이면', invalid: { title: true } },
             { condition: '개봉일이 null이면', invalid: { releaseDate: null } },
             { condition: 'assetIds를 직접 지정하면', invalid: { assetIds: [nullObjectId] } }
-        ])('$condition 400을 반환한다', async ({ invalid }) => {
-            await fix.httpClient.post('/movies').body(invalid).badRequest()
+        ])('$condition', ({ invalid }) => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.post('/movies').body(invalid)
+            })
+            it('영화 생성을 요청하면 400을 반환한다', async () => {
+                await request.badRequest()
+            })
         })
 
         it('생성된 영화를 반환한다', async () => {
@@ -57,11 +63,13 @@ describe('MoviesService', () => {
             expect(response.text).toContain('"releaseDate":"1970-01-01"')
         })
 
-        it('필드를 비워 보내면 기본값이 적용된 영화를 반환한다', async () => {
-            await fix.httpClient
-                .post('/movies')
-                .body({})
-                .created({
+        describe('요청 본문이 빈 객체이면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.post('/movies').body({})
+            })
+            it('영화를 생성하면 기본값이 적용된 영화를 반환한다', async () => {
+                await request.created({
                     schema: MovieSchema,
                     expected: {
                         genres: [],
@@ -70,6 +78,7 @@ describe('MoviesService', () => {
                         ...MovieDefaults
                     }
                 })
+            })
         })
     })
 
@@ -107,10 +116,16 @@ describe('MoviesService', () => {
             })
         })
 
-        it('ID에 해당하는 영화가 없으면 404를 반환한다', async () => {
-            await fix.httpClient
-                .get(`/movies/${nullObjectId}`)
-                .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]) })
+        describe('ID에 해당하는 영화가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get(`/movies/${nullObjectId}`)
+            })
+            it('영화를 조회하면 404를 반환한다', async () => {
+                await request.notFound({
+                    expected: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId])
+                })
+            })
         })
 
         describe('미공개 영화가 있으면', () => {
@@ -190,11 +205,14 @@ describe('MoviesService', () => {
                 .ok({ schema: MovieSchema, expected: { ...movie, ...updateDto } })
         })
 
-        it('ID에 해당하는 영화가 없으면 404를 반환한다', async () => {
-            await fix.httpClient
-                .patch(`/movies/${nullObjectId}`)
-                .body({})
-                .notFound({ expected: Errors.Mongo.DocumentNotFound(nullObjectId) })
+        describe('ID에 해당하는 영화가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.patch(`/movies/${nullObjectId}`).body({})
+            })
+            it('영화 수정을 요청하면 404를 반환한다', async () => {
+                await request.notFound({ expected: Errors.Mongo.DocumentNotFound(nullObjectId) })
+            })
         })
     })
 
@@ -245,8 +263,14 @@ describe('MoviesService', () => {
             })
         })
 
-        it('영화가 없어도 204를 반환한다', async () => {
-            await fix.httpClient.delete(`/movies/${nullObjectId}`).noContent()
+        describe('ID에 해당하는 영화가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.delete(`/movies/${nullObjectId}`)
+            })
+            it('영화 삭제를 요청하면 204를 반환한다', async () => {
+                await request.noContent()
+            })
         })
     })
 
@@ -312,79 +336,108 @@ describe('MoviesService', () => {
             }
         }
 
-        it('쿼리가 없으면 전체 영화 페이지를 반환한다', async () => {
-            const expected = buildExpectedPage([movieA1, movieA2, movieB1, movieB2])
+        describe('검색 조건이 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/movies')
+            })
+            it('영화 목록을 조회하면 전체 영화 페이지를 반환한다', async () => {
+                const expected = buildExpectedPage([movieA1, movieA2, movieB1, movieB2])
 
-            await fix.httpClient
-                .get('/movies')
-                .ok({ schema: paginationResultSchema(MovieSchema), expected })
+                await request.ok({ schema: paginationResultSchema(MovieSchema), expected })
+            })
         })
 
-        it('title 부분 일치로 필터링한다', async () => {
-            await fix.httpClient
-                .get('/movies')
-                .query({ title: 'title-a' })
-                .ok({
+        describe('영화 제목의 일부를 검색 조건으로 지정했으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/movies').query({ title: 'title-a' })
+            })
+            it('목록을 조회하면 제목에 해당 문자열이 포함된 영화를 반환한다', async () => {
+                await request.ok({
                     schema: paginationResultSchema(MovieSchema),
                     expected: buildExpectedPage([movieA1, movieA2])
                 })
+            })
         })
 
-        it('genre로 필터링한다', async () => {
-            await fix.httpClient
-                .get('/movies')
-                .query({ genre: MovieGenre.Drama })
-                .ok({
+        describe('장르를 검색 조건으로 지정했으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/movies').query({ genre: MovieGenre.Drama })
+            })
+            it('목록을 조회하면 해당 장르의 영화를 반환한다', async () => {
+                await request.ok({
                     schema: paginationResultSchema(MovieSchema),
                     expected: buildExpectedPage([movieA2, movieB1])
                 })
+            })
         })
 
-        it('개봉일로 필터링한다', async () => {
-            await fix.httpClient
-                .get('/movies')
-                .query({ releaseDate: plainDate('2000-01-02').toString() })
-                .ok({
+        describe('개봉일을 검색 조건으로 지정했으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .get('/movies')
+                    .query({ releaseDate: plainDate('2000-01-02').toString() })
+            })
+            it('목록을 조회하면 해당 날짜에 개봉한 영화를 반환한다', async () => {
+                await request.ok({
                     schema: paginationResultSchema(MovieSchema),
                     expected: buildExpectedPage([movieA2, movieB1])
                 })
+            })
         })
 
-        it('plot 부분 일치로 필터링한다', async () => {
-            await fix.httpClient
-                .get('/movies')
-                .query({ plot: 'plot-b' })
-                .ok({
+        describe('줄거리의 일부를 검색 조건으로 지정했으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/movies').query({ plot: 'plot-b' })
+            })
+            it('목록을 조회하면 줄거리에 해당 문자열이 포함된 영화를 반환한다', async () => {
+                await request.ok({
                     schema: paginationResultSchema(MovieSchema),
                     expected: buildExpectedPage([movieB1, movieB2])
                 })
+            })
         })
 
-        it('director 부분 일치로 필터링한다', async () => {
-            await fix.httpClient
-                .get('/movies')
-                .query({ director: 'James' })
-                .ok({
+        describe('감독 이름의 일부를 검색 조건으로 지정했으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/movies').query({ director: 'James' })
+            })
+            it('목록을 조회하면 감독 이름에 해당 문자열이 포함된 영화를 반환한다', async () => {
+                await request.ok({
                     schema: paginationResultSchema(MovieSchema),
                     expected: buildExpectedPage([movieA1, movieB1])
                 })
+            })
         })
 
-        it('rating으로 필터링한다', async () => {
-            await fix.httpClient
-                .get('/movies')
-                .query({ rating: MovieRating.NC17 })
-                .ok({
+        describe('관람 등급을 검색 조건으로 지정했으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/movies').query({ rating: MovieRating.NC17 })
+            })
+            it('목록을 조회하면 해당 등급의 영화를 반환한다', async () => {
+                await request.ok({
                     schema: paginationResultSchema(MovieSchema),
                     expected: buildExpectedPage([movieA1, movieA2])
                 })
+            })
         })
 
-        it('알 수 없는 쿼리 파라미터는 400을 반환한다', async () => {
-            await fix.httpClient
-                .get('/movies')
-                .query({ wrong: 'value' })
-                .badRequest({ expected: Errors.RequestValidation.Failed(expect.any(Array)) })
+        describe('정의하지 않은 쿼리 파라미터가 있으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/movies').query({ wrong: 'value' })
+            })
+            it('영화 목록을 조회하면 400을 반환한다', async () => {
+                await request.badRequest({
+                    expected: Errors.RequestValidation.Failed(expect.any(Array))
+                })
+            })
         })
     })
 })

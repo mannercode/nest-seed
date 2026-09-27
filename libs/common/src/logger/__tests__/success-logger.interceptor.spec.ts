@@ -40,10 +40,16 @@ describe('HttpSuccessLoggerInterceptor', () => {
             expect(JSON.stringify(log)).not.toContain('request-secret')
         })
 
-        it('오류가 발생하는 경로로 요청하면 success 로그를 남기지 않는다', async () => {
-            await fix.httpClient.get('/failure').internalServerError()
+        describe('오류를 반환하는 경로이면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/failure')
+            })
+            it('요청하면 success 로그를 남기지 않는다', async () => {
+                await request.internalServerError()
 
-            expect(fix.spyVerbose).not.toHaveBeenCalled()
+                expect(fix.spyVerbose).not.toHaveBeenCalled()
+            })
         })
     })
 

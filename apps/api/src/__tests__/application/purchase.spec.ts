@@ -60,32 +60,50 @@ describe('PurchaseService', () => {
                 heldTickets = await holdTickets(fix, user.id, tickets)
             })
 
-            it('Idempotency-Key가 없으면 400을 반환한다', async () => {
-                await fix.httpClient
-                    .post('/purchases')
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body(buildCreatePurchaseDto(heldTickets))
-                    .badRequest({ expected: Errors.Idempotency.KeyRequired() })
+            describe('Idempotency-Key가 없으면', () => {
+                let request: typeof fix.httpClient
+                beforeEach(() => {
+                    request = fix.httpClient
+                        .post('/purchases')
+                        .headers({ Authorization: `Bearer ${accessToken}` })
+                        .body(buildCreatePurchaseDto(heldTickets))
+                })
+                it('구매를 요청하면 400을 반환한다', async () => {
+                    await request.badRequest({ expected: Errors.Idempotency.KeyRequired() })
+                })
             })
 
-            it('문자열로 전달한 결제 금액은 400을 반환한다', async () => {
-                const createDto = buildCreatePurchaseDto(heldTickets)
-                await fix.httpClient
-                    .post('/purchases')
-                    .headers({
-                        Authorization: `Bearer ${accessToken}`,
-                        'Idempotency-Key': randomUUID()
-                    })
-                    .body({ ...createDto, totalPrice: String(createDto.totalPrice) })
-                    .badRequest()
+            describe('결제 금액이 문자열이면', () => {
+                let request: typeof fix.httpClient
+                beforeEach(() => {
+                    const createDto = buildCreatePurchaseDto(heldTickets)
+                    request = fix.httpClient
+                        .post('/purchases')
+                        .headers({
+                            Authorization: `Bearer ${accessToken}`,
+                            'Idempotency-Key': randomUUID()
+                        })
+                        .body({ ...createDto, totalPrice: String(createDto.totalPrice) })
+                })
+                it('구매를 요청하면 400을 반환한다', async () => {
+                    await request.badRequest()
+                })
             })
 
-            it('Idempotency-Key 형식이 잘못되면 400을 반환한다', async () => {
-                await fix.httpClient
-                    .post('/purchases')
-                    .headers({ Authorization: `Bearer ${accessToken}`, 'Idempotency-Key': 'short' })
-                    .body(buildCreatePurchaseDto(heldTickets))
-                    .badRequest({ expected: Errors.Idempotency.KeyInvalid() })
+            describe('Idempotency-Key 형식이 잘못되었으면', () => {
+                let request: typeof fix.httpClient
+                beforeEach(() => {
+                    request = fix.httpClient
+                        .post('/purchases')
+                        .headers({
+                            Authorization: `Bearer ${accessToken}`,
+                            'Idempotency-Key': 'short'
+                        })
+                        .body(buildCreatePurchaseDto(heldTickets))
+                })
+                it('구매를 요청하면 400을 반환한다', async () => {
+                    await request.badRequest({ expected: Errors.Idempotency.KeyInvalid() })
+                })
             })
 
             describe('워크플로 접수 응답 유실로 같은 요청이 다시 제출되도록 설정하면', () => {
@@ -399,15 +417,17 @@ describe('PurchaseService', () => {
                 })
             })
 
-            it.each([
+            describe.each([
                 { label: '같은 ID의', duplicateId: (id: string) => id },
                 { label: '대소문자만 다른 ID의', duplicateId: (id: string) => id.toUpperCase() }
-            ])(
-                '$label 중복 티켓을 보내면 400을 반환하고 같은 키로 정상 구매할 수 있다',
-                async ({ duplicateId }) => {
-                    const ticket = ensure(heldTickets[0])
+            ])('요청에 $label 중복 티켓이 있으면', ({ duplicateId }) => {
+                let ticket: TicketDto
+                let headers: Record<string, string>
+                let request: typeof fix.httpClient
+                beforeEach(() => {
+                    ticket = ensure(heldTickets[0])
                     const idempotencyKey = randomUUID()
-                    const headers = {
+                    headers = {
                         Authorization: `Bearer ${accessToken}`,
                         'Idempotency-Key': idempotencyKey
                     }
@@ -415,12 +435,10 @@ describe('PurchaseService', () => {
                         ticket,
                         { ...ticket, id: duplicateId(ticket.id) }
                     ])
-
-                    await fix.httpClient
-                        .post('/purchases')
-                        .headers(headers)
-                        .body(invalidDto)
-                        .badRequest({ expected: Errors.Purchase.DuplicateTickets() })
+                    request = fix.httpClient.post('/purchases').headers(headers).body(invalidDto)
+                })
+                it('구매를 요청하면 400을 반환하고 같은 키로 정상 구매할 수 있다', async () => {
+                    await request.badRequest({ expected: Errors.Purchase.DuplicateTickets() })
 
                     expect(
                         await fix.module
@@ -454,8 +472,8 @@ describe('PurchaseService', () => {
                                 updatedAt: expect.any(Temporal.Instant)
                             }
                         })
-                }
-            )
+                })
+            })
 
             it('구매를 반환하고 결제 기록과 티켓 판매 상태를 저장한다', async () => {
                 const createDto = buildCreatePurchaseDto(heldTickets)
@@ -594,17 +612,21 @@ describe('PurchaseService', () => {
                 })
             })
 
-            it('금액이 서버 계산과 다르면 400을 반환한다', async () => {
-                const createDto = buildCreatePurchaseDto(heldTickets, { totalPrice: 1 })
-
-                await fix.httpClient
-                    .post('/purchases')
-                    .headers({ 'Idempotency-Key': randomUUID() })
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body(createDto)
-                    .badRequest({
+            describe('요청 금액이 서버에서 계산한 금액과 다르면', () => {
+                let request: typeof fix.httpClient
+                beforeEach(() => {
+                    const createDto = buildCreatePurchaseDto(heldTickets, { totalPrice: 1 })
+                    request = fix.httpClient
+                        .post('/purchases')
+                        .headers({ 'Idempotency-Key': randomUUID() })
+                        .headers({ Authorization: `Bearer ${accessToken}` })
+                        .body(createDto)
+                })
+                it('구매를 요청하면 400을 반환한다', async () => {
+                    await request.badRequest({
                         expected: Errors.Purchase.TotalPriceMismatch(expect.any(Number), 1)
                     })
+                })
             })
 
             describe.each([

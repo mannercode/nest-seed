@@ -60,16 +60,16 @@ describe('PurchaseRecordsService', () => {
                 findOne = vi.spyOn(repository.collection, 'findOne')
             })
 
-            it.each([
-                { condition: '등록된 키로 조회하면', idempotencyKey: 'key-255' },
-                { condition: '등록되지 않은 키로 조회해도', idempotencyKey: 'missing-key' }
-            ])(
-                '$condition 문서와 인덱스 키를 각각 한 건 이하로 읽는다',
-                async ({ idempotencyKey }) => {
-                    const operation = await purchaseRecordsService.findIdempotencyOperation({
-                        userId,
-                        idempotencyKey
-                    })
+            describe.each([
+                { condition: '조회할 키가 등록되어 있으면', idempotencyKey: 'key-255' },
+                { condition: '조회할 키가 등록되어 있지 않으면', idempotencyKey: 'missing-key' }
+            ])('$condition', ({ idempotencyKey }) => {
+                let query: Parameters<typeof purchaseRecordsService.findIdempotencyOperation>[0]
+                beforeEach(() => {
+                    query = { userId, idempotencyKey }
+                })
+                it('멱등성 작업을 조회하면 문서와 인덱스 키를 각각 한 건 이하로 읽는다', async () => {
+                    const operation = await purchaseRecordsService.findIdempotencyOperation(query)
 
                     expect(operation?.purchaseRecord).toEqual(
                         idempotencyKey === 'key-255' ? records[255] : undefined
@@ -82,8 +82,8 @@ describe('PurchaseRecordsService', () => {
                         .explain('executionStats')
                     expect(executionStats.totalDocsExamined).toBeLessThanOrEqual(1)
                     expect(executionStats.totalKeysExamined).toBeLessThanOrEqual(1)
-                }
-            )
+                })
+            })
         })
     })
 
@@ -121,10 +121,16 @@ describe('PurchaseRecordsService', () => {
             })
         })
 
-        it('구매 기록이 없으면 빈 배열을 반환한다', async () => {
-            const records = await purchaseRecordsService.findCompleted({ userId: oid(0x1) })
+        describe('사용자의 구매 기록이 없으면', () => {
+            let query: Parameters<typeof purchaseRecordsService.findCompleted>[0]
+            beforeEach(() => {
+                query = { userId: oid(0x1) }
+            })
+            it('완료된 구매 기록을 조회하면 빈 배열을 반환한다', async () => {
+                const records = await purchaseRecordsService.findCompleted(query)
 
-            expect(records).toEqual([])
+                expect(records).toEqual([])
+            })
         })
     })
 

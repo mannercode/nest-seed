@@ -35,41 +35,49 @@ describe('MongoConnection', () => {
 })
 
 describe('MongoModule', () => {
-    it.each([
-        { label: '기본 최소 풀 크기', minPoolSize: undefined },
-        { label: '최소 풀 크기 50', minPoolSize: 50 }
-    ])('$label 설정으로 연결하고 모듈 종료 시 client를 닫는다', async ({ minPoolSize }) => {
-        const options = {
-            uri: process.env.TESTLIB_MONGO_URI!,
-            dbName: process.env.TESTLIB_MONGO_DATABASE!,
-            minPoolSize
-        }
-        const config = Symbol('config')
-        @Global()
-        @Module({ providers: [{ provide: config, useValue: options }], exports: [config] })
-        class Configuration {}
-        const module = await Test.createTestingModule({
-            imports: [
-                Configuration,
-                MongoModule.forRootAsync({ inject: [config], useFactory: async (value) => value })
-            ]
-        }).compile()
-        const connection = module.get(MongoConnection)
-        const close = vi.spyOn(connection.client, 'close')
-        try {
-            await expect(connection.ping()).resolves.toBeUndefined()
-            expect(connection.db.databaseName).toBe(options.dbName)
-            expect(connection.client.options.minPoolSize).toBe(minPoolSize ?? 0)
-            expect(connection.client.options.waitQueueTimeoutMS).toBe(5000)
-            expect(connection.client.options.writeConcern).toMatchObject({
-                j: true,
-                w: 'majority',
-                wtimeoutMS: 60000
-            })
-        } finally {
-            await module.close()
-        }
-        expect(close).toHaveBeenCalledOnce()
+    describe.each([
+        { condition: '최소 연결 풀 크기를 지정하지 않았으면', minPoolSize: undefined },
+        { condition: '최소 연결 풀 크기가 50이면', minPoolSize: 50 }
+    ])('$condition', ({ minPoolSize }) => {
+        let options: { uri: string; dbName: string; minPoolSize: number | undefined }
+        beforeEach(() => {
+            options = {
+                uri: process.env.TESTLIB_MONGO_URI!,
+                dbName: process.env.TESTLIB_MONGO_DATABASE!,
+                minPoolSize
+            }
+        })
+        it('모듈을 초기화하면 설정대로 연결하고 종료하면 client를 닫는다', async () => {
+            const config = Symbol('config')
+            @Global()
+            @Module({ providers: [{ provide: config, useValue: options }], exports: [config] })
+            class Configuration {}
+            const module = await Test.createTestingModule({
+                imports: [
+                    Configuration,
+                    MongoModule.forRootAsync({
+                        inject: [config],
+                        useFactory: async (value) => value
+                    })
+                ]
+            }).compile()
+            const connection = module.get(MongoConnection)
+            const close = vi.spyOn(connection.client, 'close')
+            try {
+                await expect(connection.ping()).resolves.toBeUndefined()
+                expect(connection.db.databaseName).toBe(options.dbName)
+                expect(connection.client.options.minPoolSize).toBe(minPoolSize ?? 0)
+                expect(connection.client.options.waitQueueTimeoutMS).toBe(5000)
+                expect(connection.client.options.writeConcern).toMatchObject({
+                    j: true,
+                    w: 'majority',
+                    wtimeoutMS: 60000
+                })
+            } finally {
+                await module.close()
+            }
+            expect(close).toHaveBeenCalledOnce()
+        })
     })
 })
 

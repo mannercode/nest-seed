@@ -133,26 +133,38 @@ describe('createShowtimeCreationWorkflow', () => {
             classify = configured
         })
 
-        it.each([
+        describe.each([
             {
-                condition: '잘못된 요청 예외는',
+                condition: '잘못된 요청 예외가 발생했으면',
                 failure: new BadRequestException('bad request'),
                 expected: { code: 400, message: 'bad request' }
             },
             {
-                condition: '자원을 찾을 수 없다는 예외는',
+                condition: '자원을 찾을 수 없다는 예외가 발생했으면',
                 failure: new NotFoundException('not found'),
                 expected: { code: 404, message: 'not found' }
             }
-        ])('$condition 재시도하지 않는 오류로 변환한다', ({ failure, expected }) => {
-            const result = classify(failure)
+        ])('$condition', ({ failure, expected }) => {
+            let error: typeof failure
+            beforeEach(() => {
+                error = failure
+            })
+            it('오류를 분류하면 재시도하지 않는 오류로 변환한다', () => {
+                const result = classify(error)
 
-            expect(result).toBeInstanceOf(TerminalError)
-            expect(result).toMatchObject(expected)
+                expect(result).toBeInstanceOf(TerminalError)
+                expect(result).toMatchObject(expected)
+            })
         })
 
-        it('일반 Error는 재시도 중단 오류로 변환하지 않는다', () => {
-            expect(classify(new Error('retry me'))).toBeUndefined()
+        describe('일반 Error가 발생했으면', () => {
+            let error: Error
+            beforeEach(() => {
+                error = new Error('retry me')
+            })
+            it('오류를 분류하면 재시도 중단 오류로 변환하지 않는다', () => {
+                expect(classify(error)).toBeUndefined()
+            })
         })
     })
 

@@ -135,17 +135,25 @@ test.describe('로그인하지 않았으면', () => {
         expect(result.firstIpStatuses[50]).toBe(429)
         expect(result.secondIpStatus).toBe(401)
     })
-    test('BFF는 요청 본문이 1MiB를 넘으면 413을 반환한다', async ({ page }) => {
-        const result = await page.evaluate(async () => {
-            const response = await fetch('/api/users', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ payload: 'x'.repeat(1024 * 1024 + 1) })
-            })
-            return { body: await response.json(), status: response.status }
+    test.describe('요청 본문이 1MiB를 넘으면', () => {
+        let requestBody: string
+
+        test.beforeEach(() => {
+            requestBody = JSON.stringify({ payload: 'x'.repeat(1024 * 1024 + 1) })
         })
 
-        expect(result).toEqual({ body: BFF_PAYLOAD_TOO_LARGE, status: 413 })
+        test('BFF로 요청하면 413을 반환한다', async ({ page }) => {
+            const result = await page.evaluate(async (body) => {
+                const response = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body
+                })
+                return { body: await response.json(), status: response.status }
+            }, requestBody)
+
+            expect(result).toEqual({ body: BFF_PAYLOAD_TOO_LARGE, status: 413 })
+        })
     })
 })
 

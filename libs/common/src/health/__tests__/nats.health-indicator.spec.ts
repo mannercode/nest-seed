@@ -12,7 +12,7 @@ describe('NatsHealthIndicator', () => {
     afterEach(() => fix.teardown())
 
     describe('isHealthy', () => {
-        it('flush가 성공하면 up 상태를 반환한다', async () => {
+        it('상태를 조회하면 up 상태를 반환한다', async () => {
             const healthStatus = await fix.natsIndicator.isHealthy('key', fix.connection)
             expect(healthStatus).toEqual({ key: { status: 'up' } })
         })

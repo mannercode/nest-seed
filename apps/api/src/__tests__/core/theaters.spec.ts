@@ -36,32 +36,41 @@ describe('TheatersService', () => {
                 })
         })
 
-        it('필수 필드가 누락되면 400을 반환한다', async () => {
-            await fix.httpClient
-                .post('/theaters')
-                .body({})
-                .badRequest({ expected: Errors.RequestValidation.Failed(expect.any(Array)) })
+        describe('요청 본문에 필수 필드가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.post('/theaters').body({})
+            })
+            it('극장 생성을 요청하면 400을 반환한다', async () => {
+                await request.badRequest({
+                    expected: Errors.RequestValidation.Failed(expect.any(Array))
+                })
+            })
         })
 
-        it('같은 행의 좌석 좌표가 중복되면 400을 반환한다', async () => {
-            const createDto = buildCreateTheaterDto({
-                seatmap: {
-                    blocks: [
-                        {
-                            name: 'A',
-                            rows: [
-                                { name: '1', layout: 'O' },
-                                { name: '1', layout: 'O' }
-                            ]
-                        }
-                    ]
-                }
+        describe('요청한 좌석 배치에서 같은 행의 좌석 좌표가 중복되면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                const createDto = buildCreateTheaterDto({
+                    seatmap: {
+                        blocks: [
+                            {
+                                name: 'A',
+                                rows: [
+                                    { name: '1', layout: 'O' },
+                                    { name: '1', layout: 'O' }
+                                ]
+                            }
+                        ]
+                    }
+                })
+                request = fix.httpClient.post('/theaters').body(createDto)
             })
-
-            await fix.httpClient
-                .post('/theaters')
-                .body(createDto)
-                .badRequest({ expected: Errors.RequestValidation.Failed(expect.any(Array)) })
+            it('극장 생성을 요청하면 400을 반환한다', async () => {
+                await request.badRequest({
+                    expected: Errors.RequestValidation.Failed(expect.any(Array))
+                })
+            })
         })
     })
 
@@ -78,10 +87,16 @@ describe('TheatersService', () => {
             })
         })
 
-        it('ID에 해당하는 극장이 없으면 404를 반환한다', async () => {
-            await fix.httpClient
-                .get(`/theaters/${nullObjectId}`)
-                .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]) })
+        describe('ID에 해당하는 극장이 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get(`/theaters/${nullObjectId}`)
+            })
+            it('극장을 조회하면 404를 반환한다', async () => {
+                await request.notFound({
+                    expected: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId])
+                })
+            })
         })
     })
 
@@ -116,10 +131,10 @@ describe('TheatersService', () => {
                 .ok({ schema: TheaterSchema, expected: { ...theater, ...updateDto } })
         })
 
-        it('블록 사이에 좌석 좌표가 중복되면 400을 반환하고 기존 배치를 유지한다', async () => {
-            await fix.httpClient
-                .patch(`/theaters/${theater.id}`)
-                .body({
+        describe('요청한 좌석 배치에서 블록 사이에 좌석 좌표가 중복되면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.patch(`/theaters/${theater.id}`).body({
                     seatmap: {
                         blocks: [
                             { name: 'A', rows: [{ name: '1', layout: 'O' }] },
@@ -127,18 +142,26 @@ describe('TheatersService', () => {
                         ]
                     }
                 })
-                .badRequest({ expected: Errors.RequestValidation.Failed(expect.any(Array)) })
+            })
+            it('극장 수정을 요청하면 400을 반환하고 기존 배치를 유지한다', async () => {
+                await request.badRequest({
+                    expected: Errors.RequestValidation.Failed(expect.any(Array))
+                })
 
-            await fix.httpClient
-                .get(`/theaters/${theater.id}`)
-                .ok({ schema: TheaterSchema, expected: theater })
+                await fix.httpClient
+                    .get(`/theaters/${theater.id}`)
+                    .ok({ schema: TheaterSchema, expected: theater })
+            })
         })
 
-        it('ID에 해당하는 극장이 없으면 404를 반환한다', async () => {
-            await fix.httpClient
-                .patch(`/theaters/${nullObjectId}`)
-                .body({})
-                .notFound({ expected: Errors.Mongo.DocumentNotFound(nullObjectId) })
+        describe('ID에 해당하는 극장이 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.patch(`/theaters/${nullObjectId}`).body({})
+            })
+            it('극장 수정을 요청하면 404를 반환한다', async () => {
+                await request.notFound({ expected: Errors.Mongo.DocumentNotFound(nullObjectId) })
+            })
         })
     })
 
@@ -170,8 +193,14 @@ describe('TheatersService', () => {
             })
         })
 
-        it('극장이 없어도 204를 반환한다', async () => {
-            await fix.httpClient.delete(`/theaters/${nullObjectId}`).noContent()
+        describe('ID에 해당하는 극장이 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.delete(`/theaters/${nullObjectId}`)
+            })
+            it('극장 삭제를 요청하면 204를 반환한다', async () => {
+                await request.noContent()
+            })
         })
     })
 
@@ -201,29 +230,41 @@ describe('TheatersService', () => {
             total: theaters.length
         })
 
-        it('쿼리가 없으면 전체 극장 페이지를 반환한다', async () => {
-            const expected = buildExpectedPage([theaterA1, theaterA2, theaterB1, theaterB2])
+        describe('검색 조건이 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/theaters')
+            })
+            it('극장 목록을 조회하면 전체 극장 페이지를 반환한다', async () => {
+                const expected = buildExpectedPage([theaterA1, theaterA2, theaterB1, theaterB2])
 
-            await fix.httpClient
-                .get('/theaters')
-                .ok({ schema: paginationResultSchema(TheaterSchema), expected })
+                await request.ok({ schema: paginationResultSchema(TheaterSchema), expected })
+            })
         })
 
-        it('name 부분 일치로 필터링한다', async () => {
-            await fix.httpClient
-                .get('/theaters')
-                .query({ name: 'theater-a' })
-                .ok({
+        describe('극장 이름의 일부를 검색 조건으로 지정했으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/theaters').query({ name: 'theater-a' })
+            })
+            it('목록을 조회하면 이름에 해당 문자열이 포함된 극장을 반환한다', async () => {
+                await request.ok({
                     schema: paginationResultSchema(TheaterSchema),
                     expected: buildExpectedPage([theaterA1, theaterA2])
                 })
+            })
         })
 
-        it('알 수 없는 쿼리 파라미터는 400을 반환한다', async () => {
-            await fix.httpClient
-                .get('/theaters')
-                .query({ wrong: 'value' })
-                .badRequest({ expected: Errors.RequestValidation.Failed(expect.any(Array)) })
+        describe('정의하지 않은 쿼리 파라미터가 있으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/theaters').query({ wrong: 'value' })
+            })
+            it('극장 목록을 조회하면 400을 반환한다', async () => {
+                await request.badRequest({
+                    expected: Errors.RequestValidation.Failed(expect.any(Array))
+                })
+            })
         })
     })
 
@@ -232,14 +273,20 @@ describe('TheatersService', () => {
         beforeEach(async () => {
             theater = await createTheater(fix, { name: 'original-name' })
         })
-        it('필수 필드를 null로 수정하면 예외를 던지고 기존 값을 유지한다', async () => {
-            const theatersService = fix.module.get(TheatersService)
+        describe('수정할 필수 필드 값이 null이면', () => {
+            let update: { name: null }
+            beforeEach(() => {
+                update = { name: null }
+            })
+            it('극장을 수정하면 예외를 던지고 기존 값을 유지한다', async () => {
+                const theatersService = fix.module.get(TheatersService)
 
-            // @ts-expect-error 런타임 호출이 타입 계약을 어긴 경우를 검증한다.
-            await expect(theatersService.update(theater.id, { name: null })).rejects.toThrow()
-            await fix.httpClient
-                .get(`/theaters/${theater.id}`)
-                .ok({ schema: TheaterSchema, expected: theater })
+                // @ts-expect-error 런타임 호출이 타입 계약을 어긴 경우를 검증한다.
+                await expect(theatersService.update(theater.id, update)).rejects.toThrow()
+                await fix.httpClient
+                    .get(`/theaters/${theater.id}`)
+                    .ok({ schema: TheaterSchema, expected: theater })
+            })
         })
     })
 })

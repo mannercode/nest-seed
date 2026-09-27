@@ -58,14 +58,17 @@ describe('BookingService', () => {
             user = resources.user
         })
 
-        it('선택한 날짜에 상영이 없으면 빈 목록을 반환한다', async () => {
-            const theaterId = ensure(createdTickets[0]).theaterId
-
-            await fix.httpClient
-                .get(
+        describe('선택한 날짜에 상영이 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                const theaterId = ensure(createdTickets[0]).theaterId
+                request = fix.httpClient.get(
                     `/booking/movies/${movie.id}/theaters/${theaterId}/showdates/29990201/showtimes`
                 )
-                .ok({ schema: BookingShowtimeSchema.array(), expected: [] })
+            })
+            it('상영 목록을 조회하면 빈 목록을 반환한다', async () => {
+                await request.ok({ schema: BookingShowtimeSchema.array(), expected: [] })
+            })
         })
 
         describe('티켓 집계가 빈 결과를 반환하면', () => {
@@ -185,11 +188,16 @@ describe('BookingService', () => {
         const locations = [{ latitude: 30.0, longitude: 130.0 }]
         const startTimes = [instant('2999-01-01T12:00Z')]
 
-        it('인증 없이 요청하면 401을 반환한다', async () => {
-            await fix.httpClient
-                .post(`/booking/showtimes/${nullObjectId}/tickets/hold`)
-                .body({ ticketIds: [nullObjectId] })
-                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+        describe('인증 정보가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post(`/booking/showtimes/${nullObjectId}/tickets/hold`)
+                    .body({ ticketIds: [nullObjectId] })
+            })
+            it('티켓 선점을 요청하면 401을 반환한다', async () => {
+                await request.unauthorized({ expected: Errors.Auth.Unauthorized() })
+            })
         })
 
         describe('선점되지 않은 티켓이 존재하면', () => {
@@ -221,23 +229,35 @@ describe('BookingService', () => {
                 expect(heldTicketIds.sort()).toEqual([...ticketIds].sort())
             })
 
-            it('존재하지 않는 티켓이 섞여 있으면 404를 반환한다', async () => {
-                await fix.httpClient
-                    .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body({ ticketIds: [...ticketIds, nullObjectId] })
-                    .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]) })
+            describe('요청한 티켓 ID에 존재하지 않는 ID가 섞여 있으면', () => {
+                let request: typeof fix.httpClient
+                beforeEach(() => {
+                    request = fix.httpClient
+                        .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
+                        .headers({ Authorization: `Bearer ${accessToken}` })
+                        .body({ ticketIds: [...ticketIds, nullObjectId] })
+                })
+                it('티켓 선점을 요청하면 404를 반환한다', async () => {
+                    await request.notFound({
+                        expected: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId])
+                    })
+                })
             })
 
-            it('선점 수량 제한을 넘는 요청에 400을 반환한다', async () => {
-                const max = fix.module.get(AppConfigService).ticket.maxPerPurchase
-                const ticketIds = Array.from({ length: max + 1 }, (_, i) => oid(0x100 + i))
-
-                await fix.httpClient
-                    .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body({ ticketIds })
-                    .badRequest({ expected: Errors.Booking.HoldLimitExceeded(max) })
+            describe('요청한 티켓 수가 선점 한도를 넘으면', () => {
+                let request: typeof fix.httpClient
+                let max: number
+                beforeEach(() => {
+                    max = fix.module.get(AppConfigService).ticket.maxPerPurchase
+                    const ticketIds = Array.from({ length: max + 1 }, (_, i) => oid(0x100 + i))
+                    request = fix.httpClient
+                        .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
+                        .headers({ Authorization: `Bearer ${accessToken}` })
+                        .body({ ticketIds })
+                })
+                it('티켓 선점을 요청하면 400을 반환한다', async () => {
+                    await request.badRequest({ expected: Errors.Booking.HoldLimitExceeded(max) })
+                })
             })
         })
 
@@ -289,10 +309,14 @@ describe('BookingService', () => {
     })
 
     describe('GET /booking/showtimes/:id/tickets', () => {
-        it('상영 시간이 없으면 404를 반환한다', async () => {
-            await fix.httpClient
-                .get(`/booking/showtimes/${nullObjectId}/tickets`)
-                .notFound({ expected: Errors.Booking.ShowtimeNotFound(nullObjectId) })
+        describe('ID에 해당하는 상영이 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get(`/booking/showtimes/${nullObjectId}/tickets`)
+            })
+            it('티켓 목록을 조회하면 404를 반환한다', async () => {
+                await request.notFound({ expected: Errors.Booking.ShowtimeNotFound(nullObjectId) })
+            })
         })
     })
 
@@ -301,31 +325,41 @@ describe('BookingService', () => {
         const movieId = nullObjectId
         const theaterId = nullObjectId
 
-        it('YYYYMMDD 형식이 아니면 400을 반환한다', async () => {
-            await fix.httpClient
-                .get(`/booking/movies/${movieId}/theaters/${theaterId}/showdates/abc/showtimes`)
-                .badRequest({
+        describe('상영일이 YYYYMMDD 형식이 아니면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get(
+                    `/booking/movies/${movieId}/theaters/${theaterId}/showdates/abc/showtimes`
+                )
+            })
+            it('상영 목록을 조회하면 400을 반환한다', async () => {
+                await request.badRequest({
                     expected: {
                         code: 'ERR_BOOKING_SHOWDATE_INVALID',
                         message: 'showdate must be in YYYYMMDD format',
                         showdate: 'abc'
                     }
                 })
+            })
         })
 
-        it('형식은 맞지만 실제 달력에 없는 날짜이면 400을 반환한다', async () => {
-            // Temporal은 잘못된 달력 날짜를 조용히 보정하지 않아야 한다.
-            await fix.httpClient
-                .get(
+        describe('상영일의 형식은 맞지만 실제 달력에 없는 날짜이면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get(
                     `/booking/movies/${movieId}/theaters/${theaterId}/showdates/20240230/showtimes`
                 )
-                .badRequest({
+            })
+            it('상영 목록을 조회하면 400을 반환한다', async () => {
+                // Temporal은 잘못된 달력 날짜를 조용히 보정하지 않아야 한다.
+                await request.badRequest({
                     expected: {
                         code: 'ERR_BOOKING_SHOWDATE_INVALID',
                         message: 'showdate must be a valid calendar date',
                         showdate: '20240230'
                     }
                 })
+            })
         })
     })
 })

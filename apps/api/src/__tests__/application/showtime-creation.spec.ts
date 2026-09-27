@@ -72,11 +72,15 @@ describe('ShowtimeCreationService', () => {
     })
 
     describe('GET /showtime-creation/movies', () => {
-        it('쿼리가 없으면 전체 영화 페이지를 반환한다', async () => {
-            await fix.httpClient
-                .get('/showtime-creation/movies')
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .ok({
+        describe('검색 조건이 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .get('/showtime-creation/movies')
+                    .headers({ Authorization: `Bearer ${adminAccessToken}` })
+            })
+            it('영화 목록을 조회하면 전체 영화 페이지를 반환한다', async () => {
+                await request.ok({
                     schema: paginationResultSchema(MovieSchema),
                     expected: {
                         items: [movie],
@@ -85,15 +89,20 @@ describe('ShowtimeCreationService', () => {
                         total: 1
                     }
                 })
+            })
         })
     })
 
     describe('GET /showtime-creation/theaters', () => {
-        it('쿼리가 없으면 전체 극장 페이지를 반환한다', async () => {
-            await fix.httpClient
-                .get('/showtime-creation/theaters')
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .ok({
+        describe('검색 조건이 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .get('/showtime-creation/theaters')
+                    .headers({ Authorization: `Bearer ${adminAccessToken}` })
+            })
+            it('극장 목록을 조회하면 전체 극장 페이지를 반환한다', async () => {
+                await request.ok({
                     schema: paginationResultSchema(TheaterSchema),
                     expected: {
                         items: [theater],
@@ -102,6 +111,7 @@ describe('ShowtimeCreationService', () => {
                         total: 1
                     }
                 })
+            })
         })
     })
 
@@ -243,30 +253,47 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        it('요청한 관리자에게 접수 기록이 없는 작업이면 404를 반환한다', async () => {
-            await fix.httpClient
-                .get(`/showtime-creation/showtimes/${nullObjectId}/status`)
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .notFound({ expected: Errors.ShowtimeCreation.SagaNotFound(nullObjectId) })
+        describe('요청한 관리자에게 작업 접수 기록이 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .get(`/showtime-creation/showtimes/${nullObjectId}/status`)
+                    .headers({ Authorization: `Bearer ${adminAccessToken}` })
+            })
+            it('작업 상태를 조회하면 404를 반환한다', async () => {
+                await request.notFound({
+                    expected: Errors.ShowtimeCreation.SagaNotFound(nullObjectId)
+                })
+            })
         })
     })
 
     describe('POST /showtime-creation/showtimes', () => {
-        it('Idempotency-Key가 없으면 400을 반환한다', async () => {
-            await fix.httpClient
-                .post('/showtime-creation/showtimes')
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .body(buildCreateDto())
-                .badRequest({ expected: Errors.Idempotency.KeyRequired() })
+        describe('Idempotency-Key가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post('/showtime-creation/showtimes')
+                    .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                    .body(buildCreateDto())
+            })
+            it('상영 생성을 요청하면 400을 반환한다', async () => {
+                await request.badRequest({ expected: Errors.Idempotency.KeyRequired() })
+            })
         })
 
-        it('Idempotency-Key 형식이 잘못되면 400을 반환한다', async () => {
-            await fix.httpClient
-                .post('/showtime-creation/showtimes')
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .headers({ 'Idempotency-Key': 'short' })
-                .body(buildCreateDto())
-                .badRequest({ expected: Errors.Idempotency.KeyInvalid() })
+        describe('Idempotency-Key 형식이 잘못되었으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post('/showtime-creation/showtimes')
+                    .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                    .headers({ 'Idempotency-Key': 'short' })
+                    .body(buildCreateDto())
+            })
+            it('상영 생성을 요청하면 400을 반환한다', async () => {
+                await request.badRequest({ expected: Errors.Idempotency.KeyInvalid() })
+            })
         })
 
         describe('이미 접수한 상영 생성 요청이 존재하면', () => {
@@ -618,12 +645,10 @@ describe('ShowtimeCreationService', () => {
             expect(statuses).toEqual(['waiting', 'processing', 'succeeded'])
         })
 
-        it('존재하지 않는 영화 ID로 요청하면 오류 상태를 전송한다', async () => {
-            const {
-                response: { body },
-                completion
-            } = await submitAndWaitForCompletion(fix, adminAccessToken, 'error', () =>
-                fix.httpClient
+        describe('ID에 해당하는 영화가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
                     .post('/showtime-creation/showtimes')
                     .headers({ Authorization: `Bearer ${adminAccessToken}` })
                     .headers({ 'Idempotency-Key': randomUUID() })
@@ -633,22 +658,27 @@ describe('ShowtimeCreationService', () => {
                         startTimes: [instant()],
                         theaterIds: [theater.id]
                     })
-                    .accepted({ schema: RequestShowtimeCreationResponseSchema })
-            )
+            })
+            it('상영 생성을 요청하면 오류 상태를 전송한다', async () => {
+                const {
+                    response: { body },
+                    completion
+                } = await submitAndWaitForCompletion(fix, adminAccessToken, 'error', () =>
+                    request.accepted({ schema: RequestShowtimeCreationResponseSchema })
+                )
 
-            expect(completion).toEqual({
-                message: 'The requested movie could not be found.',
-                sagaId: body.sagaId,
-                status: 'error'
+                expect(completion).toEqual({
+                    message: 'The requested movie could not be found.',
+                    sagaId: body.sagaId,
+                    status: 'error'
+                })
             })
         })
 
-        it('존재하지 않는 극장 ID로 요청하면 오류 상태를 전송한다', async () => {
-            const {
-                response: { body },
-                completion
-            } = await submitAndWaitForCompletion(fix, adminAccessToken, 'error', () =>
-                fix.httpClient
+        describe('ID에 해당하는 극장이 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
                     .post('/showtime-creation/showtimes')
                     .headers({ Authorization: `Bearer ${adminAccessToken}` })
                     .headers({ 'Idempotency-Key': randomUUID() })
@@ -658,57 +688,77 @@ describe('ShowtimeCreationService', () => {
                         startTimes: [instant()],
                         theaterIds: [nullObjectId]
                     })
-                    .accepted({ schema: RequestShowtimeCreationResponseSchema })
-            )
+            })
+            it('상영 생성을 요청하면 오류 상태를 전송한다', async () => {
+                const {
+                    response: { body },
+                    completion
+                } = await submitAndWaitForCompletion(fix, adminAccessToken, 'error', () =>
+                    request.accepted({ schema: RequestShowtimeCreationResponseSchema })
+                )
 
-            expect(completion).toEqual({
-                message: 'One or more requested theaters could not be found.',
-                sagaId: body.sagaId,
-                status: 'error'
+                expect(completion).toEqual({
+                    message: 'One or more requested theaters could not be found.',
+                    sagaId: body.sagaId,
+                    status: 'error'
+                })
             })
         })
 
-        it('요청 안의 상영 시간이 서로 겹치면 400을 반환한다', async () => {
-            await fix.httpClient
-                .post('/showtime-creation/showtimes')
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .headers({ 'Idempotency-Key': randomUUID() })
-                .body({
-                    durationInMinutes: 90,
-                    movieId: movie.id,
-                    startTimes: [instant('2100-01-01T09:00Z'), instant('2100-01-01T10:00Z')],
-                    theaterIds: [theater.id]
-                })
-                .badRequest({
+        describe('요청한 상영 시간이 서로 겹치면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post('/showtime-creation/showtimes')
+                    .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                    .headers({ 'Idempotency-Key': randomUUID() })
+                    .body({
+                        durationInMinutes: 90,
+                        movieId: movie.id,
+                        startTimes: [instant('2100-01-01T09:00Z'), instant('2100-01-01T10:00Z')],
+                        theaterIds: [theater.id]
+                    })
+            })
+            it('상영 생성을 요청하면 400을 반환한다', async () => {
+                await request.badRequest({
                     expected: Errors.ShowtimeCreation.OverlappingStartTimes(expect.any(Array))
                 })
+            })
         })
 
-        it('같은 시작 시각이 중복되어도 400을 반환한다', async () => {
-            const start = instant('2100-01-01T09:00Z')
-
-            await fix.httpClient
-                .post('/showtime-creation/showtimes')
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .headers({ 'Idempotency-Key': randomUUID() })
-                .body({
-                    durationInMinutes: 1,
-                    movieId: movie.id,
-                    startTimes: [start, start],
-                    theaterIds: [theater.id]
-                })
-                .badRequest({
+        describe('요청한 상영 시작 시각에 중복이 있으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                const start = instant('2100-01-01T09:00Z')
+                request = fix.httpClient
+                    .post('/showtime-creation/showtimes')
+                    .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                    .headers({ 'Idempotency-Key': randomUUID() })
+                    .body({
+                        durationInMinutes: 1,
+                        movieId: movie.id,
+                        startTimes: [start, start],
+                        theaterIds: [theater.id]
+                    })
+            })
+            it('상영 생성을 요청하면 400을 반환한다', async () => {
+                await request.badRequest({
                     expected: Errors.ShowtimeCreation.OverlappingStartTimes(expect.any(Array))
                 })
+            })
         })
 
-        it('같은 극장 ID가 중복되면 400을 반환한다', async () => {
-            await fix.httpClient
-                .post('/showtime-creation/showtimes')
-                .headers({ Authorization: `Bearer ${adminAccessToken}` })
-                .headers({ 'Idempotency-Key': randomUUID() })
-                .body({ ...buildCreateDto(), theaterIds: [theater.id, theater.id] })
-                .badRequest({
+        describe('요청한 극장 ID에 중복이 있으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post('/showtime-creation/showtimes')
+                    .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                    .headers({ 'Idempotency-Key': randomUUID() })
+                    .body({ ...buildCreateDto(), theaterIds: [theater.id, theater.id] })
+            })
+            it('상영 생성을 요청하면 400을 반환한다', async () => {
+                await request.badRequest({
                     expected: Errors.RequestValidation.Failed([
                         {
                             constraints: { validation: 'Duplicate theater IDs are not allowed' },
@@ -716,6 +766,7 @@ describe('ShowtimeCreationService', () => {
                         }
                     ])
                 })
+            })
         })
 
         describe('극장 21개가 존재하면', () => {
@@ -1116,19 +1167,23 @@ describe('ShowtimeCreationService', () => {
             })
         })
 
-        it('한 번에 생성할 상영 수가 상한을 넘으면 수량 초과 예외를 던진다', async () => {
-            const createDto = {
-                ...buildCreateDto(),
-                startTimes: Array.from({ length: 15 }, (_, index) =>
-                    instant(Date.UTC(2100, 0, 1, index))
-                ),
-                theaterIds: Array.from({ length: 15 }, () => newObjectIdString())
-            }
-
-            await expect(
-                persistence.validateAndCreate(createDto, newObjectIdString())
-            ).rejects.toMatchObject({
-                response: { code: 'ERR_SHOWTIME_CREATION_TOO_MANY_SHOWTIMES', maximum: 200 }
+        describe('요청한 상영 수가 한 번에 생성할 수 있는 상한을 넘으면', () => {
+            let createDto: Parameters<typeof persistence.validateAndCreate>[0]
+            beforeEach(() => {
+                createDto = {
+                    ...buildCreateDto(),
+                    startTimes: Array.from({ length: 15 }, (_, index) =>
+                        instant(Date.UTC(2100, 0, 1, index))
+                    ),
+                    theaterIds: Array.from({ length: 15 }, () => newObjectIdString())
+                }
+            })
+            it('상영을 생성하면 수량 초과 예외를 던진다', async () => {
+                await expect(
+                    persistence.validateAndCreate(createDto, newObjectIdString())
+                ).rejects.toMatchObject({
+                    response: { code: 'ERR_SHOWTIME_CREATION_TOO_MANY_SHOWTIMES', maximum: 200 }
+                })
             })
         })
         describe('좌석이 10,001개인 극장이 존재하면', () => {

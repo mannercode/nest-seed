@@ -13,36 +13,50 @@ describe('RequestValidationPipe HTTP 및 오류 변환', () => {
     })
     afterEach(() => fix.teardown())
 
-    it('경로가 없는 스키마 오류는 field가 빈 문자열인 예외로 변환해 던진다', async () => {
-        const schema = {
-            '~standard': {
-                validate: () => ({ issues: [{ message: 'root validation failed' }] }),
-                vendor: 'test',
-                version: 1 as const
+    describe('스키마가 필드 경로 없는 검증 오류를 반환하도록 설정하면', () => {
+        let schema: NonNullable<Parameters<RequestValidationPipe['transform']>[1]['schema']>
+        beforeEach(() => {
+            schema = {
+                '~standard': {
+                    validate: () => ({ issues: [{ message: 'root validation failed' }] }),
+                    vendor: 'test',
+                    version: 1 as const
+                }
             }
-        }
-
-        await expect(
-            new RequestValidationPipe().transform({}, { schema, type: 'body' })
-        ).rejects.toMatchObject({
-            response: {
-                code: 'ERR_REQUEST_VALIDATION_FAILED',
-                details: [{ constraints: { validation: 'root validation failed' }, field: '' }],
-                message: 'Validation failed'
-            }
+        })
+        it('본문을 변환하면 field가 빈 문자열인 예외를 던진다', async () => {
+            await expect(
+                new RequestValidationPipe().transform({}, { schema, type: 'body' })
+            ).rejects.toMatchObject({
+                response: {
+                    code: 'ERR_REQUEST_VALIDATION_FAILED',
+                    details: [{ constraints: { validation: 'root validation failed' }, field: '' }],
+                    message: 'Validation failed'
+                }
+            })
         })
     })
 
     describe('POST /', () => {
-        it('유효한 본문으로 요청하면 201을 반환한다', async () => {
-            await fix.httpClient.post('/').body({ date: nullDate, sampleId: 'id' }).created()
+        describe('요청 본문이 스키마에 맞으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.post('/').body({ date: nullDate, sampleId: 'id' })
+            })
+            it('요청하면 201을 반환한다', async () => {
+                await request.created()
+            })
         })
 
-        it('알 수 없는 필드가 있으면 400을 반환한다', async () => {
-            await fix.httpClient
-                .post('/')
-                .body({ date: nullDate, sampleId: 'id', unknown: 'x' })
-                .badRequest({
+        describe('요청 본문에 정의하지 않은 필드가 있으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post('/')
+                    .body({ date: nullDate, sampleId: 'id', unknown: 'x' })
+            })
+            it('요청하면 400을 반환한다', async () => {
+                await request.badRequest({
                     expected: {
                         code: 'ERR_REQUEST_VALIDATION_FAILED',
                         details: [
@@ -51,14 +65,17 @@ describe('RequestValidationPipe HTTP 및 오류 변환', () => {
                         message: 'Validation failed'
                     }
                 })
+            })
         })
 
         // 응답을 만드는 함수로 예상값까지 만들면 같은 오류를 놓칠 수 있으므로, 기대하는 JSON을 직접 적는다.
-        it('필수 필드가 누락되면 필드명과 검증 오류를 담은 400 응답을 반환한다', async () => {
-            await fix.httpClient
-                .post('/')
-                .body({ date: nullDate })
-                .badRequest({
+        describe('요청 본문에 필수 필드가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.post('/').body({ date: nullDate })
+            })
+            it('요청하면 필드명과 검증 오류를 담은 400을 반환한다', async () => {
+                await request.badRequest({
                     expected: {
                         code: 'ERR_REQUEST_VALIDATION_FAILED',
                         details: [
@@ -67,38 +84,55 @@ describe('RequestValidationPipe HTTP 및 오류 변환', () => {
                         message: 'Validation failed'
                     }
                 })
+            })
         })
     })
 
     describe('POST /array', () => {
-        it('유효한 배열로 요청하면 201을 반환한다', async () => {
-            await fix.httpClient
-                .post('/array')
-                .body([{ date: nullDate, sampleId: 'id' }])
-                .created()
+        describe('요청 배열의 모든 항목이 스키마에 맞으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.post('/array').body([{ date: nullDate, sampleId: 'id' }])
+            })
+            it('요청하면 201을 반환한다', async () => {
+                await request.created()
+            })
         })
 
-        it('배열 항목의 날짜가 잘못되면 400을 반환한다', async () => {
-            await fix.httpClient
-                .post('/array')
-                .body([{ date: 'wrong', sampleId: 'id' }])
-                .badRequest()
+        describe('요청 배열 항목의 날짜가 잘못되었으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.post('/array').body([{ date: 'wrong', sampleId: 'id' }])
+            })
+            it('요청하면 400을 반환한다', async () => {
+                await request.badRequest()
+            })
         })
     })
 
     describe('POST /nested', () => {
-        it('유효한 중첩 배열로 요청하면 201을 반환한다', async () => {
-            await fix.httpClient
-                .post('/nested')
-                .body({ samples: [{ date: nullDate, sampleId: 'id' }] })
-                .created()
+        describe('요청 본문의 중첩 배열이 스키마에 맞으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post('/nested')
+                    .body({ samples: [{ date: nullDate, sampleId: 'id' }] })
+            })
+            it('요청하면 201을 반환한다', async () => {
+                await request.created()
+            })
         })
 
-        it('중첩 배열 항목의 날짜가 잘못되면 400을 반환한다', async () => {
-            await fix.httpClient
-                .post('/nested')
-                .body({ samples: [{ date: 'wrong', sampleId: 'id' }] })
-                .badRequest()
+        describe('요청 본문의 중첩 배열 항목에 잘못된 날짜가 있으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post('/nested')
+                    .body({ samples: [{ date: 'wrong', sampleId: 'id' }] })
+            })
+            it('요청하면 400을 반환한다', async () => {
+                await request.badRequest()
+            })
         })
     })
 })

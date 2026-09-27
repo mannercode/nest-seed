@@ -22,15 +22,21 @@ function createTestLogger(consoleLogLevel: string, environment = 'test') {
 }
 
 describe('createWinstonLogger', () => {
-    it('consoleLogLevel이 "silent"이면 transport를 등록하지 않는다', () => {
-        const silentLogger = createTestLogger('silent')
+    describe('consoleLogLevel이 "silent"이면', () => {
+        let level: string
+        beforeEach(() => {
+            level = 'silent'
+        })
+        it('로거를 만들면 transport를 등록하지 않는다', () => {
+            const silentLogger = createTestLogger(level)
 
-        try {
-            expect(silentLogger.transports).toHaveLength(0)
-            expect(silentLogger.silent).toBe(true)
-        } finally {
-            silentLogger.close()
-        }
+            try {
+                expect(silentLogger.transports).toHaveLength(0)
+                expect(silentLogger.silent).toBe(true)
+            } finally {
+                silentLogger.close()
+            }
+        })
     })
 })
 

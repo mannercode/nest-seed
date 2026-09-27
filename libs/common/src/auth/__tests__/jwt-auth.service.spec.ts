@@ -120,19 +120,22 @@ describe('JwtAuthService', () => {
             })
         })
 
-        it.each([
+        describe.each([
             { label: 'sub가 없는', payload: {} },
             { label: 'sub가 숫자인', payload: { sub: 12345 } },
             { label: 'sub가 빈 문자열인', payload: { sub: '' } }
-        ])(
-            '$label 입력으로 토큰을 발급하면 401 예외를 던지고 세션을 만들지 않는다',
-            async ({ payload }) => {
-                await expect(fix.jwtService.generateAuthTokens(payload)).rejects.toMatchObject({
+        ])('$label 인증 정보가 있으면', ({ payload }) => {
+            let claims: typeof payload
+            beforeEach(() => {
+                claims = payload
+            })
+            it('토큰을 발급하면 401 예외를 던지고 세션을 만들지 않는다', async () => {
+                await expect(fix.jwtService.generateAuthTokens(claims)).rejects.toMatchObject({
                     status: 401
                 })
                 expect(await fix.redis.keys(`${fix.jwtService.prefix}:*`)).toEqual([])
-            }
-        )
+            })
+        })
     })
 
     describe('refreshAuthTokens', () => {
@@ -258,21 +261,32 @@ describe('JwtAuthService', () => {
             })
         })
 
-        it.each([
+        describe.each([
             { label: 'sessionId가 없는', sessionId: undefined },
             { label: 'sessionId가 빈 문자열인', sessionId: '' },
             { label: 'sessionId가 숫자인', sessionId: 1 }
-        ])('$label 토큰으로 갱신하면 401 예외를 던진다', async ({ sessionId }) => {
-            const token = await signedRefresh({ sub: 'u1', sessionId })
-            await expect(fix.jwtService.refreshAuthTokens(token)).rejects.toMatchObject({
-                status: 401
+        ])('$label 리프레시 토큰이 있으면', ({ sessionId }) => {
+            let token: string
+            beforeEach(async () => {
+                token = await signedRefresh({ sub: 'u1', sessionId })
+            })
+            it('토큰을 갱신하면 401 예외를 던진다', async () => {
+                await expect(fix.jwtService.refreshAuthTokens(token)).rejects.toMatchObject({
+                    status: 401
+                })
             })
         })
 
-        it('사용자 식별자가 없는 서명된 토큰도 거부한다', async () => {
-            await expect(
-                fix.jwtService.refreshAuthTokens(await signedRefresh({ sessionId: 's1' }))
-            ).rejects.toMatchObject({ status: 401 })
+        describe('서명된 토큰에 사용자 식별자가 없으면', () => {
+            let token: string
+            beforeEach(async () => {
+                token = await signedRefresh({ sessionId: 's1' })
+            })
+            it('토큰을 갱신하면 401 예외를 던진다', async () => {
+                await expect(fix.jwtService.refreshAuthTokens(token)).rejects.toMatchObject({
+                    status: 401
+                })
+            })
         })
     })
 
@@ -377,53 +391,75 @@ describe('JwtAuthService', () => {
             })
         })
 
-        it('활성 세션이 없는 사용자를 전체 로그아웃해도 오류 없이 끝난다', async () => {
-            await expect(fix.jwtService.revokeAllSessions('missing')).resolves.toBeUndefined()
+        describe('사용자의 활성 세션이 없으면', () => {
+            let userId: string
+            beforeEach(() => {
+                userId = 'missing'
+            })
+            it('전체 로그아웃을 요청하면 오류 없이 완료한다', async () => {
+                await expect(fix.jwtService.revokeAllSessions(userId)).resolves.toBeUndefined()
+            })
         })
     })
 
     describe('서명과 클레임 검증', () => {
-        it.each(['refreshAuthTokens', 'revokeRefreshToken'] as const)(
-            '%s는 깨진 토큰을 거부한다',
-            async (operation) => {
-                await expect(fix.jwtService[operation]('garbage')).rejects.toMatchObject({
-                    status: 401
-                })
-            }
-        )
-
-        it.each(['refreshAuthTokens', 'revokeRefreshToken'] as const)(
-            '%s는 만료된 토큰을 거부한다',
-            async (operation) => {
-                const token = await signedRefresh(
-                    { sub: 'u1', sessionId: 's1' },
-                    { expiresIn: '-1s' }
-                )
-                await expect(fix.jwtService[operation](token)).rejects.toMatchObject({
-                    status: 401,
-                    response: JwtAuthErrors.RefreshTokenInvalid()
-                })
-            }
-        )
-
-        it.each(['none', 'HS384', 'HS512'])('%s 알고리즘을 거부한다', async (algorithm) => {
-            await expect(
-                fix.jwtService.refreshAuthTokens(
-                    await signedRefresh({ sub: 'u1', sessionId: 's1' }, { algorithm })
-                )
-            ).rejects.toMatchObject({ status: 401 })
+        describe('토큰 문자열이 깨져 있으면', () => {
+            let token: string
+            beforeEach(() => {
+                token = 'garbage'
+            })
+            it.each(['refreshAuthTokens', 'revokeRefreshToken'] as const)(
+                '%s를 호출하면 401 예외를 던진다',
+                async (operation) => {
+                    await expect(fix.jwtService[operation](token)).rejects.toMatchObject({
+                        status: 401
+                    })
+                }
+            )
         })
 
-        it.each([
+        describe('리프레시 토큰이 만료되었으면', () => {
+            let token: string
+            beforeEach(async () => {
+                token = await signedRefresh({ sub: 'u1', sessionId: 's1' }, { expiresIn: '-1s' })
+            })
+            it.each(['refreshAuthTokens', 'revokeRefreshToken'] as const)(
+                '%s를 호출하면 401 예외를 던진다',
+                async (operation) => {
+                    await expect(fix.jwtService[operation](token)).rejects.toMatchObject({
+                        status: 401,
+                        response: JwtAuthErrors.RefreshTokenInvalid()
+                    })
+                }
+            )
+        })
+
+        describe.each(['none', 'HS384', 'HS512'])('토큰 서명 알고리즘이 %s이면', (algorithm) => {
+            let token: string
+            beforeEach(async () => {
+                token = await signedRefresh({ sub: 'u1', sessionId: 's1' }, { algorithm })
+            })
+            it('토큰을 갱신하면 401 예외를 던진다', async () => {
+                await expect(fix.jwtService.refreshAuthTokens(token)).rejects.toMatchObject({
+                    status: 401
+                })
+            })
+        })
+
+        describe.each([
             { label: 'issuer가 다른', options: { issuer: 'other' } },
             { label: 'audience가 다른', options: { audience: 'other' } },
             { label: '서명 키가 다른', options: { secret: 'wrong' } }
-        ])('$label 토큰으로 갱신하면 401 예외를 던진다', async ({ options }) => {
-            await expect(
-                fix.jwtService.refreshAuthTokens(
-                    await signedRefresh({ sub: 'u1', sessionId: 's1' }, options)
-                )
-            ).rejects.toMatchObject({ status: 401 })
+        ])('$label 리프레시 토큰이 있으면', ({ options }) => {
+            let token: string
+            beforeEach(async () => {
+                token = await signedRefresh({ sub: 'u1', sessionId: 's1' }, options)
+            })
+            it('토큰을 갱신하면 401 예외를 던진다', async () => {
+                await expect(fix.jwtService.refreshAuthTokens(token)).rejects.toMatchObject({
+                    status: 401
+                })
+            })
         })
     })
 })

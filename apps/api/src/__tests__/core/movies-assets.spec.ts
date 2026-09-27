@@ -75,22 +75,29 @@ describe('MoviesAssets', () => {
             expect(response.ok).toBe(true)
         })
 
-        it('지원하지 않는 MIME 타입이면 400을 반환한다', async () => {
-            const createDto = buildCreateAssetDto(testAssets.json)
-
-            await fix.httpClient
-                .post(`/movies/${movie.id}/assets`)
-                .body(createDto)
-                .badRequest({ expected: Errors.Movies.UnsupportedAssetType(createDto.mimeType) })
+        describe('에셋의 MIME 타입을 지원하지 않으면', () => {
+            let request: typeof fix.httpClient
+            let createDto: ReturnType<typeof buildCreateAssetDto>
+            beforeEach(() => {
+                createDto = buildCreateAssetDto(testAssets.json)
+                request = fix.httpClient.post(`/movies/${movie.id}/assets`).body(createDto)
+            })
+            it('업로드 URL을 요청하면 400을 반환한다', async () => {
+                await request.badRequest({
+                    expected: Errors.Movies.UnsupportedAssetType(createDto.mimeType)
+                })
+            })
         })
 
-        it('영화가 없으면 404를 반환한다', async () => {
-            const createDto = buildCreateAssetDto(testAssets.image)
-
-            await fix.httpClient
-                .post(`/movies/${nullObjectId}/assets`)
-                .body(createDto)
-                .notFound({ expected: Errors.Movies.NotFound(nullObjectId) })
+        describe('영화가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                const createDto = buildCreateAssetDto(testAssets.image)
+                request = fix.httpClient.post(`/movies/${nullObjectId}/assets`).body(createDto)
+            })
+            it('업로드 URL을 요청하면 404를 반환한다', async () => {
+                await request.notFound({ expected: Errors.Movies.NotFound(nullObjectId) })
+            })
         })
     })
 
@@ -184,10 +191,14 @@ describe('MoviesAssets', () => {
             })
         })
 
-        it('영화가 없으면 404를 반환한다', async () => {
-            await fix.httpClient
-                .delete(`/movies/${nullObjectId}/assets/${nullObjectId}`)
-                .notFound({ expected: Errors.Movies.NotFound(nullObjectId) })
+        describe('영화가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.delete(`/movies/${nullObjectId}/assets/${nullObjectId}`)
+            })
+            it('에셋 삭제를 요청하면 404를 반환한다', async () => {
+                await request.notFound({ expected: Errors.Movies.NotFound(nullObjectId) })
+            })
         })
     })
 
@@ -347,10 +358,16 @@ describe('MoviesAssets', () => {
             })
         })
 
-        it('영화가 없으면 404를 반환한다', async () => {
-            await fix.httpClient
-                .post(`/movies/${nullObjectId}/assets/${nullObjectId}/finalize`)
-                .notFound({ expected: Errors.Movies.NotFound(nullObjectId) })
+        describe('영화가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.post(
+                    `/movies/${nullObjectId}/assets/${nullObjectId}/finalize`
+                )
+            })
+            it('에셋 업로드 완료 처리를 요청하면 404를 반환한다', async () => {
+                await request.notFound({ expected: Errors.Movies.NotFound(nullObjectId) })
+            })
         })
     })
 })

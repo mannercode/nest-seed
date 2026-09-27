@@ -30,15 +30,17 @@ describe('MovieRecommender', () => {
             ]
         })
 
-        it.each([
+        describe.each([
             {
                 expectedIds: ['2', '1', '3'],
-                name: '시청 기록이 없으면 개봉일이 최신인 순서로 추천한다',
+                condition: '시청 기록이 없으면',
+                result: '영화를 추천하면 개봉일이 최신인 순서로 반환한다',
                 watchedMovies: []
             },
             {
                 expectedIds: ['1', '2', '3'],
-                name: '액션 장르를 가장 많이 시청했으면 액션 영화를 먼저 추천한다',
+                condition: '액션 장르를 가장 많이 시청했으면',
+                result: '영화를 추천하면 액션 영화를 먼저 반환한다',
                 watchedMovies: [
                     createDto('4', [MovieGenre.Action], plainDate('2023-07-01')),
                     createDto('5', [MovieGenre.Action], plainDate('2023-06-01')),
@@ -47,13 +49,20 @@ describe('MovieRecommender', () => {
             },
             {
                 expectedIds: ['1', '3'],
-                name: '이미 시청한 영화는 추천 결과에서 제외한다',
+                condition: '상영 중인 영화를 이미 시청했으면',
+                result: '영화를 추천하면 이미 시청한 영화를 제외한다',
                 watchedMovies: [createDto('2', [MovieGenre.Drama], plainDate('2023-10-01'))]
             }
-        ])('$name', ({ watchedMovies, expectedIds }) => {
-            const recommendedMovies = MovieRecommender.recommend(showingMovies, watchedMovies)
+        ])('$condition', ({ watchedMovies, expectedIds, result }) => {
+            let history: MovieDto[]
+            beforeEach(() => {
+                history = watchedMovies
+            })
+            it(result, () => {
+                const recommendedMovies = MovieRecommender.recommend(showingMovies, history)
 
-            expect(recommendedMovies.map((movie) => movie.id)).toEqual(expectedIds)
+                expect(recommendedMovies.map((movie) => movie.id)).toEqual(expectedIds)
+            })
         })
     })
 })

@@ -25,12 +25,16 @@ describe('UserHomeView', () => {
     afterEach(() => teardown?.())
 
     describe('GET /views/user-app/home', () => {
-        it('상영 예정이 없으면 빈 목록을 반환한다', async () => {
-            const { body } = await fix.httpClient
-                .get('/views/user-app/home')
-                .ok({ schema: UserHomeViewSchema })
+        describe('상영 예정이 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/views/user-app/home')
+            })
+            it('홈 화면을 조회하면 상영·추천 영화 목록이 비어 있다', async () => {
+                const { body } = await request.ok({ schema: UserHomeViewSchema })
 
-            expect(body).toEqual({ showingMovies: [], recommendedMovies: [] })
+                expect(body).toEqual({ showingMovies: [], recommendedMovies: [] })
+            })
         })
 
         describe('상영 예정이 없는 영화가 존재하면', () => {

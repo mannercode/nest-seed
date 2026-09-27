@@ -41,14 +41,19 @@ describe('UsersService', () => {
                 })
         })
 
-        it.each([
+        describe.each([
             { condition: 'name이 문자열이 아니면', invalid: { name: false } },
             { condition: 'password가 문자열이 아니면', invalid: { password: 1234 } }
-        ])('$condition 400을 반환한다', async ({ invalid }) => {
-            await fix.httpClient
-                .post('/users')
-                .body({ ...buildCreateUserDto(), ...invalid })
-                .badRequest()
+        ])('$condition', ({ invalid }) => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post('/users')
+                    .body({ ...buildCreateUserDto(), ...invalid })
+            })
+            it('가입을 요청하면 400을 반환한다', async () => {
+                await request.badRequest()
+            })
         })
 
         describe('사용자가 존재하면', () => {
@@ -114,11 +119,16 @@ describe('UsersService', () => {
             30 * 1000
         )
 
-        it('필수 필드가 누락되면 400을 반환한다', async () => {
-            await fix.httpClient
-                .post('/users')
-                .body({})
-                .badRequest({ expected: Errors.RequestValidation.Failed(expect.any(Array)) })
+        describe('요청 본문에 필수 필드가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.post('/users').body({})
+            })
+            it('가입을 요청하면 400을 반환한다', async () => {
+                await request.badRequest({
+                    expected: Errors.RequestValidation.Failed(expect.any(Array))
+                })
+            })
         })
     })
 
@@ -138,11 +148,16 @@ describe('UsersService', () => {
             })
         })
 
-        it('존재하지 않는 사용자 ID로 조회하면 404를 반환한다', async () => {
-            await fix.httpClient
-                .get(`/users/${nullObjectId}`)
-                .headers(adminAuth)
-                .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]) })
+        describe('ID에 해당하는 사용자가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get(`/users/${nullObjectId}`).headers(adminAuth)
+            })
+            it('사용자를 조회하면 404를 반환한다', async () => {
+                await request.notFound({
+                    expected: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId])
+                })
+            })
         })
     })
 
@@ -163,12 +178,17 @@ describe('UsersService', () => {
                 .ok({ schema: UserSchema, expected: { ...user, ...updateDto } })
         })
 
-        it('필수 필드를 null로 바꾸는 요청은 400을 반환한다', async () => {
-            await fix.httpClient
-                .patch(`/users/${user.id}`)
-                .headers(adminAuth)
-                .body({ name: null })
-                .badRequest()
+        describe('수정할 필수 필드 값이 null이면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .patch(`/users/${user.id}`)
+                    .headers(adminAuth)
+                    .body({ name: null })
+            })
+            it('사용자 수정을 요청하면 400을 반환한다', async () => {
+                await request.badRequest()
+            })
         })
 
         it('수정 내용이 DB에 저장된다', async () => {
@@ -185,12 +205,14 @@ describe('UsersService', () => {
                 .ok({ schema: UserSchema, expected: { ...user, ...updateDto } })
         })
 
-        it('존재하지 않는 사용자 ID로 수정하면 404를 반환한다', async () => {
-            await fix.httpClient
-                .patch(`/users/${nullObjectId}`)
-                .headers(adminAuth)
-                .body({})
-                .notFound({ expected: Errors.Mongo.DocumentNotFound(nullObjectId) })
+        describe('ID에 해당하는 사용자가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.patch(`/users/${nullObjectId}`).headers(adminAuth).body({})
+            })
+            it('사용자 수정을 요청하면 404를 반환한다', async () => {
+                await request.notFound({ expected: Errors.Mongo.DocumentNotFound(nullObjectId) })
+            })
         })
 
         describe('사용자의 비밀번호가 변경되었으면', () => {
@@ -264,8 +286,14 @@ describe('UsersService', () => {
             })
         })
 
-        it('존재하지 않는 사용자 ID로 삭제를 요청해도 204를 반환한다', async () => {
-            await fix.httpClient.delete(`/users/${nullObjectId}`).headers(adminAuth).noContent()
+        describe('ID에 해당하는 사용자가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.delete(`/users/${nullObjectId}`).headers(adminAuth)
+            })
+            it('사용자 삭제를 요청하면 204를 반환한다', async () => {
+                await request.noContent()
+            })
         })
     })
 
@@ -371,67 +399,85 @@ describe('UsersService', () => {
             total: users.length
         })
 
-        it('쿼리가 없으면 전체 고객 페이지를 반환한다', async () => {
-            const expected = buildExpectedPage([userA1, userA2, userB1, userB2])
+        describe('검색 조건이 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/users').headers(adminAuth)
+            })
+            it('사용자 목록을 조회하면 전체 사용자 페이지를 반환한다', async () => {
+                const expected = buildExpectedPage([userA1, userA2, userB1, userB2])
 
-            await fix.httpClient
-                .get('/users')
-                .headers(adminAuth)
-                .ok({ schema: paginationResultSchema(UserSchema), expected })
+                await request.ok({ schema: paginationResultSchema(UserSchema), expected })
+            })
         })
 
-        it('정렬과 페이지 조건에 맞는 고객을 반환한다', async () => {
-            await fix.httpClient
-                .get('/users')
-                .headers(adminAuth)
-                .query({ orderby: 'email:asc', page: '2', size: '2' })
-                .ok({
+        describe('정렬이 이메일 오름차순이고 page와 size가 2이면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .get('/users')
+                    .headers(adminAuth)
+                    .query({ orderby: 'email:asc', page: '2', size: '2' })
+            })
+            it('목록을 조회하면 정렬과 페이지 조건에 맞는 사용자를 반환한다', async () => {
+                await request.ok({
                     schema: paginationResultSchema(UserSchema),
                     expected: { items: [userB1, userB2], page: 2, size: 2, total: 4 }
                 })
+            })
         })
 
-        it('name 부분 일치로 필터링한다', async () => {
-            await fix.httpClient
-                .get('/users')
-                .headers(adminAuth)
-                .query({ name: 'user-a' })
-                .ok({
+        describe('사용자 이름의 일부를 검색 조건으로 지정했으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/users').headers(adminAuth).query({ name: 'user-a' })
+            })
+            it('목록을 조회하면 이름에 해당 문자열이 포함된 사용자를 반환한다', async () => {
+                await request.ok({
                     schema: paginationResultSchema(UserSchema),
                     expected: buildExpectedPage([userA1, userA2])
                 })
+            })
         })
 
-        it('name 검색은 대소문자를 무시한 부분 문자열로 일치시킨다', async () => {
-            // 'SER-A'는 'user-a1'의 비접두어 부분 문자열 + 대문자라, 접두어·대소문자 구분
-            // 매칭으로 바꾸는 회귀를 한 번에 잡는다.
-            await fix.httpClient
-                .get('/users')
-                .headers(adminAuth)
-                .query({ name: 'SER-A' })
-                .ok({
+        describe('검색할 이름에 대소문자가 다르고 접두어가 아닌 부분 문자열이 있으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/users').headers(adminAuth).query({ name: 'SER-A' })
+            })
+            it('목록을 조회하면 대소문자를 무시하고 이름이 부분 일치하는 사용자를 반환한다', async () => {
+                // 'SER-A'는 'user-a1'의 비접두어 부분 문자열 + 대문자라, 접두어·대소문자 구분
+                // 매칭으로 바꾸는 회귀를 한 번에 잡는다.
+                await request.ok({
                     schema: paginationResultSchema(UserSchema),
                     expected: buildExpectedPage([userA1, userA2])
                 })
+            })
         })
 
-        it('email 부분 일치로 필터링한다', async () => {
-            await fix.httpClient
-                .get('/users')
-                .headers(adminAuth)
-                .query({ email: 'user-b' })
-                .ok({
+        describe('이메일의 일부를 검색 조건으로 지정했으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/users').headers(adminAuth).query({ email: 'user-b' })
+            })
+            it('목록을 조회하면 이메일에 해당 문자열이 포함된 사용자를 반환한다', async () => {
+                await request.ok({
                     schema: paginationResultSchema(UserSchema),
                     expected: buildExpectedPage([userB1, userB2])
                 })
+            })
         })
 
-        it('알 수 없는 쿼리 파라미터는 400을 반환한다', async () => {
-            await fix.httpClient
-                .get('/users')
-                .headers(adminAuth)
-                .query({ wrong: 'value' })
-                .badRequest({ expected: Errors.RequestValidation.Failed(expect.any(Array)) })
+        describe('정의하지 않은 쿼리 파라미터가 있으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/users').headers(adminAuth).query({ wrong: 'value' })
+            })
+            it('사용자 목록을 조회하면 400을 반환한다', async () => {
+                await request.badRequest({
+                    expected: Errors.RequestValidation.Failed(expect.any(Array))
+                })
+            })
         })
     })
 

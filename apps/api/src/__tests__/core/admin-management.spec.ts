@@ -74,27 +74,38 @@ describe('AdminManagement', () => {
             })
         })
 
-        it('필수 필드가 null이면 ConflictException이 아닌 예외를 던진다', async () => {
-            const service = fix.module.get(AdminsService)
+        describe('생성할 관리자의 필수 필드가 null이면', () => {
+            let service: AdminsService
+            let invalidDto: Parameters<AdminsService['create']>[0]
+            beforeEach(() => {
+                service = fix.module.get(AdminsService)
 
-            // required 필드를 null로 보내 저장 경계 검증 오류를 유도한다.
-            // 요청 스키마 검증은 컨트롤러에만 적용되므로 service를 직접 호출한다.
-            const invalidDto = { email: 'x@y.com', name: null as unknown as string, password: 'p' }
-
-            // "그대로 던진다"의 핵심은 409로 변환되지 않는 것이므로 예외 타입까지 확인한다.
-            const promise = service.create(invalidDto)
-            await expect(promise).rejects.toThrow()
-            await expect(promise).rejects.not.toBeInstanceOf(ConflictException)
+                // required 필드를 null로 보내 저장 경계 검증 오류를 유도한다.
+                // 요청 스키마 검증은 컨트롤러에만 적용되므로 service를 직접 호출한다.
+                invalidDto = { email: 'x@y.com', name: null as unknown as string, password: 'p' }
+            })
+            it('관리자를 생성하면 ConflictException이 아닌 예외를 던진다', async () => {
+                // "그대로 던진다"의 핵심은 409로 변환되지 않는 것이므로 예외 타입까지 확인한다.
+                const promise = service.create(invalidDto)
+                await expect(promise).rejects.toThrow()
+                await expect(promise).rejects.not.toBeInstanceOf(ConflictException)
+            })
         })
     })
 
     describe('AdminsService.remove', () => {
-        it('존재하지 않는 ID로 삭제하면 관리자가 없다는 예외를 던진다', async () => {
-            const service = fix.module.get(AdminsService)
-
-            await expect(service.remove(nullObjectId)).rejects.toThrow(
-                Errors.Mongo.DocumentNotFound(nullObjectId).message
-            )
+        describe('ID에 해당하는 관리자가 없으면', () => {
+            let service: AdminsService
+            let id: string
+            beforeEach(() => {
+                service = fix.module.get(AdminsService)
+                id = nullObjectId
+            })
+            it('관리자를 삭제하면 관리자가 없다는 예외를 던진다', async () => {
+                await expect(service.remove(id)).rejects.toThrow(
+                    Errors.Mongo.DocumentNotFound(nullObjectId).message
+                )
+            })
         })
     })
 
@@ -190,8 +201,14 @@ describe('AdminManagement', () => {
             })
         })
 
-        it('토큰이 없으면 401을 반환한다', async () => {
-            await fix.httpClient.patch('/admins/me').body({ name: 'x' }).unauthorized()
+        describe('인증 토큰이 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.patch('/admins/me').body({ name: 'x' })
+            })
+            it('본인 정보 수정을 요청하면 401을 반환한다', async () => {
+                await request.unauthorized()
+            })
         })
     })
 
@@ -213,12 +230,18 @@ describe('AdminManagement', () => {
             })
         })
 
-        it('존재하지 않는 ID로 수정하면 관리자가 없다는 예외를 던진다', async () => {
-            const service = fix.module.get(AdminsService)
-
-            await expect(service.update(nullObjectId, { name: 'x' })).rejects.toThrow(
-                Errors.Mongo.DocumentNotFound(nullObjectId).message
-            )
+        describe('ID에 해당하는 관리자가 없으면', () => {
+            let service: AdminsService
+            let id: string
+            beforeEach(() => {
+                service = fix.module.get(AdminsService)
+                id = nullObjectId
+            })
+            it('관리자를 수정하면 관리자가 없다는 예외를 던진다', async () => {
+                await expect(service.update(id, { name: 'x' })).rejects.toThrow(
+                    Errors.Mongo.DocumentNotFound(nullObjectId).message
+                )
+            })
         })
     })
 

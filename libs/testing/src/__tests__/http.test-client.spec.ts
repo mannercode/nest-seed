@@ -14,69 +14,112 @@ describe('HttpTestClient', () => {
     afterEach(() => fix.teardown())
 
     describe('JSON 응답 파싱', () => {
-        it('JSON의 큰 정수는 기본 파싱 결과를 따르고 문자열 안의 숫자는 유지한다', async () => {
-            const { body } = await fix.httpClient.get('/big-int').ok()
+        describe('JSON 응답에 큰 정수와 숫자를 담은 문자열이 있으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/big-int')
+            })
+            it('응답을 읽으면 큰 정수는 기본 파싱 결과를 따르고 문자열은 유지한다', async () => {
+                const { body } = await request.ok()
 
-            expect(body.v).toBe(Number('9223372036854775807'))
-            expect(body.note).toBe('id: 9223372036854775807')
+                expect(body.v).toBe(Number('9223372036854775807'))
+                expect(body.note).toBe('id: 9223372036854775807')
+            })
         })
 
-        it('명시한 응답 스키마로 변환하고 body 타입을 추론한다', async () => {
-            const schema = {
-                parse: (value: unknown) => ({
-                    at: Temporal.Instant.from((value as { at: string }).at)
-                })
-            }
-            const { body } = await fix.httpClient
-                .get('/timestamp')
-                .ok({ schema, expected: { at: Temporal.Instant.from('2023-06-18T12:12:34.567Z') } })
-            expectTypeOf(body.at).toEqualTypeOf<Temporal.Instant>()
+        describe('응답에 적용할 Instant 변환 스키마가 있으면', () => {
+            let schema: { parse(value: unknown): { at: Temporal.Instant } }
+            beforeEach(() => {
+                schema = {
+                    parse: (value: unknown) => ({
+                        at: Temporal.Instant.from((value as { at: string }).at)
+                    })
+                }
+            })
+            it('응답을 읽으면 스키마로 변환하고 body 타입을 추론한다', async () => {
+                const { body } = await fix.httpClient
+                    .get('/timestamp')
+                    .ok({
+                        schema,
+                        expected: { at: Temporal.Instant.from('2023-06-18T12:12:34.567Z') }
+                    })
+                expectTypeOf(body.at).toEqualTypeOf<Temporal.Instant>()
 
-            expect(body.at).toBeInstanceOf(Temporal.Instant)
-            expect(body.at.toString()).toBe('2023-06-18T12:12:34.567Z')
+                expect(body.at).toBeInstanceOf(Temporal.Instant)
+                expect(body.at.toString()).toBe('2023-06-18T12:12:34.567Z')
+            })
         })
 
-        it('스키마를 주지 않으면 날짜 모양의 문자열도 그대로 둔다', async () => {
-            const { body } = await fix.httpClient.get('/plain-date').ok()
+        describe('응답에 날짜 문자열이 있고 변환 스키마를 지정하지 않았으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/plain-date')
+            })
+            it('응답을 읽으면 날짜 문자열을 유지한다', async () => {
+                const { body } = await request.ok()
 
-            expect(body.date).toBe('2023-06-18')
+                expect(body.date).toBe('2023-06-18')
+            })
         })
 
-        it('확장 연도 문자열도 자동 변환하지 않는다', async () => {
-            const { body } = await fix.httpClient.get('/expanded-temporal').ok()
+        describe('응답에 확장 연도 문자열이 있으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/expanded-temporal')
+            })
+            it('응답을 읽으면 문자열을 유지한다', async () => {
+                const { body } = await request.ok()
 
-            expect(body.at).toBe('+010000-01-02T03:04:05Z')
-            expect(body.date).toBe('-000001-12-31')
+                expect(body.at).toBe('+010000-01-02T03:04:05Z')
+                expect(body.date).toBe('-000001-12-31')
+            })
         })
 
-        it('ISO 모양이지만 잘못된 날짜 응답은 문자열로 보존한다', async () => {
-            const { body } = await fix.httpClient.get('/invalid-temporal').ok()
+        describe('응답에 ISO 형식이지만 유효하지 않은 날짜 문자열이 있으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/invalid-temporal')
+            })
+            it('응답을 읽으면 문자열을 유지한다', async () => {
+                const { body } = await request.ok()
 
-            expect(body).toEqual({ at: '2025-13-01T00:00:00Z', date: '2025-02-30' })
+                expect(body).toEqual({ at: '2025-13-01T00:00:00Z', date: '2025-02-30' })
+            })
         })
     })
 
     describe('상태 코드 단언', () => {
-        it('.badRequest()는 400이 아니면 실패한다', async () => {
-            await expect(fix.httpClient.get('/always-200').badRequest()).rejects.toThrow()
-        })
+        describe('서버가 200을 반환하는 경로이면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/always-200')
+            })
+            it('badRequest로 응답을 확인하면 실패한다', async () => {
+                await expect(request.badRequest()).rejects.toThrow()
+            })
 
-        it('.internalServerError()는 500이 아니면 실패한다', async () => {
-            await expect(fix.httpClient.get('/always-200').internalServerError()).rejects.toThrow()
+            it('internalServerError로 응답을 확인하면 실패한다', async () => {
+                await expect(request.internalServerError()).rejects.toThrow()
+            })
         })
     })
 
     describe('multipart 업로드', () => {
-        it('.attachments()와 .fields()를 함께 쓰면 multipart/form-data로 전송된다', async () => {
-            const { body } = await fix.httpClient
-                .post('/inspect')
-                .attachments([{ file: Buffer.from('hello'), name: 'files', options: 'a.txt' }])
-                .fields([{ name: 'note', value: 'test-field' }])
-                .created()
+        describe('요청에 파일과 필드가 함께 지정되어 있으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post('/inspect')
+                    .attachments([{ file: Buffer.from('hello'), name: 'files', options: 'a.txt' }])
+                    .fields([{ name: 'note', value: 'test-field' }])
+            })
+            it('전송하면 multipart/form-data에 파일과 필드를 담는다', async () => {
+                const { body } = await request.created()
 
-            expect(body.contentType).toMatch(/^multipart\/form-data/)
-            expect(body.body).toContain('test-field')
-            expect(body.body).toContain('a.txt')
+                expect(body.contentType).toMatch(/^multipart\/form-data/)
+                expect(body.body).toContain('test-field')
+                expect(body.body).toContain('a.txt')
+            })
         })
     })
 
@@ -269,88 +312,120 @@ describe('HttpTestClient', () => {
             })
         })
 
-        it('한글 바이트가 청크 사이에 나뉘어도 원문을 전달한다', async () => {
-            const firstChunk = Promise.withResolvers<void>()
-            const received = Promise.withResolvers<string>()
-            const reject = (reason: unknown) => {
-                firstChunk.reject(reason)
-                received.reject(reason)
-            }
+        describe('한글 바이트를 여러 청크로 나누어 응답하는 경로이면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/split-utf8-event')
+            })
+            it('구독하면 원래 한글 문자열을 전달한다', async () => {
+                const firstChunk = Promise.withResolvers<void>()
+                const received = Promise.withResolvers<string>()
+                const reject = (reason: unknown) => {
+                    firstChunk.reject(reason)
+                    received.reject(reason)
+                }
 
-            fix.httpClient.get('/split-utf8-event').sse((data) => {
-                if (data === 'ready') firstChunk.resolve()
-                else received.resolve(data)
-            }, reject)
-
-            try {
-                const [data] = await Promise.all([
-                    received.promise,
-                    firstChunk.promise.then(() =>
-                        new HttpTestClient(fix.httpClient.serverUrl)
-                            .post('/complete-utf8-event')
-                            .created()
-                    )
-                ])
-                expect(data).toBe('한글')
-            } finally {
-                fix.httpClient.abort()
-            }
-        })
-
-        it('첫 이벤트 없이도 수신 준비를 알리고 이후 요청의 이벤트를 받는다', async () => {
-            const ready = Promise.withResolvers<void>()
-            const received = Promise.withResolvers<string>()
-            const reject = (reason: unknown) => {
-                ready.reject(reason)
-                received.reject(reason)
-            }
-
-            fix.httpClient.get('/events-after-ready').sse(received.resolve, reject, ready.resolve)
-
-            try {
-                const [data] = await Promise.all([
-                    received.promise,
-                    ready.promise.then(() =>
-                        new HttpTestClient(fix.httpClient.serverUrl).post('/emit-event').created()
-                    )
-                ])
-                expect(JSON.parse(data)).toEqual({ status: 'succeeded' })
-            } finally {
-                fix.httpClient.abort()
-            }
-        })
-
-        it('한 청크로 도착한 여러 이벤트를 모두 전달한다', async () => {
-            const events = await new Promise<string[]>((resolve, reject) => {
-                const received: string[] = []
-
-                fix.httpClient.get('/events').sse((data) => {
-                    received.push(data)
-                    if (received.length === 3) resolve(received)
+                request.sse((data) => {
+                    if (data === 'ready') firstChunk.resolve()
+                    else received.resolve(data)
                 }, reject)
-            })
 
-            expect(events.map((e) => JSON.parse(e).status)).toEqual([
-                'waiting',
-                'processing',
-                'succeeded'
-            ])
+                try {
+                    const [data] = await Promise.all([
+                        received.promise,
+                        firstChunk.promise.then(() =>
+                            new HttpTestClient(fix.httpClient.serverUrl)
+                                .post('/complete-utf8-event')
+                                .created()
+                        )
+                    ])
+                    expect(data).toBe('한글')
+                } finally {
+                    fix.httpClient.abort()
+                }
+            })
         })
 
-        it('error 이벤트는 errorHandler로 전달한다', async () => {
-            const reason = await new Promise((resolve) => {
-                fix.httpClient.get('/event-error').sse(() => {}, resolve)
+        describe('다른 요청을 받은 뒤 첫 이벤트를 보내는 경로이면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/events-after-ready')
             })
+            it('구독하면 먼저 수신 준비를 알리고 이후 요청의 이벤트를 받는다', async () => {
+                const ready = Promise.withResolvers<void>()
+                const received = Promise.withResolvers<string>()
+                const reject = (reason: unknown) => {
+                    ready.reject(reason)
+                    received.reject(reason)
+                }
 
-            expect(reason).toMatchObject({ event: 'error', data: 'oops' })
+                request.sse(received.resolve, reject, ready.resolve)
+
+                try {
+                    const [data] = await Promise.all([
+                        received.promise,
+                        ready.promise.then(() =>
+                            new HttpTestClient(fix.httpClient.serverUrl)
+                                .post('/emit-event')
+                                .created()
+                        )
+                    ])
+                    expect(JSON.parse(data)).toEqual({ status: 'succeeded' })
+                } finally {
+                    fix.httpClient.abort()
+                }
+            })
         })
 
-        it('SSE 형식이 아닌 응답 본문은 errorHandler로 전달한다', async () => {
-            const reason = await new Promise<string>((resolve) => {
-                fix.httpClient.get('/not-found-text').sse(() => {}, resolve)
+        describe('여러 이벤트를 한 청크에 담아 응답하는 경로이면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/events')
             })
+            it('구독하면 모든 이벤트를 전달한다', async () => {
+                const events = await new Promise<string[]>((resolve, reject) => {
+                    const received: string[] = []
 
-            expect(reason).toContain('Not Found')
+                    request.sse((data) => {
+                        received.push(data)
+                        if (received.length === 3) resolve(received)
+                    }, reject)
+                })
+
+                expect(events.map((e) => JSON.parse(e).status)).toEqual([
+                    'waiting',
+                    'processing',
+                    'succeeded'
+                ])
+            })
+        })
+
+        describe('error 이벤트를 보내는 경로이면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/event-error')
+            })
+            it('구독하면 errorHandler로 이벤트를 전달한다', async () => {
+                const reason = await new Promise((resolve) => {
+                    request.sse(() => {}, resolve)
+                })
+
+                expect(reason).toMatchObject({ event: 'error', data: 'oops' })
+            })
+        })
+
+        describe('SSE 형식이 아닌 본문을 응답하는 경로이면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/not-found-text')
+            })
+            it('구독하면 errorHandler로 응답 본문을 전달한다', async () => {
+                const reason = await new Promise<string>((resolve) => {
+                    request.sse(() => {}, resolve)
+                })
+
+                expect(reason).toContain('Not Found')
+            })
         })
     })
 

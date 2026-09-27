@@ -86,37 +86,67 @@ describe('TicketsService', () => {
                 ticketForShowtime = ensure(createdTickets[3])
             })
 
-            it('사가 식별자 목록으로 필터링한다', async () => {
-                const tickets = await ticketsService.search({ sagaIds: [sagaId] })
+            describe('사가 식별자 목록을 검색 조건으로 지정했으면', () => {
+                let query: Parameters<typeof ticketsService.search>[0]
+                beforeEach(() => {
+                    query = { sagaIds: [sagaId] }
+                })
+                it('검색하면 해당 ID에 속한 티켓만 반환한다', async () => {
+                    const tickets = await ticketsService.search(query)
 
-                expect(tickets).toEqual([ticketForSaga])
+                    expect(tickets).toEqual([ticketForSaga])
+                })
             })
 
-            it('영화 ID 목록으로 필터링한다', async () => {
-                const tickets = await ticketsService.search({ movieIds: [movieId] })
+            describe('영화 ID 목록을 검색 조건으로 지정했으면', () => {
+                let query: Parameters<typeof ticketsService.search>[0]
+                beforeEach(() => {
+                    query = { movieIds: [movieId] }
+                })
+                it('검색하면 해당 ID에 속한 티켓만 반환한다', async () => {
+                    const tickets = await ticketsService.search(query)
 
-                expect(tickets).toEqual([ticketForMovie])
+                    expect(tickets).toEqual([ticketForMovie])
+                })
             })
 
-            it('극장 ID 목록으로 필터링한다', async () => {
-                const tickets = await ticketsService.search({ theaterIds: [theaterId] })
+            describe('극장 ID 목록을 검색 조건으로 지정했으면', () => {
+                let query: Parameters<typeof ticketsService.search>[0]
+                beforeEach(() => {
+                    query = { theaterIds: [theaterId] }
+                })
+                it('검색하면 해당 ID에 속한 티켓만 반환한다', async () => {
+                    const tickets = await ticketsService.search(query)
 
-                expect(tickets).toEqual([ticketForTheater])
+                    expect(tickets).toEqual([ticketForTheater])
+                })
             })
 
-            it('상영 시간 ID 목록으로 필터링한다', async () => {
-                const tickets = await ticketsService.search({ showtimeIds: [showtimeId] })
+            describe('상영 시간 ID 목록을 검색 조건으로 지정했으면', () => {
+                let query: Parameters<typeof ticketsService.search>[0]
+                beforeEach(() => {
+                    query = { showtimeIds: [showtimeId] }
+                })
+                it('검색하면 해당 ID에 속한 티켓만 반환한다', async () => {
+                    const tickets = await ticketsService.search(query)
 
-                expect(tickets).toEqual([ticketForShowtime])
+                    expect(tickets).toEqual([ticketForShowtime])
+                })
             })
         })
 
-        it('필터가 비어 있으면 400을 던진다', async () => {
-            const promise = ticketsService.search({})
+        describe('검색 조건이 비어 있으면', () => {
+            let query: Parameters<typeof ticketsService.search>[0]
+            beforeEach(() => {
+                query = {}
+            })
+            it('티켓을 검색하면 400 예외를 던진다', async () => {
+                const promise = ticketsService.search(query)
 
-            await expect(promise).rejects.toMatchObject({
-                message: Errors.Mongo.FiltersRequired().message,
-                status: HttpStatus.BAD_REQUEST
+                await expect(promise).rejects.toMatchObject({
+                    message: Errors.Mongo.FiltersRequired().message,
+                    status: HttpStatus.BAD_REQUEST
+                })
             })
         })
     })
@@ -165,19 +195,25 @@ describe('TicketsService', () => {
                 )
             })
 
-            it('없는 티켓 ID를 함께 판매하면 404 예외를 던지고 기존 티켓의 상태를 유지한다', async () => {
-                const ticket = ensure(tickets[0])
-
-                const promise = ticketsService.sellForPurchase([ticket.id, nullObjectId], oid(0x10))
-
-                // '없는 티켓'은 상태 충돌(409)이 아니라 누락 id 목록을 담은 404로 분류되어야 한다.
-                await expect(promise).rejects.toMatchObject({
-                    response: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]),
-                    status: HttpStatus.NOT_FOUND
+            describe('판매할 티켓 ID에 존재하지 않는 ID가 섞여 있으면', () => {
+                let ticket: TicketDto
+                let ticketIds: string[]
+                beforeEach(() => {
+                    ticket = ensure(tickets[0])
+                    ticketIds = [ticket.id, nullObjectId]
                 })
+                it('판매를 요청하면 404 예외를 던지고 기존 티켓의 상태를 유지한다', async () => {
+                    const promise = ticketsService.sellForPurchase(ticketIds, oid(0x10))
 
-                const after = await ticketsService.getMany([ticket.id])
-                expect(ensure(after[0]).status).toBe(TicketStatus.Available)
+                    // '없는 티켓'은 상태 충돌(409)이 아니라 누락 id 목록을 담은 404로 분류되어야 한다.
+                    await expect(promise).rejects.toMatchObject({
+                        response: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]),
+                        status: HttpStatus.NOT_FOUND
+                    })
+
+                    const after = await ticketsService.getMany([ticket.id])
+                    expect(ensure(after[0]).status).toBe(TicketStatus.Available)
+                })
             })
         })
 

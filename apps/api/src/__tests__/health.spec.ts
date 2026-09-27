@@ -15,16 +15,22 @@ describe('Health', () => {
     afterEach(() => teardown?.())
 
     describe('GET /health', () => {
-        it('mongo·redis·nats·restate가 정상이면 200과 상태 정보를 반환한다', async () => {
-            const { body } = await fix.httpClient.get('/health').ok()
+        describe('MongoDB·Redis·NATS·Restate 연결이 정상이면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/health')
+            })
+            it('상태를 조회하면 200과 상태 정보를 반환한다', async () => {
+                const { body } = await request.ok()
 
-            const allUp = {
-                mongodb: { status: 'up' },
-                redis: { status: 'up' },
-                nats: { status: 'up' },
-                restate: { status: 'up' }
-            }
-            expect(body).toEqual({ status: 'ok', info: allUp, error: {}, details: allUp })
+                const allUp = {
+                    mongodb: { status: 'up' },
+                    redis: { status: 'up' },
+                    nats: { status: 'up' },
+                    restate: { status: 'up' }
+                }
+                expect(body).toEqual({ status: 'ok', info: allUp, error: {}, details: allUp })
+            })
         })
 
         describe('MongoDB 상태 확인에 실패하면', () => {

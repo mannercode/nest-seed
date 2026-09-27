@@ -6,19 +6,28 @@ import { PathUtil } from '../index.js'
 
 describe('PathUtil', () => {
     describe('getAbsolute', () => {
-        it('상대 경로를 절대 경로로 변환한다', () => {
-            const relativePath = `.${PathUtil.sep()}file.txt`
-            const absolutePath = PathUtil.getAbsolute(relativePath)
+        describe('입력이 상대 경로이면', () => {
+            let relativePath: string
+            beforeEach(() => {
+                relativePath = `.${PathUtil.sep()}file.txt`
+            })
+            it('절대 경로로 변환하면 절대 경로를 반환한다', () => {
+                const absolutePath = PathUtil.getAbsolute(relativePath)
 
-            expect(p.isAbsolute(absolutePath)).toBe(true)
+                expect(p.isAbsolute(absolutePath)).toBe(true)
+            })
         })
 
-        it('이미 절대 경로면 그대로 반환한다', () => {
-            const absolutePath = p.join(os.tmpdir(), 'file.txt')
+        describe('입력이 절대 경로이면', () => {
+            let absolutePath: string
+            beforeEach(() => {
+                absolutePath = p.join(os.tmpdir(), 'file.txt')
+            })
+            it('절대 경로로 변환하면 원래 경로를 반환한다', () => {
+                const result = PathUtil.getAbsolute(absolutePath)
 
-            const result = PathUtil.getAbsolute(absolutePath)
-
-            expect(result).toEqual(absolutePath)
+                expect(result).toEqual(absolutePath)
+            })
         })
     })
 
@@ -58,25 +67,39 @@ describe('PathUtil', () => {
                 })
             })
 
-            it('존재하지 않는 경로면 false를 반환한다', async () => {
-                const nonExistentPath = PathUtil.join(tempDir, 'nonexistent.txt')
-
-                const exists = await PathUtil.exists(nonExistentPath)
-                expect(exists).toBe(false)
+            describe('대상 경로가 존재하지 않으면', () => {
+                let nonExistentPath: string
+                beforeEach(() => {
+                    nonExistentPath = PathUtil.join(tempDir, 'nonexistent.txt')
+                })
+                it('존재 여부를 조회하면 false를 반환한다', async () => {
+                    const exists = await PathUtil.exists(nonExistentPath)
+                    expect(exists).toBe(false)
+                })
             })
         })
 
         describe('isDirectory', () => {
-            it('디렉터리에 대해 true를 반환한다', async () => {
-                const result = await PathUtil.isDirectory(tempDir)
-                expect(result).toBe(true)
+            describe('대상 경로가 디렉터리이면', () => {
+                let directory: string
+                beforeEach(() => {
+                    directory = tempDir
+                })
+                it('디렉터리 여부를 조회하면 true를 반환한다', async () => {
+                    const result = await PathUtil.isDirectory(directory)
+                    expect(result).toBe(true)
+                })
             })
 
-            it('존재하지 않는 경로에 대해 ENOENT 예외를 그대로 던진다', async () => {
-                const nonExistent = PathUtil.join(tempDir, 'no-such-path')
-
-                await expect(PathUtil.isDirectory(nonExistent)).rejects.toMatchObject({
-                    code: 'ENOENT'
+            describe('대상 경로가 존재하지 않으면', () => {
+                let nonExistent: string
+                beforeEach(() => {
+                    nonExistent = PathUtil.join(tempDir, 'no-such-path')
+                })
+                it('디렉터리 여부를 조회하면 ENOENT 예외를 그대로 던진다', async () => {
+                    await expect(PathUtil.isDirectory(nonExistent)).rejects.toMatchObject({
+                        code: 'ENOENT'
+                    })
                 })
             })
         })

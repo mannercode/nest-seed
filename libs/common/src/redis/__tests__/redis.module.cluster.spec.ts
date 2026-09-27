@@ -27,13 +27,21 @@ describe('RedisModule', () => {
             )
         })
 
-        it('클러스터 옵션을 주면 지정한 노드 목록으로 Cluster를 생성한다', async () => {
-            const fix = await createRedisModuleClusterFixture()
-            try {
-                expect(Cluster).toHaveBeenCalledWith([{ host: 'localhost', port: 7000 }], undefined)
-            } finally {
-                await fix.teardown()
-            }
+        describe('클러스터 옵션으로 초기화한 모듈이 있으면', () => {
+            let fix: Awaited<ReturnType<typeof createRedisModuleClusterFixture>>
+            beforeEach(async () => {
+                fix = await createRedisModuleClusterFixture()
+            })
+            it('지정한 노드 목록으로 Cluster를 생성한다', async () => {
+                try {
+                    expect(Cluster).toHaveBeenCalledWith(
+                        [{ host: 'localhost', port: 7000 }],
+                        undefined
+                    )
+                } finally {
+                    await fix.teardown()
+                }
+            })
         })
     })
 })

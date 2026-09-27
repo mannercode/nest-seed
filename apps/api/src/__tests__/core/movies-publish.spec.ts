@@ -66,7 +66,7 @@ describe('MoviesPublish', () => {
                     })
             })
 
-            it('공개된 영화는 검색에서 노출된다', async () => {
+            it('영화를 공개하면 검색 결과에 포함된다', async () => {
                 const { body: publishedMovie } = await fix.httpClient
                     .post(`/movies/${movie.id}/publish`)
                     .ok({ schema: MovieSchema })
@@ -78,7 +78,7 @@ describe('MoviesPublish', () => {
                 expect(moviePage.items[0]).toEqual(publishedMovie)
             })
 
-            it('공개 전에는 검색에서 노출되지 않는다', async () => {
+            it('공개하지 않고 검색하면 결과에 포함되지 않는다', async () => {
                 const { body: moviePage } = await fix.httpClient
                     .get('/movies')
                     .query({ title: 'MovieTitle' })
@@ -128,10 +128,14 @@ describe('MoviesPublish', () => {
             })
         })
 
-        it('영화가 없으면 404를 반환한다', async () => {
-            await fix.httpClient
-                .post(`/movies/${nullObjectId}/publish`)
-                .notFound({ expected: Errors.Mongo.DocumentNotFound(nullObjectId) })
+        describe('영화가 없으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.post(`/movies/${nullObjectId}/publish`)
+            })
+            it('공개를 요청하면 404를 반환한다', async () => {
+                await request.notFound({ expected: Errors.Mongo.DocumentNotFound(nullObjectId) })
+            })
         })
     })
 
@@ -142,7 +146,7 @@ describe('MoviesPublish', () => {
             movie = await createMovie(fix)
         })
 
-        it.each([
+        describe.each([
             ['genres', { genres: [] }],
             ['durationInSeconds', { durationInSeconds: 0 }],
             ['rating', { rating: MovieRating.Unrated }],
@@ -150,15 +154,20 @@ describe('MoviesPublish', () => {
             ['director', { director: '' }],
             ['plot', { plot: '' }],
             ['title', { title: '' }]
-        ])('%s 값을 비우는 수정에 422를 반환하고 기존 값을 유지한다', async (field, update) => {
-            await fix.httpClient
-                .patch(`/movies/${movie.id}`)
-                .body(update)
-                .unprocessableEntity({ expected: Errors.Movies.InvalidForPublish([field]) })
+        ])('수정할 %s 값이 비어 있으면', (field, update) => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.patch(`/movies/${movie.id}`).body(update)
+            })
+            it('영화 수정을 요청하면 422를 반환하고 기존 값을 유지한다', async () => {
+                await request.unprocessableEntity({
+                    expected: Errors.Movies.InvalidForPublish([field])
+                })
 
-            await fix.httpClient
-                .get(`/movies/${movie.id}`)
-                .ok({ schema: MovieSchema, expected: movie })
+                await fix.httpClient
+                    .get(`/movies/${movie.id}`)
+                    .ok({ schema: MovieSchema, expected: movie })
+            })
         })
     })
 
@@ -172,13 +181,19 @@ describe('MoviesPublish', () => {
                 movie = await createUnpublishedMovie(fix)
             })
 
-            it.each([
+            describe.each([
                 { field: 'genres', update: { genres: null } },
                 { field: 'rating', update: { rating: null } },
                 { field: 'releaseDate', update: { releaseDate: null } }
-            ])('$field를 null로 수정하면 예외를 던진다', async ({ update }) => {
-                // @ts-expect-error 런타임 호출이 타입 계약을 어긴 경우를 검증한다.
-                await expect(moviesService.update(movie.id, update)).rejects.toThrow()
+            ])('수정할 $field 값이 null이면', ({ update }) => {
+                let updateDto: typeof update
+                beforeEach(() => {
+                    updateDto = update
+                })
+                it('영화를 수정하면 예외를 던진다', async () => {
+                    // @ts-expect-error 런타임 호출이 타입 계약을 어긴 경우를 검증한다.
+                    await expect(moviesService.update(movie.id, updateDto)).rejects.toThrow()
+                })
             })
         })
     })

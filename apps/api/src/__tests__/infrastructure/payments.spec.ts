@@ -44,10 +44,16 @@ describe('PaymentsService', () => {
             })
         })
 
-        it('결제 ID가 없으면 404를 던진다', async () => {
-            await expect(paymentsService.cancel(nullObjectId)).rejects.toMatchObject({
-                response: Errors.Mongo.DocumentNotFound(nullObjectId),
-                status: HttpStatus.NOT_FOUND
+        describe('ID에 해당하는 결제가 없으면', () => {
+            let paymentId: Parameters<typeof paymentsService.cancel>[0]
+            beforeEach(() => {
+                paymentId = nullObjectId
+            })
+            it('결제를 취소하면 404 예외를 던진다', async () => {
+                await expect(paymentsService.cancel(paymentId)).rejects.toMatchObject({
+                    response: Errors.Mongo.DocumentNotFound(nullObjectId),
+                    status: HttpStatus.NOT_FOUND
+                })
             })
         })
     })
@@ -135,12 +141,18 @@ describe('PaymentsService', () => {
             })
         })
 
-        it('존재하지 않는 결제 ID로 조회하면 404 예외를 던진다', async () => {
-            const promise = paymentsService.getMany([nullObjectId])
+        describe('ID에 해당하는 결제가 없으면', () => {
+            let paymentIds: Parameters<typeof paymentsService.getMany>[0]
+            beforeEach(() => {
+                paymentIds = [nullObjectId]
+            })
+            it('결제를 조회하면 404 예외를 던진다', async () => {
+                const promise = paymentsService.getMany(paymentIds)
 
-            await expect(promise).rejects.toMatchObject({
-                message: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]).message,
-                status: HttpStatus.NOT_FOUND
+                await expect(promise).rejects.toMatchObject({
+                    message: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId]).message,
+                    status: HttpStatus.NOT_FOUND
+                })
             })
         })
     })
@@ -159,8 +171,14 @@ describe('PaymentsService', () => {
                 expect(cancelled?.status).toBe('cancelled')
             })
         })
-        it('존재하지 않는 구매 ID로 취소를 요청해도 오류 없이 완료한다', async () => {
-            await paymentsService.cancelByPurchaseRecordId({ purchaseRecordId: nullObjectId })
+        describe('구매 ID에 해당하는 결제가 없으면', () => {
+            let query: Parameters<typeof paymentsService.cancelByPurchaseRecordId>[0]
+            beforeEach(() => {
+                query = { purchaseRecordId: nullObjectId }
+            })
+            it('구매 결제를 취소하면 오류 없이 완료한다', async () => {
+                await paymentsService.cancelByPurchaseRecordId(query)
+            })
         })
     })
 
