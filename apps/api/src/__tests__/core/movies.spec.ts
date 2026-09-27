@@ -237,10 +237,14 @@ describe('MoviesService', () => {
                 movie = await createMovie(fix)
                 await createShowtimes(fix, [{ movieId: movie.id }])
             })
-            it('영화 삭제 요청에 409를 반환한다', async () => {
+            it('영화 삭제 요청에 409를 반환하고 영화를 유지한다', async () => {
                 await fix.httpClient
                     .delete(`/movies/${movie.id}`)
                     .conflict({ expected: Errors.Movies.DeleteBlockedByShowtimes(movie.id) })
+
+                await fix.httpClient
+                    .get(`/movies/${movie.id}`)
+                    .ok({ schema: MovieSchema, expected: movie })
             })
         })
 

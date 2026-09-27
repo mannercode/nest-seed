@@ -186,10 +186,14 @@ describe('TheatersService', () => {
                 theater = await createTheater(fix)
                 await createShowtimes(fix, [{ theaterId: theater.id }])
             })
-            it('극장 삭제 요청에 409를 반환한다', async () => {
+            it('극장 삭제 요청에 409를 반환하고 극장을 유지한다', async () => {
                 await fix.httpClient
                     .delete(`/theaters/${theater.id}`)
                     .conflict({ expected: Errors.Theaters.DeleteBlockedByShowtimes(theater.id) })
+
+                await fix.httpClient
+                    .get(`/theaters/${theater.id}`)
+                    .ok({ schema: TheaterSchema, expected: theater })
             })
         })
 

@@ -8,13 +8,14 @@ import { Module } from '@nestjs/common'
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
 import {
     BookingModule,
-    CatalogManagementModule,
+    MovieDeletionModule,
     PurchaseModule,
     PurchaseWorkflow,
     PurchaseEventWorkflow,
     RecommendationModule,
     ShowtimeCreationModule,
-    ShowtimeCreationWorkflow
+    ShowtimeCreationWorkflow,
+    TheaterDeletionModule
 } from '#application'
 import { AppConfigService } from '#config'
 import {
@@ -63,10 +64,11 @@ import { AppConfigModule, GlobalModule, HealthModule } from './modules/index.js'
         PaymentsModule,
         AssetsModule,
         BookingModule,
-        CatalogManagementModule,
+        MovieDeletionModule,
         PurchaseModule,
         RecommendationModule,
         ShowtimeCreationModule,
+        TheaterDeletionModule,
         UserHomeViewModule
     ],
     controllers: [

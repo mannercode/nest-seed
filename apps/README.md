@@ -17,7 +17,7 @@ flowchart TB
     Gateway -. CRUD 직접 호출 .-> Core
 ```
 
-필요한 하위 계층은 직접 사용할 수 있다. 극장 도메인의 CRUD는 Gateway → Core로 충분하다. 영화 삭제 전에 상영이 있는지 확인하는 작업은 `CatalogManagementService`가 Movies와 Showtimes를 조합한다. 계층 수를 맞추려고 호출을 전달하기만 하는 Application Service를 만들지 않는다.
+필요한 하위 계층은 직접 사용할 수 있다. 극장 도메인의 단순 생성·조회·수정은 Gateway → Core로 충분하다. 영화·극장 삭제는 각각 `MovieDeletionService`·`TheaterDeletionService`가 해당 도메인과 Showtimes를 조합해 상영이 있는지 확인한다. 계층 수를 맞추려고 호출을 전달하기만 하는 Application Service를 만들지 않는다.
 
 View는 데이터를 읽어 화면에 반환할 DTO와 항목의 순서·개수를 결정한다. `UserHomeViewService`는 추천·영화·상영·극장 정보를 조합한다. 도메인 상태 변경과 transaction은 View에 두지 않는다. Application과 Core는 View에 의존하지 않으며, 화면 요구에 맞추기 위해 도메인 API의 목적을 바꾸지 않는다.
 
@@ -29,29 +29,29 @@ View는 데이터를 읽어 화면에 반환할 DTO와 항목의 순서·개수�
 
 컨트롤러가 다른 모듈의 서비스를 주입받으려면 그 서비스가 export되어 있어야 한다. 컨트롤러를 등록한 모듈은 서비스를 제공하는 모듈을 import해야 한다. 따라서 컨트롤러를 도메인 모듈에 등록하면 도메인 모듈이 상위 유스케이스 모듈까지 import하게 될 수 있다.
 
-예를 들어 현재 `MoviesHttpController`는 `MoviesService`와 `CatalogManagementService`를 사용한다. 이 컨트롤러를 `MoviesModule`에 등록하면 `CatalogManagementModule`을 import해야 하는데, `CatalogManagementModule`도 영화 삭제를 위해 `MoviesModule`을 import한다. 서비스 호출은 CatalogManagement → Movies의 단방향이어도 모듈은 서로 참조하게 된다.
+예를 들어 현재 `MoviesHttpController`는 `MoviesService`와 `MovieDeletionService`를 사용한다. 이 컨트롤러를 `MoviesModule`에 등록하면 `MovieDeletionModule`을 import해야 하는데, `MovieDeletionModule`도 영화 삭제를 위해 `MoviesModule`을 import한다. 서비스 호출은 MovieDeletion → Movies의 단방향이어도 모듈은 서로 참조하게 된다.
 
 ```mermaid
 flowchart LR
     subgraph coupled["도메인 모듈에 컨트롤러를 등록한 경우"]
         direction TB
         M1["MoviesModule<br/>MoviesHttpController · MoviesService"]
-        C1["CatalogManagementModule"]
-        M1 -->|컨트롤러의 삭제 호출| C1
-        C1 -->|영화 삭제| M1
+        D1["MovieDeletionModule"]
+        M1 -->|컨트롤러의 삭제 호출| D1
+        D1 -->|영화 삭제| M1
     end
     subgraph separated["Gateway로 컨트롤러를 분리"]
         direction TB
         A["AppModule<br/>Gateway 컨트롤러"]
-        C2["CatalogManagementModule"]
+        D2["MovieDeletionModule"]
         M2["MoviesModule"]
-        A --> C2
+        A --> D2
         A --> M2
-        C2 --> M2
+        D2 --> M2
     end
 ```
 
-그래서 이 시드는 컨트롤러를 `services/gateway`에 두고 `AppModule`에 등록한다. 필요한 모듈은 상위의 `AppModule`에서 import하므로 `MoviesModule`이 컨트롤러의 유스케이스에 의존하지 않고, CatalogManagement → Movies의 단방향을 유지한다. 폴더만 옮기지 말고 컨트롤러 등록과 모듈 import도 함께 분리해야 한다. `forwardRef`로 순환 의존을 주입할 수 있게 해도 모듈 간 결합은 남는다.
+그래서 이 시드는 컨트롤러를 `services/gateway`에 두고 `AppModule`에 등록한다. 필요한 모듈은 상위의 `AppModule`에서 import하므로 `MoviesModule`이 컨트롤러의 유스케이스에 의존하지 않고, MovieDeletion → Movies의 단방향을 유지한다. 폴더만 옮기지 말고 컨트롤러 등록과 모듈 import도 함께 분리해야 한다. `forwardRef`로 순환 의존을 주입할 수 있게 해도 모듈 간 결합은 남는다.
 
 ## 데이터와 DTO
 

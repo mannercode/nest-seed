@@ -11,7 +11,7 @@ import {
     Query,
     UseGuards
 } from '@nestjs/common'
-import { CatalogManagementService } from '#application'
+import { MovieDeletionService } from '#application'
 import {
     MoviesService,
     SearchMoviesPageSchema,
@@ -26,7 +26,7 @@ import { AdminAuthGuard } from './guards/index.js'
 export class MoviesHttpController {
     constructor(
         private readonly moviesService: MoviesService,
-        private readonly catalogManagementService: CatalogManagementService
+        private readonly movieDeletionService: MovieDeletionService
     ) {}
 
     @Post()
@@ -48,7 +48,7 @@ export class MoviesHttpController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @UseGuards(AdminAuthGuard)
     async delete(@Param('movieId') movieId: string) {
-        await this.catalogManagementService.deleteMovie(movieId)
+        await this.movieDeletionService.deleteMovie(movieId)
     }
 
     @Delete(':movieId/assets/:assetId')
