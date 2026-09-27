@@ -99,7 +99,7 @@ describe('NatsPubSubService', () => {
         }
     })
 
-    it('공유 준비가 실패하면 모든 등록이 실패하고 다음 명시적 구독은 새로 시작한다', async () => {
+    it('같은 subject의 구독 등록이 실패하면 함께 기다린 호출도 실패하고 다음 호출은 다시 등록한다', async () => {
         const connection = (fix.pubSubB as any).connection as NatsConnection
         const failure = new Error('SUB flush failed')
         vi.spyOn(connection, 'flush').mockRejectedValueOnce(failure)

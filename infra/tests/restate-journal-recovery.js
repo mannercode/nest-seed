@@ -13,7 +13,7 @@ const COMPOSE_PROJECT_NAME = requiredEnvironment('COMPOSE_PROJECT_NAME')
 const INGRESS_URL = requiredEnvironment('RESTATE_INGRESS_URL')
 
 test(
-    'Restate SIGKILL 재시작 뒤 완료 step은 replay하고 중단 step만 다시 실행한다',
+    'Restate 서버를 강제 종료하고 재시작하면 완료한 step의 결과를 재사용하고 중단된 step만 다시 실행한다',
     { timeout: 120_000 },
     async () => {
         const completedStepEntered = deferred()

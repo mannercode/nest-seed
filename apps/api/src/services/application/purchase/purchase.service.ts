@@ -39,8 +39,8 @@ export class PurchaseService {
             }
             await this.ticketPurchaseService.validatePurchase(createDto, userId)
         } catch (error) {
-            // 최초 조회 뒤 같은 키의 요청이 선점을 소비하거나 판매를 끝냈을 수 있다.
-            // 그 경우 바뀐 티켓 상태보다 먼저 접수한 요청의 결과를 반환한다.
+            // 최초 조회 뒤 같은 키의 다른 요청이 티켓을 구매에 할당하거나 판매를 끝냈을 수 있다.
+            // 현재 티켓 상태만으로 거절하지 않고, 먼저 접수한 요청의 결과를 반환한다.
             const concurrent = await this.purchaseRecordsService.findIdempotencyOperation({
                 userId,
                 idempotencyKey
@@ -49,8 +49,9 @@ export class PurchaseService {
             throw error
         }
 
-        // Restate 접수가 durable 시작점이다. DB 예약 후 제출 전에 죽는 빈틈을 만들지 않는다.
-        // 다른 본문의 동시 요청은 별도 workflow에서 같은 DB unique key를 경쟁한다.
+        // Restate가 요청을 저장한 뒤 workflow에서 구매 기록을 만든다.
+        // 구매 기록만 저장하고 workflow를 제출하지 못한 채 API가 종료되는 상황을 막는다.
+        // 같은 키에 다른 본문을 보낸 동시 요청은 별도 workflow로 실행되며, DB의 고유 키로 구매 기록 중복을 막는다.
         const workflowId = sha256(JsonUtil.stringify([userId, idempotencyKey, fingerprint]), 'hex')
         const submission = await this.workflow.submit(
             { createDto, fingerprint, idempotencyKey, userId },

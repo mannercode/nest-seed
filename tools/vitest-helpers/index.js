@@ -17,9 +17,8 @@ function generateTestId() {
 async function cleanCollections(mongoClient, dbName) {
     const db = mongoClient.db(dbName)
     const collections = await db.collections()
-    // 정리는 테스트 본문과 달리 처리량을 얻을 이유가 없다. 한 worker의 모든 collection을
-    // 동시에 비우면 짧은 수명의 pool이 connection을 만드는 동안 불필요한 checkout
-    // fan-out이 생긴다. 순차 실행해 정리 작업이 항상 connection 하나만 사용하게 한다.
+    // 여러 collection을 동시에 비우면 연결 풀이 여러 연결을 한꺼번에 준비해야 한다.
+    // 정리 작업은 처리 속도보다 연결 부하를 줄이는 것이 중요하므로 하나씩 비운다.
     for (const collection of collections) {
         await collection.deleteMany({})
     }
@@ -242,8 +241,8 @@ function assertScopedRedisKeyPattern(keyPattern, redisKeyScope) {
 async function redisWriteTargets(redis, operation) {
     if (typeof redis.nodes !== 'function') return [redis]
 
-    // Cluster의 connectionPool은 비동기로 채워져, 생성 직후의 nodes()는 빈 배열이다.
-    // 그대로 진행하면 정리가 조용히 no-op이 되므로 ready를 기다린 뒤 조회한다.
+    // Redis Cluster 연결 직후에는 nodes()가 빈 배열을 반환할 수 있다.
+    // 삭제할 노드를 하나도 찾지 못한 채 정리를 끝내지 않도록 ready를 기다린다.
     if (redis.status !== 'ready') {
         await new Promise((resolve, reject) => {
             redis.once('ready', resolve)

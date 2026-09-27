@@ -29,7 +29,7 @@ TEST "상영 시간 대량 생성을 요청한다" \
 SAGA_ID=$(echo "${BODY}" | jq -r '.sagaId')
 wait_for_showtime_creation
 
-TEST "상영 생성의 영속 최종 상태를 조회한다" \
+TEST "상영 생성 작업의 처리 결과를 조회한다" \
 	200 GET /showtime-creation/showtimes/${SAGA_ID}/status
 
 get_created_showtime

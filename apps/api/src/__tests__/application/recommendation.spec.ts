@@ -92,13 +92,13 @@ describe('RecommendationService', () => {
                 ])
             })
 
-            it('구매 마감 안에 시작하는 상영만 남은 영화는 추천에서 제외한다', async () => {
+            it('구매 마감 시간이 지난 상영만 남은 영화는 추천에서 제외한다', async () => {
                 const config = fix.module.get(AppConfigService)
 
                 // releaseDate를 가장 최신으로 둬, 필터 회귀 시 목록 맨 앞에 나타나 바로 드러난다.
                 const nearMovie = await createMovie(fix, { releaseDate: plainDate('2900-06-01') })
                 const theater = await createTheater(fix)
-                // 마감 창의 절반 지점이라 테스트 소요 시간과 무관하게 항상 마감 안쪽이다.
+                // 상영 시작까지 남은 시간을 구매 마감 기준의 절반으로 잡아, 요청 시점에는 이미 구매가 마감되게 한다.
                 const startTime = DateUtil.add({ minutes: config.ticket.purchaseCutoffMinutes / 2 })
                 await createShowtimes(fix, [
                     { movieId: nearMovie.id, theaterId: theater.id, startTime }

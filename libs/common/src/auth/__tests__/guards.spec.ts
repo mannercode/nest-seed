@@ -70,9 +70,8 @@ describe('AuthGuard', () => {
                 .ok()
         })
 
-        it('스킴 뒤 공백/토큰이 비어 있으면 401을 반환한다', async () => {
-            // HTTP 헤더의 trailing whitespace는 Node http 파서가 trim해서 가드 입장에서는
-            // "Bearer" 한 단어로 보인다(공백 분리 실패 → 즉시 401).
+        it('Bearer 뒤에 토큰이 없으면 401을 반환한다', async () => {
+            // Node의 HTTP 파서가 헤더 끝 공백을 제거하므로 가드에는 "Bearer"만 전달된다.
             await fix.httpClient
                 .get('/bearer/protected')
                 .headers({ Authorization: 'Bearer ' })

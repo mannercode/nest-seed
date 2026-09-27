@@ -127,7 +127,7 @@ export class DateUtil {
         return Temporal.Instant.fromEpochMilliseconds(Temporal.Now.instant().epochMilliseconds)
     }
 
-    /** MongoDB BSON Date, JWT, AWS SDK 같은 외부 Date 경계에서만 사용한다. */
+    /** MongoDB·JWT·AWS SDK 등 외부 API가 Date 객체를 요구할 때 Instant를 변환한다. */
     static toDate(instant: Temporal.Instant): Date {
         return new Date(instant.epochMilliseconds)
     }
@@ -153,7 +153,7 @@ export class DateUtil {
         })
     }
 
-    /** 날짜 전용 값을 BSON Date로 저장하기 위한 UTC 자정 경계 변환이다. */
+    /** PlainDate를 같은 날짜의 UTC 자정 Date로 바꿔 BSON Date로 저장할 수 있게 한다. */
     static plainDateToDate(date: Temporal.PlainDate): Date {
         const isoDate = this.plainDateFromInput(date)
         const boundary = new Date(0)

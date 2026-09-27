@@ -274,7 +274,7 @@ describe('UsersService', () => {
         })
     })
 
-    describe('인가 경계', () => {
+    describe('관리자 전용 사용자 관리 경로에 접근할 때', () => {
         let userAuth: { Authorization: string }
         let target: UserDto
 

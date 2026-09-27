@@ -66,7 +66,7 @@ export class PaymentsRepository extends CrudRepository<Payment> {
                         userId: createDto.userId
                     }
                 },
-                // no-op 재시도가 updatedAt을 바꾸지 않게 insert timestamps를 직접 지정한다.
+                // 이미 있는 결제의 updatedAt을 재시도로 바꾸지 않도록, 삽입할 때만 시각을 저장한다.
                 { upsert: true }
             )
         } catch (error) {

@@ -5,7 +5,8 @@ import type { ValidateAndCreateResult } from './types.js'
 import { ShowtimeCreationOperation } from './models/index.js'
 
 const COMMIT_TIMEOUT_MS = 10_000
-// 콜백 재시도까지 Activity 한 시도 안에서 끝낸다. commit 제한은 전체 실행을 제한하지 않는다.
+// commit 기한은 커밋 단계에만 적용된다. Restate step의 한 실행 시도 안에 끝나도록
+// 콜백 재시도를 포함한 전체 트랜잭션에도 별도 기한을 둔다.
 const TRANSACTION_TIMEOUT_MS = 45_000
 
 @Injectable()

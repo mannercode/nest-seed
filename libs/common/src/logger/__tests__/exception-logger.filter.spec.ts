@@ -102,15 +102,15 @@ describe('HttpExceptionLoggerFilter', () => {
             expect(JSON.stringify(log)).not.toContain('query-secret')
         })
 
-        it('duration을 인터셉터가 마크한 요청 진입 시각부터 계산한다', async () => {
+        it('duration을 인터셉터가 기록한 요청 시작 시각부터 계산한다', async () => {
             await fix.httpClient.get('/slow-exception').notFound()
 
             expect(fix.spyWarn).toHaveBeenCalledTimes(1)
             const firstCall = fix.spyWarn.mock.calls[0]
             if (!firstCall) throw new Error('Logger.warn must be called')
             const [, log] = firstCall
-            // 핸들러가 50ms 지연 후 던지므로 마크가 빠지면 0ms로 퇴행한다. 부하는 값을
-            // 키우는 방향으로만 작용하므로 타이머 오차 여유를 둔 하한만 단언한다.
+            // 핸들러는 50ms 기다린 뒤 예외를 던진다. 요청 시작 시각을 기록하지 않으면 duration이 0ms가 된다.
+            // 부하가 있으면 시간이 더 길어질 수 있으므로, 타이머 오차를 감안한 최소 시간만 확인한다.
             expect(parseInt(log.duration)).toBeGreaterThanOrEqual(40)
         })
 

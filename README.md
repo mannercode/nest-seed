@@ -69,7 +69,7 @@ bash apps/api/api-docs/run.sh showtime-creation.spec
 
 `pnpm run race`는 시나리오 목록을, `pnpm run e2e:list`는 브라우저 테스트 목록을 보여 준다. 브라우저 테스트를 화면에서 선택하고 실행하려면 `pnpm run e2e:ui`를 사용한다.
 
-Playwright 버전을 바꾸면 Chromium과 브라우저 실행에 필요한 OS 패키지도 맞춰야 한다. Dev Container를 다시 빌드하는 방법은 [개발 환경](.devcontainer/README.md#3-시작-순서와-데이터-수명)을 따른다. Dev Container 시작·AtoZ는 Chromium을 설치하며, Chromium만 다시 설치할 때는 다음 명령을 쓴다.
+Playwright 버전을 바꾸면 Chromium과 브라우저 실행에 필요한 OS 패키지도 맞춰야 한다. Dev Container를 다시 빌드하는 방법은 [개발 환경](.devcontainer/README.md#3-시작-순서와-데이터-초기화)을 따른다. Dev Container 시작·AtoZ는 Chromium을 설치하며, Chromium만 다시 설치할 때는 다음 명령을 쓴다.
 
 ```bash
 pnpm --filter './tests/web' exec playwright install chromium

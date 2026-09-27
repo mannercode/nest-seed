@@ -4,8 +4,8 @@
         "moduleResolution": "nodenext",
         // Nest CLI의 path transformer가 `#alias`를 소스 `.ts` 경로로 바꾸므로 ESM 산출물에서 `.js`로 다시 쓴다.
         "rewriteRelativeImportExtensions": true,
-        // "ESNext"는 TS 버전마다 의미가 바뀌어 emit/타입이 흔들린다.
-        // Node 26에서 안전한 구체 에디션으로 고정한다.
+        // "ESNext"가 가리키는 ECMAScript 버전은 TypeScript 버전마다 달라진다.
+        // 생성할 JavaScript 문법을 일정하게 유지하도록 Node 26이 지원하는 버전을 명시한다.
         "target": "ES2024",
         "lib": ["ES2024", "ESNext.Temporal"],
         "types": ["node"],

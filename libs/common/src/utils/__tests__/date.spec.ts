@@ -110,7 +110,7 @@ describe('DateUtil', () => {
         })
     })
 
-    describe('외부 Date 경계', () => {
+    describe('외부 API에 사용할 Date 객체 변환', () => {
         it.each(['buddhist', 'japanese', 'hebrew'])(
             '%s 달력의 날짜를 같은 날짜의 UTC 자정에 저장하고 ISO로 복원한다',
             (calendar) => {

@@ -15,7 +15,7 @@ export class TimeUtil {
         let remainingMs = Math.abs(milliseconds)
 
         const days = Math.floor(remainingMs / (24 * 60 * 60 * 1000))
-        // parser가 곱셈으로 복원하는 값과 같은 값을 빼야 큰 수의 반올림 잔여량도 보존된다.
+        // toMs가 복원할 밀리초 값과 같은 방식으로 계산해 빼야, 큰 수를 왕복 변환할 때 나머지가 유실되지 않는다.
         remainingMs -= days * (24 * 60 * 60 * 1000)
         const hours = Math.floor(remainingMs / (60 * 60 * 1000))
         remainingMs -= hours * (60 * 60 * 1000)
@@ -51,7 +51,7 @@ export class TimeUtil {
         const timeTokenRegex = /(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)(ms|s|m|h|d)/g
         let totalMilliseconds = 0
 
-        // fromMs가 큰 단위부터 내보내므로 작은 잔여량을 먼저 더해 반복 반올림을 피한다.
+        // fromMs는 큰 단위부터 출력한다. 역순으로 더해 작은 값이 큰 값에 더해질 때마다 반올림되는 것을 줄인다.
         for (const [, amount, unit] of Array.from(
             timeExpression.matchAll(timeTokenRegex)
         ).reverse()) {

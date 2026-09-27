@@ -53,7 +53,7 @@ describe('RequestValidationPipe HTTP 및 오류 변환', () => {
                 })
         })
 
-        // 프로덕션 팩토리 재사용은 동어반복이라 리터럴로 단언해 와이어 포맷을 고정한다.
+        // 응답을 만드는 함수로 예상값까지 만들면 같은 오류를 놓칠 수 있으므로, 기대하는 JSON을 직접 적는다.
         it('검증 실패 시 code·message·details[{ field, constraints }] 형식의 본문을 반환한다', async () => {
             await fix.httpClient
                 .post('/')

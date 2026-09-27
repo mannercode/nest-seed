@@ -2,13 +2,13 @@
 
 이 폴더에는 개발 명령을 실행하거나 테스트 환경을 준비하는 코드를 둔다. 앱 실행에 필요한 공통 코드는 `libs/common`에, spec에서 사용하는 client·fixture는 `libs/testing`에 둔다. 앱의 운영 의존성으로 tools를 가져오지 않는다.
 
-## 1. vitest-helpers — 테스트 환경의 수명
+## 1. vitest-helpers — 테스트 자원 준비와 정리
 
 Vitest 설정·global setup·teardown은 앱 소스가 변환되기 전에도 실행돼야 한다. 이 단계에서 helper를 별도로 빌드할 필요가 없도록 CommonJS와 타입 선언으로 제공한다.
 
-각 workspace가 연결과 자원 이름을 정하고, helper가 worker별 MongoDB·S3 자원을 준비하고 정리한다. API 테스트는 개발 인프라를 공유하므로 자기 접두사가 붙은 자원만 정리한다. 해당 테스트 실행 전용으로 만든 Testcontainers Redis도 호출자가 명시한 경우에만 전체 데이터를 지운다.
+각 workspace가 접속 정보와 테스트용 DB·bucket 이름을 정하면, helper가 worker별 MongoDB·S3 자원을 준비하고 정리한다. API 테스트는 개발 인프라를 공유하므로 해당 테스트에 지정한 접두사가 붙은 자원만 정리한다. 테스트 실행 전용으로 만든 Testcontainers Redis도 호출자가 전체 삭제를 명시한 경우에만 데이터를 모두 지운다.
 
-테스트 파일에서 공유하는 MongoClient는 개별 API 앱 context보다 오래 유지해야 한다. 따라서 앱 context를 정리할 때 공유 연결을 닫지 않는다. 연결 설정은 [API setup](../apps/api/src/__tests__/vitest.setup.ts)과 [자원 설정](../apps/api/scripts/vitest-resource-wiring.cjs)을 본다.
+한 테스트 파일의 여러 앱 context가 같은 MongoClient를 공유한다. 따라서 개별 앱 context를 정리할 때는 연결을 닫지 않고, 그 파일의 테스트가 모두 끝난 뒤 닫는다. 연결 설정은 [API setup](../apps/api/src/__tests__/vitest.setup.ts)과 [자원 설정](../apps/api/scripts/vitest-resource-wiring.cjs)을 본다.
 
 ## 2. dev-tools — 명시적으로 실행하는 개발 도구
 
@@ -26,4 +26,4 @@ lychee와 k6는 [tools/compose.yml](compose.yml)의 일회성 컨테이너로 �
 
 lychee는 `lint:root`에서 내부 문서 링크와 문서 내 제목 링크를 검사한다. 외부 사이트의 응답 여부가 lint 결과에 영향을 주지 않도록 오프라인으로 검사하며, `_todo/`와 과거 가이드 원문은 대상에서 제외한다. benchmark 실행기는 k6를 API 스택에 연결하고 결과 파일을 Dev Container 사용자 권한으로 작성한다.
 
-두 도구의 bind mount는 [호스트와 컨테이너의 같은 절대경로](../.devcontainer/README.md#2-docker-outside-of-docker의-경로-계약)를 전제로 한다.
+두 도구의 bind mount는 [호스트와 컨테이너의 같은 절대경로](../.devcontainer/README.md#2-호스트와-dev-container에서-같은-경로-사용)를 전제로 한다.

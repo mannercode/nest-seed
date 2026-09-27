@@ -27,7 +27,7 @@ findByPurchaseRecordId({ purchaseRecordId })
 | `get` / `getMany`       | 요청한 대상 중 하나라도 없으면 NotFoundException      |
 | `search` / `searchPage` | 조건 검색 / 페이지 정보를 포함한 검색                 |
 
-이 시드의 일반 서비스 조회·삭제는 `getMany`·`deleteMany`를 사용한다. 단건 HTTP 핸들러는 `[id]`로 호출하고 단건 응답을 반환한다. 이후 일괄 호출을 추가할 때 계약을 다시 만들지 않으려는 선택이다. 생성·수정과 업무상 특별한 조회까지 일괄 API로 바꾸지는 않는다.
+이 시드의 일반 서비스 조회·삭제는 `getMany`·`deleteMany`를 사용한다. 한 건을 처리하는 HTTP 핸들러도 ID를 `[id]`로 감싸 같은 메서드를 호출하고, 응답은 한 건만 반환한다. 이후 여러 건을 처리하는 호출을 추가해도 서비스 메서드의 입력·반환 방식을 바꾸지 않으려는 선택이다. 생성·수정과 업무상 특별한 조회까지 일괄 API로 바꾸지는 않는다.
 
 요청 DTO는 `CreateTheaterDto`, `UpdateUserDto`, `SearchTheatersPageDto`처럼 동작과 대상을 이름에 드러낸다. `releaseDate` 같은 달력 날짜와 `createdAt` 같은 시점은 이름뿐 아니라 타입과 직렬화 형식에서도 구분한다.
 
@@ -49,7 +49,7 @@ JSON 본문의 숫자·불리언·문자열은 선언한 타입으로 받는다.
 
 JSON 복원과 HTTP 테스트에서 스키마를 사용하는 방법은 [공유 패키지의 JSON과 DTO 복원](../libs/README.md#4-json과-dto-복원)을 따른다.
 
-## Import와 공개 경계
+## 다른 모듈을 import하는 방법
 
 다른 모듈의 기능은 공개 `index.ts`를 통해 사용한다. `internal/`·`worker/`의 내부 구성은 공개하지 않고, 앱 조립에 필요한 workflow 정의 등만 명시적으로 공개한다. 모듈 내부나 부모 모듈을 참조할 때는 상대 import를 사용한다.
 
@@ -65,7 +65,7 @@ import { UsersService } from '#core'
 
 백엔드는 Node의 ESM과 TypeScript의 NodeNext 설정을 사용한다. 상대 import의 `.js`는 빌드 후 Node가 읽을 파일을 가리키며 TypeScript는 대응하는 `.ts`를 검사한다. 패키지 이름과 `#core` 같은 별칭에는 확장자를 붙이지 않는다. 디렉터리 import 대신 `index.js`를 명시하고 타입만 참조할 때는 `import type`을 사용한다.
 
-ESM 패키지 안의 CommonJS 도구는 `.cjs`, ESM 형식을 명시할 도구는 `.mjs`를 쓴다. CommonJS 패키지에서는 `.js` 도구도 CommonJS로 실행된다. common의 peer dependency 설치와 SDK 호출 경계는 [공유 패키지](../libs/README.md#2-common은-연동-구현을-소유한다)를 따른다.
+ESM 패키지 안의 CommonJS 도구는 `.cjs`, ESM 형식을 명시할 도구는 `.mjs`를 쓴다. CommonJS 패키지에서는 `.js` 도구도 CommonJS로 실행된다. common의 peer dependency 설치와 SDK 호출 경계는 [공유 패키지](../libs/README.md#2-sdk-연결과-호출은-common에서-구현한다)를 따른다.
 
 ## 오류와 불변식
 
@@ -75,7 +75,7 @@ NestJS `HttpException`과 하위 예외를 Core·Application에서도 사용한�
 throw new ConflictException(MovieErrors.DeleteBlockedByShowtimes(movieId))
 ```
 
-서비스는 업무 조건을 판단한다. Repository는 고유 키 충돌처럼 DB가 원자적으로 판정한 결과를 도메인 예외로 바꾼다. MongoDB 오류 번호·드라이버 세션은 서비스로 보내지 않는다. 클라이언트가 구분해야 할 4xx 오류에는 `code`를 두고, 5xx 오류의 내부 원인은 응답 본문 대신 진단에 남긴다.
+서비스는 업무 조건을 판단한다. Repository는 고유 키 충돌처럼 DB가 원자적으로 판정한 결과를 도메인 예외로 바꾼다. MongoDB 오류 번호·드라이버 세션은 서비스로 보내지 않는다. 클라이언트가 구분해야 할 4xx 오류에는 `code`를 두고, 5xx 오류의 내부 원인은 응답 본문 대신 서버 로그에 남긴다.
 
 필수 환경 변수는 부팅 시 검증하고 필수 shell 변수는 `${VAR:?}`로 확인한다. 코드 내부의 필수 값은 `ensure`·`Require.defined`로 검사한다.
 

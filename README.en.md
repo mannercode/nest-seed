@@ -77,7 +77,7 @@ The specs contain requests, and the execution logs contain actual responses. The
 
 `pnpm run race` lists race scenarios, and `pnpm run e2e:list` lists browser tests. Use `pnpm run e2e:ui` to select and run browser tests interactively.
 
-When changing the Playwright version, update Chromium and its required OS packages too. Follow the [development environment guide](.devcontainer/README.md#3-시작-순서와-데이터-수명) to rebuild the Dev Container. Dev Container startup and AtoZ install Chromium. To reinstall Chromium alone, run:
+When changing the Playwright version, update Chromium and its required OS packages too. Follow the [development environment guide](.devcontainer/README.md#3-시작-순서와-데이터-초기화) to rebuild the Dev Container. Dev Container startup and AtoZ install Chromium. To reinstall Chromium alone, run:
 
 ```bash
 pnpm --filter './tests/web' exec playwright install chromium

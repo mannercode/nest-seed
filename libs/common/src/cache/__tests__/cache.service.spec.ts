@@ -451,7 +451,7 @@ describe('CacheService', () => {
             expect(result).toBe(1)
         })
 
-        it('이미 취소된 대기는 락을 실행하지 않고 즉시 중단한다', async () => {
+        it('이미 취소된 signal을 받으면 콜백을 실행하지 않고 취소 오류를 던진다', async () => {
             const controller = new AbortController()
             const runner = vi.fn(async () => 1)
             controller.abort(new Error('activity cancelled'))

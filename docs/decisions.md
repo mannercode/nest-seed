@@ -50,7 +50,7 @@ Redis Pub/Sub도 실시간 전달에 사용할 수 있지만 메시지를 보존
 
 ## Restate를 선택한 이유와 재실행 제약
 
-상영 생성과 구매는 Restate workflow로 재시도하고 중단 후 재개한다. 이를 통해 두 업무에 lease를 관리하는 실행기와 복구 scheduler를 각각 구현하지 않아도 된다. Restate는 journal에 기록한 완료 step의 결과를 재사용하며, 짧은 DB 묶음 쓰기는 MongoDB transaction으로 원자적으로 확정한다.
+상영 생성과 구매는 Restate workflow로 재시도하고 중단 후 재개한다. 따라서 각 업무에 실행 권한의 만료 기한(lease)을 관리하는 코드와 중단된 작업을 찾아 재개하는 scheduler를 따로 구현하지 않아도 된다. Restate는 실행 기록(journal)에 남긴 완료 step의 결과를 재사용한다. 함께 성공하거나 실패해야 하는 짧은 DB 쓰기 작업은 MongoDB transaction으로 묶는다.
 
 ```mermaid
 flowchart TB
@@ -58,7 +58,7 @@ flowchart TB
     Interrupted --> Retry["같은 step 재실행 가능"]
 ```
 
-따라서 `ctx.run`으로 감쌌어도 외부 효과는 멱등해야 한다. 예를 들어 결제는 구매 ID로 중복을 막는다. workflow key는 같은 작업의 재제출을 합칠 뿐 서로 다른 작업의 좌석·시간 경쟁을 조정하지 않는다.
+따라서 `ctx.run` 안의 결제·DB 쓰기 등을 다시 실행해도 결과가 중복되지 않도록 만들어야 한다. 예를 들어 결제는 구매 ID로 중복을 막는다. workflow key는 같은 작업의 재제출을 합칠 뿐 서로 다른 작업의 좌석·시간 경쟁을 조정하지 않는다.
 
 저장·보상·응답의 구체적인 계약은 [구매와 선점](../apps/README.md#구매와-선점), [상영 생성과 알림](../apps/README.md#상영-생성과-알림)을 따른다.
 
@@ -66,9 +66,9 @@ flowchart TB
 
 BullMQ나 JetStream consumer로도 작업을 실행할 수 있지만 단계별 재시도·상태·보상은 직접 관리해야 한다. workflow 엔진인 Temporal도 요구를 충족한다. 이 저장소에서는 별도 worker bundle·sandbox·서버 DB를 관리하는 구성보다 API에 endpoint를 붙이는 Restate 구성이 작아 이를 선택했다.
 
-### 배포 revision
+### 진행 중인 작업을 보존하는 배포
 
-운영에서는 revision별로 endpoint를 등록하고 기존 invocation이 끝날 때까지 이전 코드를 유지해야 한다. [Restate의 deployment](https://docs.restate.dev/concepts/services/)는 새 invocation과 진행 중인 실행이 사용할 코드를 구분한다.
+운영에서는 코드 버전(revision)마다 endpoint를 따로 등록하고, 진행 중인 작업(invocation)이 끝날 때까지 이전 코드를 유지해야 한다. [Restate의 deployment](https://docs.restate.dev/concepts/services/)는 새 작업과 진행 중인 작업이 각각 사용할 코드를 구분한다.
 
 workflow step을 삭제하거나 순서를 바꾸면 이전 journal에 기록된 실행은 이전 코드로 끝내야 한다. 같은 endpoint에 새 코드를 덮어쓰면 실행을 재개할 때 step 순서가 맞지 않을 수 있다. 새 DB 문서에서 필드를 없애는 것과 기존 journal의 실행 코드를 교체하는 것은 별도로 검토해야 한다.
 

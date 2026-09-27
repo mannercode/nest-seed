@@ -15,7 +15,7 @@ flowchart TB
 
 루트 `.env.infra`나 `.env.api`를 수정한 뒤에는 VS Code의 **`Rebuild Container`로 Dev Container를 다시 만든다.** 환경 변수는 컨테이너를 만들 때 전달되므로 앱이나 컨테이너를 재시작하는 것만으로는 변경한 값이 반영되지 않는다. API와 reset·API 테스트 실행기는 루트 env 파일을 다시 읽지 않는다. API는 전달받은 환경 변수를 검증한다.
 
-이 방식에서는 `$`와 따옴표도 값의 일부다. 셸 문법처럼 다른 변수를 참조하거나 값을 따옴표로 감싸지 않는다.
+두 env 파일의 값은 변수 치환이나 따옴표 제거 없이 전달된다. `$`와 따옴표도 값에 포함되므로, 셸 명령을 쓸 때처럼 다른 변수를 참조하거나 값을 따옴표로 감싸지 않는다.
 
 ```dotenv
 # 의도한 최종 값을 적는다.
@@ -29,7 +29,7 @@ PASSWORD=secret
 
 `WORKSPACE_ROOT`는 저장소의 절대경로다. `COMPOSE_PROJECT_NAME`은 Docker 프로젝트 이름이며, `DEVCONTAINER_NETWORK`는 여러 Compose 프로젝트가 공유하는 네트워크 이름이다.
 
-## 2. Docker-outside-of-Docker의 경로 계약
+## 2. 호스트와 Dev Container에서 같은 경로 사용
 
 컨테이너의 Docker CLI는 호스트의 Docker 소켓을 사용한다. bind mount할 경로를 찾는 쪽도 호스트이므로 workspace는 호스트와 Dev Container에서 **같은 절대경로**여야 한다.
 
@@ -42,9 +42,9 @@ PASSWORD=secret
 
 호스트의 `initializeCommand`가 네트워크를 먼저 만들고 Dev Container와 Compose가 이를 공유한다. 같은 사용자가 이름이 같은 저장소 폴더를 동시에 열면 컨테이너·네트워크 이름이 충돌하므로 폴더 이름을 다르게 둔다.
 
-## 3. 시작 순서와 데이터 수명
+## 3. 시작 순서와 데이터 초기화
 
-Dev Container는 다음 순서로 준비한다. [인프라 reset](../infra/README.md#2-시작과-reset의-범위)까지 성공한 뒤 앱을 실행한다.
+Dev Container는 다음 순서로 준비한다. [인프라 reset](../infra/README.md#2-인프라-시작과-데이터-초기화)까지 성공한 뒤 앱을 실행한다.
 
 ```mermaid
 flowchart TB
@@ -57,11 +57,11 @@ workspace를 bind mount하면 이미지의 같은 경로가 가려지므로 프�
 
 브라우저 실행에 필요한 OS 패키지는 이미지 빌드에서 설치한다. Playwright 버전을 변경하면 Dev Container도 다시 빌드해 Chromium과 OS 패키지 버전을 맞춘다.
 
-**postStartCommand는 매 시작에 개발 데이터를 초기화한다.** DB·S3 객체뿐 아니라 Restate journal과 JetStream 기록도 지운다. 보존할 데이터나 실행이 있는 환경에는 이 시작 절차를 적용하지 않는다.
+**`postStartCommand`는 Dev Container를 시작할 때마다 개발 데이터를 초기화한다.** DB·S3 객체뿐 아니라 Restate journal과 JetStream 기록도 지운다. 보존할 데이터나 진행 중인 작업이 있는 환경에는 이 시작 절차를 적용하지 않는다.
 
 자동 포트 전달은 꺼져 있다. 브라우저에서 console·user-app을 열 때는 VS Code 포트 패널에서 프론트엔드 포트를 전달한다.
 
-## 4. 개발 도구와 호스트의 경계
+## 4. 호스트 파일과 Docker 소켓 공유
 
 Codex의 세션·인덱스·SQLite 상태는 프로젝트별 홈에 두고 설정·인증·스킬만 호스트의 공용 홈에 있는 파일과 디렉터리로 링크한다. 설정·인증 파일은 저장할 때 교체되므로 개별 파일 대신 디렉터리를 마운트한다. 이 구성은 프로젝트별 상태를 나누며, 파일 접근을 차단하는 샌드박스는 아니다.
 

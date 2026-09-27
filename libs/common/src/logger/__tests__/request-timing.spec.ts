@@ -10,7 +10,7 @@ describe('request-timing', () => {
         await new Promise((r) => setTimeout(r, 50))
         markRequestStart(reqB)
 
-        // 시작 시각이 공유된다면 reqB 마크가 reqA의 시각을 덮어써 두 elapsed의 차이가 대기 시간만큼 벌어질 수 없다.
+        // 두 요청이 시작 시각을 공유하면 reqB의 기록이 reqA의 기록을 덮어써, 두 elapsed의 차이가 대기 시간만큼 나지 않는다.
         // elapsedB를 먼저 측정하면 측정 간 시차가 차이를 키우는 쪽으로만 작용해 하한 단언이 부하와 무관하게 성립한다.
         const elapsedB = elapsedSinceRequestStart(reqB)
         const elapsedA = elapsedSinceRequestStart(reqA)
@@ -32,7 +32,7 @@ describe('request-timing', () => {
         expect(elapsedAfter).toBeLessThan(elapsedBefore)
     })
 
-    it('마크되지 않은 요청에 대해서는 0을 반환한다', () => {
+    it('시작 시각을 기록하지 않은 요청은 경과 시간으로 0을 반환한다', () => {
         const req = {} as Request
         expect(elapsedSinceRequestStart(req)).toBe(0)
     })

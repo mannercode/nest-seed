@@ -4,7 +4,7 @@ import { Observable, Subject } from 'rxjs'
 import { AppConfigService } from '#config'
 import { ShowtimeCreationEventSchema, type ShowtimeCreationEvent } from './internal/types.js'
 
-// NATS로 복제본을 건넌 상태를 로컬 RxJS 스트림에 전달하며, PROJECT_ID로 테스트를 격리한다.
+// NATS로 받은 상영 상태 이벤트를 이 API 복제본의 RxJS 스트림에 전달한다. PROJECT_ID로 테스트별 메시지를 구분한다.
 @Injectable()
 export class ShowtimeCreationEventService implements OnModuleInit, OnModuleDestroy {
     private readonly natsSubject: string

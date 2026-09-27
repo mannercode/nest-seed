@@ -1,6 +1,6 @@
 # 사용자 관리
 
-현재 [사용자 서비스](../apps/api/src/services/core/users/users.service.ts)는 생성·조회·수정·탈퇴를 제공한다. 삭제는 soft delete이며 같은 이메일로 재가입할 수 있다. 로그인 세션의 발급·폐기 정합성은 [인증 A2·A3](authentication.md)가 소유한다.
+현재 [사용자 서비스](../apps/api/src/services/core/users/users.service.ts)는 생성·조회·수정·탈퇴를 제공한다. 삭제는 soft delete이며 같은 이메일로 재가입할 수 있다. 세션 발급과 폐기가 동시에 일어날 때의 처리와 보장은 [인증 A2·A3](authentication.md)에서 다룬다.
 
 ## 결정 필요
 

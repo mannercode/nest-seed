@@ -1,7 +1,7 @@
 /**
  * 복제본 스택에 같은 refresh token의 회전 요청을 동시에 보낸다.
- * 정확히 하나만 성공하고 나머지는 이미 교체된 토큰이어야 하며,
- * 승자의 새 refresh token으로 다시 회전해 현재 로그인 세션을 계속 사용할 수 있는지 확인한다.
+ * 정확히 하나만 성공하고 나머지 요청은 토큰이 이미 교체됐다는 이유로 거절되어야 한다.
+ * 성공한 요청이 받은 새 refresh token으로 다시 갱신해 현재 로그인 세션을 계속 사용할 수 있는지 확인한다.
  */
 
 const { test } = require('node:test')
@@ -103,7 +103,8 @@ async function runInner(iteration) {
         }
     }
 
-    // 복제본 분산은 충돌 키별이 아니라 이번 회차 전체의 응답에서 확인한다.
+    // 이번 회차의 전체 응답에 여러 복제본이 참여했는지만 확인한다.
+    // 같은 대상을 두고 경쟁한 각 요청 묶음이 여러 복제본에 분산됐는지까지 확인하지는 않는다.
     if (replicaSet.size < 2) {
         throw new Error(
             `iter ${iteration}: only 1 replica served (got ${[...replicaSet]}) — cross-replica unverified`

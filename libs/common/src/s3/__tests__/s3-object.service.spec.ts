@@ -253,8 +253,8 @@ describe('S3ObjectService', () => {
                 })
             })
 
-            it('하한 이상이면 크기에 상관없이 업로드를 허용한다', async () => {
-                // 서비스가 설정한 1 TiB sentinel 상한 안에서는 하한보다 큰 본문을 허용한다.
+            it('하한보다 큰 본문을 업로드할 수 있다', async () => {
+                // 상한을 생략하면 서비스가 1 TiB로 설정하므로, 그보다 작은 본문으로 검증한다.
                 const largeBody = Buffer.alloc(minContentLength * 20, 'a')
                 const form = buildPresignedPostForm(presigned.fields, largeBody, 'text/plain')
 

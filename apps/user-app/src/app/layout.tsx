@@ -4,7 +4,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
     title: 'Nest-Seed',
-    description: '사용자 앱 데모 — 사용자 앱이 view 레이어를 어떻게 소비하는지 보인다'
+    description: '회원가입·로그인과 영화 추천을 확인할 수 있는 사용자 앱 데모'
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {

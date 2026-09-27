@@ -80,7 +80,8 @@ async function runInner(iteration, movieId, theaterId, tokens, startTimeOffsetMs
         }
     }
 
-    // 복제본 분산은 충돌 키별이 아니라 이번 회차 전체의 응답에서 확인한다.
+    // 이번 회차의 전체 응답에 여러 복제본이 참여했는지만 확인한다.
+    // 같은 대상을 두고 경쟁한 각 요청 묶음이 여러 복제본에 분산됐는지까지 확인하지는 않는다.
     if (replicaSet.size < 2) {
         throw new Error(
             `iter ${iteration}: only 1 replica (got ${[...replicaSet]}) — cross-replica unverified`
