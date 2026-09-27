@@ -12,7 +12,7 @@
 | NATS·JetStream      | 복제본 간 fan-out, 저장·ack·재전달                      |
 | Restate             | endpoint 중단 뒤 journal을 통한 실행 재개               |
 
-메모리 mock이나 단일 서버로 대체하면 복제·분산 구성에서 발생하는 오류를 놓칠 수 있다. 각 도구를 선택한 이유와 애플리케이션이 보장하는 범위는 [설계 결정](../docs/decisions.md)에 있다.
+메모리 mock이나 단일 서버로 대체하면 복제·분산 구성에서 발생하는 오류를 놓칠 수 있다. 각 도구를 선택한 이유와 애플리케이션이 보장하는 범위는 [앱 가이드](../apps/README.md)에 있다.
 
 ## 2. 인프라 시작과 데이터 초기화
 
@@ -36,6 +36,6 @@ NATS·Restate 기록은 named volume에 저장하므로 컨테이너를 재시�
 
 서버 health가 정상이더라도 workflow endpoint는 별도로 등록해야 한다. 개발 실행기는 Dev Container 안의 API 주소를 등록하고, 검증 스택은 NGINX 주소 하나를 등록해 API 복제본들에 요청을 전달한다.
 
-고정 URI를 사용하는 검증 스택에서 코드를 바꿀 때의 제약은 [tests 가이드](../tests/README.md)에 있다. 진행 중인 작업을 보존하면서 배포 revision을 바꾸는 방법은 [설계 결정](../docs/decisions.md)을 따른다. `PROJECT_ID`나 endpoint 설정을 바꿨다면 API와 등록 실행기에 같은 값을 전달해야 한다.
+고정 URI를 사용하는 검증 스택에서 코드를 바꿀 때의 제약은 [tests 가이드](../tests/README.md)에 있다. 진행 중인 작업을 보존하면서 배포 revision을 바꾸는 방법은 [앱 가이드](../apps/README.md#진행-중인-작업을-보존하는-배포)를 따른다. `PROJECT_ID`나 endpoint 설정을 바꿨다면 API와 등록 실행기에 같은 값을 전달해야 한다.
 
 이미지의 tag와 digest는 함께 갱신한다. Dockerfile을 갱신할 때 `.env.infra`의 이미지 변수도 별도로 확인한다.

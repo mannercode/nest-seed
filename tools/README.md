@@ -24,6 +24,6 @@ tunnel로 공개한 화면에서는 BFF를 통해 API도 호출할 수 있다. �
 
 lychee와 k6는 [tools/compose.yml](compose.yml)의 일회성 컨테이너로 실행한다. 루트 `pnpm compose:tools` 명령은 기존 `DEVCONTAINER_NETWORK`에 연결하되 `${COMPOSE_PROJECT_NAME}-tools`라는 별도 프로젝트를 사용한다. 도구를 실행하거나 종료할 때 개발 인프라에 영향을 주지 않도록 분리한 것이다.
 
-lychee는 `lint:root`에서 내부 문서 링크와 문서 내 제목 링크를 검사한다. 외부 사이트의 응답 여부가 lint 결과에 영향을 주지 않도록 오프라인으로 검사하며, `_todo/`와 과거 가이드 원문은 대상에서 제외한다. benchmark 실행기는 k6를 API 스택에 연결하고 결과 파일을 Dev Container 사용자 권한으로 작성한다.
+lychee는 `lint:root`에서 내부 문서 링크와 문서 내 제목 링크를 검사한다. 외부 사이트의 응답 여부가 lint 결과에 영향을 주지 않도록 오프라인으로 검사하며, `_todo/`는 대상에서 제외한다. benchmark 실행기는 k6를 API 스택에 연결하고 결과 파일을 Dev Container 사용자 권한으로 작성한다.
 
 두 도구의 bind mount는 [호스트와 컨테이너의 같은 절대경로](../.devcontainer/README.md#2-호스트와-dev-container에서-같은-경로-사용)를 전제로 한다.

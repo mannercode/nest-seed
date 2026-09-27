@@ -88,7 +88,7 @@ CI의 반복 실행 중 실패한 회차는 `[Run i/N]`에서 찾는다. API Rac
 
 API는 SoLA의 Gateway → View → Application → Core → Infrastructure 순서로 하위 계층에 의존한다. 필요한 하위 계층은 중간 계층을 거치지 않고 직접 호출할 수 있다. 같은 계층의 여러 모듈을 조합하는 작업은 상위 계층에서 맡는다. 단일 Core의 CRUD에는 Application 계층을 추가하지 않는다.
 
-MongoDB는 데이터 저장과 트랜잭션, Redis는 좌석 선점과 리프레시 세션을 맡는다. NATS는 실시간 메시지를 전달하고, JetStream은 나중에 처리할 메시지를 보존하며, Restate는 중단된 작업을 재개한다. SDK 연결·호출은 common에, 업무 쿼리·정책·workflow 단계는 API에 구현한다. 선택 이유와 한계는 [설계 결정](docs/decisions.md)에 있다.
+MongoDB는 데이터 저장과 트랜잭션, Redis는 좌석 선점과 리프레시 세션을 맡는다. NATS는 실시간 메시지를 전달하고, JetStream은 나중에 처리할 메시지를 보존하며, Restate는 중단된 작업을 재개한다. SDK 연결·호출은 common에, 업무 쿼리·정책·workflow 단계는 API에 구현한다. 선택 이유와 한계는 [앱 가이드](apps/README.md)와 [공유 패키지 가이드](libs/README.md)에 있다.
 
 ### 저장소 루트의 주요 폴더
 
@@ -96,11 +96,10 @@ MongoDB는 데이터 저장과 트랜잭션, Redis는 좌석 선점과 리프레
 nest-seed/
 ├── .devcontainer/  # 개발 환경 설정
 ├── apps/           # API와 연결 데모
-├── docs/           # 개발 규칙·설계 결정·검토 기준
 ├── infra/          # 개발 인프라
 ├── libs/           # 공통 코드와 테스트 도구
 ├── tests/          # 다중 프로세스·브라우저·성능 검증
 └── tools/          # 개발·테스트 실행 도구
 ```
 
-작성 방법은 [개발 규칙](docs/conventions.md), 변경과 리뷰의 판단 기준은 [프로젝트 변경·검토 기준](docs/project-review.md)을 따른다. 할 일과 미결 검토는 루트 `_todo/`에서 관리한다.
+작성 규칙은 [API](apps/api/README.md)·[공유 패키지](libs/README.md)·[테스트](tests/README.md)의 README를, 작업과 리뷰의 판단 기준은 [저장소 작업 지침](AGENTS.md)을 따른다. 할 일과 미결 검토는 루트 `_todo/`에서 관리한다.

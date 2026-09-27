@@ -96,7 +96,7 @@ Find the failed iteration of a repeated CI run by its `[Run i/N]` marker. For AP
 
 The API follows SoLA dependencies from Gateway → View → Application → Core → Infrastructure. A layer can call a lower layer directly without passing through intermediate layers. A higher layer combines modules from the same lower layer. CRUD within a single Core does not need an Application layer.
 
-MongoDB handles data storage and transactions; Redis handles seat holds and refresh sessions. NATS delivers real-time messages, JetStream preserves messages for later processing, and Restate resumes interrupted work. SDK connections and calls live in common; business queries, policies, and workflow steps live in the API. See [design decisions](docs/decisions.md) for the reasons and limitations.
+MongoDB handles data storage and transactions; Redis handles seat holds and refresh sessions. NATS delivers real-time messages, JetStream preserves messages for later processing, and Restate resumes interrupted work. SDK connections and calls live in common; business queries, policies, and workflow steps live in the API. See the [application guide](apps/README.md) and [shared package guide](libs/README.md) for the reasons and limitations.
 
 ### Main directories at the repository root
 
@@ -104,11 +104,10 @@ MongoDB handles data storage and transactions; Redis handles seat holds and refr
 nest-seed/
 ├── .devcontainer/  # Development environment configuration
 ├── apps/           # API and connected demos
-├── docs/           # Development conventions, design decisions, and review criteria
 ├── infra/          # Development infrastructure
 ├── libs/           # Shared code and test utilities
 ├── tests/          # Multi-process, browser, and performance verification
 └── tools/          # Development and test execution tools
 ```
 
-Follow the [development conventions](docs/conventions.md) when writing code and the [project change and review criteria](docs/project-review.md) when assessing changes. Keep tasks and unresolved reviews in the root `_todo/` directory.
+Follow the conventions in the [API](apps/api/README.md), [shared package](libs/README.md), and [test](tests/README.md) guides when writing code, and the [repository instructions](AGENTS.md) when making or reviewing changes. Keep tasks and unresolved reviews in the root `_todo/` directory.

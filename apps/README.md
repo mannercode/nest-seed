@@ -2,6 +2,12 @@
 
 `apps/api`는 이 시드의 중심이다. `console`과 `user-app`은 API 연결과 쿠키 인증, 화면 조회를 보여 주는 데모다. API의 계층 구조와 NestJS 모듈 구성은 [API 가이드](api/README.md)에 있다.
 
+## 시드의 범위
+
+이 시드는 단순 CRUD와 분산 실행의 예제를 함께 제공한다. 예매 서비스의 모든 기능과 장애 대응·보안 정책까지 제공하지는 않는다. 새 기술이나 계층은 현재 요구사항을 해결하면서 줄일 수 있는 비용이 학습·실행·유지 비용보다 클 때 도입한다.
+
+핵심은 API와 재사용 라이브러리다. 데모는 API와의 연결 흐름을 보여 주는 범위로 유지한다. 작은 중복을 없애려고 범용 BFF나 인증 프레임워크를 만들지 않는다.
+
 ## 데이터와 DTO
 
 각 도메인은 자기 collection의 읽기·쓰기를 담당한다. 다른 도메인의 Repository나 collection에 직접 접근해 join하지 않고 공개 서비스를 통해 협력한다. Ticket의 `movieId`·`theaterId`·`showtimeId`처럼 조회를 단순하게 하는 안정적인 값은 중복 저장할 수 있다.
@@ -26,6 +32,16 @@ HTTP 요청은 명시한 Zod 스키마로 검사·변환하고, 응답의 형태
 
 영화 이미지는 해당 영화의 업로드 요청 → 파일 전송 → finalize 순서로 연결한다. finalize가 업로드 완료와 소유자를 확인한 뒤 영화에 연결하므로, 생성·수정 본문의 `assetIds`는 허용하지 않는다. 이미지 제거도 전용 삭제 경로를 사용한다.
 
+### MongoDB와 원자성
+
+문서 단위 모델과 공식 driver 사용을 보여 주기 위해 MongoDB를 선택했다. 도메인 사이의 관계를 서비스의 공개 API로 관리하는 구조는 관계형 DB에서도 사용할 수 있다. 도메인 간 외래 키나 join을 쓰지 않는 설계에 MongoDB가 반드시 필요한 것은 아니다.
+
+여러 쓰기를 함께 확정해야 할 때는 transaction을 사용한다. 개발 환경도 Replica Set으로 구성한다. MongoDB의 다중 문서 transaction은 [Replica Set과 sharded cluster](https://www.mongodb.com/docs/manual/core/transactions-production-consideration/)에서 지원하며 standalone에서는 지원하지 않기 때문이다.
+
+동시 요청의 무결성은 DB의 unique index, 조건부 상태 전환, transaction으로 지킨다. transaction 콜백의 일시 오류는 driver가 재시도한다. transaction을 사용해도 두 요청이 모두 “없음”을 조회한 뒤 삽입하는 경쟁까지 자동으로 막아 주지는 않는다. 상영 생성에서 같은 극장 문서를 갱신하는 이유는 [상영 생성과 알림](#상영-생성과-알림)에 있다.
+
+관계형 DB로 옮길 때는 저장소 구현뿐 아니라 동시성 제어와 조회 계약도 함께 검증해야 한다. 포크한 프로젝트에서 DB를 바꿀 가능성만으로 두 DB 구현을 미리 유지하지 않는다.
+
 ## 구매와 선점
 
 한 구매에는 한 상영의 티켓만 포함한다. 같은 티켓 ID를 중복하면 대소문자가 달라도 구매 기록·결제를 만들기 전에 400으로 거절하며 기존 선점은 유지한다.
@@ -44,13 +60,15 @@ stateDiagram-v2
     compensating --> cancelled: 보상 완료
 ```
 
-`pending` 구매 기록 저장 → 티켓을 구매에 할당(claim) → 결제 → 판매를 순서대로 실행한다. 티켓의 Available → Sold 전환, 구매 완료 상태, 최초 응답의 사본은 같은 MongoDB transaction으로 저장한다. 일부 티켓만 겹치는 두 구매도 이 조건부 상태 전환으로 이중 판매를 막는다. 구매 요청 전체를 묶는 별도 Redis 락은 두지 않는다.
+`pending` 구매 기록 저장 → 티켓을 구매에 할당(claim) → 결제 → 판매를 순서대로 실행한다. 티켓의 Available → Sold 전환, 구매 완료 상태, 최초 응답의 사본은 같은 MongoDB transaction으로 저장한다. 일부 티켓만 겹치는 두 구매도 이 조건부 상태 전환으로 이중 판매를 막는다.
+
+락의 TTL이 만료되거나 락을 얻은 프로세스가 종료될 수 있으므로, 락만으로 판매 정합성을 보장하지 않는다. 구매에는 티켓 묶음 전체를 키로 한 추가 락을 두지 않는다. `[A, B]`와 `[B, C]`처럼 일부만 겹치는 요청은 키가 달라 이런 락으로 순서를 보장할 수 없기 때문이다. Redis는 선점 소유권을 관리하고 DB는 최종 판매 상태를 확정한다. DB에서 필요한 원자성을 지키므로 별도 락 알고리즘을 추가하지 않는다.
 
 선점 상실·판매 충돌처럼 확정된 업무 실패는 구매 기록에 남긴 뒤 claim 해제와 결제 취소를 수행한다. 결제나 DB 작업의 결과를 확인하지 못한 경우에는 Restate가 재시도하며, 인프라 장애가 계속되면 구매는 처리 중으로 남는다. 결과를 모르는 상태를 취소 성공으로 응답하지 않는다.
 
 결제나 DB 저장이 성공했어도 Restate의 실행 기록(journal)에 결과를 남기기 전에 중단되면 같은 step이 다시 실행될 수 있다. 따라서 같은 구매가 다시 claim하는 것을 허용하고 결제는 구매 ID로 중복을 막는다. 구매 완료를 저장하는 transaction을 재실행할 때는 이미 저장한 응답을 사용한다. 현재 Payments는 외부 PG 없이 MongoDB에 결제 상태를 기록하는 예제다.
 
-구매 완료 후에는 구매 ID를 키로 별도 알림 workflow를 접수한다. 구매 응답은 그 접수까지만 기다리고 JetStream 발행은 기다리지 않는다. 알림 workflow가 PubAck까지 기다리며, Restate가 journal을 바탕으로 진행 상태와 재시도를 관리한다. PubAck는 JetStream의 저장 확인이며 소비자가 알림을 처리했다는 뜻이 아니다.
+broker 장애가 구매 완료 응답을 막지 않도록 구매 완료 후에는 구매 ID를 키로 별도 알림 workflow를 접수한다. 구매 응답은 그 접수까지만 기다리고 JetStream 발행은 기다리지 않는다. 알림 workflow가 PubAck까지 기다리며, Restate가 journal을 바탕으로 진행 상태와 재시도를 관리한다. PubAck는 JetStream의 저장 확인이며 소비자가 알림을 처리했다는 뜻이 아니다.
 
 ## 상영 생성과 알림
 
@@ -87,13 +105,49 @@ workflow는 202 응답 전에 시작할 수도 있고, HTTP 요청을 접수한 
 
 ### 메시지가 보장하는 것
 
+프로세스 내부의 EventEmitter로는 다른 API 복제본에 연결된 SSE client에 알림을 보낼 수 없어 NATS를 사용한다. Core NATS는 연결된 구독자에게 실시간으로 전달하고, JetStream은 소비자가 중단된 동안에도 구매 완료 이벤트를 보존한다.
+
 상영 진행 이벤트는 Core NATS → 각 복제본의 RxJS Subject → 연결된 SSE client로 전달된다. 연결 전 이벤트는 다시 보내지 않으며, 호출자는 payload의 sagaId로 자기 작업의 이벤트를 골라야 한다. NATS flush는 서버가 이전 명령을 처리했다는 확인이다. 메시지의 영속 저장이나 소비자의 처리 완료를 확인하는 ack는 아니다.
 
 workflow는 SSE 발행 실패나 기한 초과를 로그에 남기고 업무 실행을 계속한다. 상영 생성은 DB commit으로 완료되며 SSE는 진행 상황을 알린다. 알림을 놓친 호출자는 Restate의 결과 보존 기간 안에 상태 API를 조회할 수 있다. 이 기간이 끝나도 생성한 상영은 취소되지 않는다. Restate 결과에는 보존 기한이 있으므로, 재실행의 중복 생성을 막는 DB operation을 대신하지 않는다.
 
-구매 완료 알림은 JetStream에 보존한다. DB 저장, 발행의 PubAck, 소비자의 외부 효과와 ack를 한 transaction으로 묶을 수 없으므로 at-least-once로 전달하며 중복이 가능하다. 실제 발송을 추가할 때는 소비자가 구매 ID를 발송 서비스의 멱등성 키나 durable inbox의 키로 사용해야 한다. 현재 소비자는 발송할 내용을 로그로 남기는 예제다.
+진행 이벤트를 놓쳐도 별도로 상태를 조회할 수 있으므로 모든 subject에 저장·ack·재전달을 적용하지 않는다. 구매 완료 알림은 소비자가 중단된 동안에도 남아 있어야 하므로 JetStream에 보존하고 durable consumer로 읽는다. DB 저장, 발행의 PubAck, 소비자의 외부 효과와 ack를 한 transaction으로 묶을 수 없으므로 at-least-once로 전달하며 중복이 가능하다. broker가 중복을 억제하는 기간은 유한하므로 영구적인 exactly-once 보장은 아니다. 실제 발송을 추가할 때는 소비자가 구매 ID를 발송 서비스의 멱등성 키나 durable inbox의 키로 사용해야 한다. 현재 소비자는 발송할 내용을 로그로 남기는 예제다.
 
-stream의 용량이 한도에 도달하면 새 발행을 거부하고 workflow가 재시도한다. 보존 기간·중복 억제 기간·용량은 [purchase-event.service.ts](api/src/services/application/purchase/purchase-event.service.ts)에 정의한다. 전달 방식의 원리와 도구 선택 이유는 [설계 결정](../docs/decisions.md)을 참고한다.
+stream의 용량이 한도에 도달하면 새 발행을 거부하고 workflow가 재시도한다. 보존 기간·중복 억제 기간·용량은 [purchase-event.service.ts](api/src/services/application/purchase/purchase-event.service.ts)에 정의한다.
+
+Redis Pub/Sub도 실시간 전달에 사용할 수 있지만 메시지를 보존하는 경로가 별도로 필요하다. Kafka를 추가하면 운영·학습 대상이 늘어나는 데 비해 현재 예제에서 얻는 이점은 작다. sticky session을 사용해도 작업을 실행하는 복제본과 SSE가 연결된 복제본은 다를 수 있으므로 복제본 사이의 메시지 전달을 대신할 수 없다.
+
+## Workflow 재실행과 배포
+
+상영 생성과 구매는 Restate workflow로 재시도하고 중단 후 재개한다. 따라서 각 업무에 실행 권한의 만료 기한(lease)을 관리하는 코드와 중단된 작업을 찾아 재개하는 scheduler를 따로 구현하지 않아도 된다. Restate는 실행 기록(journal)에 남긴 완료 step의 결과를 재사용한다. 함께 성공하거나 실패해야 하는 짧은 DB 쓰기 작업은 MongoDB transaction으로 묶는다.
+
+```mermaid
+flowchart TB
+    Write["외부 쓰기 성공"] --> Interrupted["응답 또는 journal 기록 전<br/>실행 중단"]
+    Interrupted --> Retry["같은 step 재실행 가능"]
+```
+
+따라서 `ctx.run` 안의 결제·DB 쓰기 등을 다시 실행해도 결과가 중복되지 않도록 만들어야 한다. 예를 들어 결제는 구매 ID로 중복을 막는다. workflow key는 같은 작업의 재제출을 합칠 뿐 서로 다른 작업의 좌석·시간 경쟁을 조정하지 않는다.
+
+저장·보상·응답의 구체적인 계약은 [구매와 선점](#구매와-선점), [상영 생성과 알림](#상영-생성과-알림)을 따른다.
+
+BullMQ나 JetStream consumer로도 작업을 실행할 수 있지만 단계별 재시도·상태·보상은 직접 관리해야 한다. workflow 엔진인 Temporal도 요구를 충족한다. 이 저장소에서는 별도 worker bundle·sandbox·서버 DB를 관리하는 구성보다 API에 endpoint를 붙이는 Restate 구성이 작아 이를 선택했다.
+
+### 진행 중인 작업을 보존하는 배포
+
+운영에서는 코드 버전(revision)마다 endpoint를 따로 등록하고, 진행 중인 작업(invocation)이 끝날 때까지 이전 코드를 유지해야 한다. [Restate의 deployment](https://docs.restate.dev/concepts/services/)는 새 작업과 진행 중인 작업이 각각 사용할 코드를 구분한다.
+
+workflow step을 삭제하거나 순서를 바꾸면 이전 journal에 기록된 실행은 이전 코드로 끝내야 한다. 같은 endpoint에 새 코드를 덮어쓰면 실행을 재개할 때 step 순서가 맞지 않을 수 있다. 새 DB 문서에서 필드를 없애는 것과 기존 journal의 실행 코드를 교체하는 것은 별도로 검토해야 한다.
+
+```mermaid
+flowchart TB
+    A["v1 실행 유지"] --> B["v2 endpoint 등록"]
+    B --> C["신규 실행을 v2로 전환"]
+    C --> D["v1 실행 종료 확인"]
+    D --> E["v1 제거"]
+```
+
+개발용 force 재등록이나 테스트의 고정 NGINX URI를 운영 무중단 배포 방식으로 복사하지 않는다. 개발 reset은 journal까지 삭제하므로 보존할 실행이 없는 환경에서만 사용한다.
 
 ## HTTP와 인증 계약
 
@@ -116,11 +170,13 @@ stream의 용량이 한도에 도달하면 새 발행을 거부하고 workflow�
 
 admin은 콘텐츠와 모든 사용자의 자원을, user는 본인 자원을 다룬다. 최초 admin은 독립 스크립트로 생성한다. `/me`의 사용자 ID와 구매자 ID는 요청 본문 대신 토큰의 subject로 결정한다. 같은 컨트롤러에 공개·user·admin 경로가 섞이면 guard를 메서드마다 지정하고, `/me`는 `/:userId`보다 먼저 선언한다.
 
-액세스 JWT 인증에서는 서명·만료·issuer/audience·필수 claim을 검사하며 계정 DB를 조회하지 않는다. 유효 기간은 5분이며 로그아웃·비밀번호 변경·계정 삭제로도 이미 발급한 액세스 권한을 즉시 회수하지 않는다. 삭제된 계정의 `/me` 요청은 인증을 통과한 뒤 자원 조회에서 404가 될 수 있다.
+액세스 JWT 인증에서는 서명·만료·issuer/audience·필수 claim을 검사하며 계정·토큰 DB를 조회하지 않는다. 유효 기간은 5분이며 로그아웃·비밀번호 변경·계정 삭제로도 이미 발급한 액세스 권한을 즉시 회수하지 않는다. 삭제된 계정의 `/me` 요청은 인증을 통과한 뒤 자원 조회에서 404가 될 수 있다.
 
-리프레시 토큰은 로그인 세션별로 현재 토큰의 해시를 Redis에 저장하고 원자적으로 교체한다. 교체된 과거 토큰을 사용하면 409를 반환하고 현재 세션은 유지한다. 로그아웃은 해당 세션을, 전체 로그아웃·비밀번호 변경·계정 삭제는 해당 계정의 기존 리프레시 세션을 모두 제거한다.
+액세스 권한의 유지 시간은 짧은 JWT 유효 기간으로 제한한다. 즉시 권한을 회수하려면 서버에서 액세스 세션을 관리하는 등 인증 계약을 바꿔야 하므로 authVersion 같은 장치를 미리 추가하지 않는다.
 
-로그인 실패는 IP별로 제한하며 로그인에 성공해도 실패 횟수를 초기화하지 않는다. admin과 user는 서로 다른 서명 키를 사용하며, `/me`는 본인의 자원만 다룬다. 인증 범위를 이렇게 정한 이유는 [설계 결정](../docs/decisions.md#기본-로그인과-데모)에 있다.
+리프레시 토큰은 로그인 세션별로 현재 토큰의 해시를 Redis에 저장하고 원자적으로 교체한다. 교체된 과거 토큰을 사용하면 409를 반환하고 현재 세션은 유지한다. 로그아웃은 해당 세션을, 전체 로그아웃·비밀번호 변경·계정 삭제는 해당 계정의 기존 리프레시 세션을 모두 제거한다. 토큰의 교체 이력을 추적하거나 이메일별로 로그인을 잠그지는 않는다.
+
+로그인 실패는 IP별로 제한하며 로그인에 성공해도 실패 횟수를 초기화하지 않는다. admin과 user는 서로 다른 서명 키를 사용하며, `/me`는 본인의 자원만 다룬다.
 
 ## 통합 테스트와 실행 가능한 API 문서
 
@@ -128,7 +184,7 @@ API 테스트는 실제 Nest 앱과 MongoDB·Redis·S3·NATS·Restate에 연결�
 
 모듈 최상위에서 읽은 `process.env` 값은 import 시점에 고정된다. 따라서 테스트마다 달라지는 prefix·subject·workflow 이름은 provider를 만들 때 주입한 설정으로 결정한다. workflow 테스트는 `enableRestate: true`로 endpoint를 등록하고, 작업 종료 후 정리 단계에서 등록을 제거한다. 다른 테스트에서는 의도하지 않은 workflow 제출을 거절한다.
 
-접수 202, DB 생성, 이벤트 전달은 서로 다른 결과다. DB 결과는 작업이 끝난 후 다시 조회하고, SSE 자체를 검증할 때는 구독을 준비한 뒤 요청한다. 테스트 작성은 [개발 규칙](../docs/conventions.md#테스트는-한-행동의-결과를-검증한다), 여러 프로세스의 검증은 [tests](../tests/README.md)를 따른다.
+접수 202, DB 생성, 이벤트 전달은 서로 다른 결과다. DB 결과는 작업이 끝난 후 다시 조회하고, SSE 자체를 검증할 때는 구독을 준비한 뒤 요청한다. 테스트 작성은 [테스트 작성 규칙](../tests/README.md#테스트는-한-행동의-결과를-검증한다), 여러 프로세스의 검증은 [tests](../tests/README.md)를 따른다.
 
 `api-docs/*.spec`는 bash·curl로 주요 요청 흐름을 실행한다. `TEST`는 설명과 기대 HTTP 상태를 정의하는 문서 항목이고, `SETUP`은 그 조건을 준비하는 요청이다. SSE와 세부 장애 조건까지 curl 문서에 복제하지 않는다. 실행 방법과 결과 위치는 [README](../README.md#실행과-검증)를 참고한다.
 
@@ -158,3 +214,16 @@ flowchart TB
 edge를 우회해 origin(BFF 서버)과 API에 직접 접근하지 못하게 해야 한다. edge는 X-Forwarded-For의 오른쪽 끝과 X-Real-IP를 실제 연결 주소로 덮어써야 한다. BFF는 오른쪽 끝값을 사용하며, 그 값이 잘못돼도 앞쪽 주소로 대체하지 않는다. 운영 모드의 쿠키에는 Secure가 기본으로 켜진다. HTTP로 실행하는 [web 테스트](../tests/README.md)는 이 조건의 일부만 모사한다.
 
 API의 production build는 Rspack으로 앱 코드를 묶고, common 등 런타임 패키지는 번들에 넣지 않고 별도로 배포한다. 개발 중 변경을 감지하는 watch 모드는 TSC를 사용한다. Restate endpoint는 API 안에서 함께 실행하므로 별도 worker bundle은 두지 않는다.
+
+## 추가하지 않은 도구
+
+| 도구                      | 현재 선택의 이유                                                                                    |
+| ------------------------- | --------------------------------------------------------------------------------------------------- |
+| OpenAPI / Swagger         | 주요 흐름은 실행 가능한 curl 문서로 동작과 함께 검증한다. 별도 카탈로그·SDK 생성은 요구하지 않는다. |
+| Passport                  | 현재 역할별 인증은 Nest Guard로 간단히 구현할 수 있다.                                              |
+| Nx / Turborepo            | 현재 workspace 실행은 pnpm으로 충분하며 별도 작업 의존성 관리나 캐시가 필요하지 않다.               |
+| GraphQL                   | 홈 화면 한 응답은 View로 조합할 수 있어 별도 schema·resolver 체계를 넣지 않는다.                    |
+| pino                      | 현재 로거를 교체해야 할 처리량 병목은 확인되지 않았다.                                              |
+| Service Mesh·관측 backend | 운영 플랫폼은 실제 배포 환경에 맞춰 선택한다.                                                       |
+
+영화 예매 도메인의 설계 과정은 블로그 시리즈 [백엔드 서비스 분석과 설계 1](https://mannercode.com/2025/04/01/backend-design-1.html), [2](https://mannercode.com/2025/05/01/backend-design-2.html), [3](https://mannercode.com/2025/06/01/backend-design-3.html)을 참고한다.

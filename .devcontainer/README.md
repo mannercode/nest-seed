@@ -1,6 +1,8 @@
 # .devcontainer/ — 개발 환경
 
-앱·테스트·실행 도구가 같은 인프라 구성을 사용하도록 Dev Container만 공식 개발 환경으로 지원한다.
+앱·테스트·실행 도구가 같은 인프라 구성을 사용하도록 Dev Container만 공식 개발 환경으로 지원한다. 개발자마다 MongoDB Replica Set·Redis Cluster·S3·NATS·Restate의 버전과 설정이 달라지는 것을 막기 위해서다. Redis Cluster의 다중 키 제한처럼 standalone에서는 드러나지 않는 제약도 개발 중 확인한다.
+
+Node는 네이티브 Temporal을 사용하는 26 계열을 유지한다. TypeScript 버전은 사용처별로 고정한다. legacy compiler API에 의존하는 앱·도구까지 일괄적으로 같은 major 버전으로 올리지 않기 위해서다.
 
 ## 1. 환경 변수 파일 변경 후 Dev Container 재생성
 
