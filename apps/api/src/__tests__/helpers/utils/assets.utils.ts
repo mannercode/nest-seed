@@ -71,7 +71,9 @@ export async function uploadAsset(filePath: string, uploadDto: AssetPresignedUpl
 export async function uploadFile(ctx: TestContext, file: TestAsset) {
     const uploadRequest = await createAsset(ctx, file)
     const uploadRes = await uploadAsset(file.path, uploadRequest)
-    expect(uploadRes.ok).toBe(true)
+    expect(uploadRes.ok, `S3 upload failed (${uploadRes.status}): ${await uploadRes.text()}`).toBe(
+        true
+    )
 
     return uploadRequest.assetId
 }
