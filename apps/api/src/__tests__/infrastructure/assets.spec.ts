@@ -17,7 +17,6 @@ import {
     type AppTestContext,
     createAppTestContext
 } from '../helpers/index.js'
-import { AppConfigService } from '#config'
 
 describe('AssetsService', () => {
     let fix: AppTestContext
@@ -361,7 +360,6 @@ describe('AssetsService', () => {
         let assetId: string
 
         beforeEach(async () => {
-            await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 1 })
             expect(scheduler.doesExist('cron', 'assets.cleanupExpiredUploads')).toBe(true)
 
             const createDto = buildCreateAssetDto(file)
@@ -379,8 +377,7 @@ describe('AssetsService', () => {
 
         describe('미완료 에셋의 업로드 기한이 지났으면', () => {
             beforeEach(async () => {
-                const config = fix.module.get(AppConfigService)
-                await sleep(config.asset.uploadExpiresInSec * 1000 + 500)
+                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
             })
             it('만료 정리로 에셋을 삭제한다', async () => {
                 await assetsService.cleanupExpiredUploads()
@@ -394,11 +391,8 @@ describe('AssetsService', () => {
         describe('소유자가 확정된 에셋의 업로드 기한이 지났으면', () => {
             let finalizedAsset: AssetDto
             beforeEach(async () => {
-                // finalize가 만료 창 안에 끝나야 하므로 beforeEach의 1초 설정을 2초로 늘린다.
-                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 2 })
                 finalizedAsset = await uploadAndFinalizeAsset(fix, file)
-
-                await sleep(2500)
+                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
             })
             it('만료 정리를 실행해도 에셋을 유지한다', async () => {
                 await assetsService.cleanupExpiredUploads()
