@@ -47,7 +47,7 @@
         "@restatedev/restate-sdk": "1.17.2",
         "@restatedev/restate-sdk-clients": "1.17.2",
         "@testcontainers/mongodb": "12.1.0",
-        "@testcontainers/nats": "12.1.0",
+        "@testcontainers/nats": "12.2.0",
         "@types/bcrypt": "6.0.0",
         "bcrypt": "6.0.0",
         "ioredis": "6.0.0",
