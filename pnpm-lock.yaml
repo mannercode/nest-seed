@@ -203,8 +203,8 @@ importers:
         specifier: 12.1.1
         version: 12.1.1(@nestjs/common@12.1.1(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@nestjs/core@12.1.1)(@nestjs/platform-express@12.1.1)
       '@testcontainers/mongodb':
-        specifier: 12.1.0
-        version: 12.1.0(supports-color@10.2.2)
+        specifier: 12.2.0
+        version: 12.2.0(supports-color@10.2.2)
       '@testcontainers/nats':
         specifier: 12.2.0
         version: 12.2.0(supports-color@10.2.2)
@@ -531,8 +531,8 @@ importers:
         specifier: 1.17.2
         version: 1.17.2
       '@testcontainers/mongodb':
-        specifier: 12.1.0
-        version: 12.1.0(supports-color@10.2.2)
+        specifier: 12.2.0
+        version: 12.2.0(supports-color@10.2.2)
       '@testcontainers/nats':
         specifier: 12.2.0
         version: 12.2.0(supports-color@10.2.2)
@@ -2033,8 +2033,8 @@ packages:
   '@tailwindcss/postcss@4.3.3':
     resolution: {integrity: sha512-JTSZZGQi1AyKirbLN3azmjVzef92tcX7h+iSqPdaeStyFpGpDlKvvpxeOE8njhbUanbRwr3z8DyzhICWnMtQeg==}
 
-  '@testcontainers/mongodb@12.1.0':
-    resolution: {integrity: sha512-ke/WBhHAFzGJ4Yzdt/G55fKfU51TTq8hvAsOxOFVHi6LwgCoFpAM2vyxXBsG1i4aGeJ2gH+8HFfRd1cq8EuiQg==}
+  '@testcontainers/mongodb@12.2.0':
+    resolution: {integrity: sha512-ET7C32t7IIOM93NCAgjBhLcp7RC0gbtiBvnK/A+cmE5ezbIGF36UvjNhSFK2ns+7OosCgwv4lRf3H/3sYzIpoQ==}
 
   '@testcontainers/nats@12.2.0':
     resolution: {integrity: sha512-THQL2vHdRthUUiFrnNSlObunxb+TMfjXktQI8H4u9k+wAlLtoawnP9NUezWlGU2vvu9/F/VO67PiYY2AmsF2jA==}
@@ -6429,10 +6429,10 @@ snapshots:
       postcss: 8.5.28
       tailwindcss: 4.3.3
 
-  '@testcontainers/mongodb@12.1.0(supports-color@10.2.2)':
+  '@testcontainers/mongodb@12.2.0(supports-color@10.2.2)':
     dependencies:
       compare-versions: 6.1.1
-      testcontainers: 12.1.0(supports-color@10.2.2)
+      testcontainers: 12.2.0(supports-color@10.2.2)
     transitivePeerDependencies:
       - bare-abort-controller
       - bare-buffer
