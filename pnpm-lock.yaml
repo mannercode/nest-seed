@@ -167,14 +167,14 @@ importers:
   .:
     devDependencies:
       '@aws-sdk/client-s3':
-        specifier: 3.1143.0
-        version: 3.1143.0
+        specifier: 3.1147.0
+        version: 3.1147.0
       '@aws-sdk/s3-presigned-post':
-        specifier: 3.1143.0
-        version: 3.1143.0
+        specifier: 3.1147.0
+        version: 3.1147.0
       '@aws-sdk/s3-request-presigner':
-        specifier: 3.1143.0
-        version: 3.1143.0
+        specifier: 3.1147.0
+        version: 3.1147.0
       '@commitlint/cli':
         specifier: 21.2.3
         version: 21.2.3(@types/node@26.6.2)(conventional-commits-parser@7.1.2)(typescript@6.0.3)
@@ -269,14 +269,14 @@ importers:
   apps/api:
     dependencies:
       '@aws-sdk/client-s3':
-        specifier: 3.1143.0
-        version: 3.1143.0
+        specifier: 3.1147.0
+        version: 3.1147.0
       '@aws-sdk/s3-presigned-post':
-        specifier: 3.1143.0
-        version: 3.1143.0
+        specifier: 3.1147.0
+        version: 3.1147.0
       '@aws-sdk/s3-request-presigner':
-        specifier: 3.1143.0
-        version: 3.1143.0
+        specifier: 3.1147.0
+        version: 3.1147.0
       '@mannercode/common':
         specifier: workspace:*
         version: link:../../libs/common
@@ -480,10 +480,10 @@ importers:
     dependencies:
       '@aws-sdk/s3-presigned-post':
         specifier: ^3.0.0
-        version: 3.1143.0
+        version: 3.1147.0
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.0.0
-        version: 3.1143.0
+        version: 3.1147.0
       '@elastic/ecs-winston-format':
         specifier: 1.5.3
         version: 1.5.3
@@ -513,8 +513,8 @@ importers:
         version: 3.19.0
     devDependencies:
       '@aws-sdk/client-s3':
-        specifier: 3.1143.0
-        version: 3.1143.0
+        specifier: 3.1147.0
+        version: 3.1147.0
       '@mannercode/testing':
         specifier: workspace:*
         version: link:../testing
@@ -596,8 +596,8 @@ importers:
   tools/vitest-helpers:
     dependencies:
       '@aws-sdk/client-s3':
-        specifier: 3.1143.0
-        version: 3.1143.0
+        specifier: 3.1147.0
+        version: 3.1147.0
 
 packages:
 
@@ -627,8 +627,8 @@ packages:
     resolution: {integrity: sha512-x12Q17KYlJAd3nKf8LV5LV0vt8sh8/6YfQLGPtrGnQf/tW4jqxPGq5GPpuVitpQYM3eUR4XB7CbxZf751NMbLw==}
     engines: {node: '>=20.0.0'}
 
-  '@aws-sdk/client-s3@3.1143.0':
-    resolution: {integrity: sha512-YVcwL17cUDru7OJFMoGB6aJCg7TmMiuAUjKfswtSm+t8NhO5BLLFTUhjnGWrhdw7ZgYyU2Y8u19t8a7yu0EhEg==}
+  '@aws-sdk/client-s3@3.1147.0':
+    resolution: {integrity: sha512-uTrcJxnJKPr8bc1z7cMxopYSQyAm2dPfiMK+UiBr51L8MzimDxHbW/d9GR6X/LFbWDpMzfFPLhB4UohDrCSaPQ==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/core@3.978.1':
@@ -675,12 +675,12 @@ packages:
     resolution: {integrity: sha512-oRxtBcka/JGHGs9l9p9IVajGoTP8vTPmoAzdHGy4Qcy9P5vPnDf6nhIeM/COQNY9k/OahImTRaLkHftoXvfcmQ==}
     engines: {node: '>=20.0.0'}
 
-  '@aws-sdk/s3-presigned-post@3.1143.0':
-    resolution: {integrity: sha512-62+StcwqfjAzLD7E/PhwZC0sNY9p0MRZmBwbGhTLxKyZlbd5uCilLVtxk/W9LJ0NPmqfGBIYCfixGlqLIgJR0Q==}
+  '@aws-sdk/s3-presigned-post@3.1147.0':
+    resolution: {integrity: sha512-ydV4xmQMI/LN/U18FaE7wG0KSC3GMTn6KZx6xw3FvqU0MX59F4p6/k6N2X+Gm7akwczgQB5l75vAMKaT0XcbEA==}
     engines: {node: '>=20.0.0'}
 
-  '@aws-sdk/s3-request-presigner@3.1143.0':
-    resolution: {integrity: sha512-E+NP73AhU0NXXNAYv6JTdN9Jdm9yUS0WheSIh/QOhpM1Dd4JeTsamxbiLYvboyhdnPQAkqFYITHImaS1Bhqafg==}
+  '@aws-sdk/s3-request-presigner@3.1147.0':
+    resolution: {integrity: sha512-9za8GOn8IRFz+foPbLfjFFfqDV87mLBhNbUg+8YgqaSIuvzx+o6bWgOAETqPev5wul6DAImTQSCgt8mBsKtGUg==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/signature-v4-multi-region@3.996.47':
@@ -5066,7 +5066,7 @@ snapshots:
       '@smithy/types': 4.19.0
       tslib: 2.8.1
 
-  '@aws-sdk/client-s3@3.1143.0':
+  '@aws-sdk/client-s3@3.1147.0':
     dependencies:
       '@aws-sdk/checksums': 3.1001.1
       '@aws-sdk/core': 3.978.1
@@ -5195,9 +5195,9 @@ snapshots:
       '@smithy/types': 4.19.0
       tslib: 2.8.1
 
-  '@aws-sdk/s3-presigned-post@3.1143.0':
+  '@aws-sdk/s3-presigned-post@3.1147.0':
     dependencies:
-      '@aws-sdk/client-s3': 3.1143.0
+      '@aws-sdk/client-s3': 3.1147.0
       '@aws-sdk/core': 3.978.1
       '@aws-sdk/types': 3.974.6
       '@smithy/core': 3.35.0
@@ -5205,7 +5205,7 @@ snapshots:
       '@smithy/types': 4.19.0
       tslib: 2.8.1
 
-  '@aws-sdk/s3-request-presigner@3.1143.0':
+  '@aws-sdk/s3-request-presigner@3.1147.0':
     dependencies:
       '@aws-sdk/core': 3.978.1
       '@aws-sdk/signature-v4-multi-region': 3.996.47
