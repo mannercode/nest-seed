@@ -54,6 +54,6 @@
         "mongodb": "7.6.0",
         "testcontainers": "12.1.0",
         "vitest": "5.0.1",
-        "zod": "4.6.5"
+        "zod": "4.6.7"
     }
 }
