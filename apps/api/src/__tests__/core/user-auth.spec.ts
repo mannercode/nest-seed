@@ -607,31 +607,37 @@ describe('UserAuthentication', () => {
             await loginCompletion
         })
 
-        it.each(['비밀번호를 변경', '계정을 삭제'] as const)(
-            '%s하면 변경 전에 인증된 로그인 세션으로 갱신할 수 없다',
-            async (operation) => {
-                try {
-                    if (operation === '비밀번호를 변경') {
-                        await usersService.update(session.user.id, { password: 'newPassword' })
-                    } else {
-                        await usersService.deleteMany([session.user.id])
-                    }
-                } finally {
-                    gate?.release()
-                }
+        it('비밀번호를 변경하면 변경 전에 인증된 로그인 세션으로 갱신할 수 없다', async () => {
+            await usersService.update(session.user.id, { password: 'newPassword' })
+            ensure(gate).release()
 
-                await fix.httpClient
-                    .post('/users/refresh')
-                    .body({ refreshToken: session.refreshToken })
-                    .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: session.refreshToken })
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
 
-                const login = ensure(await loginResult)
-                await fix.httpClient
-                    .post('/users/refresh')
-                    .body({ refreshToken: login.tokens.refreshToken })
-                    .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
-            }
-        )
+            const login = ensure(await loginResult)
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: login.tokens.refreshToken })
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+        })
+
+        it('계정을 삭제하면 삭제 전에 인증된 로그인 세션으로 갱신할 수 없다', async () => {
+            await usersService.deleteMany([session.user.id])
+            ensure(gate).release()
+
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: session.refreshToken })
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+
+            const login = ensure(await loginResult)
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: login.tokens.refreshToken })
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+        })
     })
 
     describe('계정 변경 후 리프레시 세션 회수에 실패하도록 설정하면', () => {

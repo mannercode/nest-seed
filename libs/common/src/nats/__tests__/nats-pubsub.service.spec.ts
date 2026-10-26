@@ -197,60 +197,76 @@ describe('NatsPubSubService', () => {
         })
     })
 
-    describe.each([
-        { label: '핸들러 두 개가 등록되어 있으면', unsubscribeFirst: false },
-        { label: '핸들러 한 개가 등록되어 있으면', unsubscribeFirst: true }
-    ])('$label', ({ unsubscribeFirst }) => {
+    describe('완료를 기다리는 핸들러가 등록되어 있으면', () => {
         let entered: ReturnType<typeof Promise.withResolvers<void>>
         let release: ReturnType<typeof Promise.withResolvers<void>>
         let finished: ReturnType<typeof vi.fn<() => void>>
-        let next: ReturnType<typeof vi.fn<() => void>>
         let handler: ReturnType<typeof vi.fn<() => Promise<void>>>
+        let stopping: Promise<void> | undefined
+        let stopped: boolean
         beforeEach(async () => {
             entered = Promise.withResolvers<void>()
             release = Promise.withResolvers<void>()
             finished = vi.fn()
-            next = vi.fn()
+            stopping = undefined
+            stopped = false
             handler = vi.fn(async () => {
                 entered.resolve()
                 await release.promise
                 finished()
             })
             await fix.pubSubB.subscribe(subject, handler)
-            if (!unsubscribeFirst) await fix.pubSubB.subscribe(subject, next)
         })
-        it(
-            unsubscribeFirst
-                ? '처리 중인 핸들러의 구독을 해제하고 종료해도 그 처리가 끝날 때까지 기다린다'
-                : '메시지 처리 중 종료하면 진행 중 핸들러를 기다리고 다음 핸들러는 호출하지 않는다',
-            async () => {
-                let stopping: Promise<void> | undefined
-                let stopped = false
+        afterEach(async () => {
+            release.resolve()
+            await stopping
+        })
 
-                try {
-                    await fix.pubSubA.publish(subject, 'in-flight')
-                    await entered.promise
-                    await fix.pubSubA.publish(subject, 'queued')
-                    if (unsubscribeFirst) await fix.pubSubB.unsubscribe(subject, handler)
-                    stopping = fix.pubSubB.onModuleDestroy().then(() => {
-                        stopped = true
-                    })
-                    // 이미 완료된 종료 훅의 then까지 실행한 뒤, handler 대기를 확인한다.
-                    await Promise.resolve()
-                    expect(stopped).toBe(false)
-                    expect(finished).not.toHaveBeenCalled()
+        it('처리 중인 핸들러의 구독을 해제하고 종료해도 그 처리가 끝날 때까지 기다린다', async () => {
+            await fix.pubSubA.publish(subject, 'in-flight')
+            await entered.promise
+            await fix.pubSubA.publish(subject, 'queued')
+            await fix.pubSubB.unsubscribe(subject, handler)
+            stopping = fix.pubSubB.onModuleDestroy().then(() => {
+                stopped = true
+            })
+            // 이미 완료된 종료 훅의 then까지 실행한 뒤, handler 대기를 확인한다.
+            await Promise.resolve()
+            expect(stopped).toBe(false)
+            expect(finished).not.toHaveBeenCalled()
 
-                    release.resolve()
-                    await stopping
-                    expect(finished).toHaveBeenCalledTimes(1)
-                    expect(handler).toHaveBeenCalledTimes(1)
-                    expect(next).not.toHaveBeenCalled()
-                } finally {
-                    release.resolve()
-                    await stopping
-                }
-            }
-        )
+            release.resolve()
+            await stopping
+            expect(finished).toHaveBeenCalledTimes(1)
+            expect(handler).toHaveBeenCalledTimes(1)
+        })
+
+        describe('그 뒤에 실행할 핸들러도 등록되어 있으면', () => {
+            let next: ReturnType<typeof vi.fn<() => void>>
+            beforeEach(async () => {
+                next = vi.fn()
+                await fix.pubSubB.subscribe(subject, next)
+            })
+
+            it('메시지 처리 중 종료하면 진행 중 핸들러를 기다리고 다음 핸들러는 호출하지 않는다', async () => {
+                await fix.pubSubA.publish(subject, 'in-flight')
+                await entered.promise
+                await fix.pubSubA.publish(subject, 'queued')
+                stopping = fix.pubSubB.onModuleDestroy().then(() => {
+                    stopped = true
+                })
+                // 이미 완료된 종료 훅의 then까지 실행한 뒤, handler 대기를 확인한다.
+                await Promise.resolve()
+                expect(stopped).toBe(false)
+                expect(finished).not.toHaveBeenCalled()
+
+                release.resolve()
+                await stopping
+                expect(finished).toHaveBeenCalledTimes(1)
+                expect(handler).toHaveBeenCalledTimes(1)
+                expect(next).not.toHaveBeenCalled()
+            })
+        })
     })
 
     describe('subject를 구독한 적이 없으면', () => {

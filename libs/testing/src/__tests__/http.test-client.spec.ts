@@ -124,15 +124,45 @@ describe('HttpTestClient', () => {
     })
 
     describe('SSE', () => {
-        describe.each([
-            { name: '한 번에', continuation: undefined },
-            { name: '두 청크로', continuation: 'data: second\n\n' }
-        ])('$name 응답할 때', ({ continuation }) => {
+        describe('한 번에 응답할 때', () => {
+            beforeEach(() => {
+                fix.setRawEvents({ content: 'data: first\n\n', contentType: 'text/event-stream' })
+            })
+
+            it('요청 본문으로 이벤트 응답을 HTML로 바꾸거나 내용을 주입할 수 없다', async () => {
+                const abort = new AbortController()
+
+                try {
+                    const response = await fetch(`${fix.httpClient.serverUrl}/raw-events`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            content: '<script>alert(1)</script>',
+                            contentType: 'text/html',
+                            split: false
+                        }),
+                        signal: abort.signal
+                    })
+
+                    expect(response.status).toBe(200)
+                    expect(response.headers.get('content-type')).toBe(
+                        'text/event-stream; charset=utf-8'
+                    )
+                    expect(await response.text()).toBe(
+                        'data: first\n\n\n\ndata: fixture-complete\n\n'
+                    )
+                } finally {
+                    abort.abort()
+                }
+            })
+        })
+
+        describe('두 청크로 응답할 때', () => {
             beforeEach(() => {
                 fix.setRawEvents({
                     content: 'data: first\n\n',
                     contentType: 'text/event-stream',
-                    continuation
+                    continuation: 'data: second\n\n'
                 })
             })
 
@@ -146,26 +176,22 @@ describe('HttpTestClient', () => {
                         body: JSON.stringify({
                             content: '<script>alert(1)</script>',
                             contentType: 'text/html',
-                            split: continuation !== undefined
+                            split: true
                         }),
                         signal: abort.signal
                     })
 
-                    if (continuation !== undefined) {
-                        await new HttpTestClient(fix.httpClient.serverUrl)
-                            .post('/complete-raw-events')
-                            .body({ content: '<script>alert(2)</script>' })
-                            .created()
-                    }
+                    await new HttpTestClient(fix.httpClient.serverUrl)
+                        .post('/complete-raw-events')
+                        .body({ content: '<script>alert(2)</script>' })
+                        .created()
 
                     expect(response.status).toBe(200)
                     expect(response.headers.get('content-type')).toBe(
                         'text/event-stream; charset=utf-8'
                     )
                     expect(await response.text()).toBe(
-                        continuation === undefined
-                            ? 'data: first\n\n\n\ndata: fixture-complete\n\n'
-                            : 'data: fixture-ready\n\ndata: first\n\ndata: second\n\n\n\ndata: fixture-complete\n\n'
+                        'data: fixture-ready\n\ndata: first\n\ndata: second\n\n\n\ndata: fixture-complete\n\n'
                     )
                 } finally {
                     abort.abort()
