@@ -1,16 +1,17 @@
-import { compare, hash, hashSync } from 'bcrypt'
-
-const BCRYPT_SALT_ROUNDS = 10
-// 계정이 없어도 같은 해시 비교를 수행해 로그인 실패 응답 시간 차이를 줄인다.
-const TIMING_DUMMY_HASH = hashSync('timing-equalization-only', BCRYPT_SALT_ROUNDS)
+import { argon2id, hash, verify } from 'argon2'
 
 export class PasswordHasher {
+    private static dummyHash: Promise<string> | undefined
+
     static hash(rawPassword: string): Promise<string> {
-        return hash(rawPassword, BCRYPT_SALT_ROUNDS)
+        return hash(rawPassword, { type: argon2id })
     }
 
     static async verify(rawPassword: string, hashedPassword: string | undefined): Promise<boolean> {
-        const matches = await compare(rawPassword, hashedPassword ?? TIMING_DUMMY_HASH)
+        // 계정이 없어도 같은 해시 비교를 수행해 로그인 실패 응답 시간 차이를 줄인다.
+        const targetHash =
+            hashedPassword ?? (await (this.dummyHash ??= this.hash('timing-equalization-only')))
+        const matches = await verify(targetHash, rawPassword)
         return hashedPassword !== undefined && matches
     }
 }

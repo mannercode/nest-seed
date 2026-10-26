@@ -20,7 +20,7 @@
 
 `infra-setup`은 MongoDB·Redis Cluster·S3 bucket의 초기 설정이 성공하고 NATS·Restate가 healthy 상태가 될 때까지 기다린다. MongoDB는 PRIMARY 하나와 SECONDARY 둘이 준비되고 실제 majority write가 성공해야 준비를 마친 것으로 판단한다.
 
-인프라가 준비되면 [독립 스크립트](../apps/api/scripts/admin-create.cjs)로 `.env.infra`에 지정한 개발 관리자 계정을 생성한다. common을 빌드하기 전에도 실행할 수 있도록 MongoDB와 bcrypt를 직접 사용한다. 인프라 준비나 계정 생성이 실패하면 reset도 실패한다.
+인프라가 준비되면 [독립 스크립트](../apps/api/scripts/admin-create.cjs)로 `.env.infra`에 지정한 개발 관리자 계정을 생성한다. common을 빌드하기 전에도 실행할 수 있도록 MongoDB와 Argon2id를 직접 사용한다. 인프라 준비나 계정 생성이 실패하면 reset도 실패한다.
 
 reset은 루트 env 파일을 새로 읽지 않는다. 값을 바꿨다면 먼저 [Dev Container를 재생성](../.devcontainer/README.md#1-환경-변수-파일-변경-후-dev-container-재생성)해 실행 환경을 맞춘다.
 

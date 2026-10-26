@@ -10,6 +10,7 @@ import {
     PurchaseRecordSchema
 } from '#core'
 import {
+    buildCreateUserDto,
     createPurchaseRecord,
     createUser,
     Errors,
@@ -68,6 +69,30 @@ describe('UserAuthentication', () => {
     afterEach(() => teardown?.())
 
     describe('POST /users/login', () => {
+        describe.each([
+            { label: 'ASCII', prefix: 'a'.repeat(72) },
+            { label: '한글', prefix: '가'.repeat(24) },
+            { label: '이모지', prefix: '🌱'.repeat(18) }
+        ])('72바이트를 넘는 $label 비밀번호로 가입했으면', ({ prefix }) => {
+            const email = 'long-password@mail.com'
+            beforeEach(async () => {
+                await fix.httpClient
+                    .post('/users')
+                    .body(buildCreateUserDto({ email, password: `${prefix}original` }))
+                    .created()
+            })
+            it('전체 비밀번호가 일치해야 로그인할 수 있다', async () => {
+                await fix.httpClient
+                    .post('/users/login')
+                    .body({ email, password: `${prefix}original` })
+                    .ok()
+                await fix.httpClient
+                    .post('/users/login')
+                    .body({ email, password: `${prefix}different` })
+                    .unauthorized({ expected: Errors.Auth.Unauthorized() })
+            })
+        })
+
         describe('이메일과 비밀번호가 등록된 사용자 정보와 일치하면', () => {
             let request: typeof fix.httpClient
             beforeEach(() => {

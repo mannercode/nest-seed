@@ -1,10 +1,9 @@
-const { hash } = require('bcrypt')
+const { argon2id, hash } = require('argon2')
 const { MongoClient, ObjectId } = require('mongodb')
 const { createInterface } = require('node:readline/promises')
 const { Writable } = require('node:stream')
 const { z } = require('zod')
 
-const BCRYPT_SALT_ROUNDS = 10
 const environmentSchema = z.object({
     MONGO_DATABASE: z.string().min(1),
     MONGO_URI: z.string().min(1)
@@ -74,7 +73,7 @@ async function createAdmin() {
             deletedAt: null,
             email: admin.email,
             name: admin.name,
-            password: await hash(admin.password, BCRYPT_SALT_ROUNDS),
+            password: await hash(admin.password, { type: argon2id }),
             updatedAt: now
         })
 

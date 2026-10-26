@@ -142,7 +142,7 @@ describe('AdminManagement', () => {
             })
 
             describe('비밀번호가 변경되었으면', () => {
-                const newPassword = 'newPassword'
+                const newPassword = '변경한 비밀번호🌱'.repeat(10)
 
                 beforeEach(async () => {
                     await fix.httpClient
