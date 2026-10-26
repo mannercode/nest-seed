@@ -584,6 +584,99 @@ describe('UserAuthentication', () => {
         })
     })
 
+    describe('비밀번호 검증을 통과한 로그인이 토큰 발급을 기다리면', () => {
+        let session: Awaited<ReturnType<typeof loginUser>>
+        let usersService: UsersService
+        let gate: ReturnType<typeof pauseNextTokenIssue> | undefined
+        let loginResult: ReturnType<UsersService['login']> | undefined
+        let loginCompletion: Promise<unknown> | undefined
+
+        beforeEach(async () => {
+            gate = undefined
+            loginResult = undefined
+            loginCompletion = undefined
+            session = await loginUser(fix, credentials)
+            usersService = fix.module.get(UsersService)
+            gate = pauseNextTokenIssue(fix.module.get(JwtAuthService.getName()))
+            loginResult = usersService.login(credentials)
+            loginCompletion = Promise.allSettled([loginResult])
+            await gate.started
+        })
+        afterEach(async () => {
+            gate?.release()
+            await loginCompletion
+        })
+
+        it.each(['비밀번호를 변경', '계정을 삭제'] as const)(
+            '%s하면 변경 전에 인증된 로그인 세션으로 갱신할 수 없다',
+            async (operation) => {
+                try {
+                    if (operation === '비밀번호를 변경') {
+                        await usersService.update(session.user.id, { password: 'newPassword' })
+                    } else {
+                        await usersService.deleteMany([session.user.id])
+                    }
+                } finally {
+                    gate?.release()
+                }
+
+                await fix.httpClient
+                    .post('/users/refresh')
+                    .body({ refreshToken: session.refreshToken })
+                    .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+
+                const login = ensure(await loginResult)
+                await fix.httpClient
+                    .post('/users/refresh')
+                    .body({ refreshToken: login.tokens.refreshToken })
+                    .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+            }
+        )
+    })
+
+    describe('계정 변경 후 리프레시 세션 회수에 실패하도록 설정하면', () => {
+        let session: Awaited<ReturnType<typeof loginUser>>
+        let usersService: UsersService
+        let failure: Error
+
+        beforeEach(async () => {
+            session = await loginUser(fix, credentials)
+            usersService = fix.module.get(UsersService)
+            failure = new Error('Redis session revocation failed')
+            vi.spyOn(
+                fix.module.get<JwtAuthService>(JwtAuthService.getName()),
+                'revokeAllSessions'
+            ).mockRejectedValueOnce(failure)
+        })
+
+        it('비밀번호 변경이 실패해도 DB에 반영된 새 비밀번호로 로그인할 수 있고 이전 세션은 갱신할 수 없다', async () => {
+            const password = 'newPassword'
+            await expect(usersService.update(session.user.id, { password })).rejects.toBe(failure)
+            await fix.httpClient
+                .post('/users/login')
+                .body({ ...credentials, password })
+                .ok()
+
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: session.refreshToken })
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+        })
+
+        it('계정 삭제가 실패해도 DB에서 삭제된 계정으로 로그인하거나 이전 세션을 갱신할 수 없다', async () => {
+            await expect(usersService.deleteMany([session.user.id])).rejects.toBe(failure)
+            await fix.httpClient
+                .post('/users/login')
+                .body(credentials)
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: session.refreshToken })
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+        })
+    })
+
     describe('리프레시 토큰 발급이 진행 중이면', () => {
         let session: Awaited<ReturnType<typeof loginUser>>
         let usersService: UsersService

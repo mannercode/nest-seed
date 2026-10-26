@@ -42,26 +42,36 @@ test.describe('로그인하지 않았으면', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(`${USER_APP_BASE_URL}/login`)
     })
-    test('사용자 앱에서 관리자 로그인 경로를 요청하면 토큰 없이 404를 반환한다', async ({
-        page
-    }) => {
-        const result = await page.evaluate(
-            async ({ email, password }) => {
-                const response = await fetch('/api/admins/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                })
-                const body = await response.text()
-                return {
-                    exposesToken: /"(?:accessToken|refreshToken)"\s*:/.test(body),
-                    status: response.status
-                }
-            },
-            { email: ADMIN_EMAIL, password: ADMIN_PASSWORD }
-        )
+    test.describe('관리자 자격 증명이 유효하면', () => {
+        test.beforeEach(async ({ request: api }) => {
+            const response = await api.post(`${API_BASE_URL}/admins/login`, {
+                data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD }
+            })
+            expect(response.status()).toBe(200)
+        })
+        for (const pathname of ['/api/admins/login', '/api/ADMINS/LOGIN']) {
+            test(`사용자 앱에서 ${pathname} 경로를 요청하면 토큰 없이 404를 반환한다`, async ({
+                page
+            }) => {
+                const result = await page.evaluate(
+                    async ({ email, password, pathname }) => {
+                        const response = await fetch(pathname, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, password })
+                        })
+                        const body = await response.text()
+                        return {
+                            exposesToken: /"(?:accessToken|refreshToken)"\s*:/.test(body),
+                            status: response.status
+                        }
+                    },
+                    { email: ADMIN_EMAIL, password: ADMIN_PASSWORD, pathname }
+                )
 
-        expect(result).toEqual({ exposesToken: false, status: 404 })
+                expect(result).toEqual({ exposesToken: false, status: 404 })
+            })
+        }
     })
     test('사용자 앱에서 토큰 갱신 경로를 직접 요청하면 404를 반환한다', async ({ page }) => {
         const result = await page.evaluate(async () => {
@@ -134,6 +144,90 @@ test.describe('사용자로 로그인했으면', () => {
         })
         await expect(page.getByText(email)).toBeVisible()
     })
+    test('로그인 경로의 대소문자가 달라도 토큰은 본문 없이 쿠키로 전달한다', async ({
+        context,
+        page
+    }) => {
+        const result = await page.evaluate(
+            async ({ email, password }) => {
+                const response = await fetch('/api/Users/Login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                })
+                const body = await response.text()
+                return {
+                    exposesToken: /"(?:accessToken|refreshToken)"\s*:/.test(body),
+                    hasBody: body.length > 0,
+                    status: response.status
+                }
+            },
+            { email, password: PASSWORD }
+        )
+
+        expect(result).toEqual({ exposesToken: false, hasBody: false, status: 204 })
+        const refreshCookie = await getSessionCookie(context, REFRESH_COOKIE)
+        expect(refreshCookie).toMatchObject({ httpOnly: true, value: expect.any(String) })
+        expect(refreshCookie?.value === refreshCookieBefore?.value).toBe(false)
+    })
+    test('유효한 토큰으로 대소문자가 다른 갱신 경로를 요청하면 세션을 바꾸지 않고 404를 반환한다', async ({
+        page,
+        request: api
+    }) => {
+        expect(refreshCookieBefore).toBeDefined()
+        const result = await page.evaluate(async (refreshToken) => {
+            const response = await fetch('/api/Users/Refresh', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken })
+            })
+            const body = await response.text()
+            return {
+                exposesToken: /"(?:accessToken|refreshToken)"\s*:/.test(body),
+                status: response.status
+            }
+        }, refreshCookieBefore!.value)
+        const refresh = await api.post(`${API_BASE_URL}/users/refresh`, {
+            data: { refreshToken: refreshCookieBefore!.value }
+        })
+
+        expect({ ...result, originalTokenStatus: refresh.status() }).toEqual({
+            exposesToken: false,
+            originalTokenStatus: 200,
+            status: 404
+        })
+    })
+    for (const method of ['GET', 'HEAD']) {
+        test(`${method} 로그아웃 요청은 404를 반환하고 쿠키와 서버 세션을 유지한다`, async ({
+            context,
+            page,
+            request: api
+        }) => {
+            expect(accessCookie).toBeDefined()
+            expect(refreshCookieBefore).toBeDefined()
+            const status = await page.evaluate(
+                async (method) => (await fetch('/api/users/logout', { method })).status,
+                method
+            )
+            const accessAfter = await getSessionCookie(context, ACCESS_COOKIE)
+            const refreshAfter = await getSessionCookie(context, REFRESH_COOKIE)
+            const refresh = await api.post(`${API_BASE_URL}/users/refresh`, {
+                data: { refreshToken: refreshCookieBefore!.value }
+            })
+
+            expect({
+                accessCookieRetained: accessAfter?.value === accessCookie!.value,
+                refreshCookieRetained: refreshAfter?.value === refreshCookieBefore!.value,
+                refreshStatus: refresh.status(),
+                status
+            }).toEqual({
+                accessCookieRetained: true,
+                refreshCookieRetained: true,
+                refreshStatus: 200,
+                status: 404
+            })
+        })
+    }
     test('로그아웃하면 브라우저 쿠키와 서버의 리프레시 토큰을 폐기한다', async ({
         context,
         page

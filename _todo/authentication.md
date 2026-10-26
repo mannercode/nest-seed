@@ -10,12 +10,12 @@
 
 근거: [UsersService](../apps/api/src/services/core/users/users.service.ts)와 [AdminsService](../apps/api/src/services/core/admins/admins.service.ts)는 DB 변경 후 세션을 폐기한다. 로그인은 계정 조회·비밀번호 비교 후 별도로 세션을 만든다. refresh는 현재 계정 상태를 조회하지 않는다.
 
-사용자 서비스와 실제 MongoDB·Redis를 사용해 다음 네 경우를 재현했다. 관리자도 같은 처리 순서이지만 관리자 경합·장애는 별도로 실행하지 않았다.
+실제 MongoDB·Redis를 연결한 [사용자 인증 테스트](../apps/api/src/__tests__/core/user-auth.spec.ts)와 [관리자 인증 테스트](../apps/api/src/__tests__/core/admin-auth.spec.ts)에서 다음 네 경우를 각각 재현했다. 추가한 8개 테스트는 모두 refresh HTTP 401을 기대한 지점에서 실제 200을 받아 실패한다. 한 앱에서 실행 순서를 제어한 재현이며 여러 API 프로세스 사이의 경합은 아직 검증하지 않았다.
 
 | 조건                                                                     | 관찰한 결과                                                                |
 | ------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
 | 비밀번호 검증 후 토큰 발급을 멈추고, 비밀번호 변경을 완료한 뒤 발급 재개 | 이전 비밀번호로 검증한 요청이 새 세션을 발급하고 refresh HTTP 200          |
-| 같은 순서에서 계정 삭제를 완료한 뒤 발급 재개                            | 삭제된 사용자의 새 세션으로 refresh HTTP 200                               |
+| 같은 순서에서 계정 삭제를 완료한 뒤 발급 재개                            | 삭제된 계정의 새 세션으로 refresh HTTP 200                                 |
 | 비밀번호 DB 변경 후 `revokeAllSessions`가 한 번 실패하도록 주입          | 변경 요청은 실패하지만 새 비밀번호가 저장되고 이전 세션은 refresh HTTP 200 |
 | 계정 DB 삭제 후 같은 실패 주입                                           | 삭제 요청은 실패하지만 계정은 삭제되고 이전 세션은 refresh HTTP 200        |
 
@@ -29,14 +29,14 @@
 
 근거: [사용자 BFF](../apps/user-app/src/app/api/[...path]/route.ts)와 [관리자 BFF](../apps/console/src/app/api/[...path]/route.ts)는 경로를 대소문자로 구분하지만 API 라우터는 구분하지 않는다. `isLogin`·`isLogout`은 HTTP 메서드를 검사하지 않는다.
 
-실제 API·사용자 BFF의 production 빌드에서 다음을 재현했다. 관리자 BFF도 역할 이름을 제외하면 같은 구현이지만 같은 변형 요청을 별도로 실행하지 않았다.
+실제 API와 두 BFF의 production 빌드에서 다음을 각각 재현했다. [사용자 브라우저 테스트](../tests/web/e2e/user-auth-flow.spec.ts)와 [관리자 브라우저 테스트](../tests/web/e2e/console-auth-flow.spec.ts)에 추가한 10개 테스트가 정상 동작을 기대한 단언에서 실패한다. 다른 역할의 계정도 API 로그인에 성공하는 것을 먼저 확인해, 잘못된 자격 증명 때문에 요청이 거절되는 경우와 구분한다.
 
-| 요청                                                 | 관찰한 결과                                                    |
-| ---------------------------------------------------- | -------------------------------------------------------------- |
-| 유효한 사용자 자격 증명으로 `POST /api/Users/Login`  | 쿠키 설정과 HTTP 204 대신 HTTP 200과 토큰 JSON 반환            |
-| 유효한 관리자 자격 증명으로 `POST /api/ADMINS/LOGIN` | 다른 역할의 인증 경로 차단을 우회하고 토큰 JSON 반환           |
-| 유효한 refresh 토큰으로 `POST /api/Users/Refresh`    | 외부 refresh 경로 차단을 우회하고 토큰 JSON 반환               |
-| 로그인한 브라우저에서 `GET /api/users/logout`        | HTTP 502를 반환하면서 쿠키 삭제; API 세션 폐기는 실행하지 않음 |
+| 요청                                                                            | 관찰한 결과                                                                |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| 해당 역할의 자격 증명으로 `POST /api/Users/Login`, `POST /api/Admins/Login`     | 쿠키 설정과 HTTP 204 대신 HTTP 200과 토큰 JSON 반환                        |
+| 다른 역할의 자격 증명으로 `POST /api/ADMINS/LOGIN`, `POST /api/USERS/LOGIN`     | 다른 역할의 인증 경로 차단을 우회하고 토큰 JSON 반환                       |
+| 유효한 토큰으로 `POST /api/Users/Refresh`, `POST /api/Admins/Refresh`           | 외부 refresh 경로 차단을 우회하고 토큰 JSON 반환; 기존 토큰은 교체되어 409 |
+| 로그인한 브라우저에서 `/api/users/logout`, `/api/admins/logout`에 GET·HEAD 요청 | HTTP 502를 반환하면서 두 쿠키 삭제; 서버의 기존 refresh 토큰은 여전히 200  |
 
 영향: 인증에 성공할 자격 증명이나 토큰이 필요하지만, BFF의 토큰 비노출·역할별 인증 경로 계약을 어긴다. GET 요청은 로그아웃에 필요한 세션 폐기 없이 브라우저 로그인 상태를 바꾼다.
 
@@ -48,7 +48,7 @@
 
 - [ ] 브라우저에서 BFF로 로그아웃 요청을 보내지 못했을 때 실패를 표시하고 재시도할 수 있게 한다.
 
-근거: [LogoutButton](../apps/console/src/app/_components/logout-button.tsx)은 모든 오류를 무시하고 로그인 화면으로 이동한다. Playwright에서 `/api/admins/logout` 요청을 중단했을 때 로그인 화면으로 이동했지만 refresh 쿠키가 남고 오류 안내가 없는 것을 재현했다. BFF가 응답하기 전에 실패하면 BFF의 쿠키 삭제는 실행되지 않는다.
+근거: [LogoutButton](../apps/console/src/app/_components/logout-button.tsx)은 모든 오류를 무시하고 로그인 화면으로 이동한다. [관리자 브라우저 테스트](../tests/web/e2e/console-auth-flow.spec.ts)에서 `/api/admins/logout` 요청을 중단했을 때 로그인 화면으로 이동했지만 두 인증 쿠키가 남고 오류 안내가 없는 것을 재현했다. 오류 표시와 현재 화면 유지를 기대한 테스트 1개가 실패한다. BFF가 응답하기 전에 실패하면 BFF의 쿠키 삭제는 실행되지 않는다.
 
 최소 범위: 통신 실패를 성공한 로그아웃처럼 표시하지 않는다. BFF에 도달한 뒤 API 호출이 실패하면 쿠키를 지우는 기존 동작과 구분하고, 실제 로그아웃 완료 여부를 사용자에게 알린다. 임의 재시도로 실패를 숨기지 않는다.
 
@@ -97,3 +97,5 @@
 검증: 정상 변경·복구, 틀린 현재 비밀번호, 만료·재사용·동시 사용된 복구 토큰, 발송 실패, 복구 후 이전 비밀번호와 세션의 동작을 확인한다.
 
 검증 위치: [JWT 세션 테스트](../libs/common/src/auth/__tests__/jwt-auth.service.spec.ts), [user-auth.spec.ts](../apps/api/src/__tests__/core/user-auth.spec.ts), [admin-auth.spec.ts](../apps/api/src/__tests__/core/admin-auth.spec.ts), [관리자 브라우저 흐름](../tests/web/e2e/console-auth-flow.spec.ts), [사용자 브라우저 흐름](../tests/web/e2e/user-auth-flow.spec.ts).
+
+재현 실행: `pnpm run test`로 A2를, Argon2id 관리자 계정이 준비된 환경에서 `pnpm run e2e`로 A6·A7을 실행한다. 재현 테스트는 정상 동작을 기대하며, 위 문제가 수정될 때까지 해당 명령은 실패한다.
