@@ -49,6 +49,7 @@ export class AdminsService {
         if (!admin) return null
 
         const tokens = await this.authenticationService.generateAuthTokens({
+            authVersion: admin.authVersion,
             email: admin.email,
             sub: admin.id
         })

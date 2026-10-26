@@ -1,5 +1,5 @@
-import { InjectJwtAuth, JwtAuthService, PasswordHasher } from '@mannercode/common'
-import { Injectable } from '@nestjs/common'
+import { InjectJwtAuth, JwtAuthErrors, JwtAuthService, PasswordHasher } from '@mannercode/common'
+import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { AdminsRepository } from '../admins.repository.js'
 import type { AdminAuthPayload, AdminCredentialsDto } from '../dtos/index.js'
 
@@ -22,7 +22,7 @@ export class AdminAuthenticationService {
         return admin && isValid ? admin : null
     }
 
-    async generateAuthTokens(payload: AdminAuthPayload) {
+    async generateAuthTokens(payload: AdminAuthPayload & { authVersion: number }) {
         return this.jwtAuthService.generateAuthTokens(payload)
     }
 
@@ -31,7 +31,19 @@ export class AdminAuthenticationService {
     }
 
     async refreshAuthTokens(refreshToken: string) {
-        return this.jwtAuthService.refreshAuthTokens(refreshToken)
+        return this.jwtAuthService.refreshAuthTokens(
+            refreshToken,
+            async (adminId, { authVersion }) => {
+                const admin = await this.repository.find({ id: adminId })
+                if (
+                    typeof authVersion !== 'number' ||
+                    !admin ||
+                    admin.authVersion !== authVersion
+                ) {
+                    throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
+                }
+            }
+        )
     }
 
     async revokeAllForAdmin(adminId: string): Promise<void> {

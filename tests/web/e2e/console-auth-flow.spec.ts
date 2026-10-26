@@ -284,9 +284,10 @@ test.describe('관리자로 로그인했으면', () => {
             expect(refreshCookieBefore).toBeDefined()
             await page.route('**/api/admins/logout', (route) => route.abort('failed'))
         })
-        test('로그아웃하면 실패를 표시하고 쿠키와 현재 화면을 유지한다', async ({
+        test('로그아웃 실패 시 쿠키와 화면을 유지하고 재시도하면 로그아웃을 완료한다', async ({
             context,
-            page
+            page,
+            request: api
         }) => {
             const currentUrl = page.url()
             const failed = page.waitForEvent(
@@ -305,6 +306,40 @@ test.describe('관리자로 로그인했으면', () => {
                     refreshCookieBefore?.value
             ).toBe(true)
             await expect(page).toHaveURL(currentUrl)
+
+            await page.unroute('**/api/admins/logout')
+            await page.getByRole('button', { name: '로그아웃', exact: true }).click()
+            await expect(page).toHaveURL(/\/login$/)
+            expect(await getSessionCookie(context, ACCESS_COOKIE)).toBeUndefined()
+            expect(await getSessionCookie(context, REFRESH_COOKIE)).toBeUndefined()
+            const refresh = await api.post(`${API_BASE_URL}/admins/refresh`, {
+                data: { refreshToken: refreshCookieBefore!.value }
+            })
+            expect(refresh.status()).toBe(401)
+        })
+    })
+    test.describe('리프레시 쿠키가 잘못되어 API가 로그아웃을 거절하면', () => {
+        test.beforeEach(async ({ context }) => {
+            expect(refreshCookieBefore).toBeDefined()
+            await context.addCookies([{ ...refreshCookieBefore!, value: 'invalid-refresh-token' }])
+        })
+        test('BFF는 쿠키를 지우고 화면은 실패를 표시하며 다시 로그아웃할 수 있다', async ({
+            context,
+            page
+        }) => {
+            const currentUrl = page.url()
+            const response = page.waitForResponse(
+                (response) => new URL(response.url()).pathname === '/api/admins/logout'
+            )
+            await page.getByRole('button', { name: '로그아웃', exact: true }).click()
+            expect((await response).status()).toBe(401)
+            await expect(page.locator('main [role="alert"]')).toBeVisible()
+            await expect(page).toHaveURL(currentUrl)
+            expect(await getSessionCookie(context, ACCESS_COOKIE)).toBeUndefined()
+            expect(await getSessionCookie(context, REFRESH_COOKIE)).toBeUndefined()
+
+            await page.getByRole('button', { name: '로그아웃', exact: true }).click()
+            await expect(page).toHaveURL(/\/login$/)
         })
     })
     test('로그아웃하면 브라우저 쿠키와 서버의 리프레시 토큰을 폐기한다', async ({

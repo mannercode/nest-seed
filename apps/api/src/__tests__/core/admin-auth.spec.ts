@@ -2,7 +2,7 @@ import { HttpStatus, type INestApplication } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { ensure, JwtAuthService, TimeUtil } from '@mannercode/common'
 import { AppConfigService } from '#config'
-import { type AdminDto, AdminsService } from '#core'
+import { type AdminDto, AdminsService, AdminsRepository } from '#core'
 import {
     createAdmin,
     Errors,
@@ -194,6 +194,57 @@ describe('AdminAuthentication', () => {
     })
 
     describe('POST /admins/refresh', () => {
+        describe('로그인 후 이름만 변경했으면', () => {
+            let session: Awaited<ReturnType<typeof loginAdmin>>
+            beforeEach(async () => {
+                session = await loginAdmin(fix, credentials)
+                await fix.module.get(AdminsService).update(session.admin.id, { name: 'Updated' })
+            })
+            it('기존 세션으로 토큰을 갱신할 수 있다', async () => {
+                await fix.httpClient
+                    .post('/admins/refresh')
+                    .body({ refreshToken: session.refreshToken })
+                    .ok()
+            })
+        })
+
+        describe('인증 버전 없이 발급한 리프레시 토큰이면', () => {
+            let refreshToken: string
+            beforeEach(async () => {
+                const { admin } = await loginAdmin(fix, credentials)
+                const jwt = fix.module.get<JwtAuthService>(JwtAuthService.getName('admins'))
+                ;({ refreshToken } = await jwt.generateAuthTokens({
+                    sub: admin.id,
+                    email: admin.email
+                }))
+            })
+            it('토큰 갱신을 요청하면 401을 반환한다', async () => {
+                await fix.httpClient
+                    .post('/admins/refresh')
+                    .body({ refreshToken })
+                    .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+            })
+        })
+
+        describe('현재 계정 조회가 한 번 실패하면', () => {
+            let session: Awaited<ReturnType<typeof loginAdmin>>
+            let failure: Error
+            beforeEach(async () => {
+                session = await loginAdmin(fix, credentials)
+                failure = new Error('Account database unavailable')
+                vi.spyOn(fix.module.get(AdminsRepository), 'find').mockRejectedValueOnce(failure)
+            })
+            it('갱신은 실패하고 저장소가 복구되면 같은 토큰으로 다시 갱신할 수 있다', async () => {
+                await expect(
+                    fix.module.get(AdminsService).refreshAuthTokens(session.refreshToken)
+                ).rejects.toBe(failure)
+                await fix.httpClient
+                    .post('/admins/refresh')
+                    .body({ refreshToken: session.refreshToken })
+                    .ok()
+            })
+        })
+
         describe('유효한 리프레시 토큰을 가지고 있을 때', () => {
             let tokens: Awaited<ReturnType<typeof loginAdmin>>
 
@@ -264,6 +315,12 @@ describe('AdminAuthentication', () => {
                 .post('/admins/refresh')
                 .body({ refreshToken: login.tokens.refreshToken })
                 .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+
+            const current = await loginAdmin(fix, { ...credentials, password: 'newPassword' })
+            await fix.httpClient
+                .post('/admins/refresh')
+                .body({ refreshToken: current.refreshToken })
+                .ok()
         })
 
         it('계정을 삭제하면 삭제 전에 인증된 로그인 세션으로 갱신할 수 없다', async () => {
@@ -301,7 +358,7 @@ describe('AdminAuthentication', () => {
         it('비밀번호 변경이 실패해도 DB에 반영된 새 비밀번호로 로그인할 수 있고 이전 세션은 갱신할 수 없다', async () => {
             const password = 'newPassword'
             await expect(adminsService.update(session.admin.id, { password })).rejects.toBe(failure)
-            await fix.httpClient
+            const { body: current } = await fix.httpClient
                 .post('/admins/login')
                 .body({ ...credentials, password })
                 .ok()
@@ -310,6 +367,11 @@ describe('AdminAuthentication', () => {
                 .post('/admins/refresh')
                 .body({ refreshToken: session.refreshToken })
                 .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+
+            await fix.httpClient
+                .post('/admins/refresh')
+                .body({ refreshToken: current.refreshToken })
+                .ok()
         })
 
         it('계정 삭제가 실패해도 DB에서 삭제된 계정으로 로그인하거나 이전 세션을 갱신할 수 없다', async () => {

@@ -41,6 +41,7 @@ export class UsersRepository extends CrudRepository<User> {
     async create(createDto: CreateUserDto): Promise<User> {
         UserWriteSchema.parse(createDto)
         const user = this.newDocument()
+        user.authVersion = 0
         user.name = createDto.name
         user.email = createDto.email
         user.birthDate = createDto.birthDate
@@ -85,11 +86,13 @@ export class UsersRepository extends CrudRepository<User> {
         assignIfDefined(patch, updateDto, 'email')
         assignIfDefined(patch, updateDto, 'birthDate')
         assignIfDefined(patch, updateDto, 'password')
+        const update = this.timestamped({ $set: patch })
+        if (patch.password !== undefined) update.$inc.authVersion = 1
 
         try {
             const user = await this.findAndUpdateDocument(
                 this.activeFilter(this.idFilter(userId)),
-                this.timestamped({ $set: patch }),
+                update,
                 { projection: this.projection, returnDocument: 'after' }
             )
 

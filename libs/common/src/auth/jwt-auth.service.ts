@@ -70,9 +70,17 @@ export class JwtAuthService {
         return tokens
     }
 
-    async refreshAuthTokens(refreshToken: string): Promise<JwtAuthTokens> {
+    /** 추가 세션 검증은 서명 확인 후, 토큰 생성·Redis 교체 전에 실행하며 실패를 그대로 전달한다. */
+    async refreshAuthTokens(
+        refreshToken: string,
+        validateSession?: (
+            subjectId: string,
+            payload: Readonly<Record<string, unknown>>
+        ) => Promise<void>
+    ): Promise<JwtAuthTokens> {
         const payload = await this.getAuthTokenPayload(refreshToken)
         const { userId, sessionId } = this.getSession(payload)
+        await validateSession?.(userId, payload)
         const tokens = await this.createTokens(omit(payload, ['sessionId']), sessionId)
 
         // 새 토큰을 준비한 뒤 현재 해시와 원자 교체한다. 로그아웃이 먼저 세션을 지웠으면

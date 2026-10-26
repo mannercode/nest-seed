@@ -9,6 +9,9 @@ import {
 } from './jwt-auth.service.fixture.js'
 
 const decode = (token: string) => new JwtService().decode<Record<string, any>>(token)
+type SessionValidator = NonNullable<
+    Parameters<JwtAuthServiceFixture['jwtService']['refreshAuthTokens']>[1]
+>
 const sessionKey = (fix: JwtAuthServiceFixture, token: string) => {
     const { sub, sessionId } = decode(token)
     return `${fix.jwtService.prefix}:{${sub}}:session:${sessionId}`
@@ -154,6 +157,57 @@ describe('JwtAuthService', () => {
                 sessionId: decode(original.refreshToken).sessionId
             })
             expect(decode(rotated.refreshToken).jti).not.toBe(decode(original.refreshToken).jti)
+        })
+
+        describe('추가 세션 검증이 성공하면', () => {
+            let validateSession: ReturnType<typeof vi.fn<SessionValidator>>
+            beforeEach(() => {
+                validateSession = vi.fn<SessionValidator>().mockResolvedValue(undefined)
+            })
+            it('서명을 확인한 주체와 클레임을 검증 함수에 전달한 뒤 토큰을 교체한다', async () => {
+                const rotated = await fix.jwtService.refreshAuthTokens(
+                    original.refreshToken,
+                    validateSession
+                )
+                expect(validateSession).toHaveBeenCalledExactlyOnceWith('u1', {
+                    sub: 'u1',
+                    email: 'email',
+                    sessionId: decode(original.refreshToken).sessionId
+                })
+                expect(rotated.refreshToken).not.toBe(original.refreshToken)
+            })
+        })
+
+        describe('추가 세션 검증이 실패하면', () => {
+            let failure: Error
+            let validateSession: ReturnType<typeof vi.fn<SessionValidator>>
+            beforeEach(() => {
+                failure = new Error('Account lookup failed')
+                validateSession = vi.fn<SessionValidator>().mockRejectedValue(failure)
+            })
+            it('검증 오류를 그대로 던지고 기존 토큰을 교체하지 않는다', async () => {
+                await expect(
+                    fix.jwtService.refreshAuthTokens(original.refreshToken, validateSession)
+                ).rejects.toBe(failure)
+                await expect(
+                    fix.jwtService.refreshAuthTokens(original.refreshToken)
+                ).resolves.toMatchObject({ refreshToken: expect.any(String) })
+            })
+        })
+
+        describe('서명이 유효하지 않은 리프레시 토큰이면', () => {
+            let validateSession: ReturnType<typeof vi.fn<SessionValidator>>
+            let invalidToken: string
+            beforeEach(() => {
+                validateSession = vi.fn<SessionValidator>().mockResolvedValue(undefined)
+                invalidToken = original.accessToken
+            })
+            it('401 예외를 던지고 추가 세션 검증을 실행하지 않는다', async () => {
+                await expect(
+                    fix.jwtService.refreshAuthTokens(invalidToken, validateSession)
+                ).rejects.toMatchObject({ status: 401 })
+                expect(validateSession).not.toHaveBeenCalled()
+            })
         })
 
         describe('같은 세션의 토큰을 두 번 교체했으면', () => {

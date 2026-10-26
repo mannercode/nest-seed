@@ -6,6 +6,7 @@ import {
     type UserDto,
     type PurchaseRecordDto,
     UsersService,
+    UsersRepository,
     UserSchema,
     PurchaseRecordSchema
 } from '#core'
@@ -445,6 +446,57 @@ describe('UserAuthentication', () => {
             })
         })
 
+        describe('로그인 후 이름만 변경했으면', () => {
+            let session: Awaited<ReturnType<typeof loginUser>>
+            beforeEach(async () => {
+                session = await loginUser(fix, credentials)
+                await fix.module.get(UsersService).update(session.user.id, { name: 'Updated' })
+            })
+            it('기존 세션으로 토큰을 갱신할 수 있다', async () => {
+                await fix.httpClient
+                    .post('/users/refresh')
+                    .body({ refreshToken: session.refreshToken })
+                    .ok()
+            })
+        })
+
+        describe('인증 버전 없이 발급한 리프레시 토큰이면', () => {
+            let refreshToken: string
+            beforeEach(async () => {
+                const { user } = await loginUser(fix, credentials)
+                const jwt = fix.module.get<JwtAuthService>(JwtAuthService.getName())
+                ;({ refreshToken } = await jwt.generateAuthTokens({
+                    sub: user.id,
+                    email: user.email
+                }))
+            })
+            it('토큰 갱신을 요청하면 401을 반환한다', async () => {
+                await fix.httpClient
+                    .post('/users/refresh')
+                    .body({ refreshToken })
+                    .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+            })
+        })
+
+        describe('현재 계정 조회가 한 번 실패하면', () => {
+            let session: Awaited<ReturnType<typeof loginUser>>
+            let failure: Error
+            beforeEach(async () => {
+                session = await loginUser(fix, credentials)
+                failure = new Error('Account database unavailable')
+                vi.spyOn(fix.module.get(UsersRepository), 'find').mockRejectedValueOnce(failure)
+            })
+            it('갱신은 실패하고 저장소가 복구되면 같은 토큰으로 다시 갱신할 수 있다', async () => {
+                await expect(
+                    fix.module.get(UsersService).refreshAuthTokens(session.refreshToken)
+                ).rejects.toBe(failure)
+                await fix.httpClient
+                    .post('/users/refresh')
+                    .body({ refreshToken: session.refreshToken })
+                    .ok()
+            })
+        })
+
         describe('리프레시 토큰이 유효하지 않으면', () => {
             let request: typeof fix.httpClient
             beforeEach(() => {
@@ -621,6 +673,12 @@ describe('UserAuthentication', () => {
                 .post('/users/refresh')
                 .body({ refreshToken: login.tokens.refreshToken })
                 .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+
+            const current = await loginUser(fix, { ...credentials, password: 'newPassword' })
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: current.refreshToken })
+                .ok()
         })
 
         it('계정을 삭제하면 삭제 전에 인증된 로그인 세션으로 갱신할 수 없다', async () => {
@@ -658,7 +716,7 @@ describe('UserAuthentication', () => {
         it('비밀번호 변경이 실패해도 DB에 반영된 새 비밀번호로 로그인할 수 있고 이전 세션은 갱신할 수 없다', async () => {
             const password = 'newPassword'
             await expect(usersService.update(session.user.id, { password })).rejects.toBe(failure)
-            await fix.httpClient
+            const { body: current } = await fix.httpClient
                 .post('/users/login')
                 .body({ ...credentials, password })
                 .ok()
@@ -667,6 +725,11 @@ describe('UserAuthentication', () => {
                 .post('/users/refresh')
                 .body({ refreshToken: session.refreshToken })
                 .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: current.refreshToken })
+                .ok()
         })
 
         it('계정 삭제가 실패해도 DB에서 삭제된 계정으로 로그인하거나 이전 세션을 갱신할 수 없다', async () => {

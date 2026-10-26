@@ -35,6 +35,7 @@ export class UsersService {
         if (!user) return null
 
         const tokens = await this.authenticationService.generateAuthTokens({
+            authVersion: user.authVersion,
             email: user.email,
             sub: user.id
         })
