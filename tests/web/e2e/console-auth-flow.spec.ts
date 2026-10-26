@@ -32,6 +32,30 @@ async function getSessionCookie(context: BrowserContext, name: string) {
     return cookies.find((cookie) => cookie.name === name)
 }
 
+for (const { condition, password } of [
+    { condition: '이모지 14자', password: '🌱'.repeat(14) },
+    { condition: '이모지 129자', password: '🌱'.repeat(129) }
+]) {
+    test.describe(`관리자 로그인 화면의 비밀번호가 ${condition}이면`, () => {
+        test.beforeEach(async ({ page }) => {
+            await page.goto('/login')
+            await page.getByLabel('비밀번호').fill(password)
+        })
+        test('입력 원문을 유지하면서 길이 오류를 표시한다', async ({ page }) => {
+            const input = page.getByLabel('비밀번호')
+            await expect(input).toHaveValue(password)
+            expect(
+                await input.evaluate((element) => (element as HTMLInputElement).checkValidity())
+            ).toBe(false)
+            expect(
+                await input.evaluate(
+                    (element) => (element as HTMLInputElement).validity.patternMismatch
+                )
+            ).toBe(true)
+        })
+    })
+}
+
 test.describe('로그인하지 않았으면', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/login')

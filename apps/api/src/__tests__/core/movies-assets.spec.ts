@@ -1,4 +1,5 @@
-import { ensure, Require } from '@mannercode/common'
+import { Checksum, ensure, Require } from '@mannercode/common'
+import { readFile } from 'node:fs/promises'
 import { nullObjectId } from '@mannercode/testing'
 import { type MovieDto, MoviesService } from '#core'
 import {
@@ -41,6 +42,170 @@ describe('MoviesAssets', () => {
 
         beforeEach(async () => {
             movie = await createUnpublishedMovie(fix)
+        })
+
+        describe.each(['image/jpeg', 'image/png', 'image/webp'])(
+            '신고한 형식이 %s이면',
+            (mimeType) => {
+                let createDto: ReturnType<typeof buildCreateAssetDto>
+                beforeEach(() => {
+                    createDto = { ...buildCreateAssetDto(), mimeType }
+                })
+                it('업로드 URL을 요청하면 같은 형식·크기·체크섬을 요구하는 정책을 반환한다', async () => {
+                    const { body } = await fix.httpClient
+                        .post(`/movies/${movie.id}/assets`)
+                        .body(createDto)
+                        .created({ schema: AssetPresignedUploadSchema })
+                    const policy = JSON.parse(
+                        Buffer.from(ensure(body.fields.Policy), 'base64').toString('utf8')
+                    )
+                    expect(policy.conditions).toEqual(
+                        expect.arrayContaining([
+                            ['eq', '$Content-Type', mimeType],
+                            ['content-length-range', createDto.size, createDto.size],
+                            ['eq', '$x-amz-checksum-sha256', createDto.checksum.base64]
+                        ])
+                    )
+                })
+            }
+        )
+
+        describe.each(['image/svg+xml', 'image/gif'])('신고한 형식이 %s이면', (mimeType) => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post(`/movies/${movie.id}/assets`)
+                    .body({ ...buildCreateAssetDto(), mimeType })
+                vi.spyOn(assetsService, 'create')
+            })
+            it('업로드 URL을 요청하면 400을 반환하고 자산을 생성하지 않는다', async () => {
+                await request.badRequest({ expected: Errors.Movies.UnsupportedAssetType(mimeType) })
+                expect(assetsService.create).not.toHaveBeenCalled()
+            })
+        })
+
+        describe('신고한 크기가 5 MiB를 1바이트 초과하면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post(`/movies/${movie.id}/assets`)
+                    .body({ ...buildCreateAssetDto(), size: 5 * 1024 * 1024 + 1 })
+                vi.spyOn(assetsService, 'create')
+            })
+            it('업로드 URL을 요청하면 400을 반환하고 자산을 생성하지 않는다', async () => {
+                await request.badRequest({
+                    expected: Errors.Movies.AssetTooLarge(5 * 1024 * 1024 + 1, 5 * 1024 * 1024)
+                })
+                expect(assetsService.create).not.toHaveBeenCalled()
+            })
+        })
+
+        describe.each([0, -1, 1.5])('신고한 크기가 %s바이트이면', (size) => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post(`/movies/${movie.id}/assets`)
+                    .body({ ...buildCreateAssetDto(), size })
+            })
+            it('업로드 URL을 요청하면 입력 오류로 400을 반환한다', async () => {
+                await request.badRequest({
+                    expected: Errors.RequestValidation.Failed(expect.any(Array))
+                })
+            })
+        })
+
+        describe('신고한 크기가 1바이트이면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post(`/movies/${movie.id}/assets`)
+                    .body({ ...buildCreateAssetDto(), size: 1 })
+            })
+            it('업로드 URL을 요청하면 1바이트만 허용하는 정책을 반환한다', async () => {
+                const { body } = await request.created({ schema: AssetPresignedUploadSchema })
+                const policy = JSON.parse(
+                    Buffer.from(ensure(body.fields.Policy), 'base64').toString('utf8')
+                )
+                expect(policy.conditions).toContainEqual(['content-length-range', 1, 1])
+            })
+        })
+
+        describe('업로드할 이미지의 크기가 정확히 5 MiB이면', () => {
+            let upload: AssetPresignedUploadDto
+            let form: FormData
+            beforeEach(async () => {
+                const image = await readFile(testAssets.image.path)
+                const content = Buffer.concat([image, Buffer.alloc(5 * 1024 * 1024 - image.length)])
+                const createDto = {
+                    ...buildCreateAssetDto(),
+                    size: content.length,
+                    checksum: Checksum.fromBuffer(content)
+                }
+                ;({ body: upload } = await fix.httpClient
+                    .post(`/movies/${movie.id}/assets`)
+                    .body(createDto)
+                    .created({ schema: AssetPresignedUploadSchema }))
+                form = new FormData()
+                for (const [name, value] of Object.entries(upload.fields)) form.append(name, value)
+                form.append(
+                    'file',
+                    new Blob([content], { type: createDto.mimeType }),
+                    createDto.originalName
+                )
+            })
+            it('업로드하면 스토리지에 저장하고 영화에 연결할 수 있다', async () => {
+                const response = await fetch(upload.url, { method: 'POST', body: form })
+                expect(response.status).toBe(204)
+                await fix.httpClient
+                    .post(`/movies/${movie.id}/assets/${upload.assetId}/finalize`)
+                    .noContent()
+                expect(ensure((await assetsService.getMany([upload.assetId]))[0])).toMatchObject({
+                    size: 5 * 1024 * 1024,
+                    owner: { service: 'movies', entityId: movie.id }
+                })
+            })
+        })
+
+        describe('발급한 업로드 요청의 체크섬 필드를 제거했으면', () => {
+            let upload: AssetPresignedUploadDto
+            let form: FormData
+            beforeEach(async () => {
+                upload = await createMovieAsset(fix, movie.id, testAssets.image)
+                form = new FormData()
+                for (const [name, value] of Object.entries(upload.fields)) form.append(name, value)
+                form.delete('x-amz-checksum-sha256')
+                form.append(
+                    'file',
+                    new Blob([await readFile(testAssets.image.path)], { type: 'image/png' }),
+                    'image.png'
+                )
+            })
+            it('업로드하면 스토리지가 거절하고 파일은 미완료 상태로 남는다', async () => {
+                const response = await fetch(upload.url, { method: 'POST', body: form })
+                expect(response.status).toBe(403)
+                expect(await assetsService.isUploadComplete(upload.assetId)).toBe(false)
+            })
+        })
+
+        describe('발급한 업로드 요청의 형식 필드를 다른 허용 형식으로 바꿨으면', () => {
+            let upload: AssetPresignedUploadDto
+            let form: FormData
+            beforeEach(async () => {
+                upload = await createMovieAsset(fix, movie.id, testAssets.image)
+                form = new FormData()
+                for (const [name, value] of Object.entries(upload.fields)) form.append(name, value)
+                form.set('Content-Type', 'image/jpeg')
+                form.append(
+                    'file',
+                    new Blob([await readFile(testAssets.image.path)], { type: 'image/jpeg' }),
+                    'image.jpg'
+                )
+            })
+            it('업로드하면 스토리지가 거절하고 파일은 미완료 상태로 남는다', async () => {
+                const response = await fetch(upload.url, { method: 'POST', body: form })
+                expect(response.status).toBe(403)
+                expect(await assetsService.isUploadComplete(upload.assetId)).toBe(false)
+            })
         })
 
         it('에셋 생성을 요청하면 업로드 URL이 포함된 정보를 반환한다', async () => {

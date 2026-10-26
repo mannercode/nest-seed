@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto'
 
 import { API_BASE_URL, USER_APP_BASE_URL } from '../playwright.config'
 
-const PASSWORD = 'DevPass1!'
+const PASSWORD = 'DevPassword1234!'
 const ADMIN_EMAIL = requiredEnvironment('ADMIN_EMAIL')
 const ADMIN_PASSWORD = requiredEnvironment('ADMIN_PASSWORD')
 const ACCESS_COOKIE = 'nest-seed-user-access'
@@ -15,18 +15,18 @@ function requiredEnvironment(name: string): string {
     return value
 }
 
-async function signupAndLogin(page: Page): Promise<string> {
+async function signupAndLogin(page: Page, password = PASSWORD): Promise<string> {
     const email = `e2e-user-${randomUUID()}@example.com`
 
     await page.goto(`${USER_APP_BASE_URL}/signup`)
     await page.getByRole('textbox', { name: '이름' }).fill('E2E User')
     await page.getByRole('textbox', { name: '이메일' }).fill(email)
-    await page.getByLabel('비밀번호').fill(PASSWORD)
+    await page.getByLabel('비밀번호').fill(password)
     await page.getByRole('button', { name: '회원가입' }).click()
     await expect(page).toHaveURL(`${USER_APP_BASE_URL}/login`)
 
     await page.getByRole('textbox', { name: '이메일' }).fill(email)
-    await page.getByLabel('비밀번호').fill(PASSWORD)
+    await page.getByLabel('비밀번호').fill(password)
     await page.getByRole('button', { name: '로그인' }).click()
     await expect(page).toHaveURL(`${USER_APP_BASE_URL}/`)
 
@@ -36,6 +36,53 @@ async function signupAndLogin(page: Page): Promise<string> {
 async function getSessionCookie(context: BrowserContext, name: string) {
     const cookies = await context.cookies(USER_APP_BASE_URL)
     return cookies.find((cookie) => cookie.name === name)
+}
+
+for (const { condition, password } of [
+    { condition: '이모지 15자', password: '🌱'.repeat(15) },
+    { condition: '이모지 128자', password: '🌱'.repeat(128) },
+    { condition: '앞뒤 공백을 포함한 20자', password: '  browser password  ' }
+]) {
+    test.describe(`가입할 비밀번호가 ${condition}이면`, () => {
+        test('가입과 로그인 화면에서 원문을 그대로 사용할 수 있다', async ({ page }) => {
+            const email = await signupAndLogin(page, password)
+            const result = await page.evaluate(async () => {
+                const response = await fetch('/api/users/me')
+                return { status: response.status, body: await response.json() }
+            })
+            expect(result.status).toBe(200)
+            expect(result.body.email).toBe(email)
+        })
+    })
+}
+
+for (const { name, pathname } of [
+    { name: '가입', pathname: '/signup' },
+    { name: '로그인', pathname: '/login' }
+]) {
+    for (const { condition, password } of [
+        { condition: '이모지 14자', password: '🌱'.repeat(14) },
+        { condition: '이모지 129자', password: '🌱'.repeat(129) }
+    ]) {
+        test.describe(`${name} 화면의 비밀번호가 ${condition}이면`, () => {
+            test.beforeEach(async ({ page }) => {
+                await page.goto(`${USER_APP_BASE_URL}${pathname}`)
+                await page.getByLabel('비밀번호').fill(password)
+            })
+            test('입력 원문을 유지하면서 길이 오류를 표시한다', async ({ page }) => {
+                const input = page.getByLabel('비밀번호')
+                await expect(input).toHaveValue(password)
+                expect(
+                    await input.evaluate((element) => (element as HTMLInputElement).checkValidity())
+                ).toBe(false)
+                expect(
+                    await input.evaluate(
+                        (element) => (element as HTMLInputElement).validity.patternMismatch
+                    )
+                ).toBe(true)
+            })
+        })
+    }
 }
 
 test.describe('로그인하지 않았으면', () => {

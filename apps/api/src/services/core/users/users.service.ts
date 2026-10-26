@@ -2,9 +2,12 @@ import { mapDocToDto } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import {
     CreateUserDto,
+    CreateUserSchema,
     UserCredentialsDto,
     SearchUsersPageDto,
     UpdateUserDto,
+    UpdateUserSchema,
+    UserCredentialsSchema,
     UserSchema
 } from './dtos/index.js'
 import { UserAuthenticationService } from './internal/index.js'
@@ -19,6 +22,7 @@ export class UsersService {
     ) {}
 
     async create(createDto: CreateUserDto) {
+        createDto = CreateUserSchema.parse(createDto)
         const password = await this.authenticationService.hash(createDto.password)
 
         const user = await this.repository.create({ ...createDto, password })
@@ -31,6 +35,7 @@ export class UsersService {
     }
 
     async login(credentials: UserCredentialsDto) {
+        credentials = UserCredentialsSchema.parse(credentials)
         const user = await this.authenticationService.authenticate(credentials)
         if (!user) return null
 
@@ -67,7 +72,7 @@ export class UsersService {
     }
 
     async update(userId: string, updateDto: UpdateUserDto) {
-        const patch = { ...updateDto }
+        const patch = UpdateUserSchema.parse(updateDto)
         if (typeof patch.password === 'string') {
             patch.password = await this.authenticationService.hash(patch.password)
         }

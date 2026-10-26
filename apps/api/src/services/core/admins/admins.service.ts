@@ -3,9 +3,12 @@ import { Injectable } from '@nestjs/common'
 import { AdminsRepository } from './admins.repository.js'
 import {
     AdminCredentialsDto,
+    AdminCredentialsSchema,
     AdminDto,
     CreateAdminDto,
+    CreateAdminSchema,
     UpdateAdminDto,
+    UpdateAdminSchema,
     AdminSchema
 } from './dtos/index.js'
 import { AdminAuthenticationService } from './internal/index.js'
@@ -19,6 +22,7 @@ export class AdminsService {
     ) {}
 
     async create(createDto: CreateAdminDto) {
+        createDto = CreateAdminSchema.parse(createDto)
         const password = await this.authenticationService.hash(createDto.password)
 
         const created = await this.repository.create({ ...createDto, password })
@@ -26,7 +30,7 @@ export class AdminsService {
     }
 
     async update(id: string, updateDto: UpdateAdminDto) {
-        const patch = { ...updateDto }
+        const patch = UpdateAdminSchema.parse(updateDto)
         if (typeof patch.password === 'string') {
             patch.password = await this.authenticationService.hash(patch.password)
         }
@@ -45,6 +49,7 @@ export class AdminsService {
     }
 
     async login(credentials: AdminCredentialsDto) {
+        credentials = AdminCredentialsSchema.parse(credentials)
         const admin = await this.authenticationService.authenticate(credentials)
         if (!admin) return null
 

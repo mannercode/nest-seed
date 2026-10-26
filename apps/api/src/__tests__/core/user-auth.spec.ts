@@ -57,7 +57,7 @@ function pauseNextTokenIssue(jwtAuthService: object) {
 describe('UserAuthentication', () => {
     let fix: AppTestContext
     let teardown: AppTestContext['teardown'] | undefined
-    const credentials = { email: 'user@mail.com', password: 'password' }
+    const credentials = { email: 'user@mail.com', password: 'Example password 1!' }
 
     beforeEach(async () => {
         teardown = undefined
@@ -70,6 +70,40 @@ describe('UserAuthentication', () => {
     afterEach(() => teardown?.())
 
     describe('POST /users/login', () => {
+        describe.each([
+            { condition: '15자 미만', password: '🌱'.repeat(14) },
+            { condition: '128자 초과', password: 'a'.repeat(129) }
+        ])('비밀번호 길이가 $condition 범위이면', ({ password }) => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.post('/users/login').body({ ...credentials, password })
+            })
+            it('로그인을 요청하면 입력 오류로 400을 반환한다', async () => {
+                await request.badRequest({
+                    expected: Errors.RequestValidation.Failed(expect.any(Array))
+                })
+            })
+        })
+
+        describe('이메일의 대소문자와 앞뒤 공백만 등록 정보와 다르면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post('/users/login')
+                    .body({ ...credentials, email: '  USER@MAIL.COM  ' })
+            })
+            it('로그인하면 같은 사용자의 토큰을 반환한다', async () => {
+                const { body } = await request.ok()
+                await fix.httpClient
+                    .get('/users/me')
+                    .headers({ Authorization: `Bearer ${body.accessToken}` })
+                    .ok({
+                        schema: UserSchema,
+                        expected: expect.objectContaining({ email: credentials.email })
+                    })
+            })
+        })
+
         describe.each([
             { label: 'ASCII', prefix: 'a'.repeat(72) },
             { label: '한글', prefix: '가'.repeat(24) },
@@ -117,7 +151,7 @@ describe('UserAuthentication', () => {
             beforeEach(() => {
                 request = fix.httpClient
                     .post('/users/login')
-                    .body({ ...credentials, password: 'wrong password' })
+                    .body({ ...credentials, password: 'incorrect password' })
             })
             it('로그인을 요청하면 401을 반환한다', async () => {
                 await request.unauthorized({ expected: Errors.Auth.Unauthorized() })
@@ -142,7 +176,7 @@ describe('UserAuthentication', () => {
                     await fix.httpClient
                         .post('/users/login')
                         .headers({ 'X-Forwarded-For': `198.51.100.${index + 1}` })
-                        .body({ ...credentials, password: 'wrong password' })
+                        .body({ ...credentials, password: 'incorrect password' })
                         .unauthorized({ expected: Errors.Auth.Unauthorized() })
                 }
             })
@@ -164,7 +198,10 @@ describe('UserAuthentication', () => {
                     await fix.httpClient
                         .post('/users/login')
                         .headers({ 'X-Forwarded-For': ip })
-                        .body({ email: `unknown-${index}@mail.com`, password: 'wrong password' })
+                        .body({
+                            email: `unknown-${index}@mail.com`,
+                            password: 'incorrect password'
+                        })
                         .unauthorized({ expected: Errors.Auth.Unauthorized() })
                 }
 
@@ -178,13 +215,13 @@ describe('UserAuthentication', () => {
                 await fix.httpClient
                     .post('/users/login')
                     .headers({ 'X-Forwarded-For': ip })
-                    .body({ email: 'unknown-50@mail.com', password: 'wrong password' })
+                    .body({ email: 'unknown-50@mail.com', password: 'incorrect password' })
                     .unauthorized({ expected: Errors.Auth.Unauthorized() })
 
                 await fix.httpClient
                     .post('/users/login')
                     .headers({ 'X-Forwarded-For': ip })
-                    .body({ email: 'unknown-51@mail.com', password: 'wrong password' })
+                    .body({ email: 'unknown-51@mail.com', password: 'incorrect password' })
                     .send(HttpStatus.TOO_MANY_REQUESTS, { expected: LOGIN_RATE_LIMITED_ERROR })
             })
         })
@@ -349,7 +386,7 @@ describe('UserAuthentication', () => {
                 await fix.httpClient
                     .patch('/users/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body({ password: 'newPassword' })
+                    .body({ password: 'updated password' })
                     .ok({ schema: UserSchema })
                 await fix.httpClient
                     .get('/users/me')
@@ -660,7 +697,7 @@ describe('UserAuthentication', () => {
         })
 
         it('비밀번호를 변경하면 변경 전에 인증된 로그인 세션으로 갱신할 수 없다', async () => {
-            await usersService.update(session.user.id, { password: 'newPassword' })
+            await usersService.update(session.user.id, { password: 'updated password' })
             ensure(gate).release()
 
             await fix.httpClient
@@ -674,7 +711,7 @@ describe('UserAuthentication', () => {
                 .body({ refreshToken: login.tokens.refreshToken })
                 .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
 
-            const current = await loginUser(fix, { ...credentials, password: 'newPassword' })
+            const current = await loginUser(fix, { ...credentials, password: 'updated password' })
             await fix.httpClient
                 .post('/users/refresh')
                 .body({ refreshToken: current.refreshToken })
@@ -714,7 +751,7 @@ describe('UserAuthentication', () => {
         })
 
         it('비밀번호 변경이 실패해도 DB에 반영된 새 비밀번호로 로그인할 수 있고 이전 세션은 갱신할 수 없다', async () => {
-            const password = 'newPassword'
+            const password = 'updated password'
             await expect(usersService.update(session.user.id, { password })).rejects.toBe(failure)
             const { body: current } = await fix.httpClient
                 .post('/users/login')
@@ -768,7 +805,7 @@ describe('UserAuthentication', () => {
         })
         it('비밀번호를 변경하면 진행 중인 발급을 401 예외로 거절하고 기존 액세스 토큰은 유지한다', async () => {
             try {
-                await usersService.update(session.user.id, { password: 'newPassword' })
+                await usersService.update(session.user.id, { password: 'updated password' })
             } finally {
                 gate?.release()
             }

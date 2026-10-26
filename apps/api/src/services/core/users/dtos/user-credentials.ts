@@ -1,5 +1,6 @@
-import { z } from 'zod'
+import type { z } from 'zod'
+import { CreateUserSchema } from './create-user.dto.js'
 
-export const UserCredentialsSchema = z.strictObject({ email: z.email(), password: z.string() })
+export const UserCredentialsSchema = CreateUserSchema.pick({ email: true, password: true })
 
 export type UserCredentialsDto = z.infer<typeof UserCredentialsSchema>

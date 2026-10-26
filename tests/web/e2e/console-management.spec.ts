@@ -153,7 +153,7 @@ test.describe('관리자로 로그인했으면', () => {
                     data: {
                         name: 'Delete Me',
                         email,
-                        password: 'DevPass1!',
+                        password: 'DevPassword1234!',
                         birthDate: '2000-01-01'
                     }
                 })

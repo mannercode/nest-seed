@@ -21,6 +21,8 @@ import { MoviePendingAssetsRepository } from './movie-pending-assets.repository.
 import { MoviesRepository } from './movies.repository.js'
 
 const MOVIE_UPDATE_ATTEMPTS = 5
+const MOVIE_IMAGE_MAX_BYTES = 5 * 1024 * 1024
+const MOVIE_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
 @Injectable()
 export class MoviesService {
@@ -41,8 +43,13 @@ export class MoviesService {
             throw new NotFoundException(MovieErrors.NotFound(movieId))
         }
 
-        if (!createDto.mimeType.startsWith('image/')) {
+        if (!MOVIE_IMAGE_MIME_TYPES.includes(createDto.mimeType)) {
             throw new BadRequestException(MovieErrors.UnsupportedAssetType(createDto.mimeType))
+        }
+        if (createDto.size > MOVIE_IMAGE_MAX_BYTES) {
+            throw new BadRequestException(
+                MovieErrors.AssetTooLarge(createDto.size, MOVIE_IMAGE_MAX_BYTES)
+            )
         }
 
         const upload = await this.assetsService.create(createDto)

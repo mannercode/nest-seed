@@ -4,6 +4,7 @@ import {
     createAdmin,
     Errors,
     loginAdmin,
+    runAdminCreateScript,
     type AppTestContext,
     createAppTestContext
 } from '../helpers/index.js'
@@ -12,7 +13,7 @@ import { ConflictException } from '@nestjs/common'
 describe('AdminManagement', () => {
     let fix: AppTestContext
     let teardown: AppTestContext['teardown'] | undefined
-    const adminCredentials = { email: 'admin@mail.com', password: 'password' }
+    const adminCredentials = { email: 'admin@mail.com', password: 'Example password 1!' }
 
     beforeEach(async () => {
         teardown = undefined
@@ -26,7 +27,7 @@ describe('AdminManagement', () => {
         it('POST /admins로 관리자 생성을 요청하면 404를 반환한다', async () => {
             await fix.httpClient
                 .post('/admins')
-                .body({ email: 'new-admin@mail.com', name: 'new', password: 'password' })
+                .body({ email: 'new-admin@mail.com', name: 'new', password: 'Example password 1!' })
                 .notFound()
         })
 
@@ -36,6 +37,78 @@ describe('AdminManagement', () => {
     })
 
     describe('AdminsService.create', () => {
+        describe.each([
+            { condition: 'ASCII 14자', password: 'a'.repeat(14) },
+            { condition: '이모지 14자', password: '🌱'.repeat(14) },
+            { condition: '한글 129자', password: '가'.repeat(129) }
+        ])('비밀번호에 $condition 값을 입력하면', ({ password }) => {
+            let createDto: Parameters<AdminsService['create']>[0]
+            beforeEach(() => {
+                createDto = { ...adminCredentials, name: 'admin', password }
+            })
+            it('관리자 생성을 요청하면 검증 오류를 던지고 저장하지 않는다', async () => {
+                await expect(fix.module.get(AdminsService).create(createDto)).rejects.toMatchObject(
+                    { name: 'ZodError' }
+                )
+                expect(
+                    await fix.module
+                        .get(AdminsRepository)
+                        .findForAuthentication({ email: adminCredentials.email })
+                ).toBeNull()
+            })
+        })
+
+        describe.each([
+            { condition: 'ASCII 15자', password: 'a'.repeat(15) },
+            { condition: '이모지 15자', password: '🌱'.repeat(15) },
+            { condition: '이모지 128자', password: '🌱'.repeat(128) },
+            { condition: '공백 15자', password: ' '.repeat(15) }
+        ])('비밀번호에 $condition 값을 입력하면', ({ password }) => {
+            let createDto: Parameters<AdminsService['create']>[0]
+            beforeEach(() => {
+                createDto = { ...adminCredentials, name: 'admin', password }
+            })
+            it('관리자를 생성한 뒤 원문 비밀번호로 로그인할 수 있다', async () => {
+                await fix.module.get(AdminsService).create(createDto)
+                await fix.httpClient
+                    .post('/admins/login')
+                    .body({ email: createDto.email, password })
+                    .ok()
+            })
+        })
+
+        describe('이메일에 대문자와 앞뒤 공백이 있으면', () => {
+            let email: string
+            beforeEach(() => {
+                email = ' Admin.Name+Tag@Example.COM '
+            })
+            it('생성하면 공백을 제거한 소문자 이메일을 저장하고 반환한다', async () => {
+                const admin = await createAdmin(fix, { email })
+                expect(admin.email).toBe('admin.name+tag@example.com')
+                expect(
+                    await fix.module
+                        .get(AdminsRepository)
+                        .findForAuthentication({ email: 'admin.name+tag@example.com' })
+                ).toMatchObject({ id: admin.id })
+            })
+        })
+
+        describe('대소문자와 앞뒤 공백만 다른 생성 요청이 있으면', () => {
+            let emails: string[]
+            beforeEach(() => {
+                emails = ['race@example.com', ' RACE@EXAMPLE.COM ']
+            })
+            it('동시에 생성하면 한 요청만 성공하고 나머지는 이메일 충돌 예외를 던진다', async () => {
+                const results = await Promise.allSettled(
+                    emails.map((email) => createAdmin(fix, { email }))
+                )
+                expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1)
+                expect(results.filter((result) => result.status === 'rejected')).toEqual([
+                    expect.objectContaining({ reason: expect.objectContaining({ status: 409 }) })
+                ])
+            })
+        })
+
         it('관리자를 생성하면 생성된 정보를 반환한다', async () => {
             await expect(createAdmin(fix, adminCredentials)).resolves.toEqual(
                 expect.objectContaining({
@@ -80,15 +153,80 @@ describe('AdminManagement', () => {
             beforeEach(() => {
                 service = fix.module.get(AdminsService)
 
-                // required 필드를 null로 보내 저장 경계 검증 오류를 유도한다.
-                // 요청 스키마 검증은 컨트롤러에만 적용되므로 service를 직접 호출한다.
-                invalidDto = { email: 'x@y.com', name: null as unknown as string, password: 'p' }
+                // HTTP를 거치지 않은 생성도 동일한 입력 검증을 적용한다.
+                invalidDto = {
+                    email: 'x@y.com',
+                    name: null as unknown as string,
+                    password: 'Example password 1!'
+                }
             })
             it('관리자 생성을 요청하면 오류를 던지고 중복 이메일 충돌로 분류하지 않는다', async () => {
                 // "그대로 던진다"의 핵심은 409로 변환되지 않는 것이므로 예외 타입까지 확인한다.
                 const promise = service.create(invalidDto)
                 await expect(promise).rejects.toThrow()
                 await expect(promise).rejects.not.toBeInstanceOf(ConflictException)
+            })
+        })
+    })
+
+    describe('관리자 생성 명령', () => {
+        describe.each([
+            { condition: 'ASCII 15자', password: 'a'.repeat(15) },
+            { condition: '이모지 128자', password: '🌱'.repeat(128) },
+            { condition: '공백 15자', password: ' '.repeat(15) }
+        ])('비밀번호에 $condition 값을 입력하면', ({ password }) => {
+            let createDto: Parameters<typeof runAdminCreateScript>[1]
+            beforeEach(() => {
+                createDto = { name: 'CLI admin', email: '  Cli.Admin+Tag@Example.COM  ', password }
+            })
+            it('명령이 성공하고 같은 이메일 식별값과 원문 비밀번호로 로그인할 수 있다', async () => {
+                const result = await runAdminCreateScript(fix, createDto)
+                expect(result).toMatchObject({ exitCode: 0, stderr: '' })
+                expect(result.stdout).toContain('Admin created: cli.admin+tag@example.com')
+                await fix.httpClient
+                    .post('/admins/login')
+                    .body({ email: createDto.email, password })
+                    .ok()
+            })
+        })
+
+        describe.each([
+            { condition: '이모지 14자', password: '🌱'.repeat(14) },
+            { condition: '한글 129자', password: '가'.repeat(129) }
+        ])('비밀번호에 $condition 값을 입력하면', ({ password }) => {
+            let createDto: Parameters<typeof runAdminCreateScript>[1]
+            beforeEach(() => {
+                createDto = { ...adminCredentials, name: 'CLI admin', password }
+            })
+            it('명령이 실패하고 관리자를 저장하지 않는다', async () => {
+                const result = await runAdminCreateScript(fix, createDto)
+                expect(result.exitCode).toBe(1)
+                expect(result.stderr).toContain(
+                    'Password must contain 15 to 128 Unicode code points.'
+                )
+                expect(
+                    await fix.module
+                        .get(AdminsRepository)
+                        .findForAuthentication({ email: createDto.email })
+                ).toBeNull()
+            })
+        })
+
+        describe('같은 식별값의 관리자가 이미 있으면', () => {
+            let createDto: Parameters<typeof runAdminCreateScript>[1]
+            beforeEach(async () => {
+                await createAdmin(fix, adminCredentials)
+                createDto = { ...adminCredentials, name: 'CLI admin', email: '  ADMIN@MAIL.COM  ' }
+            })
+            it('생성 명령이 실패하고 기존 관리자 한 명만 유지한다', async () => {
+                const result = await runAdminCreateScript(fix, createDto)
+                expect(result.exitCode).toBe(1)
+                expect(result.stderr).toContain('E11000')
+                expect(
+                    await fix.module
+                        .get(AdminsRepository)
+                        .collection.countDocuments({ email: adminCredentials.email })
+                ).toBe(1)
             })
         })
     })
@@ -183,19 +321,63 @@ describe('AdminManagement', () => {
                 await fix.httpClient
                     .patch('/admins/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body({ email: 'renamed@mail.com' })
+                    .body({ email: '  Renamed@Mail.COM  ' })
                     .ok({ expected: { ...admin, email: 'renamed@mail.com' } })
+
+                await fix.httpClient
+                    .post('/admins/login')
+                    .body({ ...adminCredentials, email: ' RENAMED@MAIL.COM ' })
+                    .ok()
+            })
+
+            describe.each([
+                { condition: '이모지 14자', password: '🌱'.repeat(14) },
+                { condition: '한글 129자', password: '가'.repeat(129) }
+            ])('새 비밀번호에 $condition 값을 입력하면', ({ password }) => {
+                let request: typeof fix.httpClient
+                beforeEach(() => {
+                    request = fix.httpClient
+                        .patch('/admins/me')
+                        .headers({ Authorization: `Bearer ${accessToken}` })
+                        .body({ password })
+                })
+                it('변경을 요청하면 400을 반환하고 기존 비밀번호를 유지한다', async () => {
+                    await request.badRequest()
+                    await fix.httpClient.post('/admins/login').body(adminCredentials).ok()
+                })
+            })
+
+            describe('새 비밀번호에 앞뒤 공백이 있으면', () => {
+                let password: string
+                beforeEach(() => {
+                    password = '  updated password  '
+                })
+                it('변경하면 공백까지 일치하는 비밀번호로만 로그인할 수 있다', async () => {
+                    await fix.httpClient
+                        .patch('/admins/me')
+                        .headers({ Authorization: `Bearer ${accessToken}` })
+                        .body({ password })
+                        .ok()
+                    await fix.httpClient
+                        .post('/admins/login')
+                        .body({ ...adminCredentials, password })
+                        .ok()
+                    await fix.httpClient
+                        .post('/admins/login')
+                        .body({ ...adminCredentials, password: password.trim() })
+                        .unauthorized({ expected: Errors.Auth.Unauthorized() })
+                })
             })
 
             describe('다른 관리자가 존재하면', () => {
                 beforeEach(async () => {
-                    await createAdmin(fix, { email: 'a@mail.com', password: 'p' })
+                    await createAdmin(fix, { email: 'a@mail.com', password: 'Example password 1!' })
                 })
                 it('그 관리자의 이메일로 변경을 요청하면 409를 반환한다', async () => {
                     await fix.httpClient
                         .patch('/admins/me')
                         .headers({ Authorization: `Bearer ${accessToken}` })
-                        .body({ email: 'a@mail.com' })
+                        .body({ email: '  A@MAIL.COM  ' })
                         .conflict()
                 })
             })

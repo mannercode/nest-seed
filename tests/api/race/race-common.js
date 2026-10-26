@@ -395,7 +395,7 @@ async function createShowtimeWithTickets({
 
 async function createAndLoginUser({ prefix, index }) {
     const email = `${prefix}.${index}.${secureRandomHex()}@example.com`
-    const password = `${prefix}password`
+    const password = `${prefix} password 123`
     const created = await request('POST', '/users', {
         body: { name: `${prefix}-${index}`, birthDate: '1990-01-01', email, password }
     })

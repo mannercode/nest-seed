@@ -29,6 +29,89 @@ describe('UsersService', () => {
     afterEach(() => teardown?.())
 
     describe('POST /users', () => {
+        describe.each([
+            { condition: 'ASCII 14자', password: 'a'.repeat(14) },
+            { condition: '이모지 14자', password: '🌱'.repeat(14) },
+            { condition: 'ASCII 129자', password: 'a'.repeat(129) },
+            { condition: '한글 129자', password: '가'.repeat(129) }
+        ])('비밀번호에 $condition 값을 입력하면', ({ password }) => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.post('/users').body(buildCreateUserDto({ password }))
+            })
+            it('가입을 요청하면 400을 반환하고 사용자를 저장하지 않는다', async () => {
+                await request.badRequest()
+                expect(
+                    await fix.module
+                        .get(UsersRepository)
+                        .findForAuthentication({ email: 'name@mail.com' })
+                ).toBeNull()
+            })
+        })
+
+        describe.each([
+            { condition: 'ASCII 15자', password: 'a'.repeat(15) },
+            { condition: '이모지 15자', password: '🌱'.repeat(15) },
+            { condition: '한글 128자', password: '가'.repeat(128) },
+            { condition: '이모지 128자', password: '🌱'.repeat(128) },
+            { condition: '공백 15자', password: ' '.repeat(15) }
+        ])('비밀번호에 $condition 값을 입력하면', ({ password }) => {
+            let createDto: ReturnType<typeof buildCreateUserDto>
+            beforeEach(() => {
+                createDto = buildCreateUserDto({ password })
+            })
+            it('가입한 뒤 원문 비밀번호로 로그인할 수 있다', async () => {
+                await fix.httpClient.post('/users').body(createDto).created({ schema: UserSchema })
+                await fix.httpClient
+                    .post('/users/login')
+                    .body({ email: createDto.email, password })
+                    .ok()
+            })
+        })
+
+        describe('이메일에 대문자와 앞뒤 공백이 있으면', () => {
+            let createDto: ReturnType<typeof buildCreateUserDto>
+            beforeEach(() => {
+                createDto = buildCreateUserDto({ email: '  First.Last+Tag@Example.COM  ' })
+            })
+            it('가입하면 공백을 제거한 소문자 이메일을 저장하고 반환한다', async () => {
+                const { body } = await fix.httpClient
+                    .post('/users')
+                    .body(createDto)
+                    .created({
+                        schema: UserSchema,
+                        expected: {
+                            ...omit(createDto, ['password']),
+                            email: 'first.last+tag@example.com',
+                            id: expect.any(String)
+                        }
+                    })
+                expect(
+                    await fix.module
+                        .get(UsersRepository)
+                        .findForAuthentication({ email: 'first.last+tag@example.com' })
+                ).toMatchObject({ id: body.id })
+            })
+        })
+
+        describe.each(['firstlast@example.com', 'first.last+tag@example.com'])(
+            'first.last@example.com 계정이 있고 새 이메일이 %s이면',
+            (email) => {
+                let existing: UserDto
+                beforeEach(async () => {
+                    existing = await createUser(fix, { email: 'first.last@example.com' })
+                })
+                it('가입하면 점과 +태그가 다른 별도 계정을 생성한다', async () => {
+                    const { body } = await fix.httpClient
+                        .post('/users')
+                        .body(buildCreateUserDto({ email }))
+                        .created({ schema: UserSchema })
+                    expect(body.email).toBe(email)
+                    expect(body.id).not.toBe(existing.id)
+                })
+            }
+        )
+
         it('사용자를 생성하면 생성된 정보를 반환한다', async () => {
             const createDto = buildCreateUserDto({ name: '2000-01-02' })
 
@@ -66,7 +149,7 @@ describe('UsersService', () => {
             it('그 사용자의 이메일로 가입을 요청하면 409를 반환한다', async () => {
                 await fix.httpClient
                     .post('/users')
-                    .body(buildCreateUserDto({ email }))
+                    .body(buildCreateUserDto({ email: ` ${email.toUpperCase()} ` }))
                     .conflict({ expected: Errors.Users.EmailAlreadyExists(email) })
             })
         })
@@ -82,42 +165,52 @@ describe('UsersService', () => {
             it('같은 이메일로 다시 가입할 수 있다', async () => {
                 await fix.httpClient
                     .post('/users')
-                    .body(buildCreateUserDto({ email }))
+                    .body(buildCreateUserDto({ email: ` ${email.toUpperCase()} ` }))
                     .created({ schema: UserSchema })
             })
         })
 
-        it(
-            '같은 이메일로 동시에 요청해도 하나만 201을 반환하고 나머지는 409를 반환한다',
-            async () => {
-                const email = 'race@mail.com'
-                const count = 10
-                const serverUrl = fix.httpClient.serverUrl
+        describe('대소문자와 앞뒤 공백만 다른 가입 요청이 있으면', () => {
+            let emails: string[]
+            beforeEach(() => {
+                emails = ['race@mail.com', 'RACE@MAIL.COM', ' race@mail.com ', ' Race@Mail.Com ']
+            })
+            it(
+                '동시에 가입을 요청하면 하나만 201을 반환하고 나머지는 409를 반환한다',
+                async () => {
+                    const count = emails.length
+                    const serverUrl = fix.httpClient.serverUrl
 
-                const statuses = await Promise.all(
-                    Array.from({ length: count }, async () => {
-                        const client = new HttpTestClient(serverUrl)
-                        const response = await client
-                            .post('/users')
-                            .body(buildCreateUserDto({ email }))
-                            .sendRaw()
-                        return response.status
-                    })
-                )
+                    const statuses = await Promise.all(
+                        emails.map(async (email) => {
+                            const client = new HttpTestClient(serverUrl)
+                            const response = await client
+                                .post('/users')
+                                .body(buildCreateUserDto({ email }))
+                                .sendRaw()
+                            return response.status
+                        })
+                    )
 
-                const createdCount = statuses.filter((s) => s === 201).length
-                const conflictCount = statuses.filter((s) => s === 409).length
-                const otherStatuses = statuses.filter((s) => s !== 201 && s !== 409)
+                    const createdCount = statuses.filter((s) => s === 201).length
+                    const conflictCount = statuses.filter((s) => s === 409).length
+                    const otherStatuses = statuses.filter((s) => s !== 201 && s !== 409)
 
-                expect(createdCount).toBe(1)
-                expect(conflictCount).toBe(count - 1)
-                // 동시 삽입의 중복 키 오류는 409로 변환되어야 한다.
-                // 500이 새어 나오면 변환 누락이므로
-                // 201/409 외 상태가 하나도 없음을 함께 단언한다.
-                expect(otherStatuses).toEqual([])
-            },
-            30 * 1000
-        )
+                    expect(createdCount).toBe(1)
+                    expect(conflictCount).toBe(count - 1)
+                    // 동시 삽입의 중복 키 오류는 409로 변환되어야 한다.
+                    // 500이 새어 나오면 변환 누락이므로
+                    // 201/409 외 상태가 하나도 없음을 함께 단언한다.
+                    expect(otherStatuses).toEqual([])
+                    expect(
+                        await fix.module
+                            .get(UsersRepository)
+                            .findForAuthentication({ email: 'race@mail.com' })
+                    ).toMatchObject({ email: 'race@mail.com' })
+                },
+                30 * 1000
+            )
+        })
 
         describe('요청 본문에 필수 필드가 없으면', () => {
             let request: typeof fix.httpClient
@@ -166,6 +259,92 @@ describe('UsersService', () => {
 
         beforeEach(async () => {
             user = await createUser(fix, { name: 'original-name' })
+        })
+
+        describe.each([
+            { condition: '이모지 14자', password: '🌱'.repeat(14) },
+            { condition: '한글 129자', password: '가'.repeat(129) }
+        ])('새 비밀번호에 $condition 값을 입력하면', ({ password }) => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .patch(`/users/${user.id}`)
+                    .headers(adminAuth)
+                    .body({ password })
+            })
+            it('변경을 요청하면 400을 반환하고 이전 비밀번호를 유지한다', async () => {
+                await request.badRequest()
+                await fix.httpClient
+                    .post('/users/login')
+                    .body({ email: user.email, password: 'Example password 1!' })
+                    .ok()
+            })
+        })
+
+        describe('새 비밀번호에 앞뒤 공백이 있으면', () => {
+            let password: string
+            beforeEach(() => {
+                password = '  updated password  '
+            })
+            it('변경하면 공백까지 일치하는 비밀번호로만 로그인할 수 있다', async () => {
+                await fix.httpClient
+                    .patch(`/users/${user.id}`)
+                    .headers(adminAuth)
+                    .body({ password })
+                    .ok()
+                await fix.httpClient.post('/users/login').body({ email: user.email, password }).ok()
+                await fix.httpClient
+                    .post('/users/login')
+                    .body({ email: user.email, password: password.trim() })
+                    .unauthorized({ expected: Errors.Auth.Unauthorized() })
+            })
+        })
+
+        describe('새 이메일에 대문자와 앞뒤 공백이 있으면', () => {
+            let email: string
+            beforeEach(() => {
+                email = '  Renamed+Tag@Example.COM  '
+            })
+            it('변경하면 소문자로 저장하고 같은 식별값의 이메일로 로그인할 수 있다', async () => {
+                await fix.httpClient
+                    .patch(`/users/${user.id}`)
+                    .headers(adminAuth)
+                    .body({ email })
+                    .ok({
+                        schema: UserSchema,
+                        expected: { ...user, email: 'renamed+tag@example.com' }
+                    })
+                await fix.httpClient
+                    .post('/users/login')
+                    .body({ email, password: 'Example password 1!' })
+                    .ok()
+            })
+        })
+
+        describe('두 사용자가 같은 식별값의 이메일로 변경하려고 하면', () => {
+            let requests: HttpTestClient[]
+            beforeEach(async () => {
+                const other = await createUser(fix, { email: 'other@mail.com' })
+                requests = [
+                    new HttpTestClient(fix.httpClient.serverUrl)
+                        .patch(`/users/${user.id}`)
+                        .headers(adminAuth)
+                        .body({ email: ' Change@Mail.Com ' }),
+                    new HttpTestClient(fix.httpClient.serverUrl)
+                        .patch(`/users/${other.id}`)
+                        .headers(adminAuth)
+                        .body({ email: 'change@mail.com' })
+                ]
+            })
+            it('동시에 변경을 요청하면 하나만 성공하고 나머지는 409를 반환한다', async () => {
+                const responses = await Promise.all(requests.map((request) => request.sendRaw()))
+                expect(responses.map((response) => response.status).sort()).toEqual([200, 409])
+                expect(
+                    await fix.module
+                        .get(UsersRepository)
+                        .findForAuthentication({ email: 'change@mail.com' })
+                ).toMatchObject({ email: 'change@mail.com' })
+            })
         })
 
         it('사용자를 수정하면 수정된 정보를 반환한다', async () => {
@@ -222,7 +401,7 @@ describe('UsersService', () => {
             beforeEach(async () => {
                 ;({ refreshToken } = await loginUser(fix, {
                     email: user.email,
-                    password: 'password'
+                    password: 'Example password 1!'
                 }))
                 await fix.httpClient
                     .patch(`/users/${user.id}`)
