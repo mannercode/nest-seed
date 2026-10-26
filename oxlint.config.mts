@@ -215,6 +215,7 @@ export default defineConfig({
                                     '!../../services/core/movies/movie-pending-assets.repository.js',
                                     '!../../services/core/purchase-records/purchase-records.repository.js',
                                     '!../../services/core/tickets/tickets.repository.js',
+                                    '!../../services/infrastructure/assets/assets.repository.js',
                                     '!../../services/infrastructure/payments/payments.repository.js'
                                 ],
                                 message:

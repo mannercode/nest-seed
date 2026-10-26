@@ -498,13 +498,21 @@ describe('UsersService', () => {
         })
     })
 
-    describe('일반 사용자로 로그인했으면', () => {
-        let userAuth: { Authorization: string }
+    describe.each([
+        { condition: '일반 사용자로 로그인했으면', credential: 'user' },
+        { condition: '인증 정보가 없으면', credential: 'guest' },
+        { condition: '토큰이 잘못되었으면', credential: 'invalid' }
+    ] as const)('$condition', ({ credential }) => {
+        let userAuth: Record<string, string>
         let target: UserDto
 
         beforeEach(async () => {
             const { accessToken } = await createAndLoginUser(fix)
-            userAuth = { Authorization: `Bearer ${accessToken}` }
+            userAuth = {
+                user: { Authorization: `Bearer ${accessToken}` },
+                guest: {},
+                invalid: { Authorization: 'Bearer invalid-token' }
+            }[credential]
             target = await createUser(fix, { email: 'target@mail.com' })
         })
 
@@ -521,6 +529,9 @@ describe('UsersService', () => {
                 .headers(userAuth)
                 .body({ name: 'hacked' })
                 .unauthorized({ expected: Errors.Auth.Unauthorized() })
+            await expect(fix.module.get(UsersService).getMany([target.id])).resolves.toEqual([
+                target
+            ])
         })
 
         it('DELETE /users/:id 요청에 401을 반환한다', async () => {
@@ -528,26 +539,15 @@ describe('UsersService', () => {
                 .delete(`/users/${target.id}`)
                 .headers(userAuth)
                 .unauthorized({ expected: Errors.Auth.Unauthorized() })
+            await expect(fix.module.get(UsersService).getMany([target.id])).resolves.toEqual([
+                target
+            ])
         })
 
         it('GET /users 요청에 401을 반환한다', async () => {
             await fix.httpClient
                 .get('/users')
                 .headers(userAuth)
-                .unauthorized({ expected: Errors.Auth.Unauthorized() })
-        })
-    })
-
-    describe('인증 정보가 없으면', () => {
-        let target: UserDto
-
-        beforeEach(async () => {
-            target = await createUser(fix, { email: 'target@mail.com' })
-        })
-
-        it('GET /users/:id 요청에 401을 반환한다', async () => {
-            await fix.httpClient
-                .get(`/users/${target.id}`)
                 .unauthorized({ expected: Errors.Auth.Unauthorized() })
         })
     })

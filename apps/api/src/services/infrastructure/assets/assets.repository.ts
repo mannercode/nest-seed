@@ -1,4 +1,9 @@
-import { CrudRepository, MongoConnection } from '@mannercode/common'
+import {
+    CrudRepository,
+    DateUtil,
+    MongoConnection,
+    type TransactionContext
+} from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { AppConfigService } from '#config'
 import { CreateAssetDto } from './dtos/index.js'
@@ -25,6 +30,7 @@ export class AssetsRepository extends CrudRepository<Asset> {
         const doc = await this.findAndUpdateDocument(
             this.activeFilter({
                 ...this.idFilter(assetId),
+                deletionRequestedAt: null,
                 $or: [
                     { ownerEntityId: owner.entityId, ownerService: owner.service },
                     { ownerEntityId: null, ownerService: null, createdAt: { $gt: createdAfter } }
@@ -46,18 +52,66 @@ export class AssetsRepository extends CrudRepository<Asset> {
         asset.checksum = createDto.checksum
         asset.ownerEntityId = null
         asset.ownerService = null
+        asset.deletionRequestedAt = null
+        asset.storageCleanedAt = null
 
         return this.insertOne(asset)
     }
 
-    async findExpiredIncomplete(expiresBefore: Temporal.Instant): Promise<Asset[]> {
-        const docs = await this.findDocuments(
+    async requestExpiredDeletion(expiresBefore: Temporal.Instant): Promise<void> {
+        await this.updateDocuments(
             this.activeFilter({
                 createdAt: { $lte: expiresBefore },
+                deletionRequestedAt: null,
                 ownerEntityId: null,
                 ownerService: null
-            })
+            }),
+            this.timestamped({ $set: { deletionRequestedAt: DateUtil.now() } })
         )
-        return docs
+    }
+
+    async requestDeletion(assetIds: string[]): Promise<void> {
+        await this.updateDocuments(
+            this.activeFilter({ ...this.idsFilter(assetIds), deletionRequestedAt: null }),
+            this.timestamped({ $set: { deletionRequestedAt: DateUtil.now() } })
+        )
+    }
+
+    async findPendingDeletion(expiresBefore: Temporal.Instant): Promise<Asset[]> {
+        return this.findDocuments({
+            $or: [
+                { deletedAt: null, deletionRequestedAt: { $ne: null } },
+                { deletedAt: { $ne: null, $lte: expiresBefore }, storageCleanedAt: null }
+            ]
+        })
+    }
+
+    async markStorageCleaned(assetIds: string[], expiresBefore: Temporal.Instant): Promise<void> {
+        await this.updateDocuments(
+            {
+                ...this.idsFilter(assetIds),
+                deletedAt: { $ne: null, $lte: expiresBefore },
+                storageCleanedAt: null
+            },
+            this.timestamped({ $set: { storageCleanedAt: DateUtil.now() } })
+        )
+    }
+
+    async confirmOwner(
+        assetId: string,
+        owner: { entityId: string; service: string },
+        transaction: TransactionContext
+    ) {
+        // 소유권 확인도 쓰기로 참여시켜 삭제 시작과 영화 연결 transaction이 경합하게 한다.
+        return this.findAndUpdateDocument(
+            this.activeFilter({
+                ...this.idFilter(assetId),
+                deletionRequestedAt: null,
+                ownerEntityId: owner.entityId,
+                ownerService: owner.service
+            }),
+            this.timestamped({}),
+            { returnDocument: 'after', transaction }
+        )
     }
 }

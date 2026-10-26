@@ -5,13 +5,16 @@ import {
     plainDateFromMongo,
     MongoErrors,
     QueryBuilder,
-    MongoConnection
+    MongoConnection,
+    DateUtil,
+    type TransactionContext
 } from '@mannercode/common'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { z } from 'zod'
 import { AppConfigService } from '#config'
 import { SearchMoviesPageDto, UpsertMovieDto } from './dtos/index.js'
 import { Movie, MovieDefaults, MovieGenre, MovieRating } from './models/index.js'
+import { MovieErrors } from './errors.js'
 
 const StoredMovieSchema = z.object({
     assetIds: z.array(z.string()),
@@ -36,13 +39,31 @@ export class MoviesRepository extends CrudRepository<Movie> {
         )
     }
 
-    async addAsset(movieId: string, assetId: string) {
-        // finalize가 동시에 두 번 들어오면 load→push→save가 같은 옛 배열을 읽어 assetId를 중복 추가한다.
-        // $addToSet은 단일 문서 원자 연산이라 중복을 차단한다 — 트랜잭션·락 없이 끝난다.
-        await this.updateDocument(
-            this.activeFilter(this.idFilter(movieId)),
-            this.timestamped({ $addToSet: { assetIds: assetId } })
+    async addAsset(movieId: string, assetId: string, transaction?: TransactionContext) {
+        // 동시에 완료 요청을 처리해도 동일한 assetId는 한 번만 연결한다.
+        const result = await this.updateDocument(
+            this.activeFilter({ ...this.idFilter(movieId), deletionRequestedAt: null }),
+            this.timestamped({ $addToSet: { assetIds: assetId } }),
+            { transaction }
         )
+        if (result.matchedCount === 0) throw new NotFoundException(MovieErrors.NotFound(movieId))
+    }
+
+    async touchForAssetChange(movieId: string, transaction: TransactionContext) {
+        const result = await this.updateDocument(
+            this.activeFilter({ ...this.idFilter(movieId), deletionRequestedAt: null }),
+            this.timestamped({}),
+            { transaction }
+        )
+        if (result.matchedCount === 0) throw new NotFoundException(MovieErrors.NotFound(movieId))
+    }
+
+    async requestDeletion(movieIds: string[]) {
+        await this.updateDocuments(
+            this.activeFilter({ ...this.idsFilter(movieIds), deletionRequestedAt: null }),
+            this.timestamped({ $set: { deletionRequestedAt: DateUtil.now() } })
+        )
+        return this.findMany({ ids: movieIds })
     }
 
     async removeAsset(movieId: string, assetId: string) {
@@ -54,9 +75,21 @@ export class MoviesRepository extends CrudRepository<Movie> {
         )
     }
 
+    async findAssetIds(): Promise<string[]> {
+        return this.distinctValues<string>('assetIds', this.activeFilter({}))
+    }
+
+    async removeAssets(assetIds: string[]): Promise<void> {
+        await this.updateDocuments(
+            this.activeFilter({ assetIds: { $in: assetIds } }),
+            this.timestamped({ $pull: { assetIds: { $in: assetIds } } })
+        )
+    }
+
     async create(upsertDto: UpsertMovieDto) {
         const movie = this.newDocument()
         movie.assetIds = []
+        movie.deletionRequestedAt = null
         movie.director = MovieDefaults.director
         movie.durationInSeconds = MovieDefaults.durationInSeconds
         movie.genres = []

@@ -18,6 +18,8 @@ import {
 import { PaymentStatus, PaymentsService } from '#infrastructure'
 import {
     createAndLoginUser,
+    createAndLoginAdmin,
+    createUser,
     Errors,
     getPayments,
     getTickets,
@@ -52,12 +54,80 @@ describe('PurchaseService', () => {
     afterEach(() => teardown?.())
 
     describe('POST /purchases', () => {
+        describe.each([
+            { condition: '인증 정보가 없으면', credential: 'guest' },
+            { condition: '관리자 토큰을 보냈으면', credential: 'admin' },
+            { condition: '토큰이 잘못되었으면', credential: 'invalid' }
+        ] as const)('$condition', ({ credential }) => {
+            let request: typeof fix.httpClient
+            let submit: MockInstance<PurchaseWorkflowClient['submit']>
+            let heldTickets: TicketDto[]
+            beforeEach(async () => {
+                const admin = await createAndLoginAdmin(fix)
+                const headers: Record<string, string> = {
+                    guest: {},
+                    admin: { Authorization: `Bearer ${admin.accessToken}` },
+                    invalid: { Authorization: 'Bearer invalid-token' }
+                }[credential]
+                heldTickets = await holdTickets(fix, user.id, await createShowtimeAndTickets(fix))
+                submit = vi.spyOn(fix.module.get(PurchaseWorkflowClient), 'submit')
+                request = fix.httpClient
+                    .post('/purchases')
+                    .headers(headers)
+                    .headers({ 'Idempotency-Key': randomUUID() })
+                    .body(buildCreatePurchaseDto(heldTickets))
+            })
+            it('구매를 거절하고 워크플로·결제·구매 기록을 만들지 않으며 기존 선점을 유지한다', async () => {
+                await request.unauthorized({ expected: Errors.Auth.Unauthorized() })
+                expect(submit).not.toHaveBeenCalled()
+                await expect(
+                    fix.module.get(PurchaseRecordsRepository).countDocuments({ deletedAt: null })
+                ).resolves.toBe(0)
+                await expect(
+                    fix.module.get(PaymentsRepository).countDocuments({ deletedAt: null })
+                ).resolves.toBe(0)
+                await expect(
+                    fix.module
+                        .get(TicketHoldingService)
+                        .searchHeldTicketIds(ensure(heldTickets[0]).showtimeId, user.id)
+                ).resolves.toEqual(expect.arrayContaining(pickIds(heldTickets)))
+            })
+        })
+
         describe('사용자가 티켓을 선점했으면', () => {
             let heldTickets: TicketDto[]
 
             beforeEach(async () => {
                 const tickets = await createShowtimeAndTickets(fix)
                 heldTickets = await holdTickets(fix, user.id, tickets)
+            })
+
+            describe('구매 본문에 다른 사용자의 ID가 있으면', () => {
+                let request: typeof fix.httpClient
+                let submit: MockInstance<PurchaseWorkflowClient['submit']>
+                beforeEach(async () => {
+                    const other = await createUser(fix, { email: 'other-buyer@mail.com' })
+                    submit = vi.spyOn(fix.module.get(PurchaseWorkflowClient), 'submit')
+                    request = fix.httpClient
+                        .post('/purchases')
+                        .headers({
+                            Authorization: `Bearer ${accessToken}`,
+                            'Idempotency-Key': randomUUID()
+                        })
+                        .body({ ...buildCreatePurchaseDto(heldTickets), userId: other.id })
+                })
+                it('구매를 거절하고 타인 명의의 구매나 결제를 만들지 않는다', async () => {
+                    await request.badRequest()
+                    expect(submit).not.toHaveBeenCalled()
+                    await expect(
+                        fix.module
+                            .get(PurchaseRecordsRepository)
+                            .countDocuments({ deletedAt: null })
+                    ).resolves.toBe(0)
+                    await expect(
+                        fix.module.get(PaymentsRepository).countDocuments({ deletedAt: null })
+                    ).resolves.toBe(0)
+                })
             })
 
             describe('Idempotency-Key가 없으면', () => {

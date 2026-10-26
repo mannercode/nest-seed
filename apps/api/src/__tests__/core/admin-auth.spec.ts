@@ -2,9 +2,10 @@ import { HttpStatus, type INestApplication } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { ensure, JwtAuthService, TimeUtil } from '@mannercode/common'
 import { AppConfigService } from '#config'
-import { type AdminDto, AdminsService, AdminsRepository } from '#core'
+import { type AdminDto, AdminsService, AdminsRepository, AdminSchema } from '#core'
 import {
     createAdmin,
+    createAndLoginUser,
     Errors,
     loginAdmin,
     type AppTestContext,
@@ -35,6 +36,67 @@ describe('AdminAuthentication', () => {
         await createAdmin(fix, credentials)
     })
     afterEach(() => teardown?.())
+
+    describe.each([
+        { condition: '인증 정보가 없으면', credential: 'guest' },
+        { condition: '일반 사용자 토큰을 보냈으면', credential: 'user' },
+        { condition: '토큰이 잘못되었으면', credential: 'invalid' }
+    ] as const)('$condition', ({ credential }) => {
+        let headers: Record<string, string>
+        let admin: AdminDto
+        beforeEach(async () => {
+            const user = await createAndLoginUser(fix)
+            ;({ admin } = await loginAdmin(fix, credentials))
+            headers = {
+                guest: {},
+                user: { Authorization: `Bearer ${user.accessToken}` },
+                invalid: { Authorization: 'Bearer invalid-token' }
+            }[credential]
+        })
+        it('관리자 본인 조회에 401을 반환한다', async () => {
+            await fix.httpClient
+                .get('/admins/me')
+                .headers(headers)
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+        })
+        it('관리자 본인 수정에 401을 반환하고 관리자 정보를 유지한다', async () => {
+            await fix.httpClient
+                .patch('/admins/me')
+                .headers(headers)
+                .body({ name: 'denied' })
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+            await expect(fix.module.get(AdminsService).getMany([admin.id])).resolves.toEqual([
+                admin
+            ])
+        })
+    })
+
+    describe('서로 다른 두 관리자가 있으면', () => {
+        let mine: Awaited<ReturnType<typeof loginAdmin>>
+        let other: AdminDto
+        beforeEach(async () => {
+            mine = await loginAdmin(fix, credentials)
+            other = await createAdmin(fix, { email: 'other-admin@mail.com' })
+        })
+        it('타인 ID를 조회 조건으로 보내도 토큰에 해당하는 관리자 정보를 반환한다', async () => {
+            await fix.httpClient
+                .get('/admins/me')
+                .headers({ Authorization: `Bearer ${mine.accessToken}` })
+                .query({ adminId: other.id })
+                .ok({ schema: AdminSchema, expected: mine.admin })
+        })
+        it('타인 ID를 수정 조건으로 보내도 본인만 수정하고 다른 관리자는 유지한다', async () => {
+            await fix.httpClient
+                .patch('/admins/me')
+                .headers({ Authorization: `Bearer ${mine.accessToken}` })
+                .query({ adminId: other.id })
+                .body({ name: 'changed' })
+                .ok({ schema: AdminSchema, expected: { ...mine.admin, name: 'changed' } })
+            await expect(fix.module.get(AdminsService).getMany([other.id])).resolves.toEqual([
+                other
+            ])
+        })
+    })
 
     describe('POST /admins/login', () => {
         describe.each([

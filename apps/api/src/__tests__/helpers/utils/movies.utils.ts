@@ -2,6 +2,8 @@ import { nullPlainDate, type TestContext } from '@mannercode/testing'
 import { MovieGenre, MovieRating, type MovieDto, type UpsertMovieDto, MoviesService } from '#core'
 import { testAssets, type TestAsset } from '../assets/index.js'
 import { buildCreateAssetDto, uploadAsset } from './assets.utils.js'
+import { MoviesRepository } from '../../../services/core/movies/movies.repository.js'
+import { MoviePendingAssetsRepository } from '../../../services/core/movies/movie-pending-assets.repository.js'
 
 export function buildCreateMovieDto(overrides: Partial<UpsertMovieDto> = {}): UpsertMovieDto {
     return {
@@ -63,4 +65,30 @@ export async function uploadAndFinalizeMovieAsset(ctx: TestContext, movieId: str
 
     await moviesService.finalizeUpload(movieId, assetId)
     return assetId
+}
+
+export function pauseNextMovieAssetAttachment(ctx: TestContext) {
+    const repository = ctx.module.get(MoviesRepository)
+    const addAsset = repository.addAsset.bind(repository)
+    const started = Promise.withResolvers<void>()
+    const held = Promise.withResolvers<void>()
+    vi.spyOn(repository, 'addAsset').mockImplementationOnce(async (...args) => {
+        started.resolve()
+        await held.promise
+        return addAsset(...args)
+    })
+    return { started: started.promise, release: held.resolve }
+}
+
+export function pauseNextPendingAssetLookup(ctx: TestContext) {
+    const repository = ctx.module.get(MoviePendingAssetsRepository)
+    const findAssetIds = repository.findAssetIds.bind(repository)
+    const started = Promise.withResolvers<void>()
+    const held = Promise.withResolvers<void>()
+    vi.spyOn(repository, 'findAssetIds').mockImplementationOnce(async (...args) => {
+        started.resolve()
+        await held.promise
+        return findAssetIds(...args)
+    })
+    return { started: started.promise, release: held.resolve }
 }

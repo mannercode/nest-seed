@@ -17,22 +17,102 @@ import {
     testAssets,
     uploadAndFinalizeMovieAsset,
     type AppTestContext,
-    createAppTestContext
+    createAppTestContext,
+    createAndLoginAdmin,
+    createAndLoginUser
 } from '../helpers/index.js'
-import { AdminAuthGuard } from '#gateway'
 import { MoviesRepository } from '../../services/core/movies/movies.repository.js'
 
 describe('MoviesService', () => {
     let fix: AppTestContext
     let teardown: AppTestContext['teardown'] | undefined
+    let adminAuth: { Authorization: string }
 
     beforeEach(async () => {
         teardown = undefined
 
-        fix = await createAppTestContext({ ignoreGuards: [AdminAuthGuard] })
+        fix = await createAppTestContext()
         teardown = fix.teardown
+        const { accessToken } = await createAndLoginAdmin(fix)
+        adminAuth = { Authorization: `Bearer ${accessToken}` }
     })
     afterEach(() => teardown?.())
+
+    describe.each([
+        { condition: '인증 정보가 없으면', credential: 'guest' },
+        { condition: '일반 사용자로 인증했으면', credential: 'user' },
+        { condition: '토큰이 잘못되었으면', credential: 'invalid' }
+    ] as const)('$condition', ({ credential }) => {
+        let headers: Record<string, string>
+        let movie: MovieDto
+        beforeEach(async () => {
+            const { accessToken } = await createAndLoginUser(fix)
+            headers = {
+                guest: {},
+                user: { Authorization: `Bearer ${accessToken}` },
+                invalid: { Authorization: 'Bearer invalid-token' }
+            }[credential]
+            movie = await fix.module.get(MoviesService).create(buildCreateMovieDto())
+        })
+
+        it('영화 생성을 요청하면 401을 반환하고 영화를 추가하지 않는다', async () => {
+            await fix.httpClient
+                .post('/movies')
+                .headers(headers)
+                .body({ title: 'denied' })
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+            await expect(
+                fix.module.get(MoviesRepository).countDocuments({ deletedAt: null })
+            ).resolves.toBe(1)
+        })
+
+        it('영화 수정을 요청하면 401을 반환하고 기존 정보를 유지한다', async () => {
+            await fix.httpClient
+                .patch(`/movies/${movie.id}`)
+                .headers(headers)
+                .body({ title: 'denied' })
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+            await expect(fix.module.get(MoviesService).getMany([movie.id])).resolves.toEqual([
+                movie
+            ])
+        })
+
+        it('영화 삭제를 요청하면 401을 반환하고 영화를 유지한다', async () => {
+            await fix.httpClient
+                .delete(`/movies/${movie.id}`)
+                .headers(headers)
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+            await expect(fix.module.get(MoviesService).getMany([movie.id])).resolves.toEqual([
+                movie
+            ])
+        })
+
+        it('영화 공개를 요청하면 401을 반환하고 미공개 상태를 유지한다', async () => {
+            await fix.httpClient
+                .post(`/movies/${movie.id}/publish`)
+                .headers(headers)
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+            await expect(
+                fix.module.get(MoviesRepository).get({ id: movie.id })
+            ).resolves.toMatchObject({ isPublished: false })
+        })
+    })
+
+    describe('관리자로 인증했고 공개 가능한 영화가 있으면', () => {
+        let movie: MovieDto
+        beforeEach(async () => {
+            movie = await fix.module.get(MoviesService).create(buildCreateMovieDto())
+        })
+        it('영화 공개를 요청하면 200을 반환하고 비로그인 조회에도 영화를 공개한다', async () => {
+            await fix.httpClient
+                .post(`/movies/${movie.id}/publish`)
+                .headers(adminAuth)
+                .ok({ schema: MovieSchema, expected: movie })
+            await fix.httpClient
+                .get(`/movies/${movie.id}`)
+                .ok({ schema: MovieSchema, expected: movie })
+        })
+    })
 
     describe('POST /movies', () => {
         describe.each([
@@ -43,7 +123,7 @@ describe('MoviesService', () => {
         ])('$condition', ({ invalid }) => {
             let request: typeof fix.httpClient
             beforeEach(() => {
-                request = fix.httpClient.post('/movies').body(invalid)
+                request = fix.httpClient.post('/movies').headers(adminAuth).body(invalid)
             })
             it('영화 생성을 요청하면 400을 반환한다', async () => {
                 await request.badRequest()
@@ -55,6 +135,7 @@ describe('MoviesService', () => {
 
             const response = await fix.httpClient
                 .post('/movies')
+                .headers(adminAuth)
                 .body(createDto)
                 .created({
                     schema: MovieSchema,
@@ -66,7 +147,7 @@ describe('MoviesService', () => {
         describe('요청 본문이 빈 객체이면', () => {
             let request: typeof fix.httpClient
             beforeEach(() => {
-                request = fix.httpClient.post('/movies').body({})
+                request = fix.httpClient.post('/movies').headers(adminAuth).body({})
             })
             it('영화를 생성하면 기본값이 적용된 영화를 반환한다', async () => {
                 await request.created({
@@ -160,6 +241,7 @@ describe('MoviesService', () => {
 
             await fix.httpClient
                 .patch(`/movies/${movie.id}`)
+                .headers(adminAuth)
                 .body(updateDto)
                 .ok({ schema: MovieSchema, expected: { ...movie, ...updateDto } })
         })
@@ -176,6 +258,7 @@ describe('MoviesService', () => {
             it('assetIds를 직접 수정하는 요청에 400을 반환하고 기존 이미지 연결을 유지한다', async () => {
                 await fix.httpClient
                     .patch(`/movies/${movie.id}`)
+                    .headers(adminAuth)
                     .body({ assetIds: [] })
                     .badRequest()
                 expect(await moviesRepository.getForUpdate(movie.id)).toEqual(before)
@@ -197,6 +280,7 @@ describe('MoviesService', () => {
             const updateDto = { title: 'update title' }
             await fix.httpClient
                 .patch(`/movies/${movie.id}`)
+                .headers(adminAuth)
                 .body(updateDto)
                 .ok({ schema: MovieSchema })
 
@@ -208,7 +292,10 @@ describe('MoviesService', () => {
         describe('ID에 해당하는 영화가 없으면', () => {
             let request: typeof fix.httpClient
             beforeEach(() => {
-                request = fix.httpClient.patch(`/movies/${nullObjectId}`).body({})
+                request = fix.httpClient
+                    .patch(`/movies/${nullObjectId}`)
+                    .headers(adminAuth)
+                    .body({})
             })
             it('영화 수정을 요청하면 404를 반환한다', async () => {
                 await request.notFound({ expected: Errors.Mongo.DocumentNotFound(nullObjectId) })
@@ -223,7 +310,7 @@ describe('MoviesService', () => {
                 movie = await createMovie(fix)
             })
             it('영화를 삭제하면 204를 반환하고 이후 조회에는 404를 반환한다', async () => {
-                await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
+                await fix.httpClient.delete(`/movies/${movie.id}`).headers(adminAuth).noContent()
 
                 await fix.httpClient
                     .get(`/movies/${movie.id}`)
@@ -240,6 +327,7 @@ describe('MoviesService', () => {
             it('영화 삭제 요청에 409를 반환하고 영화를 유지한다', async () => {
                 await fix.httpClient
                     .delete(`/movies/${movie.id}`)
+                    .headers(adminAuth)
                     .conflict({ expected: Errors.Movies.DeleteBlockedByShowtimes(movie.id) })
 
                 await fix.httpClient
@@ -260,7 +348,7 @@ describe('MoviesService', () => {
             })
 
             it('영화를 삭제하면 204를 반환하고 연결된 이미지 URL을 무효화한다', async () => {
-                await fix.httpClient.delete(`/movies/${movie.id}`).noContent()
+                await fix.httpClient.delete(`/movies/${movie.id}`).headers(adminAuth).noContent()
 
                 const response = await fetch(ensure(movie.imageUrls[0]))
                 expect(response.status).toBe(404)
@@ -270,7 +358,7 @@ describe('MoviesService', () => {
         describe('ID에 해당하는 영화가 없으면', () => {
             let request: typeof fix.httpClient
             beforeEach(() => {
-                request = fix.httpClient.delete(`/movies/${nullObjectId}`)
+                request = fix.httpClient.delete(`/movies/${nullObjectId}`).headers(adminAuth)
             })
             it('영화 삭제를 요청하면 204를 반환한다', async () => {
                 await request.noContent()

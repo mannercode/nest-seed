@@ -26,6 +26,6 @@
 
 보류 이유: 현재 `deletedAt`으로 활성·삭제를 구분하고 탈퇴 시 soft delete와 refresh 세션 회수를 수행한다. 별도 정지 상태나 구매 기록 등 관련 데이터의 삭제는 제공하지 않는다. 정지·보존 기간·연관 데이터 처리는 실제 서비스의 업무와 보관 요건에 따라 달라진다.
 
-재검토 조건: 정지·해제나 탈퇴 후 데이터 처리가 필요하면 본인·관리자 권한, 진행 중인 업무·소유 파일, 탈퇴 재요청·재가입 결과를 정한다. [인증 A3](authentication.md)의 효력 시점과 [권한 R2](authorization.md)의 자원 인가, [파일 F3·F4](files.md)의 삭제·정리를 함께 검토한다. 중간 실패·재요청으로 타인 데이터가 삭제되지 않고 상태 변경 후 로그인·갱신·조회가 정해진 결과를 반환하는지 확인한다.
+재검토 조건: 정지·해제나 탈퇴 후 데이터 처리가 필요하면 본인·관리자 권한, 진행 중인 업무·소유 파일, 탈퇴 재요청·재가입 결과를 정한다. [인증 A3](authentication.md)의 효력 시점과 [권한 정책](authorization.md)의 자원 인가, [파일 정책](files.md)의 삭제·정리를 함께 검토한다. 중간 실패·재요청으로 타인 데이터가 삭제되지 않고 상태 변경 후 로그인·갱신·조회가 정해진 결과를 반환하는지 확인한다.
 
 검증 위치: [users.spec.ts](../apps/api/src/__tests__/core/users.spec.ts), [user-auth.spec.ts](../apps/api/src/__tests__/core/user-auth.spec.ts), [admin-management.spec.ts](../apps/api/src/__tests__/core/admin-management.spec.ts), [사용자 브라우저 흐름](../tests/web/e2e/user-auth-flow.spec.ts).

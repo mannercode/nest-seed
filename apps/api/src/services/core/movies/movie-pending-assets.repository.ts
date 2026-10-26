@@ -1,4 +1,10 @@
-import { CrudRepository, DateUtil, QueryBuilder, MongoConnection } from '@mannercode/common'
+import {
+    CrudRepository,
+    DateUtil,
+    QueryBuilder,
+    MongoConnection,
+    type TransactionContext
+} from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { AppConfigService } from '#config'
 import { MoviePendingAsset } from './models/index.js'
@@ -14,11 +20,11 @@ export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAss
         )
     }
 
-    async addPendingAsset(movieId: string, assetId: string) {
+    async addPendingAsset(movieId: string, assetId: string, transaction?: TransactionContext) {
         const pendingAsset = this.newDocument()
         pendingAsset.assetId = assetId
         pendingAsset.movieId = movieId
-        return this.insertOne(pendingAsset)
+        return this.insertOne(pendingAsset, transaction)
     }
 
     async hasPendingAsset(movieId: string, assetId: string): Promise<boolean> {
@@ -50,7 +56,11 @@ export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAss
         )
     }
 
-    async removePendingAsset(movieId: string, assetId: string): Promise<void> {
+    async removePendingAsset(
+        movieId: string,
+        assetId: string,
+        transaction?: TransactionContext
+    ): Promise<void> {
         const builder = new QueryBuilder()
         builder.addEquals('movieId', movieId)
         builder.addEquals('assetId', assetId)
@@ -58,6 +68,18 @@ export class MoviePendingAssetsRepository extends CrudRepository<MoviePendingAss
 
         await this.updateDocument(
             this.activeFilter(query),
+            this.timestamped({ $set: { deletedAt: DateUtil.now() } }),
+            { transaction }
+        )
+    }
+
+    async findAllAssetIds(): Promise<string[]> {
+        return this.distinctValues<string>('assetId', this.activeFilter({}))
+    }
+
+    async removeAssets(assetIds: string[]): Promise<void> {
+        await this.updateDocuments(
+            this.activeFilter({ assetId: { $in: assetIds } }),
             this.timestamped({ $set: { deletedAt: DateUtil.now() } })
         )
     }
