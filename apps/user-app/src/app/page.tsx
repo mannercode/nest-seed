@@ -40,13 +40,7 @@ export default function HomePage() {
                 if (!cancelled) setHome(view)
             } catch (err) {
                 if (!cancelled) {
-                    setError(
-                        err instanceof ApiError
-                            ? err.message
-                            : err instanceof Error
-                              ? err.message
-                              : '홈 화면을 불러올 수 없다'
-                    )
+                    setError(err instanceof Error ? err.message : '홈 화면을 불러올 수 없다')
                 }
             }
         }

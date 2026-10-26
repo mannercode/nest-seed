@@ -475,44 +475,106 @@ describe('NatsPubSubService', () => {
 })
 
 describe('createNatsPubSubServiceFixture', () => {
-    describe.each([
-        { label: '두 번째 앱 생성이 실패하면', stage: 'second-context' },
-        { label: '연결 확인이 실패하면', stage: 'flush' },
-        { label: '연결 확인과 정리가 모두 실패하면', stage: 'cleanup' }
-    ] as const)('$label', ({ stage }) => {
-        let failure: Error
-        let contexts: Array<{ close: () => Promise<void>; closeSpy: MockInstance }>
-        beforeEach(async () => {
-            failure = new Error('fixture initialization failed')
-            const createContext = testing.createTestContext
-            contexts = []
-            vi.spyOn(testing, 'createTestContext').mockImplementation(async (options) => {
-                if (stage === 'second-context' && contexts.length === 1) throw failure
-                const context = await createContext(options)
-                const close = context.close.bind(context)
-                const first = contexts.length === 0
-                const closeSpy = vi.spyOn(context, 'close').mockImplementation(async () => {
-                    await close()
-                    if (stage === 'cleanup' && first) throw new Error('cleanup failed')
+    let failure: Error
+    let createContext: typeof testing.createTestContext
+    let contexts: Array<{ close: () => Promise<void>; closeSpy: MockInstance }>
+
+    beforeEach(() => {
+        failure = new Error('fixture initialization failed')
+        createContext = testing.createTestContext
+        contexts = []
+    })
+    afterEach(async () => {
+        await Promise.allSettled(contexts.map((context) => context.close()))
+    })
+
+    describe('두 번째 앱 생성이 실패하면', () => {
+        beforeEach(() => {
+            vi.spyOn(testing, 'createTestContext')
+                .mockImplementationOnce(async (options) => {
+                    const context = await createContext(options)
+                    const close = context.close.bind(context)
+                    const closeSpy = vi.spyOn(context, 'close')
+                    contexts.push({ close, closeSpy })
+                    return context
                 })
-                contexts.push({ close, closeSpy })
-                if (stage !== 'second-context' && first) {
+                .mockRejectedValueOnce(failure)
+        })
+
+        it('픽스처 생성 시 이미 만든 앱 하나를 한 번 닫고 최초 초기화 오류를 던진다', async () => {
+            await expect(createNatsPubSubServiceFixture()).rejects.toBe(failure)
+
+            expect(contexts).toHaveLength(1)
+            expect(ensure(contexts[0]).closeSpy).toHaveBeenCalledTimes(1)
+        })
+    })
+
+    describe('연결 확인이 실패하면', () => {
+        beforeEach(() => {
+            vi.spyOn(testing, 'createTestContext')
+                .mockImplementationOnce(async (options) => {
+                    const context = await createContext(options)
+                    const close = context.close.bind(context)
+                    const closeSpy = vi.spyOn(context, 'close')
+                    contexts.push({ close, closeSpy })
+
                     const connection = context.module.get<NatsConnection>(
                         getNatsConnectionToken('replicaA')
                     )
                     vi.spyOn(connection, 'flush').mockRejectedValueOnce(failure)
-                }
-                return context
-            })
+                    return context
+                })
+                .mockImplementationOnce(async (options) => {
+                    const context = await createContext(options)
+                    const close = context.close.bind(context)
+                    const closeSpy = vi.spyOn(context, 'close')
+                    contexts.push({ close, closeSpy })
+                    return context
+                })
         })
-        it('픽스처 생성 시 이미 만든 앱을 모두 닫고 최초 초기화 오류를 던진다', async () => {
-            try {
-                await expect(createNatsPubSubServiceFixture()).rejects.toBe(failure)
-                expect(contexts).toHaveLength(stage === 'second-context' ? 1 : 2)
-                for (const context of contexts) expect(context.closeSpy).toHaveBeenCalledTimes(1)
-            } finally {
-                await Promise.allSettled(contexts.map((context) => context.close()))
-            }
+
+        it('픽스처 생성 시 이미 만든 앱 두 개를 각각 한 번 닫고 최초 초기화 오류를 던진다', async () => {
+            await expect(createNatsPubSubServiceFixture()).rejects.toBe(failure)
+
+            expect(contexts).toHaveLength(2)
+            expect(ensure(contexts[0]).closeSpy).toHaveBeenCalledTimes(1)
+            expect(ensure(contexts[1]).closeSpy).toHaveBeenCalledTimes(1)
+        })
+    })
+
+    describe('연결 확인과 정리가 모두 실패하면', () => {
+        beforeEach(() => {
+            vi.spyOn(testing, 'createTestContext')
+                .mockImplementationOnce(async (options) => {
+                    const context = await createContext(options)
+                    const close = context.close.bind(context)
+                    const closeSpy = vi.spyOn(context, 'close').mockImplementation(async () => {
+                        await close()
+                        throw new Error('cleanup failed')
+                    })
+                    contexts.push({ close, closeSpy })
+
+                    const connection = context.module.get<NatsConnection>(
+                        getNatsConnectionToken('replicaA')
+                    )
+                    vi.spyOn(connection, 'flush').mockRejectedValueOnce(failure)
+                    return context
+                })
+                .mockImplementationOnce(async (options) => {
+                    const context = await createContext(options)
+                    const close = context.close.bind(context)
+                    const closeSpy = vi.spyOn(context, 'close')
+                    contexts.push({ close, closeSpy })
+                    return context
+                })
+        })
+
+        it('픽스처 생성 시 이미 만든 앱 두 개를 각각 한 번 닫고 정리 오류 대신 최초 초기화 오류를 던진다', async () => {
+            await expect(createNatsPubSubServiceFixture()).rejects.toBe(failure)
+
+            expect(contexts).toHaveLength(2)
+            expect(ensure(contexts[0]).closeSpy).toHaveBeenCalledTimes(1)
+            expect(ensure(contexts[1]).closeSpy).toHaveBeenCalledTimes(1)
         })
     })
 })
