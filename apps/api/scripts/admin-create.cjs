@@ -77,7 +77,12 @@ async function createAdmin() {
             deletedAt: null,
             email: admin.email,
             name: admin.name,
-            password: await hash(admin.password, { type: argon2id }),
+            password: await hash(admin.password, {
+                memoryCost: 19 * 1024,
+                parallelism: 1,
+                timeCost: 2,
+                type: argon2id
+            }),
             updatedAt: now
         })
 

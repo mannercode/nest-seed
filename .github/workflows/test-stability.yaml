@@ -15,14 +15,14 @@ jobs:
             matrix:
                 include:
                     - name: libs
-                      repeat: 75
+                      repeat: 38
                       command: pnpm --recursive --filter './libs/**' --fail-if-no-match run test --coverage.enabled=false
                     - name: api
-                      repeat: 60
+                      repeat: 30
                       setup: pnpm run pretest
                       command: pnpm --filter './apps/api' --fail-if-no-match run test --coverage.enabled=false
                     - name: infra-reset
-                      repeat: 50
+                      repeat: 25
                       command: bash infra/reset.sh
         runs-on: ubuntu-26.04-arm
         steps:

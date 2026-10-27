@@ -183,6 +183,18 @@ describe('AdminManagement', () => {
                 const result = await runAdminCreateScript(fix, createDto)
                 expect(result).toMatchObject({ exitCode: 0, stderr: '' })
                 expect(result.stdout).toContain('Admin created: cli.admin+tag@example.com')
+
+                const stored = await fix.module
+                    .get(AdminsRepository)
+                    .findForAuthentication({ email: 'cli.admin+tag@example.com' })
+
+                expect(stored?.password).toMatch(/^\$argon2id\$v=19\$/)
+                expect(stored?.password.split('$')[3]?.split(',').sort()).toEqual([
+                    'm=19456',
+                    'p=1',
+                    't=2'
+                ])
+
                 await fix.httpClient
                     .post('/admins/login')
                     .body({ email: createDto.email, password })
