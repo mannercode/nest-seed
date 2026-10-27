@@ -10,7 +10,7 @@ TEST "사용자를 생성한다" \
 			"name": "사용자 이름",
 			"birthDate": "1990-01-01",
 			"email": "'${USER_EMAIL}'",
-			"password": "password"
+			"password": "Example password 1!"
 		}'
 
 USER_ID=$(echo "${BODY}" | jq -r '.id')
@@ -22,7 +22,7 @@ TEST "이미 가입한 이메일로 가입하면 409를 반환한다" \
 			"name": "사용자 이름",
 			"birthDate": "1990-01-01",
 			"email": "'${USER_EMAIL}'",
-			"password": "password"
+			"password": "Example password 1!"
 		}'
 
 TEST "빈 요청 본문으로 가입하면 400을 반환한다" \
@@ -37,7 +37,7 @@ TEST "올바르지 않은 이메일 형식으로 가입하면 400을 반환한�
 			"name": "사용자 이름",
 			"birthDate": "1990-01-01",
 			"email": "not-an-email",
-			"password": "password"
+			"password": "Example password 1!"
 		}'
 
 TEST "비밀번호 없이 가입하면 400을 반환한다" \
@@ -52,7 +52,7 @@ TEST "비밀번호 없이 가입하면 400을 반환한다" \
 TEST "이메일과 비밀번호로 로그인한다" \
 	200 POST /users/login \
 	-H 'Content-Type: application/json' \
-	-d '{ "email": "'${USER_EMAIL}'", "password": "password" }'
+	-d '{ "email": "'${USER_EMAIL}'", "password": "Example password 1!" }'
 
 USER_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
 USER_REFRESH_TOKEN=$(echo "${BODY}" | jq -r '.refreshToken')
@@ -60,12 +60,12 @@ USER_REFRESH_TOKEN=$(echo "${BODY}" | jq -r '.refreshToken')
 TEST "잘못된 비밀번호로 로그인하면 401을 반환한다" \
 	401 POST /users/login \
 	-H 'Content-Type: application/json' \
-	-d '{ "email": "'${USER_EMAIL}'", "password": "wrong-password" }'
+	-d '{ "email": "'${USER_EMAIL}'", "password": "incorrect password" }'
 
 TEST "존재하지 않는 이메일로 로그인하면 401을 반환한다" \
 	401 POST /users/login \
 	-H 'Content-Type: application/json' \
-	-d '{ "email": "unknown@example.com", "password": "password" }'
+	-d '{ "email": "unknown@example.com", "password": "Example password 1!" }'
 
 TEST "리프레시 토큰으로 액세스 토큰을 재발급한다" \
 	200 POST /users/refresh \
@@ -159,7 +159,7 @@ TEST "로그아웃한 리프레시 토큰으로 재발급하면 401을 반환한
 
 SETUP POST /users/login \
 	-H 'Content-Type: application/json' \
-	-d '{ "email": "'${USER_EMAIL}'", "password": "password" }'
+	-d '{ "email": "'${USER_EMAIL}'", "password": "Example password 1!" }'
 USER_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
 USER_REFRESH_TOKEN=$(echo "${BODY}" | jq -r '.refreshToken')
 
@@ -189,12 +189,12 @@ TEST "본인 삭제 데모용 사용자를 생성한다" \
 			"name": "self-delete",
 			"birthDate": "1990-01-01",
 			"email": "'${SELF_EMAIL}'",
-			"password": "password"
+			"password": "Example password 1!"
 		}'
 
 SETUP POST /users/login \
 	-H 'Content-Type: application/json' \
-	-d '{ "email": "'${SELF_EMAIL}'", "password": "password" }'
+	-d '{ "email": "'${SELF_EMAIL}'", "password": "Example password 1!" }'
 SELF_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
 
 TEST "사용자가 본인 계정을 삭제한다" \

@@ -1,10 +1,11 @@
 import { HttpStatus, type INestApplication } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
-import { TimeUtil } from '@mannercode/common'
+import { ensure, JwtAuthService, TimeUtil } from '@mannercode/common'
 import { AppConfigService } from '#config'
-import type { AdminDto } from '#core'
+import { type AdminDto, AdminsService, AdminsRepository, AdminSchema } from '#core'
 import {
     createAdmin,
+    createAndLoginUser,
     Errors,
     loginAdmin,
     type AppTestContext,
@@ -24,7 +25,7 @@ function trustPrivateProxy(app: INestApplication) {
 describe('AdminAuthentication', () => {
     let fix: AppTestContext
     let teardown: AppTestContext['teardown'] | undefined
-    const credentials = { email: 'admin@mail.com', password: 'password' }
+    const credentials = { email: 'admin@mail.com', password: 'Example password 1!' }
 
     beforeEach(async () => {
         teardown = undefined
@@ -36,7 +37,99 @@ describe('AdminAuthentication', () => {
     })
     afterEach(() => teardown?.())
 
+    describe.each([
+        { condition: '인증 정보가 없으면', credential: 'guest' },
+        { condition: '일반 사용자 토큰을 보냈으면', credential: 'user' },
+        { condition: '토큰이 잘못되었으면', credential: 'invalid' }
+    ] as const)('$condition', ({ credential }) => {
+        let headers: Record<string, string>
+        let admin: AdminDto
+        beforeEach(async () => {
+            const user = await createAndLoginUser(fix)
+            ;({ admin } = await loginAdmin(fix, credentials))
+            headers = {
+                guest: {},
+                user: { Authorization: `Bearer ${user.accessToken}` },
+                invalid: { Authorization: 'Bearer invalid-token' }
+            }[credential]
+        })
+        it('관리자 본인 조회에 401을 반환한다', async () => {
+            await fix.httpClient
+                .get('/admins/me')
+                .headers(headers)
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+        })
+        it('관리자 본인 수정에 401을 반환하고 관리자 정보를 유지한다', async () => {
+            await fix.httpClient
+                .patch('/admins/me')
+                .headers(headers)
+                .body({ name: 'denied' })
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+            await expect(fix.module.get(AdminsService).getMany([admin.id])).resolves.toEqual([
+                admin
+            ])
+        })
+    })
+
+    describe('서로 다른 두 관리자가 있으면', () => {
+        let mine: Awaited<ReturnType<typeof loginAdmin>>
+        let other: AdminDto
+        beforeEach(async () => {
+            mine = await loginAdmin(fix, credentials)
+            other = await createAdmin(fix, { email: 'other-admin@mail.com' })
+        })
+        it('타인 ID를 조회 조건으로 보내도 토큰에 해당하는 관리자 정보를 반환한다', async () => {
+            await fix.httpClient
+                .get('/admins/me')
+                .headers({ Authorization: `Bearer ${mine.accessToken}` })
+                .query({ adminId: other.id })
+                .ok({ schema: AdminSchema, expected: mine.admin })
+        })
+        it('타인 ID를 수정 조건으로 보내도 본인만 수정하고 다른 관리자는 유지한다', async () => {
+            await fix.httpClient
+                .patch('/admins/me')
+                .headers({ Authorization: `Bearer ${mine.accessToken}` })
+                .query({ adminId: other.id })
+                .body({ name: 'changed' })
+                .ok({ schema: AdminSchema, expected: { ...mine.admin, name: 'changed' } })
+            await expect(fix.module.get(AdminsService).getMany([other.id])).resolves.toEqual([
+                other
+            ])
+        })
+    })
+
     describe('POST /admins/login', () => {
+        describe.each([
+            { condition: '15자 미만', password: '🌱'.repeat(14) },
+            { condition: '128자 초과', password: 'a'.repeat(129) }
+        ])('비밀번호 길이가 $condition 범위이면', ({ password }) => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.post('/admins/login').body({ ...credentials, password })
+            })
+            it('로그인을 요청하면 입력 오류로 400을 반환한다', async () => {
+                await request.badRequest({
+                    expected: Errors.RequestValidation.Failed(expect.any(Array))
+                })
+            })
+        })
+
+        describe('이메일의 대소문자와 앞뒤 공백만 등록 정보와 다르면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post('/admins/login')
+                    .body({ ...credentials, email: '  ADMIN@MAIL.COM  ' })
+            })
+            it('로그인하면 같은 관리자의 토큰을 반환한다', async () => {
+                const { body } = await request.ok()
+                await fix.httpClient
+                    .get('/admins/me')
+                    .headers({ Authorization: `Bearer ${body.accessToken}` })
+                    .ok({ expected: expect.objectContaining({ email: credentials.email }) })
+            })
+        })
+
         describe('이메일과 비밀번호가 등록된 관리자 정보와 일치하면', () => {
             let request: typeof fix.httpClient
             beforeEach(() => {
@@ -60,7 +153,7 @@ describe('AdminAuthentication', () => {
             beforeEach(() => {
                 request = fix.httpClient
                     .post('/admins/login')
-                    .body({ ...credentials, password: 'wrong password' })
+                    .body({ ...credentials, password: 'incorrect password' })
             })
             it('로그인을 요청하면 401을 반환한다', async () => {
                 await request.unauthorized({ expected: Errors.Auth.Unauthorized() })
@@ -85,7 +178,7 @@ describe('AdminAuthentication', () => {
                     await fix.httpClient
                         .post('/admins/login')
                         .headers({ 'X-Forwarded-For': `198.51.100.${index + 1}` })
-                        .body({ ...credentials, password: 'wrong password' })
+                        .body({ ...credentials, password: 'incorrect password' })
                         .unauthorized({ expected: Errors.Auth.Unauthorized() })
                 }
             })
@@ -107,7 +200,10 @@ describe('AdminAuthentication', () => {
                     await fix.httpClient
                         .post('/admins/login')
                         .headers({ 'X-Forwarded-For': ip })
-                        .body({ email: `unknown-${index}@mail.com`, password: 'wrong password' })
+                        .body({
+                            email: `unknown-${index}@mail.com`,
+                            password: 'incorrect password'
+                        })
                         .unauthorized({ expected: Errors.Auth.Unauthorized() })
                 }
 
@@ -121,13 +217,13 @@ describe('AdminAuthentication', () => {
                 await fix.httpClient
                     .post('/admins/login')
                     .headers({ 'X-Forwarded-For': ip })
-                    .body({ email: 'unknown-50@mail.com', password: 'wrong password' })
+                    .body({ email: 'unknown-50@mail.com', password: 'incorrect password' })
                     .unauthorized({ expected: Errors.Auth.Unauthorized() })
 
                 await fix.httpClient
                     .post('/admins/login')
                     .headers({ 'X-Forwarded-For': ip })
-                    .body({ email: 'unknown-51@mail.com', password: 'wrong password' })
+                    .body({ email: 'unknown-51@mail.com', password: 'incorrect password' })
                     .send(HttpStatus.TOO_MANY_REQUESTS, { expected: LOGIN_RATE_LIMITED_ERROR })
             })
         })
@@ -194,6 +290,57 @@ describe('AdminAuthentication', () => {
     })
 
     describe('POST /admins/refresh', () => {
+        describe('로그인 후 이름만 변경했으면', () => {
+            let session: Awaited<ReturnType<typeof loginAdmin>>
+            beforeEach(async () => {
+                session = await loginAdmin(fix, credentials)
+                await fix.module.get(AdminsService).update(session.admin.id, { name: 'Updated' })
+            })
+            it('기존 세션으로 토큰을 갱신할 수 있다', async () => {
+                await fix.httpClient
+                    .post('/admins/refresh')
+                    .body({ refreshToken: session.refreshToken })
+                    .ok()
+            })
+        })
+
+        describe('인증 버전 없이 발급한 리프레시 토큰이면', () => {
+            let refreshToken: string
+            beforeEach(async () => {
+                const { admin } = await loginAdmin(fix, credentials)
+                const jwt = fix.module.get<JwtAuthService>(JwtAuthService.getName('admins'))
+                ;({ refreshToken } = await jwt.generateAuthTokens({
+                    sub: admin.id,
+                    email: admin.email
+                }))
+            })
+            it('토큰 갱신을 요청하면 401을 반환한다', async () => {
+                await fix.httpClient
+                    .post('/admins/refresh')
+                    .body({ refreshToken })
+                    .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+            })
+        })
+
+        describe('현재 계정 조회가 한 번 실패하면', () => {
+            let session: Awaited<ReturnType<typeof loginAdmin>>
+            let failure: Error
+            beforeEach(async () => {
+                session = await loginAdmin(fix, credentials)
+                failure = new Error('Account database unavailable')
+                vi.spyOn(fix.module.get(AdminsRepository), 'find').mockRejectedValueOnce(failure)
+            })
+            it('갱신은 실패하고 저장소가 복구되면 같은 토큰으로 다시 갱신할 수 있다', async () => {
+                await expect(
+                    fix.module.get(AdminsService).refreshAuthTokens(session.refreshToken)
+                ).rejects.toBe(failure)
+                await fix.httpClient
+                    .post('/admins/refresh')
+                    .body({ refreshToken: session.refreshToken })
+                    .ok()
+            })
+        })
+
         describe('유효한 리프레시 토큰을 가지고 있을 때', () => {
             let tokens: Awaited<ReturnType<typeof loginAdmin>>
 
@@ -215,6 +362,125 @@ describe('AdminAuthentication', () => {
                 expect(body.accessToken).not.toEqual(tokens.accessToken)
                 expect(body.refreshToken).not.toEqual(tokens.refreshToken)
             })
+        })
+    })
+
+    describe('비밀번호 검증을 통과한 로그인이 토큰 발급을 기다리면', () => {
+        let session: Awaited<ReturnType<typeof loginAdmin>>
+        let adminsService: AdminsService
+        let release: (() => void) | undefined
+        let loginResult: ReturnType<AdminsService['login']> | undefined
+        let loginCompletion: Promise<unknown> | undefined
+
+        beforeEach(async () => {
+            release = undefined
+            loginResult = undefined
+            loginCompletion = undefined
+            session = await loginAdmin(fix, credentials)
+            adminsService = fix.module.get(AdminsService)
+            const jwt = fix.module.get<JwtAuthService>(JwtAuthService.getName('admins'))
+            const generateAuthTokens = jwt.generateAuthTokens.bind(jwt)
+            const started = Promise.withResolvers<void>()
+            const held = Promise.withResolvers<void>()
+            release = held.resolve
+            vi.spyOn(jwt, 'generateAuthTokens').mockImplementationOnce(async (payload) => {
+                started.resolve()
+                await held.promise
+                return generateAuthTokens(payload)
+            })
+            loginResult = adminsService.login(credentials)
+            loginCompletion = Promise.allSettled([loginResult])
+            await started.promise
+        })
+        afterEach(async () => {
+            release?.()
+            await loginCompletion
+        })
+
+        it('비밀번호를 변경하면 변경 전에 인증된 로그인 세션으로 갱신할 수 없다', async () => {
+            await adminsService.update(session.admin.id, { password: 'updated password' })
+            ensure(release)()
+
+            await fix.httpClient
+                .post('/admins/refresh')
+                .body({ refreshToken: session.refreshToken })
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+
+            const login = ensure(await loginResult)
+            await fix.httpClient
+                .post('/admins/refresh')
+                .body({ refreshToken: login.tokens.refreshToken })
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+
+            const current = await loginAdmin(fix, { ...credentials, password: 'updated password' })
+            await fix.httpClient
+                .post('/admins/refresh')
+                .body({ refreshToken: current.refreshToken })
+                .ok()
+        })
+
+        it('계정을 삭제하면 삭제 전에 인증된 로그인 세션으로 갱신할 수 없다', async () => {
+            await adminsService.remove(session.admin.id)
+            ensure(release)()
+
+            await fix.httpClient
+                .post('/admins/refresh')
+                .body({ refreshToken: session.refreshToken })
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+
+            const login = ensure(await loginResult)
+            await fix.httpClient
+                .post('/admins/refresh')
+                .body({ refreshToken: login.tokens.refreshToken })
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+        })
+    })
+
+    describe('계정 변경 후 리프레시 세션 회수에 실패하도록 설정하면', () => {
+        let session: Awaited<ReturnType<typeof loginAdmin>>
+        let adminsService: AdminsService
+        let failure: Error
+
+        beforeEach(async () => {
+            session = await loginAdmin(fix, credentials)
+            adminsService = fix.module.get(AdminsService)
+            failure = new Error('Redis session revocation failed')
+            vi.spyOn(
+                fix.module.get<JwtAuthService>(JwtAuthService.getName('admins')),
+                'revokeAllSessions'
+            ).mockRejectedValueOnce(failure)
+        })
+
+        it('비밀번호 변경이 실패해도 DB에 반영된 새 비밀번호로 로그인할 수 있고 이전 세션은 갱신할 수 없다', async () => {
+            const password = 'updated password'
+            await expect(adminsService.update(session.admin.id, { password })).rejects.toBe(failure)
+            const { body: current } = await fix.httpClient
+                .post('/admins/login')
+                .body({ ...credentials, password })
+                .ok()
+
+            await fix.httpClient
+                .post('/admins/refresh')
+                .body({ refreshToken: session.refreshToken })
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+
+            await fix.httpClient
+                .post('/admins/refresh')
+                .body({ refreshToken: current.refreshToken })
+                .ok()
+        })
+
+        it('계정 삭제가 실패해도 DB에서 삭제된 계정으로 로그인하거나 이전 세션을 갱신할 수 없다', async () => {
+            await expect(adminsService.remove(session.admin.id)).rejects.toBe(failure)
+            await fix.httpClient
+                .post('/admins/login')
+                .body(credentials)
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+
+            await fix.httpClient
+                .post('/admins/refresh')
+                .body({ refreshToken: session.refreshToken })
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
         })
     })
 

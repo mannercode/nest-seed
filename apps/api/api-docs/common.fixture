@@ -12,7 +12,7 @@ new_idempotency_key() {
 
 USER_NAME="사용자 이름"
 USER_BIRTHDATE="1990-01-01"
-USER_PASSWORD="testpassword"
+USER_PASSWORD="Example password 1!"
 USER_EMAIL="user@example.com"
 
 # admin은 infra/reset.sh가 만든 고정 개발 fixture이고, 콘텐츠 spec은 그 admin 토큰으로 진행한다.

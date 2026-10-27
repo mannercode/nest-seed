@@ -40,14 +40,15 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<NextR
     }
 
     const { path } = await context.params
-    if (isBlockedAuthEndpoint(path)) {
+    const pathname = path.map(encodeURIComponent).join('/')
+    const authPathname = pathname.toLowerCase()
+    if (isBlockedAuthEndpoint(authPathname.split('/'), request.method)) {
         return jsonResponse({ message: 'Not found' }, 404)
     }
 
-    const pathname = path.map(encodeURIComponent).join('/')
     const authPath = `${AUTH_PREFIX}/`
-    const isLogin = pathname === `${authPath}login`
-    const isLogout = pathname === `${authPath}logout`
+    const isLogin = request.method === 'POST' && authPathname === `${authPath}login`
+    const isLogout = request.method === 'POST' && authPathname === `${authPath}logout`
     const cookieStore = request.cookies
     const accessToken = cookieStore.get(ACCESS_COOKIE)?.value
     const refreshToken = cookieStore.get(REFRESH_COOKIE)?.value
@@ -127,7 +128,7 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<NextR
     return copyResponse(upstream)
 }
 
-function isBlockedAuthEndpoint(path: string[]): boolean {
+function isBlockedAuthEndpoint(path: string[], method: string): boolean {
     if (path.length !== 2) return false
 
     const [namespace, operation] = path
@@ -137,7 +138,10 @@ function isBlockedAuthEndpoint(path: string[]): boolean {
         AUTH_OPERATIONS.has(operation)
 
     // login/logout은 이 BFF가 담당하는 역할만 허용하고, refresh는 내부 회전에서만 호출한다.
-    return isAuthEndpoint && (namespace !== AUTH_PREFIX || operation === 'refresh')
+    return (
+        isAuthEndpoint &&
+        (namespace !== AUTH_PREFIX || operation === 'refresh' || method !== 'POST')
+    )
 }
 
 async function readBody(request: NextRequest): Promise<ArrayBuffer | undefined> {

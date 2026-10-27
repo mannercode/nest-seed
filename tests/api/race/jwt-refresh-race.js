@@ -14,7 +14,7 @@ const REPLACED_ERROR_CODE = 'ERR_JWT_AUTH_REFRESH_TOKEN_REPLACED'
 
 async function createAndLogin(suffix) {
     const email = `race.${suffix}.${secureRandomHex()}@example.com`
-    const password = 'racepassword'
+    const password = 'race password 123'
 
     const created = await request('POST', '/users', {
         body: { name: 'race', birthDate: '1990-01-01', email, password }

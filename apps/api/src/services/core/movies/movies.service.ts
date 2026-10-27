@@ -13,6 +13,7 @@ import {
     NotFoundException,
     UnprocessableEntityException
 } from '@nestjs/common'
+import { Cron, CronExpression } from '@nestjs/schedule'
 import { AssetsService, CreateAssetDto } from '#infrastructure'
 import { SearchMoviesPageDto, UpsertMovieDto, MovieDto, MovieSchema } from './dtos/index.js'
 import { MovieErrors } from './errors.js'
@@ -21,6 +22,8 @@ import { MoviePendingAssetsRepository } from './movie-pending-assets.repository.
 import { MoviesRepository } from './movies.repository.js'
 
 const MOVIE_UPDATE_ATTEMPTS = 5
+const MOVIE_IMAGE_MAX_BYTES = 5 * 1024 * 1024
+const MOVIE_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
 @Injectable()
 export class MoviesService {
@@ -29,6 +32,19 @@ export class MoviesService {
         private readonly pendingAssetsRepository: MoviePendingAssetsRepository,
         private readonly assetsService: AssetsService
     ) {}
+
+    @Cron(CronExpression.EVERY_10_MINUTES, { name: 'movies.cleanupExpiredUploads' })
+    async cleanupExpiredUploads(): Promise<void> {
+        await this.assetsService.cleanupExpiredUploads()
+        const pendingIds = await this.pendingAssetsRepository.findAllAssetIds()
+        const attachedIds = await this.moviesRepository.findAssetIds()
+        const candidateIds = uniq([...pendingIds, ...attachedIds])
+        const owners = await this.assetsService.findOwners(candidateIds)
+        // 이전 회차가 자산 삭제 뒤 중단됐어도 남은 연결·대기 기록을 다시 찾아 정리한다.
+        const removedIds = candidateIds.filter((assetId) => !owners.has(assetId))
+        await this.moviesRepository.removeAssets(removedIds)
+        await this.pendingAssetsRepository.removeAssets(removedIds)
+    }
 
     async create(upsertDto: UpsertMovieDto) {
         const movie = await this.moviesRepository.create(upsertDto)
@@ -41,13 +57,21 @@ export class MoviesService {
             throw new NotFoundException(MovieErrors.NotFound(movieId))
         }
 
-        if (!createDto.mimeType.startsWith('image/')) {
+        if (!MOVIE_IMAGE_MIME_TYPES.includes(createDto.mimeType)) {
             throw new BadRequestException(MovieErrors.UnsupportedAssetType(createDto.mimeType))
+        }
+        if (createDto.size > MOVIE_IMAGE_MAX_BYTES) {
+            throw new BadRequestException(
+                MovieErrors.AssetTooLarge(createDto.size, MOVIE_IMAGE_MAX_BYTES)
+            )
         }
 
         const upload = await this.assetsService.create(createDto)
 
-        await this.pendingAssetsRepository.addPendingAsset(movieId, upload.assetId)
+        await this.moviesRepository.withTransaction(async (transaction) => {
+            await this.moviesRepository.touchForAssetChange(movieId, transaction)
+            await this.pendingAssetsRepository.addPendingAsset(movieId, upload.assetId, transaction)
+        })
 
         return upload
     }
@@ -77,19 +101,16 @@ export class MoviesService {
             throw new NotFoundException(MovieErrors.AssetNotFound(assetId))
         }
 
-        // 파일을 먼저 영화와 대기 목록에서 제거한 뒤 실제 저장소에서 삭제한다.
-        // 순서를 바꾸면 이미 삭제된 파일을 계속 가리키는 기록이 남을 수 있다.
-        if (isAttached) {
-            await this.moviesRepository.removeAsset(movieId, assetId)
-        }
-        if (isPending) {
-            await this.pendingAssetsRepository.removePendingAsset(movieId, assetId)
-        }
+        // 삭제 시작은 새로운 확정을 막는다. 실패 시 재요청할 수 있도록 연결과 대기
+        // 기록은 자산 삭제가 성공한 뒤 제거한다.
         await this.assetsService.deleteMany([assetId])
+        await this.moviesRepository.removeAsset(movieId, assetId)
+        await this.pendingAssetsRepository.removePendingAsset(movieId, assetId)
     }
 
     async deleteMany(movieIds: string[]): Promise<void> {
-        const movies = await this.moviesRepository.findMany({ ids: movieIds })
+        // 새 파일 연결을 먼저 막은 뒤 확정·대기 목록을 읽어야 둘 사이의 이동을 놓치지 않는다.
+        const movies = await this.moviesRepository.requestDeletion(movieIds)
 
         if (0 < movies.length) {
             const existingMovieIds = pickIds(movies)
@@ -132,35 +153,42 @@ export class MoviesService {
     async finalizeUpload(movieId: string, assetId: string): Promise<void> {
         const movie = await this.moviesRepository.find({ id: movieId })
 
-        if (!movie) {
+        if (!movie || movie.deletionRequestedAt) {
             throw new NotFoundException(MovieErrors.NotFound(movieId))
         }
 
-        if (movie.assetIds.includes(assetId)) {
-            await this.pendingAssetsRepository.removePendingAsset(movieId, assetId)
-            return
+        if (!movie.assetIds.includes(assetId)) {
+            const hasPendingAsset = await this.pendingAssetsRepository.hasPendingAsset(
+                movieId,
+                assetId
+            )
+
+            if (!hasPendingAsset) {
+                throw new NotFoundException(MovieErrors.AssetNotFound(assetId))
+            }
+
+            const isUploaded = await this.assetsService.isUploadComplete(assetId)
+
+            if (!isUploaded) {
+                throw new UnprocessableEntityException(MovieErrors.AssetUploadInvalid(assetId))
+            }
+
+            await this.assetsService.finalizeUpload(assetId, {
+                owner: { entityId: movieId, service: 'movies' }
+            })
         }
 
-        const hasPendingAsset = await this.pendingAssetsRepository.hasPendingAsset(movieId, assetId)
-
-        if (!hasPendingAsset) {
-            throw new NotFoundException(MovieErrors.AssetNotFound(assetId))
-        }
-
-        const isUploaded = await this.assetsService.isUploadComplete(assetId)
-
-        if (!isUploaded) {
-            throw new UnprocessableEntityException(MovieErrors.AssetUploadInvalid(assetId))
-        }
-
-        await this.assetsService.finalizeUpload(assetId, {
-            owner: { entityId: movieId, service: 'movies' }
+        // 최초 소유 부여는 남겨 연결 실패 뒤에도 만료와 관계없이 재시도할 수 있게 한다.
+        // 연결과 대기 제거는 삭제 시작과 경합하는 소유권 확인 쓰기와 함께 확정한다.
+        await this.moviesRepository.withTransaction(async (transaction) => {
+            await this.moviesRepository.addAsset(movieId, assetId, transaction)
+            await this.assetsService.confirmOwner(
+                assetId,
+                { entityId: movieId, service: 'movies' },
+                transaction
+            )
+            await this.pendingAssetsRepository.removePendingAsset(movieId, assetId, transaction)
         })
-
-        // 업로드한 파일을 영화에 연결한 뒤 대기 목록에서 제거한다.
-        // 연결 중 실패하더라도 대기 목록이 남아 있어 다시 처리할 수 있다.
-        await this.moviesRepository.addAsset(movieId, assetId)
-        await this.pendingAssetsRepository.removePendingAsset(movieId, assetId)
     }
 
     async getMany(movieIds: string[]) {

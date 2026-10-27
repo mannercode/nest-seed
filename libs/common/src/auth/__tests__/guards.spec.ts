@@ -229,9 +229,30 @@ describe('AuthGuard', () => {
 })
 
 describe('PasswordHasher', () => {
-    it('비밀번호를 해시하면 비용 계수가 10인 bcrypt 해시를 반환한다', async () => {
+    it('비밀번호를 해시하면 Argon2id 해시를 반환한다', async () => {
         const hashed = await PasswordHasher.hash('password')
-        expect(hashed).toMatch(/^\$2[aby]\$10\$/)
+        expect(hashed).toMatch(/^\$argon2id\$v=19\$/)
+    })
+    it('같은 비밀번호를 두 번 해시하면 서로 다른 해시를 반환하고 둘 다 검증할 수 있다', async () => {
+        const first = await PasswordHasher.hash('password')
+        const second = await PasswordHasher.hash('password')
+        expect(first).not.toBe(second)
+        expect(await PasswordHasher.verify('password', first)).toBe(true)
+        expect(await PasswordHasher.verify('password', second)).toBe(true)
+    })
+    describe.each([
+        { label: 'ASCII', prefix: 'a'.repeat(72) },
+        { label: '한글', prefix: '가'.repeat(24) },
+        { label: '이모지', prefix: '🌱'.repeat(18) }
+    ])('$label 비밀번호의 처음 72바이트가 같고 그 뒤가 다르면', ({ prefix }) => {
+        let digest: string
+        beforeEach(async () => {
+            digest = await PasswordHasher.hash(`${prefix}original`)
+        })
+        it('원래 비밀번호는 일치하고 뒤가 다른 비밀번호는 일치하지 않는다', async () => {
+            expect(await PasswordHasher.verify(`${prefix}original`, digest)).toBe(true)
+            expect(await PasswordHasher.verify(`${prefix}different`, digest)).toBe(false)
+        })
     })
     describe.each([
         {

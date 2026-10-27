@@ -13,7 +13,14 @@ import {
     TheaterSchema,
     TicketSchema
 } from '#core'
-import { Errors, type AppTestContext, createAppTestContext, holdTickets } from '../helpers/index.js'
+import {
+    Errors,
+    type AppTestContext,
+    createAppTestContext,
+    holdTickets,
+    createAndLoginAdmin,
+    createUser
+} from '../helpers/index.js'
 import { createAllResources } from './booking.utils.js'
 import { AppConfigService } from '#config'
 
@@ -188,15 +195,33 @@ describe('BookingService', () => {
         const locations = [{ latitude: 30.0, longitude: 130.0 }]
         const startTimes = [instant('2999-01-01T12:00Z')]
 
-        describe('인증 정보가 없으면', () => {
+        describe.each([
+            { condition: '인증 정보가 없으면', credential: 'guest' },
+            { condition: '관리자 토큰을 보냈으면', credential: 'admin' },
+            { condition: '토큰이 잘못되었으면', credential: 'invalid' }
+        ] as const)('$condition', ({ credential }) => {
             let request: typeof fix.httpClient
-            beforeEach(() => {
+            let resources: Awaited<ReturnType<typeof createAllResources>>
+            beforeEach(async () => {
+                resources = await createAllResources(fix, locations, startTimes)
+                const admin = await createAndLoginAdmin(fix)
+                const headers: Record<string, string> = {
+                    guest: {},
+                    admin: { Authorization: `Bearer ${admin.accessToken}` },
+                    invalid: { Authorization: 'Bearer invalid-token' }
+                }[credential]
                 request = fix.httpClient
-                    .post(`/booking/showtimes/${nullObjectId}/tickets/hold`)
-                    .body({ ticketIds: [nullObjectId] })
+                    .post(`/booking/showtimes/${ensure(resources.showtimes[0]).id}/tickets/hold`)
+                    .headers(headers)
+                    .body({ ticketIds: pickIds(resources.tickets.slice(0, 2)) })
             })
-            it('티켓 선점을 요청하면 401을 반환한다', async () => {
+            it('티켓 선점을 요청하면 401을 반환하고 선점 상태를 만들지 않는다', async () => {
                 await request.unauthorized({ expected: Errors.Auth.Unauthorized() })
+                await expect(
+                    fix.module
+                        .get(TicketHoldingService)
+                        .searchHeldTicketIds(ensure(resources.showtimes[0]).id, resources.user.id)
+                ).resolves.toEqual([])
             })
         })
 
@@ -227,6 +252,28 @@ describe('BookingService', () => {
                     userId
                 )
                 expect(heldTicketIds.sort()).toEqual([...ticketIds].sort())
+            })
+
+            describe('선점 본문에 다른 사용자의 ID가 있으면', () => {
+                let request: typeof fix.httpClient
+                let other: UserDto
+                beforeEach(async () => {
+                    other = await createUser(fix, { email: 'other-user@mail.com' })
+                    request = fix.httpClient
+                        .post(`/booking/showtimes/${showtimeId}/tickets/hold`)
+                        .headers({ Authorization: `Bearer ${accessToken}` })
+                        .body({ ticketIds, userId: other.id })
+                })
+                it('선점을 거절하고 두 사용자 모두에게 선점 상태를 만들지 않는다', async () => {
+                    await request.badRequest()
+                    const holdings = fix.module.get(TicketHoldingService)
+                    await expect(holdings.searchHeldTicketIds(showtimeId, userId)).resolves.toEqual(
+                        []
+                    )
+                    await expect(
+                        holdings.searchHeldTicketIds(showtimeId, other.id)
+                    ).resolves.toEqual([])
+                })
             })
 
             describe('요청한 티켓 ID에 존재하지 않는 ID가 섞여 있으면', () => {

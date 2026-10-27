@@ -1,18 +1,20 @@
-const { hash } = require('bcrypt')
+const { argon2id, hash } = require('argon2')
 const { MongoClient, ObjectId } = require('mongodb')
 const { createInterface } = require('node:readline/promises')
 const { Writable } = require('node:stream')
 const { z } = require('zod')
 
-const BCRYPT_SALT_ROUNDS = 10
 const environmentSchema = z.object({
     MONGO_DATABASE: z.string().min(1),
     MONGO_URI: z.string().min(1)
 })
 const adminSchema = z.object({
-    email: z.email(),
+    email: z.string().trim().toLowerCase().pipe(z.email()),
     name: z.string().min(1),
-    password: z.string().min(1)
+    password: z.string().refine((value) => {
+        const length = [...value].length
+        return 15 <= length && length <= 128
+    }, 'Password must contain 15 to 128 Unicode code points.')
 })
 
 async function promptForAdmin() {
@@ -70,11 +72,12 @@ async function createAdmin() {
         await admins.insertOne({
             __v: 0,
             _id: new ObjectId(),
+            authVersion: 0,
             createdAt: now,
             deletedAt: null,
             email: admin.email,
             name: admin.name,
-            password: await hash(admin.password, BCRYPT_SALT_ROUNDS),
+            password: await hash(admin.password, { type: argon2id }),
             updatedAt: now
         })
 

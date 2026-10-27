@@ -6,13 +6,13 @@ export function buildCreateUserDto(overrides: Partial<CreateUserDto> = {}): Crea
         birthDate: nullPlainDate,
         email: 'name@mail.com',
         name: 'name',
-        password: 'password',
+        password: 'Example password 1!',
         ...overrides
     }
 }
 
 export async function createAndLoginUser(ctx: TestContext) {
-    const credentials = { email: 'user@mail.com', password: 'password' }
+    const credentials = { email: 'user@mail.com', password: 'Example password 1!' }
 
     const user = await createUser(ctx, credentials)
 

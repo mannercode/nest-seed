@@ -6,7 +6,7 @@ import { AppConfigService } from '#config'
     imports: [
         MongoModule.forRootAsync({
             inject: [AppConfigService],
-            // 가입 요청의 bcrypt 부하가 몰리기 전에 DB 연결을 확보한다.
+            // 가입 요청의 비밀번호 해싱 부하가 몰리기 전에 DB 연결을 확보한다.
             useFactory: (config: AppConfigService) => ({ ...config.mongo, minPoolSize: 50 })
         })
     ]

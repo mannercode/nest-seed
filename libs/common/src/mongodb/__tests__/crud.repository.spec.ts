@@ -20,43 +20,69 @@ import {
 } from './crud.repository.fixture.js'
 
 describe('createMongoRepositoryFixture', () => {
-    describe.each([
-        { label: '연결 직후 초기화가 실패하면', stage: 'connect' },
-        { label: '인덱스 초기화가 실패하면', stage: 'index' },
-        { label: '인덱스 초기화와 연결 정리가 모두 실패하면', stage: 'cleanup' }
-    ] as const)('$label', ({ stage }) => {
-        let failure: Error
-        let closeClient: (() => Promise<void>) | undefined
-        let closeSpy: MockInstance<MongoClient['close']>
-        beforeEach(async () => {
-            failure = new Error('fixture initialization failed')
-            const connect = MongoClient.prototype.connect
-            const close = MongoClient.prototype.close
-            closeClient = undefined
-            vi.spyOn(MongoClient.prototype, 'connect').mockImplementationOnce(async function (
-                this: MongoClient
-            ) {
-                closeClient = close.bind(this)
-                await connect.call(this)
-                if (stage === 'connect') throw failure
-                return this
-            })
-            if (stage !== 'connect')
-                vi.spyOn(SamplesRepository.prototype, 'onModuleInit').mockRejectedValueOnce(failure)
-            closeSpy = vi
-                .spyOn(MongoClient.prototype, 'close')
-                .mockImplementationOnce(async function (this: MongoClient) {
-                    await close.call(this)
-                    if (stage === 'cleanup') throw new Error('cleanup failed')
-                })
+    let failure: Error
+    let closeClient: (() => Promise<void>) | undefined
+    let originalConnect: MongoClient['connect']
+    let originalClose: MongoClient['close']
+    let connectSpy: MockInstance<MongoClient['connect']>
+    let closeSpy: MockInstance<MongoClient['close']>
+
+    beforeEach(() => {
+        failure = new Error('fixture initialization failed')
+        originalConnect = MongoClient.prototype.connect
+        originalClose = MongoClient.prototype.close
+        closeClient = undefined
+        connectSpy = vi.spyOn(MongoClient.prototype, 'connect').mockImplementation(async function (
+            this: MongoClient
+        ) {
+            closeClient = originalClose.bind(this)
+            return originalConnect.call(this)
         })
+        closeSpy = vi.spyOn(MongoClient.prototype, 'close')
+    })
+
+    afterEach(async () => {
+        await closeClient?.()
+    })
+
+    describe('연결 직후 초기화가 실패하면', () => {
+        beforeEach(() => {
+            connectSpy.mockImplementationOnce(async function (this: MongoClient) {
+                closeClient = originalClose.bind(this)
+                await originalConnect.call(this)
+                throw failure
+            })
+        })
+
         it('픽스처 생성 시 연결을 닫고 최초 초기화 오류를 던진다', async () => {
-            try {
-                await expect(createMongoRepositoryFixture()).rejects.toBe(failure)
-                expect(closeSpy).toHaveBeenCalledTimes(1)
-            } finally {
-                await closeClient?.()
-            }
+            await expect(createMongoRepositoryFixture()).rejects.toBe(failure)
+            expect(closeSpy).toHaveBeenCalledTimes(1)
+        })
+    })
+
+    describe('인덱스 초기화가 실패하면', () => {
+        beforeEach(() => {
+            vi.spyOn(SamplesRepository.prototype, 'onModuleInit').mockRejectedValueOnce(failure)
+        })
+
+        it('픽스처 생성 시 연결을 닫고 최초 초기화 오류를 던진다', async () => {
+            await expect(createMongoRepositoryFixture()).rejects.toBe(failure)
+            expect(closeSpy).toHaveBeenCalledTimes(1)
+        })
+    })
+
+    describe('인덱스 초기화와 연결 정리가 모두 실패하면', () => {
+        beforeEach(() => {
+            vi.spyOn(SamplesRepository.prototype, 'onModuleInit').mockRejectedValueOnce(failure)
+            closeSpy.mockImplementationOnce(async function (this: MongoClient) {
+                await originalClose.call(this)
+                throw new Error('cleanup failed')
+            })
+        })
+
+        it('픽스처 생성 시 연결을 닫고 최초 초기화 오류를 던진다', async () => {
+            await expect(createMongoRepositoryFixture()).rejects.toBe(failure)
+            expect(closeSpy).toHaveBeenCalledTimes(1)
         })
     })
 })

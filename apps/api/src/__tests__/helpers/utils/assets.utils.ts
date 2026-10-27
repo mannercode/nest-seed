@@ -1,5 +1,5 @@
 import type { TestContext } from '@mannercode/testing'
-import { pick } from '@mannercode/common'
+import { pick, S3ObjectService } from '@mannercode/common'
 import { readFile } from 'fs/promises'
 import { basename } from 'path'
 import {
@@ -10,6 +10,7 @@ import {
     AssetsService
 } from '#infrastructure'
 import { testAssets, type TestAsset } from '../assets/index.js'
+import { AssetsRepository } from '../../../services/infrastructure/assets/assets.repository.js'
 
 export function buildCreateAssetDto(file: TestAsset = testAssets.image): CreateAssetDto {
     return pick(file, ['originalName', 'mimeType', 'size', 'checksum'])
@@ -76,4 +77,30 @@ export async function uploadFile(ctx: TestContext, file: TestAsset) {
     )
 
     return uploadRequest.assetId
+}
+
+export function pauseNextAssetOwnerAssignment(ctx: TestContext) {
+    const repository = ctx.module.get(AssetsRepository)
+    const assignOwner = repository.assignOwner.bind(repository)
+    const started = Promise.withResolvers<void>()
+    const held = Promise.withResolvers<void>()
+    vi.spyOn(repository, 'assignOwner').mockImplementationOnce(async (...args) => {
+        started.resolve()
+        await held.promise
+        return assignOwner(...args)
+    })
+    return { started: started.promise, release: held.resolve }
+}
+
+export function pauseNextStorageDelete(ctx: TestContext) {
+    const storage = ctx.module.get<S3ObjectService>(S3ObjectService.getName())
+    const deleteObject = storage.deleteObject.bind(storage)
+    const started = Promise.withResolvers<void>()
+    const held = Promise.withResolvers<void>()
+    vi.spyOn(storage, 'deleteObject').mockImplementationOnce(async (...args) => {
+        started.resolve()
+        await held.promise
+        return deleteObject(...args)
+    })
+    return { started: started.promise, release: held.resolve }
 }

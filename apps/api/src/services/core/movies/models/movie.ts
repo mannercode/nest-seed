@@ -28,6 +28,8 @@ export type MovieRating = (typeof MovieRating)[keyof typeof MovieRating]
 export class Movie extends CrudDocument {
     assetIds: string[]
 
+    deletionRequestedAt: Temporal.Instant | null
+
     director: string
 
     isPublished: boolean

@@ -5,7 +5,6 @@ import { API_BASE_URL } from '../playwright.config'
 
 const ADMIN_EMAIL = requiredEnvironment('ADMIN_EMAIL')
 const ADMIN_PASSWORD = requiredEnvironment('ADMIN_PASSWORD')
-const CROSS_ROLE_USER_EMAIL = 'console-cross-role-user@nest-seed.local'
 const CROSS_ROLE_USER_NAME = 'Console Cross Role User'
 const ACCESS_COOKIE = 'nest-seed-admin-access'
 const REFRESH_COOKIE = 'nest-seed-admin-refresh'
@@ -33,6 +32,30 @@ async function getSessionCookie(context: BrowserContext, name: string) {
     return cookies.find((cookie) => cookie.name === name)
 }
 
+for (const { condition, password } of [
+    { condition: '이모지 14자', password: '🌱'.repeat(14) },
+    { condition: '이모지 129자', password: '🌱'.repeat(129) }
+]) {
+    test.describe(`관리자 로그인 화면의 비밀번호가 ${condition}이면`, () => {
+        test.beforeEach(async ({ page }) => {
+            await page.goto('/login')
+            await page.getByLabel('비밀번호').fill(password)
+        })
+        test('입력 원문을 유지하면서 길이 오류를 표시한다', async ({ page }) => {
+            const input = page.getByLabel('비밀번호')
+            await expect(input).toHaveValue(password)
+            expect(
+                await input.evaluate((element) => (element as HTMLInputElement).checkValidity())
+            ).toBe(false)
+            expect(
+                await input.evaluate(
+                    (element) => (element as HTMLInputElement).validity.patternMismatch
+                )
+            ).toBe(true)
+        })
+    })
+}
+
 test.describe('로그인하지 않았으면', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/login')
@@ -43,47 +66,46 @@ test.describe('로그인하지 않았으면', () => {
         await expect(page).toHaveURL(/\/login$/)
     })
     test.describe('일반 사용자 계정이 존재하면', () => {
-        test.beforeEach(async () => {
-            const api = await request.newContext()
-            try {
-                const userResponse = await api.post(`${API_BASE_URL}/users`, {
-                    data: {
-                        birthDate: '2000-01-01',
-                        email: CROSS_ROLE_USER_EMAIL,
-                        name: CROSS_ROLE_USER_NAME,
-                        password: ADMIN_PASSWORD
-                    }
-                })
-                if (!userResponse.ok() && userResponse.status() !== 409) {
-                    throw new Error(
-                        `cross-role user creation failed: ${userResponse.status()} ${await userResponse.text()}`
-                    )
+        let email: string
+        test.beforeEach(async ({ request: api }) => {
+            email = `console-cross-role-user-${randomUUID()}@example.com`
+            const userResponse = await api.post(`${API_BASE_URL}/users`, {
+                data: {
+                    birthDate: '2000-01-01',
+                    email,
+                    name: CROSS_ROLE_USER_NAME,
+                    password: ADMIN_PASSWORD
                 }
-            } finally {
-                await api.dispose()
-            }
+            })
+            expect(userResponse.status()).toBe(201)
+            const loginResponse = await api.post(`${API_BASE_URL}/users/login`, {
+                data: { email, password: ADMIN_PASSWORD }
+            })
+            expect(loginResponse.status()).toBe(200)
         })
-        test('관리자 앱에서 사용자 로그인 경로를 요청하면 토큰 없이 404를 반환한다', async ({
-            page
-        }) => {
-            const result = await page.evaluate(
-                async ({ email, password }) => {
-                    const response = await fetch('/api/users/login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email, password })
-                    })
-                    const body = await response.text()
-                    return {
-                        exposesToken: /"(?:accessToken|refreshToken)"\s*:/.test(body),
-                        status: response.status
-                    }
-                },
-                { email: CROSS_ROLE_USER_EMAIL, password: ADMIN_PASSWORD }
-            )
+        for (const pathname of ['/api/users/login', '/api/USERS/LOGIN']) {
+            test(`관리자 앱에서 ${pathname} 경로를 요청하면 토큰 없이 404를 반환한다`, async ({
+                page
+            }) => {
+                const result = await page.evaluate(
+                    async ({ email, password, pathname }) => {
+                        const response = await fetch(pathname, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, password })
+                        })
+                        const body = await response.text()
+                        return {
+                            exposesToken: /"(?:accessToken|refreshToken)"\s*:/.test(body),
+                            status: response.status
+                        }
+                    },
+                    { email, password: ADMIN_PASSWORD, pathname }
+                )
 
-            expect(result).toEqual({ exposesToken: false, status: 404 })
-        })
+                expect(result).toEqual({ exposesToken: false, status: 404 })
+            })
+        }
     })
     test('관리자 앱에서 토큰 갱신 경로를 직접 요청하면 404를 반환한다', async ({ page }) => {
         const result = await page.evaluate(async () => {
@@ -195,6 +217,154 @@ test.describe('관리자로 로그인했으면', () => {
         })
 
         expect(me).toEqual({ cacheControl: 'private, no-store', status: 200 })
+    })
+    test('로그인 경로의 대소문자가 달라도 토큰은 본문 없이 쿠키로 전달한다', async ({
+        context,
+        page
+    }) => {
+        const result = await page.evaluate(
+            async ({ email, password }) => {
+                const response = await fetch('/api/Admins/Login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                })
+                const body = await response.text()
+                return {
+                    exposesToken: /"(?:accessToken|refreshToken)"\s*:/.test(body),
+                    hasBody: body.length > 0,
+                    status: response.status
+                }
+            },
+            { email: ADMIN_EMAIL, password: ADMIN_PASSWORD }
+        )
+
+        expect(result).toEqual({ exposesToken: false, hasBody: false, status: 204 })
+        const refreshCookie = await getSessionCookie(context, REFRESH_COOKIE)
+        expect(refreshCookie).toMatchObject({ httpOnly: true, value: expect.any(String) })
+        expect(refreshCookie?.value === refreshCookieBefore?.value).toBe(false)
+    })
+    test('유효한 토큰으로 대소문자가 다른 갱신 경로를 요청하면 세션을 바꾸지 않고 404를 반환한다', async ({
+        page,
+        request: api
+    }) => {
+        expect(refreshCookieBefore).toBeDefined()
+        const result = await page.evaluate(async (refreshToken) => {
+            const response = await fetch('/api/Admins/Refresh', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken })
+            })
+            const body = await response.text()
+            return {
+                exposesToken: /"(?:accessToken|refreshToken)"\s*:/.test(body),
+                status: response.status
+            }
+        }, refreshCookieBefore!.value)
+        const refresh = await api.post(`${API_BASE_URL}/admins/refresh`, {
+            data: { refreshToken: refreshCookieBefore!.value }
+        })
+
+        expect({ ...result, originalTokenStatus: refresh.status() }).toEqual({
+            exposesToken: false,
+            originalTokenStatus: 200,
+            status: 404
+        })
+    })
+    for (const method of ['GET', 'HEAD']) {
+        test(`${method} 로그아웃 요청은 404를 반환하고 쿠키와 서버 세션을 유지한다`, async ({
+            context,
+            page,
+            request: api
+        }) => {
+            expect(accessCookie).toBeDefined()
+            expect(refreshCookieBefore).toBeDefined()
+            const status = await page.evaluate(
+                async (method) => (await fetch('/api/admins/logout', { method })).status,
+                method
+            )
+            const accessAfter = await getSessionCookie(context, ACCESS_COOKIE)
+            const refreshAfter = await getSessionCookie(context, REFRESH_COOKIE)
+            const refresh = await api.post(`${API_BASE_URL}/admins/refresh`, {
+                data: { refreshToken: refreshCookieBefore!.value }
+            })
+
+            expect({
+                accessCookieRetained: accessAfter?.value === accessCookie!.value,
+                refreshCookieRetained: refreshAfter?.value === refreshCookieBefore!.value,
+                refreshStatus: refresh.status(),
+                status
+            }).toEqual({
+                accessCookieRetained: true,
+                refreshCookieRetained: true,
+                refreshStatus: 200,
+                status: 404
+            })
+        })
+    }
+    test.describe('로그아웃 요청이 BFF에 도달하기 전에 통신이 실패하면', () => {
+        test.beforeEach(async ({ page }) => {
+            expect(accessCookie).toBeDefined()
+            expect(refreshCookieBefore).toBeDefined()
+            await page.route('**/api/admins/logout', (route) => route.abort('failed'))
+        })
+        test('로그아웃 실패 시 쿠키와 화면을 유지하고 재시도하면 로그아웃을 완료한다', async ({
+            context,
+            page,
+            request: api
+        }) => {
+            const currentUrl = page.url()
+            const failed = page.waitForEvent(
+                'requestfailed',
+                (request) => new URL(request.url()).pathname === '/api/admins/logout'
+            )
+            await page.getByRole('button', { name: '로그아웃' }).click()
+            await failed
+
+            await expect.soft(page.locator('main [role="alert"]')).toBeVisible()
+            expect(
+                (await getSessionCookie(context, ACCESS_COOKIE))?.value === accessCookie?.value
+            ).toBe(true)
+            expect(
+                (await getSessionCookie(context, REFRESH_COOKIE))?.value ===
+                    refreshCookieBefore?.value
+            ).toBe(true)
+            await expect(page).toHaveURL(currentUrl)
+
+            await page.unroute('**/api/admins/logout')
+            await page.getByRole('button', { name: '로그아웃', exact: true }).click()
+            await expect(page).toHaveURL(/\/login$/)
+            expect(await getSessionCookie(context, ACCESS_COOKIE)).toBeUndefined()
+            expect(await getSessionCookie(context, REFRESH_COOKIE)).toBeUndefined()
+            const refresh = await api.post(`${API_BASE_URL}/admins/refresh`, {
+                data: { refreshToken: refreshCookieBefore!.value }
+            })
+            expect(refresh.status()).toBe(401)
+        })
+    })
+    test.describe('리프레시 쿠키가 잘못되어 API가 로그아웃을 거절하면', () => {
+        test.beforeEach(async ({ context }) => {
+            expect(refreshCookieBefore).toBeDefined()
+            await context.addCookies([{ ...refreshCookieBefore!, value: 'invalid-refresh-token' }])
+        })
+        test('BFF는 쿠키를 지우고 화면은 실패를 표시하며 다시 로그아웃할 수 있다', async ({
+            context,
+            page
+        }) => {
+            const currentUrl = page.url()
+            const response = page.waitForResponse(
+                (response) => new URL(response.url()).pathname === '/api/admins/logout'
+            )
+            await page.getByRole('button', { name: '로그아웃', exact: true }).click()
+            expect((await response).status()).toBe(401)
+            await expect(page.locator('main [role="alert"]')).toBeVisible()
+            await expect(page).toHaveURL(currentUrl)
+            expect(await getSessionCookie(context, ACCESS_COOKIE)).toBeUndefined()
+            expect(await getSessionCookie(context, REFRESH_COOKIE)).toBeUndefined()
+
+            await page.getByRole('button', { name: '로그아웃', exact: true }).click()
+            await expect(page).toHaveURL(/\/login$/)
+        })
     })
     test('로그아웃하면 브라우저 쿠키와 서버의 리프레시 토큰을 폐기한다', async ({
         context,

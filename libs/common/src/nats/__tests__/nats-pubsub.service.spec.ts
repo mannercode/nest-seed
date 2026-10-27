@@ -197,60 +197,76 @@ describe('NatsPubSubService', () => {
         })
     })
 
-    describe.each([
-        { label: '핸들러 두 개가 등록되어 있으면', unsubscribeFirst: false },
-        { label: '핸들러 한 개가 등록되어 있으면', unsubscribeFirst: true }
-    ])('$label', ({ unsubscribeFirst }) => {
+    describe('완료를 기다리는 핸들러가 등록되어 있으면', () => {
         let entered: ReturnType<typeof Promise.withResolvers<void>>
         let release: ReturnType<typeof Promise.withResolvers<void>>
         let finished: ReturnType<typeof vi.fn<() => void>>
-        let next: ReturnType<typeof vi.fn<() => void>>
         let handler: ReturnType<typeof vi.fn<() => Promise<void>>>
+        let stopping: Promise<void> | undefined
+        let stopped: boolean
         beforeEach(async () => {
             entered = Promise.withResolvers<void>()
             release = Promise.withResolvers<void>()
             finished = vi.fn()
-            next = vi.fn()
+            stopping = undefined
+            stopped = false
             handler = vi.fn(async () => {
                 entered.resolve()
                 await release.promise
                 finished()
             })
             await fix.pubSubB.subscribe(subject, handler)
-            if (!unsubscribeFirst) await fix.pubSubB.subscribe(subject, next)
         })
-        it(
-            unsubscribeFirst
-                ? '처리 중인 핸들러의 구독을 해제하고 종료해도 그 처리가 끝날 때까지 기다린다'
-                : '메시지 처리 중 종료하면 진행 중 핸들러를 기다리고 다음 핸들러는 호출하지 않는다',
-            async () => {
-                let stopping: Promise<void> | undefined
-                let stopped = false
+        afterEach(async () => {
+            release.resolve()
+            await stopping
+        })
 
-                try {
-                    await fix.pubSubA.publish(subject, 'in-flight')
-                    await entered.promise
-                    await fix.pubSubA.publish(subject, 'queued')
-                    if (unsubscribeFirst) await fix.pubSubB.unsubscribe(subject, handler)
-                    stopping = fix.pubSubB.onModuleDestroy().then(() => {
-                        stopped = true
-                    })
-                    // 이미 완료된 종료 훅의 then까지 실행한 뒤, handler 대기를 확인한다.
-                    await Promise.resolve()
-                    expect(stopped).toBe(false)
-                    expect(finished).not.toHaveBeenCalled()
+        it('처리 중인 핸들러의 구독을 해제하고 종료해도 그 처리가 끝날 때까지 기다린다', async () => {
+            await fix.pubSubA.publish(subject, 'in-flight')
+            await entered.promise
+            await fix.pubSubA.publish(subject, 'queued')
+            await fix.pubSubB.unsubscribe(subject, handler)
+            stopping = fix.pubSubB.onModuleDestroy().then(() => {
+                stopped = true
+            })
+            // 이미 완료된 종료 훅의 then까지 실행한 뒤, handler 대기를 확인한다.
+            await Promise.resolve()
+            expect(stopped).toBe(false)
+            expect(finished).not.toHaveBeenCalled()
 
-                    release.resolve()
-                    await stopping
-                    expect(finished).toHaveBeenCalledTimes(1)
-                    expect(handler).toHaveBeenCalledTimes(1)
-                    expect(next).not.toHaveBeenCalled()
-                } finally {
-                    release.resolve()
-                    await stopping
-                }
-            }
-        )
+            release.resolve()
+            await stopping
+            expect(finished).toHaveBeenCalledTimes(1)
+            expect(handler).toHaveBeenCalledTimes(1)
+        })
+
+        describe('그 뒤에 실행할 핸들러도 등록되어 있으면', () => {
+            let next: ReturnType<typeof vi.fn<() => void>>
+            beforeEach(async () => {
+                next = vi.fn()
+                await fix.pubSubB.subscribe(subject, next)
+            })
+
+            it('메시지 처리 중 종료하면 진행 중 핸들러를 기다리고 다음 핸들러는 호출하지 않는다', async () => {
+                await fix.pubSubA.publish(subject, 'in-flight')
+                await entered.promise
+                await fix.pubSubA.publish(subject, 'queued')
+                stopping = fix.pubSubB.onModuleDestroy().then(() => {
+                    stopped = true
+                })
+                // 이미 완료된 종료 훅의 then까지 실행한 뒤, handler 대기를 확인한다.
+                await Promise.resolve()
+                expect(stopped).toBe(false)
+                expect(finished).not.toHaveBeenCalled()
+
+                release.resolve()
+                await stopping
+                expect(finished).toHaveBeenCalledTimes(1)
+                expect(handler).toHaveBeenCalledTimes(1)
+                expect(next).not.toHaveBeenCalled()
+            })
+        })
     })
 
     describe('subject를 구독한 적이 없으면', () => {
@@ -459,44 +475,106 @@ describe('NatsPubSubService', () => {
 })
 
 describe('createNatsPubSubServiceFixture', () => {
-    describe.each([
-        { label: '두 번째 앱 생성이 실패하면', stage: 'second-context' },
-        { label: '연결 확인이 실패하면', stage: 'flush' },
-        { label: '연결 확인과 정리가 모두 실패하면', stage: 'cleanup' }
-    ] as const)('$label', ({ stage }) => {
-        let failure: Error
-        let contexts: Array<{ close: () => Promise<void>; closeSpy: MockInstance }>
-        beforeEach(async () => {
-            failure = new Error('fixture initialization failed')
-            const createContext = testing.createTestContext
-            contexts = []
-            vi.spyOn(testing, 'createTestContext').mockImplementation(async (options) => {
-                if (stage === 'second-context' && contexts.length === 1) throw failure
-                const context = await createContext(options)
-                const close = context.close.bind(context)
-                const first = contexts.length === 0
-                const closeSpy = vi.spyOn(context, 'close').mockImplementation(async () => {
-                    await close()
-                    if (stage === 'cleanup' && first) throw new Error('cleanup failed')
+    let failure: Error
+    let createContext: typeof testing.createTestContext
+    let contexts: Array<{ close: () => Promise<void>; closeSpy: MockInstance }>
+
+    beforeEach(() => {
+        failure = new Error('fixture initialization failed')
+        createContext = testing.createTestContext
+        contexts = []
+    })
+    afterEach(async () => {
+        await Promise.allSettled(contexts.map((context) => context.close()))
+    })
+
+    describe('두 번째 앱 생성이 실패하면', () => {
+        beforeEach(() => {
+            vi.spyOn(testing, 'createTestContext')
+                .mockImplementationOnce(async (options) => {
+                    const context = await createContext(options)
+                    const close = context.close.bind(context)
+                    const closeSpy = vi.spyOn(context, 'close')
+                    contexts.push({ close, closeSpy })
+                    return context
                 })
-                contexts.push({ close, closeSpy })
-                if (stage !== 'second-context' && first) {
+                .mockRejectedValueOnce(failure)
+        })
+
+        it('픽스처 생성 시 이미 만든 앱 하나를 한 번 닫고 최초 초기화 오류를 던진다', async () => {
+            await expect(createNatsPubSubServiceFixture()).rejects.toBe(failure)
+
+            expect(contexts).toHaveLength(1)
+            expect(ensure(contexts[0]).closeSpy).toHaveBeenCalledTimes(1)
+        })
+    })
+
+    describe('연결 확인이 실패하면', () => {
+        beforeEach(() => {
+            vi.spyOn(testing, 'createTestContext')
+                .mockImplementationOnce(async (options) => {
+                    const context = await createContext(options)
+                    const close = context.close.bind(context)
+                    const closeSpy = vi.spyOn(context, 'close')
+                    contexts.push({ close, closeSpy })
+
                     const connection = context.module.get<NatsConnection>(
                         getNatsConnectionToken('replicaA')
                     )
                     vi.spyOn(connection, 'flush').mockRejectedValueOnce(failure)
-                }
-                return context
-            })
+                    return context
+                })
+                .mockImplementationOnce(async (options) => {
+                    const context = await createContext(options)
+                    const close = context.close.bind(context)
+                    const closeSpy = vi.spyOn(context, 'close')
+                    contexts.push({ close, closeSpy })
+                    return context
+                })
         })
-        it('픽스처 생성 시 이미 만든 앱을 모두 닫고 최초 초기화 오류를 던진다', async () => {
-            try {
-                await expect(createNatsPubSubServiceFixture()).rejects.toBe(failure)
-                expect(contexts).toHaveLength(stage === 'second-context' ? 1 : 2)
-                for (const context of contexts) expect(context.closeSpy).toHaveBeenCalledTimes(1)
-            } finally {
-                await Promise.allSettled(contexts.map((context) => context.close()))
-            }
+
+        it('픽스처 생성 시 이미 만든 앱 두 개를 각각 한 번 닫고 최초 초기화 오류를 던진다', async () => {
+            await expect(createNatsPubSubServiceFixture()).rejects.toBe(failure)
+
+            expect(contexts).toHaveLength(2)
+            expect(ensure(contexts[0]).closeSpy).toHaveBeenCalledTimes(1)
+            expect(ensure(contexts[1]).closeSpy).toHaveBeenCalledTimes(1)
+        })
+    })
+
+    describe('연결 확인과 정리가 모두 실패하면', () => {
+        beforeEach(() => {
+            vi.spyOn(testing, 'createTestContext')
+                .mockImplementationOnce(async (options) => {
+                    const context = await createContext(options)
+                    const close = context.close.bind(context)
+                    const closeSpy = vi.spyOn(context, 'close').mockImplementation(async () => {
+                        await close()
+                        throw new Error('cleanup failed')
+                    })
+                    contexts.push({ close, closeSpy })
+
+                    const connection = context.module.get<NatsConnection>(
+                        getNatsConnectionToken('replicaA')
+                    )
+                    vi.spyOn(connection, 'flush').mockRejectedValueOnce(failure)
+                    return context
+                })
+                .mockImplementationOnce(async (options) => {
+                    const context = await createContext(options)
+                    const close = context.close.bind(context)
+                    const closeSpy = vi.spyOn(context, 'close')
+                    contexts.push({ close, closeSpy })
+                    return context
+                })
+        })
+
+        it('픽스처 생성 시 이미 만든 앱 두 개를 각각 한 번 닫고 정리 오류 대신 최초 초기화 오류를 던진다', async () => {
+            await expect(createNatsPubSubServiceFixture()).rejects.toBe(failure)
+
+            expect(contexts).toHaveLength(2)
+            expect(ensure(contexts[0]).closeSpy).toHaveBeenCalledTimes(1)
+            expect(ensure(contexts[1]).closeSpy).toHaveBeenCalledTimes(1)
         })
     })
 })

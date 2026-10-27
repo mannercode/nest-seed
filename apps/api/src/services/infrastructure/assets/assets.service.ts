@@ -7,10 +7,11 @@ import {
     InjectS3Object,
     mapDocToDto,
     pickIds,
-    S3ObjectService
+    S3ObjectService,
+    MongoErrors,
+    type TransactionContext
 } from '@mannercode/common'
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { Cron, CronExpression } from '@nestjs/schedule'
 import { AppConfigService } from '#config'
 import { AssetsRepository } from './assets.repository.js'
 import {
@@ -24,11 +25,8 @@ import { AssetErrors } from './errors.js'
 import { Asset } from './models/index.js'
 
 const CLEANUP_LOCK_KEY = 'cleanup-expired-uploads'
-// 정상 정리보다 길고, 소유 컨테이너가 죽었을 때 다음 cron이 재획득할 만큼 짧게 둔다.
+// 실행 중 락이 만료되어도 삭제 상태와 멱등 삭제로 중첩 실행을 처리한다.
 const CLEANUP_LOCK_TTL_MS = 5 * 60 * 1000
-
-// @Cron은 DI보다 먼저 평가되므로 코드 상수를 쓴다.
-const EXPIRED_UPLOAD_CLEANUP_CRON = CronExpression.EVERY_10_MINUTES
 
 @Injectable()
 export class AssetsService {
@@ -41,15 +39,19 @@ export class AssetsService {
         private readonly config: AppConfigService
     ) {}
 
-    @Cron(EXPIRED_UPLOAD_CLEANUP_CRON, { name: 'assets.cleanupExpiredUploads' })
     async cleanupExpiredUploads() {
         // 모든 복제본이 실행하므로 한 복제본만 작업하도록 분산 락을 쓴다.
         await this.cache.withLock(CLEANUP_LOCK_KEY, CLEANUP_LOCK_TTL_MS, async () => {
             const expiresBefore = this.getExpirationThreshold()
-            const expiredAssets = await this.repository.findExpiredIncomplete(expiresBefore)
+            await this.repository.requestExpiredDeletion(expiresBefore)
+            const expiredAssets = await this.repository.findPendingDeletion(expiresBefore)
 
             if (0 < expiredAssets.length) {
-                await this.deleteMany(pickIds(expiredAssets))
+                const assetIds = pickIds(expiredAssets)
+                await this.deleteMany(assetIds)
+                // 삭제 후에도 이미 발급한 업로드 요청은 유효하다. 삭제 시점부터 업로드
+                // 유효기간이 지난 기록만 재정리를 마친 것으로 표시한다.
+                await this.repository.markStorageCleaned(assetIds, expiresBefore)
             }
         })
     }
@@ -84,6 +86,8 @@ export class AssetsService {
     async deleteMany(assetIds: string[]): Promise<void> {
         if (assetIds.length === 0) return
 
+        await this.repository.requestDeletion(assetIds)
+
         // S3 삭제는 모두 시도하되 하나라도 실패하면 재시도 기준인 DB 행을 남긴다.
         const results = await Promise.allSettled(
             assetIds.map((assetId) => this.s3Service.deleteObject(assetId))
@@ -112,6 +116,9 @@ export class AssetsService {
 
         if (!updatedAsset) {
             const asset = await this.repository.get({ id: assetId })
+            if (asset.deletionRequestedAt) {
+                throw new NotFoundException(MongoErrors.DocumentNotFound(assetId))
+            }
             if (asset.ownerEntityId !== null) {
                 throw new ConflictException(AssetErrors.AlreadyOwned(assetId))
             }
@@ -122,6 +129,16 @@ export class AssetsService {
 
         const dto = this.toDto(updatedAsset)
         return this.withDownloadInfo(dto)
+    }
+
+    async confirmOwner(
+        assetId: string,
+        owner: { entityId: string; service: string },
+        transaction: TransactionContext
+    ): Promise<void> {
+        if (!(await this.repository.confirmOwner(assetId, owner, transaction))) {
+            throw new NotFoundException(MongoErrors.DocumentNotFound(assetId))
+        }
     }
 
     async findMany(assetIds: string[]) {
@@ -157,7 +174,12 @@ export class AssetsService {
     }
 
     async isUploadComplete(assetId: string): Promise<boolean> {
-        const { id, mimeType, size } = await this.repository.get({ id: assetId })
+        const { id, mimeType, size, deletionRequestedAt } = await this.repository.get({
+            id: assetId
+        })
+        if (deletionRequestedAt) {
+            throw new NotFoundException(MongoErrors.DocumentNotFound(assetId))
+        }
 
         return this.s3Service.isUploadComplete({
             contentLength: size,

@@ -24,6 +24,9 @@ import {
 } from '../../services/application/showtime-creation/internal/index.js'
 import {
     createAndLoginAdmin,
+    createAndLoginUser,
+    createAdmin,
+    loginAdmin,
     createMovie,
     createShowtimes,
     createTheater,
@@ -69,6 +72,126 @@ describe('ShowtimeCreationService', () => {
         movieId: movie.id,
         startTimes: [instant('2100-01-01T09:00Z')],
         theaterIds: [theater.id]
+    })
+
+    describe.each([
+        { condition: '인증 정보가 없으면', credential: 'guest' },
+        { condition: '일반 사용자 토큰을 보냈으면', credential: 'user' },
+        { condition: '토큰이 잘못되었으면', credential: 'invalid' }
+    ] as const)('$condition', ({ credential }) => {
+        let headers: Record<string, string>
+        beforeEach(async () => {
+            const { accessToken } = await createAndLoginUser(fix)
+            headers = {
+                guest: {},
+                user: { Authorization: `Bearer ${accessToken}` },
+                invalid: { Authorization: 'Bearer invalid-token' }
+            }[credential]
+        })
+        it('상영 생성용 영화 목록 조회에 401을 반환한다', async () => {
+            await fix.httpClient
+                .get('/showtime-creation/movies')
+                .headers(headers)
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+        })
+        it('상영 생성용 극장 목록 조회에 401을 반환한다', async () => {
+            await fix.httpClient
+                .get('/showtime-creation/theaters')
+                .headers(headers)
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+        })
+        it('상영 검색에 401을 반환한다', async () => {
+            await fix.httpClient
+                .post('/showtime-creation/showtimes/search')
+                .headers(headers)
+                .body({ theaterIds: [theater.id] })
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+        })
+        it('작업 상태 조회에 401을 반환한다', async () => {
+            await fix.httpClient
+                .get(`/showtime-creation/showtimes/${nullObjectId}/status`)
+                .headers(headers)
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+        })
+        it('상영 생성에 401을 반환하고 접수 기록·상영·티켓·워크플로를 만들지 않는다', async () => {
+            const workflow = vi.spyOn(fix.module.get(ShowtimeCreationWorkflowClient), 'submit')
+            await fix.httpClient
+                .post('/showtime-creation/showtimes')
+                .headers(headers)
+                .headers({ 'Idempotency-Key': randomUUID() })
+                .body(buildCreateDto())
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+            expect(workflow).not.toHaveBeenCalled()
+            await expect(
+                fix.module.get(ShowtimeCreationSubmissionRepository).countDocuments({})
+            ).resolves.toBe(0)
+            await expect(showtimesService.search({ theaterIds: [theater.id] })).resolves.toEqual([])
+            await expect(ticketsService.search({ theaterIds: [theater.id] })).resolves.toEqual([])
+        })
+        it('SSE 구독에 401을 반환하고 이벤트 스트림을 열지 않는다', async () => {
+            const controller = new AbortController()
+            const response = await fetch(
+                `${fix.httpClient.serverUrl}/showtime-creation/event-stream`,
+                { headers: { ...headers, Accept: 'text/event-stream' }, signal: controller.signal }
+            )
+            try {
+                expect(response.status).toBe(401)
+                expect(response.headers.get('content-type')).toContain('application/json')
+                expect(await response.json()).toEqual(Errors.Auth.Unauthorized())
+            } finally {
+                controller.abort()
+            }
+        })
+    })
+
+    describe('서로 다른 두 관리자가 로그인했으면', () => {
+        let other: Awaited<ReturnType<typeof loginAdmin>>
+        beforeEach(async () => {
+            const credentials = { email: 'other-admin@mail.com', password: 'Example password 1!' }
+            await createAdmin(fix, credentials)
+            other = await loginAdmin(fix, credentials)
+        })
+        it('상영 생성을 요청하면 두 관리자에게 완료 이벤트를 보내고 상태 조회는 요청한 관리자에게만 허용한다', async () => {
+            const workflow = fix.module.get(ShowtimeCreationWorkflowClient)
+            const submit = vi.spyOn(workflow, 'submit')
+            const broadcast = await submitAndWaitForCompletion(
+                fix,
+                other.accessToken,
+                'succeeded',
+                () =>
+                    submitAndWaitForCompletion(fix, adminAccessToken, 'succeeded', () =>
+                        fix.httpClient
+                            .post('/showtime-creation/showtimes')
+                            .headers({
+                                Authorization: `Bearer ${adminAccessToken}`,
+                                'Idempotency-Key': randomUUID()
+                            })
+                            .body(buildCreateDto())
+                            .accepted({ schema: RequestShowtimeCreationResponseSchema })
+                    )
+            )
+            const { sagaId } = broadcast.response.response.body
+            expect(broadcast.completion).toEqual(broadcast.response.completion)
+            expect(broadcast.completion).toMatchObject({ sagaId, status: 'succeeded' })
+
+            // SSE 발행 뒤 Restate가 반환값을 저장할 때까지 실제 작업 완료 Promise를 기다린다.
+            expect(submit).toHaveBeenCalledTimes(1)
+            await workflow.waitForCompletion(await ensure(submit.mock.results[0]).value)
+
+            await fix.httpClient
+                .get(`/showtime-creation/showtimes/${sagaId}/status`)
+                .headers({ Authorization: `Bearer ${adminAccessToken}` })
+                .ok({
+                    schema: ShowtimeCreationStatusResponseSchema,
+                    expected: expect.objectContaining({ sagaId, status: 'succeeded' })
+                })
+            const getStatus = vi.spyOn(fix.module.get(ShowtimeCreationWorkflowClient), 'getStatus')
+            await fix.httpClient
+                .get(`/showtime-creation/showtimes/${sagaId}/status`)
+                .headers({ Authorization: `Bearer ${other.accessToken}` })
+                .notFound({ expected: Errors.ShowtimeCreation.SagaNotFound(sagaId) })
+            expect(getStatus).not.toHaveBeenCalled()
+        })
     })
 
     describe('GET /showtime-creation/movies', () => {

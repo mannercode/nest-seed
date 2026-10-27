@@ -1,5 +1,5 @@
-import { JwtAuthService, InjectJwtAuth, PasswordHasher } from '@mannercode/common'
-import { Injectable } from '@nestjs/common'
+import { JwtAuthErrors, JwtAuthService, InjectJwtAuth, PasswordHasher } from '@mannercode/common'
+import { Injectable, UnauthorizedException } from '@nestjs/common'
 import type { UserAuthPayload, UserCredentialsDto } from '../dtos/index.js'
 import { UsersRepository } from '../users.repository.js'
 
@@ -19,7 +19,7 @@ export class UserAuthenticationService {
         return user && isValid ? user : null
     }
 
-    async generateAuthTokens(payload: UserAuthPayload) {
+    async generateAuthTokens(payload: UserAuthPayload & { authVersion: number }) {
         return this.jwtAuthService.generateAuthTokens(payload)
     }
 
@@ -28,7 +28,15 @@ export class UserAuthenticationService {
     }
 
     async refreshAuthTokens(refreshToken: string) {
-        return this.jwtAuthService.refreshAuthTokens(refreshToken)
+        return this.jwtAuthService.refreshAuthTokens(
+            refreshToken,
+            async (userId, { authVersion }) => {
+                const user = await this.repository.find({ id: userId })
+                if (typeof authVersion !== 'number' || !user || user.authVersion !== authVersion) {
+                    throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
+                }
+            }
+        )
     }
 
     async revokeAllForUser(userId: string): Promise<void> {

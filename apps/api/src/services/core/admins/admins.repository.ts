@@ -37,6 +37,7 @@ export class AdminsRepository extends CrudRepository<Admin> {
     async create(createDto: CreateAdminDto) {
         AdminWriteSchema.parse(createDto)
         const admin = this.newDocument()
+        admin.authVersion = 0
         admin.email = createDto.email
         admin.name = createDto.name
         admin.password = createDto.password
@@ -63,11 +64,13 @@ export class AdminsRepository extends CrudRepository<Admin> {
         assignIfDefined(fields, patch, 'email')
         assignIfDefined(fields, patch, 'name')
         assignIfDefined(fields, patch, 'password')
+        const update = this.timestamped({ $set: fields })
+        if (fields.password !== undefined) update.$inc.authVersion = 1
 
         try {
             const doc = await this.findAndUpdateDocument(
                 this.activeFilter(this.idFilter(id)),
-                this.timestamped({ $set: fields }),
+                update,
                 { projection: this.projection, returnDocument: 'after' }
             )
 

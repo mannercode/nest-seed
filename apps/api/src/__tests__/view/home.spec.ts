@@ -1,10 +1,15 @@
-import { UserHomeViewSchema } from '#view'
+import type { MockInstance } from 'vitest'
+import { UserHomeViewSchema, UserHomeViewService } from '#view'
 import { DateUtil, ensure } from '@mannercode/common'
 import {
     createMovie,
     createShowtimes,
     createTheater,
     createUnpublishedMovie,
+    createAndLoginUser,
+    createAndLoginAdmin,
+    createUser,
+    Errors,
     type AppTestContext,
     createAppTestContext
 } from '../helpers/index.js'
@@ -25,6 +30,49 @@ describe('UserHomeView', () => {
     afterEach(() => teardown?.())
 
     describe('GET /views/user-app/home', () => {
+        describe.each([
+            { condition: '관리자 토큰을 보냈으면', credential: 'admin' },
+            { condition: '토큰이 잘못되었으면', credential: 'invalid' }
+        ] as const)('$condition', ({ credential }) => {
+            let request: typeof fix.httpClient
+            let getHome: MockInstance<UserHomeViewService['getHome']>
+            beforeEach(async () => {
+                const admin = await createAndLoginAdmin(fix)
+                const headers = {
+                    admin: { Authorization: `Bearer ${admin.accessToken}` },
+                    invalid: { Authorization: 'Bearer invalid-token' }
+                }[credential]
+                request = fix.httpClient.get('/views/user-app/home').headers(headers)
+                getHome = vi.spyOn(fix.module.get(UserHomeViewService), 'getHome')
+            })
+            it('홈 조회에 401을 반환하고 홈 데이터를 조회하지 않는다', async () => {
+                await request.unauthorized({ expected: Errors.Auth.Unauthorized() })
+                expect(getHome).not.toHaveBeenCalled()
+            })
+        })
+
+        describe('사용자로 로그인했고 조회 조건에는 다른 사용자 ID가 있으면', () => {
+            let request: typeof fix.httpClient
+            let session: Awaited<ReturnType<typeof createAndLoginUser>>
+            let getHome: MockInstance<UserHomeViewService['getHome']>
+            beforeEach(async () => {
+                session = await createAndLoginUser(fix)
+                const other = await createUser(fix, { email: 'other-user@mail.com' })
+                request = fix.httpClient
+                    .get('/views/user-app/home')
+                    .headers({ Authorization: `Bearer ${session.accessToken}` })
+                    .query({ userId: other.id })
+                getHome = vi.spyOn(fix.module.get(UserHomeViewService), 'getHome')
+            })
+            it('홈을 조회하면 로그인한 사용자의 ID로 데이터를 조회하고 200을 반환한다', async () => {
+                await request.ok({
+                    schema: UserHomeViewSchema,
+                    expected: { showingMovies: [], recommendedMovies: [] }
+                })
+                expect(getHome).toHaveBeenCalledExactlyOnceWith(session.user.id)
+            })
+        })
+
         describe('상영 예정이 없으면', () => {
             let request: typeof fix.httpClient
             beforeEach(() => {

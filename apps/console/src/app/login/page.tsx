@@ -16,7 +16,9 @@ export default function LoginPage() {
         setError(null)
         setBusy(true)
         try {
-            await api.post('/admins/login', { body: { email, password } })
+            await api.post('/admins/login', {
+                body: { email: email.trim().toLowerCase(), password }
+            })
             router.push('/movies/new')
         } catch (err) {
             const message = err instanceof ApiError ? err.message : '로그인 실패'
@@ -51,6 +53,8 @@ export default function LoginPage() {
                     비밀번호
                     <input
                         type="password"
+                        pattern={'[\\s\\S]{15,128}'}
+                        title="비밀번호는 공백을 포함해 15~128자로 입력하세요."
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}

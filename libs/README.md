@@ -16,7 +16,7 @@
 
 ## 2. SDK 연결과 호출은 common에서 구현한다
 
-`apps/api/src`는 MongoDB 연결·드라이버 실행, Redis 명령, bcrypt·JWT, S3, NATS·JetStream, Restate 서버·클라이언트를 common을 통해 사용한다. 앱은 컬렉션별 조회 조건과 인덱스, 이벤트 내용, workflow의 업무 단계와 정책을 정의한다. 설정값은 앱이 주입하며 common이 특정 앱의 env 파일을 찾아 읽지 않는다.
+`apps/api/src`는 MongoDB 연결·드라이버 실행, Redis 명령, Argon2id·JWT, S3, NATS·JetStream, Restate 서버·클라이언트를 common을 통해 사용한다. 앱은 컬렉션별 조회 조건과 인덱스, 이벤트 내용, workflow의 업무 단계와 정책을 정의한다. 설정값은 앱이 주입하며 common이 특정 앱의 env 파일을 찾아 읽지 않는다.
 
 common은 SDK 호출과 연결의 생성·종료를 담당한다. SDK 호출을 모아 두어도 앱의 MongoDB 쿼리와 NestJS 의존성은 남으므로, 다른 기술로 교체하려면 앱 코드도 수정해야 한다.
 
@@ -103,7 +103,7 @@ SSE 수신은 TCP 청크 경계와 관계없이 한글 같은 UTF-8 문자를 �
 - `countBy`·`pick`·`pickBy`는 `constructor`·`__proto__` 같은 문자열도 데이터 키로 보존한다.
 - `assignIfDefined`는 undefined만 건너뛰고 null은 복사하거나 transform에 전달한다.
 - `Require.equals`는 값이 다르면 두 값을 진단 메시지에 담아 불변식 예외를 던진다. BigInt나 순환 객체를 비교해도 메시지를 만드는 과정에서 직렬화 오류가 발생하지 않는다.
-- `PasswordHasher.verify`는 저장된 해시가 없으면 항상 false를 반환한다.
+- `PasswordHasher`는 Argon2id를 사용하며 해시 비용은 `argon2` 패키지의 기본값을 따른다. `verify`는 저장된 해시가 없을 때도 비교 연산을 수행하고 항상 false를 반환한다.
 
 ## 7. TypeScript 작성 규칙
 

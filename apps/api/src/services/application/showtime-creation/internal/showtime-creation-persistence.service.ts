@@ -62,12 +62,18 @@ export class ShowtimeCreationPersistenceService {
                 transaction,
                 signal
             )
-            const result: ValidateAndCreateResult = isValid
-                ? {
-                      kind: 'succeeded',
-                      ...(await this.creatorService.create(createDto, sagaId, transaction, signal))
-                  }
-                : { conflictingShowtimes, kind: 'failed' }
+            let result: ValidateAndCreateResult
+            if (isValid) {
+                const created = await this.creatorService.create(
+                    createDto,
+                    sagaId,
+                    transaction,
+                    signal
+                )
+                result = { kind: 'succeeded', ...created }
+            } else {
+                result = { conflictingShowtimes, kind: 'failed' }
+            }
 
             await this.operations.create(sagaId, inputHash, result, transaction, signal)
             return result

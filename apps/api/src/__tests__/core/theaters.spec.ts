@@ -7,21 +7,72 @@ import {
     createTheater,
     Errors,
     type AppTestContext,
-    createAppTestContext
+    createAppTestContext,
+    createAndLoginAdmin,
+    createAndLoginUser
 } from '../helpers/index.js'
-import { AdminAuthGuard } from '#gateway'
 
 describe('TheatersService', () => {
     let fix: AppTestContext
     let teardown: AppTestContext['teardown'] | undefined
+    let adminAuth: { Authorization: string }
 
     beforeEach(async () => {
         teardown = undefined
 
-        fix = await createAppTestContext({ ignoreGuards: [AdminAuthGuard] })
+        fix = await createAppTestContext()
         teardown = fix.teardown
+        const { accessToken } = await createAndLoginAdmin(fix)
+        adminAuth = { Authorization: `Bearer ${accessToken}` }
     })
     afterEach(() => teardown?.())
+
+    describe.each([
+        { condition: '인증 정보가 없으면', credential: 'guest' },
+        { condition: '일반 사용자로 인증했으면', credential: 'user' },
+        { condition: '토큰이 잘못되었으면', credential: 'invalid' }
+    ] as const)('$condition', ({ credential }) => {
+        let headers: Record<string, string>
+        let theater: TheaterDto
+        beforeEach(async () => {
+            const { accessToken } = await createAndLoginUser(fix)
+            headers = {
+                guest: {},
+                user: { Authorization: `Bearer ${accessToken}` },
+                invalid: { Authorization: 'Bearer invalid-token' }
+            }[credential]
+            theater = await createTheater(fix)
+        })
+        it('극장 생성을 요청하면 401을 반환하고 극장을 추가하지 않는다', async () => {
+            await fix.httpClient
+                .post('/theaters')
+                .headers(headers)
+                .body(buildCreateTheaterDto())
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+            await fix.httpClient
+                .get('/theaters')
+                .ok({ expected: expect.objectContaining({ total: 1 }) })
+        })
+        it('극장 수정을 요청하면 401을 반환하고 기존 정보를 유지한다', async () => {
+            await fix.httpClient
+                .patch(`/theaters/${theater.id}`)
+                .headers(headers)
+                .body({ name: 'denied' })
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+            await expect(fix.module.get(TheatersService).getMany([theater.id])).resolves.toEqual([
+                theater
+            ])
+        })
+        it('극장 삭제를 요청하면 401을 반환하고 극장을 유지한다', async () => {
+            await fix.httpClient
+                .delete(`/theaters/${theater.id}`)
+                .headers(headers)
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+            await expect(fix.module.get(TheatersService).getMany([theater.id])).resolves.toEqual([
+                theater
+            ])
+        })
+    })
 
     describe('POST /theaters', () => {
         it('극장을 생성하면 생성된 정보를 반환한다', async () => {
@@ -29,6 +80,7 @@ describe('TheatersService', () => {
 
             await fix.httpClient
                 .post('/theaters')
+                .headers(adminAuth)
                 .body(createDto)
                 .created({
                     schema: TheaterSchema,
@@ -39,7 +91,7 @@ describe('TheatersService', () => {
         describe('요청 본문에 필수 필드가 없으면', () => {
             let request: typeof fix.httpClient
             beforeEach(() => {
-                request = fix.httpClient.post('/theaters').body({})
+                request = fix.httpClient.post('/theaters').headers(adminAuth).body({})
             })
             it('극장 생성을 요청하면 400을 반환한다', async () => {
                 await request.badRequest({
@@ -64,7 +116,7 @@ describe('TheatersService', () => {
                         ]
                     }
                 })
-                request = fix.httpClient.post('/theaters').body(createDto)
+                request = fix.httpClient.post('/theaters').headers(adminAuth).body(createDto)
             })
             it('극장 생성을 요청하면 400을 반환한다', async () => {
                 await request.badRequest({
@@ -115,6 +167,7 @@ describe('TheatersService', () => {
 
             await fix.httpClient
                 .patch(`/theaters/${theater.id}`)
+                .headers(adminAuth)
                 .body(updateDto)
                 .ok({ schema: TheaterSchema, expected: { ...theater, ...updateDto } })
         })
@@ -123,6 +176,7 @@ describe('TheatersService', () => {
             const updateDto = { name: 'update-name' }
             await fix.httpClient
                 .patch(`/theaters/${theater.id}`)
+                .headers(adminAuth)
                 .body(updateDto)
                 .ok({ schema: TheaterSchema })
 
@@ -134,14 +188,17 @@ describe('TheatersService', () => {
         describe('요청한 좌석 배치에서 블록 사이에 좌석 좌표가 중복되면', () => {
             let request: typeof fix.httpClient
             beforeEach(() => {
-                request = fix.httpClient.patch(`/theaters/${theater.id}`).body({
-                    seatmap: {
-                        blocks: [
-                            { name: 'A', rows: [{ name: '1', layout: 'O' }] },
-                            { name: 'A', rows: [{ name: '1', layout: 'O' }] }
-                        ]
-                    }
-                })
+                request = fix.httpClient
+                    .patch(`/theaters/${theater.id}`)
+                    .headers(adminAuth)
+                    .body({
+                        seatmap: {
+                            blocks: [
+                                { name: 'A', rows: [{ name: '1', layout: 'O' }] },
+                                { name: 'A', rows: [{ name: '1', layout: 'O' }] }
+                            ]
+                        }
+                    })
             })
             it('극장 수정을 요청하면 400을 반환하고 기존 배치를 유지한다', async () => {
                 await request.badRequest({
@@ -157,7 +214,10 @@ describe('TheatersService', () => {
         describe('ID에 해당하는 극장이 없으면', () => {
             let request: typeof fix.httpClient
             beforeEach(() => {
-                request = fix.httpClient.patch(`/theaters/${nullObjectId}`).body({})
+                request = fix.httpClient
+                    .patch(`/theaters/${nullObjectId}`)
+                    .headers(adminAuth)
+                    .body({})
             })
             it('극장 수정을 요청하면 404를 반환한다', async () => {
                 await request.notFound({ expected: Errors.Mongo.DocumentNotFound(nullObjectId) })
@@ -172,7 +232,10 @@ describe('TheatersService', () => {
                 theater = await createTheater(fix)
             })
             it('극장을 삭제하면 204를 반환하고 이후 조회에는 404를 반환한다', async () => {
-                await fix.httpClient.delete(`/theaters/${theater.id}`).noContent()
+                await fix.httpClient
+                    .delete(`/theaters/${theater.id}`)
+                    .headers(adminAuth)
+                    .noContent()
 
                 await fix.httpClient
                     .get(`/theaters/${theater.id}`)
@@ -189,6 +252,7 @@ describe('TheatersService', () => {
             it('극장 삭제 요청에 409를 반환하고 극장을 유지한다', async () => {
                 await fix.httpClient
                     .delete(`/theaters/${theater.id}`)
+                    .headers(adminAuth)
                     .conflict({ expected: Errors.Theaters.DeleteBlockedByShowtimes(theater.id) })
 
                 await fix.httpClient
@@ -200,7 +264,7 @@ describe('TheatersService', () => {
         describe('ID에 해당하는 극장이 없으면', () => {
             let request: typeof fix.httpClient
             beforeEach(() => {
-                request = fix.httpClient.delete(`/theaters/${nullObjectId}`)
+                request = fix.httpClient.delete(`/theaters/${nullObjectId}`).headers(adminAuth)
             })
             it('극장 삭제를 요청하면 204를 반환한다', async () => {
                 await request.noContent()

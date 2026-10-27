@@ -6,12 +6,15 @@ import {
     type UserDto,
     type PurchaseRecordDto,
     UsersService,
+    UsersRepository,
     UserSchema,
     PurchaseRecordSchema
 } from '#core'
 import {
+    buildCreateUserDto,
     createPurchaseRecord,
     createUser,
+    createAndLoginAdmin,
     Errors,
     loginUser,
     type AppTestContext,
@@ -55,7 +58,7 @@ function pauseNextTokenIssue(jwtAuthService: object) {
 describe('UserAuthentication', () => {
     let fix: AppTestContext
     let teardown: AppTestContext['teardown'] | undefined
-    const credentials = { email: 'user@mail.com', password: 'password' }
+    const credentials = { email: 'user@mail.com', password: 'Example password 1!' }
 
     beforeEach(async () => {
         teardown = undefined
@@ -67,7 +70,209 @@ describe('UserAuthentication', () => {
     })
     afterEach(() => teardown?.())
 
+    describe.each([
+        { condition: '인증 정보가 없으면', credential: 'guest' },
+        { condition: '관리자 토큰을 보냈으면', credential: 'admin' },
+        { condition: '토큰이 잘못되었으면', credential: 'invalid' }
+    ] as const)('$condition', ({ credential }) => {
+        let headers: Record<string, string>
+        let session: Awaited<ReturnType<typeof loginUser>>
+        beforeEach(async () => {
+            const admin = await createAndLoginAdmin(fix)
+            session = await loginUser(fix, credentials)
+            headers = {
+                guest: {},
+                admin: { Authorization: `Bearer ${admin.accessToken}` },
+                invalid: { Authorization: 'Bearer invalid-token' }
+            }[credential]
+        })
+        it('본인 정보 조회에 401을 반환한다', async () => {
+            await fix.httpClient
+                .get('/users/me')
+                .headers(headers)
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+        })
+        it('본인 정보 수정에 401을 반환하고 사용자 정보를 유지한다', async () => {
+            await fix.httpClient
+                .patch('/users/me')
+                .headers(headers)
+                .body({ name: 'denied' })
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+            await expect(fix.module.get(UsersService).getMany([session.user.id])).resolves.toEqual([
+                session.user
+            ])
+        })
+        it('탈퇴 요청에 401을 반환하고 사용자와 로그인 세션을 유지한다', async () => {
+            await fix.httpClient
+                .delete('/users/me')
+                .headers(headers)
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+            await expect(fix.module.get(UsersService).getMany([session.user.id])).resolves.toEqual([
+                session.user
+            ])
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: session.refreshToken })
+                .ok()
+        })
+        it('구매 이력 조회에 401을 반환한다', async () => {
+            await fix.httpClient
+                .get('/users/me/purchases')
+                .headers(headers)
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+        })
+        it('전체 로그아웃 요청에 401을 반환하고 로그인 세션을 유지한다', async () => {
+            await fix.httpClient
+                .post('/users/me/logout-all')
+                .headers(headers)
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: session.refreshToken })
+                .ok()
+        })
+    })
+
+    describe('서로 다른 두 사용자가 로그인했으면', () => {
+        let mine: Awaited<ReturnType<typeof loginUser>>
+        let other: Awaited<ReturnType<typeof loginUser>>
+        let headers: { Authorization: string }
+        beforeEach(async () => {
+            mine = await loginUser(fix, credentials)
+            const otherCredentials = { ...credentials, email: 'other-user@mail.com' }
+            await createUser(fix, otherCredentials)
+            other = await loginUser(fix, otherCredentials)
+            headers = { Authorization: `Bearer ${mine.accessToken}` }
+        })
+        it('타인 ID를 조회 조건으로 보내도 본인 정보를 반환한다', async () => {
+            await fix.httpClient
+                .get('/users/me')
+                .headers(headers)
+                .query({ userId: other.user.id })
+                .ok({ schema: UserSchema, expected: mine.user })
+        })
+        describe('수정 본문에 타인 ID를 넣었으면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .patch('/users/me')
+                    .headers(headers)
+                    .body({ id: other.user.id, userId: other.user.id, name: 'denied' })
+            })
+            it('수정을 거절하고 두 사용자의 정보를 유지한다', async () => {
+                await request.badRequest()
+                await expect(
+                    fix.module.get(UsersService).getMany([mine.user.id, other.user.id])
+                ).resolves.toEqual(expect.arrayContaining([mine.user, other.user]))
+            })
+        })
+        it('탈퇴 요청에 타인 ID를 보내도 본인만 삭제하고 타인의 계정과 세션은 유지한다', async () => {
+            await fix.httpClient
+                .delete('/users/me')
+                .headers(headers)
+                .query({ userId: other.user.id })
+                .noContent()
+            await expect(
+                fix.module.get(UsersService).getMany([mine.user.id])
+            ).rejects.toMatchObject({ status: 404 })
+            await expect(fix.module.get(UsersService).getMany([other.user.id])).resolves.toEqual([
+                other.user
+            ])
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: other.refreshToken })
+                .ok()
+        })
+        it('전체 로그아웃 요청에 타인 ID를 보내도 본인 세션만 회수한다', async () => {
+            await fix.httpClient
+                .post('/users/me/logout-all')
+                .headers(headers)
+                .body({ userId: other.user.id })
+                .noContent()
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: mine.refreshToken })
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: other.refreshToken })
+                .ok()
+        })
+        describe('두 사용자의 구매 기록이 있으면', () => {
+            let record: PurchaseRecordDto
+            beforeEach(async () => {
+                record = await createPurchaseRecord(fix, { userId: mine.user.id })
+                await createPurchaseRecord(fix, { userId: other.user.id })
+            })
+            it('타인 ID를 검색 조건으로 보내도 본인 구매 기록만 반환한다', async () => {
+                await fix.httpClient
+                    .get('/users/me/purchases')
+                    .headers(headers)
+                    .query({ userId: other.user.id })
+                    .ok({ schema: PurchaseRecordSchema.array(), expected: [record] })
+            })
+        })
+    })
+
     describe('POST /users/login', () => {
+        describe.each([
+            { condition: '15자 미만', password: '🌱'.repeat(14) },
+            { condition: '128자 초과', password: 'a'.repeat(129) }
+        ])('비밀번호 길이가 $condition 범위이면', ({ password }) => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.post('/users/login').body({ ...credentials, password })
+            })
+            it('로그인을 요청하면 입력 오류로 400을 반환한다', async () => {
+                await request.badRequest({
+                    expected: Errors.RequestValidation.Failed(expect.any(Array))
+                })
+            })
+        })
+
+        describe('이메일의 대소문자와 앞뒤 공백만 등록 정보와 다르면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient
+                    .post('/users/login')
+                    .body({ ...credentials, email: '  USER@MAIL.COM  ' })
+            })
+            it('로그인하면 같은 사용자의 토큰을 반환한다', async () => {
+                const { body } = await request.ok()
+                await fix.httpClient
+                    .get('/users/me')
+                    .headers({ Authorization: `Bearer ${body.accessToken}` })
+                    .ok({
+                        schema: UserSchema,
+                        expected: expect.objectContaining({ email: credentials.email })
+                    })
+            })
+        })
+
+        describe.each([
+            { label: 'ASCII', prefix: 'a'.repeat(72) },
+            { label: '한글', prefix: '가'.repeat(24) },
+            { label: '이모지', prefix: '🌱'.repeat(18) }
+        ])('72바이트를 넘는 $label 비밀번호로 가입했으면', ({ prefix }) => {
+            const email = 'long-password@mail.com'
+            beforeEach(async () => {
+                await fix.httpClient
+                    .post('/users')
+                    .body(buildCreateUserDto({ email, password: `${prefix}original` }))
+                    .created()
+            })
+            it('전체 비밀번호가 일치해야 로그인할 수 있다', async () => {
+                await fix.httpClient
+                    .post('/users/login')
+                    .body({ email, password: `${prefix}original` })
+                    .ok()
+                await fix.httpClient
+                    .post('/users/login')
+                    .body({ email, password: `${prefix}different` })
+                    .unauthorized({ expected: Errors.Auth.Unauthorized() })
+            })
+        })
+
         describe('이메일과 비밀번호가 등록된 사용자 정보와 일치하면', () => {
             let request: typeof fix.httpClient
             beforeEach(() => {
@@ -91,7 +296,7 @@ describe('UserAuthentication', () => {
             beforeEach(() => {
                 request = fix.httpClient
                     .post('/users/login')
-                    .body({ ...credentials, password: 'wrong password' })
+                    .body({ ...credentials, password: 'incorrect password' })
             })
             it('로그인을 요청하면 401을 반환한다', async () => {
                 await request.unauthorized({ expected: Errors.Auth.Unauthorized() })
@@ -116,7 +321,7 @@ describe('UserAuthentication', () => {
                     await fix.httpClient
                         .post('/users/login')
                         .headers({ 'X-Forwarded-For': `198.51.100.${index + 1}` })
-                        .body({ ...credentials, password: 'wrong password' })
+                        .body({ ...credentials, password: 'incorrect password' })
                         .unauthorized({ expected: Errors.Auth.Unauthorized() })
                 }
             })
@@ -138,7 +343,10 @@ describe('UserAuthentication', () => {
                     await fix.httpClient
                         .post('/users/login')
                         .headers({ 'X-Forwarded-For': ip })
-                        .body({ email: `unknown-${index}@mail.com`, password: 'wrong password' })
+                        .body({
+                            email: `unknown-${index}@mail.com`,
+                            password: 'incorrect password'
+                        })
                         .unauthorized({ expected: Errors.Auth.Unauthorized() })
                 }
 
@@ -152,13 +360,13 @@ describe('UserAuthentication', () => {
                 await fix.httpClient
                     .post('/users/login')
                     .headers({ 'X-Forwarded-For': ip })
-                    .body({ email: 'unknown-50@mail.com', password: 'wrong password' })
+                    .body({ email: 'unknown-50@mail.com', password: 'incorrect password' })
                     .unauthorized({ expected: Errors.Auth.Unauthorized() })
 
                 await fix.httpClient
                     .post('/users/login')
                     .headers({ 'X-Forwarded-For': ip })
-                    .body({ email: 'unknown-51@mail.com', password: 'wrong password' })
+                    .body({ email: 'unknown-51@mail.com', password: 'incorrect password' })
                     .send(HttpStatus.TOO_MANY_REQUESTS, { expected: LOGIN_RATE_LIMITED_ERROR })
             })
         })
@@ -276,16 +484,6 @@ describe('UserAuthentication', () => {
                     .noContent()
             })
         })
-
-        describe('인증 정보가 없으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.delete('/users/me')
-            })
-            it('계정 삭제를 요청하면 401을 반환한다', async () => {
-                await request.unauthorized()
-            })
-        })
     })
 
     describe('PATCH /users/me', () => {
@@ -323,7 +521,7 @@ describe('UserAuthentication', () => {
                 await fix.httpClient
                     .patch('/users/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body({ password: 'newPassword' })
+                    .body({ password: 'updated password' })
                     .ok({ schema: UserSchema })
                 await fix.httpClient
                     .get('/users/me')
@@ -331,29 +529,9 @@ describe('UserAuthentication', () => {
                     .ok({ schema: UserSchema, expected: user })
             })
         })
-
-        describe('인증 정보가 없으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.patch('/users/me').body({ name: 'x' })
-            })
-            it('본인 정보 수정을 요청하면 401을 반환한다', async () => {
-                await request.unauthorized()
-            })
-        })
     })
 
     describe('GET /users/me/purchases', () => {
-        describe('인증 정보가 없으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/users/me/purchases')
-            })
-            it('구매 내역 조회를 요청하면 401을 반환한다', async () => {
-                await request.unauthorized()
-            })
-        })
-
         describe('사용자로 로그인했으면', () => {
             let accessToken: string
             let user: UserDto
@@ -420,6 +598,57 @@ describe('UserAuthentication', () => {
             })
         })
 
+        describe('로그인 후 이름만 변경했으면', () => {
+            let session: Awaited<ReturnType<typeof loginUser>>
+            beforeEach(async () => {
+                session = await loginUser(fix, credentials)
+                await fix.module.get(UsersService).update(session.user.id, { name: 'Updated' })
+            })
+            it('기존 세션으로 토큰을 갱신할 수 있다', async () => {
+                await fix.httpClient
+                    .post('/users/refresh')
+                    .body({ refreshToken: session.refreshToken })
+                    .ok()
+            })
+        })
+
+        describe('인증 버전 없이 발급한 리프레시 토큰이면', () => {
+            let refreshToken: string
+            beforeEach(async () => {
+                const { user } = await loginUser(fix, credentials)
+                const jwt = fix.module.get<JwtAuthService>(JwtAuthService.getName())
+                ;({ refreshToken } = await jwt.generateAuthTokens({
+                    sub: user.id,
+                    email: user.email
+                }))
+            })
+            it('토큰 갱신을 요청하면 401을 반환한다', async () => {
+                await fix.httpClient
+                    .post('/users/refresh')
+                    .body({ refreshToken })
+                    .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+            })
+        })
+
+        describe('현재 계정 조회가 한 번 실패하면', () => {
+            let session: Awaited<ReturnType<typeof loginUser>>
+            let failure: Error
+            beforeEach(async () => {
+                session = await loginUser(fix, credentials)
+                failure = new Error('Account database unavailable')
+                vi.spyOn(fix.module.get(UsersRepository), 'find').mockRejectedValueOnce(failure)
+            })
+            it('갱신은 실패하고 저장소가 복구되면 같은 토큰으로 다시 갱신할 수 있다', async () => {
+                await expect(
+                    fix.module.get(UsersService).refreshAuthTokens(session.refreshToken)
+                ).rejects.toBe(failure)
+                await fix.httpClient
+                    .post('/users/refresh')
+                    .body({ refreshToken: session.refreshToken })
+                    .ok()
+            })
+        })
+
         describe('리프레시 토큰이 유효하지 않으면', () => {
             let request: typeof fix.httpClient
             beforeEach(() => {
@@ -472,16 +701,6 @@ describe('UserAuthentication', () => {
     })
 
     describe('POST /users/me/logout-all', () => {
-        describe('인증 정보가 없으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.post('/users/me/logout-all')
-            })
-            it('전체 로그아웃을 요청하면 401을 반환한다', async () => {
-                await request.unauthorized()
-            })
-        })
-
         describe('두 로그인 세션이 존재하면', () => {
             let sessionA: Awaited<ReturnType<typeof loginUser>>
             let sessionB: Awaited<ReturnType<typeof loginUser>>
@@ -559,6 +778,116 @@ describe('UserAuthentication', () => {
         })
     })
 
+    describe('비밀번호 검증을 통과한 로그인이 토큰 발급을 기다리면', () => {
+        let session: Awaited<ReturnType<typeof loginUser>>
+        let usersService: UsersService
+        let gate: ReturnType<typeof pauseNextTokenIssue> | undefined
+        let loginResult: ReturnType<UsersService['login']> | undefined
+        let loginCompletion: Promise<unknown> | undefined
+
+        beforeEach(async () => {
+            gate = undefined
+            loginResult = undefined
+            loginCompletion = undefined
+            session = await loginUser(fix, credentials)
+            usersService = fix.module.get(UsersService)
+            gate = pauseNextTokenIssue(fix.module.get(JwtAuthService.getName()))
+            loginResult = usersService.login(credentials)
+            loginCompletion = Promise.allSettled([loginResult])
+            await gate.started
+        })
+        afterEach(async () => {
+            gate?.release()
+            await loginCompletion
+        })
+
+        it('비밀번호를 변경하면 변경 전에 인증된 로그인 세션으로 갱신할 수 없다', async () => {
+            await usersService.update(session.user.id, { password: 'updated password' })
+            ensure(gate).release()
+
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: session.refreshToken })
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+
+            const login = ensure(await loginResult)
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: login.tokens.refreshToken })
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+
+            const current = await loginUser(fix, { ...credentials, password: 'updated password' })
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: current.refreshToken })
+                .ok()
+        })
+
+        it('계정을 삭제하면 삭제 전에 인증된 로그인 세션으로 갱신할 수 없다', async () => {
+            await usersService.deleteMany([session.user.id])
+            ensure(gate).release()
+
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: session.refreshToken })
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+
+            const login = ensure(await loginResult)
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: login.tokens.refreshToken })
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+        })
+    })
+
+    describe('계정 변경 후 리프레시 세션 회수에 실패하도록 설정하면', () => {
+        let session: Awaited<ReturnType<typeof loginUser>>
+        let usersService: UsersService
+        let failure: Error
+
+        beforeEach(async () => {
+            session = await loginUser(fix, credentials)
+            usersService = fix.module.get(UsersService)
+            failure = new Error('Redis session revocation failed')
+            vi.spyOn(
+                fix.module.get<JwtAuthService>(JwtAuthService.getName()),
+                'revokeAllSessions'
+            ).mockRejectedValueOnce(failure)
+        })
+
+        it('비밀번호 변경이 실패해도 DB에 반영된 새 비밀번호로 로그인할 수 있고 이전 세션은 갱신할 수 없다', async () => {
+            const password = 'updated password'
+            await expect(usersService.update(session.user.id, { password })).rejects.toBe(failure)
+            const { body: current } = await fix.httpClient
+                .post('/users/login')
+                .body({ ...credentials, password })
+                .ok()
+
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: session.refreshToken })
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: current.refreshToken })
+                .ok()
+        })
+
+        it('계정 삭제가 실패해도 DB에서 삭제된 계정으로 로그인하거나 이전 세션을 갱신할 수 없다', async () => {
+            await expect(usersService.deleteMany([session.user.id])).rejects.toBe(failure)
+            await fix.httpClient
+                .post('/users/login')
+                .body(credentials)
+                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+
+            await fix.httpClient
+                .post('/users/refresh')
+                .body({ refreshToken: session.refreshToken })
+                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+        })
+    })
+
     describe('리프레시 토큰 발급이 진행 중이면', () => {
         let session: Awaited<ReturnType<typeof loginUser>>
         let usersService: UsersService
@@ -581,7 +910,7 @@ describe('UserAuthentication', () => {
         })
         it('비밀번호를 변경하면 진행 중인 발급을 401 예외로 거절하고 기존 액세스 토큰은 유지한다', async () => {
             try {
-                await usersService.update(session.user.id, { password: 'newPassword' })
+                await usersService.update(session.user.id, { password: 'updated password' })
             } finally {
                 gate?.release()
             }
