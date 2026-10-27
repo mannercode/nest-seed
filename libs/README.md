@@ -103,7 +103,7 @@ SSE 수신은 TCP 청크 경계와 관계없이 한글 같은 UTF-8 문자를 �
 - `countBy`·`pick`·`pickBy`는 `constructor`·`__proto__` 같은 문자열도 데이터 키로 보존한다.
 - `assignIfDefined`는 undefined만 건너뛰고 null은 복사하거나 transform에 전달한다.
 - `Require.equals`는 값이 다르면 두 값을 진단 메시지에 담아 불변식 예외를 던진다. BigInt나 순환 객체를 비교해도 메시지를 만드는 과정에서 직렬화 오류가 발생하지 않는다.
-- `PasswordHasher`는 Argon2id를 사용하며 해시 비용은 `argon2` 패키지의 기본값을 따른다. `verify`는 저장된 해시가 없을 때도 비교 연산을 수행하고 항상 false를 반환한다.
+- `PasswordHasher`와 독립 관리자 생성 스크립트는 [OWASP 권장 구성](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id)에 따라 Argon2id의 메모리 19MiB·반복 2회·병렬도 1을 사용한다. `verify`는 저장된 해시가 없을 때도 비교 연산을 수행하고 항상 false를 반환한다.
 
 ## 7. TypeScript 작성 규칙
 

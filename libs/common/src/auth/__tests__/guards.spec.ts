@@ -229,9 +229,11 @@ describe('AuthGuard', () => {
 })
 
 describe('PasswordHasher', () => {
-    it('비밀번호를 해시하면 Argon2id 해시를 반환한다', async () => {
+    it('비밀번호를 해시하면 19MiB·2회·병렬도 1인 Argon2id 해시를 반환한다', async () => {
         const hashed = await PasswordHasher.hash('password')
+
         expect(hashed).toMatch(/^\$argon2id\$v=19\$/)
+        expect(hashed.split('$')[3]?.split(',').sort()).toEqual(['m=19456', 'p=1', 't=2'])
     })
     it('같은 비밀번호를 두 번 해시하면 서로 다른 해시를 반환하고 둘 다 검증할 수 있다', async () => {
         const first = await PasswordHasher.hash('password')

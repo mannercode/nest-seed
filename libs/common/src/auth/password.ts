@@ -4,7 +4,12 @@ export class PasswordHasher {
     private static dummyHash: Promise<string> | undefined
 
     static hash(rawPassword: string): Promise<string> {
-        return hash(rawPassword, { type: argon2id })
+        return hash(rawPassword, {
+            memoryCost: 19 * 1024,
+            parallelism: 1,
+            timeCost: 2,
+            type: argon2id
+        })
     }
 
     static async verify(rawPassword: string, hashedPassword: string | undefined): Promise<boolean> {

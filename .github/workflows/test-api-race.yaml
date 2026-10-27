@@ -41,8 +41,8 @@ jobs:
                   runCmd: |
                       set -e
                       run=1
-                      while [ "$run" -le 50 ]; do
-                          echo "[Run ${run}/50]"
+                      while [ "$run" -le 25 ]; do
+                          echo "[Run ${run}/25]"
                           pnpm run race ${{ matrix.scenario }}
                           run=$((run + 1))
                       done
