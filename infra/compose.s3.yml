@@ -22,7 +22,7 @@ services:
 
     s3-setup:
         extends: { file: ./compose.common.yml, service: common-options }
-        image: amazon/aws-cli:2.38.3@sha256:efe32e825cf203652eaca3e7e94679580274e7d567c39270aaa36a5144737108
+        image: amazon/aws-cli:2.39.0@sha256:6014c77975a4ae237395924cc821333f20bf87c91964a45dd4ed5f3b13b424f5
         depends_on:
             s3:
                 condition: service_healthy
