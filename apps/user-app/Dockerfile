@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM node:26.12.0-bookworm-slim@sha256:742a0fe7320e09e0321222b68165e6ac731d30470e7ea7f98f9bfc3a6e1034fe AS build
+FROM node:26.12.1-bookworm-slim@sha256:88e480776c6149ff1d098cd304f44bf18057fb5d284a3329b78162d29821e28c AS build
 
 RUN npm install -g pnpm@12.4.2
 
@@ -15,7 +15,7 @@ RUN --mount=type=cache,id=nest-seed-pnpm,target=/pnpm/store,sharing=locked \
 COPY apps/user-app/ apps/user-app/
 RUN pnpm --filter './apps/user-app' --fail-if-no-match run build
 
-FROM node:26.12.0-bookworm-slim@sha256:742a0fe7320e09e0321222b68165e6ac731d30470e7ea7f98f9bfc3a6e1034fe AS runtime
+FROM node:26.12.1-bookworm-slim@sha256:88e480776c6149ff1d098cd304f44bf18057fb5d284a3329b78162d29821e28c AS runtime
 
 ENV HOSTNAME=0.0.0.0 \
     NODE_ENV=production \
