@@ -35,9 +35,9 @@
         "dev:web": "pnpm --dir apps/web run dev"
     },
     "devDependencies": {
-        "@aws-sdk/client-s3": "3.1158.0",
-        "@aws-sdk/s3-presigned-post": "3.1158.0",
-        "@aws-sdk/s3-request-presigner": "3.1158.0",
+        "@aws-sdk/client-s3": "3.1161.0",
+        "@aws-sdk/s3-presigned-post": "3.1161.0",
+        "@aws-sdk/s3-request-presigner": "3.1161.0",
         "@commitlint/cli": "21.2.4",
         "@commitlint/config-conventional": "21.2.4",
         "@mannercode/dev-tools": "workspace:*",
