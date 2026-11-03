@@ -2,6 +2,16 @@
 
 ## 진행 대상
 
+### 예약 실행의 긴 공백
+
+- [ ] 예약 실행이 설정 간격보다 적게 생성되는 원인을 확인한다.
+
+근거: 2026-11-02 UTC 하루 동안 AtoZ는 3시간 간격 설정에 3회, Stability와 API Race는 6시간 간격 설정에 각각 2회 실행됐다. 11월 3일 15:59 UTC 조회에서도 [AtoZ](https://github.com/mannercode/nest-seed/actions/runs/41593300436)·[Stability](https://github.com/mannercode/nest-seed/actions/runs/41593531879)·[API Race](https://github.com/mannercode/nest-seed/actions/runs/41593622225)의 마지막 예약 실행 생성 시각은 06:59~07:02 UTC였다. 저장소의 Actions와 세 워크플로는 활성 상태다.
+
+필요한 이유: 마지막 예약 실행 세 건과 [수동 AtoZ](https://github.com/mannercode/nest-seed/actions/runs/41669715347)는 성공했지만 자동 반복 검사가 설정한 빈도로 시작되지 않는다. 수동 실행은 요청 후 7초 만에 시작해 8분 15초 동안 검사를 수행했으므로, 예약 실행 공백을 러너의 실행 불능으로 판단할 근거는 없다. [GitHub는 예약 실행의 지연·누락 가능성을 명시](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)하지만, 이번 공백의 원인은 확인되지 않았다.
+
+최소 범위와 검증: 이후 `schedule` 실행의 생성 시각과 완료 결과를 확인한다. 수동 실행 성공만으로 예약 실행이 정상화됐다고 판단하지 않으며, 원인 조사에는 GitHub의 예약 이벤트 처리 정보가 필요할 수 있다.
+
 ### 회원가입 Race의 실행 시간 초과
 
 - [ ] 19MiB·2회·병렬도 1 설정으로 회원가입 Race 25회가 작업 제한 안에 완료되는지 확인한다.
