@@ -32,7 +32,7 @@ services:
             replicas: 4
 
     nginx:
-        image: nginx:1.31.7-alpine@sha256:892bb2152464f0c5d8972593a5f5afaf8054552580b699d95f8ff4af08c2d33d
+        image: nginx:1.31.8-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
         ports: ['127.0.0.1:3000:80']
         volumes: ['./nginx.conf:/etc/nginx/nginx.conf:ro']
         depends_on:
