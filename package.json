@@ -52,7 +52,7 @@
         "@types/express": "5.0.6",
         "@types/node": "26.6.2",
         "@vitest/coverage-v8": "5.0.1",
-        "concurrently": "10.0.5",
+        "concurrently": "10.0.6",
         "eslint-import-resolver-typescript": "4.4.5",
         "eslint-plugin-allowed-dependencies": "3.1.0",
         "eslint-plugin-boundaries": "7.2.0",
