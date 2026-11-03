@@ -19,4 +19,5 @@ jobs:
             - name: Run in devcontainer
               uses: devcontainers/ci@v0.3.1900000450
               with:
+                  push: never
                   runCmd: pnpm run atoz
