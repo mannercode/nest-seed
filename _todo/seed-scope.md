@@ -1,45 +1,62 @@
-# 기존 구현의 축소 후보
+# 도메인에 독립적인 seed 정리
 
-기준은 `fb1ef0cd`이며 검토 시작 시 미커밋·미추적 변경은 없었다. 아래 항목은 코드와 호출 관계로 확인한 범위 판단이다. 기능 삭제를 진행 대상으로 확정하지 않았으며, 시드 완료 조건에서 제외한다.
+검토 기준은 `25374215`이며 시작 시 미커밋 변경은 없었다. 극장 예매는 복사한 `playground`에서 다루고, 이 저장소의 앱은 다른 프로젝트에서 가져다 쓸 기반과 작은 기술 예제로 정리한다. 이번 작업에서 `libs/`의 소스·테스트·설정·의존성·문서는 변경하지 않는다.
 
-[현재 시드](../apps/README.md#시드의-범위)는 CRUD와 분산 실행을 함께 보여 준다. 사용처가 연결되지 않은 기능은 축소를 우선 검토하되, 분산 실행 예제를 유지하면서 그 예제에 필요한 정합성 처리만 제거하지 않는다.
+## 남길 앱 서비스
 
-## S1. 관람 이력에 따른 개인화 추천 — 축소 우선 검토
+- `UsersService`: 회원 가입·인증·계정 관리.
+- `AdminsService`: 관리자 인증·계정 관리.
+- `HealthService`: 앱과 실제 사용하는 인프라의 상태 확인.
+- `EventDemoService`: 이벤트 발행·수신과 저장·ack·재전달 예제.
+- `JobDemoService`: 비동기 작업 접수·상태 조회·결과·중단 후 재개 예제.
 
-[추천 서비스](../apps/api/src/services/application/recommendation/recommendation.service.ts)는 로그인한 사용자의 최근 관람 이력을 읽고, [추천 계산](../apps/api/src/services/application/recommendation/domain/movie-recommender.ts)은 이미 본 영화를 제외하고 장르 선호도로 정렬한다. 그러나 [관람 이력 생성](../apps/api/src/services/core/watch-records/watch-records.service.ts)의 호출자는 [테스트 준비 코드](../apps/api/src/__tests__/helpers/utils/watch-records.utils.ts)와 해당 서비스 테스트뿐이다. 현재 API·구매 workflow·데모에는 관람 이력을 쌓는 경로가 없다.
+이 목록은 기능 단위다. 인증 내부 처리·로그인 제한·입력 검증·설정·로깅·연결 관리는 필요한 만큼 유지한다. Demo는 기존 Application 계층의 `event-demo/`·`job-demo/`에 두고 HTTP 진입점은 Gateway에 둔다. SDK 연결·호출은 기존 common의 공개 기능을 사용한다.
 
-빈 DB에서 제공된 앱 흐름만 실행하면 개인화에 필요한 이력이 생기지 않는다. 그 상태에서도 로그인한 홈 조회는 관람 이력을 조회하고, 별도 collection·모듈·DTO·장르 계산을 유지해야 한다. 순수 계산 예제로서의 가치는 있지만, 실제 연결 흐름을 보여 주는 시드에서는 유지 근거가 약하다.
+## 진행 대상
 
-추천안은 구매 가능한 공개 영화의 개봉일 정렬을 남기고 개인화와 관람 이력 모듈을 줄이는 것이다. 관람 이력 수집 기능을 새로 구현하는 방향으로 범위를 늘리지 않는다. 변경한다면 홈 응답·공개 영화 조건·구매 마감 조건을 기존 API 테스트와 데모에서 확인한다. 개인화 예제를 계속 제공할지는 결정이 필요하다.
+### D1. 극장 예매 전용 API 제거
 
-## S2. 로그만 남기는 구매 완료 알림 — 기본 예제 포함 여부 보류
+- [ ] Core의 `movies`, `theaters`, `showtimes`, `tickets`, `ticket-holding`, `purchase-records`, `watch-records`를 정리한다.
+- [ ] Application의 `booking`, `movie-deletion`, `theater-deletion`, `purchase`, `showtime-creation`, `recommendation`을 정리한다.
+- [ ] 예제 결제인 `infrastructure/payments`와 영화·상영을 조합하는 `view/user-app/home`을 정리한다.
 
-[구매 workflow](../apps/api/src/services/application/purchase/worker/workflow.ts)는 완료 후 [별도 발행 workflow](../apps/api/src/services/application/purchase/worker/event-workflow.ts)를 접수한다. 이 작업은 [JetStream](../apps/api/src/services/application/purchase/purchase-event.service.ts)에 저장하고, [알림 소비자](../apps/api/src/services/application/purchase/internal/purchase-notification.service.ts)는 발송할 내용을 로그로 남긴 뒤 ack한다. 실제 메일·문자·앱 알림 발송은 없다. [PurchaseModule](../apps/api/src/services/application/purchase/purchase.module.ts)이 소비자와 발행 workflow를 항상 등록한다.
+대응 컨트롤러·공개 export·앱 등록·DTO·테스트·fixture·curl 문서를 같은 기능 단위로 정리한다. `TICKET_*` 설정과 전용 날짜·멱등성 입력 처리도 실제 사용처에 맞춘다. 영화 예매를 다른 이름의 업무로 치환하지 않는다.
 
-현재 사용자 기능에 비해 발행 접수·보존 정책·재전달·소비자 종료를 읽고 관리하는 부담이 크다. 다만 [메시지 보장 예제](../apps/README.md#메시지가-보장하는-것)로서는 목적이 명확하다. Restate는 발행 작업을 재개하고 JetStream은 소비자가 중단된 동안 메시지를 보존하므로 두 구성 요소가 같은 역할을 중복 구현한 것은 아니다.
+### D2. Event·Job Demo 구성
 
-일반 앱의 출발점을 우선한다면 기본 구매 흐름에서 이 알림 예제를 제외하는 안을 추천한다. JetStream의 발행·소비 예제를 앱 안에 유지할지는 별도로 결정한다. 제거할 경우 구매 완료·보상 계약은 유지하고 알림 보존 계약과 대응 테스트·문서를 함께 조정해야 한다. 현재 계약을 그대로 둔 채 발행을 기다리지 않거나 실패를 무시하는 변경은 축소안에 포함하지 않는다.
+- [ ] `EventDemoService`에서 입력한 메시지를 발행하고 수신 결과를 확인할 수 있게 한다.
+- [ ] `JobDemoService`에서 작은 입력을 접수하고 작업 ID로 상태와 결과를 확인할 수 있게 한다.
 
-## S3. 상영 생성의 비동기 접수·상태·SSE — 예제 목표 결정 전 보류
+Event Demo는 Core NATS의 실시간 전달과 JetStream의 저장·ack·재전달을 구분해서 보여 준다. PubAck와 소비자의 처리 완료도 구분한다. 실제 메일·문자 발송 기능은 추가하지 않는다.
 
-실제 [검증·상영·티켓 생성](../apps/api/src/services/application/showtime-creation/internal/showtime-creation-persistence.service.ts)은 한 MongoDB transaction이다. 그 바깥에 [접수 기록과 lease](../apps/api/src/services/application/showtime-creation/internal/showtime-creation-submission.repository.ts), [Restate 제출과 상태 조회](../apps/api/src/services/application/showtime-creation/showtime-creation.service.ts), [workflow](../apps/api/src/services/application/showtime-creation/worker/workflow.ts), [NATS 진행 알림](../apps/api/src/services/application/showtime-creation/showtime-creation-event.service.ts), [SSE 경로](../apps/api/src/services/gateway/showtime-creation.http-controller.ts)가 있다. 현재 두 데모 화면에는 이 API를 호출하는 기능이 없다.
+Job Demo는 Restate의 작업 실행과 중단 후 재개를 보여 준다. 구매 보상·좌석 선점·상영 충돌 같은 업무 규칙을 옮기지 않고, 실행을 길게 보이게 하는 임의의 sleep이나 재시도를 추가하지 않는다. 입력·결과·재요청 의미를 정한 뒤 구현한다.
 
-상영을 등록하는 기능만 필요하다면 동기 transaction으로 줄일 여지가 있다. 그러나 현재 [상영 생성 계약](../apps/README.md#상영-생성과-알림)은 중단 후 재개·202 접수·상태 조회·복제본 간 진행 알림을 보여 준다. 구매 workflow와도 학습 목적이 완전히 같지는 않으므로 지금 바로 불필요하다고 판정하지 않는다.
+### D3. 두 웹앱의 극장 화면 정리
 
-분산 실행 예제를 구매에 집중할지 먼저 결정한다. 동기화한다면 HTTP 계약·호출자·재시도 의미를 함께 바꾸고, 시간 중복 방지와 상영·티켓 생성의 원자성은 기존 경합·부분 실패 테스트로 유지해야 한다. 비동기 기능을 유지하면서 접수 기록이나 멱등성 보장만 제거하지 않는다.
+- [ ] console의 영화·극장 등록·목록과 해당 메뉴·로그인 후 이동 경로를 정리한다.
+- [ ] user-app 홈의 영화·상영·추천 응답 의존을 정리한다.
 
-## S4. 항상 시작하는 분산 인프라 — 기본 실행 범위 결정 전 보류
+기본안은 관리자 로그인·사용자 관리와 사용자 가입·로그인·로그아웃·본인 조회를 유지하는 것이다. 기존 쿠키 인증과 BFF의 갱신·오류 처리 계약은 유지한다.
 
-[기본 Compose](../infra/compose.yml)는 MongoDB 3개, Redis 3개, S3·NATS·Restate 각 1개를 시작한다. 초기화용 컨테이너를 제외해도 인프라 서버 9개다. [Dev Container](../.devcontainer/devcontainer.json)는 시작 시 이 구성을 준비하며, [앱 모듈](../apps/api/src/app.module.ts)과 [연결 설정](../apps/api/src/modules/app-config.module.ts)은 분산 예제를 항상 포함한다. [health 검사](../apps/api/src/modules/health/health.service.ts)도 NATS·Restate를 필수 기능으로 취급한다.
+### D4. 실행·검증·문서 갱신
 
-인증·CRUD만 가져다 쓰려는 경우 초기 실행 부담이 크다. 반면 [인프라 가이드](../infra/README.md#1-개발-환경에서도-분산-구성을-사용하는-이유)의 실제 복제·hash slot·메시지·journal 검증 목적에는 근거가 있다. 이번 검토에서는 실제 메모리 사용량과 시작 시간을 측정하지 않았다.
+- [ ] API 테스트 context와 자원 정리에서 구매 workflow·JetStream subject에 고정된 처리를 Demo에 맞춘다.
+- [ ] API 문서·브라우저 테스트·Race·benchmark·CI에서 삭제한 API를 호출하는 경로를 정리한다.
+- [ ] 루트와 영역별 README를 새 앱 구성과 실행 명령에 맞춘다.
 
-가벼운 기본 앱을 별도로 제공할지 결정하기 전에는 서버 수나 검증 구성을 줄이지 않는다. 단순히 Compose profile을 추가해도 앱의 필수 연결은 남으므로 앱 조립·설정·실행 명령을 함께 검토해야 한다. 구성 분리가 필요하다면 현재 분산 환경과 라이브러리 검증을 유지할 수 있는 범위를 먼저 정한다.
+현재 Race의 SSE·좌석 선점·상영 겹침·구매 검사는 극장 API에 의존한다. 가입·refresh 경쟁과 복제본 종료 검사는 남길 계정 기능에도 적용할 수 있다. 극장 CRUD를 측정하는 benchmark는 그대로 유지할 수 없으며, 대체할 업무를 임의로 만들지는 않는다.
 
-## 검토 범위와 남은 판단
+NATS·Restate 연결과 health는 새 Demo에서도 실제 사용한다. common의 S3·NATS·Restate SDK는 현재 필수 peer dependency이므로 앱의 직접 호출을 지웠다는 이유만으로 의존성 선언이나 라이브러리 검증용 이미지 설정을 삭제하지 않는다.
 
-앱·API·인프라 가이드, API 모듈 조립과 연결 설정·health, 추천·홈 조합·관람 이력, 구매 workflow와 알림, 상영 생성의 접수·저장·workflow·HTTP 경로, 기본 Compose와 Dev Container·루트 실행 명령을 중심으로 검토했다. 추천 테스트와 데이터 준비 코드를 읽고, 두 데모의 호출 경로와 관람 이력 생성 호출자를 검색했다. 전체 저장소 리뷰는 아니며, 각 테스트와 프런트엔드 파일 전체·CI·실행 도구·라이브러리 내부 전체는 이번 판단의 검토 범위에 포함하지 않았다.
+## 구현 전 남은 결정
 
-최근 인증 수정은 기존 비밀번호 변경·탈퇴·로그아웃·갱신 계약을 지키는 데 필요한 처리다. 시드라는 이유로 이 보장을 제거할 근거는 확인하지 못했다. `libs/`는 [공개 계약 기준](../AGENTS.md#영역별-판단-기준)을 적용하므로 앱의 축소 여부만으로 공개 기능을 삭제하지 않는다.
+- **파일 업로드:** `AssetsService`의 HTTP 진입점과 정리 cron 호출자는 Movies다. 파일 Demo를 seed에 남길지, 남긴다면 사용처·소유·접근 계약을 정해야 한다. `libs/common`의 S3 기능은 이 결정과 관계없이 유지한다.
+- **회원 정보:** 이름·생년월일의 유지 여부는 계정 모델의 선택이다. 도메인 제거만으로 가입·수정·응답 계약을 자동 변경하지 않으며, [사용자 TODO](users.md)와 함께 맞춘다.
+- **Demo 계약:** 이벤트 payload·관찰 방법, 작업의 입력·결과·재요청 의미, HTTP 경로·접근 권한을 작은 계약으로 확정한다.
+- **Demo 화면:** 우선 API와 실행 가능한 curl 문서로 제공하는 안을 추천한다. console에 실행 화면을 추가할지는 별도 결정한다.
 
-동작 변경이나 장애 재현은 수행하지 않았다. 남은 결정은 개인화 예제의 유지 여부, 구매 알림·상영 생성이 보여 줄 분산 실행 범위, 별도 기본 실행 구성의 필요성이다. 결정 전까지 네 항목 모두 보류한다.
+## 검증
+
+삭제한 도메인의 참조와 사용하지 않는 설정이 남지 않았는지 확인하고 `libs/`의 diff가 없는지 검사한다. 남긴 계정 기능과 Demo의 실제 요청·응답 및 저장·메시지·재개 결과를 검증한다. 루트의 `pnpm run lint`, `pnpm run test`, `pnpm run atoz`와 변경한 Race를 실행한다. 테스트와 커버리지 기준은 유지한다.
+
+검토한 범위는 앱 모듈 조립·설정·health, 예매·추천·이벤트·workflow의 호출 관계, 두 데모의 요청 경로, 테스트 준비·정리와 실행 구성이다. 라이브러리 구현 변경이나 전체 저장소의 결함 리뷰는 포함하지 않는다.
