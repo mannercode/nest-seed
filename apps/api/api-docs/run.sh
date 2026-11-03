@@ -86,9 +86,7 @@ format_endpoint() {
 	IFS='/' read -r -a segments <<<"${path}"
 
 	for ((i = 0; i < ${#segments[@]}; i++)); do
-		if [[ "${segments[i]}" =~ ^[0-9]{8}$ ]]; then
-			segments[i]=':date'
-		elif [[ "${segments[i]}" =~ ^[[:xdigit:]]+$ ]]; then
+		if [[ "${segments[i]}" =~ ^[[:xdigit:]]+$ ]]; then
 			segments[i]=':id'
 		fi
 	done
