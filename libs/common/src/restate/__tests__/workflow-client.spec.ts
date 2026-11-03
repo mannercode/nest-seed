@@ -6,12 +6,7 @@ import { instant } from '@mannercode/testing'
 import { workflow } from '@restatedev/restate-sdk'
 import { RestateWorkflowClient, TemporalJsonSerde } from '../index.js'
 
-type TestResult = {
-    createdShowtimeCount: number
-    createdTicketCount: number
-    sagaId: string
-    status: 'succeeded'
-}
+type TestResult = { processedCount: number; status: 'succeeded'; workflowId: string }
 
 const restateMocks = vi.hoisted(() => ({ connect: vi.fn() }))
 
@@ -22,19 +17,18 @@ vi.mock('@restatedev/restate-sdk-clients', async (importOriginal) => {
 
 describe('RestateWorkflowClient', () => {
     const terminal: TestResult = {
-        createdShowtimeCount: 1,
-        createdTicketCount: 10,
-        sagaId: 'saga-id',
-        status: 'succeeded'
+        processedCount: 1,
+        status: 'succeeded',
+        workflowId: 'workflow-id'
     }
     const input = {
-        createDto: {
-            durationInMinutes: 90,
-            movieId: 'movie-id',
-            startTimes: [instant('2100-01-01T09:00:00.000Z')],
-            theaterIds: ['theater-id']
+        payload: {
+            count: 1,
+            message: 'test message',
+            tags: ['sample'],
+            timestamps: [instant('2100-01-01T09:00:00.000Z')]
         },
-        sagaId: 'saga-id'
+        workflowId: 'workflow-id'
     }
     const submission: WorkflowSubmission<TestResult> = {
         attachable: true,
@@ -48,8 +42,8 @@ describe('RestateWorkflowClient', () => {
             fix = createFixture({ result: vi.fn() })
         })
         it('지정한 키와 60초 제한으로 제출하고 완료 결과를 기다리지 않는다', async () => {
-            await expect(fix.client.submit(input, input.sagaId)).resolves.toBe(submission)
-            expect(fix.workflowClient).toHaveBeenCalledWith(fix.definition, input.sagaId)
+            await expect(fix.client.submit(input, input.workflowId)).resolves.toBe(submission)
+            expect(fix.workflowClient).toHaveBeenCalledWith(fix.definition, input.workflowId)
             expect(fix.workflowSubmit).toHaveBeenCalledTimes(1)
             expect(fix.workflowSubmit.mock.calls[0]?.[0]).toEqual(input)
             expect(fix.workflowSubmit.mock.calls[0]?.[1].opts).toEqual({ timeout: 60_000 })
@@ -102,7 +96,7 @@ describe('RestateWorkflowClient', () => {
             })
         })
         it('제출 시 오류를 던지고 완료 결과는 조회하지 않는다', async () => {
-            await expect(fix.client.submit(input, input.sagaId)).rejects.toThrow(
+            await expect(fix.client.submit(input, input.workflowId)).rejects.toThrow(
                 'ingress unavailable'
             )
             expect(fix.result).not.toHaveBeenCalled()
@@ -117,8 +111,8 @@ describe('RestateWorkflowClient', () => {
             fix = createFixture({ result: vi.fn(), workflowOutput })
         })
         it('출력을 조회하면 지정한 키와 60초 제한을 사용하고 ready: false를 반환한다', async () => {
-            await expect(fix.client.output(input.sagaId)).resolves.toEqual({ ready: false })
-            expect(fix.workflowClient).toHaveBeenCalledWith(fix.definition, input.sagaId)
+            await expect(fix.client.output(input.workflowId)).resolves.toEqual({ ready: false })
+            expect(fix.workflowClient).toHaveBeenCalledWith(fix.definition, input.workflowId)
             expect(workflowOutput.mock.calls[0]?.[0].opts).toEqual({ timeout: 60_000 })
         })
     })
@@ -130,7 +124,7 @@ describe('RestateWorkflowClient', () => {
             fix = createFixture({ result: vi.fn(), workflowOutput })
         })
         it('출력을 조회하면 ready: true와 완료 결과를 반환한다', async () => {
-            await expect(fix.client.output(input.sagaId)).resolves.toEqual({
+            await expect(fix.client.output(input.workflowId)).resolves.toEqual({
                 ready: true,
                 result: terminal
             })
@@ -158,10 +152,9 @@ describe('RestateWorkflowClient', () => {
             definition,
             'http://restate.test:8080',
             z.object({
-                createdShowtimeCount: z.number(),
-                createdTicketCount: z.number(),
-                sagaId: z.string(),
-                status: z.literal('succeeded')
+                processedCount: z.number(),
+                status: z.literal('succeeded'),
+                workflowId: z.string()
             })
         )
 
