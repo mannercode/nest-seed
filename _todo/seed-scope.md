@@ -1,6 +1,6 @@
 # 영화 등록 예제를 남기는 seed 정리
 
-검토 기준은 `25374215`이며 시작 시 미커밋 변경은 없었다. 극장 예매는 복사한 `playground`에서 다룬다. 이 저장소에는 도메인과 SoLA 구조를 보여 주는 영화 정보 등록·목록·이미지 업로드, 이벤트·비동기 작업 예제를 남긴다. 이번 작업에서 `libs/`의 소스·테스트·설정·의존성·문서는 변경하지 않는다.
+검토 기준은 `25374215`이며 시작 시 미커밋 변경은 없었다. 극장 예매와 View 계층의 화면 응답 조합은 복사한 `playground`에서 다룬다. 이 저장소에는 도메인과 Application의 사용을 보여 주는 영화 정보 등록·목록·이미지 업로드, 이벤트·비동기 작업 예제를 남긴다. 이번 작업에서 `libs/`의 소스·테스트·설정·의존성·문서는 변경하지 않는다.
 
 ## 앱 서비스 구성안
 
@@ -22,7 +22,8 @@ MovieRegistration은 새 서비스의 제안이다. 단순 생성·조회 호출
 
 - [ ] Core의 `admins`, `theaters`, `showtimes`, `tickets`, `ticket-holding`, `purchase-records`, `watch-records`를 제거한다.
 - [ ] Application의 `booking`, `movie-deletion`, `theater-deletion`, `purchase`, `showtime-creation`, `recommendation`을 정리한다.
-- [ ] 예제 결제인 `infrastructure/payments`와 영화·상영을 조합하는 `view/user-app/home`을 정리한다.
+- [ ] 예제 결제인 `infrastructure/payments`를 제거한다.
+- [ ] `UserHomeViewService`를 포함한 View 서비스와 화면 조합 API·DTO·테스트·모듈 등록·경로 별칭을 제거한다.
 - [ ] 관리자 전용 Guard·인증 설정·계정 생성 스크립트와 개발 인프라 초기화 호출을 제거한다.
 
 대응 컨트롤러·공개 export·앱 등록·DTO·테스트·fixture·curl 문서를 같은 기능 단위로 정리한다. `TICKET_*` 설정과 전용 날짜·멱등성 입력 처리도 실제 사용처에 맞춘다. Movies·Assets는 유지하되 상영·추천·관리자 기능에 대한 의존을 제거한다.
@@ -42,7 +43,7 @@ Job Demo는 Restate의 작업 실행과 중단 후 재개를 보여 준다. 구�
 - [ ] user-app에 영화 정보 등록·이미지 업로드·목록 조회를 제공한다.
 - [ ] 영화 등록의 Application 예제를 구성하고 기존 상영·추천 응답 의존을 제거한다.
 
-사용자 가입·로그인·로그아웃·본인 조회와 기존 쿠키 인증, user-app BFF의 갱신·오류 처리 계약을 유지한다. 영화 등록 권한과 작성자별 관리 범위는 구현 전에 정한다. 영화 목록만 반환하는 조회에는 별도 View 서비스를 추가하지 않는다.
+사용자 가입·로그인·로그아웃·본인 조회와 기존 쿠키 인증, user-app BFF의 갱신·오류 처리 계약을 유지한다. 영화 등록 권한과 작성자별 관리 범위는 구현 전에 정한다. seed에는 View 서비스를 두지 않으며 Gateway가 필요한 Application·Core 서비스를 직접 호출한다. user-app의 BFF는 인증 쿠키의 토큰을 API 요청 헤더에 넣고 요청을 전달하는 역할로 유지한다.
 
 ### D4. 실행·검증·문서 갱신
 
