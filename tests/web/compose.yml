@@ -28,6 +28,7 @@ services:
             dockerfile: apps/web/Dockerfile
         environment:
             API_BASE_URL: http://api:${API_PORT:?}
+            S3_ENDPOINT: ${S3_ENDPOINT:?}
             BFF_COOKIE_SECURE: 'false'
             BFF_TRUST_PROXY_HEADERS: 'true'
             PORT: ${WEB_PORT:?}

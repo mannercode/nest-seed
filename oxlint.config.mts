@@ -55,9 +55,8 @@ const integrationImportRestrictions = [
 ]
 const internalImportRestrictions = [
     {
-        regex: '(?:^|/)showtime-creation/(?:internal|worker)(?:/|$)',
-        message:
-            'showtime-creation의 internal/worker는 공개 API가 아닙니다. 외부 운영 코드는 #application을 사용하세요.'
+        regex: '(?:^|/)(?:event-demo/internal|job-demo/worker)(?:[/.]|$)',
+        message: '예제 모듈의 내부 구현입니다. 외부 운영 코드는 #infrastructure를 사용하세요.'
     }
 ]
 
@@ -210,13 +209,10 @@ export default defineConfig({
                                     '!../index.js',
                                     '!../**/index.js',
                                     // 공개 API가 아닌 구현 단위 테스트에서만 허용하는 직접 import다.
-                                    '!../booking.utils.js',
-                                    '!../../services/core/movies/movies.repository.js',
-                                    '!../../services/core/movies/movie-pending-assets.repository.js',
-                                    '!../../services/core/purchase-records/purchase-records.repository.js',
-                                    '!../../services/core/tickets/tickets.repository.js',
                                     '!../../services/infrastructure/assets/assets.repository.js',
-                                    '!../../services/infrastructure/payments/payments.repository.js'
+                                    '!../../services/infrastructure/job-demo/job-demo.repository.js',
+                                    '!../../services/infrastructure/job-demo/worker.js',
+                                    '!../../services/infrastructure/event-demo/internal/message-consumer.js'
                                 ],
                                 message:
                                     '공개 항목은 해당 모듈의 index.js에서 가져오세요. 비공개 구현 테스트는 oxlint.config.mts의 명시적 허용 목록에 추가하세요.'
@@ -239,10 +235,6 @@ export default defineConfig({
         {
             files: ['libs/common/src/utils/__tests__/byte.spec.ts'],
             rules: { 'oxc/number-arg-out-of-range': 'off' }
-        },
-        {
-            files: ['apps/api/src/__tests__/application/purchase-events.spec.ts'],
-            rules: { 'require-yield': 'off' }
         }
     ]
 })

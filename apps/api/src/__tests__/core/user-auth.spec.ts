@@ -1,20 +1,10 @@
-import { oid } from '@mannercode/testing'
 import { HttpStatus, type INestApplication } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { AppConfigService } from '#config'
-import {
-    type UserDto,
-    type PurchaseRecordDto,
-    UsersService,
-    UsersRepository,
-    UserSchema,
-    PurchaseRecordSchema
-} from '#core'
+import { type UserDto, UsersService, UsersRepository, UserSchema } from '#core'
 import {
     buildCreateUserDto,
-    createPurchaseRecord,
     createUser,
-    createAndLoginAdmin,
     Errors,
     loginUser,
     type AppTestContext,
@@ -72,19 +62,13 @@ describe('UserAuthentication', () => {
 
     describe.each([
         { condition: '인증 정보가 없으면', credential: 'guest' },
-        { condition: '관리자 토큰을 보냈으면', credential: 'admin' },
         { condition: '토큰이 잘못되었으면', credential: 'invalid' }
     ] as const)('$condition', ({ credential }) => {
         let headers: Record<string, string>
         let session: Awaited<ReturnType<typeof loginUser>>
         beforeEach(async () => {
-            const admin = await createAndLoginAdmin(fix)
             session = await loginUser(fix, credentials)
-            headers = {
-                guest: {},
-                admin: { Authorization: `Bearer ${admin.accessToken}` },
-                invalid: { Authorization: 'Bearer invalid-token' }
-            }[credential]
+            headers = { guest: {}, invalid: { Authorization: 'Bearer invalid-token' } }[credential]
         })
         it('본인 정보 조회에 401을 반환한다', async () => {
             await fix.httpClient
@@ -114,12 +98,6 @@ describe('UserAuthentication', () => {
                 .post('/users/refresh')
                 .body({ refreshToken: session.refreshToken })
                 .ok()
-        })
-        it('구매 이력 조회에 401을 반환한다', async () => {
-            await fix.httpClient
-                .get('/users/me/purchases')
-                .headers(headers)
-                .unauthorized({ expected: Errors.Auth.Unauthorized() })
         })
         it('전체 로그아웃 요청에 401을 반환하고 로그인 세션을 유지한다', async () => {
             await fix.httpClient
@@ -197,20 +175,6 @@ describe('UserAuthentication', () => {
                 .post('/users/refresh')
                 .body({ refreshToken: other.refreshToken })
                 .ok()
-        })
-        describe('두 사용자의 구매 기록이 있으면', () => {
-            let record: PurchaseRecordDto
-            beforeEach(async () => {
-                record = await createPurchaseRecord(fix, { userId: mine.user.id })
-                await createPurchaseRecord(fix, { userId: other.user.id })
-            })
-            it('타인 ID를 검색 조건으로 보내도 본인 구매 기록만 반환한다', async () => {
-                await fix.httpClient
-                    .get('/users/me/purchases')
-                    .headers(headers)
-                    .query({ userId: other.user.id })
-                    .ok({ schema: PurchaseRecordSchema.array(), expected: [record] })
-            })
         })
     })
 
@@ -527,49 +491,6 @@ describe('UserAuthentication', () => {
                     .get('/users/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
                     .ok({ schema: UserSchema, expected: user })
-            })
-        })
-    })
-
-    describe('GET /users/me/purchases', () => {
-        describe('사용자로 로그인했으면', () => {
-            let accessToken: string
-            let user: UserDto
-            beforeEach(async () => {
-                ;({ accessToken, user } = await loginUser(fix, credentials))
-            })
-            describe('서로 다른 사용자 ID의 구매 기록이 존재하면', () => {
-                let mine1: PurchaseRecordDto
-                let mine2: PurchaseRecordDto
-                beforeEach(async () => {
-                    // 본인 기록 둘과 타인 기록 하나를 심어, 토큰 주체의 것만 조회되는지 본다.
-                    mine1 = await createPurchaseRecord(fix, { userId: user.id })
-                    mine2 = await createPurchaseRecord(fix, { userId: user.id })
-                    await createPurchaseRecord(fix, { userId: oid(0xff) })
-                })
-                it('구매 이력을 조회하면 로그인한 사용자의 기록만 반환한다', async () => {
-                    const { body } = await fix.httpClient
-                        .get('/users/me/purchases')
-                        .headers({ Authorization: `Bearer ${accessToken}` })
-                        .ok({ schema: PurchaseRecordSchema.array() })
-
-                    expect(body).toEqual(expect.arrayContaining([mine1, mine2]))
-                    expect(body).toHaveLength(2)
-                    expect(
-                        body.every((record: { userId: string }) => record.userId === user.id)
-                    ).toBe(true)
-                })
-            })
-            describe('구매 기록이 없으면', () => {
-                let request: typeof fix.httpClient
-                beforeEach(() => {
-                    request = fix.httpClient
-                        .get('/users/me/purchases')
-                        .headers({ Authorization: `Bearer ${accessToken}` })
-                })
-                it('구매 내역을 조회하면 빈 배열을 반환한다', async () => {
-                    await request.ok({ schema: PurchaseRecordSchema.array(), expected: [] })
-                })
             })
         })
     })

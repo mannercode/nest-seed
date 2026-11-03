@@ -6,59 +6,58 @@ import {
     HttpCode,
     HttpStatus,
     Ip,
-    Param,
     Patch,
     Post,
-    Query,
     Req,
     UnauthorizedException,
     UseGuards
 } from '@nestjs/common'
 import {
-    CreateUserSchema,
-    PurchaseRecordsService,
     RefreshTokenBodySchema,
-    SearchUsersPageSchema,
-    type CreateUserDto,
     type RefreshTokenBodyDto,
-    type SearchUsersPageDto,
     type UpdateUserDto,
     type UserCredentialsDto,
     UpdateUserSchema,
     UserCredentialsSchema,
     UsersService
 } from '#core'
+import {
+    UserRegistrationService,
+    RegisterUserSchema,
+    CreateRegistrationPhotoSchema,
+    type RegisterUserDto,
+    type CreateRegistrationPhotoDto
+} from '#application'
 import type { UserAuthRequest } from './types.js'
-import { AdminAuthGuard, AuthErrors, UserAuthGuard } from './guards/index.js'
+import { AuthErrors, UserAuthGuard } from './guards/index.js'
 import { LoginRateLimiterService } from './login-rate-limiter.service.js'
 
-// 클래스와 메서드 가드는 누적 적용된다. 공개·user·admin 라우트가 섞여 있으므로 역할 가드는 메서드에만 둔다.
+// 가입·로그인은 공개하고 본인 정보 경로에는 사용자 인증을 적용한다.
 @Controller('users')
 export class UsersHttpController {
     constructor(
         private readonly usersService: UsersService,
-        private readonly purchaseRecordsService: PurchaseRecordsService,
+        private readonly registration: UserRegistrationService,
         private readonly loginRateLimiter: LoginRateLimiterService
     ) {}
 
     @Post()
-    async create(@Body({ schema: CreateUserSchema }) createDto: CreateUserDto) {
-        return this.usersService.create(createDto)
+    async create(@Body({ schema: RegisterUserSchema }) createDto: RegisterUserDto) {
+        return this.registration.register(createDto)
     }
 
-    // 라우트 매칭상 `me`를 `:userId`보다 먼저 선언해야 `/users/me`가 파라미터로 잡히지 않는다.
+    @Post('photo-upload')
+    async createPhotoUpload(
+        @Body({ schema: CreateRegistrationPhotoSchema }) input: CreateRegistrationPhotoDto
+    ) {
+        return this.registration.createPhotoUpload(input)
+    }
+
     @Delete('me')
     @HttpCode(HttpStatus.NO_CONTENT)
     @UseGuards(UserAuthGuard)
     async deleteMe(@Req() req: UserAuthRequest) {
-        await this.usersService.deleteMany([req.user.sub])
-    }
-
-    @Delete(':userId')
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @UseGuards(AdminAuthGuard)
-    async delete(@Param('userId') userId: string) {
-        await this.usersService.deleteMany([userId])
+        await this.registration.deleteUser(req.user.sub)
     }
 
     @HttpCode(HttpStatus.OK)
@@ -111,33 +110,5 @@ export class UsersHttpController {
         @Body({ schema: UpdateUserSchema }) updateDto: UpdateUserDto
     ) {
         return this.usersService.update(req.user.sub, updateDto)
-    }
-
-    @Get('me/purchases')
-    @UseGuards(UserAuthGuard)
-    async getMyPurchases(@Req() req: UserAuthRequest) {
-        return this.purchaseRecordsService.findCompleted({ userId: req.user.sub })
-    }
-
-    @Get()
-    @UseGuards(AdminAuthGuard)
-    async searchPage(@Query({ schema: SearchUsersPageSchema }) searchDto: SearchUsersPageDto) {
-        return this.usersService.searchPage(searchDto)
-    }
-
-    @Get(':userId')
-    @UseGuards(AdminAuthGuard)
-    async get(@Param('userId') userId: string) {
-        const [user] = await this.usersService.getMany([userId])
-        return user
-    }
-
-    @Patch(':userId')
-    @UseGuards(AdminAuthGuard)
-    async update(
-        @Param('userId') userId: string,
-        @Body({ schema: UpdateUserSchema }) updateDto: UpdateUserDto
-    ) {
-        return this.usersService.update(userId, updateDto)
     }
 }

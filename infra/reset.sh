@@ -34,8 +34,3 @@ fi
 
 "${compose[@]}" rm -f \
     infra-setup mongo-setup redis-setup s3-setup
-
-printf '%s\n%s\n%s\n' \
-    "${ADMIN_EMAIL}" \
-    "${ADMIN_NAME}" \
-    "${ADMIN_PASSWORD}" | NODE_ENV=development pnpm --dir "${WORKSPACE_ROOT}" run admin:create

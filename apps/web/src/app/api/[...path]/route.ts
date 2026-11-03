@@ -133,15 +133,10 @@ function isBlockedAuthEndpoint(path: string[], method: string): boolean {
 
     const [namespace, operation] = path
     const isAuthEndpoint =
-        (namespace === 'admins' || namespace === 'users') &&
-        operation !== undefined &&
-        AUTH_OPERATIONS.has(operation)
+        namespace === AUTH_PREFIX && operation !== undefined && AUTH_OPERATIONS.has(operation)
 
-    // login/logout은 이 BFF가 담당하는 역할만 허용하고, refresh는 내부 회전에서만 호출한다.
-    return (
-        isAuthEndpoint &&
-        (namespace !== AUTH_PREFIX || operation === 'refresh' || method !== 'POST')
-    )
+    // login/logout은 POST만 허용하고, refresh는 내부 회전에서만 호출한다.
+    return isAuthEndpoint && (operation === 'refresh' || method !== 'POST')
 }
 
 async function readBody(request: NextRequest): Promise<ArrayBuffer | undefined> {
@@ -200,11 +195,9 @@ async function callApi(
     const headers = new Headers()
     const accept = request.headers.get('accept')
     const contentType = request.headers.get('content-type')
-    const idempotencyKey = request.headers.get('idempotency-key')
     const clientIp = resolveForwardedClientIp(request.headers, TRUST_PROXY_HEADERS)
     if (accept) headers.set('Accept', accept)
     if (contentType) headers.set('Content-Type', contentType)
-    if (idempotencyKey) headers.set('Idempotency-Key', idempotencyKey)
     // 신뢰하도록 설정한 프록시가 실제 접속 IP를 X-Forwarded-For의 맨 뒤에 넣는 환경에서만 전달한다.
     if (clientIp) headers.set('X-Forwarded-For', clientIp)
     if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`)

@@ -470,6 +470,20 @@ describe('AssetsService', () => {
         })
     })
 
+    describe('일부 ID에 해당하는 파일만 존재하면', () => {
+        let asset: AssetDto
+        let ids: string[]
+        beforeEach(async () => {
+            asset = await uploadAndFinalizeAsset(fix, file)
+            ids = [asset.id, nullObjectId]
+        })
+        it('findMany는 존재하는 파일의 다운로드 정보만 반환한다', async () => {
+            const found = await assetsService.findMany(ids)
+            expect(found).toMatchObject([{ id: asset.id, download: { url: expect.any(String) } }])
+            expect(await downloadAsset(ensure(found[0]))).toEqual(await downloadAsset(asset))
+        })
+    })
+
     describe('getMany', () => {
         describe('에셋이 존재할 때', () => {
             let assets: AssetDto[]
@@ -596,7 +610,7 @@ describe('AssetsService', () => {
         let assetId: string
 
         beforeEach(async () => {
-            expect(scheduler.doesExist('cron', 'movies.cleanupExpiredUploads')).toBe(true)
+            expect(scheduler.doesExist('cron', 'registration.cleanupExpiredPhotos')).toBe(true)
 
             const createDto = buildCreateAssetDto(file)
             const createdAsset = await assetsService.create(createDto)

@@ -6,20 +6,12 @@ import { Counter, Rate, Trend } from 'k6/metrics'
 
 import { positiveInteger, randomHex, summaryOutput } from './benchmark-common.js'
 
-const MODE = __ENV.MODE
 const SERVER_URL = __ENV.SERVER_URL
-const ADMIN_ACCESS_TOKEN = __ENV.ADMIN_ACCESS_TOKEN
 const DURATION_MS = positiveInteger('DURATION_MS', 30_000)
 const WARMUP_MS = positiveInteger('WARMUP_MS', 3_000)
 const SETTLE_MS = 10_000
 
-if (MODE !== 'seed' && MODE !== 'benchmark') {
-    throw new Error('MODE must be seed or benchmark')
-}
 if (!SERVER_URL) throw new Error('SERVER_URL must be set')
-if (!ADMIN_ACCESS_TOKEN) throw new Error('ADMIN_ACCESS_TOKEN must be set')
-if (!__ENV.ADMIN_EMAIL || !__ENV.ADMIN_PASSWORD)
-    throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be set')
 
 const CASES = [
     { name: 'read_identity_200', readVus: 200, writeVus: 0, acceptEncoding: 'identity' },
@@ -97,92 +89,52 @@ function benchmarkOptions() {
     }
 }
 
-function seedOptions() {
-    return {
-        discardResponseBodies: true,
-        scenarios: {
-            seed: {
-                executor: 'constant-vus',
-                exec: 'seed',
-                vus: 100,
-                duration: `${DURATION_MS}ms`,
-                gracefulStop: '5s'
-            }
-        },
-        thresholds: { checks: ['rate==1'] }
-    }
-}
+export const options = benchmarkOptions()
 
-export const options = MODE === 'seed' ? seedOptions() : benchmarkOptions()
-
-const headers = {
-    accept: 'application/json',
-    authorization: `Bearer ${ADMIN_ACCESS_TOKEN}`,
-    'content-type': 'application/json'
-}
-let accessExpiresAt = tokenExpiresAt(ADMIN_ACCESS_TOKEN)
+let tokens
+let accessExpiresAt = 0
+const jsonHeaders = { 'content-type': 'application/json' }
 
 function tokenExpiresAt(token) {
     const { exp } = JSON.parse(encoding.b64decode(token.split('.')[1], 'rawurl', 's'))
-    if (!Number.isFinite(exp)) throw new Error('Admin access token has no valid expiry')
+    if (!Number.isFinite(exp)) throw new Error('Access token has no valid expiry')
     return exp * 1000
 }
 
+function authenticate(path, body, expectedStatus) {
+    const response = http.post(SERVER_URL + path, JSON.stringify(body), {
+        headers: jsonHeaders,
+        responseType: 'text',
+        tags: { name: 'user authentication' }
+    })
+    if (response.status !== expectedStatus)
+        exec.test.abort('Authentication ' + path + ': HTTP ' + response.status)
+    return response.json()
+}
+
 function authenticatedHeaders() {
-    // k6의 기본 요청 제한 60초 안에 만료될 토큰은 요청 전에 갱신한다.
-    // 인증 요청은 극장 응답의 개수·지연 지표에 넣지 않는다.
-    if (Date.now() >= accessExpiresAt - 60_000) {
-        try {
-            const response = http.post(
-                `${SERVER_URL}/admins/login`,
-                JSON.stringify({ email: __ENV.ADMIN_EMAIL, password: __ENV.ADMIN_PASSWORD }),
-                {
-                    headers: { 'content-type': 'application/json' },
-                    responseType: 'text',
-                    tags: { name: 'admin authentication' }
-                }
-            )
-            if (response.status !== 200) throw new Error(`HTTP ${response.status}`)
-            const token = response.json('accessToken')
-            accessExpiresAt = tokenExpiresAt(token)
-            headers.authorization = `Bearer ${token}`
-        } catch (error) {
-            exec.test.abort(`Admin authentication failed: ${error.message}`)
-        }
+    if (!tokens) {
+        const email = 'benchmark-' + __VU + '-' + randomHex() + '@example.com'
+        const password = 'Benchmark password 123!'
+        authenticate(
+            '/users',
+            { name: 'Benchmark user', birthDate: '1990-01-01', email, password },
+            201
+        )
+        tokens = authenticate('/users/login', { email, password }, 200)
+        accessExpiresAt = tokenExpiresAt(tokens.accessToken)
     }
-    return headers
-}
-
-function createTheater(acceptEncoding = 'gzip') {
-    return http.post(
-        `${SERVER_URL}/theaters`,
-        JSON.stringify({
-            name: `benchmark-${__VU}-${__ITER}-${randomHex()}`,
-            location: { latitude: 37.5, longitude: 127.0 },
-            seatmap: {
-                blocks: [
-                    {
-                        name: 'A',
-                        rows: [
-                            { name: '1', layout: 'OOOOOOOOOO' },
-                            { name: '2', layout: 'OOOOOOOOOO' }
-                        ]
-                    }
-                ]
-            }
-        }),
-        { headers: { ...authenticatedHeaders(), 'Accept-Encoding': acceptEncoding } }
-    )
-}
-
-export function seed() {
-    const response = createTheater()
-    check(response, { 'theater creation returns 201': (result) => result.status === 201 })
+    // 각 VU가 자기 세션만 갱신한다. 인증 시간은 사용자 정보 측정에 포함하지 않는다.
+    if (Date.now() >= accessExpiresAt - 60_000) {
+        tokens = authenticate('/users/refresh', { refreshToken: tokens.refreshToken }, 200)
+        accessExpiresAt = tokenExpiresAt(tokens.accessToken)
+    }
+    return { ...jsonHeaders, authorization: 'Bearer ' + tokens.accessToken }
 }
 
 export function read() {
     const metric = currentMetric()
-    const response = http.get(`${SERVER_URL}/theaters?page=1&size=50`, {
+    const response = http.get(SERVER_URL + '/users/me', {
         headers: { ...authenticatedHeaders(), 'Accept-Encoding': metric.acceptEncoding }
     })
     record(response, 200, metric)
@@ -190,8 +142,12 @@ export function read() {
 
 export function write() {
     const metric = currentMetric()
-    const response = createTheater(metric.acceptEncoding)
-    record(response, 201, metric)
+    const response = http.patch(
+        SERVER_URL + '/users/me',
+        JSON.stringify({ name: 'benchmark-' + __VU + '-' + __ITER }),
+        { headers: { ...authenticatedHeaders(), 'Accept-Encoding': metric.acceptEncoding } }
+    )
+    record(response, 200, metric)
 }
 
 function currentMetric() {
@@ -263,5 +219,5 @@ function round2(value) {
 }
 
 export function handleSummary(data) {
-    return summaryOutput(MODE === 'benchmark' ? benchmarkSummary(data) : data)
+    return summaryOutput(benchmarkSummary(data))
 }

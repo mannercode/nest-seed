@@ -24,10 +24,6 @@ export class AppConfigService extends BaseConfigService {
         AUTH_ACCESS_SECRET: z.string().min(20),
 
         AUTH_ACCESS_TOKEN_EXPIRATION: requiredString,
-        AUTH_ADMIN_ACCESS_SECRET: z.string().min(20),
-        AUTH_ADMIN_ACCESS_TOKEN_EXPIRATION: requiredString,
-        AUTH_ADMIN_REFRESH_SECRET: z.string().min(20),
-        AUTH_ADMIN_REFRESH_TOKEN_EXPIRATION: requiredString,
         AUTH_AUDIENCE: requiredString,
         AUTH_ISSUER: requiredString,
         AUTH_LOGIN_FAILURE_WINDOW: requiredString,
@@ -68,11 +64,7 @@ export class AppConfigService extends BaseConfigService {
         PROJECT_ID: requiredString,
 
         ASSET_UPLOAD_EXPIRES_SEC: numberFromEnvironment,
-        ASSET_DOWNLOAD_EXPIRES_SEC: numberFromEnvironment,
-        TICKET_HOLD_DURATION_MS: numberFromEnvironment,
-        TICKET_MAX_PER_PURCHASE: numberFromEnvironment,
-        TICKET_PRICE: numberFromEnvironment,
-        TICKET_PURCHASE_CUTOFF_MINUTES: numberFromEnvironment
+        ASSET_DOWNLOAD_EXPIRES_SEC: numberFromEnvironment
     })
 
     get auth() {
@@ -83,18 +75,6 @@ export class AppConfigService extends BaseConfigService {
             issuer: this.getString('AUTH_ISSUER'),
             refreshSecret: this.getString('AUTH_REFRESH_SECRET'),
             refreshTokenExpiration: this.getString('AUTH_REFRESH_TOKEN_EXPIRATION')
-        }
-    }
-
-    // user 토큰이 admin API를 통과하지 못하도록 별도의 서명 키를 쓴다.
-    get adminAuth() {
-        return {
-            accessSecret: this.getString('AUTH_ADMIN_ACCESS_SECRET'),
-            accessTokenExpiration: this.getString('AUTH_ADMIN_ACCESS_TOKEN_EXPIRATION'),
-            audience: this.getString('AUTH_AUDIENCE'),
-            issuer: this.getString('AUTH_ISSUER'),
-            refreshSecret: this.getString('AUTH_ADMIN_REFRESH_SECRET'),
-            refreshTokenExpiration: this.getString('AUTH_ADMIN_REFRESH_TOKEN_EXPIRATION')
         }
     }
 
@@ -164,15 +144,6 @@ export class AppConfigService extends BaseConfigService {
         return {
             uploadExpiresInSec: this.getNumber('ASSET_UPLOAD_EXPIRES_SEC'),
             downloadExpiresInSec: this.getNumber('ASSET_DOWNLOAD_EXPIRES_SEC')
-        }
-    }
-
-    get ticket() {
-        return {
-            holdDurationInMs: this.getNumber('TICKET_HOLD_DURATION_MS'),
-            maxPerPurchase: this.getNumber('TICKET_MAX_PER_PURCHASE'),
-            price: this.getNumber('TICKET_PRICE'),
-            purchaseCutoffMinutes: this.getNumber('TICKET_PURCHASE_CUTOFF_MINUTES')
         }
     }
 

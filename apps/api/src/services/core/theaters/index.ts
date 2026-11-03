@@ -1,5 +1,0 @@
-export * from './dtos/index.js'
-export * from './errors.js'
-export * from './models/index.js'
-export * from './theaters.module.js'
-export * from './theaters.service.js'

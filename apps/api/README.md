@@ -1,20 +1,19 @@
-# API — 영화 예매 예제
+# API — 사용자와 기술 예제
 
-NestJS로 구현한 영화 예매 API다. 실행 방법은 [루트 README](../../README.md#실행과-검증), API의 동작과 보장은 [앱 가이드](../README.md#데이터와-dto)를 따른다. 공통 코드로 옮길지는 [libs 기준](../../libs/README.md)으로 판단한다.
+사용자 등록·인증·본인 조회와 파일·이벤트·비동기 작업을 보여 주는 NestJS API다. 실행 방법은 [루트 README](../../README.md#실행과-검증), API의 동작과 보장은 [앱 가이드](../README.md#데이터와-dto)를 따른다. 공통 코드로 옮길지는 [libs 기준](../../libs/README.md)으로 판단한다.
 
 ## 예제 살펴보기
 
-단순 CRUD부터 시작해 모듈 조합과 비동기 처리를 차례로 살펴본다.
+| 서비스                                                                 | 계층           | 책임                                    |
+| ---------------------------------------------------------------------- | -------------- | --------------------------------------- |
+| [UsersService](src/services/core/users/)                               | Core           | 사용자 저장·조회와 인증                 |
+| [UserRegistrationService](src/services/application/user-registration/) | Application    | 선택한 사진과 계정을 함께 등록          |
+| [WebHomeViewService](src/services/view/web/home/)                      | View           | 로그인한 사용자 정보와 사진 URL 조합    |
+| [AssetsService](src/services/infrastructure/assets/)                   | Infrastructure | 파일 업로드·소유권·삭제                 |
+| [EventDemoService](src/services/infrastructure/event-demo/)            | Infrastructure | JetStream 메시지 발행·소비와 SSE 전달   |
+| [JobDemoService](src/services/infrastructure/job-demo/)                | Infrastructure | Restate 문자열 변환 작업 접수·결과 조회 |
 
-| 읽을 코드                                                        | 보여 주는 것                                 |
-| ---------------------------------------------------------------- | -------------------------------------------- |
-| [theaters](src/services/core/theaters/)                          | 서비스·저장소·DTO의 기본 구성                |
-| [booking](src/services/application/booking/)                     | 여러 도메인의 공개 API를 조합하는 유스케이스 |
-| [home](src/services/view/web/home/)                              | 화면에 필요한 읽기 응답 조합                 |
-| [showtime-creation](src/services/application/showtime-creation/) | 비동기 접수, Restate 실행, DB 트랜잭션과 SSE |
-| [purchase](src/services/application/purchase/)                   | 한 상영의 티켓 구매, 멱등성·보상·완료 알림   |
-
-각 코드와 같은 이름의 [API 통합 테스트](src/__tests__/)를 함께 읽으면 허용하는 입력, 응답 형태, 저장 결과를 확인할 수 있다. 실제 결제 대행사(PG) 연동, 여러 상영관을 갖는 극장 모델, 예매 전체 UI는 구현하지 않는다.
+[통합 테스트](src/__tests__/)와 [실행 가능한 API 문서](api-docs/)에서 성공·실패 조건을 확인한다. Health는 외부 연결의 상태를 확인한다.
 
 ## SoLA의 모듈 의존 방향
 
@@ -28,14 +27,14 @@ flowchart TB
     View["View<br/>화면 전용 읽기 조합"]
     Application["Application<br/>여러 도메인·외부 효과의<br/>유스케이스 조합"]
     Core["Core<br/>한 도메인의 상태·규칙<br/>저장소"]
-    Infrastructure["Infrastructure<br/>결제·파일 등 외부 연동의<br/>앱 정책"]
+    Infrastructure["Infrastructure<br/>파일·메시지·작업 등 연동의<br/>앱 정책"]
     Gateway --> View --> Application --> Core --> Infrastructure
     Gateway -. CRUD 직접 호출 .-> Core
 ```
 
-필요한 하위 계층은 직접 사용할 수 있다. 극장 도메인의 단순 생성·조회·수정은 Gateway → Core로 충분하다. 영화·극장 삭제는 각각 `MovieDeletionService`·`TheaterDeletionService`가 해당 도메인과 Showtimes를 조합해 상영이 있는지 확인한다. 계층 수를 맞추려고 호출을 전달하기만 하는 Application Service를 만들지 않는다.
+필요한 하위 계층은 직접 사용할 수 있다. 본인 정보 조회·수정은 Gateway → Core로 충분하다. UserRegistration은 Users와 Assets를 조합하므로 Application에 둔다. EventDemo와 JobDemo는 다른 도메인을 조합하지 않고 기술 연동을 보여 주므로 Infrastructure에 둔다. 계층 수를 맞추려고 호출만 전달하는 Application을 만들지 않는다.
 
-View는 데이터를 읽어 화면에 반환할 DTO와 항목의 순서·개수를 결정한다. `WebHomeViewService`는 추천·영화·상영·극장 정보를 조합한다. 도메인 상태 변경과 transaction은 View에 두지 않는다. Application과 Core는 View에 의존하지 않으며, 화면 요구에 맞추기 위해 도메인 API의 목적을 바꾸지 않는다.
+View는 데이터를 읽어 화면에 반환할 DTO와 항목의 순서·개수를 결정한다. `WebHomeViewService`는 사용자와 사진을 조합한다. Users는 사진 ID만 반환하며 URL이 필요 없는 호출에 자산 조회 비용을 추가하지 않는다. 도메인 상태 변경과 transaction은 View에 두지 않는다. Application과 Core는 View에 의존하지 않으며, 화면 요구에 맞추기 위해 도메인 API의 목적을 바꾸지 않는다.
 
 `internal/`과 `worker/`는 모듈 내부 구현을 나눈 폴더이며 별도 도메인 계층이 아니다. 계층 방향과 모듈 간 import는 lint가 검사한다. View가 상태를 바꾸지 않는지처럼 코드의 동작에 관한 규칙은 리뷰로 확인한다.
 
@@ -45,45 +44,13 @@ View는 데이터를 읽어 화면에 반환할 DTO와 항목의 순서·개수�
 
 Gateway는 REST API 컨트롤러와 HTTP 전용 기능을 모아 둔 계층이다. 컨트롤러는 `services/gateway`에 두고 `AppModule`에 등록한다.
 
-NestJS의 [기능 모듈 예시](https://docs.nestjs.com/modules#feature-modules)처럼 각 업무 모듈에 컨트롤러를 두면 API·서비스·테스트를 함께 관리하기 쉽다. 현재 `src/__tests__`에 있는 기능별 HTTP 테스트도 해당 모듈에 두고, `AppModule` 전체 대신 대상 모듈과 필요한 의존성·공통 HTTP 설정으로 구성할 수 있다.
+`UsersHttpController`는 가입은 UserRegistration에, 로그인과 본인 조회·수정은 Users에 맡긴다. 하나의 사용자 API가 내부 서비스 책임에 따라 여러 폴더로 갈라지지 않도록 Gateway에서 URL·입력 검증·인증을 함께 관리한다.
 
-다만 이 구조에서는 영화 조회·생성·수정 API는 `MoviesModule`에, 삭제 API는 `MovieDeletionModule`에 놓인다. `/movies`를 하나의 영화 API로 설계해도 내부 서비스가 나뉜다는 이유로 API 정의부터 두 모듈로 갈라진다.
-
-이 프로젝트는 본질기반해석에 따라 영화 API를 먼저 정의하고 그 동작을 구현하는 책임을 나누는 탑다운 설계에 맞춰 Gateway 배치를 선택했다. `MoviesHttpController`에서 `/movies`의 URL·요청값 검사·인증 설정을 함께 관리하고, 조회·생성·수정은 `MoviesService`에, 삭제는 `MovieDeletionService`에 맡긴다. API를 한곳에서 이해한 뒤 서비스를 호출하는 단계에서 구현 책임이 나뉘므로 설계 순서대로 코드를 읽기 자연스럽다.
-
-HTTP에서만 공유하는 인증 Guard·입력 변환 Pipe를 Gateway에 모으고, 도메인 서비스 모듈을 컨트롤러·URL·HTTP 인증 설정과 분리하는 것도 모듈화다. 추천 기능에서 `MoviesModule`을 import해도 `/movies` API가 함께 등록되지 않는다. 다만 서비스 구현을 따라갈 때는 Gateway와 업무 모듈의 폴더를 오가야 한다.
-
-```mermaid
-flowchart LR
-    subgraph distributed["각 업무 모듈에 컨트롤러를 나누어 등록"]
-        direction TB
-        A1["AppModule"]
-        M1["MoviesModule<br/>조회·생성·수정 컨트롤러 · MoviesService"]
-        D1["MovieDeletionModule<br/>삭제 컨트롤러 · MovieDeletionService"]
-        A1 --> M1
-        A1 --> D1
-        D1 --> M1
-    end
-    subgraph gateway["현재 Gateway 배치"]
-        direction TB
-        A2["AppModule<br/>MoviesHttpController"]
-        D2["MovieDeletionModule<br/>MovieDeletionService"]
-        M2["MoviesModule<br/>MoviesService"]
-        A2 --> D2
-        A2 --> M2
-        D2 --> M2
-    end
-```
-
-기존 `MoviesHttpController`를 나누지 않고 `MoviesModule`에 등록하면 삭제 서비스를 쓰기 위해 `MovieDeletionModule`을 import하게 되어 Movies → MovieDeletion → Movies의 순환이 생긴다. 위의 모듈별 배치가 성립하려면 컨트롤러도 각 모듈의 책임에 맞게 나누어야 한다.
+컨트롤러를 UsersModule에 넣으면 가입을 위해 UserRegistrationModule을 import해야 해서 Users → UserRegistration → Users 순환이 생긴다. 각 기능 모듈에 컨트롤러를 두려면 컨트롤러도 책임별로 나누어야 한다. 현재 구조는 API를 먼저 읽고 필요한 서비스 구현으로 내려가는 순서를 선택했다. 다른 모듈에서 UsersModule을 import해도 HTTP 경로는 함께 등록되지 않는다.
 
 ## 이름은 동작과 계약을 설명한다
 
-엔티티 집합을 관리하는 Core 서비스는 `UsersService`, `MoviesService`처럼 도메인의 복수형으로 이름 짓는다. 여러 도메인을 조합하는 Application 서비스는 `PurchaseService`, `ShowtimeCreationService`처럼 유스케이스를 나타내는 단수형 이름을 쓴다. 단수·복수는 한 요청이 처리하는 데이터 개수가 아니라 서비스의 역할에 따라 정한다.
-
-데이터를 조회하고 다른 서비스를 조율하면 `RecommendationService`, 전달받은 데이터만 계산하면 `MovieRecommender`처럼 이름으로 역할을 구분한다.
-
-이벤트 발행·구독을 담당하는 서비스도 `PurchaseEventService`처럼 `Service`로 끝내고 파일은 `purchase-event.service.ts`로 맞춘다. 이벤트 데이터인 `TicketPurchasedEvent`와 구분한다.
+엔티티 집합을 관리하는 Core 서비스는 `UsersService`처럼 도메인의 복수형으로 이름 짓는다. 여러 도메인을 조합하는 Application 서비스는 `UserRegistrationService`처럼 유스케이스를 나타내는 단수형 이름을 쓴다. 단수·복수는 한 요청이 처리하는 데이터 개수가 아니라 서비스의 역할에 따라 정한다.
 
 단순 조회의 조건은 객체 인자로 표현한다. 업무 목적이나 반환 정보로 다른 조회와 구분해야 하면 함수 이름에도 드러낸다.
 
@@ -91,10 +58,9 @@ flowchart LR
 find({ id })
 find({ email })
 findForAuthentication({ email })
-findByPurchaseRecordId({ purchaseRecordId })
 ```
 
-`existsByMovieIds`, `existsByTheaterIds`처럼 조건을 이름에 드러내도 된다. 이름을 줄이기 위해 두 함수를 합치고 `movieIds`와 `theaterIds`를 판별하는 분기를 추가하지 않는다. 단일 값 유틸까지 객체 인자로 바꿀 필요는 없다. 비슷한 타입의 인자가 많아 의미를 혼동하기 쉬우면 속성 이름이 있는 객체로 받는다.
+단일 값 유틸까지 객체 인자로 바꿀 필요는 없다. 비슷한 타입의 인자가 많아 의미를 혼동하기 쉬우면 속성 이름이 있는 객체로 받는다.
 
 | 이름                    | 기본 계약                                             |
 | ----------------------- | ----------------------------------------------------- |
@@ -104,7 +70,7 @@ findByPurchaseRecordId({ purchaseRecordId })
 
 이 시드의 일반 서비스 조회·삭제는 `getMany`·`deleteMany`를 사용한다. 한 건을 처리하는 HTTP 핸들러도 ID를 `[id]`로 감싸 같은 메서드를 호출하고, 응답은 한 건만 반환한다. 이후 여러 건을 처리하는 호출을 추가해도 서비스 메서드의 입력·반환 방식을 바꾸지 않으려는 선택이다. 생성·수정과 업무상 특별한 조회까지 일괄 API로 바꾸지는 않는다.
 
-요청 DTO는 `CreateTheaterDto`, `UpdateUserDto`, `SearchTheatersPageDto`처럼 동작과 대상을 이름에 드러낸다. `releaseDate` 같은 달력 날짜와 `createdAt` 같은 시점은 이름뿐 아니라 타입과 직렬화 형식에서도 구분한다.
+요청 DTO는 `CreateUserDto`, `UpdateUserDto`, `CreateTextJobDto`처럼 동작과 대상을 이름에 드러낸다. `birthDate` 같은 달력 날짜와 `createdAt` 같은 시점은 이름뿐 아니라 타입과 직렬화 형식에서도 구분한다.
 
 ## 다른 모듈을 import하는 방법
 
@@ -132,13 +98,13 @@ DTO에는 Zod를 사용한다. 요청 검증과 응답·workflow·테스트의 J
 
 데이터를 검사·변환하는 지점에는 Zod 스키마를 명시한다. 타입 인자만으로 런타임 변환 정보를 알 수 없기 때문이다.
 
-HTTP 요청·응답과 JSON에서 복원할 데이터는 Zod 스키마로 정의하고 `z.infer`로 타입을 얻는다. 타입 이름은 `Dto`, 실행 시 검사·변환에 쓸 스키마 이름은 `Schema`로 끝낸다. [극장 생성 DTO](src/services/core/theaters/dtos/create-theater.dto.ts)가 그 예다.
+HTTP 요청·응답과 JSON에서 복원할 데이터는 Zod 스키마로 정의하고 `z.infer`로 타입을 얻는다. 타입 이름은 `Dto`, 실행 시 검사·변환에 쓸 스키마 이름은 `Schema`로 끝낸다. [사용자 생성 DTO](src/services/core/users/dtos/create-user.dto.ts)가 그 예다.
 
 ```ts
-export type CreateTheaterDto = z.infer<typeof CreateTheaterSchema>
+export type CreateUserDto = z.infer<typeof CreateUserSchema>
 ```
 
-요청 검사·변환에는 `CreateTheaterSchema`, 검증된 값을 받는 함수 인자에는 `CreateTheaterDto`를 사용한다. 같은 필드를 클래스와 스키마에 두 번 적지 않는다. JSON 경계를 통과하지 않는 내부 함수 인자까지 스키마를 새로 만들 필요는 없다.
+요청 검사·변환에는 `CreateUserSchema`, 검증된 값을 받는 함수 인자에는 `CreateUserDto`를 사용한다. 같은 필드를 클래스와 스키마에 두 번 적지 않는다. JSON 경계를 통과하지 않는 내부 함수 인자까지 스키마를 새로 만들 필요는 없다.
 
 JSON 본문의 숫자·불리언·문자열은 선언한 타입으로 받는다. 쿼리 숫자나 날짜처럼 변환이 필요한 필드만 명시적으로 변환한다. 수정 필드를 생략하면 기존 값을 유지하며, `null`은 실제 모델이 허용할 때만 받는다.
 
@@ -149,7 +115,7 @@ JSON 복원과 HTTP 테스트에서 스키마를 사용하는 방법은 [공유 
 NestJS `HttpException`과 하위 예외를 Core·Application에서도 사용한다. 예상한 실패는 해당 도메인의 `errors.ts`에 코드·메시지·문맥을 정의한다. 해당 조건을 판단한 코드가 이를 알맞은 예외에 담아 던지므로 Gateway에서 같은 의미의 오류로 다시 변환하지 않는다.
 
 ```ts
-throw new ConflictException(MovieErrors.DeleteBlockedByShowtimes(movieId))
+throw new ConflictException(UserErrors.EmailAlreadyExists(email))
 ```
 
 서비스는 업무 조건을 판단한다. Repository는 고유 키 충돌처럼 DB가 원자적으로 판정한 결과를 도메인 예외로 바꾼다. MongoDB 오류 번호·드라이버 세션은 서비스로 보내지 않는다. 클라이언트가 구분해야 할 4xx 오류에는 `code`를 두고, 5xx 오류의 내부 원인은 응답 본문 대신 서버 로그에 남긴다.

@@ -1,10 +1,9 @@
-import { mapDocToDto } from '@mannercode/common'
+import { mapDocToDto, type TransactionContext } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import {
     CreateUserDto,
     CreateUserSchema,
     UserCredentialsDto,
-    SearchUsersPageDto,
     UpdateUserDto,
     UpdateUserSchema,
     UserCredentialsSchema,
@@ -21,11 +20,19 @@ export class UsersService {
         private readonly authenticationService: UserAuthenticationService
     ) {}
 
-    async create(createDto: CreateUserDto) {
+    async create(
+        createDto: CreateUserDto,
+        photoAssetId: string | null = null,
+        transaction?: TransactionContext
+    ) {
         createDto = CreateUserSchema.parse(createDto)
         const password = await this.authenticationService.hash(createDto.password)
 
-        const user = await this.repository.create({ ...createDto, password })
+        const user = await this.repository.create(
+            { ...createDto, password },
+            photoAssetId,
+            transaction
+        )
         return this.toDto(user)
     }
 
@@ -63,12 +70,6 @@ export class UsersService {
 
     async revokeRefreshToken(refreshToken: string): Promise<void> {
         await this.authenticationService.revokeRefreshToken(refreshToken)
-    }
-
-    async searchPage(searchDto: SearchUsersPageDto) {
-        const { items, ...pagination } = await this.repository.searchPage(searchDto)
-
-        return { ...pagination, items: this.toDtos(items) }
     }
 
     async update(userId: string, updateDto: UpdateUserDto) {

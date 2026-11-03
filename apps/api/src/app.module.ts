@@ -6,44 +6,19 @@ import {
 } from '@mannercode/common'
 import { Module } from '@nestjs/common'
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
-import {
-    BookingModule,
-    MovieDeletionModule,
-    PurchaseModule,
-    PurchaseWorkflow,
-    PurchaseEventWorkflow,
-    RecommendationModule,
-    ShowtimeCreationModule,
-    ShowtimeCreationWorkflow,
-    TheaterDeletionModule
-} from '#application'
+import { UserRegistrationModule } from '#application'
 import { AppConfigService } from '#config'
+import { UsersModule } from '#core'
 import {
-    AdminsModule,
-    MoviesModule,
-    PurchaseRecordsModule,
-    ShowtimesModule,
-    TheatersModule,
-    TicketHoldingModule,
-    TicketsModule,
-    UsersModule,
-    WatchRecordsModule
-} from '#core'
-import {
-    AdminAuthGuard,
-    AdminsHttpController,
-    BookingHttpController,
-    MoviesHttpController,
+    EventDemoHttpController,
+    JobDemoHttpController,
     LoginRateLimiterService,
-    PurchaseHttpController,
     RequestValidationPipe,
-    ShowtimeCreationHttpController,
-    TheatersHttpController,
     UserAuthGuard,
     WebHomeViewHttpController,
     UsersHttpController
 } from '#gateway'
-import { AssetsModule, PaymentsModule } from '#infrastructure'
+import { AssetsModule, EventDemoModule, JobDemoModule, TextJobWorkflow } from '#infrastructure'
 import { WebHomeViewModule } from '#view'
 import { AppConfigModule, GlobalModule, HealthModule } from './modules/index.js'
 
@@ -52,60 +27,30 @@ import { AppConfigModule, GlobalModule, HealthModule } from './modules/index.js'
         GlobalModule,
         AppConfigModule,
         HealthModule,
-        AdminsModule,
         UsersModule,
-        MoviesModule,
-        TheatersModule,
-        ShowtimesModule,
-        TicketsModule,
-        TicketHoldingModule,
-        WatchRecordsModule,
-        PurchaseRecordsModule,
-        PaymentsModule,
         AssetsModule,
-        BookingModule,
-        MovieDeletionModule,
-        PurchaseModule,
-        RecommendationModule,
-        ShowtimeCreationModule,
-        TheaterDeletionModule,
+        UserRegistrationModule,
+        EventDemoModule,
+        JobDemoModule,
         WebHomeViewModule
     ],
     controllers: [
-        AdminsHttpController,
-        BookingHttpController,
         UsersHttpController,
-        MoviesHttpController,
-        PurchaseHttpController,
-        ShowtimeCreationHttpController,
-        TheatersHttpController,
-        WebHomeViewHttpController
+        WebHomeViewHttpController,
+        EventDemoHttpController,
+        JobDemoHttpController
     ],
     providers: [
-        AdminAuthGuard,
         LoginRateLimiterService,
         UserAuthGuard,
         {
             provide: RestateEndpoint,
-            inject: [
-                ShowtimeCreationWorkflow,
-                PurchaseWorkflow,
-                PurchaseEventWorkflow,
-                AppConfigService,
-                AppLoggerService
-            ],
+            inject: [TextJobWorkflow, AppConfigService, AppLoggerService],
             useFactory: (
-                showtime: ShowtimeCreationWorkflow,
-                purchase: PurchaseWorkflow,
-                event: PurchaseEventWorkflow,
+                workflow: TextJobWorkflow,
                 config: AppConfigService,
                 logger: AppLoggerService
-            ) =>
-                new RestateEndpoint(
-                    [showtime.definition, purchase.definition, event.definition],
-                    config.restate.servicePort,
-                    logger
-                )
+            ) => new RestateEndpoint([workflow.definition], config.restate.servicePort, logger)
         },
         { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: ['/health'] },
         { provide: APP_PIPE, useClass: RequestValidationPipe },

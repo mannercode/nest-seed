@@ -6,7 +6,7 @@ Node는 네이티브 Temporal을 사용하는 26 계열을 유지한다. TypeScr
 
 ## 1. 환경 변수 파일 변경 후 Dev Container 재생성
 
-루트 [.env.infra](../.env.infra)에는 인프라 접속 정보·이미지·포트·개발 관리자 계정을, [.env.api](../.env.api)에는 인증·HTTP·업무 설정을 둔다.
+루트 [.env.infra](../.env.infra)에는 인프라 접속 정보·이미지·포트를, [.env.api](../.env.api)에는 인증·HTTP·앱 설정을 둔다.
 
 ```mermaid
 flowchart TB

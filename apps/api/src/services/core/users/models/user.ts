@@ -10,4 +10,6 @@ export class User extends CrudDocument {
     name: string
 
     password: string
+
+    photoAssetId: string | null
 }

@@ -1,17 +1,16 @@
 import {
-    QueryBuilderOptions,
     assignIfDefined,
     CrudRepository,
     isDuplicateKeyError,
     MongoErrors,
     plainDateFromMongo,
-    QueryBuilder,
-    MongoConnection
+    MongoConnection,
+    type TransactionContext
 } from '@mannercode/common'
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { z } from 'zod'
 import { AppConfigService } from '#config'
-import { CreateUserDto, SearchUsersPageDto, UpdateUserDto } from './dtos/index.js'
+import { CreateUserDto, UpdateUserDto } from './dtos/index.js'
 import { UserErrors } from './errors.js'
 import { User } from './models/index.js'
 
@@ -38,7 +37,11 @@ export class UsersRepository extends CrudRepository<User> {
         )
     }
 
-    async create(createDto: CreateUserDto): Promise<User> {
+    async create(
+        createDto: CreateUserDto,
+        photoAssetId: string | null,
+        transaction?: TransactionContext
+    ): Promise<User> {
         UserWriteSchema.parse(createDto)
         const user = this.newDocument()
         user.authVersion = 0
@@ -46,8 +49,9 @@ export class UsersRepository extends CrudRepository<User> {
         user.email = createDto.email
         user.birthDate = createDto.birthDate
         user.password = createDto.password
+        user.photoAssetId = photoAssetId
         try {
-            await this.insertOne(user)
+            await this.insertOne(user, transaction)
         } catch (error) {
             if (isDuplicateKeyError(error)) {
                 throw new ConflictException(UserErrors.EmailAlreadyExists(createDto.email))
@@ -62,21 +66,6 @@ export class UsersRepository extends CrudRepository<User> {
         const user = await this.findDocument(this.activeFilter({ email: { $eq: email } }))
 
         return user ? this.toDomainDocument(user) : null
-    }
-
-    async searchPage(searchDto: SearchUsersPageDto) {
-        const { orderby, page, size } = searchDto
-
-        const pagination = await this.findWithPagination({
-            filter: this.buildQuery(searchDto, { allowEmpty: true }),
-            pagination: {
-                orderby: orderby ?? undefined,
-                page: page ?? undefined,
-                size: size ?? undefined
-            }
-        })
-
-        return pagination
     }
 
     async update(userId: string, updateDto: UpdateUserDto) {
@@ -105,17 +94,6 @@ export class UsersRepository extends CrudRepository<User> {
             }
             throw error
         }
-    }
-
-    private buildQuery(searchDto: SearchUsersPageDto, options: QueryBuilderOptions) {
-        const { email, name } = searchDto
-
-        const builder = new QueryBuilder()
-        builder.addRegex('name', name ?? undefined)
-        builder.addRegex('email', email ?? undefined)
-
-        const query = builder.build(options)
-        return query
     }
 
     protected override toDomainDocument(doc: User): User {

@@ -105,17 +105,22 @@ export class AssetsService {
         await this.repository.deleteMany({ ids: assetIds })
     }
 
-    async finalizeUpload(assetId: string, { owner }: FinalizeAssetDto) {
+    async finalizeUpload(
+        assetId: string,
+        { owner }: FinalizeAssetDto,
+        transaction?: TransactionContext
+    ) {
         // 만료 판정과 소유 부여를 조건부 원자 갱신 하나로 처리한다.
         // 시각을 먼저 검사하고 나중에 소유를 쓰면, 그 틈에 정리 cron이 같은 자산의 S3 객체를 지울 수 있다.
         const updatedAsset = await this.repository.assignOwner(
             assetId,
             owner,
-            this.getExpirationThreshold()
+            this.getExpirationThreshold(),
+            transaction
         )
 
         if (!updatedAsset) {
-            const asset = await this.repository.get({ id: assetId })
+            const asset = await this.repository.get({ id: assetId, transaction })
             if (asset.deletionRequestedAt) {
                 throw new NotFoundException(MongoErrors.DocumentNotFound(assetId))
             }
@@ -129,16 +134,6 @@ export class AssetsService {
 
         const dto = this.toDto(updatedAsset)
         return this.withDownloadInfo(dto)
-    }
-
-    async confirmOwner(
-        assetId: string,
-        owner: { entityId: string; service: string },
-        transaction: TransactionContext
-    ): Promise<void> {
-        if (!(await this.repository.confirmOwner(assetId, owner, transaction))) {
-            throw new NotFoundException(MongoErrors.DocumentNotFound(assetId))
-        }
     }
 
     async findMany(assetIds: string[]) {
@@ -163,14 +158,6 @@ export class AssetsService {
         if (!asset) return undefined
 
         return this.toOwner(asset)
-    }
-
-    async findOwners(
-        assetIds: string[]
-    ): Promise<Map<string, { entityId: string; service: string } | null>> {
-        const assets = await this.repository.findMany({ ids: assetIds })
-
-        return new Map(assets.map((asset) => [asset.id, this.toOwner(asset)]))
     }
 
     async isUploadComplete(assetId: string): Promise<boolean> {

@@ -4,7 +4,7 @@ NestJS 기반 백엔드 프로젝트를 위한 시작 템플릿이다.
 
 `apps/api`가 중심 API이고 `libs/`에는 다른 NestJS 프로젝트에서도 사용할 공통 코드가 있다.
 
-[영화 예매 예제](apps/api/README.md#예제-살펴보기)로 모듈 간 협력, 데이터 정합성, 외부 서비스 연동을 설명한다.
+[사용자·파일·이벤트·비동기 작업 예제](apps/api/README.md#예제-살펴보기)로 모듈 간 협력, 데이터 정합성, 외부 서비스 연동을 설명한다.
 
 ## 시작하기
 
@@ -20,7 +20,7 @@ NestJS 기반 백엔드 프로젝트를 위한 시작 템플릿이다.
 4. VS Code의 포트 패널에서 web의 `3200`을 전달한다. 자동 포트 전달은 꺼져 있다.
 5. web에서 가입·로그인과 홈 화면을 확인한다.
 
-Dev Container 시작, `bash infra/reset.sh`, `pnpm run atoz`는 개발 데이터를 지운다. DB·S3 파일·Restate journal·JetStream 이벤트를 보존할 환경에서 실행하지 않는다. 초기화 뒤 개발 admin도 다시 만들어진다.
+Dev Container 시작, `bash infra/reset.sh`, `pnpm run atoz`는 개발 데이터를 지운다. DB·S3 파일·Restate journal·JetStream 이벤트를 보존할 환경에서 실행하지 않는다.
 
 루트 `.env.api`와 `.env.infra`에는 개발·검증용 설정값이 커밋되어 있다. 이 파일을 수정한 뒤에는 Dev Container를 재생성해야 변경한 값이 반영된다. 운영 secret은 저장소 밖에서 주입한다. 파일별 역할과 주입 방법은 [개발 환경](.devcontainer/README.md)에 있다.
 
@@ -54,7 +54,7 @@ API 사용 예시는 [api-docs](apps/api/api-docs/)의 bash·curl spec에 있다
 
 ```bash
 bash apps/api/api-docs/run.sh
-bash apps/api/api-docs/run.sh showtime-creation.spec
+bash apps/api/api-docs/run.sh registration-photo.spec
 ```
 
 요청은 spec에서, 실제 응답은 실행 결과에서 확인한다. 이 문서는 주요 성공·실패 흐름을 보여 주며 전체 API 목록이나 통합 테스트를 대신하지 않는다.
@@ -72,7 +72,7 @@ pnpm --filter './tests/web' exec playwright install chromium
 - 단위·통합 테스트와 race 결과는 터미널에서 확인한다. race가 실패하면 검증 스택을 정리하기 전에 컨테이너·MongoDB 진단 정보를 남긴다.
 - 브라우저의 trace·screenshot·HTML 결과는 `tests/web/_output/`에 있다. `pnpm run e2e:report`로 마지막 보고서를 연다.
 - `apps/api/api-docs/_output/` 아래에서 실제 응답은 `logs/`, 실행 항목 요약은 `docs/summary.md`에 있다.
-- benchmark는 `tests/api/benchmark/_output/<실행 시각>/`에 `report.html`과 `summary.json`을 남긴다. 측정용 극장 데이터는 DB에 남으며 `bash infra/reset.sh`로 초기화한다.
+- benchmark는 `tests/api/benchmark/_output/<실행 시각>/`에 `report.html`과 `summary.json`을 남긴다. 측정용 사용자 데이터는 DB에 남으며 `bash infra/reset.sh`로 초기화한다.
 
 CI의 반복 실행 중 실패한 회차는 `[Run i/N]`에서 찾는다. API Race가 실패했다면 실행기의 진단 정보와 같은 시각의 컨테이너 로그를 함께 확인한다.
 
@@ -80,7 +80,7 @@ CI의 반복 실행 중 실패한 회차는 `[Run i/N]`에서 찾는다. API Rac
 
 API는 SoLA의 Gateway → View → Application → Core → Infrastructure 순서로 하위 계층에 의존한다. 필요한 하위 계층은 중간 계층을 거치지 않고 직접 호출할 수 있다. 같은 계층의 여러 모듈을 조합하는 작업은 상위 계층에서 맡는다. 단일 Core의 CRUD에는 Application 계층을 추가하지 않는다.
 
-MongoDB는 데이터 저장과 트랜잭션, Redis는 좌석 선점과 리프레시 세션을 맡는다. NATS는 실시간 메시지를 전달하고, JetStream은 나중에 처리할 메시지를 보존하며, Restate는 중단된 작업을 재개한다. SDK 연결·호출은 common에, 업무 쿼리·정책·workflow 단계는 API에 구현한다. 선택 이유와 한계는 [앱 가이드](apps/README.md)와 [공유 패키지 가이드](libs/README.md)에 있다.
+MongoDB는 데이터 저장과 트랜잭션, Redis는 리프레시 세션과 정리 작업의 락을 맡는다. NATS는 실시간 메시지를 전달하고, JetStream은 나중에 처리할 메시지를 보존하며, Restate는 중단된 작업을 재개한다. SDK 연결·호출은 common에, 업무 쿼리·정책·workflow 단계는 API에 구현한다. 선택 이유와 한계는 [앱 가이드](apps/README.md)와 [공유 패키지 가이드](libs/README.md)에 있다.
 
 ### 저장소 루트의 주요 폴더
 

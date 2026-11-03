@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { ApiError, postJson } from '@/lib/api-client'
+import { postJson } from '@/lib/api-client'
+import { uploadRegistrationPhoto } from '@/lib/photos'
 
 export default function SignupPage() {
     const router = useRouter()
@@ -11,6 +12,7 @@ export default function SignupPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [birthDate, setBirthDate] = useState('2000-01-01')
+    const [photo, setPhoto] = useState<File | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [busy, setBusy] = useState(false)
 
@@ -19,15 +21,17 @@ export default function SignupPage() {
         setError(null)
         setBusy(true)
         try {
+            const photoAssetId = photo ? await uploadRegistrationPhoto(photo) : undefined
             await postJson('/users', {
                 name,
                 email: email.trim().toLowerCase(),
                 password,
-                birthDate
+                birthDate,
+                photoAssetId
             })
             router.push('/login')
         } catch (err) {
-            setError(err instanceof ApiError ? err.message : '회원가입 실패')
+            setError(err instanceof Error ? err.message : '회원가입 실패')
         } finally {
             setBusy(false)
         }
@@ -80,6 +84,19 @@ export default function SignupPage() {
                         onChange={(e) => setBirthDate(e.target.value)}
                         className={inputCls}
                     />
+                </label>
+                <label className="block text-sm font-medium text-slate-700">
+                    사진 (선택)
+                    <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        disabled={busy}
+                        onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
+                        className={inputCls}
+                    />
+                    <span className="mt-1 block text-xs text-slate-500">
+                        JPEG·PNG·WebP, 최대 5 MiB
+                    </span>
                 </label>
                 {error && (
                     <p role="alert" className="text-sm text-red-600">

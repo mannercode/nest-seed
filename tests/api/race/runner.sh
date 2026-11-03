@@ -2,9 +2,9 @@
 set -Eeuo pipefail
 cd -- "$(dirname -- "$0")"
 
-# API 테스트 스택 기동, admin 인증, 단일 race 시나리오 실행과 정리를 한 번에 수행한다.
+# API 테스트 스택 기동, 단일 race 시나리오 실행과 정리를 한 번에 수행한다.
 # 사용: pnpm run race <scenario-name>
-#  예) pnpm run race purchase-double-spend
+#  예) pnpm run race sse-fanout-race
 
 : "${WORKSPACE_ROOT:?}"
 
@@ -116,23 +116,6 @@ bring_up_stack() {
     "${compose[@]}" run --rm --no-deps restate-register
 }
 
-# admin은 infra/reset.sh가 만든 고정 개발 fixture로 로그인한다.
-# 콘텐츠 endpoint(POST /movies, /theaters, /showtime-creation/*)는 admin token만 통과한다.
-# admin이 없으면 개발 상태가 준비되지 않은 것이므로 로그인 실패를 그대로 보고한다.
-login_admin() {
-    local login_res
-    login_res=$(curl -sS -X POST "${SERVER_URL}/admins/login" \
-        -H 'Content-Type: application/json' \
-        -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}")
-    ADMIN_ACCESS_TOKEN=$(echo "${login_res}" | jq -r '.accessToken // empty')
-    if [ -z "${ADMIN_ACCESS_TOKEN}" ]; then
-        echo "Error: admin login failed: ${login_res}"
-        dump_diagnostics
-        exit 1
-    fi
-    export ADMIN_ACCESS_TOKEN
-}
-
 run_scenario() {
     echo ""
     echo "=== ${TEST_NAME} ==="
@@ -147,5 +130,4 @@ run_scenario() {
 }
 
 bring_up_stack
-login_admin
 run_scenario

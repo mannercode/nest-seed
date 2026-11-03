@@ -7,7 +7,6 @@
         "node": "^26.0.0"
     },
     "scripts": {
-        "admin:create": "pnpm --dir apps/api run admin:create",
         "prepare": "husky",
         "build": "pnpm --recursive --if-present run build",
         "build:libs": "pnpm --recursive --filter './libs/**' --fail-if-no-match run build",

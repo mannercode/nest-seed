@@ -12,7 +12,7 @@ A starter template for NestJS backend projects.
 
 `apps/api` is the main API, and `libs/` contains common code for use in other NestJS projects. `web` is a small Next.js demo connected to the API.
 
-The [movie-booking example](apps/api/README.md#예제-살펴보기) demonstrates cooperation between modules, data consistency, and external service integration.
+The [user, file, event, and background-job examples](apps/api/README.md#예제-살펴보기) demonstrate cooperation between modules, data consistency, and external service integration.
 
 ## Getting started
 
@@ -28,7 +28,7 @@ The supported development environment is the Dev Container. Open the repository 
 4. Forward the web app's port `3200` in the VS Code **Ports** panel. Automatic port forwarding is disabled.
 5. Use the web app to explore sign-up, login, and the home screen.
 
-Dev Container startup, `bash infra/reset.sh`, and `pnpm run atoz` delete development data. Do not run them in an environment where DB data, S3 files, the Restate journal, or JetStream events must survive. Resets also recreate the development admin.
+Dev Container startup, `bash infra/reset.sh`, and `pnpm run atoz` delete development data. Do not run them in an environment where DB data, S3 files, the Restate journal, or JetStream events must survive.
 
 The root `.env.api` and `.env.infra` files contain committed development and verification settings. After editing either file, recreate the Dev Container to apply the changes. Inject production secrets outside the repository. The [development environment guide](.devcontainer/README.md) explains each file's role and how its values are injected.
 
@@ -62,7 +62,7 @@ API usage examples are in the bash and curl specs under [api-docs](apps/api/api-
 
 ```bash
 bash apps/api/api-docs/run.sh
-bash apps/api/api-docs/run.sh showtime-creation.spec
+bash apps/api/api-docs/run.sh registration-photo.spec
 ```
 
 The specs contain requests, and the execution logs contain actual responses. These documents demonstrate the main success and failure flows; they do not replace a complete API catalog or the integration tests.
@@ -80,7 +80,7 @@ pnpm --filter './tests/web' exec playwright install chromium
 - Unit, integration, and race results appear in the terminal. If a race fails, the runner collects container and MongoDB diagnostics before cleaning up the test stack.
 - Browser traces, screenshots, and HTML reports are in `tests/web/_output/`. Open the latest report with `pnpm run e2e:report`.
 - Under `apps/api/api-docs/_output/`, actual responses are in `logs/` and the executed-item summary is in `docs/summary.md`.
-- Benchmarks write `report.html` and `summary.json` to `tests/api/benchmark/_output/<run timestamp>/`. Measurement theater data stays in the DB; use `bash infra/reset.sh` to clear it.
+- Benchmarks write `report.html` and `summary.json` to `tests/api/benchmark/_output/<run timestamp>/`. Measurement user data stays in the DB; use `bash infra/reset.sh` to clear it.
 
 Find the failed iteration of a repeated CI run by its `[Run i/N]` marker. For API Race failures, compare the runner's diagnostics with container logs from the same time.
 
@@ -88,7 +88,7 @@ Find the failed iteration of a repeated CI run by its `[Run i/N]` marker. For AP
 
 The API follows SoLA dependencies from Gateway → View → Application → Core → Infrastructure. A layer can call a lower layer directly without passing through intermediate layers. A higher layer combines modules from the same lower layer. CRUD within a single Core does not need an Application layer.
 
-MongoDB handles data storage and transactions; Redis handles seat holds and refresh sessions. NATS delivers real-time messages, JetStream preserves messages for later processing, and Restate resumes interrupted work. SDK connections and calls live in common; business queries, policies, and workflow steps live in the API. See the [application guide](apps/README.md) and [shared package guide](libs/README.md) for the reasons and limitations.
+MongoDB handles data storage and transactions; Redis handles refresh sessions and cleanup locks. NATS delivers real-time messages, JetStream preserves messages for later processing, and Restate resumes interrupted work. SDK connections and calls live in common; business queries, policies, and workflow steps live in the API. See the [application guide](apps/README.md) and [shared package guide](libs/README.md) for the reasons and limitations.
 
 ### Main directories at the repository root
 

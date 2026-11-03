@@ -1,40 +1,13 @@
 #!/bin/bash
 
 random_email() {
-	local epoch_ns
-	epoch_ns=$(date +%s%N)
-	printf 'test.%s.%s@example.com\n' "${epoch_ns}" "${RANDOM}"
-}
-
-new_idempotency_key() {
-	openssl rand -hex 16
+	printf "test.%s.%s@example.com\n" "$(date +%s%N)" "${RANDOM}"
 }
 
 USER_NAME="사용자 이름"
 USER_BIRTHDATE="1990-01-01"
 USER_PASSWORD="Example password 1!"
-USER_EMAIL="user@example.com"
-
-# admin은 infra/reset.sh가 만든 고정 개발 fixture이고, 콘텐츠 spec은 그 admin 토큰으로 진행한다.
-# `CURRENT_AUTH_TOKEN`이 세팅돼 있으면 run.sh의 CURL이 모든 호출에 자동으로 Bearer 헤더를 붙인다.
-# admin → user로 전환할 때는 다시 login_user를 호출한다.
-#
-# ADMIN_ACCESS_TOKEN은 `:=`로 spec 사이에 유지한다.
-# CURRENT_AUTH_TOKEN은 매 spec에서 비워, 이전 spec의 admin 토큰이 "인증 없이" 케이스를
-# admin 인증 또는 잘못된 user 서명 경로로 바꾸지 않게 한다.
-: "${ADMIN_EMAIL:?ADMIN_EMAIL must be set}"
-: "${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set}"
-: "${ADMIN_ACCESS_TOKEN:=}"
 CURRENT_AUTH_TOKEN=""
-
-login_admin() {
-	SETUP POST /admins/login \
-		-H 'Content-Type: application/json' \
-		-d '{ "email": "'"${ADMIN_EMAIL}"'", "password": "'"${ADMIN_PASSWORD}"'" }'
-
-	ADMIN_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
-	CURRENT_AUTH_TOKEN="${ADMIN_ACCESS_TOKEN}"
-}
 
 create_user() {
 	USER_EMAIL=$(random_email)
@@ -47,8 +20,6 @@ create_user() {
 				"email": "'"${USER_EMAIL}"'",
 				"password": "'"${USER_PASSWORD}"'"
 			}'
-
-	USER_ID=$(echo "${BODY}" | jq -r '.id')
 }
 
 login_user() {
@@ -66,145 +37,8 @@ create_and_login_user() {
 	login_user
 }
 
-# 이후 호출을 인증 없는 게스트로 만든다 — run.sh의 자동 Bearer 주입만 끊는 로컬 전환이다.
-# 서버 세션을 끝내는 POST /users/logout, /admins/logout API와는 다르다.
 as_guest() {
 	CURRENT_AUTH_TOKEN=""
-}
-
-create_movie() {
-	SETUP POST /movies \
-		-H 'Content-Type: application/json' \
-		-d '{
-				"title": "영화 제목",
-				"genres": ["action", "drama"],
-				"releaseDate": "2024-01-01",
-				"plot": "API 문서 흐름 검증용 줄거리",
-				"durationInSeconds": 7200,
-				"director": "감독 이름",
-				"rating": "PG"
-			}'
-
-	MOVIE_ID=$(echo "${BODY}" | jq -r '.id')
-}
-
-publish_movie() {
-	SETUP POST /movies/${MOVIE_ID}/publish
-}
-
-create_theater() {
-	SETUP POST /theaters \
-		-H 'Content-Type: application/json' \
-		-d '{
-				"name": "극장 이름",
-				"location": { "latitude": 37.5665, "longitude": 126.9780 },
-				"seatmap": {
-					"blocks": [
-						{ "name": "A", "rows": [{ "name": "1", "layout": "OOOOOOOO" }] }
-					]
-				}
-			}'
-
-	THEATER_ID=$(echo "${BODY}" | jq -r '.id')
-}
-
-request_showtime_creation() {
-	local startTime=${1:-$(date -u -d '+1 day' '+%Y-%m-%dT%H:%M:%S.000Z')}
-	local idempotencyKey
-	idempotencyKey=$(new_idempotency_key)
-
-	SETUP POST /showtime-creation/showtimes \
-		-H 'Content-Type: application/json' \
-		-H "Idempotency-Key: ${idempotencyKey}" \
-		-d '{
-				"movieId": "'${MOVIE_ID}'",
-				"theaterIds": ["'${THEATER_ID}'"],
-				"durationInMinutes": 120,
-				"startTimes": ["'${startTime}'"]
-			}'
-
-	SAGA_ID=$(echo "${BODY}" | jq -r '.sagaId')
-}
-
-wait_for_showtime_creation() {
-	local attempts=30
-	local attempt
-	local sagaStatus
-
-	for ((attempt = 1; attempt <= attempts; attempt++)); do
-		SETUP GET /showtime-creation/showtimes/${SAGA_ID}/status
-
-		sagaStatus=$(echo "${BODY}" | jq -r '.status')
-		if [[ "${sagaStatus}" = "succeeded" ]]; then
-			return 0
-		fi
-		if [[ "${sagaStatus}" = "failed" || "${sagaStatus}" = "error" ]]; then
-			break
-		fi
-		if [[ "${sagaStatus}" != "pending" ]]; then
-			break
-		fi
-
-		sleep 1
-	done
-
-	LOG_LINE "# 준비 실패: 상영 생성 saga가 성공 상태에 도달하지 않았다"
-	LOG_LINE "상태=${sagaStatus}"
-	LOG_LINE ""
-	echo "[FAIL] SETUP wait_for_showtime_creation: sagaId=${SAGA_ID}, status=${sagaStatus}"
-	exit 2
-}
-
-get_created_showtime() {
-	local showtimeId
-
-	SETUP POST /showtime-creation/showtimes/search \
-		-H 'Content-Type: application/json' \
-		-d '{ "theaterIds": ["'${THEATER_ID}'"] }'
-
-	showtimeId=$(
-		echo "${BODY}" |
-			jq -r --arg movieId "${MOVIE_ID}" --arg theaterId "${THEATER_ID}" \
-				'[.[] | select(.movieId == $movieId and .theaterId == $theaterId)] | first | .id'
-	)
-
-	if [[ -n "${showtimeId}" && "${showtimeId}" != "null" ]]; then
-		SHOWTIME_ID="${showtimeId}"
-		return 0
-	fi
-
-	LOG_LINE "# 준비 실패: 상영 생성 성공 후 상영 시간이 조회되지 않았다"
-	LOG_LINE ""
-	echo "[FAIL] SETUP get_created_showtime: 생성된 상영 시간이 없다 (movieId=${MOVIE_ID}, theaterId=${THEATER_ID})"
-	exit 2
-}
-
-get_created_tickets() {
-	local ticketCount
-
-	SETUP GET /booking/showtimes/${SHOWTIME_ID}/tickets
-
-	ticketCount=$(echo "${BODY}" | jq -r 'length')
-
-	if [[ "${ticketCount}" -ge 2 ]]; then
-		TICKET_ID_1=$(echo "${BODY}" | jq -r '.[0].id')
-		TICKET_ID_2=$(echo "${BODY}" | jq -r '.[1].id')
-		return 0
-	fi
-
-	LOG_LINE "# 준비 실패: 상영 생성 성공 후 필요한 티켓이 조회되지 않았다"
-	LOG_LINE ""
-	echo "[FAIL] SETUP get_created_tickets: 생성된 티켓이 부족하다 (showtimeId=${SHOWTIME_ID}, ticketCount=${ticketCount})"
-	exit 2
-}
-
-setup_showtime_resources() {
-	create_movie
-	publish_movie
-	create_theater
-	request_showtime_creation
-	wait_for_showtime_creation
-	get_created_showtime
 }
 
 upload_presigned_post() {

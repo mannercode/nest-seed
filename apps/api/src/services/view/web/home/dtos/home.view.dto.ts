@@ -1,23 +1,8 @@
-import { InstantFromInputSchema } from '@mannercode/common'
 import { z } from 'zod'
-import { MovieSchema } from '#core'
-
-export const HomeShowtimeViewSchema = z.strictObject({
-    endTime: InstantFromInputSchema,
-    id: z.string(),
-    startTime: InstantFromInputSchema,
-    theater: z.strictObject({ id: z.string(), name: z.string() })
-})
-export type HomeShowtimeView = z.infer<typeof HomeShowtimeViewSchema>
-
-export const HomeMovieCardSchema = z.strictObject({
-    movie: MovieSchema,
-    upcomingShowtimes: z.array(HomeShowtimeViewSchema)
-})
-export type HomeMovieCard = z.infer<typeof HomeMovieCardSchema>
+import { UserSchema } from '#core'
 
 export const WebHomeViewSchema = z.strictObject({
-    showingMovies: z.array(HomeMovieCardSchema),
-    recommendedMovies: z.array(MovieSchema)
+    user: UserSchema,
+    photoUrl: z.string().nullable()
 })
 export type WebHomeView = z.infer<typeof WebHomeViewSchema>

@@ -8,7 +8,6 @@ cd -- "$(dirname -- "$0")"
 export COMPOSE_IGNORE_ORPHANS=True
 
 SERVER_URL="http://nginx"
-SEED_TARGET="${SEED_TARGET:-50000}"
 OUTPUT_DIR="_output/$(date '+%Y%m%d-%H%M%S')"
 
 mkdir -p _output
@@ -66,63 +65,14 @@ wait_for_api() {
     done
 }
 
-login_admin() {
-    local response
-    response=$(curl -fsS -X POST "${SERVER_URL}/admins/login" \
-        -H 'Content-Type: application/json' \
-        -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}")
-    ADMIN_ACCESS_TOKEN=$(jq -er '.accessToken' <<<"${response}")
-    export ADMIN_ACCESS_TOKEN
-}
-
-theater_count() {
-    curl -fsS "${SERVER_URL}/theaters?page=1&size=1" | jq -er '.total'
-}
-
-seed_theaters() {
-    local attempts=0
-    local count
-    count=$(theater_count)
-
-    while [[ "${count}" -lt "${SEED_TARGET}" ]]; do
-        attempts=$((attempts + 1))
-        if [[ "${attempts}" -gt 10 ]]; then
-            echo "Error: theaters ${count}/${SEED_TARGET} after 10 seed runs" >&2
-            return 1
-        fi
-
-        echo "Seeding theaters: ${count}/${SEED_TARGET}"
-        login_admin
-        run_k6 run --quiet \
-            --env "MODE=seed" \
-            --env "SERVER_URL=${SERVER_URL}" \
-            --env "ADMIN_ACCESS_TOKEN=${ADMIN_ACCESS_TOKEN}" \
-            --env "ADMIN_EMAIL=${ADMIN_EMAIL}" \
-            --env "ADMIN_PASSWORD=${ADMIN_PASSWORD}" \
-            --env "DURATION_MS=30000" \
-            --env "SUMMARY_PATH=/dev/null" \
-            crud.js >/dev/null
-        count=$(theater_count)
-    done
-
-    echo "Theaters: ${count}"
-}
-
 echo "Building API benchmark stack"
 "${compose[@]}" up -d --build --wait
 "${compose[@]}" run --rm --no-deps restate-register
 wait_for_api
-login_admin
-seed_theaters
-login_admin
 
 k6_arguments=(
     run
-    --env "MODE=benchmark"
     --env "SERVER_URL=${SERVER_URL}"
-    --env "ADMIN_ACCESS_TOKEN=${ADMIN_ACCESS_TOKEN}"
-    --env "ADMIN_EMAIL=${ADMIN_EMAIL}"
-    --env "ADMIN_PASSWORD=${ADMIN_PASSWORD}"
     --env "SUMMARY_PATH=${OUTPUT_DIR}/summary.json"
 )
 [[ -n "${DURATION_MS:-}" ]] && k6_arguments+=(--env "DURATION_MS=${DURATION_MS}")

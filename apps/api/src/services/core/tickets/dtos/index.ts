@@ -1,7 +1,0 @@
-export * from './aggregate-ticket-sales.dto.js'
-export * from './create-ticket.dto.js'
-export * from './create-tickets.result.js'
-export * from './search-tickets.dto.js'
-export * from './ticket-sales-for-showtime.dto.js'
-export * from './ticket-sales.dto.js'
-export * from './ticket.dto.js'
