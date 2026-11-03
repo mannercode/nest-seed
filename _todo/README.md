@@ -1,12 +1,13 @@
 # 시드 프로젝트 TODO
 
-영화·극장 예매와 View 계층의 화면 응답 조합은 복사한 `playground`에서 다루고, 이 저장소는 사진을 첨부하는 사용자 등록·조회와 기술 예제로 줄이는 안으로 정리한다. 이번 정리에서 `libs/`는 변경하지 않는다. 기존 앱의 동작과 보장은 [앱 가이드](../apps/README.md)에 있으며, 구현 전 결정할 내용과 변경 범위는 [seed 정리 계획](seed-scope.md)에 둔다.
+영화·극장 예매는 복사한 `playground`에서 다루고, 이 저장소는 사진을 첨부하는 사용자 등록·목록 조회와 기술 예제로 줄이는 안으로 정리한다. 이번 정리에서 `libs/`는 변경하지 않는다. 기존 앱의 동작과 보장은 [앱 가이드](../apps/README.md)에 있으며, 구현 전 결정할 내용과 변경 범위는 [seed 정리 계획](seed-scope.md)에 둔다.
 
 ## 사용자 등록 예제로 줄이는 seed
 
 - [ ] 영화·극장 예매 전용 API·화면과 그에 연결된 테스트·설정을 제거한다.
 - [ ] `apps/console`과 관리자 기능을 제거한다.
-- [ ] View 서비스와 화면 조합 API를 제거하고 user-app의 인증·요청 전달 BFF는 유지한다.
+- [ ] `UserHomeViewService`를 사용자 목록·사진 URL 조합으로 축소한다. Users 조회는 Assets를 호출하지 않는다.
+- [ ] user-app의 인증·요청 전달 BFF는 유지한다.
 - [ ] user-app에 사진을 첨부하는 사용자 등록·조회를 제공하고 Application에서 Users·Assets를 조율하는 예제를 구성한다.
 - [ ] 이벤트·비동기 작업의 사용법을 `EventDemoService`·`JobDemoService`로 구성한다.
 
