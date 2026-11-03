@@ -14,7 +14,7 @@ Vitest 설정·global setup·teardown은 앱 소스가 변환되기 전에도 �
 
 `free-port`는 개발 서버가 사용할 포트를 점유한 프로세스를 종료한다. 조회 직후 사라진 프로세스만 무시하고, 명령·권한 오류는 실패로 전달한다.
 
-저장소 루트에서 `pnpm exec tunnel`을 실행하면 console·user-app을 Quick Tunnel로 공개한다. 종료할 때는 함께 시작한 tunnel 프로세스도 정리한다.
+저장소 루트에서 `pnpm exec tunnel`을 실행하면 web을 Quick Tunnel로 공개한다. 종료할 때는 함께 시작한 tunnel 프로세스도 정리한다.
 
 tunnel로 공개한 화면에서는 BFF를 통해 API도 호출할 수 있다. 최종 권한 검사는 API guard가 맡으며, BFF의 쿠키 처리와 요청 전달 방식은 [apps 가이드](../apps/README.md)에 있다.
 

@@ -227,7 +227,7 @@ export default defineConfig({
             }
         },
         {
-            files: ['apps/{console,user-app}/src/**/*.{ts,tsx}'],
+            files: ['apps/web/src/**/*.{ts,tsx}'],
             plugins: ['jsx-a11y', 'nextjs', 'react'],
             rules: {
                 'react/rules-of-hooks': 'error',

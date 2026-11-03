@@ -5,10 +5,10 @@
 ## 사용자 등록 예제로 줄이는 seed
 
 - [ ] 영화·극장 예매 전용 API·화면과 그에 연결된 테스트·설정을 제거한다.
-- [ ] `apps/console`과 관리자 기능을 제거한다.
-- [ ] `UserHomeViewService`를 사용자 목록·사진 URL 조합으로 축소한다. Users 조회는 Assets를 호출하지 않는다.
-- [ ] user-app의 인증·요청 전달 BFF는 유지한다.
-- [ ] user-app에 사진을 첨부하는 사용자 등록·조회를 제공하고 Application에서 Users·Assets를 조율하는 예제를 구성한다.
+- [ ] 관리자 기능을 제거한다.
+- [ ] `WebHomeViewService`를 사용자 목록·사진 URL 조합으로 축소한다. Users 조회는 Assets를 호출하지 않는다.
+- [ ] web의 인증·요청 전달 BFF는 유지한다.
+- [ ] web에 사진을 첨부하는 사용자 등록·조회를 제공하고 Application에서 Users·Assets를 조율하는 예제를 구성한다.
 - [ ] 이벤트·비동기 작업의 사용법을 `EventDemoService`·`JobDemoService`로 구성한다.
 
 사용자·사진 등록 계약과 조회 범위, 회원 필드, Demo의 API와 화면 범위는 [남은 결정](seed-scope.md#구현-전-남은-결정)을 먼저 확정한다. 아래 CI 조사 항목은 이 정리와 별개로 남아 있으며, 이를 이유로 이번 작업에서 라이브러리를 수정하지 않는다.

@@ -1,7 +1,7 @@
 import { expect, request, test, type BrowserContext, type Page } from '@playwright/test'
 import { randomUUID } from 'node:crypto'
 
-import { API_BASE_URL, USER_APP_BASE_URL } from '../playwright.config'
+import { API_BASE_URL, WEB_BASE_URL } from '../playwright.config'
 
 const PASSWORD = 'DevPassword1234!'
 const ADMIN_EMAIL = requiredEnvironment('ADMIN_EMAIL')
@@ -18,23 +18,23 @@ function requiredEnvironment(name: string): string {
 async function signupAndLogin(page: Page, password = PASSWORD): Promise<string> {
     const email = `e2e-user-${randomUUID()}@example.com`
 
-    await page.goto(`${USER_APP_BASE_URL}/signup`)
+    await page.goto(`${WEB_BASE_URL}/signup`)
     await page.getByRole('textbox', { name: '이름' }).fill('E2E User')
     await page.getByRole('textbox', { name: '이메일' }).fill(email)
     await page.getByLabel('비밀번호').fill(password)
     await page.getByRole('button', { name: '회원가입' }).click()
-    await expect(page).toHaveURL(`${USER_APP_BASE_URL}/login`)
+    await expect(page).toHaveURL(`${WEB_BASE_URL}/login`)
 
     await page.getByRole('textbox', { name: '이메일' }).fill(email)
     await page.getByLabel('비밀번호').fill(password)
     await page.getByRole('button', { name: '로그인' }).click()
-    await expect(page).toHaveURL(`${USER_APP_BASE_URL}/`)
+    await expect(page).toHaveURL(`${WEB_BASE_URL}/`)
 
     return email
 }
 
 async function getSessionCookie(context: BrowserContext, name: string) {
-    const cookies = await context.cookies(USER_APP_BASE_URL)
+    const cookies = await context.cookies(WEB_BASE_URL)
     return cookies.find((cookie) => cookie.name === name)
 }
 
@@ -66,7 +66,7 @@ for (const { name, pathname } of [
     ]) {
         test.describe(`${name} 화면의 비밀번호가 ${condition}이면`, () => {
             test.beforeEach(async ({ page }) => {
-                await page.goto(`${USER_APP_BASE_URL}${pathname}`)
+                await page.goto(`${WEB_BASE_URL}${pathname}`)
                 await page.getByLabel('비밀번호').fill(password)
             })
             test('입력 원문을 유지하면서 길이 오류를 표시한다', async ({ page }) => {
@@ -87,7 +87,7 @@ for (const { name, pathname } of [
 
 test.describe('로그인하지 않았으면', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto(`${USER_APP_BASE_URL}/login`)
+        await page.goto(`${WEB_BASE_URL}/login`)
     })
     test.describe('관리자 자격 증명이 유효하면', () => {
         test.beforeEach(async ({ request: api }) => {
@@ -176,7 +176,7 @@ test.describe('사용자로 로그인했으면', () => {
         expect(me).toEqual({ body: expect.objectContaining({ email }), status: 200 })
 
         const home = await page.evaluate(async () => {
-            const response = await fetch('/api/views/user-app/home')
+            const response = await fetch('/api/views/web/home')
             return {
                 body: (await response.json()) as {
                     recommendedMovies: unknown[]

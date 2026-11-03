@@ -10,7 +10,7 @@ NestJS로 구현한 영화 예매 API다. 실행 방법은 [루트 README](../..
 | ---------------------------------------------------------------- | -------------------------------------------- |
 | [theaters](src/services/core/theaters/)                          | 서비스·저장소·DTO의 기본 구성                |
 | [booking](src/services/application/booking/)                     | 여러 도메인의 공개 API를 조합하는 유스케이스 |
-| [home](src/services/view/user-app/home/)                         | 화면에 필요한 읽기 응답 조합                 |
+| [home](src/services/view/web/home/)                              | 화면에 필요한 읽기 응답 조합                 |
 | [showtime-creation](src/services/application/showtime-creation/) | 비동기 접수, Restate 실행, DB 트랜잭션과 SSE |
 | [purchase](src/services/application/purchase/)                   | 한 상영의 티켓 구매, 멱등성·보상·완료 알림   |
 
@@ -35,7 +35,7 @@ flowchart TB
 
 필요한 하위 계층은 직접 사용할 수 있다. 극장 도메인의 단순 생성·조회·수정은 Gateway → Core로 충분하다. 영화·극장 삭제는 각각 `MovieDeletionService`·`TheaterDeletionService`가 해당 도메인과 Showtimes를 조합해 상영이 있는지 확인한다. 계층 수를 맞추려고 호출을 전달하기만 하는 Application Service를 만들지 않는다.
 
-View는 데이터를 읽어 화면에 반환할 DTO와 항목의 순서·개수를 결정한다. `UserHomeViewService`는 추천·영화·상영·극장 정보를 조합한다. 도메인 상태 변경과 transaction은 View에 두지 않는다. Application과 Core는 View에 의존하지 않으며, 화면 요구에 맞추기 위해 도메인 API의 목적을 바꾸지 않는다.
+View는 데이터를 읽어 화면에 반환할 DTO와 항목의 순서·개수를 결정한다. `WebHomeViewService`는 추천·영화·상영·극장 정보를 조합한다. 도메인 상태 변경과 transaction은 View에 두지 않는다. Application과 Core는 View에 의존하지 않으며, 화면 요구에 맞추기 위해 도메인 API의 목적을 바꾸지 않는다.
 
 `internal/`과 `worker/`는 모듈 내부 구현을 나눈 폴더이며 별도 도메인 계층이 아니다. 계층 방향과 모듈 간 import는 lint가 검사한다. View가 상태를 바꾸지 않는지처럼 코드의 동작에 관한 규칙은 리뷰로 확인한다.
 

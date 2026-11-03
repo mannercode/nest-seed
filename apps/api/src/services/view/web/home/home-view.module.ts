@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common'
 import { RecommendationModule } from '#application'
 import { MoviesModule, ShowtimesModule, TheatersModule } from '#core'
-import { UserHomeViewService } from './home-view.service.js'
+import { WebHomeViewService } from './home-view.service.js'
 
 @Module({
-    exports: [UserHomeViewService],
+    exports: [WebHomeViewService],
     imports: [MoviesModule, ShowtimesModule, TheatersModule, RecommendationModule],
-    providers: [UserHomeViewService]
+    providers: [WebHomeViewService]
 })
-export class UserHomeViewModule {}
+export class WebHomeViewModule {}

@@ -58,8 +58,7 @@ updates:
       directories:
           - '/.devcontainer'
           - '/apps/api'
-          - '/apps/console'
-          - '/apps/user-app'
+          - '/apps/web'
       schedule:
           interval: weekly
       allow:

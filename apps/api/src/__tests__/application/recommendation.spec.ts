@@ -1,4 +1,4 @@
-import { UserHomeViewSchema } from '#view'
+import { WebHomeViewSchema } from '#view'
 import { DateUtil, ensure } from '@mannercode/common'
 import { plainDate } from '@mannercode/testing'
 import { MovieGenre, type MovieDto } from '#core'
@@ -24,7 +24,7 @@ describe('RecommendationService', () => {
     })
     afterEach(() => teardown?.())
 
-    describe('GET /views/user-app/home (recommendedMovies)', () => {
+    describe('GET /views/web/home (recommendedMovies)', () => {
         let fantasyMovie: MovieDto
         let comedy1Movie: MovieDto
         let comedy2Movie: MovieDto
@@ -63,9 +63,9 @@ describe('RecommendationService', () => {
 
             it('많이 시청한 장르를 먼저 추천하고 같은 장르는 최신 개봉일부터 추천한다', async () => {
                 const { body } = await fix.httpClient
-                    .get('/views/user-app/home')
+                    .get('/views/web/home')
                     .headers({ Authorization: `Bearer ${accessToken}` })
-                    .ok({ schema: UserHomeViewSchema })
+                    .ok({ schema: WebHomeViewSchema })
 
                 expect(body.recommendedMovies).toEqual([
                     actionMovie,
@@ -80,8 +80,8 @@ describe('RecommendationService', () => {
         describe('로그인 정보가 없으면', () => {
             it('개봉일이 최신인 순서로 추천한다', async () => {
                 const { body } = await fix.httpClient
-                    .get('/views/user-app/home')
-                    .ok({ schema: UserHomeViewSchema })
+                    .get('/views/web/home')
+                    .ok({ schema: WebHomeViewSchema })
 
                 expect(body.recommendedMovies).toEqual([
                     dramaMovie, // 2900-05-01
@@ -111,8 +111,8 @@ describe('RecommendationService', () => {
                 })
                 it('홈 조회 시 해당 영화를 추천에서 제외한다', async () => {
                     const { body } = await fix.httpClient
-                        .get('/views/user-app/home')
-                        .ok({ schema: UserHomeViewSchema })
+                        .get('/views/web/home')
+                        .ok({ schema: WebHomeViewSchema })
 
                     expect(body.recommendedMovies).toEqual([
                         dramaMovie,

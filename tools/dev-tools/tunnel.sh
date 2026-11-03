@@ -19,7 +19,6 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-start_tunnel console "${CONSOLE_PORT:?}"
-start_tunnel user-app "${USER_APP_PORT:?}"
+start_tunnel web "${WEB_PORT:?}"
 
 wait -n "${pids[@]}"

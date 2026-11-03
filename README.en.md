@@ -10,7 +10,7 @@ _This is a translation of [README.md](README.md). The Korean original is authori
 
 A starter template for NestJS backend projects.
 
-`apps/api` is the main API, and `libs/` contains common code for use in other NestJS projects. `console` and `user-app` are small Next.js demos connected to the API.
+`apps/api` is the main API, and `libs/` contains common code for use in other NestJS projects. `web` is a small Next.js demo connected to the API.
 
 The [movie-booking example](apps/api/README.md#예제-살펴보기) demonstrates cooperation between modules, data consistency, and external service integration.
 
@@ -25,8 +25,8 @@ The supported development environment is the Dev Container. Open the repository 
 1. Run `Reopen in Container` in VS Code. Startup installs dependencies and resets the development infrastructure.
 2. Run `pnpm run test` in the container terminal.
 3. Run `pnpm run dev` and check the API with `curl http://localhost:3000/health`.
-4. Forward the console's port `3100` and the user app's port `3200` in the VS Code **Ports** panel. Automatic port forwarding is disabled.
-5. Sign in to the console with the development admin (`admin@nest-seed.local` / `DevPass1!`). Use the user app to explore sign-up, login, and the home screen.
+4. Forward the web app's port `3200` in the VS Code **Ports** panel. Automatic port forwarding is disabled.
+5. Use the web app to explore sign-up, login, and the home screen.
 
 Dev Container startup, `bash infra/reset.sh`, and `pnpm run atoz` delete development data. Do not run them in an environment where DB data, S3 files, the Restate journal, or JetStream events must survive. Resets also recreate the development admin.
 
@@ -38,12 +38,12 @@ Run these commands from the repository root inside the Dev Container. Each comma
 
 | Command                    | Purpose                                                                      |
 | -------------------------- | ---------------------------------------------------------------------------- |
-| `pnpm run dev`             | Run the API and both demos in watch mode                                     |
+| `pnpm run dev`             | Run the API and web in watch mode                                            |
 | `pnpm run test`            | Run workspace unit and integration tests                                     |
 | `pnpm run lint`            | Check types, code, formatting, shell scripts, and documentation links        |
 | `pnpm run atoz`            | Reset infrastructure, then run builds, tests, browser checks, and API docs   |
 | `pnpm run api-docs`        | Verify executable documentation against a four-replica API stack             |
-| `pnpm run e2e`             | Verify the production builds of the demos and their API connections          |
+| `pnpm run e2e`             | Verify the production build of web and its API connection                    |
 | `pnpm run race <scenario>` | Run HTTP/SSE contention or replica termination scenarios across API replicas |
 | `pnpm run benchmark`       | Compare API performance under the same conditions                            |
 
@@ -95,7 +95,7 @@ MongoDB handles data storage and transactions; Redis handles seat holds and refr
 ```text
 nest-seed/
 ├── .devcontainer/  # Development environment configuration
-├── apps/           # API and connected demos
+├── apps/           # API and connected demo
 ├── infra/          # Development infrastructure
 ├── libs/           # Shared code and test utilities
 ├── tests/          # Multi-process, browser, and performance verification

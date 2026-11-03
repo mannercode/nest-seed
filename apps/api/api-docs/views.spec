@@ -12,8 +12,8 @@ create_and_login_user
 as_guest
 
 TEST "로그인하지 않은 사용자가 사용자 앱 홈을 조회한다" \
-	200 GET /views/user-app/home
+	200 GET /views/web/home
 
 TEST "로그인한 사용자가 사용자 앱 홈을 조회한다" \
-	200 GET /views/user-app/home \
+	200 GET /views/web/home \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"

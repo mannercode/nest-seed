@@ -2,7 +2,7 @@ import { DateUtil, OrderDirection, Require, sortBy, uniq } from '@mannercode/com
 import { Injectable } from '@nestjs/common'
 import { RecommendationService } from '#application'
 import { MoviesService, ShowtimeDto, ShowtimesService, TheatersService } from '#core'
-import { HomeMovieCard, HomeShowtimeView, UserHomeView } from './dtos/index.js'
+import { HomeMovieCard, HomeShowtimeView, WebHomeView } from './dtos/index.js'
 
 const HOME_MOVIE_COUNT = 12
 const SHOWTIMES_PER_MOVIE = 3
@@ -10,7 +10,7 @@ const SHOWTIMES_PER_MOVIE = 3
 type TheaterRef = { id: string; name: string }
 
 @Injectable()
-export class UserHomeViewService {
+export class WebHomeViewService {
     constructor(
         private readonly movies: MoviesService,
         private readonly showtimes: ShowtimesService,
@@ -18,7 +18,7 @@ export class UserHomeViewService {
         private readonly recommendation: RecommendationService
     ) {}
 
-    async getHome(userId: null | string): Promise<UserHomeView> {
+    async getHome(userId: null | string): Promise<WebHomeView> {
         const [cards, recommendedMovies] = await Promise.all([
             this.getUpcomingCards(),
             this.recommendation.searchRecommendedMovies(userId)

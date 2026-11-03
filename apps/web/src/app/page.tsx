@@ -36,7 +36,7 @@ export default function HomePage() {
             }
 
             try {
-                const view = await getJson<HomeView>('/views/user-app/home')
+                const view = await getJson<HomeView>('/views/web/home')
                 if (!cancelled) setHome(view)
             } catch (err) {
                 if (!cancelled) {
@@ -57,7 +57,7 @@ export default function HomePage() {
         try {
             await postJson('/users/logout', {})
             setEmail(null)
-            setHome(await getJson<HomeView>('/views/user-app/home'))
+            setHome(await getJson<HomeView>('/views/web/home'))
         } catch (err) {
             setEmail(null)
             setError(err instanceof Error ? err.message : '로그아웃에 실패했다')

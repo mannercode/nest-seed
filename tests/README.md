@@ -109,9 +109,9 @@ API의 HTTP 포트나 Restate 내부 포트를 바꾸면 환경 변수뿐 아니
 
 ## 브라우저 E2E와 데모
 
-web 테스트는 production build한 console·user-app과 API를 Compose로 실행하고, Dev Container의 Playwright·Chromium으로 접속한다. 브라우저는 Dev Container 준비 과정에서 workspace lockfile의 버전에 맞춰 설치한다. 일반 E2E는 호스트에 포트를 공개하지 않고 Docker 서비스 이름으로 접속한다.
+web 테스트는 production build한 web과 API를 Compose로 실행하고, Dev Container의 Playwright·Chromium으로 접속한다. 브라우저는 Dev Container 준비 과정에서 workspace lockfile의 버전에 맞춰 설치한다. 일반 E2E는 호스트에 포트를 공개하지 않고 Docker 서비스 이름으로 접속한다.
 
-console의 로그인·영화/극장/사용자 관리와 user-app의 가입·로그인·홈 조회, 쿠키 전달·갱신·로그아웃을 검증한다. 예매·구매 전체 UI는 검증 대상이 아니다. API 통합 테스트와 같은 행동을 검사하더라도 브라우저 테스트에서는 실제 화면·BFF·쿠키가 API와 함께 동작하는지 확인한다.
+web의 가입·로그인·홈 조회, 쿠키 전달·갱신·로그아웃을 검증한다. 예매·구매 전체 UI는 검증 대상이 아니다. API 통합 테스트와 같은 행동을 검사하더라도 브라우저 테스트에서는 실제 화면·BFF·쿠키가 API와 함께 동작하는지 확인한다.
 
 web Compose는 내부 HTTP를 사용하므로 쿠키의 Secure 속성을 끈다. 테스트가 신뢰할 수 있는 프록시 역할을 하도록 전달 헤더 신뢰 설정도 켠다. 이 설정을 운영 기본값으로 복사하지 않는다. 테스트에서 IP 헤더를 전달하는 것만으로는 실제 공개 프록시의 헤더 재구성이나 원본 서버(origin)로의 직접 접근 차단을 검증할 수 없다. 운영에 적용할 조건은 [apps 가이드](../apps/README.md)에 있다.
 

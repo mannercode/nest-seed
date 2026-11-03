@@ -40,11 +40,11 @@ import {
     ShowtimeCreationHttpController,
     TheatersHttpController,
     UserAuthGuard,
-    UserHomeViewHttpController,
+    WebHomeViewHttpController,
     UsersHttpController
 } from '#gateway'
 import { AssetsModule, PaymentsModule } from '#infrastructure'
-import { UserHomeViewModule } from '#view'
+import { WebHomeViewModule } from '#view'
 import { AppConfigModule, GlobalModule, HealthModule } from './modules/index.js'
 
 @Module({
@@ -69,7 +69,7 @@ import { AppConfigModule, GlobalModule, HealthModule } from './modules/index.js'
         RecommendationModule,
         ShowtimeCreationModule,
         TheaterDeletionModule,
-        UserHomeViewModule
+        WebHomeViewModule
     ],
     controllers: [
         AdminsHttpController,
@@ -79,7 +79,7 @@ import { AppConfigModule, GlobalModule, HealthModule } from './modules/index.js'
         PurchaseHttpController,
         ShowtimeCreationHttpController,
         TheatersHttpController,
-        UserHomeViewHttpController
+        WebHomeViewHttpController
     ],
     providers: [
         AdminAuthGuard,

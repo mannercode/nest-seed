@@ -21,19 +21,19 @@ services:
             retries: 60
             start_period: 5s
 
-    console:
+    web:
         <<: *logging
         build:
             context: ${WORKSPACE_ROOT:?}
-            dockerfile: apps/console/Dockerfile
+            dockerfile: apps/web/Dockerfile
         environment:
             API_BASE_URL: http://api:${API_PORT:?}
             BFF_COOKIE_SECURE: 'false'
             BFF_TRUST_PROXY_HEADERS: 'true'
-            PORT: ${CONSOLE_PORT:?}
+            PORT: ${WEB_PORT:?}
         depends_on:
             api: { condition: service_healthy }
-        healthcheck: &frontend-healthcheck
+        healthcheck:
             test:
                 [
                     'CMD',
@@ -45,20 +45,6 @@ services:
             timeout: 5s
             retries: 60
             start_period: 5s
-
-    user-app:
-        <<: *logging
-        build:
-            context: ${WORKSPACE_ROOT:?}
-            dockerfile: apps/user-app/Dockerfile
-        environment:
-            API_BASE_URL: http://api:${API_PORT:?}
-            BFF_COOKIE_SECURE: 'false'
-            BFF_TRUST_PROXY_HEADERS: 'true'
-            PORT: ${USER_APP_PORT:?}
-        depends_on:
-            api: { condition: service_healthy }
-        healthcheck: *frontend-healthcheck
 
 networks:
     default:

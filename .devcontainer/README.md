@@ -25,7 +25,7 @@ API_URL=http://api:3000
 PASSWORD=secret
 ```
 
-`API_URL=http://${API_HOST}:3000`은 변수를 치환하지 않으며 `PASSWORD="secret"`은 따옴표까지 전달한다. Compose YAML의 `${...}` 변수 치환은 이 파일 전달 방식과 별개다. 두 프론트엔드의 `.env`는 Next.js가 읽고, `apps/api/api-docs/.env`는 문서 실행기가 읽는 셸 설정이다.
+`API_URL=http://${API_HOST}:3000`은 변수를 치환하지 않으며 `PASSWORD="secret"`은 따옴표까지 전달한다. Compose YAML의 `${...}` 변수 치환은 이 파일 전달 방식과 별개다. `apps/web/.env`는 Next.js가 읽고, `apps/api/api-docs/.env`는 문서 실행기가 읽는 셸 설정이다.
 
 공통 env 파일에는 `NODE_ENV`를 고정하지 않는다. 개발 실행 명령·검증 스택·Next.js·Vitest가 각 실행 모드에 맞게 정한다.
 
@@ -61,7 +61,7 @@ workspace를 bind mount하면 이미지의 같은 경로가 가려지므로 프�
 
 **`postStartCommand`는 Dev Container를 시작할 때마다 개발 데이터를 초기화한다.** DB·S3 객체뿐 아니라 Restate journal과 JetStream 기록도 지운다. 보존할 데이터나 진행 중인 작업이 있는 환경에는 이 시작 절차를 적용하지 않는다.
 
-자동 포트 전달은 꺼져 있다. 브라우저에서 console·user-app을 열 때는 VS Code 포트 패널에서 프론트엔드 포트를 전달한다.
+자동 포트 전달은 꺼져 있다. 브라우저에서 web을 열 때는 VS Code 포트 패널에서 web 포트를 전달한다.
 
 ## 4. 호스트 파일과 Docker 소켓 공유
 

@@ -16,8 +16,8 @@ export const HomeMovieCardSchema = z.strictObject({
 })
 export type HomeMovieCard = z.infer<typeof HomeMovieCardSchema>
 
-export const UserHomeViewSchema = z.strictObject({
+export const WebHomeViewSchema = z.strictObject({
     showingMovies: z.array(HomeMovieCardSchema),
     recommendedMovies: z.array(MovieSchema)
 })
-export type UserHomeView = z.infer<typeof UserHomeViewSchema>
+export type WebHomeView = z.infer<typeof WebHomeViewSchema>

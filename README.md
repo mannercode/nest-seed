@@ -17,8 +17,8 @@ NestJS 기반 백엔드 프로젝트를 위한 시작 템플릿이다.
 1. VS Code에서 `Reopen in Container`를 실행한다. 시작 과정에서 의존성을 설치하고 개발 인프라를 초기화한다.
 2. 컨테이너 터미널에서 `pnpm run test`를 실행한다.
 3. `pnpm run dev`를 실행하고 `curl http://localhost:3000/health`로 API를 확인한다.
-4. VS Code의 포트 패널에서 console의 `3100`, user-app의 `3200`을 전달한다. 자동 포트 전달은 꺼져 있다.
-5. console은 개발 admin(`admin@nest-seed.local` / `DevPassword1234!`)으로 로그인한다. user-app에서는 가입·로그인과 홈 화면을 확인한다.
+4. VS Code의 포트 패널에서 web의 `3200`을 전달한다. 자동 포트 전달은 꺼져 있다.
+5. web에서 가입·로그인과 홈 화면을 확인한다.
 
 Dev Container 시작, `bash infra/reset.sh`, `pnpm run atoz`는 개발 데이터를 지운다. DB·S3 파일·Restate journal·JetStream 이벤트를 보존할 환경에서 실행하지 않는다. 초기화 뒤 개발 admin도 다시 만들어진다.
 
@@ -30,7 +30,7 @@ Dev Container 시작, `bash infra/reset.sh`, `pnpm run atoz`는 개발 데이터
 
 | 명령                       | 용도                                                          |
 | -------------------------- | ------------------------------------------------------------- |
-| `pnpm run dev`             | API와 두 데모를 watch mode로 실행                             |
+| `pnpm run dev`             | API와 web을 watch mode로 실행                                 |
 | `pnpm run test`            | workspace의 단위·통합 테스트                                  |
 | `pnpm run lint`            | 타입·코드·서식·셸·문서 링크 검사                              |
 | `pnpm run atoz`            | 인프라 초기화부터 빌드·테스트·브라우저·API 문서까지 전체 회귀 |

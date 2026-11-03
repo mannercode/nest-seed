@@ -1,14 +1,14 @@
 {
-    "name": "user-app",
+    "name": "web",
     "version": "0.0.1",
     "private": true,
     "type": "module",
     "scripts": {
-        "predev": "free-port ${USER_APP_PORT:?}",
-        "dev": "next dev -p ${USER_APP_PORT:?}",
+        "predev": "free-port ${WEB_PORT:?}",
+        "dev": "next dev -p ${WEB_PORT:?}",
         "build": "next build",
-        "prestart": "free-port ${USER_APP_PORT:?}",
-        "start": "next start -p ${USER_APP_PORT:?}",
+        "prestart": "free-port ${WEB_PORT:?}",
+        "start": "next start -p ${WEB_PORT:?}",
         "format": "prettier --write src/ next.config.mjs postcss.config.mjs",
         "lint": "tsc --noEmit && oxlint -c \"${WORKSPACE_ROOT:?}/oxlint.config.mts\" src/ next.config.mjs postcss.config.mjs && prettier --check src/ next.config.mjs postcss.config.mjs",
         "atoz": "pnpm run lint && pnpm run build"

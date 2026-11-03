@@ -33,8 +33,7 @@
         "dev:common": "pnpm --dir libs/common run dev",
         "dev:api": "pnpm --dir apps/api run dev",
         "dev:restate": "node apps/api/scripts/register-restate.cjs",
-        "dev:console": "pnpm --dir apps/console run dev",
-        "dev:user-app": "pnpm --dir apps/user-app run dev"
+        "dev:web": "pnpm --dir apps/web run dev"
     },
     "devDependencies": {
         "@aws-sdk/client-s3": "3.1158.0",

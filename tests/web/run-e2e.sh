@@ -41,7 +41,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-"${compose[@]}" build api console user-app
-"${compose[@]}" up --detach --no-build --wait api console user-app
+"${compose[@]}" build api web
+"${compose[@]}" up --detach --no-build --wait api web
 
 pnpm exec playwright test "$@"

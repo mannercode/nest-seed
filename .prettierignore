@@ -1,6 +1,5 @@
 pnpm-lock.yaml
 # `next dev`가 include 항목을 자동으로 추가·재배치하므로, 생성된 tsconfig의 서식은 검사하지 않는다.
-apps/console/tsconfig.json
-apps/user-app/tsconfig.json
+apps/web/tsconfig.json
 # devcontainers/ci 액션이 빌드 시 자동 생성하는 lock 파일이다.
 .devcontainer/devcontainer-lock.json

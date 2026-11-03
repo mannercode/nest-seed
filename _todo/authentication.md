@@ -22,4 +22,4 @@
 
 재검토 조건: 도입할 서비스에서 본인 변경의 재인증·관리자 변경 권한과 복구 정책을 정하고 [사용자 U3](users.md)의 이메일 확인·발송 수단을 확보한다. 복구 토큰의 일회성·만료·재발급, 미등록 계정 응답·재발송 제한, 복구 후 세션 처리를 정한다. 틀린 현재 비밀번호, 토큰 만료·재사용·동시 사용, 발송 실패와 복구 후 이전 비밀번호·세션의 동작을 검증한다.
 
-검증 위치: [JWT 세션 테스트](../libs/common/src/auth/__tests__/jwt-auth.service.spec.ts), [user-auth.spec.ts](../apps/api/src/__tests__/core/user-auth.spec.ts), [admin-auth.spec.ts](../apps/api/src/__tests__/core/admin-auth.spec.ts), [관리자 브라우저 흐름](../tests/web/e2e/console-auth-flow.spec.ts), [사용자 브라우저 흐름](../tests/web/e2e/user-auth-flow.spec.ts).
+검증 위치: [JWT 세션 테스트](../libs/common/src/auth/__tests__/jwt-auth.service.spec.ts), [user-auth.spec.ts](../apps/api/src/__tests__/core/user-auth.spec.ts), [admin-auth.spec.ts](../apps/api/src/__tests__/core/admin-auth.spec.ts), [사용자 브라우저 흐름](../tests/web/e2e/user-auth-flow.spec.ts).
