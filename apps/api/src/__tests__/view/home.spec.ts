@@ -1,219 +1,74 @@
-import type { MockInstance } from 'vitest'
-import { UserHomeViewSchema, UserHomeViewService } from '#view'
-import { DateUtil, ensure } from '@mannercode/common'
+import { readFile } from 'node:fs/promises'
+import { UserRegistrationService } from '#application'
+import { AssetsService } from '#infrastructure'
+import { WebHomeViewSchema } from '#view'
 import {
-    createMovie,
-    createShowtimes,
-    createTheater,
-    createUnpublishedMovie,
+    buildCreateUserDto,
+    buildCreateAssetDto,
+    createAppTestContext,
     createAndLoginUser,
-    createAndLoginAdmin,
     createUser,
-    Errors,
-    type AppTestContext,
-    createAppTestContext
+    loginUser,
+    testAssets,
+    uploadAsset,
+    type AppTestContext
 } from '../helpers/index.js'
 
-type ShowtimeFixture = NonNullable<Awaited<ReturnType<typeof createShowtimes>>[number]>
-
-describe('UserHomeView', () => {
+describe('WebHomeViewService', () => {
     let fix: AppTestContext
-    let teardown: AppTestContext['teardown'] | undefined
-
     beforeEach(async () => {
-        teardown = undefined
-
         fix = await createAppTestContext()
-        teardown = fix.teardown
     })
-
-    afterEach(() => teardown?.())
-
-    describe('GET /views/user-app/home', () => {
-        describe.each([
-            { condition: '관리자 토큰을 보냈으면', credential: 'admin' },
-            { condition: '토큰이 잘못되었으면', credential: 'invalid' }
-        ] as const)('$condition', ({ credential }) => {
-            let request: typeof fix.httpClient
-            let getHome: MockInstance<UserHomeViewService['getHome']>
-            beforeEach(async () => {
-                const admin = await createAndLoginAdmin(fix)
-                const headers = {
-                    admin: { Authorization: `Bearer ${admin.accessToken}` },
-                    invalid: { Authorization: 'Bearer invalid-token' }
-                }[credential]
-                request = fix.httpClient.get('/views/user-app/home').headers(headers)
-                getHome = vi.spyOn(fix.module.get(UserHomeViewService), 'getHome')
-            })
-            it('홈 조회에 401을 반환하고 홈 데이터를 조회하지 않는다', async () => {
-                await request.unauthorized({ expected: Errors.Auth.Unauthorized() })
-                expect(getHome).not.toHaveBeenCalled()
-            })
+    afterEach(() => fix?.teardown())
+    it('인증하지 않고 홈을 조회하면 401을 반환한다', async () => {
+        await fix.httpClient.get('/views/web/home').unauthorized()
+    })
+    describe('사진 없이 가입한 사용자가 로그인했으면', () => {
+        let session: Awaited<ReturnType<typeof createAndLoginUser>>
+        beforeEach(async () => {
+            session = await createAndLoginUser(fix)
+            await createUser(fix, { email: 'other@mail.com', name: '다른 사용자' })
         })
-
-        describe('사용자로 로그인했고 조회 조건에는 다른 사용자 ID가 있으면', () => {
-            let request: typeof fix.httpClient
-            let session: Awaited<ReturnType<typeof createAndLoginUser>>
-            let getHome: MockInstance<UserHomeViewService['getHome']>
-            beforeEach(async () => {
-                session = await createAndLoginUser(fix)
-                const other = await createUser(fix, { email: 'other-user@mail.com' })
-                request = fix.httpClient
-                    .get('/views/user-app/home')
-                    .headers({ Authorization: `Bearer ${session.accessToken}` })
-                    .query({ userId: other.id })
-                getHome = vi.spyOn(fix.module.get(UserHomeViewService), 'getHome')
-            })
-            it('홈을 조회하면 로그인한 사용자의 ID로 데이터를 조회하고 200을 반환한다', async () => {
-                await request.ok({
-                    schema: UserHomeViewSchema,
-                    expected: { showingMovies: [], recommendedMovies: [] }
-                })
-                expect(getHome).toHaveBeenCalledExactlyOnceWith(session.user.id)
-            })
+        it('홈을 조회하면 로그인한 본인만 반환하고 자산을 조회하지 않는다', async () => {
+            const spy = vi.spyOn(fix.module.get(AssetsService), 'getMany')
+            await fix.httpClient
+                .get('/views/web/home')
+                .headers({ Authorization: 'Bearer ' + session.accessToken })
+                .query({ userId: 'other' })
+                .ok({ schema: WebHomeViewSchema, expected: { user: session.user, photoUrl: null } })
+            expect(spy).not.toHaveBeenCalled()
         })
-
-        describe('상영 예정이 없으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/views/user-app/home')
+    })
+    describe('사진을 첨부한 사용자가 로그인했으면', () => {
+        let token: string
+        let assetId: string
+        let userId: string
+        beforeEach(async () => {
+            const registration = fix.module.get(UserRegistrationService)
+            const upload = await registration.createPhotoUpload({
+                ...buildCreateAssetDto(),
+                mimeType: 'image/png' as const
             })
-            it('홈 화면을 조회하면 상영·추천 영화 목록이 비어 있다', async () => {
-                const { body } = await request.ok({ schema: UserHomeViewSchema })
-
-                expect(body).toEqual({ showingMovies: [], recommendedMovies: [] })
-            })
+            expect((await uploadAsset(testAssets.image.path, upload)).ok).toBe(true)
+            assetId = upload.assetId
+            const input = buildCreateUserDto()
+            userId = (await registration.register({ ...input, photoAssetId: assetId })).id
+            token = (await loginUser(fix, { email: input.email, password: input.password }))
+                .accessToken
         })
-
-        describe('상영 예정이 없는 영화가 존재하면', () => {
-            beforeEach(async () => {
-                await createMovie(fix, { title: 'Home Only Movie' })
-            })
-            it('홈을 조회하면 해당 영화를 영화 목록과 추천 목록에서 제외한다', async () => {
-                const { body } = await fix.httpClient
-                    .get('/views/user-app/home')
-                    .ok({ schema: UserHomeViewSchema })
-
-                expect(body).toEqual({ showingMovies: [], recommendedMovies: [] })
-            })
-        })
-
-        describe('공개된 영화와 미공개 영화에 모두 상영 예정이 있으면', () => {
-            let published: Awaited<ReturnType<typeof createMovie>>
-            beforeEach(async () => {
-                published = await createMovie(fix)
-                const unpublished = await createUnpublishedMovie(fix)
-                const theater = await createTheater(fix)
-                const startTime = DateUtil.add({ days: 1 })
-
-                await createShowtimes(fix, [
-                    { movieId: published.id, theaterId: theater.id, startTime },
-                    {
-                        movieId: unpublished.id,
-                        theaterId: theater.id,
-                        startTime: DateUtil.add({ days: 2 })
-                    }
-                ])
-            })
-            it('홈을 조회하면 공개된 영화만 영화 목록과 추천 목록에 포함한다', async () => {
-                const { body } = await fix.httpClient
-                    .get('/views/user-app/home')
-                    .ok({ schema: UserHomeViewSchema })
-
-                expect(body.showingMovies.map(({ movie }) => movie.id)).toEqual([published.id])
-                expect(body.recommendedMovies.map((movie) => movie.id)).toEqual([published.id])
-            })
-        })
-
-        describe('지난 상영 한 건과 예정된 상영 네 건이 존재하면', () => {
-            let theaterA: Awaited<ReturnType<typeof createTheater>>
-            let theaterB: Awaited<ReturnType<typeof createTheater>>
-            let pastShowtime: ShowtimeFixture
-            let s1: ShowtimeFixture
-            let s2: ShowtimeFixture
-            let s3: ShowtimeFixture
-            let s4: ShowtimeFixture
-
-            beforeEach(async () => {
-                const movie = await createMovie(fix, { title: 'Home Movie' })
-                theaterA = await createTheater(fix, { name: 'Home Theater A' })
-                theaterB = await createTheater(fix, { name: 'Home Theater B' })
-
-                const now = DateUtil.now()
-                const past = DateUtil.add({ base: now, days: -1 })
-                const t1 = DateUtil.add({ base: now, days: 1 })
-                const t2 = DateUtil.add({ base: now, days: 2 })
-                const t3 = DateUtil.add({ base: now, days: 3 })
-                const t4 = DateUtil.add({ base: now, days: 4 })
-
-                pastShowtime = ensure(
-                    (
-                        await createShowtimes(fix, [
-                            { movieId: movie.id, startTime: past, theaterId: theaterA.id }
-                        ])
-                    )[0]
-                )
-                s1 = ensure(
-                    (
-                        await createShowtimes(fix, [
-                            { movieId: movie.id, startTime: t1, theaterId: theaterA.id }
-                        ])
-                    )[0]
-                )
-                s2 = ensure(
-                    (
-                        await createShowtimes(fix, [
-                            { movieId: movie.id, startTime: t2, theaterId: theaterB.id }
-                        ])
-                    )[0]
-                )
-                s3 = ensure(
-                    (
-                        await createShowtimes(fix, [
-                            { movieId: movie.id, startTime: t3, theaterId: theaterA.id }
-                        ])
-                    )[0]
-                )
-                s4 = ensure(
-                    (
-                        await createShowtimes(fix, [
-                            { movieId: movie.id, startTime: t4, theaterId: theaterB.id }
-                        ])
-                    )[0]
-                )
-            })
-
-            it('홈을 조회하면 예정된 상영을 시작 시각이 빠른 순서로 반환한다', async () => {
-                const { body } = await fix.httpClient
-                    .get('/views/user-app/home')
-                    .ok({ schema: UserHomeViewSchema })
-                const card = ensure(body.showingMovies[0])
-                expect(card.upcomingShowtimes.map((s) => s.id)).toEqual([s1.id, s2.id, s3.id])
-                expect(card.upcomingShowtimes.map((s) => s.theater.name)).toEqual([
-                    theaterA.name,
-                    theaterB.name,
-                    theaterA.name
-                ])
-            })
-
-            it('홈을 조회하면 영화당 상영을 최대 3개까지만 포함한다', async () => {
-                const { body } = await fix.httpClient
-                    .get('/views/user-app/home')
-                    .ok({ schema: UserHomeViewSchema })
-                expect(body.showingMovies).toHaveLength(1)
-                const card = ensure(body.showingMovies[0])
-                expect(card.movie.title).toBe('Home Movie')
-                expect(card.upcomingShowtimes).toHaveLength(3)
-                expect(card.upcomingShowtimes.map((s) => s.id)).not.toContain(s4.id)
-            })
-
-            it('홈을 조회하면 이미 지난 상영은 카드에서 제외한다', async () => {
-                const { body } = await fix.httpClient
-                    .get('/views/user-app/home')
-                    .ok({ schema: UserHomeViewSchema })
-                const card = ensure(body.showingMovies[0])
-                expect(card.upcomingShowtimes.map((s) => s.id)).not.toContain(pastShowtime.id)
-            })
+        it('본인 사진만 조회하고 실제로 내려받을 수 있는 URL을 반환한다', async () => {
+            const spy = vi.spyOn(fix.module.get(AssetsService), 'getMany')
+            const { body } = await fix.httpClient
+                .get('/views/web/home')
+                .headers({ Authorization: 'Bearer ' + token })
+                .ok({ schema: WebHomeViewSchema })
+            expect(body.user.id).toBe(userId)
+            expect(spy).toHaveBeenCalledExactlyOnceWith([assetId])
+            const response = await fetch(body.photoUrl!)
+            expect(response.ok).toBe(true)
+            expect(Buffer.from(await response.arrayBuffer())).toEqual(
+                await readFile(testAssets.image.path)
+            )
         })
     })
 })

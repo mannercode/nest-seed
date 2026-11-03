@@ -1,40 +1,32 @@
 import { expect, request, test, type BrowserContext, type Page } from '@playwright/test'
 import { randomUUID } from 'node:crypto'
 
-import { API_BASE_URL, USER_APP_BASE_URL } from '../playwright.config'
+import { API_BASE_URL, WEB_BASE_URL } from '../playwright.config'
 
 const PASSWORD = 'DevPassword1234!'
-const ADMIN_EMAIL = requiredEnvironment('ADMIN_EMAIL')
-const ADMIN_PASSWORD = requiredEnvironment('ADMIN_PASSWORD')
 const ACCESS_COOKIE = 'nest-seed-user-access'
 const REFRESH_COOKIE = 'nest-seed-user-refresh'
-
-function requiredEnvironment(name: string): string {
-    const value = process.env[name]
-    if (!value) throw new Error(`${name} must be set by tests/web/compose.yml`)
-    return value
-}
 
 async function signupAndLogin(page: Page, password = PASSWORD): Promise<string> {
     const email = `e2e-user-${randomUUID()}@example.com`
 
-    await page.goto(`${USER_APP_BASE_URL}/signup`)
+    await page.goto(`${WEB_BASE_URL}/signup`)
     await page.getByRole('textbox', { name: '이름' }).fill('E2E User')
     await page.getByRole('textbox', { name: '이메일' }).fill(email)
     await page.getByLabel('비밀번호').fill(password)
     await page.getByRole('button', { name: '회원가입' }).click()
-    await expect(page).toHaveURL(`${USER_APP_BASE_URL}/login`)
+    await expect(page).toHaveURL(`${WEB_BASE_URL}/login`)
 
     await page.getByRole('textbox', { name: '이메일' }).fill(email)
     await page.getByLabel('비밀번호').fill(password)
     await page.getByRole('button', { name: '로그인' }).click()
-    await expect(page).toHaveURL(`${USER_APP_BASE_URL}/`)
+    await expect(page).toHaveURL(`${WEB_BASE_URL}/`)
 
     return email
 }
 
 async function getSessionCookie(context: BrowserContext, name: string) {
-    const cookies = await context.cookies(USER_APP_BASE_URL)
+    const cookies = await context.cookies(WEB_BASE_URL)
     return cookies.find((cookie) => cookie.name === name)
 }
 
@@ -66,7 +58,7 @@ for (const { name, pathname } of [
     ]) {
         test.describe(`${name} 화면의 비밀번호가 ${condition}이면`, () => {
             test.beforeEach(async ({ page }) => {
-                await page.goto(`${USER_APP_BASE_URL}${pathname}`)
+                await page.goto(`${WEB_BASE_URL}${pathname}`)
                 await page.getByLabel('비밀번호').fill(password)
             })
             test('입력 원문을 유지하면서 길이 오류를 표시한다', async ({ page }) => {
@@ -87,38 +79,7 @@ for (const { name, pathname } of [
 
 test.describe('로그인하지 않았으면', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto(`${USER_APP_BASE_URL}/login`)
-    })
-    test.describe('관리자 자격 증명이 유효하면', () => {
-        test.beforeEach(async ({ request: api }) => {
-            const response = await api.post(`${API_BASE_URL}/admins/login`, {
-                data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD }
-            })
-            expect(response.status()).toBe(200)
-        })
-        for (const pathname of ['/api/admins/login', '/api/ADMINS/LOGIN']) {
-            test(`사용자 앱에서 ${pathname} 경로를 요청하면 토큰 없이 404를 반환한다`, async ({
-                page
-            }) => {
-                const result = await page.evaluate(
-                    async ({ email, password, pathname }) => {
-                        const response = await fetch(pathname, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email, password })
-                        })
-                        const body = await response.text()
-                        return {
-                            exposesToken: /"(?:accessToken|refreshToken)"\s*:/.test(body),
-                            status: response.status
-                        }
-                    },
-                    { email: ADMIN_EMAIL, password: ADMIN_PASSWORD, pathname }
-                )
-
-                expect(result).toEqual({ exposesToken: false, status: 404 })
-            })
-        }
+        await page.goto(`${WEB_BASE_URL}/login`)
     })
     test('사용자 앱에서 토큰 갱신 경로를 직접 요청하면 404를 반환한다', async ({ page }) => {
         const result = await page.evaluate(async () => {
@@ -168,7 +129,7 @@ test.describe('사용자로 로그인했으면', () => {
             expect(header?.value).toContain(`Expires=${new Date(payload.exp * 1000).toUTCString()}`)
         }
     })
-    test('보호 API와 홈을 요청하면 본인 정보와 영화 목록을 반환한다', async ({ page }) => {
+    test('보호 API와 홈을 요청하면 본인 정보만 반환한다', async ({ page }) => {
         const me = await page.evaluate(async () => {
             const response = await fetch('/api/users/me')
             return { body: (await response.json()) as { email: string }, status: response.status }
@@ -176,17 +137,17 @@ test.describe('사용자로 로그인했으면', () => {
         expect(me).toEqual({ body: expect.objectContaining({ email }), status: 200 })
 
         const home = await page.evaluate(async () => {
-            const response = await fetch('/api/views/user-app/home')
+            const response = await fetch('/api/views/web/home')
             return {
                 body: (await response.json()) as {
-                    recommendedMovies: unknown[]
-                    showingMovies: unknown[]
+                    user: { email: string }
+                    photoUrl: string | null
                 },
                 status: response.status
             }
         })
         expect(home).toEqual({
-            body: { recommendedMovies: expect.any(Array), showingMovies: expect.any(Array) },
+            body: { user: expect.objectContaining({ email, photoAssetId: null }), photoUrl: null },
             status: 200
         })
         await expect(page.getByText(email)).toBeVisible()
@@ -314,6 +275,51 @@ test.describe('사용자로 로그인했으면', () => {
             expect(refreshCookieAfter).toMatchObject({ value: expect.any(String) })
             expect(accessCookieAfter?.value).not.toBe('invalid-access-token')
             expect(refreshCookieAfter?.value).not.toBe(refreshCookieBefore?.value)
+        })
+    })
+})
+
+test.describe('사진을 첨부해 가입하면', () => {
+    let email: string
+    test.beforeEach(async ({ page }) => {
+        email = `photo-${randomUUID()}@example.com`
+        await page.goto(`${WEB_BASE_URL}/signup`)
+        await page.getByRole('textbox', { name: '이름' }).fill('Photo User')
+        await page.getByRole('textbox', { name: '이메일' }).fill(email)
+        await page.getByLabel('비밀번호').fill(PASSWORD)
+        await page
+            .getByLabel('사진 (선택)')
+            .setInputFiles('../../apps/api/api-docs/assets/image.png')
+    })
+    test('로그인 후 본인 정보와 업로드한 사진을 표시한다', async ({ page }) => {
+        await page.getByRole('button', { name: '회원가입' }).click()
+        await expect(page).toHaveURL(`${WEB_BASE_URL}/login`)
+        await page.getByRole('textbox', { name: '이메일' }).fill(email)
+        await page.getByLabel('비밀번호').fill(PASSWORD)
+        await page.getByRole('button', { name: '로그인' }).click()
+        await expect(page.getByText(email)).toBeVisible()
+        const photo = page.getByRole('img', { name: 'Photo User의 프로필 사진' })
+        await expect(photo).toBeVisible()
+        await expect
+            .poll(() => photo.evaluate((image) => (image as HTMLImageElement).naturalWidth))
+            .toBeGreaterThan(0)
+    })
+    test.describe('사진 전송이 실패하면', () => {
+        test.beforeEach(async ({ page }) => {
+            await page.route('**/storage/**', (route) =>
+                route.fulfill({ status: 503, body: 'Storage unavailable' })
+            )
+        })
+        test('가입 화면에 실패를 표시하고 계정을 만들지 않는다', async ({ page, request: api }) => {
+            await page.getByRole('button', { name: '회원가입' }).click()
+            await expect(page.getByRole('alert').filter({ hasText: '사진' })).toContainText(
+                '사진 업로드에 실패했습니다.'
+            )
+            await expect(page).toHaveURL(`${WEB_BASE_URL}/signup`)
+            const login = await api.post(`${API_BASE_URL}/users/login`, {
+                data: { email, password: PASSWORD }
+            })
+            expect(login.status()).toBe(401)
         })
     })
 })

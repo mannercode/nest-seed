@@ -1,7 +1,7 @@
 import type { TestingModule } from '@nestjs/testing'
 import { AppConfigService } from '#config'
 
-export async function overrideConfigGetter<K extends 'asset' | 'ticket'>(
+export async function overrideConfigGetter<K extends 'asset'>(
     module: Pick<TestingModule, 'get'>,
     key: K,
     override: Partial<AppConfigService[K]>

@@ -8,98 +8,76 @@
 
 _This is a translation of [README.md](README.md). The Korean original is authoritative; the other guides and code comments are in Korean._
 
-A starter template for NestJS backend projects.
-
-`apps/api` is the main API, and `libs/` contains common code for use in other NestJS projects. `console` and `user-app` are small Next.js demos connected to the API.
-
-The [movie-booking example](apps/api/README.md#예제-살펴보기) demonstrates cooperation between modules, data consistency, and external service integration.
+A starter template for NestJS backend projects. `apps/api` contains user, file, event, and background-job examples. `apps/web` provides sign-up, login, and profile screens. `libs/` contains shared code for other NestJS projects.
 
 ## Getting started
 
-The provided infrastructure and execution setup are for development and verification.
+The infrastructure and execution setup are for development and verification. When forking, replace the project name `nest-seed` and organization name `mannercode`, including the `@mannercode/*` package scope.
 
-When forking for a new project, replace the project name `nest-seed` and organization name `mannercode`, including the `@mannercode/*` package scope, with your own names.
+The supported environment is the Dev Container. Open the repository on a Docker host through VS Code Remote SSH. The workspace must have the same absolute path on the host and inside the container. See the [development environment guide](.devcontainer/README.md).
 
-The supported development environment is the Dev Container. Open the repository on a Docker host through VS Code Remote SSH and use the Dev Containers extension. The [development environment guide](.devcontainer/README.md) explains why the workspace must have the same absolute path on the host and inside the container.
-
-1. Run `Reopen in Container` in VS Code. Startup installs dependencies and resets the development infrastructure.
+1. Run `Reopen in Container` in VS Code and wait for dependency installation and infrastructure reset.
 2. Run `pnpm run test` in the container terminal.
-3. Run `pnpm run dev` and check the API with `curl http://localhost:3000/health`.
-4. Forward the console's port `3100` and the user app's port `3200` in the VS Code **Ports** panel. Automatic port forwarding is disabled.
-5. Sign in to the console with the development admin (`admin@nest-seed.local` / `DevPass1!`). Use the user app to explore sign-up, login, and the home screen.
+3. Run `pnpm run dev` to start the API and web, then check `curl http://localhost:3000/health`.
+4. Forward port `3200` in the VS Code **Ports** panel to open web. Automatic port forwarding is disabled.
 
-Dev Container startup, `bash infra/reset.sh`, and `pnpm run atoz` delete development data. Do not run them in an environment where DB data, S3 files, the Restate journal, or JetStream events must survive. Resets also recreate the development admin.
+**Dev Container startup, `bash infra/reset.sh`, and `pnpm run atoz` delete MongoDB data, S3 files, the Restate journal, and JetStream events.** Do not run them where data or pending work must survive.
 
-The root `.env.api` and `.env.infra` files contain committed development and verification settings. After editing either file, recreate the Dev Container to apply the changes. Inject production secrets outside the repository. The [development environment guide](.devcontainer/README.md) explains each file's role and how its values are injected.
+The root `.env.api` and `.env.infra` files contain committed development settings. After editing them, **recreate the Dev Container with `Rebuild Container`.** Inject production secrets outside the repository. See [environment variable injection](.devcontainer/README.md#1-환경-변수-파일-변경-후-dev-container-재생성).
 
 ## Running and verifying
 
-Run these commands from the repository root inside the Dev Container. Each command includes its required preparation, such as building libraries.
+Run commands from the repository root inside the Dev Container. Each includes its required preparation, such as building libraries.
 
-| Command                    | Purpose                                                                      |
-| -------------------------- | ---------------------------------------------------------------------------- |
-| `pnpm run dev`             | Run the API and both demos in watch mode                                     |
-| `pnpm run test`            | Run workspace unit and integration tests                                     |
-| `pnpm run lint`            | Check types, code, formatting, shell scripts, and documentation links        |
-| `pnpm run atoz`            | Reset infrastructure, then run builds, tests, browser checks, and API docs   |
-| `pnpm run api-docs`        | Verify executable documentation against a four-replica API stack             |
-| `pnpm run e2e`             | Verify the production builds of the demos and their API connections          |
-| `pnpm run race <scenario>` | Run HTTP/SSE contention or replica termination scenarios across API replicas |
-| `pnpm run benchmark`       | Compare API performance under the same conditions                            |
+| Command                    | Purpose                                                                    |
+| -------------------------- | -------------------------------------------------------------------------- |
+| `pnpm run dev`             | Run the API and web in watch mode                                          |
+| `pnpm run test`            | Run workspace unit and integration tests                                   |
+| `pnpm run lint`            | Check types, code, formatting, shell scripts, and documentation links      |
+| `pnpm run atoz`            | Reset infrastructure, then run builds, tests, browser checks, and API docs |
+| `pnpm run api-docs`        | Verify bash and curl documentation against four API replicas               |
+| `pnpm run e2e`             | Verify the production build of web and its API connection                  |
+| `pnpm run race <scenario>` | Verify HTTP/SSE contention and replica termination                         |
+| `pnpm run benchmark`       | Compare API performance under the same conditions                          |
 
-Race and benchmark runs are not part of the default test or AtoZ commands. Concurrent runs of the same API Vitest command are unsupported. The 100% coverage requirement exposes code paths that tests have not executed; repeated CI runs look for intermittent failures. The [tests guide](tests/README.md) explains what each suite verifies.
+Race and benchmark runs are not part of the default test or AtoZ commands. Concurrent runs of the same API Vitest command are unsupported. The [tests guide](tests/README.md) explains the guarantees and limits of each suite.
 
-### Running selected tests
+### Selected runs and external access
 
-To run a particular API spec, first build the libraries, then specify a test file pattern. Disable coverage collection for this partial run because selected tests cannot cover the entire workspace. Before completing a change, run the workspace's full test suite and coverage checks again.
+For a selected API spec, first build the libraries and disable coverage for the partial run. Before completing a change, pass the workspace's full test suite and coverage checks.
 
 ```bash
 pnpm run pretest
 pnpm --filter './apps/api' test users.spec --coverage.enabled=false
 ```
 
-API usage examples are in the bash and curl specs under [api-docs](apps/api/api-docs/). You can also verify all documents or a selected document against a running development API.
+Use `bash apps/api/api-docs/run.sh` to run the [curl documentation](apps/api/api-docs/) against a running development API. Append a filename such as `registration-photo.spec` to run one document.
 
-```bash
-bash apps/api/api-docs/run.sh
-bash apps/api/api-docs/run.sh showtime-creation.spec
-```
+`pnpm run race` lists scenarios, and `pnpm run e2e:list` lists browser tests. Use `pnpm run e2e:ui` to select and run browser tests interactively. See the [development environment guide](.devcontainer/README.md#3-시작-순서와-데이터-초기화) for Chromium installation and version changes.
 
-The specs contain requests, and the execution logs contain actual responses. These documents demonstrate the main success and failure flows; they do not replace a complete API catalog or the integration tests.
-
-`pnpm run race` lists race scenarios, and `pnpm run e2e:list` lists browser tests. Use `pnpm run e2e:ui` to select and run browser tests interactively.
-
-When changing the Playwright version, update Chromium and its required OS packages too. Follow the [development environment guide](.devcontainer/README.md#3-시작-순서와-데이터-초기화) to rebuild the Dev Container. Dev Container startup and AtoZ install Chromium. To reinstall Chromium alone, run:
-
-```bash
-pnpm --filter './tests/web' exec playwright install chromium
-```
+To access web externally, start the development server and run `pnpm exec tunnel` in another terminal. cloudflared provides an HTTPS Quick Tunnel URL. See the [tunnel requirements](tools/README.md#2-dev-tools--명시적으로-실행하는-개발-도구).
 
 ### Results and diagnostics
 
-- Unit, integration, and race results appear in the terminal. If a race fails, the runner collects container and MongoDB diagnostics before cleaning up the test stack.
-- Browser traces, screenshots, and HTML reports are in `tests/web/_output/`. Open the latest report with `pnpm run e2e:report`.
-- Under `apps/api/api-docs/_output/`, actual responses are in `logs/` and the executed-item summary is in `docs/summary.md`.
-- Benchmarks write `report.html` and `summary.json` to `tests/api/benchmark/_output/<run timestamp>/`. Measurement theater data stays in the DB; use `bash infra/reset.sh` to clear it.
+| Check                   | Results                                                                                   |
+| ----------------------- | ----------------------------------------------------------------------------------------- |
+| Unit, integration, race | Terminal; failed races collect container and MongoDB diagnostics before cleanup           |
+| Browser                 | Traces, screenshots, and HTML under `tests/web/_output/`; open with `pnpm run e2e:report` |
+| Curl documentation      | `logs/` and `docs/summary.md` under `apps/api/api-docs/_output/`                          |
+| Benchmark               | `report.html` and `summary.json` under `tests/api/benchmark/_output/<run timestamp>/`     |
 
-Find the failed iteration of a repeated CI run by its `[Run i/N]` marker. For API Race failures, compare the runner's diagnostics with container logs from the same time.
+Find failed CI iterations by their `[Run i/N]` marker. Measurement data remains after stack shutdown; use [infra reset](infra/README.md#2-인프라-시작과-데이터-초기화) to delete it.
 
 ## Structure and choices
 
-The API follows SoLA dependencies from Gateway → View → Application → Core → Infrastructure. A layer can call a lower layer directly without passing through intermediate layers. A higher layer combines modules from the same lower layer. CRUD within a single Core does not need an Application layer.
+| Location                                  | Guide contents                                                         |
+| ----------------------------------------- | ---------------------------------------------------------------------- |
+| [apps/](apps/README.md)                   | Seed scope, sign-up, authentication, event and job guarantees, web BFF |
+| [apps/api/](apps/api/README.md)           | Services, SoLA dependencies, API conventions                           |
+| [libs/](libs/README.md)                   | Shared package responsibilities and contracts                          |
+| [.devcontainer/](.devcontainer/README.md) | Development environment, env changes, shared host paths                |
+| [infra/](infra/README.md)                 | Development infrastructure and data reset                              |
+| [tests/](tests/README.md)                 | Test conventions and verification scope                                |
+| [tools/](tools/README.md)                 | Development and test execution tools                                   |
 
-MongoDB handles data storage and transactions; Redis handles seat holds and refresh sessions. NATS delivers real-time messages, JetStream preserves messages for later processing, and Restate resumes interrupted work. SDK connections and calls live in common; business queries, policies, and workflow steps live in the API. See the [application guide](apps/README.md) and [shared package guide](libs/README.md) for the reasons and limitations.
-
-### Main directories at the repository root
-
-```text
-nest-seed/
-├── .devcontainer/  # Development environment configuration
-├── apps/           # API and connected demos
-├── infra/          # Development infrastructure
-├── libs/           # Shared code and test utilities
-├── tests/          # Multi-process, browser, and performance verification
-└── tools/          # Development and test execution tools
-```
-
-Follow the conventions in the [API](apps/api/README.md), [shared package](libs/README.md), and [test](tests/README.md) guides when writing code, and the [repository instructions](AGENTS.md) when making or reviewing changes. Keep tasks and unresolved reviews in the root `_todo/` directory.
+See [AGENTS.md](AGENTS.md) for repository work and review rules.

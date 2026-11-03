@@ -1,118 +1,72 @@
 # libs/ — 공유 패키지
 
-다른 NestJS 프로젝트에서도 사용할 공통 코드와 테스트 도구를 둔다. 영화·상영·구매 같은 업무 규칙은 앱에 구현한다. 개별 API의 사용법은 타입과 JSDoc에서 확인한다.
-
-이 폴더에는 [재사용 라이브러리 변경·검토 기준](../AGENTS.md#영역별-판단-기준)을 적용한다. 현재 시드의 사용처에 한정하지 않고 여러 프로젝트가 의존하는 라이브러리의 공개 계약을 기준으로 판단한다.
+다른 NestJS 프로젝트에서도 사용하는 공통 코드와 테스트 도구다. 업무 규칙과 화면·쿠키 처리는 앱에 둔다. 시드의 사용처 수가 아니라 [재사용 라이브러리의 공개 계약](../AGENTS.md#영역별-판단-기준)을 기준으로 변경한다.
 
 ## 1. 공통 코드와 테스트 도구의 위치
 
-| 위치                   | 책임                                                   |
-| ---------------------- | ------------------------------------------------------ |
-| `libs/common`          | 앱이 운영 중 호출하는 외부 연동과 공통 유틸            |
-| `libs/testing`         | spec과 fixture가 import하는 HTTP client·테스트 context |
-| `tools/vitest-helpers` | 소스 변환 전에 실행되는 Vitest 준비·정리               |
-
-앱은 `testing`을 개발 의존성으로만 설치한다. Vitest 준비·정리 도구는 라이브러리를 빌드하기 전에도 실행할 수 있도록 [tools](../tools/README.md)에 둔다.
+| 위치                                                                                 | 책임                                                                   |
+| ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| `libs/common`                                                                        | 앱이 운영 중 호출하는 외부 연동과 공통 유틸                            |
+| `libs/testing`                                                                       | spec·fixture의 HTTP client와 테스트 context. 앱의 개발 의존성으로 사용 |
+| [tools/vitest-helpers](../tools/README.md#1-vitest-helpers--테스트-자원-준비와-정리) | 라이브러리 빌드·소스 변환 전에 실행되는 Vitest 준비·정리               |
 
 ## 2. SDK 연결과 호출은 common에서 구현한다
 
-`apps/api/src`는 MongoDB 연결·드라이버 실행, Redis 명령, Argon2id·JWT, S3, NATS·JetStream, Restate 서버·클라이언트를 common을 통해 사용한다. 앱은 컬렉션별 조회 조건과 인덱스, 이벤트 내용, workflow의 업무 단계와 정책을 정의한다. 설정값은 앱이 주입하며 common이 특정 앱의 env 파일을 찾아 읽지 않는다.
+`apps/api/src`의 MongoDB·Redis·Argon2id·JWT·S3·NATS·JetStream·Restate 연결과 호출은 common이 맡는다. 앱은 쿼리·인덱스·이벤트 내용·workflow 단계와 설정값을 제공한다. common이 앱의 env 파일을 읽지는 않는다. 이 구분은 기술 교체를 자동화하지 않으며 앱의 MongoDB 쿼리와 NestJS 의존성은 남는다.
 
-common은 SDK 호출과 연결의 생성·종료를 담당한다. SDK 호출을 모아 두어도 앱의 MongoDB 쿼리와 NestJS 의존성은 남으므로, 다른 기술로 교체하려면 앱 코드도 수정해야 한다.
+NestJS·Zod·RxJS·Express 타입·HTTP 미들웨어는 앱에서 직접 사용한다. 독립 실행 스크립트는 common 빌드 없이 실행하도록 SDK를 직접 사용할 수 있고, 테스트도 상태 관찰·장애 주입을 위해 SDK에 접근할 수 있다. web의 BFF·화면은 common으로 옮기지 않는다.
 
-API는 요청이 몰릴 때마다 새 연결을 만드는 비용을 줄이도록 MongoDB 연결을 일정 수 이상 유지한다. 짧게 쓰는 테스트 연결에는 이 예비 연결을 요구하지 않는다.
+common의 peer dependency는 소비 프로젝트가 설치한다. 테스트 context를 만드는 루트도 API와 같은 Nest HTTP adapter 버전을 사용한다. 중복 로드된 Nest core는 `Reflector` 같은 클래스의 주입 토큰을 다르게 만들 수 있다. API의 MongoDB 연결은 요청마다 연결을 준비하는 비용을 줄이기 위해 예비 연결을 유지하며 짧게 쓰는 테스트에는 이를 요구하지 않는다.
 
-- NestJS·Zod·RxJS와 Express 타입·HTTP 미들웨어처럼 앱 작성에 사용하는 API는 직접 사용한다.
-- `apps/api/scripts`의 독립 실행 스크립트는 SDK를 직접 사용하며 common 빌드에 의존하지 않는다.
-- 테스트는 외부 상태 관찰과 장애 주입을 위해 SDK에 직접 접근할 수 있다.
-- console·user-app의 쿠키·인증 프록시·화면 코드는 각 앱에 둔다. 데모 두 곳의 코드가 비슷해도 common으로 옮기지 않는다.
+### 메시지와 락의 완료 조건
 
-common의 peer dependency는 common을 사용하는 프로젝트가 설치해야 한다. API가 MongoDB·Redis SDK를 설치하더라도 앱 소스에서는 위의 호출 경계를 따른다.
+[NATS 구독](common/src/nats/nats-pubsub.service.ts)은 같은 subject·queue의 동시 등록 모두 서버의 SUB 처리를 기다린다. 실패하면 모두에게 오류를 전달하고 구독을 정리한다. 등록 완료는 메시지 저장·소비 완료를 뜻하지 않는다. 종료 훅은 새 handler를 막고, 마지막 구독을 이미 해제했어도 진행 중인 handler가 끝날 때까지 기다린다.
 
-테스트 context를 만드는 루트 패키지도 API와 같은 Nest HTTP adapter 버전을 설치한다. 의존성 조합이 달라 Nest core가 중복 로드되면 `Reflector` 같은 클래스의 주입 토큰이 일치하지 않는다.
+[CacheService](common/src/cache/cache.service.ts)의 TTL은 정수 밀리초다. 잘못된 값은 Redis 쓰기 전에 거절한다. `set`의 0은 영구 저장, `incrementWithExpiry`의 0·음수는 즉시 만료이며 `withLock`은 양수만 허용한다.
 
-같은 subject·queue의 NATS 구독을 동시에 요청하면, 모든 요청이 NATS 서버의 구독 등록(SUB) 처리를 기다린다. 등록에 실패하면 모든 요청에 오류를 전달하고 해당 구독을 정리한다. 구독 등록이 끝났다는 확인은 메시지의 영속 저장이나 소비자의 처리 완료를 뜻하지 않는다.
-
-NATS 종료 훅은 새 handler의 실행을 막고 이미 실행 중인 handler가 끝날 때까지 기다린다. 마지막 구독을 먼저 해제했어도 진행 중인 소비 작업이 끝나야 종료한다.
-
-`CacheService`의 TTL은 정수 밀리초로 지정한다. 유효하지 않은 TTL은 Redis에 쓰기 전에 거절하므로, 만료 시간 설정에 실패하고 카운터만 증가하는 일은 없다. `set`에서 TTL 0은 영구 저장을 뜻하고, `withLock`의 TTL은 양수만 허용한다. `incrementWithExpiry`의 TTL이 0이나 음수이면 카운터를 즉시 만료시킨다.
-
-분산 락은 중복 작업 비용을 줄이는 데 사용한다. 만료된 업로드를 정리할 때는 `withLock`으로 다른 복제본이 작업 중인지 확인하고, 그렇다면 건너뛴다. 락을 기다려야 하는 호출자를 위해 `withLockBlocking`도 제공한다.
-
-`withLockBlocking`은 `waitMs` 안에서만 콜백을 시작한다. 기한이 지나면 늦게 획득한 락도 해제하고 503 예외를 던지며, `waitMs`가 0이면 획득을 시도하지 않는다. 기한 전에 시작한 콜백의 실행 시간은 제한하지 않는다.
-
-Redlock은 독립된 Redis master 여러 개를 전제로 하므로 현재 Redis Cluster의 단일 키 락과 구성이 다르다. 두 방식이 같은 보장을 제공하는 것으로 보지 않는다.
+`withLock`은 중복 작업을 건너뛰고 `withLockBlocking`은 락을 기다린다. 후자는 `waitMs` 안에서만 콜백을 시작하며 기한이 지나면 늦게 얻은 락도 해제하고 503을 던진다. 0이면 획득을 시도하지 않으며 이미 시작한 콜백의 시간은 제한하지 않는다. 현재 Redis Cluster의 단일 키 락은 독립 master 여러 개를 전제로 하는 Redlock과 같은 보장이 아니다.
 
 ## 3. 저장소 ID와 트랜잭션
 
-앱의 DTO와 Repository는 ID를 문자열로 주고받는다. Repository는 DB 문서의 ID 조건을 다음 helper로 만든다.
+DTO·Repository의 ID는 문자열이다. [idFilter·idsFilter](common/src/mongodb/crud.repository.ts)로 만든 조건만 BSON ObjectId로 변환한다. 일반 `_id` 문자열을 자동 변환하지 않으므로 집계 그룹 키로 사용할 수 있다. ObjectId 문자열의 대소문자는 구분하지 않는다. 같은 collection을 사용하는 저장소도 각자 인덱스를 적용하며 충돌은 초기화 오류다.
 
-```ts
-{ ...this.idFilter(id), __v: version }
-{ $or: [this.idsFilter(ids), { title }] }
-```
+생성·조회·갱신 결과는 `_id`를 문자열 `id`로 반환하며 projection으로 제외하면 반환하지 않는다. 집계는 `_id` 필드명을 유지하고 ObjectId 값만 문자열로 바꾼다. `newDocument`는 문자열 ID를 만들고 저장 시 BSON으로 변환한다. `toDomainDocument`는 ID·시간 변환이 끝난 문서를 받는다.
 
-common은 이 helper가 받은 ID를 BSON ObjectId로 변환한다. 다른 `_id` 문자열은 자동으로 변환하지 않으므로 집계의 문자열 그룹 키를 `{ _id: 'group-name' }` 그대로 사용할 수 있다.
+앱은 DB 타입이 없는 `TransactionContext`를 전달하고 common이 세션·드라이버 옵션을 관리한다. 묶을 작업·snapshot·시간 제한은 앱이 결정한다. Temporal 값은 실제 타입으로 BSON 변환하며 문자열 모양으로 추측하지 않는다.
 
-ObjectId 문자열은 대소문자 구분 없이 같은 ID로 취급한다. 같은 컬렉션을 사용하는 저장소도 각자의 인덱스 선언을 적용하며 충돌은 초기화 오류로 전달한다.
-
-생성·조회·갱신 결과에서는 문서의 `_id`를 문자열 `id`로 반환한다. projection으로 ID를 제외하면 `id`도 반환하지 않는다. 집계 결과의 `_id`는 필드명을 유지하고 ObjectId 값만 문자열로 바꾼다. `newDocument`는 문자열 ID를 만들고 common이 저장할 때 BSON으로 변환한다. `toDomainDocument`는 ID와 시간 값이 이미 변환된 문서를 받는다.
-
-앱은 DB 타입이 없는 `TransactionContext`로 트랜잭션을 전달하고 common이 MongoDB 세션·드라이버 옵션을 관리한다. 어떤 작업을 트랜잭션으로 묶을지, snapshot과 시간 제한이 필요한지는 앱에서 결정한다. Temporal 값은 실제 타입을 기준으로 BSON으로 변환하며 문자열 모양으로 추측하지 않는다.
-
-과반수 복제와 저널 쓰기를 확인할 때는 일시적인 복제·디스크 지연을 기다리되 기한을 둔다. `wtimeout`은 이미 반영된 쓰기를 취소하지 않으므로, 기한을 넘기면 성공이나 rollback으로 추측하지 않고 오류를 전달한다.
-
-같은 트랜잭션 세션에서는 MongoDB 작업을 순서대로 실행한다. 페이지 조회의 목록과 개수도 같은 세션에서 순서대로 읽으므로 아직 커밋하지 않은 변경이 양쪽에 반영된다. 트랜잭션이 없으면 목록과 개수를 병렬로 조회하며 두 결과가 같은 시점의 데이터라는 보장은 없다.
+과반수 복제와 journal 쓰기는 기한 내에서 확인한다. `wtimeout`이 이미 반영한 쓰기를 취소하지는 않으므로 시간 초과를 성공이나 rollback으로 간주하지 않고 오류를 전달한다. 같은 세션의 DB 작업은 순서대로 실행한다. 페이지의 목록·개수도 미커밋 변경을 함께 읽지만, transaction 밖에서는 병렬 조회하므로 같은 시점의 결과라는 보장이 없다.
 
 ## 4. JSON과 DTO 복원
 
-JSON은 `JSON.parse`로 읽고 날짜·시점으로 복원할 필드를 DTO 스키마에 명시한다. 문자열 모양이나 숫자 크기로 타입을 추측하지 않는다. 정밀도를 보존해야 하는 큰 정수는 JSON 문자열로 주고받는다.
+JSON은 `JSON.parse`로 읽고 DTO 스키마에 복원할 타입을 명시한다. 타입 인자·문자열 모양·숫자 크기로 런타임 변환을 추측하지 않는다. 큰 정수의 정밀도를 보존하려면 JSON 문자열로 전달한다.
 
-`JsonUtil.stringify`와 HTTP 응답은 Instant를 밀리초가 3자리인 UTC 문자열로, PlainDate를 날짜 문자열로 내보낸다. Restate도 같은 JSON 형식으로 저장하고 workflow 입력과 step의 DTO 결과, 최종 결과를 각 스키마로 복원한다. step 이름·순서·저장 형식을 바꿀 때는 [기존 journal과의 배포 호환 조건](../apps/README.md#진행-중인-작업을-보존하는-배포)을 따른다.
+[JsonUtil](common/src/utils/json.ts)·HTTP 응답·Restate는 Instant를 밀리초 3자리의 UTC 문자열로, PlainDate를 날짜 문자열로 저장한다. PlainDate 객체는 입력·저장·직렬화·UTC 날짜 계산에서 같은 날짜의 ISO 달력으로 정규화하며 달력 식별자를 보존하지 않는다. 문자열은 달력 주석 없는 ISO 날짜만 받는다.
 
-PlainDate 객체는 입력·저장·직렬화·UTC 날짜 계산에서 같은 날짜의 ISO 달력으로 정규화한다. 달력 식별자는 보존하지 않는다. 문자열 입력은 달력 주석 없는 ISO 날짜만 받는다.
+Restate의 workflow 입력·step DTO·최종 결과는 각각의 스키마로 복원한다. step 이름·순서·저장 형식 변경은 [진행 중인 작업의 배포 조건](../apps/README.md#진행-중인-작업을-보존하는-배포)을 따른다.
 
-테스트 응답도 같은 DTO 스키마를 사용한다.
-
-```ts
-const { body } = await fix.httpClient
-    .post('/purchases')
-    .headers(headers)
-    .body(createDto)
-    .created({ schema: PurchaseRecordSchema })
-```
-
-`schema`는 응답을 검사·변환하고 `body`의 타입도 결정한다. 검사나 변환에 실패하면 테스트가 실패한다. `{ schema, expected }`는 변환한 응답을 예상값과 비교하고, `{ expected }`는 JSON 응답을 변환 없이 비교한다. 제네릭 타입 인자만으로 런타임 변환이 일어나지는 않는다.
+[HttpTestClient](testing/src/http.test-client.ts)의 `schema`는 응답 검증·변환과 `body` 타입을 결정하며 실패하면 테스트도 실패한다. `{ schema, expected }`는 변환한 응답을, `{ expected }`는 원래 JSON을 비교한다. 사용 예시는 [사용자 API 테스트](../apps/api/src/__tests__/core/users.spec.ts)에 있다.
 
 ## 5. SSE 이벤트를 받는 테스트 작성
 
-SSE로 요청 결과를 검증할 때는 `HttpTestClient.sse`의 세 번째 인자인 준비 완료 콜백이 호출된 뒤, 이벤트를 발생시킬 요청을 보낸다. 첫 이벤트를 받은 뒤 요청하려 하면, 요청이 와야 이벤트를 보내는 서버와 서로 기다리게 된다. 완료·실패 여부와 관계없이 테스트가 연 스트림은 `finally`에서 닫는다.
+`HttpTestClient.sse`의 세 번째 인자인 준비 완료 콜백 뒤에 이벤트를 발생시킬 요청을 보낸다. 첫 이벤트를 기다리면 요청과 이벤트가 서로 기다릴 수 있다. 스트림은 성공·실패와 관계없이 `finally`에서 닫는다.
 
-SSE 수신은 TCP 청크 경계와 관계없이 한글 같은 UTF-8 문자를 보존한다.
-
-같은 SSE 이벤트의 여러 data 줄은 개행으로 연결하고 빈 data도 콜백에 전달한다. HTTP 오류 본문은 오류 콜백으로 전달한다.
+TCP 청크가 나뉘어도 UTF-8 문자를 보존하고 여러 `data` 줄은 개행으로 연결한다. 빈 `data`도 전달하며 HTTP 오류 본문은 오류 콜백으로 보낸다. 상세 수신 조건은 [client 테스트](testing/src/__tests__/http.test-client.spec.ts)에 있다.
 
 ## 6. 공통 유틸의 입력·반환 규칙
 
-기존 유틸을 유지할지는 사용처 개수만이 아니라, 제공하는 계약과 기능을 쉽게 찾을 수 있는 이름의 가치로 판단한다. `generateUuid`는 UUID를 만들 때 어떤 Node API를 써야 하는지 매번 찾지 않고, 기능 이름으로 기억하고 호출할 수 있게 한 공통 유틸이다. 같은 목적에 맞는 기존 래퍼는 유지하지만 Node 기본 API 전부를 감싸지는 않는다.
+유틸은 사용처 수뿐 아니라 공개 계약과 기능을 찾기 쉬운 이름을 기준으로 유지한다. `generateUuid` 같은 기존 래퍼는 유지하되 Node API 전체를 감싸지는 않는다.
 
-- `isEqual`의 두 인자가 같은 객체를 가리키면 getter를 실행하지 않고 true를 반환한다. 서로 다른 값에는 Node의 엄격한 비교를 적용하고, 열거 가능한 속성·배열·Map·Set에 담긴 Temporal 값도 비교한다. 순환 구조를 처리하며 Temporal의 타입·달력·참조 날짜를 구분한다. 날짜 문자열과 Temporal 값은 같다고 보지 않는다.
-- `TimeUtil`과 `ByteUtil`은 단위를 변환할 때 소수 부분을 보존한다. 지수 표기를 포함한 출력 문자열도 다시 수치로 변환할 수 있다. 음수를 여러 단위로 표시할 때는 `-1h-30m`, `-1KB -0.5B`처럼 각 항목에 부호를 붙인다.
-- `Env`의 불리언 입력은 대소문자와 관계없이 `true`·`false`만 받는다. 숫자 입력이 공백뿐이거나 NaN·Infinity처럼 유한한 수가 아니면 설정 오류로 거절한다.
-- `BaseConfigService`는 env 문자열뿐 아니라 설정 객체의 값도 검사한다. 문자열 getter는 문자열만 받는다. 숫자·불리언 getter는 해당 타입의 값과 유효한 문자열만 받으며 null·배열·객체를 강제 변환하지 않는다.
-- `countBy`·`pick`·`pickBy`는 `constructor`·`__proto__` 같은 문자열도 데이터 키로 보존한다.
-- `assignIfDefined`는 undefined만 건너뛰고 null은 복사하거나 transform에 전달한다.
-- `Require.equals`는 값이 다르면 두 값을 진단 메시지에 담아 불변식 예외를 던진다. BigInt나 순환 객체를 비교해도 메시지를 만드는 과정에서 직렬화 오류가 발생하지 않는다.
-- `PasswordHasher`와 독립 관리자 생성 스크립트는 [OWASP 권장 구성](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id)에 따라 Argon2id의 메모리 19MiB·반복 2회·병렬도 1을 사용한다. `verify`는 저장된 해시가 없을 때도 비교 연산을 수행하고 항상 false를 반환한다.
+- [isEqual](common/src/utils/lodash.ts)은 동일 객체면 getter 없이 true를 반환한다. 다른 값은 Node의 엄격한 비교에 열거 가능한 속성·배열·Map·Set의 Temporal 비교를 더한다. 순환 구조를 처리하며 Temporal 타입·달력·참조 날짜를 구분한다. 날짜 문자열과 Temporal 값은 다르다.
+- [TimeUtil](common/src/utils/time.ts)·[ByteUtil](common/src/utils/byte.ts)은 소수 부분을 보존하며 지수 표기 문자열도 수치로 복원한다. 여러 단위의 음수는 `-1h-30m`, `-1KB -0.5B`처럼 항목마다 부호를 붙인다.
+- [Env](common/src/utils/env.ts)의 불리언은 대소문자 무관한 true·false만 받는다. 숫자는 공백만 있는 문자열·NaN·Infinity를 거절한다. [BaseConfigService](common/src/config/base-config.service.ts)도 문자열 getter는 문자열만, 숫자·불리언 getter는 해당 타입 또는 유효한 문자열만 받는다. null·배열·객체를 강제 변환하지 않는다.
+- `countBy`·`pick`·`pickBy`는 `constructor`·`__proto__`를 데이터 키로 보존한다. `assignIfDefined`는 undefined만 건너뛰며 null은 복사하거나 transform에 전달한다.
+- [Require.equals](common/src/utils/validator.ts)는 불일치한 두 값을 예외 메시지에 담는다. BigInt·순환 객체도 메시지 직렬화 오류로 실패하지 않는다.
+- [PasswordHasher](common/src/auth/password.ts)는 [OWASP 구성](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id)에 따라 Argon2id 메모리 19 MiB·반복 2회·병렬도 1을 사용한다. 저장된 해시가 없어도 비교 연산을 수행하고 false를 반환한다.
 
 ## 7. TypeScript 작성 규칙
 
-API와 공유 패키지는 다음 표기를 함께 사용한다. 객체·유니온은 기본적으로 `type`으로 선언한다. 클래스가 구현할 계약을 선언하거나 선언 병합이 필요하면 `interface`를 쓴다.
+객체·유니온은 `type`, 클래스가 구현할 계약이나 선언 병합은 `interface`를 쓴다. 경로 변수는 파일이면 `Path`, 디렉터리면 `Dir`로 끝내 호출자가 파일명을 붙여야 하는지 구분한다.
 
-경로 변수는 파일을 가리키면 `Path`, 디렉터리를 가리키면 `Dir`로 끝낸다. 호출자가 경로에 파일명을 더 붙여야 하는지 알 수 있게 한다.
+백엔드는 Node ESM·TypeScript NodeNext를 사용한다. 상대 import에는 빌드 결과의 `.js`를, 디렉터리는 `index.js`를 명시한다. 패키지명·`#core` 같은 별칭에는 확장자를 붙이지 않고 타입 전용 참조는 `import type`을 쓴다. ESM 패키지의 CommonJS 도구는 `.cjs`, ESM 명시는 `.mjs`를 사용한다. CommonJS 패키지의 `.js`는 CommonJS다.
 
-백엔드는 Node의 ESM과 TypeScript의 NodeNext 설정을 사용한다. 상대 import의 `.js`는 빌드 후 Node가 읽을 파일을 가리키며 TypeScript는 대응하는 `.ts`를 검사한다. 패키지 이름과 `#core` 같은 별칭에는 확장자를 붙이지 않는다. 디렉터리 import 대신 `index.js`를 명시하고 타입만 참조할 때는 `import type`을 사용한다.
-
-ESM 패키지 안의 CommonJS 도구는 `.cjs`, ESM 형식을 명시할 도구는 `.mjs`를 쓴다. CommonJS 패키지에서는 `.js` 도구도 CommonJS로 실행된다.
-
-테스트의 조건과 이름·단언·자원 정리는 [테스트 작성 규칙](../tests/README.md#테스트는-한-행동의-결과를-검증한다)을 따른다.
+테스트 작성은 [공통 규칙](../tests/README.md#테스트는-한-행동의-결과를-검증한다)을 따른다.

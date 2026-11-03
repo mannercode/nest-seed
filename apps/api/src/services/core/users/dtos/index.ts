@@ -1,6 +1,5 @@
 export * from './create-user.dto.js'
 export * from './refresh-token.body.dto.js'
-export * from './search-users.page.dto.js'
 export * from './update-user.dto.js'
 export * from './user-auth-payload.js'
 export * from './user-credentials.js'

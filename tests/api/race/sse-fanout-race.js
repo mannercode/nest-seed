@@ -1,158 +1,90 @@
-// 여러 복제본에 연결한 모든 SSE 클라이언트가 동시에 시작한 모든 사가의 succeeded 이벤트를 받는지 검증한다.
-
+// 같은 사용자의 SSE 연결을 여러 복제본에 열고 모든 발행 메시지가 도착하는지 검증한다.
 const { test } = require('node:test')
 const {
+    createAndLoginUser,
+    refreshUserAccessTokens,
     readPositiveInt,
-    refreshAdminAccessToken,
     request,
-    secureRandomHex,
     SERVER_URL,
     openEventStream,
     waitUntil
 } = require('./race-common')
 
 const SSE_CLIENT_COUNT = readPositiveInt('SSE_CLIENT_COUNT', 100)
-const SAGAS_PER_INNER = readPositiveInt('SAGAS_PER_INNER', 10)
+const MESSAGES_PER_INNER = readPositiveInt('MESSAGES_PER_INNER', 10)
 const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 150)
 const DEADLINE_MS = readPositiveInt('SSE_DEADLINE_MS', 300_000)
 
-// 손상된 SSE payload를 raw 문자열로 삼키지 않고 즉시 실패시킨다.
-function openStrictSseClient(clientId) {
-    return openEventStream({
-        label: `client ${clientId}`,
-        onParseError: (payload, e) => {
-            throw new Error(
-                `SSE client ${clientId} JSON parse failed: ${e.message} (payload=${payload.slice(0, 100)})`
-            )
-        }
-    })
-}
-
-async function setupFixture() {
-    const movie = await request('POST', '/movies', {
-        body: {
-            title: 'stress-movie',
-            genres: ['action'],
-            releaseDate: '2024-01-01',
-            plot: 'stress plot',
-            durationInSeconds: 7200,
-            director: 'stress',
-            rating: 'PG'
-        }
-    })
-    if (movie.status !== 201) throw new Error(`movie create failed: ${movie.status}`)
-
-    const publish = await request('POST', `/movies/${movie.body.id}/publish`)
-    if (publish.status !== 200 && publish.status !== 201) {
-        throw new Error(`movie publish failed: ${publish.status}`)
-    }
-
-    const theater = await request('POST', '/theaters', {
-        body: {
-            name: 'stress-theater',
-            location: { latitude: 37.5665, longitude: 126.978 },
-            seatmap: { blocks: [{ name: 'A', rows: [{ name: '1', layout: 'OOOOOOOO' }] }] }
-        }
-    })
-    if (theater.status !== 201) throw new Error(`theater create failed: ${theater.status}`)
-
-    return { movieId: movie.body.id, theaterId: theater.body.id }
-}
-
-async function runInner(movieId, theaterId, iteration, baseOffsetMs) {
-    const clients = Array.from({ length: SSE_CLIENT_COUNT }, (_, i) => openStrictSseClient(i))
+async function runInner(user, iteration) {
+    const clients = Array.from({ length: SSE_CLIENT_COUNT }, (_, i) =>
+        openEventStream({
+            accessToken: user.accessToken,
+            label: `client ${i}`,
+            onParseError: (payload, error) => {
+                throw new Error(
+                    `SSE client ${i}: ${error.message} (payload=${payload.slice(0, 100)})`
+                )
+            }
+        })
+    )
     try {
-        await Promise.all(clients.map((c) => c.connected))
-
-        const replicaSet = new Set(clients.map((c) => c.getReplicaId()).filter(Boolean))
-        if (replicaSet.size < 2) {
+        await Promise.all(clients.map((client) => client.connected))
+        const replicas = new Set(clients.map((client) => client.getReplicaId()).filter(Boolean))
+        if (replicas.size < 2)
             throw new Error(
-                `iter ${iteration}: only 1 replica served SSE (got ${[...replicaSet]}) — cross-replica unverified`
+                `iter ${iteration}: cross-replica delivery unverified (${[...replicas]})`
             )
-        }
-
-        // validator가 거부하지 않도록 각각 서로 겹치지 않는 startTime을 사용한다.
-        const sagaSpacingMs = 3 * 60 * 60 * 1000
-        const sagaPromises = Array.from({ length: SAGAS_PER_INNER }, (_, i) => {
-            const startTime = Temporal.Now.instant()
-                .add({ hours: 24, milliseconds: baseOffsetMs + i * sagaSpacingMs })
-                .round({ roundingMode: 'floor', smallestUnit: 'second' })
-                .toString({ smallestUnit: 'millisecond' })
-            return request('POST', '/showtime-creation/showtimes', {
-                body: {
-                    movieId,
-                    theaterIds: [theaterId],
-                    durationInMinutes: 120,
-                    startTimes: [startTime]
-                },
-                headers: { 'idempotency-key': secureRandomHex() }
+        const sent = await Promise.all(
+            Array.from({ length: MESSAGES_PER_INNER }, async (_, i) => {
+                const message = `message ${iteration}-${i}`
+                const response = await request('POST', '/event-demo/messages', {
+                    headers: { authorization: `Bearer ${user.accessToken}` },
+                    body: { message }
+                })
+                if (response.status !== 202) throw new Error(`message POST: ${response.status}`)
+                return { id: response.body.id, message }
             })
-        })
-
-        const postResults = await Promise.all(sagaPromises)
-        const sagaIds = postResults.map((r) => {
-            if (r.status !== 202) throw new Error(`iter ${iteration}: saga POST status ${r.status}`)
-            return r.body.sagaId
-        })
-
-        const ok = await waitUntil(
-            () =>
-                clients.every((c) =>
-                    sagaIds.every((id) =>
-                        c.events.some((e) => e && e.sagaId === id && e.status === 'succeeded')
-                    )
-                ),
-            { timeoutMs: DEADLINE_MS }
         )
-
-        if (!ok) {
-            const missing = []
-            for (const [clientId, c] of clients.entries()) {
-                for (const sagaId of sagaIds) {
-                    if (
-                        !c.events.some((e) => e && e.sagaId === sagaId && e.status === 'succeeded')
-                    ) {
-                        missing.push({ client: clientId, sagaId, replicaId: c.getReplicaId() })
-                    }
-                }
-            }
-            console.error(
-                `[sse] iter=${iteration} ${missing.length} client×saga pairs missed succeeded`
+        const delivered = (client, message) =>
+            client.events.some(
+                (event) => event.id === message.id && event.message === message.message
             )
-            for (const m of missing.slice(0, 20)) {
-                console.error(`  - client ${m.client} saga ${m.sagaId} replica=${m.replicaId}`)
-            }
-            if (missing.length > 20) console.error(`  ... ${missing.length - 20} more`)
-            throw new Error(`iter ${iteration}: ${missing.length} missing events`)
+        if (
+            !(await waitUntil(
+                () =>
+                    clients.every((client) => sent.every((message) => delivered(client, message))),
+                { timeoutMs: DEADLINE_MS }
+            ))
+        ) {
+            const missing = clients.flatMap((client, index) =>
+                sent
+                    .filter((message) => !delivered(client, message))
+                    .map((message) => ({
+                        client: index,
+                        replica: client.getReplicaId(),
+                        id: message.id
+                    }))
+            )
+            throw new Error(
+                `iter ${iteration}: ${missing.length} missing deliveries: ${JSON.stringify(missing.slice(0, 20))}`
+            )
         }
-
-        const totalEvents = SSE_CLIENT_COUNT * SAGAS_PER_INNER
-        return { events: totalEvents, replicas: replicaSet.size }
+        return { events: SSE_CLIENT_COUNT * MESSAGES_PER_INNER, replicas: replicas.size }
     } finally {
-        await Promise.all(clients.map((c) => c.close()))
+        await Promise.all(clients.map((client) => client.close()))
     }
 }
 
-test('여러 복제본에 연결한 모든 SSE 클라이언트가 각 상영 생성 작업의 성공 이벤트를 받는다', async () => {
+test('여러 복제본의 SSE 연결 모두에 사용자가 발행한 메시지가 전달된다', async () => {
     console.log(
-        `[sse] server=${SERVER_URL} clients=${SSE_CLIENT_COUNT} sagas=${SAGAS_PER_INNER} inner=${INNER_ITERATIONS}`
+        `[sse] server=${SERVER_URL} clients=${SSE_CLIENT_COUNT} messages=${MESSAGES_PER_INNER} inner=${INNER_ITERATIONS}`
     )
-
-    const { movieId, theaterId } = await setupFixture()
-
-    // 한 회차가 점유하는 범위는 (SAGAS_PER_INNER - 1) × 3h + 상영 2h다.
-    // 여기에 하루보다 긴 여유를 더해 다음 회차와 충돌하지 않게 한다.
-    const iterSpacingMs = SAGAS_PER_INNER * 3 * 60 * 60 * 1000 + 24 * 60 * 60 * 1000
-
-    for (let i = 1; i <= INNER_ITERATIONS; i++) {
-        await refreshAdminAccessToken()
-        const result = await runInner(movieId, theaterId, i, i * iterSpacingMs)
+    const user = await createAndLoginUser({ prefix: 'sse-demo', index: 0 })
+    for (let iteration = 1; iteration <= INNER_ITERATIONS; iteration++) {
+        await refreshUserAccessTokens([user])
+        const result = await runInner(user, iteration)
         console.log(
-            `[sse] iter ${i}/${INNER_ITERATIONS} OK — ${result.events} events delivered, ${result.replicas} replicas`
+            `[sse] ${iteration}/${INNER_ITERATIONS}: ${result.events} deliveries, ${result.replicas} replicas`
         )
     }
-
-    console.log(
-        `[sse] PASS: ${INNER_ITERATIONS} iters × ${SSE_CLIENT_COUNT} clients × ${SAGAS_PER_INNER} sagas`
-    )
 })

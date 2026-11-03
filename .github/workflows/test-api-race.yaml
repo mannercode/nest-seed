@@ -15,10 +15,6 @@ jobs:
                 scenario:
                     - sse-fanout-race
                     - user-signup-race
-                    - ticket-holding-race
-                    - showtime-overlap-race
-                    - purchase-double-spend
-                    - purchase-overlap-race
                     - replica-chaos
                     - jwt-refresh-race
         runs-on: ubuntu-26.04-arm

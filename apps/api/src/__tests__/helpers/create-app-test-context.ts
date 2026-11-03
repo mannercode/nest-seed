@@ -13,20 +13,16 @@ import {
 import { SchedulerRegistry } from '@nestjs/schedule'
 import compression from 'compression'
 import express from 'express'
-import { PURCHASE_EVENTS_MAX_BYTES } from '#application'
+import { DEMO_EVENTS_MAX_BYTES } from '#infrastructure'
 import { AppConfigService } from '#config'
 import { getSharedTestMongoConnection } from '../../../scripts/shared-test-mongo-connection.cjs'
 import { AppModule } from '../../app.module.js'
 import { configureTemporalJson } from '../../configure-temporal-json.js'
-import { ShowtimeCreationWorkflowClient } from '../../services/application/showtime-creation/worker/index.js'
-import {
-    PurchaseWorkflowClient,
-    PurchaseEventWorkflowClient
-} from '../../services/application/purchase/worker/index.js'
+import { TextJobWorkflowClient } from '../../services/infrastructure/job-demo/worker.js'
 
 type AppTestOptions = TestModuleOptions & { enableRestate?: boolean }
 
-const TEST_PURCHASE_EVENTS_MAX_BYTES = 1024 * 1024
+const TEST_DEMO_EVENTS_MAX_BYTES = 1024 * 1024
 
 export async function createAppTestContext({
     enableRestate = false,
@@ -37,7 +33,7 @@ export async function createAppTestContext({
     const imports = [AppModule, ...(metadata.imports ?? [])]
     const sharedMongo = getSharedTestMongoConnection()
     const overrideProviders = [
-        { original: PURCHASE_EVENTS_MAX_BYTES, replacement: TEST_PURCHASE_EVENTS_MAX_BYTES },
+        { original: DEMO_EVENTS_MAX_BYTES, replacement: TEST_DEMO_EVENTS_MAX_BYTES },
         {
             original: MongoConnection,
             replacement: new MongoConnection(sharedMongo.client, sharedMongo.db, false)
@@ -49,11 +45,7 @@ export async function createAppTestContext({
                       original: RestateEndpoint,
                       replacement: { onApplicationBootstrap() {}, onApplicationShutdown() {} }
                   },
-                  ...[
-                      ShowtimeCreationWorkflowClient,
-                      PurchaseWorkflowClient,
-                      PurchaseEventWorkflowClient
-                  ].map((original) => ({
+                  ...[TextJobWorkflowClient].map((original) => ({
                       original,
                       replacement: {
                           submit() {
@@ -86,12 +78,7 @@ export async function createAppTestContext({
     try {
         if (enableRestate) {
             restateDeploymentId = await registerRestateEndpoint(ctx)
-            trackRestateCompletions(
-                ctx.module.get(ShowtimeCreationWorkflowClient),
-                restateCompletions
-            )
-            trackRestateCompletions(ctx.module.get(PurchaseWorkflowClient), restateCompletions)
-            trackRestateCompletions(ctx.module.get(PurchaseEventWorkflowClient), restateCompletions)
+            trackRestateCompletions(ctx.module.get(TextJobWorkflowClient), restateCompletions)
         }
         await stopAllCronJobs(ctx)
     } catch (setupError) {

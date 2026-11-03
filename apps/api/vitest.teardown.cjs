@@ -34,8 +34,7 @@ module.exports = async function globalTeardown() {
 }
 
 async function cleanupJetStreamStreams() {
-    const purchasedSubject =
-        /^project-nest-seed-api-test-[A-Za-z0-9_-]+\.purchase\.ticketPurchased$/
+    const demoSubject = /^project-nest-seed-api-test-[A-Za-z0-9_-]+\.event-demo\.queued$/
     const connection = await connectNats({
         servers: [`${process.env.NATS_HOST}:${process.env.NATS_PORT}`]
     })
@@ -44,7 +43,7 @@ async function cleanupJetStreamStreams() {
         const manager = await jetstreamManager(connection)
         const targets = []
         for await (const stream of manager.streams.list()) {
-            if (stream.config.subjects.some((subject) => purchasedSubject.test(subject))) {
+            if (stream.config.subjects.some((subject) => demoSubject.test(subject))) {
                 targets.push(stream.config.name)
             }
         }

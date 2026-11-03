@@ -37,13 +37,13 @@ describe('AppConfigService.schema', () => {
         })
     })
 
-    describe('필수 환경 변수 TICKET_PRICE가 없으면', () => {
+    describe('필수 환경 변수 ASSET_UPLOAD_EXPIRES_SEC가 없으면', () => {
         let input: Record<string, unknown>
         beforeEach(() => {
             input = {}
         })
         it('설정을 검증하면 실패하고 기본값으로 채우지 않는다', () => {
-            const schema = AppConfigService.schema.pick({ TICKET_PRICE: true })
+            const schema = AppConfigService.schema.pick({ ASSET_UPLOAD_EXPIRES_SEC: true })
 
             expect(schema.safeParse(input).success).toBe(false)
         })

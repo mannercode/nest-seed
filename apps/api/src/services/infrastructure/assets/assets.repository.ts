@@ -23,7 +23,8 @@ export class AssetsRepository extends CrudRepository<Asset> {
     async assignOwner(
         assetId: string,
         owner: { entityId: string; service: string },
-        createdAfter: Temporal.Instant
+        createdAfter: Temporal.Instant,
+        transaction?: TransactionContext
     ) {
         // 최초 소유권은 만료 전 무소유 자산에만 부여한다. 같은 소유자의 완료 재시도는
         // 업로드 만료와 관계없이 허용하고, 다른 소유자로 덮어쓰지는 않는다.
@@ -39,7 +40,7 @@ export class AssetsRepository extends CrudRepository<Asset> {
             this.timestamped({
                 $set: { ownerEntityId: owner.entityId, ownerService: owner.service }
             }),
-            { returnDocument: 'after' }
+            { returnDocument: 'after', transaction }
         )
         return doc
     }
@@ -94,24 +95,6 @@ export class AssetsRepository extends CrudRepository<Asset> {
                 storageCleanedAt: null
             },
             this.timestamped({ $set: { storageCleanedAt: DateUtil.now() } })
-        )
-    }
-
-    async confirmOwner(
-        assetId: string,
-        owner: { entityId: string; service: string },
-        transaction: TransactionContext
-    ) {
-        // 소유권 확인도 쓰기로 참여시켜 삭제 시작과 영화 연결 transaction이 경합하게 한다.
-        return this.findAndUpdateDocument(
-            this.activeFilter({
-                ...this.idFilter(assetId),
-                deletionRequestedAt: null,
-                ownerEntityId: owner.entityId,
-                ownerService: owner.service
-            }),
-            this.timestamped({}),
-            { returnDocument: 'after', transaction }
         )
     }
 }
