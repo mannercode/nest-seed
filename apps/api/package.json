@@ -36,7 +36,7 @@
         "@nestjs/schedule": "12.0.2",
         "@restatedev/restate-sdk": "1.18.2",
         "@restatedev/restate-sdk-clients": "1.18.2",
-        "argon2": "0.45.1",
+        "argon2": "0.45.2",
         "compression": "1.8.2",
         "express": "5.2.1",
         "ioredis": "6.0.0",

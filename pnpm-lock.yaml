@@ -311,8 +311,8 @@ importers:
         specifier: 1.18.2
         version: 1.18.2
       argon2:
-        specifier: 0.45.1
-        version: 0.45.1
+        specifier: 0.45.2
+        version: 0.45.2
       compression:
         specifier: 1.8.2
         version: 1.8.2(supports-color@10.2.2)
@@ -497,8 +497,8 @@ importers:
         specifier: 12.2.0
         version: 12.2.0(supports-color@10.2.2)
       argon2:
-        specifier: 0.45.1
-        version: 0.45.1
+        specifier: 0.45.2
+        version: 0.45.2
       ioredis:
         specifier: 6.0.0
         version: 6.0.0(supports-color@10.2.2)
@@ -2534,8 +2534,8 @@ packages:
     resolution: {integrity: sha512-ZcbTaIqJOfCc03QwD468Unz/5Ir8ATtvAHsK+FdXbDIbGfihqh9mrvdcYunQzqn4HrvWWaFyaxJhGZagaJJpPQ==}
     engines: {node: '>= 14'}
 
-  argon2@0.45.1:
-    resolution: {integrity: sha512-skm+/WCjkGqCQxF7FG1LuZXM5yvbFjgbfiCGsud2oLgaDhh6b6dbH0b1EkghbM+xx4Bj8Ape+KKgixoIlWZicQ==}
+  argon2@0.45.2:
+    resolution: {integrity: sha512-41gOiSQBpQf+7H7HyLZbUqRZxrNk5ps39TsJKILjWuOyAOialUkztuIVL/Y/l+n5iSA2C4/jFg3FUYso/cX7TA==}
     engines: {node: '>=16.17.0'}
 
   argparse@2.0.1:
@@ -6941,7 +6941,7 @@ snapshots:
       - bare-buffer
       - react-native-b4a
 
-  argon2@0.45.1:
+  argon2@0.45.2:
     dependencies:
       '@phc/format': 1.0.0
       cross-env: 10.1.0

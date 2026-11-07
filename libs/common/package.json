@@ -48,7 +48,7 @@
         "@restatedev/restate-sdk-clients": "1.18.2",
         "@testcontainers/mongodb": "12.2.1",
         "@testcontainers/nats": "12.2.0",
-        "argon2": "0.45.1",
+        "argon2": "0.45.2",
         "ioredis": "6.0.0",
         "mongodb": "7.7.0",
         "testcontainers": "12.2.1",
