@@ -7,7 +7,10 @@ packages:
 
 saveExact: true
 
-# TypeScript는 별도 지시 전까지 현재 버전을 유지한다.
+# TypeScript는 루트·API에서 6.x, 웹 앱·브라우저 테스트에서 7.x를 쓰므로 사용처별로 수동 갱신한다.
+# 백엔드의 7.1 이상 전환 시 ts-loader가 Nest 생성자 타입(design:paramtypes)을 기록하고
+# fork-ts-checker가 API 빌드에서 타입 오류를 검출해야 한다. https://github.com/TypeStrong/fork-ts-checker-webpack-plugin/pull/899
+# Vitest 변환기는 컴파일러가 데코레이터 메타데이터에 추가한 분기만 커버리지에서 제외해야 한다. https://github.com/microsoft/TypeScript/issues/64861
 update:
     ignoreDeps:
         - typescript
