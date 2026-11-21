@@ -38,9 +38,3 @@ pnpm --filter './tests/web' exec playwright install chromium
 ```
 
 자동 포트 전달은 꺼져 있다. web은 VS Code 포트 패널에서 전달한다.
-
-## 4. 호스트 파일과 Docker 소켓 공유
-
-Codex의 세션·인덱스·SQLite 상태는 프로젝트별 홈에, 설정·인증·스킬은 호스트 공용 홈에 둔다. 저장 시 교체되는 설정·인증 파일을 공유하려고 파일 대신 디렉터리를 마운트해 링크한다. 이 구성은 상태를 분리하며 파일 접근 샌드박스는 아니다.
-
-호스트 Docker 소켓과 개발 도구 자격증명을 공유하므로 신뢰하지 않는 코드를 실행하기 전에 `.devcontainer/`·설치 스크립트·워크플로·셸 변경을 확인한다. 의존성 설치 스크립트 허용 목록은 [pnpm-workspace.yaml](../pnpm-workspace.yaml)에서 관리한다. 갱신 시 스크립트와 lockfile integrity를 확인하고 현재 OS에서 사용하지 않는 다른 OS 항목도 유지한다.
