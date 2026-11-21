@@ -14,7 +14,9 @@ update:
 
 allowBuilds:
     argon2: true
-    cpu-features: false
-    protobufjs: false
-    ssh2: false
     unrs-resolver: true
+    # Testcontainers는 로컬 Docker 소켓에 연결하므로 SSH용 CPU 감지와 암호화 가속 모듈의 빌드를 생략한다.
+    cpu-features: false
+    ssh2: false
+    # protobufjs의 postinstall은 상위 패키지의 의존성 버전 표기를 검사해 경고만 출력한다.
+    protobufjs: false
