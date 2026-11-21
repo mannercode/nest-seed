@@ -18,7 +18,3 @@ allowBuilds:
     protobufjs: false
     ssh2: false
     'unrs-resolver@1.12.2': true
-
-minimumReleaseAgeExclude:
-    - compression@1.8.2
-    - lint-staged@17.5.1
