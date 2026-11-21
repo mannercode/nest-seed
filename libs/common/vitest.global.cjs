@@ -3,11 +3,8 @@ const { MongoDBContainer } = require('@testcontainers/mongodb')
 const { NatsContainer } = require('@testcontainers/nats')
 
 module.exports = async function globalSetup() {
-    // MongoDBContainer 12.1.0은 digest를 버전 tag로 오인해 구형 `mongo` 명령을 선택한다.
-    const mongoImageWithoutDigest = process.env.MONGO_IMAGE.split('@', 1)[0]
-
     const [mongo, redis, s3, nats] = await Promise.all([
-        new MongoDBContainer(mongoImageWithoutDigest)
+        new MongoDBContainer(process.env.MONGO_IMAGE)
             .withCommand(['--replSet', 'rs0', '--bind_ip_all', '--wiredTigerCacheSizeGB', '0.25'])
             .withResourcesQuota({ memory: 1 })
             .start(),
