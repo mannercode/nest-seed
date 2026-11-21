@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
+FROM node:26.13-slim AS base
 
-FROM node:26.13.1-trixie-slim@sha256:e6bedef217677b276c591795e169840edd9096dbf13f29df8ef8d1856b8820bc AS build
+FROM base AS build
 
 RUN npm install -g pnpm@12.21.0
 
@@ -15,7 +16,7 @@ RUN --mount=type=cache,id=nest-seed-pnpm,target=/pnpm/store,sharing=locked \
 COPY apps/web/ apps/web/
 RUN pnpm --filter './apps/web' --fail-if-no-match run build
 
-FROM node:26.13.1-trixie-slim@sha256:e6bedef217677b276c591795e169840edd9096dbf13f29df8ef8d1856b8820bc AS runtime
+FROM base AS runtime
 
 ENV HOSTNAME=0.0.0.0 \
     NODE_ENV=production \
