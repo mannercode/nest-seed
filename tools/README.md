@@ -22,4 +22,4 @@ workspace가 접속 정보·DB·bucket 이름을 정하고 helper가 worker별 �
 
 [compose.yml](compose.yml)의 lychee·k6는 `pnpm compose:tools`로 실행하는 일회성 컨테이너다. 기존 `DEVCONTAINER_NETWORK`를 사용하되 개발 인프라와 수명을 분리하려고 `${COMPOSE_PROJECT_NAME}-tools` 프로젝트로 실행한다. bind mount는 [호스트와 컨테이너의 같은 절대경로](../.devcontainer/README.md#2-호스트와-dev-container에서-같은-경로-사용)를 전제로 한다.
 
-lychee는 `lint:root`에서 내부 문서·제목 링크를 검사한다. 외부 사이트 상태에 영향을 받지 않도록 오프라인으로 실행하며 `_todo/`는 제외한다. benchmark 실행기는 k6를 API 스택에 연결하고 결과를 Dev Container 사용자 권한으로 작성한다.
+lychee는 `lint:root`에서 내부 문서·제목 링크를 검사한다. benchmark 실행기는 k6를 API 스택에 연결하고 결과를 Dev Container 사용자 권한으로 작성한다.
