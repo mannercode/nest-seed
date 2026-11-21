@@ -13,8 +13,8 @@ update:
         - typescript
 
 allowBuilds:
-    'argon2@0.45.1': true
+    argon2: true
     cpu-features: false
     protobufjs: false
     ssh2: false
-    'unrs-resolver@1.12.2': true
+    unrs-resolver: true
