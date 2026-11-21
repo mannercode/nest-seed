@@ -14,7 +14,7 @@
         "atoz": "pnpm run build && pnpm run lint && pnpm test"
     },
     "dependencies": {
-        "superagent": "10.4.1"
+        "superagent": "10.4.2"
     },
     "peerDependencies": {
         "@nestjs/common": "^12.0.0",
