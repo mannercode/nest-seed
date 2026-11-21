@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM node:26.13.1-bookworm-slim@sha256:5df79989ed685e09f0a98019db4cebfb22fb9df1a53c0161664a011f7ff6b0f1
+FROM node:26.13.1-trixie-slim@sha256:e6bedef217677b276c591795e169840edd9096dbf13f29df8ef8d1856b8820bc
 
 ENV LANG=C.UTF-8
 
@@ -19,7 +19,7 @@ RUN set -eu; \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends cloudflared; \
     rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g pnpm@12.4.2
+RUN npm install -g pnpm@12.21.0
 
 # OS 의존성은 이미지에 두고, Chromium은 pnpm 설치 후 같은 Playwright 버전으로 설치한다.
 RUN --mount=type=bind,source=tests/web/package.json,target=/tmp/tests-web-package.json,ro \

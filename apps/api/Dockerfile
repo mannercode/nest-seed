@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1
 
-FROM node:26.13.1-bookworm-slim@sha256:5df79989ed685e09f0a98019db4cebfb22fb9df1a53c0161664a011f7ff6b0f1 AS base
+FROM node:26.13.1-trixie-slim@sha256:e6bedef217677b276c591795e169840edd9096dbf13f29df8ef8d1856b8820bc AS base
 
 FROM base AS build
 
-RUN npm install -g pnpm@12.4.2
+RUN npm install -g pnpm@12.21.0
 
 WORKDIR /workspace
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
