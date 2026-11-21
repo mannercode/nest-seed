@@ -97,7 +97,7 @@ export default defineConfig({
 
     rules: { 'typescript/no-explicit-any': 'off' },
     env: { node: true },
-    ignorePatterns: ['_todo/**', '**/_output/**', '**/.next/**', '**/coverage/**'],
+    ignorePatterns: ['**/_output/**', '**/.next/**', '**/coverage/**'],
     overrides: [
         {
             files: ['apps/api/{src,scripts}/**/*.ts'],
