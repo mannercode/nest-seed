@@ -15,8 +15,6 @@ update:
 allowBuilds:
     'argon2@0.45.1': true
     cpu-features: false
-    'fsevents@2.3.2': true
-    'fsevents@2.3.3': true
     protobufjs: false
     ssh2: false
     'unrs-resolver@1.12.2': true
