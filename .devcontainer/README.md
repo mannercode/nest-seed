@@ -27,6 +27,8 @@ VS Code Remote SSH로 호스트 폴더를 열고 `Reopen in Container`를 사용
 
 ## 3. 시작 순서와 데이터 초기화
 
+VS Code는 새 Dev Container를 만들 때 `node` 계정으로 `hunjuly/dotfiles`의 `install.sh`를 실행한다. 포크할 때는 `devcontainer.json`의 `dotfiles.repository`를 사용할 저장소로 바꾸거나 제거한다.
+
 `postStartCommand`는 의존성 설치 → lockfile 버전의 Chromium 설치 → [infra reset](../infra/README.md#2-인프라-시작과-데이터-초기화) 순서로 준비한다. **Dev Container를 시작할 때마다 MongoDB·S3·Restate journal·JetStream 기록이 삭제된다.** 준비가 끝난 뒤 앱을 실행하며 보존할 데이터·작업이 있는 환경에 이 절차를 적용하지 않는다.
 
 프로젝트 의존성은 workspace bind mount가 이미지의 같은 경로를 가리므로 이미지에 미리 설치하지 않는다. 브라우저용 OS 패키지는 이미지에 설치한다. Playwright 버전을 바꾸면 Dev Container를 다시 빌드해 OS 패키지와 Chromium을 맞춘다. Chromium만 다시 설치하려면 다음 명령을 실행한다. AtoZ도 Chromium 설치를 포함한다.

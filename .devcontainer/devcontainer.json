@@ -47,7 +47,10 @@
                 "mutantdino.resourcemonitor",
                 "mkhl.shfmt"
             ],
-            "settings": { "remote.autoForwardPorts": false }
+            "settings": {
+                "dotfiles.repository": "hunjuly/dotfiles",
+                "remote.autoForwardPorts": false
+            }
         }
     }
 }
