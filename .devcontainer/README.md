@@ -2,7 +2,7 @@
 
 Dev Container만 공식 개발 환경으로 지원한다. 앱·테스트·도구가 같은 버전의 MongoDB Replica Set·Redis Cluster·S3·NATS·Restate를 사용하고 Redis의 다중 키 제한 같은 분산 구성의 제약을 개발 중 확인하기 위해서다.
 
-Node는 네이티브 Temporal을 사용하는 26 계열이다. TypeScript는 legacy compiler API를 쓰는 앱·도구의 호환성을 위해 사용처별로 버전을 고정한다.
+Node는 네이티브 Temporal을 사용하는 26 계열이다. API 빌드의 `ts-loader`와 Vitest 변환기는 Nest가 생성자에 주입할 타입을 기록할 때 TypeScript 6의 `transpileModule`을 사용한다. 웹 앱과 브라우저 테스트는 TypeScript 7의 `tsc` 명령으로 타입을 검사한다.
 
 ## 1. 환경 변수 파일 변경 후 Dev Container 재생성
 

@@ -20,12 +20,12 @@
     },
     "devDependencies": {
         "@mannercode/dev-tools": "workspace:*",
-        "@tailwindcss/postcss": "4.3.3",
-        "@types/node": "26.6.2",
+        "@tailwindcss/postcss": "4.3.5",
+        "@types/node": "26.6.6",
         "@types/react": "19.3.0",
         "@types/react-dom": "19.3.0",
-        "postcss": "8.5.29",
-        "tailwindcss": "4.3.3",
-        "typescript": "6.0.3"
+        "postcss": "8.5.33",
+        "tailwindcss": "4.3.5",
+        "typescript": "7.0.2"
     }
 }
