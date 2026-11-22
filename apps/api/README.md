@@ -88,4 +88,4 @@ workflow 테스트는 `enableRestate: true`로 endpoint를 등록하고 작업 �
 
 ### 실행 가능한 API 문서
 
-`api-docs/run.cfg`에 API 주소를 설정한다. 같은 폴더에서 `bash run.sh`로 전체 예제를, `bash run.sh users.spec`로 사용자 예제만 실행한다. [curl 예제](api-docs/)
+외부에 `api-docs/`를 전달하기 전에 `run.cfg`의 API 주소를 수정한다. 전달받은 사람은 그 폴더에서 `bash run.sh`를 실행한다.
