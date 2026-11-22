@@ -32,10 +32,11 @@ Run these commands from the repository root inside the Dev Container. Use `pnpm 
 | `pnpm run lint`      | Check types, code, formatting, shell scripts, and documentation links |
 | `pnpm run format`    | Format the repository with Prettier                                   |
 | `pnpm run atoz`      | Initialize the test environment and run the standard CI checks        |
-| `pnpm run api-docs`  | Run curl examples against a running API, optionally by filename       |
 | `pnpm run e2e`       | Verify the production build of web and its API connection             |
 | `pnpm run race`      | List the multi-replica test scenarios and how to run them             |
 | `pnpm run benchmark` | Compare API performance under the same conditions                     |
+
+Run `bash apps/api/api-docs/run.sh` to check the curl examples against a running API. Pass an example filename to run just that file.
 
 To run a single API integration test file, build the libraries and pass the filename to Vitest.
 

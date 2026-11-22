@@ -26,10 +26,11 @@ Dev Container의 저장소 루트에서 실행한다. 전체 명령 목록은 `p
 | `pnpm run lint`      | 타입·코드·서식·셸·문서 링크 검사                 |
 | `pnpm run format`    | Prettier로 저장소 전체의 서식 정리               |
 | `pnpm run atoz`      | 실행 환경 초기화 후 CI 기본 검증                 |
-| `pnpm run api-docs`  | 실행 중인 API에서 curl 예제 검증 (파일명 선택)   |
 | `pnpm run e2e`       | production build의 web과 API 연결 검증           |
 | `pnpm run race`      | 다중 복제본 테스트의 시나리오 목록과 실행법 확인 |
 | `pnpm run benchmark` | 같은 조건의 API 성능 비교                        |
+
+실행 중인 API에서 curl 예제를 검증하려면 `bash apps/api/api-docs/run.sh`를 실행한다. 예제 파일명을 인자로 주면 해당 파일만 실행한다.
 
 API 통합 테스트 한 파일만 실행하려면 라이브러리를 빌드한 뒤 파일명을 지정한다.
 
