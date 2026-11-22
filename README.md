@@ -22,7 +22,7 @@ Dev Container의 저장소 루트에서 실행한다. 전체 명령 목록은 `p
 | 명령                 | 용도                                             |
 | -------------------- | ------------------------------------------------ |
 | `pnpm run dev`       | API와 web을 watch mode로 실행                    |
-| `pnpm run test`      | workspace의 단위·통합 테스트                     |
+| `pnpm run test`      | 단위·통합 테스트와 API 문서 예제 검증            |
 | `pnpm run lint`      | 타입·코드·서식·셸·문서 링크 검사                 |
 | `pnpm run format`    | Prettier로 저장소 전체의 서식 정리               |
 | `pnpm run atoz`      | 실행 환경 초기화 후 CI 기본 검증                 |

@@ -28,7 +28,7 @@ Run these commands from the repository root inside the Dev Container. Use `pnpm 
 | Command              | Purpose                                                               |
 | -------------------- | --------------------------------------------------------------------- |
 | `pnpm run dev`       | Run the API and web in watch mode                                     |
-| `pnpm run test`      | Run workspace unit and integration tests                              |
+| `pnpm run test`      | Run workspace unit and integration tests and verify the API examples  |
 | `pnpm run lint`      | Check types, code, formatting, shell scripts, and documentation links |
 | `pnpm run format`    | Format the repository with Prettier                                   |
 | `pnpm run atoz`      | Initialize the test environment and run the standard CI checks        |

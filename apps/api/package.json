@@ -9,7 +9,7 @@
         "build": "nest build -b rspack --rspackPath rspack.config.cjs",
         "predev": "free-port ${API_PORT:?}",
         "dev": "nest start --watch",
-        "test": "vitest run --coverage"
+        "test": "bash test.sh"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "3.1173.0",
