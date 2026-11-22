@@ -48,16 +48,14 @@ services:
     restate-register:
         profiles: [setup]
         image: nest-seed-api
-        env_file:
-            - path: ${WORKSPACE_ROOT:?}/.env.infra
-              format: raw
         environment:
-            RESTATE_DEPLOYMENT_URI: http://nginx:9080
+            - RESTATE_ADMIN_URL
+            - RESTATE_DEPLOYMENT_URI=http://nginx:9080
         entrypoint: ['/bin/sh', '-ec']
         # Compose가 문자열 command를 단어별 argv로 나누지 않도록 shell 본문 하나로 넘긴다.
         command:
             - |
-                curl -fsS "$$RESTATE_ADMIN_URL/health" >/dev/null
+                curl -fsS "$${RESTATE_ADMIN_URL:?}/health" >/dev/null
                 curl -fsS \
                   -H 'content-type: application/json' \
                   --data "{\"uri\":\"$$RESTATE_DEPLOYMENT_URI\",\"force\":false,\"use_http_11\":false}" \
