@@ -3,7 +3,7 @@
     "version": "0.0.1",
     "private": true,
     "scripts": {
-        "test:restate-recovery": "node --test --test-reporter=spec restate-journal-recovery.js"
+        "test": "node --test --test-concurrency=1 --test-reporter=spec"
     },
     "devDependencies": {
         "@restatedev/restate-sdk": "1.18.4",

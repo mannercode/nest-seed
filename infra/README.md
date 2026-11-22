@@ -21,3 +21,7 @@ Dev Container와 각 Compose 프로젝트는 같은 외부 Docker 네트워크�
 API의 HTTP·workflow 포트를 바꾸면 NGINX upstream을 맞춘다. NGINX가 workflow 요청을 받는 포트를 바꾸면 Compose의 등록 주소도 바꾼다. [NGINX 설정](../tests/api/nginx.conf)
 
 진행 중인 작업을 유지하며 배포하려면 새 버전을 별도 주소에 등록한다. 기존 작업이 끝날 때까지 이전 주소에서 이전 코드를 실행한다.
+
+## 5. 인프라 테스트
+
+루트의 `pnpm run test`는 `infra/tests/` 아래의 `*.test.js` 파일을 하나씩 실행한다. Restate 복구 테스트는 개발 서버와 공유하는 Restate 컨테이너를 강제 종료하고 다시 시작해, 중단된 workflow 단계만 재실행되는지 확인한다. [Restate 복구 테스트](tests/restate-journal-recovery.test.js)
