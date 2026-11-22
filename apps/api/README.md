@@ -86,7 +86,7 @@ workflow 테스트는 `enableRestate: true`로 endpoint를 등록하고 작업 �
 
 ### 실행 가능한 API 문서
 
-[api-docs/](api-docs/)의 `.spec` 파일은 curl로 실행하는 API 사용 예제다.
+루트에서 `pnpm run api-docs`를 실행하면 [curl 예제](api-docs/)의 요청을 실제 API에 보내고 결과 문서와 응답 로그의 위치를 출력한다.
 
 - 사진을 올려 가입하고 로그인·정보 수정·탈퇴까지 진행한다. [users.spec](api-docs/users.spec)
 - 같은 사용자로 두 터미널을 열어 메시지를 보내고 SSE로 받는다. [event-demo.spec](api-docs/event-demo.spec)
@@ -96,4 +96,4 @@ workflow 테스트는 `enableRestate: true`로 endpoint를 등록하고 작업 �
 
 `$(RESPONSE_BODY jobId)`는 직전 JSON 응답에서 `jobId` 값을 읽는다. 중첩된 필드는 `$(RESPONSE_BODY result.text)`처럼 점으로 연결한다.
 
-`run.sh`는 각 spec을 게스트 상태에서 시작한다. `login_user`를 호출하면 이후 API 요청에 인증 헤더가 붙고 `as_guest`로 해제된다. 요청에 직접 적은 Authorization 헤더가 우선한다. 단건 실행과 응답 로그 위치는 [루트 실행 안내](../../README.md#실행과-검증)에 있다.
+`run.sh`는 각 spec을 게스트 상태에서 시작한다. `login_user`를 호출하면 이후 API 요청에 인증 헤더가 붙고 `as_guest`로 해제된다. 요청에 직접 적은 Authorization 헤더가 우선한다.

@@ -20,28 +20,28 @@ The supported environment is the Dev Container. Open the repository on a Docker 
 
 1. Run `Reopen in Container` in VS Code and wait for dependency installation and infrastructure reset.
 2. Run `pnpm run test` in the container terminal.
-3. Run `pnpm run dev` to start the API and web. In a second container terminal, run `curl http://localhost:3000/health` to check the API.
-4. Forward port `3200` in the VS Code **Ports** panel to open web. Automatic port forwarding is disabled.
+3. Run `pnpm run dev` to start the API and web. In a second container terminal, run `curl "http://localhost:${API_PORT}/health"` to check the API.
+4. Run `echo "$WEB_PORT"` and forward that port in the VS Code **Ports** panel to open the web app.
 
 After editing `.env.api` or `.env.infra` at the repository root, run `Rebuild Container` in VS Code. [Environment variable setup](.devcontainer/README.md#1-환경-변수-파일-변경-후-dev-container-재생성)
 
 ## Running and verifying
 
-Run these commands from the repository root inside the Dev Container.
+Run these commands from the repository root inside the Dev Container. Use `pnpm run` for the full list.
 
-| Command                    | Purpose                                                                    |
-| -------------------------- | -------------------------------------------------------------------------- |
-| `pnpm run dev`             | Run the API and web in watch mode                                          |
-| `pnpm run test`            | Run workspace unit and integration tests                                   |
-| `pnpm run lint`            | Check types, code, formatting, shell scripts, and documentation links      |
-| `pnpm run format`          | Format the repository with Prettier                                        |
-| `pnpm run atoz`            | Reset infrastructure, then run builds, tests, browser checks, and API docs |
-| `pnpm run api-docs`        | Verify bash and curl documentation against four API replicas               |
-| `pnpm run e2e`             | Verify the production build of web and its API connection                  |
-| `pnpm run race <scenario>` | Verify HTTP/SSE contention and replica termination                         |
-| `pnpm run benchmark`       | Compare API performance under the same conditions                          |
+| Command              | Purpose                                                               |
+| -------------------- | --------------------------------------------------------------------- |
+| `pnpm run dev`       | Run the API and web in watch mode                                     |
+| `pnpm run test`      | Run workspace unit and integration tests                              |
+| `pnpm run lint`      | Check types, code, formatting, shell scripts, and documentation links |
+| `pnpm run format`    | Format the repository with Prettier                                   |
+| `pnpm run atoz`      | Initialize the test environment and run the standard CI checks        |
+| `pnpm run api-docs`  | Run the curl API examples and check their responses                   |
+| `pnpm run e2e`       | Verify the production build of web and its API connection             |
+| `pnpm run race`      | List the multi-replica test scenarios and how to run them             |
+| `pnpm run benchmark` | Compare API performance under the same conditions                     |
 
-To check formatting alone, run `pnpm run lint:format`. AtoZ also checks Restate recovery. Run race and benchmark scenarios separately. [What each suite covers](tests/README.md#검증-범위)
+To check formatting alone, run `pnpm run lint:format`. [What each suite covers](tests/README.md#검증-범위)
 
 ### Selected runs and external access
 
@@ -54,20 +54,9 @@ pnpm --filter './apps/api' test users.spec --coverage.enabled=false
 
 With the development API running, use `bash apps/api/api-docs/run.sh` to run the examples. Append a filename such as `users.spec` to run one example. [API usage examples](apps/api/README.md#실행-가능한-api-문서)
 
-`pnpm run race` lists scenarios, and `pnpm run e2e:list` lists browser tests. To select and run a browser test interactively, run `pnpm run e2e:ui` and forward `e2e:9323` in the VS Code Ports panel. [Browser E2E environment](tests/README.md#브라우저-e2e)
+Use `pnpm run e2e:list` to list browser tests and `pnpm run e2e:report` to open the report. To select and run a test interactively, run `pnpm run e2e:ui` and forward `e2e:<port printed by the UI>` in the VS Code Ports panel. [Browser E2E environment](tests/README.md#브라우저-e2e)
 
 To access web externally, start the development server and run `pnpm exec tunnel` in another terminal. cloudflared provides an HTTPS Quick Tunnel URL. See the [tunnel requirements](tools/README.md#2-dev-tools--명시적으로-실행하는-개발-도구).
-
-### Results and diagnostics
-
-| Check                   | Results                                                                                |
-| ----------------------- | -------------------------------------------------------------------------------------- |
-| Unit, integration, race | Terminal. Failed races collect container and MongoDB diagnostics before cleanup.       |
-| Browser                 | Traces, screenshots and HTML in `tests/web/_output/`. Open with `pnpm run e2e:report`. |
-| Curl documentation      | `logs/` and `docs/summary.md` under `apps/api/api-docs/_output/`                       |
-| Benchmark               | `report.html` and `summary.json` under `tests/api/benchmark/_output/<run timestamp>/`  |
-
-Benchmark reports are files in the workspace. To remove a report, delete that run's timestamped directory. In CI logs, look for the `[Run i/N]` marker to identify a failed iteration.
 
 ## Structure and choices
 

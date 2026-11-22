@@ -14,28 +14,28 @@ NestJS 기반 백엔드 프로젝트를 위한 시작 템플릿이다. `apps/api
 
 1. VS Code에서 `Reopen in Container`를 실행한다. 의존성 설치와 인프라 초기화가 끝날 때까지 기다린다.
 2. 컨테이너 터미널에서 `pnpm run test`를 실행한다.
-3. `pnpm run dev`로 API와 web을 실행한다. 다른 컨테이너 터미널에서 `curl http://localhost:3000/health`로 API를 확인한다.
-4. VS Code 포트 패널에서 `3200`을 전달해 web을 연다. 자동 포트 전달은 꺼져 있다.
+3. `pnpm run dev`로 API와 web을 실행한다. 다른 컨테이너 터미널에서 `curl "http://localhost:${API_PORT}/health"`로 API를 확인한다.
+4. `echo "$WEB_PORT"`로 web의 포트 번호를 확인하고 VS Code 포트 패널에서 그 포트를 전달해 web을 연다.
 
 루트의 `.env.api`나 `.env.infra`를 수정하면 VS Code에서 `Rebuild Container`를 실행한다. [환경 변수 적용 방법](.devcontainer/README.md#1-환경-변수-파일-변경-후-dev-container-재생성)
 
 ## 실행과 검증
 
-Dev Container의 저장소 루트에서 실행한다.
+Dev Container의 저장소 루트에서 실행한다. 전체 명령 목록은 `pnpm run`으로 확인한다.
 
-| 명령                       | 용도                                                          |
-| -------------------------- | ------------------------------------------------------------- |
-| `pnpm run dev`             | API와 web을 watch mode로 실행                                 |
-| `pnpm run test`            | workspace의 단위·통합 테스트                                  |
-| `pnpm run lint`            | 타입·코드·서식·셸·문서 링크 검사                              |
-| `pnpm run format`          | Prettier로 저장소 전체의 서식 정리                            |
-| `pnpm run atoz`            | 인프라 초기화부터 빌드·테스트·브라우저·API 문서까지 전체 회귀 |
-| `pnpm run api-docs`        | 복제본 4개의 API 스택에서 bash·curl 문서 검증                 |
-| `pnpm run e2e`             | production build의 web과 API 연결 검증                        |
-| `pnpm run race <scenario>` | 다중 복제본의 HTTP/SSE 경쟁·복제본 종료 검증                  |
-| `pnpm run benchmark`       | 같은 조건의 API 성능 비교                                     |
+| 명령                 | 용도                                             |
+| -------------------- | ------------------------------------------------ |
+| `pnpm run dev`       | API와 web을 watch mode로 실행                    |
+| `pnpm run test`      | workspace의 단위·통합 테스트                     |
+| `pnpm run lint`      | 타입·코드·서식·셸·문서 링크 검사                 |
+| `pnpm run format`    | Prettier로 저장소 전체의 서식 정리               |
+| `pnpm run atoz`      | 실행 환경 초기화 후 CI 기본 검증                 |
+| `pnpm run api-docs`  | curl로 API 사용 예제를 실행하고 응답 확인        |
+| `pnpm run e2e`       | production build의 web과 API 연결 검증           |
+| `pnpm run race`      | 다중 복제본 테스트의 시나리오 목록과 실행법 확인 |
+| `pnpm run benchmark` | 같은 조건의 API 성능 비교                        |
 
-서식만 검사하려면 `pnpm run lint:format`을 실행한다. `atoz`에는 Restate 복구 검사도 포함된다. race와 benchmark는 별도로 실행한다. [테스트별 검증 범위](tests/README.md#검증-범위)
+서식만 검사하려면 `pnpm run lint:format`을 실행한다. [테스트별 검증 범위](tests/README.md#검증-범위)
 
 ### 선택 실행과 외부 접속
 
@@ -48,20 +48,9 @@ pnpm --filter './apps/api' test users.spec --coverage.enabled=false
 
 개발 API가 실행 중이면 `bash apps/api/api-docs/run.sh`로 사용 예제를 실행한다. 뒤에 `users.spec` 같은 파일명을 붙이면 해당 예제만 실행한다. [API 사용 예제](apps/api/README.md#실행-가능한-api-문서)
 
-`pnpm run race`는 시나리오를, `pnpm run e2e:list`는 브라우저 테스트를 나열한다. 브라우저 테스트를 선택해 실행하려면 `pnpm run e2e:ui`를 실행하고 VS Code 포트 패널에서 `e2e:9323`을 전달한다. [브라우저 E2E 실행 환경](tests/README.md#브라우저-e2e)
+브라우저 테스트 목록은 `pnpm run e2e:list`로 확인하고 실행 결과는 `pnpm run e2e:report`로 연다. 테스트를 선택해 실행하려면 `pnpm run e2e:ui`를 실행하고 VS Code 포트 패널에서 `e2e:<출력된 UI 포트>`를 전달한다. [브라우저 E2E 실행 환경](tests/README.md#브라우저-e2e)
 
 외부에서 web을 확인하려면 개발 서버를 실행한 뒤 다른 터미널에서 `pnpm exec tunnel`을 실행한다. cloudflared가 HTTPS Quick Tunnel 주소를 발급한다. [tunnel 사용 조건](tools/README.md#2-dev-tools--명시적으로-실행하는-개발-도구)을 참고한다.
-
-### 결과와 진단
-
-| 검사           | 결과 위치                                                                  |
-| -------------- | -------------------------------------------------------------------------- |
-| 단위·통합·race | 터미널. race 실패 시 스택 정리 전에 컨테이너·MongoDB 진단 수집             |
-| 브라우저       | `tests/web/_output/`의 trace·screenshot·HTML. `pnpm run e2e:report`로 열기 |
-| curl 문서      | `apps/api/api-docs/_output/`의 `logs/`와 `docs/summary.md`                 |
-| benchmark      | `tests/api/benchmark/_output/<실행 시각>/`의 `report.html`·`summary.json`  |
-
-벤치마크 보고서는 저장소에 파일로 남는다. 지우려면 해당 실행 시각의 디렉터리를 삭제한다. CI의 반복 실행 로그에서는 `[Run i/N]`으로 실패한 회차를 찾을 수 있다.
 
 ## 구조와 선택
 
