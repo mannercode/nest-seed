@@ -5,7 +5,7 @@
     "type": "module",
     "scripts": {
         "start": "node --enable-source-maps _output/dist/index.js",
-        "lint": "tsc --noEmit -p tsconfig.build.json && tsc --noEmit -p tsconfig.test.json",
+        "lint": "tsc --noEmit -p tsconfig.build.json && tsc --noEmit -p tsconfig.json",
         "build": "nest build -b rspack --rspackPath rspack.config.cjs",
         "predev": "free-port ${API_PORT:?}",
         "dev": "nest start --watch",
