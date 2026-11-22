@@ -3,14 +3,6 @@
     "version": "0.0.2",
     "private": true,
     "type": "module",
-    "imports": {
-        "#application": "./_output/build/src/services/application/index.js",
-        "#config": "./_output/build/src/config/index.js",
-        "#core": "./_output/build/src/services/core/index.js",
-        "#gateway": "./_output/build/src/services/gateway/index.js",
-        "#infrastructure": "./_output/build/src/services/infrastructure/index.js",
-        "#view": "./_output/build/src/services/view/index.js"
-    },
     "scripts": {
         "start": "node --enable-source-maps _output/dist/index.js",
         "lint": "tsc --noEmit -p tsconfig.build.json && tsc --noEmit -p tsconfig.test.json",
