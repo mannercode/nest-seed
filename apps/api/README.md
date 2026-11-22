@@ -88,14 +88,4 @@ workflow 테스트는 `enableRestate: true`로 endpoint를 등록하고 작업 �
 
 ### 실행 가능한 API 문서
 
-API 통합 테스트는 [curl 예제](api-docs/)를 테스트 서버에서 실행한다. 예제 폴더만 전달받은 경우에는 [run.cfg](api-docs/run.cfg)에 실행 중인 API 주소를 지정한 뒤 그 폴더에서 `bash run.sh`를 실행한다. 실행이 끝나면 결과 문서와 응답 로그의 위치가 표시된다.
-
-- 사진을 올려 가입하고 로그인·정보 수정·탈퇴까지 진행한다. [users.spec](api-docs/users.spec)
-- 같은 사용자로 두 터미널을 열어 메시지를 보내고 SSE로 받는다. [event-demo.spec](api-docs/event-demo.spec)
-- 문자열 변환 작업을 제출하고 받은 작업 ID로 결과를 조회한다. [job-demo.spec](api-docs/job-demo.spec)
-
-`TEST`는 요청을 보내고 HTTP 상태 코드를 확인한다. `SETUP`은 다음 요청에 필요한 데이터를 준비한다. 응답 본문의 값과 형식은 API 통합 테스트에서 검증한다.
-
-`$(RESPONSE_BODY jobId)`는 직전 JSON 응답에서 `jobId` 값을 읽는다. 중첩된 필드는 `$(RESPONSE_BODY result.text)`처럼 점으로 연결한다.
-
-`run.sh`는 각 spec을 게스트 상태에서 시작한다. `login_user`를 호출하면 이후 API 요청에 인증 헤더가 붙고 `as_guest`로 해제된다. 요청에 직접 적은 Authorization 헤더가 우선한다.
+`api-docs/run.cfg`에 API 주소를 설정한다. 같은 폴더에서 `bash run.sh`로 전체 예제를, `bash run.sh users.spec`로 사용자 예제만 실행한다. [curl 예제](api-docs/)
