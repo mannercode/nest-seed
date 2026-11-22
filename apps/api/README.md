@@ -74,6 +74,8 @@ Core·Application도 NestJS DI와 `HttpException`을 사용한다. 예상한 실
 
 개발 watch는 TSC, production build는 Rspack을 사용한다. common 등 런타임 패키지는 앱 번들에 들어가지 않으므로 앱과 함께 배포한다.
 
+[API 컨테이너 실행 설정](compose.yml)은 개발 인프라와 같은 네트워크에서 API 한 개를 띄운다. API 예제·다중 복제본 테스트·벤치마크와 웹 E2E가 이 설정을 공유한다.
+
 API 로그는 설정한 로그 수준에 따라 stdout/stderr에 ECS JSON으로 출력한다. 요청·응답 본문과 쿼리는 로그에서 제외한다.
 
 ## 테스트
