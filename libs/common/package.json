@@ -12,7 +12,9 @@
         "build": "tsc -p tsconfig.build.json",
         "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
         "test": "vitest run --coverage",
-        "lint": "tsc --noEmit -p tsconfig.build.json && tsc --noEmit -p tsconfig.test.json"
+        "lint": "pnpm run '/^lint:/'",
+        "lint:build": "tsc --noEmit -p tsconfig.build.json",
+        "lint:test": "tsc --noEmit -p tsconfig.test.json"
     },
     "dependencies": {
         "@elastic/ecs-winston-format": "1.5.3",
