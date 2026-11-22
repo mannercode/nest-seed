@@ -3,12 +3,7 @@ USER_EMAIL=$(random_email)
 TEST "회원가입에 쓸 사진의 업로드 조건을 발급받는다" \
 	201 POST /users/photo-upload \
 	-H 'Content-Type: application/json' \
-	-d '{
-        "originalName": "'"${ASSET_IMAGE_ORIGINAL_NAME}"'",
-        "mimeType": "image/png",
-        "size": '"${ASSET_IMAGE_SIZE}"',
-        "checksum": { "algorithm": "sha256", "base64": "'"${ASSET_IMAGE_SHA256_BASE64}"'" }
-    }'
+	-d @./assets/image.json
 
 PHOTO_UPLOAD="${BODY}"
 
@@ -26,7 +21,7 @@ TEST "아직 업로드하지 않은 사진 ID로 가입하면 422를 반환한�
 	422 POST /users \
 	-H 'Content-Type: application/json' -d "${SIGNUP_BODY}"
 
-upload_presigned_post "${ASSET_IMAGE_PATH}" "${PHOTO_UPLOAD}"
+upload_presigned_post ./assets/image.png "${PHOTO_UPLOAD}"
 
 TEST "사진을 첨부해 회원가입한다" \
 	201 POST /users \
