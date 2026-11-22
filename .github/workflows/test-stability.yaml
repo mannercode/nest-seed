@@ -22,7 +22,7 @@ jobs:
                       setup: pnpm run pretest
                       command: |
                           pnpm --filter './apps/api' --fail-if-no-match run test --coverage.enabled=false
-                          pnpm run test:api-docs
+                          pnpm --dir apps/api run test:api-docs
                     - name: infra-reset
                       repeat: 25
                       command: bash infra/reset.sh

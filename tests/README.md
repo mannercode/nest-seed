@@ -14,6 +14,8 @@
 
 API와 common의 전체 테스트는 커버리지 100%를 요구한다. API Vitest 명령을 동시에 여러 번 실행하면 테스트 DB와 버킷 이름이 겹친다.
 
+API 문서 예제만 검증하려면 `pnpm run pretest`로 라이브러리를 빌드한 뒤 `pnpm --dir apps/api run test:api-docs`를 실행한다.
+
 ## 테스트는 한 행동의 결과를 검증한다
 
 코드 식별자는 영어로, 조건·결과는 한국어로 쓴다. `describe`와 `it`을 이어 읽었을 때 준비 상태·행동·기대 결과가 드러나야 한다. [회원가입 통합 테스트](../apps/api/src/__tests__/core/users.spec.ts)
