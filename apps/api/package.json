@@ -11,7 +11,7 @@
         "dev": "nest start --watch",
         "test": "vitest run --coverage",
         "posttest": "pnpm run test:api-docs",
-        "test:api-docs": "docker compose -p \"${COMPOSE_PROJECT_NAME:?}-api-docs\" run --rm --build --use-aliases --user \"$(id -u):$(id -g)\" test-api-docs"
+        "test:api-docs": "docker compose run --rm test-api-docs"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "3.1173.0",

@@ -21,12 +21,11 @@ services:
     test-api-docs:
         extends: api
         profiles: [test]
+        hostname: test-api-docs
+        pull_policy: build
         build:
             target: api-docs
         init: true
-        volumes:
-            - ./api-docs:/api-docs
-            - ./scripts/register-restate.cjs:/register-restate.cjs:ro
         environment:
             PROJECT_ID: ${PROJECT_ID:?}-docs
             SERVER_URL: http://localhost:${API_PORT:?}
@@ -36,7 +35,7 @@ services:
             - -ec
             - |
                 npm start &
-                node /register-restate.cjs test-api-docs
+                node /register-restate.cjs "$$HOSTNAME"
                 curl -fsS --retry 10 --retry-delay 1 --retry-connrefused "$$SERVER_URL/health" >/dev/null
                 exec bash /api-docs/run.sh "$$@"
             - sh
