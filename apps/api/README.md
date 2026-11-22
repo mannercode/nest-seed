@@ -74,7 +74,7 @@ Core·Application도 NestJS DI와 `HttpException`을 사용한다. 예상한 실
 
 개발 watch는 TSC, production build는 Rspack을 사용한다. common 등 런타임 패키지는 앱 번들에 들어가지 않으므로 앱과 함께 배포한다.
 
-[API 컨테이너 실행 설정](compose.yml)은 개발 인프라와 같은 네트워크에서 API 한 개를 띄운다. API 예제·다중 복제본 테스트·벤치마크와 웹 E2E가 이 설정을 공유한다.
+[API 컨테이너 실행 설정](compose.yml)은 개발 인프라와 같은 네트워크에서 API 한 개를 띄운다. 다중 복제본 테스트·벤치마크와 웹 E2E가 이 설정을 공유한다.
 
 API 로그는 설정한 로그 수준에 따라 stdout/stderr에 ECS JSON으로 출력한다. 요청·응답 본문과 쿼리는 로그에서 제외한다.
 
@@ -88,7 +88,7 @@ workflow 테스트는 `enableRestate: true`로 endpoint를 등록하고 작업 �
 
 ### 실행 가능한 API 문서
 
-루트에서 `pnpm run api-docs`를 실행하면 [curl 예제](api-docs/)의 요청을 실제 API에 보내고 결과 문서와 응답 로그의 위치를 출력한다.
+API 통합 테스트는 [curl 예제](api-docs/)를 테스트 서버에서 실행한다. 예제 폴더만 전달받은 경우에는 [run.cfg](api-docs/run.cfg)에 실행 중인 API 주소를 지정한 뒤 그 폴더에서 `bash run.sh`를 실행한다. 실행이 끝나면 결과 문서와 응답 로그의 위치가 표시된다.
 
 - 사진을 올려 가입하고 로그인·정보 수정·탈퇴까지 진행한다. [users.spec](api-docs/users.spec)
 - 같은 사용자로 두 터미널을 열어 메시지를 보내고 SSE로 받는다. [event-demo.spec](api-docs/event-demo.spec)

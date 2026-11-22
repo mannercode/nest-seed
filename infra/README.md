@@ -26,6 +26,6 @@ Dev Container와 각 Compose 프로젝트는 같은 외부 Docker 네트워크�
 
 `pnpm run dev`는 Restate에 Dev Container의 API 주소를 등록한다. [개발용 등록 스크립트](../apps/api/scripts/register-restate.cjs)는 `COMPOSE_PROJECT_NAME`과 `RESTATE_SERVICE_PORT`로 주소를 만든다.
 
-API 문서·race·benchmark는 API 복제본 앞에 있는 NGINX의 주소를 등록한다. API가 수신하는 포트를 변경하면 [NGINX upstream](../tests/api/nginx.conf)도 바꾼다. NGINX가 Restate 요청을 받는 포트를 변경하면 [Compose의 등록 주소](../tests/api/compose.yml)도 바꾼다.
+race와 benchmark는 API 복제본 앞에 있는 NGINX의 주소를 등록한다. API가 수신하는 포트를 변경하면 [NGINX upstream](../tests/api/nginx.conf)도 바꾼다. NGINX가 Restate 요청을 받는 포트를 변경하면 [Compose의 등록 주소](../tests/api/compose.yml)도 바꾼다.
 
 개발 실행기는 같은 주소를 강제로 재등록하고 검증용 Compose는 `force: false`로 등록한다. 진행 중인 작업을 이어서 실행해야 한다면 새 버전을 별도 주소로 등록하고 기존 작업이 끝날 때까지 이전 주소에서 이전 코드를 실행한다.

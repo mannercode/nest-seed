@@ -28,7 +28,7 @@ API의 context·공통 훅·보조 함수 배치는 [API 테스트 안내](../ap
 
 ## 테스트용 API 실행과 종료
 
-`api-docs`, `race`, `benchmark`는 같은 [Compose 프로젝트](api/compose.yml)의 NGINX와 API 복제본을 사용한다. 각 명령이 끝날 때 이 컨테이너를 내리므로 세 명령은 한 번에 하나씩 실행한다.
+`race`와 `benchmark`는 같은 [Compose 프로젝트](api/compose.yml)의 NGINX와 API 복제본을 사용한다. 각 명령이 끝날 때 이 컨테이너를 내리므로 두 명령은 한 번에 하나씩 실행한다.
 
 테스트로 만든 계정·업로드 파일·작업 기록은 공유 개발 인프라에 남는다. [인프라 초기화](../infra/README.md#2-인프라-시작과-데이터-초기화)
 

@@ -30,7 +30,7 @@ Dev Container의 저장소 루트에서 실행한다. 전체 명령 목록은 `p
 | `pnpm run lint`      | 타입·코드·서식·셸·문서 링크 검사                 |
 | `pnpm run format`    | Prettier로 저장소 전체의 서식 정리               |
 | `pnpm run atoz`      | 실행 환경 초기화 후 CI 기본 검증                 |
-| `pnpm run api-docs`  | curl로 API 사용 예제를 실행하고 응답 확인        |
+| `pnpm run api-docs`  | 실행 중인 API에서 curl 예제 검증                 |
 | `pnpm run e2e`       | production build의 web과 API 연결 검증           |
 | `pnpm run race`      | 다중 복제본 테스트의 시나리오 목록과 실행법 확인 |
 | `pnpm run benchmark` | 같은 조건의 API 성능 비교                        |
@@ -46,7 +46,7 @@ pnpm run pretest
 pnpm --filter './apps/api' test users.spec --coverage.enabled=false
 ```
 
-개발 API가 실행 중이면 `bash apps/api/api-docs/run.sh`로 사용 예제를 실행한다. 뒤에 `users.spec` 같은 파일명을 붙이면 해당 예제만 실행한다. [API 사용 예제](apps/api/README.md#실행-가능한-api-문서)
+개발 API가 실행 중이면 `pnpm run api-docs users.spec`처럼 파일명을 지정해 해당 예제만 실행할 수 있다. [API 사용 예제](apps/api/README.md#실행-가능한-api-문서)
 
 브라우저 테스트 목록은 `pnpm run e2e:list`로 확인하고 실행 결과는 `pnpm run e2e:report`로 연다. 테스트를 선택해 실행하려면 `pnpm run e2e:ui`를 실행하고 VS Code 포트 패널에서 `e2e:<출력된 UI 포트>`를 전달한다. [브라우저 E2E 실행 환경](tests/README.md#브라우저-e2e)
 

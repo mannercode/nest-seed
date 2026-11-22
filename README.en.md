@@ -36,7 +36,7 @@ Run these commands from the repository root inside the Dev Container. Use `pnpm 
 | `pnpm run lint`      | Check types, code, formatting, shell scripts, and documentation links |
 | `pnpm run format`    | Format the repository with Prettier                                   |
 | `pnpm run atoz`      | Initialize the test environment and run the standard CI checks        |
-| `pnpm run api-docs`  | Run the curl API examples and check their responses                   |
+| `pnpm run api-docs`  | Send the curl examples to a running API and check the responses       |
 | `pnpm run e2e`       | Verify the production build of web and its API connection             |
 | `pnpm run race`      | List the multi-replica test scenarios and how to run them             |
 | `pnpm run benchmark` | Compare API performance under the same conditions                     |
@@ -52,7 +52,7 @@ pnpm run pretest
 pnpm --filter './apps/api' test users.spec --coverage.enabled=false
 ```
 
-With the development API running, use `bash apps/api/api-docs/run.sh` to run the examples. Append a filename such as `users.spec` to run one example. [API usage examples](apps/api/README.md#실행-가능한-api-문서)
+With the development API running, pass a filename to run a single example, such as `pnpm run api-docs users.spec`. [API usage examples](apps/api/README.md#실행-가능한-api-문서)
 
 Use `pnpm run e2e:list` to list browser tests and `pnpm run e2e:report` to open the report. To select and run a test interactively, run `pnpm run e2e:ui` and forward `e2e:<port printed by the UI>` in the VS Code Ports panel. [Browser E2E environment](tests/README.md#브라우저-e2e)
 
