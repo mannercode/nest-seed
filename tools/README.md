@@ -4,7 +4,7 @@
 
 Vitest가 소스 변환 전에 불러올 수 있도록 CommonJS와 타입 선언으로 제공한다.
 
-DB와 버킷은 worker별로 준비하고, 종료할 때는 테스트 패키지가 지정한 자원만 삭제한다. 같은 파일의 테스트들은 MongoClient를 공유하며 마지막 테스트가 끝나면 연결을 닫는다. [API 테스트 설정](../apps/api/src/__tests__/vitest.setup.ts) · [자원 이름](../apps/api/scripts/vitest-resource-wiring.cjs)
+DB와 버킷은 worker별로 준비하고, 종료할 때는 테스트 패키지가 지정한 자원만 삭제한다. 같은 파일의 테스트들은 MongoClient를 공유하며 마지막 테스트가 끝나면 연결을 닫는다. [API 테스트 설정](../apps/api/src/__tests__/vitest.setup.ts) · [자원 이름](../apps/api/src/__tests__/vitest.resources.cjs)
 
 ## 2. dev-tools — 개발 포트와 HTTPS 터널
 
