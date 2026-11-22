@@ -6,21 +6,17 @@ cd -- "$(dirname -- "$0")"
 : "${COMPOSE_PROJECT_NAME:?Dev Container의 COMPOSE_PROJECT_NAME이 필요합니다}"
 : "${DEVCONTAINER_NETWORK:?Dev Container의 DEVCONTAINER_NETWORK가 필요합니다}"
 
-compose=(docker compose --project-name "${COMPOSE_PROJECT_NAME}-web")
-
 mkdir -p _output
 
-list_only=false
 for argument in "$@"; do
-    case "${argument}" in
-        --list) list_only=true ;;
-    esac
+    if [[ "${argument}" == --list ]]; then
+        exec pnpm exec playwright test "$@"
+    fi
 done
 
-if [[ "${list_only}" == true ]]; then
-    pnpm exec playwright test "$@"
-    exit
-fi
+PLAYWRIGHT_VERSION=$(node -p "require('@playwright/test/package.json').version")
+export PLAYWRIGHT_VERSION
+compose=(docker compose --project-name "${COMPOSE_PROJECT_NAME}-web" -f compose.yml -f compose.e2e.yml)
 
 cleanup() {
     local exit_code=$?
@@ -44,4 +40,4 @@ trap cleanup EXIT
 "${compose[@]}" build api web
 "${compose[@]}" up --detach --no-build --wait api web
 
-pnpm exec playwright test "$@"
+"${compose[@]}" run --rm --use-aliases --user "$(id -u):$(id -g)" e2e "$@"

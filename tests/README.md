@@ -77,9 +77,9 @@ API·NGINX의 health가 정상이어도 workflow 등록은 별도다. 실행기�
 
 ## 브라우저 E2E
 
-production build한 web·API를 Compose로 실행하고 Dev Container의 Playwright·Chromium으로 접속한다. 일반 E2E는 호스트에 포트를 공개하지 않고 Docker 네트워크로 연결한다. 사진 첨부 가입·본인 조회와 쿠키 전달·갱신·로그아웃, 사진 실패 시 가입 중단을 검증한다. 브라우저 설치는 [개발 환경](../.devcontainer/README.md#3-시작-순서와-데이터-초기화)이 관리한다.
+E2E 실행기는 production build한 web·API가 준비되면 같은 Docker 네트워크에서 일회성 Playwright 컨테이너를 띄운다. `tests/web`에 설치된 `@playwright/test`와 같은 버전의 공식 이미지가 Chromium을 제공한다. 컨테이너는 workspace를 마운트해 사진 fixture를 읽고, 리포트·trace·스크린샷을 `tests/web/_output/`에 Dev Container 사용자 권한으로 쓴다. [E2E 실행기](web/run-e2e.sh)
 
-테스트는 내부 HTTP 때문에 Secure 쿠키를 끄고 전달 헤더 신뢰를 켠다. 실제 edge의 IP 헤더 재구성이나 BFF·API 직접 접근 차단까지 검증하지는 않으므로 [BFF의 운영 조건](../apps/README.md#web과-bff)과 구분한다. 실행기는 `${COMPOSE_PROJECT_NAME}-web`의 앱만 종료한다.
+테스트는 호스트에 포트를 공개하지 않고 사진 첨부 가입·본인 조회와 쿠키 전달·갱신·로그아웃, 사진 실패 시 가입 중단을 검증한다. 내부 HTTP에서 쿠키를 보내기 위해 Secure 속성을 끄고, BFF가 전달 헤더를 신뢰하도록 설정한다. 실제 edge의 IP 헤더 재구성이나 BFF·API 직접 접근 차단까지 검증하지는 않으므로 [BFF의 운영 조건](../apps/README.md#web과-bff)과 구분한다. 실행기는 `${COMPOSE_PROJECT_NAME}-web`의 컨테이너만 정리한다.
 
 ## Benchmark와 반복 CI
 

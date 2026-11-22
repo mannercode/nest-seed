@@ -26,13 +26,16 @@ Dev Container의 저장소 루트에서 실행한다. 각 명령은 라이브러
 | `pnpm run dev`             | API와 web을 watch mode로 실행                                 |
 | `pnpm run test`            | workspace의 단위·통합 테스트                                  |
 | `pnpm run lint`            | 타입·코드·서식·셸·문서 링크 검사                              |
+| `pnpm run format`          | Prettier로 저장소 전체의 서식 정리                            |
 | `pnpm run atoz`            | 인프라 초기화부터 빌드·테스트·브라우저·API 문서까지 전체 회귀 |
 | `pnpm run api-docs`        | 복제본 4개의 API 스택에서 bash·curl 문서 검증                 |
 | `pnpm run e2e`             | production build의 web과 API 연결 검증                        |
 | `pnpm run race <scenario>` | 다중 복제본의 HTTP/SSE 경쟁·복제본 종료 검증                  |
 | `pnpm run benchmark`       | 같은 조건의 API 성능 비교                                     |
 
-race와 benchmark는 기본 test·AtoZ에 포함되지 않는다. 같은 API Vitest 명령을 동시에 여러 번 실행하는 것은 지원하지 않는다. 검사별 보장과 한계는 [테스트 가이드](tests/README.md)에 있다.
+`pnpm run lint`는 각 TypeScript 패키지의 타입을 검사한다. Oxlint와 Prettier는 저장소 루트에서 각각 한 번 실행한다. 서식만 검사하려면 `pnpm run lint:format`을 실행한다.
+
+`pnpm run atoz`는 `lint`와 기본 테스트에 더해 Restate 복구, web 프로덕션 빌드, 브라우저 E2E, API 문서를 검증한다. race와 benchmark는 별도로 실행한다. 같은 API Vitest 명령을 동시에 여러 번 실행하는 것은 지원하지 않는다. 검사별 보장과 한계는 [테스트 가이드](tests/README.md)에 있다.
 
 ### 선택 실행과 외부 접속
 
@@ -45,7 +48,7 @@ pnpm --filter './apps/api' test users.spec --coverage.enabled=false
 
 실행 중인 개발 API에 [curl 문서](apps/api/api-docs/)를 실행하려면 `bash apps/api/api-docs/run.sh`를 사용한다. 뒤에 `registration-photo.spec` 같은 파일명을 붙이면 해당 문서만 실행한다.
 
-`pnpm run race`는 시나리오를, `pnpm run e2e:list`는 브라우저 테스트를 나열한다. `pnpm run e2e:ui`로 브라우저 테스트를 선택해 실행할 수 있다. Chromium 설치·버전 변경은 [개발 환경](.devcontainer/README.md#3-시작-순서와-데이터-초기화)을 따른다.
+`pnpm run race`는 시나리오를, `pnpm run e2e:list`는 브라우저 테스트를 나열한다. 브라우저 테스트를 선택해 실행하려면 `pnpm run e2e:ui`를 실행하고 VS Code 포트 패널에서 `e2e:9323`을 전달한다. [브라우저 E2E 실행 환경](tests/README.md#브라우저-e2e)
 
 외부에서 web을 확인하려면 개발 서버를 실행한 뒤 다른 터미널에서 `pnpm exec tunnel`을 실행한다. cloudflared가 HTTPS Quick Tunnel 주소를 발급한다. [tunnel 사용 조건](tools/README.md#2-dev-tools--명시적으로-실행하는-개발-도구)을 참고한다.
 

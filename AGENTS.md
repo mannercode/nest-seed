@@ -79,7 +79,7 @@
 
 동작이나 보장이 바뀌면 해당 테스트와 그 의미를 소유하는 문서를 함께 갱신한다.
 
-개발자와 CI는 루트의 package script로 실행한다. 각 workspace는 지원하는 `dev`, `build`, `test`, `lint`, `format`, `atoz` 명령을 같은 뜻으로 제공한다. 실제 검사 범위는 각 package script에서, 명령별 사용법은 [README의 실행 안내](README.md#실행과-검증)에서 확인한다. 모든 영역의 테스트 작성에는 [테스트 작성 규칙](tests/README.md#테스트는-한-행동의-결과를-검증한다)을 적용한다.
+개발자와 CI는 루트의 package script로 실행한다. `format`과 `atoz`는 루트 `package.json`에만 정의한다. 각 workspace는 지원하는 `dev`, `build`, `test`, `lint` 명령을 같은 뜻으로 제공한다. 실제 검사 범위는 각 package script에서, 명령별 사용법은 [README의 실행 안내](README.md#실행과-검증)에서 확인한다. 모든 영역의 테스트 작성에는 [테스트 작성 규칙](tests/README.md#테스트는-한-행동의-결과를-검증한다)을 적용한다.
 
 문서에 적힌 명령으로 개발·빌드·검증할 수 있게 한다. 로컬과 CI가 의도한 검사를 실행하게 하고, 실행 실패와 정리 오류를 종료 코드에 반영한다.
 

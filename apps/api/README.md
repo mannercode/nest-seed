@@ -32,7 +32,7 @@ flowchart TB
 
 View는 화면 응답과 항목의 순서·개수를 결정하는 읽기 전용 계층이다. Users는 사진 ID만 보관하고 WebHomeView가 필요한 URL을 조회하므로, URL이 필요 없는 호출에 자산 조회가 붙지 않는다. 상태 변경·transaction은 View에 두지 않으며 Application·Core가 View를 참조하거나 화면 때문에 도메인 API의 목적을 바꾸지 않는다.
 
-`internal/`·`worker/`는 모듈 내부 폴더다. 계층과 import 방향은 lint가, View의 읽기 전용 동작은 리뷰가 확인한다.
+`internal/`·`worker/`는 모듈 내부 폴더다. 루트의 Oxlint가 계층과 import 방향을 검사하고, 리뷰에서 View의 읽기 전용 동작을 확인한다.
 
 ### Gateway와 모듈 공개 진입점
 
@@ -88,6 +88,8 @@ workflow 테스트는 `enableRestate: true`로 endpoint를 등록하고 작업 �
 
 ### 실행 가능한 API 문서
 
-[api-docs/](api-docs/)의 bash·curl spec은 주요 성공·실패 흐름을 실행해 문서와 동작을 함께 확인한다. 전체 API 카탈로그·SDK 생성이나 SSE·세부 장애 테스트까지 대신하지 않는다. `TEST`는 설명·기대 상태를 가진 문서 항목이고 `SETUP`은 조건을 준비하는 요청이다.
+[api-docs/](api-docs/)의 `.spec` 파일은 curl로 주요 성공·실패 흐름을 보여 주는 API 사용 예제다. 전체 API 카탈로그·SDK 생성이나 SSE·세부 장애 테스트까지 대신하지 않는다. `TEST`는 요청을 보내고 HTTP 상태 코드를 확인한다. `SETUP`은 다음 요청에 필요한 데이터를 준비한다. 응답 본문의 값과 형식은 API 통합 테스트에서 검증한다.
 
-`common.fixture`의 `login_user`는 이후 요청에 인증 헤더를 넣고 `as_guest`는 해제한다. 명시한 Authorization이 우선한다. 직접 실행은 api-docs의 `.env`, 검증 스택은 runner의 `SERVER_URL`을 사용한다. 명령과 응답 로그 위치는 [루트 실행 안내](../../README.md#실행과-검증)에 있다.
+`$(RESPONSE_BODY jobId)`는 직전 JSON 응답에서 `jobId` 값을 읽는다. 중첩된 필드는 `$(RESPONSE_BODY result.text)`처럼 점으로 연결한다.
+
+`run.sh`는 spec마다 `common.fixture`를 불러와 로그인 상태를 초기화한다. `login_user`는 이후 요청에 인증 헤더를 넣고 `as_guest`는 해제한다. 명시한 Authorization이 우선한다. 직접 실행은 api-docs의 `.env`, 검증 스택은 runner의 `SERVER_URL`을 사용한다. 명령과 응답 로그 위치는 [루트 실행 안내](../../README.md#실행과-검증)에 있다.

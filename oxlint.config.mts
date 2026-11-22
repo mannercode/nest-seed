@@ -70,7 +70,7 @@ export default defineConfig({
     categories: { correctness: 'error' },
 
     settings: {
-        // workspace lint와 루트의 lint-staged가 같은 소스 파일을 해석해야 한다.
+        // 루트에서 검사할 때 src/services 패턴은 apps/api/src/services를 가리켜야 한다.
         'boundaries/root-path': apiDir,
         'boundaries/include': ['src/services/**/*.ts'],
         'boundaries/ignore': ['**/__tests__/**'],
