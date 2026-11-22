@@ -1,6 +1,8 @@
 services:
     api:
-        extends: { file: ../../apps/api/compose.yml, service: api }
+        extends:
+            file: ${WORKSPACE_ROOT:?}/apps/api/compose.yml
+            service: api
         image: nest-seed-api
         environment:
             # 비밀번호 해싱과 파일 작업은 같은 작업 스레드를 사용한다.

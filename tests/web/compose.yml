@@ -1,6 +1,8 @@
 services:
     api:
-        extends: { file: ../../apps/api/compose.yml, service: api }
+        extends:
+            file: ${WORKSPACE_ROOT:?}/apps/api/compose.yml
+            service: api
 
     web:
         build:
