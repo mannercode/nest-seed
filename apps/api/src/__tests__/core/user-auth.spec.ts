@@ -99,16 +99,6 @@ describe('UserAuthentication', () => {
                 .body({ refreshToken: session.refreshToken })
                 .ok()
         })
-        it('전체 로그아웃 요청에 401을 반환하고 로그인 세션을 유지한다', async () => {
-            await fix.httpClient
-                .post('/users/me/logout-all')
-                .headers(headers)
-                .unauthorized({ expected: Errors.Auth.Unauthorized() })
-            await fix.httpClient
-                .post('/users/refresh')
-                .body({ refreshToken: session.refreshToken })
-                .ok()
-        })
     })
 
     describe('서로 다른 두 사용자가 로그인했으면', () => {
@@ -156,21 +146,6 @@ describe('UserAuthentication', () => {
             await expect(fix.module.get(UsersService).getMany([other.user.id])).resolves.toEqual([
                 other.user
             ])
-            await fix.httpClient
-                .post('/users/refresh')
-                .body({ refreshToken: other.refreshToken })
-                .ok()
-        })
-        it('전체 로그아웃 요청에 타인 ID를 보내도 본인 세션만 회수한다', async () => {
-            await fix.httpClient
-                .post('/users/me/logout-all')
-                .headers(headers)
-                .body({ userId: other.user.id })
-                .noContent()
-            await fix.httpClient
-                .post('/users/refresh')
-                .body({ refreshToken: mine.refreshToken })
-                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
             await fix.httpClient
                 .post('/users/refresh')
                 .body({ refreshToken: other.refreshToken })
@@ -592,8 +567,19 @@ describe('UserAuthentication', () => {
             ;({ accessToken, refreshToken, user } = await loginUser(fix, credentials))
         })
 
-        it('로그아웃하면 204를 반환한다', async () => {
-            await fix.httpClient.post('/users/logout').body({ refreshToken }).noContent()
+        describe('같은 계정에 다른 로그인 세션이 있으면', () => {
+            let otherRefreshToken: string
+            beforeEach(async () => {
+                const otherSession = await loginUser(fix, credentials)
+                otherRefreshToken = otherSession.refreshToken
+            })
+            it('한 세션에서 로그아웃해도 다른 세션의 토큰은 갱신할 수 있다', async () => {
+                await fix.httpClient.post('/users/logout').body({ refreshToken }).noContent()
+                await fix.httpClient
+                    .post('/users/refresh')
+                    .body({ refreshToken: otherRefreshToken })
+                    .ok()
+            })
         })
 
         it('로그아웃하면 리프레시 갱신은 거절하고 기존 액세스 토큰으로 본인 조회는 허용한다', async () => {
@@ -622,39 +608,15 @@ describe('UserAuthentication', () => {
     })
 
     describe('POST /users/me/logout-all', () => {
-        describe('두 로그인 세션이 존재하면', () => {
-            let sessionA: Awaited<ReturnType<typeof loginUser>>
-            let sessionB: Awaited<ReturnType<typeof loginUser>>
-            beforeEach(async () => {
-                sessionA = await loginUser(fix, credentials)
-                sessionB = await loginUser(fix, credentials)
-            })
-            it('전체 로그아웃하면 두 세션의 리프레시 토큰으로 갱신할 수 없다', async () => {
-                await fix.httpClient
-                    .post('/users/me/logout-all')
-                    .headers({ Authorization: `Bearer ${sessionA.accessToken}` })
-                    .noContent()
-
-                await fix.httpClient
-                    .post('/users/refresh')
-                    .body({ refreshToken: sessionA.refreshToken })
-                    .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
-
-                await fix.httpClient
-                    .post('/users/refresh')
-                    .body({ refreshToken: sessionB.refreshToken })
-                    .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
-            })
-            it('전체 로그아웃해도 기존 액세스 토큰으로 본인 정보를 조회할 수 있다', async () => {
-                await fix.httpClient
-                    .post('/users/me/logout-all')
-                    .headers({ Authorization: `Bearer ${sessionA.accessToken}` })
-                    .noContent()
-                await fix.httpClient
-                    .get('/users/me')
-                    .headers({ Authorization: `Bearer ${sessionA.accessToken}` })
-                    .ok({ schema: UserSchema, expected: sessionA.user })
-            })
+        let request: typeof fix.httpClient
+        beforeEach(async () => {
+            const { accessToken } = await loginUser(fix, credentials)
+            request = fix.httpClient
+                .post('/users/me/logout-all')
+                .headers({ Authorization: `Bearer ${accessToken}` })
+        })
+        it('유효한 액세스 토큰으로 요청해도 404를 반환한다', async () => {
+            await request.notFound()
         })
     })
 
@@ -849,9 +811,9 @@ describe('UserAuthentication', () => {
                 .headers({ Authorization: `Bearer ${session.accessToken}` })
                 .ok({ schema: UserSchema, expected: session.user })
         })
-        it('전체 로그아웃하면 진행 중인 발급을 401 예외로 거절하고 기존 액세스 토큰은 유지한다', async () => {
+        it('해당 세션에서 로그아웃하면 진행 중인 발급을 401 예외로 거절하고 기존 액세스 토큰은 유지한다', async () => {
             try {
-                await usersService.revokeAllForUser(session.user.id)
+                await usersService.revokeRefreshToken(session.refreshToken)
             } finally {
                 gate?.release()
             }

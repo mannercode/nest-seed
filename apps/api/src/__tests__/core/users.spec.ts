@@ -126,14 +126,20 @@ describe('UsersService', () => {
         })
 
         describe.each([
-            { condition: 'name이 문자열이 아니면', invalid: { name: false } },
-            { condition: 'password가 문자열이 아니면', invalid: { password: 1234 } }
-        ])('$condition', ({ invalid }) => {
+            { condition: 'name이 문자열이 아니면', body: { ...buildCreateUserDto(), name: false } },
+            {
+                condition: 'password가 문자열이 아니면',
+                body: { ...buildCreateUserDto(), password: 1234 }
+            },
+            {
+                condition: '이메일 형식이 잘못되면',
+                body: buildCreateUserDto({ email: 'not-an-email' })
+            },
+            { condition: '비밀번호가 없으면', body: omit(buildCreateUserDto(), ['password']) }
+        ])('$condition', ({ body }) => {
             let request: typeof fix.httpClient
             beforeEach(() => {
-                request = fix.httpClient
-                    .post('/users')
-                    .body({ ...buildCreateUserDto(), ...invalid })
+                request = fix.httpClient.post('/users').body(body)
             })
             it('가입을 요청하면 400을 반환한다', async () => {
                 await request.badRequest()
@@ -496,22 +502,6 @@ describe('UsersService', () => {
                 const promise = service.create(buildCreateUserDto())
                 await expect(promise).rejects.toBe(failure)
                 await expect(promise).rejects.not.toBeInstanceOf(ConflictException)
-            })
-        })
-    })
-
-    describe('revokeAllForUser', () => {
-        describe('사용자와 리프레시 세션이 없으면', () => {
-            let service: UsersService
-            let userId: string
-
-            beforeEach(() => {
-                service = fix.module.get(UsersService)
-                userId = nullObjectId
-            })
-
-            it('사용자의 전체 세션 폐기를 요청하면 오류 없이 완료한다', async () => {
-                await expect(service.revokeAllForUser(userId)).resolves.toBeUndefined()
             })
         })
     })

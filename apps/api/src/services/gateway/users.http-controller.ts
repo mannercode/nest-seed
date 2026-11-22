@@ -89,13 +89,6 @@ export class UsersHttpController {
         await this.usersService.revokeRefreshToken(body.refreshToken)
     }
 
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @Post('me/logout-all')
-    @UseGuards(UserAuthGuard)
-    async logoutAll(@Req() req: UserAuthRequest) {
-        await this.usersService.revokeAllForUser(req.user.sub)
-    }
-
     @Get('me')
     @UseGuards(UserAuthGuard)
     async getMe(@Req() req: UserAuthRequest) {

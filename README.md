@@ -46,7 +46,7 @@ pnpm run pretest
 pnpm --filter './apps/api' test users.spec --coverage.enabled=false
 ```
 
-실행 중인 개발 API에 [curl 문서](apps/api/api-docs/)를 실행하려면 `bash apps/api/api-docs/run.sh`를 사용한다. 뒤에 `registration-photo.spec` 같은 파일명을 붙이면 해당 문서만 실행한다.
+실행 중인 개발 API에 [curl 문서](apps/api/api-docs/)를 실행하려면 `bash apps/api/api-docs/run.sh`를 사용한다. 뒤에 `users.spec` 같은 파일명을 붙이면 해당 문서만 실행한다.
 
 `pnpm run race`는 시나리오를, `pnpm run e2e:list`는 브라우저 테스트를 나열한다. 브라우저 테스트를 선택해 실행하려면 `pnpm run e2e:ui`를 실행하고 VS Code 포트 패널에서 `e2e:9323`을 전달한다. [브라우저 E2E 실행 환경](tests/README.md#브라우저-e2e)
 
