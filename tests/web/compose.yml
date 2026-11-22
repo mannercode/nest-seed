@@ -1,28 +1,10 @@
-x-logging: &logging
-    logging: { driver: json-file, options: { max-size: '1m', max-file: '1' } }
-
 services:
     api:
-        <<: *logging
-        build:
-            context: ${WORKSPACE_ROOT:?}
-            dockerfile: apps/api/Dockerfile
-        env_file:
-            - path: ${WORKSPACE_ROOT:?}/.env.infra
-              format: raw
-            - path: ${WORKSPACE_ROOT:?}/.env.api
-              format: raw
-        environment:
-            NODE_ENV: production
-        healthcheck:
-            test: 'curl -fsS http://localhost:$${API_PORT:?}/health'
-            interval: 2s
-            timeout: 5s
-            retries: 60
-            start_period: 5s
+        extends:
+            file: ${WORKSPACE_ROOT:?}/apps/api/compose.yml
+            service: api
 
     web:
-        <<: *logging
         build:
             context: ${WORKSPACE_ROOT:?}
             dockerfile: apps/web/Dockerfile
@@ -34,6 +16,7 @@ services:
             PORT: ${WEB_PORT:?}
         depends_on:
             api: { condition: service_healthy }
+        logging: { driver: json-file, options: { max-size: '1m', max-file: '1' } }
         healthcheck:
             test:
                 [

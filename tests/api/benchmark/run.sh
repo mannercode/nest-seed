@@ -9,6 +9,8 @@ export COMPOSE_IGNORE_ORPHANS=True
 
 SERVER_URL="http://nginx"
 OUTPUT_DIR="_output/$(date '+%Y%m%d-%H%M%S')"
+HTML_REPORT="${OUTPUT_DIR}/report.html"
+JSON_SUMMARY="${OUTPUT_DIR}/summary.json"
 
 mkdir -p _output
 mkdir "${OUTPUT_DIR}"
@@ -73,7 +75,7 @@ wait_for_api
 k6_arguments=(
     run
     --env "SERVER_URL=${SERVER_URL}"
-    --env "SUMMARY_PATH=${OUTPUT_DIR}/summary.json"
+    --env "SUMMARY_PATH=${JSON_SUMMARY}"
 )
 [[ -n "${DURATION_MS:-}" ]] && k6_arguments+=(--env "DURATION_MS=${DURATION_MS}")
 [[ -n "${WARMUP_MS:-}" ]] && k6_arguments+=(--env "WARMUP_MS=${WARMUP_MS}")
@@ -82,8 +84,8 @@ k6_arguments+=(crud.js)
 K6_WEB_DASHBOARD=true \
     K6_WEB_DASHBOARD_PORT=-1 \
     K6_WEB_DASHBOARD_PERIOD=2s \
-    K6_WEB_DASHBOARD_EXPORT="${OUTPUT_DIR}/report.html" \
+    K6_WEB_DASHBOARD_EXPORT="${HTML_REPORT}" \
     run_k6 "${k6_arguments[@]}"
 
-echo "HTML: ${OUTPUT_DIR}/report.html"
-echo "JSON: ${OUTPUT_DIR}/summary.json"
+echo "HTML: ${PWD}/${HTML_REPORT}"
+echo "JSON: ${PWD}/${JSON_SUMMARY}"

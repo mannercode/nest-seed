@@ -4,5 +4,5 @@ services:
         init: true
         working_dir: ${WORKSPACE_ROOT:?}/tests/web
         volumes: ['${WORKSPACE_ROOT:?}:${WORKSPACE_ROOT:?}']
-        environment: [API_PORT, WEB_PORT, CI]
+        environment: [API_PORT, WEB_PORT]
         entrypoint: ['./node_modules/.bin/playwright', 'test']

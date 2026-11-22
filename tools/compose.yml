@@ -5,13 +5,11 @@ services:
         working_dir: /workspace
         volumes:
             - ${WORKSPACE_ROOT:?}:/workspace
-        # 현재 가이드를 검사한다. 할 일 문서는 제외한다.
         command:
             - --offline
             - --include-fragments
             - '*.md'
             - '.devcontainer/README.md'
-            - 'apps/README.md'
             - 'apps/api/README.md'
             - 'infra/README.md'
             - 'libs/README.md'
