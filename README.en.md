@@ -34,13 +34,16 @@ Run commands from the repository root inside the Dev Container. Each includes it
 | `pnpm run dev`             | Run the API and web in watch mode                                          |
 | `pnpm run test`            | Run workspace unit and integration tests                                   |
 | `pnpm run lint`            | Check types, code, formatting, shell scripts, and documentation links      |
+| `pnpm run format`          | Format the repository with Prettier                                        |
 | `pnpm run atoz`            | Reset infrastructure, then run builds, tests, browser checks, and API docs |
 | `pnpm run api-docs`        | Verify bash and curl documentation against four API replicas               |
 | `pnpm run e2e`             | Verify the production build of web and its API connection                  |
 | `pnpm run race <scenario>` | Verify HTTP/SSE contention and replica termination                         |
 | `pnpm run benchmark`       | Compare API performance under the same conditions                          |
 
-Race and benchmark runs are not part of the default test or AtoZ commands. Concurrent runs of the same API Vitest command are unsupported. The [tests guide](tests/README.md) explains the guarantees and limits of each suite.
+`pnpm run lint` uses the root `lint:code` script to run Oxlint once across the repository's JavaScript and TypeScript files. Formatting checks cover files directly under the repository root and the files selected by each workspace's `lint` script.
+
+`pnpm run atoz` verifies Restate recovery, the web production build, browser E2E, and the API docs in addition to lint and the default tests. Run race and benchmark scenarios separately. Concurrent runs of the same API Vitest command are unsupported. The [tests guide](tests/README.md) explains the guarantees and limits of each suite.
 
 ### Selected runs and external access
 
@@ -53,7 +56,7 @@ pnpm --filter './apps/api' test users.spec --coverage.enabled=false
 
 Use `bash apps/api/api-docs/run.sh` to run the [curl documentation](apps/api/api-docs/) against a running development API. Append a filename such as `registration-photo.spec` to run one document.
 
-`pnpm run race` lists scenarios, and `pnpm run e2e:list` lists browser tests. Use `pnpm run e2e:ui` to select and run browser tests interactively. See the [development environment guide](.devcontainer/README.md#3-시작-순서와-데이터-초기화) for Chromium installation and version changes.
+`pnpm run race` lists scenarios, and `pnpm run e2e:list` lists browser tests. To select and run a browser test interactively, run `pnpm run e2e:ui` and forward `e2e:9323` in the VS Code Ports panel. [Browser E2E environment](tests/README.md#브라우저-e2e)
 
 To access web externally, start the development server and run `pnpm exec tunnel` in another terminal. cloudflared provides an HTTPS Quick Tunnel URL. See the [tunnel requirements](tools/README.md#2-dev-tools--명시적으로-실행하는-개발-도구).
 

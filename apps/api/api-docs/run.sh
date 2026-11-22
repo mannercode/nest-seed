@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck source-path=SCRIPTDIR
 set -Eeuo pipefail
 trap 'echo "[ERR] ${BASH_SOURCE[0]}:${LINENO} (종료 코드: $?)" >&2' ERR
 cd "$(dirname "$0")"
@@ -17,8 +18,6 @@ OUTPUT_ROOT="$(pwd)/_output"
 LOG_DIR="${OUTPUT_ROOT}/logs/${RUN_ID}"
 DOC_DIR="${OUTPUT_ROOT}/docs"
 SUMMARY_MD="${DOC_DIR}/summary.md"
-
-CURRENT_GROUP=''
 
 LOG_LINE() {
 	echo "$*" >>"${LOG_FILE}"
@@ -243,7 +242,6 @@ fi
 
 PASSED_TESTS=0
 FAILED_TESTS=0
-LOG_FILE=''
 
 init_summary
 
@@ -253,6 +251,7 @@ for spepath in "${specs[@]}"; do
 	mkdir -p "$(dirname "${LOG_FILE}")"
 	: >"${LOG_FILE}"
 
+	. ./common.fixture
 	pushd "$(dirname "${spepath}")" >/dev/null
 	# shellcheck disable=SC1090 # spec 파일을 목록에서 받아 동적으로 source한다
 	. "./$(basename "${spepath}")"

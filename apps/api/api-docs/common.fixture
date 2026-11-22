@@ -4,10 +4,13 @@ random_email() {
 	printf "test.%s.%s@example.com\n" "$(date +%s%N)" "${RANDOM}"
 }
 
+RESPONSE_BODY() {
+	jq -r --arg path "$1" 'getpath($path | split("."))' <<<"${BODY}"
+}
+
 USER_NAME="사용자 이름"
 USER_BIRTHDATE="1990-01-01"
 USER_PASSWORD="Example password 1!"
-CURRENT_AUTH_TOKEN=""
 
 create_user() {
 	USER_EMAIL=$(random_email)
@@ -27,8 +30,8 @@ login_user() {
 		-H 'Content-Type: application/json' \
 		-d '{ "email": "'"${USER_EMAIL}"'", "password": "'"${USER_PASSWORD}"'" }'
 
-	USER_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
-	USER_REFRESH_TOKEN=$(echo "${BODY}" | jq -r '.refreshToken')
+	USER_ACCESS_TOKEN=$(RESPONSE_BODY accessToken)
+	USER_REFRESH_TOKEN=$(RESPONSE_BODY refreshToken)
 	CURRENT_AUTH_TOKEN="${USER_ACCESS_TOKEN}"
 }
 
@@ -38,7 +41,7 @@ create_and_login_user() {
 }
 
 as_guest() {
-	CURRENT_AUTH_TOKEN=""
+	unset CURRENT_AUTH_TOKEN
 }
 
 upload_presigned_post() {
@@ -61,3 +64,5 @@ upload_presigned_post() {
 		exit 2
 	fi
 }
+
+as_guest

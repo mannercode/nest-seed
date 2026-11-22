@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 function requiredEnvironment(name: string): string {
     const value = process.env[name]
-    if (!value) throw new Error(`${name} must be set by the Dev Container`)
+    if (!value) throw new Error(`${name} is required for browser tests`)
     return value
 }
 

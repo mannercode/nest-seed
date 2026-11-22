@@ -1,4 +1,5 @@
 {
+    "files.associations": { "*.spec": "shellscript" },
     "files.exclude": { "**/node_modules": true },
     "files.watcherExclude": { "**/_output/**": true },
     "search.exclude": { "**/_output/**": true },

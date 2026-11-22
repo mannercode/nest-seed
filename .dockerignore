@@ -29,8 +29,6 @@
 !/apps/web/tsconfig.json
 !/apps/web/src/
 
-!/tests/web/package.json
-
 !/tools/dev-tools/package.json
 !/tools/dev-tools/free-port.js
 !/tools/dev-tools/tunnel.sh

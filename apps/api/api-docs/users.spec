@@ -1,6 +1,3 @@
-#!/bin/bash
-. ./common.fixture
-
 USER_EMAIL=$(random_email)
 
 TEST "사용자를 생성한다" \
@@ -52,8 +49,9 @@ TEST "이메일과 비밀번호로 로그인한다" \
 	-H 'Content-Type: application/json' \
 	-d '{ "email": "'${USER_EMAIL}'", "password": "Example password 1!" }'
 
-USER_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
-USER_REFRESH_TOKEN=$(echo "${BODY}" | jq -r '.refreshToken')
+USER_ACCESS_TOKEN=$(RESPONSE_BODY accessToken)
+
+USER_REFRESH_TOKEN=$(RESPONSE_BODY refreshToken)
 
 TEST "잘못된 비밀번호로 로그인하면 401을 반환한다" \
 	401 POST /users/login \
@@ -70,8 +68,9 @@ TEST "리프레시 토큰으로 액세스 토큰을 재발급한다" \
 	-H 'Content-Type: application/json' \
 	-d '{ "refreshToken": "'${USER_REFRESH_TOKEN}'" }'
 
-USER_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
-USER_REFRESH_TOKEN=$(echo "${BODY}" | jq -r '.refreshToken')
+USER_ACCESS_TOKEN=$(RESPONSE_BODY accessToken)
+
+USER_REFRESH_TOKEN=$(RESPONSE_BODY refreshToken)
 
 TEST "형식이 잘못된 리프레시 토큰으로 갱신하면 401을 반환한다" \
 	401 POST /users/refresh \
@@ -114,8 +113,10 @@ TEST "로그아웃한 리프레시 토큰으로 재발급하면 401을 반환한
 SETUP POST /users/login \
 	-H 'Content-Type: application/json' \
 	-d '{ "email": "'${USER_EMAIL}'", "password": "Example password 1!" }'
-USER_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
-USER_REFRESH_TOKEN=$(echo "${BODY}" | jq -r '.refreshToken')
+
+USER_ACCESS_TOKEN=$(RESPONSE_BODY accessToken)
+
+USER_REFRESH_TOKEN=$(RESPONSE_BODY refreshToken)
 
 TEST "사용자가 자신의 모든 세션을 로그아웃 처리한다" \
 	204 POST /users/me/logout-all \
@@ -132,6 +133,7 @@ TEST "전체 로그아웃 뒤 기존 액세스 토큰으로 본인 정보를 조
 
 # 별도 계정으로 본인 삭제를 검증한다.
 SELF_EMAIL=$(random_email)
+
 TEST "본인 삭제 데모용 사용자를 생성한다" \
 	201 POST /users \
 	-H 'Content-Type: application/json' \
@@ -145,7 +147,8 @@ TEST "본인 삭제 데모용 사용자를 생성한다" \
 SETUP POST /users/login \
 	-H 'Content-Type: application/json' \
 	-d '{ "email": "'${SELF_EMAIL}'", "password": "Example password 1!" }'
-SELF_ACCESS_TOKEN=$(echo "${BODY}" | jq -r '.accessToken')
+
+SELF_ACCESS_TOKEN=$(RESPONSE_BODY accessToken)
 
 TEST "사용자가 본인 계정을 삭제한다" \
 	204 DELETE /users/me \

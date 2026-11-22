@@ -1,6 +1,6 @@
 {
     "name": "${containerWorkspaceFolderBasename}",
-    "build": { "dockerfile": "Dockerfile", "context": ".." },
+    "build": { "dockerfile": "Dockerfile" },
     "features": {
         "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
             "moby": false,
@@ -36,7 +36,7 @@
         "github": "mkdir -p ${localEnv:HOME}/.config/gh"
     },
     "postCreateCommand": "for entry in config.toml auth.json skills; do ln -sfn \"/home/node/.codex-shared/$entry\" \"/home/node/.codex/$entry\" || exit; done",
-    "postStartCommand": "pnpm install --frozen-lockfile && pnpm --filter './tests/web' exec playwright install chromium && bash infra/reset.sh",
+    "postStartCommand": "pnpm install --frozen-lockfile && bash infra/reset.sh",
     "waitFor": "postStartCommand",
     "customizations": {
         "vscode": {
