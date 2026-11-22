@@ -9,7 +9,7 @@
         "build": "next build",
         "prestart": "free-port ${WEB_PORT:?}",
         "start": "next start -p ${WEB_PORT:?}",
-        "lint": "tsc --noEmit && prettier --check src/ next.config.mjs postcss.config.mjs"
+        "lint": "tsc --noEmit"
     },
     "dependencies": {
         "next": "16.4.6",

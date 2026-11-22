@@ -33,7 +33,7 @@ Dev Container의 저장소 루트에서 실행한다. 각 명령은 라이브러
 | `pnpm run race <scenario>` | 다중 복제본의 HTTP/SSE 경쟁·복제본 종료 검증                  |
 | `pnpm run benchmark`       | 같은 조건의 API 성능 비교                                     |
 
-`pnpm run lint`는 루트의 `lint:code`에서 Oxlint를 한 번 실행해 저장소의 JavaScript와 TypeScript를 검사한다. 서식 검사는 루트 바로 아래 파일과 각 workspace의 `lint`가 지정한 파일을 대상으로 한다.
+`pnpm run lint`는 각 TypeScript 패키지의 타입을 검사한다. Oxlint와 Prettier는 저장소 루트에서 각각 한 번 실행한다. 서식만 검사하려면 `pnpm run lint:format`을 실행한다.
 
 `pnpm run atoz`는 `lint`와 기본 테스트에 더해 Restate 복구, web 프로덕션 빌드, 브라우저 E2E, API 문서를 검증한다. race와 benchmark는 별도로 실행한다. 같은 API Vitest 명령을 동시에 여러 번 실행하는 것은 지원하지 않는다. 검사별 보장과 한계는 [테스트 가이드](tests/README.md)에 있다.
 

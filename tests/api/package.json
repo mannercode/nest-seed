@@ -5,7 +5,6 @@
     "scripts": {
         "api-docs": "bash runner.sh",
         "race": "bash race/runner.sh",
-        "benchmark": "bash benchmark/run.sh",
-        "lint": "prettier --check 'race/*.js' 'benchmark/*.js' package.json"
+        "benchmark": "bash benchmark/run.sh"
     }
 }

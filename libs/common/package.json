@@ -12,7 +12,7 @@
         "build": "tsc -p tsconfig.build.json",
         "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
         "test": "vitest run --coverage",
-        "lint": "tsc --noEmit -p tsconfig.build.json && tsc --noEmit -p tsconfig.test.json && prettier --check src/ vitest.config.mjs vitest.global.cjs vitest.teardown.cjs"
+        "lint": "tsc --noEmit -p tsconfig.build.json && tsc --noEmit -p tsconfig.test.json"
     },
     "dependencies": {
         "@elastic/ecs-winston-format": "1.5.3",

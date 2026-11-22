@@ -41,7 +41,7 @@ Run commands from the repository root inside the Dev Container. Each includes it
 | `pnpm run race <scenario>` | Verify HTTP/SSE contention and replica termination                         |
 | `pnpm run benchmark`       | Compare API performance under the same conditions                          |
 
-`pnpm run lint` uses the root `lint:code` script to run Oxlint once across the repository's JavaScript and TypeScript files. Formatting checks cover files directly under the repository root and the files selected by each workspace's `lint` script.
+`pnpm run lint` checks types in each TypeScript package and runs Oxlint and Prettier once each from the repository root. To check formatting alone, run `pnpm run lint:format`.
 
 `pnpm run atoz` verifies Restate recovery, the web production build, browser E2E, and the API docs in addition to lint and the default tests. Run race and benchmark scenarios separately. Concurrent runs of the same API Vitest command are unsupported. The [tests guide](tests/README.md) explains the guarantees and limits of each suite.
 
