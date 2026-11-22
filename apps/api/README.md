@@ -92,4 +92,4 @@ workflow 테스트는 `enableRestate: true`로 endpoint를 등록하고 작업 �
 
 `$(RESPONSE_BODY jobId)`는 직전 JSON 응답에서 `jobId` 값을 읽는다. 중첩된 필드는 `$(RESPONSE_BODY result.text)`처럼 점으로 연결한다.
 
-`run.sh`는 spec마다 `common.fixture`를 불러와 로그인 상태를 초기화한다. `login_user`는 이후 요청에 인증 헤더를 넣고 `as_guest`는 해제한다. 명시한 Authorization이 우선한다. 직접 실행은 api-docs의 `.env`, 검증 스택은 runner의 `SERVER_URL`을 사용한다. 명령과 응답 로그 위치는 [루트 실행 안내](../../README.md#실행과-검증)에 있다.
+`run.sh`는 spec마다 `common.fixture`를 불러와 로그인 상태를 초기화한다. `login_user`는 이후 요청에 인증 헤더를 넣고 `as_guest`는 해제한다. 명시한 Authorization이 우선한다. 직접 실행하면 `api-docs/.env`의 서버 주소를 쓰고, `run-api-docs.sh`는 검증용 NGINX 주소를 전달한다. 명령과 응답 로그 위치는 [루트 실행 안내](../../README.md#실행과-검증)에 있다.

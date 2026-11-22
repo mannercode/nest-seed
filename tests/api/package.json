@@ -3,7 +3,7 @@
     "version": "0.0.1",
     "private": true,
     "scripts": {
-        "api-docs": "bash runner.sh",
+        "api-docs": "bash run-api-docs.sh",
         "race": "bash race/runner.sh",
         "benchmark": "bash benchmark/run.sh"
     }
