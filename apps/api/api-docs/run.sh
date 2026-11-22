@@ -3,7 +3,7 @@
 set -Eeuo pipefail
 trap 'echo "[ERR] ${BASH_SOURCE[0]}:${LINENO} (종료 코드: $?)" >&2' ERR
 cd "$(dirname "$0")"
-. ./.env
+. ./run.cfg
 
 RESET='\033[0m'
 BOLD='\033[1m'

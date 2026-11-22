@@ -4,12 +4,12 @@
 
 ## 1. 환경 변수 파일 변경 후 Dev Container 재생성
 
-| 파일                                                | 역할·주입 시점                                                     |
-| --------------------------------------------------- | ------------------------------------------------------------------ |
-| [.env.infra](../.env.infra)                         | 인프라 접속·이미지·포트. Dev Container 생성 시 주입                |
-| [.env.api](../.env.api)                             | 인증·HTTP·앱 설정. Dev Container 생성 시 주입                      |
-| [apps/web/.env](../apps/web/.env)                   | Next.js가 호출할 API 주소. API 포트를 바꾸면 `API_BASE_URL`도 변경 |
-| [apps/api/api-docs/.env](../apps/api/api-docs/.env) | curl 문서 실행기가 읽는 셸 설정                                    |
+| 파일                                                      | 역할·주입 시점                                                     |
+| --------------------------------------------------------- | ------------------------------------------------------------------ |
+| [.env.infra](../.env.infra)                               | 인프라 접속·이미지·포트. Dev Container 생성 시 주입                |
+| [.env.api](../.env.api)                                   | 인증·HTTP·앱 설정. Dev Container 생성 시 주입                      |
+| [apps/web/.env](../apps/web/.env)                         | Next.js가 호출할 API 주소. API 포트를 바꾸면 `API_BASE_URL`도 변경 |
+| [apps/api/api-docs/run.cfg](../apps/api/api-docs/run.cfg) | curl 문서 실행기가 읽는 API 주소                                   |
 
 루트의 두 파일을 바꾸면 **VS Code에서 `Rebuild Container`를 실행한다.** Dev Container 안에서 시작한 앱과 셸 명령은 컨테이너를 만들 때 받은 값을 상속한다. 검증용 Compose는 API 컨테이너를 만들 때 같은 파일을 `env_file`의 `format: raw`로 읽는다.
 
