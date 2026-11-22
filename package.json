@@ -29,7 +29,7 @@
         "race": "pnpm --dir tests/api run race",
         "benchmark": "pnpm --dir tests/api run benchmark",
         "preatoz": "pnpm install --frozen-lockfile && bash infra/reset.sh",
-        "atoz": "pnpm run lint && pnpm --dir infra/tests run test:restate-recovery && pnpm run test:workspaces && pnpm --dir apps/web run build && CI=1 pnpm run e2e && pnpm run api-docs",
+        "atoz": "pnpm run lint && pnpm --dir infra/tests run test:restate-recovery && pnpm run test:workspaces && pnpm --dir apps/web run build && pnpm run e2e && pnpm run api-docs",
         "predev": "pnpm run build:libs",
         "dev": "concurrently 'pnpm:dev:*'",
         "dev:common": "pnpm --dir libs/common run dev",

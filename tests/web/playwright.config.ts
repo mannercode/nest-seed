@@ -12,7 +12,7 @@ export const WEB_BASE_URL = `http://web.localhost:${requiredEnvironment('WEB_POR
 export default defineConfig({
     testDir: './e2e',
     outputDir: './_output/test-results',
-    forbidOnly: !!process.env.CI,
+    forbidOnly: true,
     workers: 1,
     reporter: [['list'], ['html', { outputFolder: './_output/report', open: 'never' }]],
     use: {
