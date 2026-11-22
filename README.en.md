@@ -54,7 +54,7 @@ pnpm run pretest
 pnpm --filter './apps/api' test users.spec --coverage.enabled=false
 ```
 
-Use `bash apps/api/api-docs/run.sh` to run the [curl documentation](apps/api/api-docs/) against a running development API. Append a filename such as `registration-photo.spec` to run one document.
+Use `bash apps/api/api-docs/run.sh` to run the [curl documentation](apps/api/api-docs/) against a running development API. Append a filename such as `users.spec` to run one document.
 
 `pnpm run race` lists scenarios, and `pnpm run e2e:list` lists browser tests. To select and run a browser test interactively, run `pnpm run e2e:ui` and forward `e2e:9323` in the VS Code Ports panel. [Browser E2E environment](tests/README.md#브라우저-e2e)
 

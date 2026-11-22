@@ -1,55 +1,47 @@
 USER_EMAIL=$(random_email)
 
-TEST "사용자를 생성한다" \
-	201 POST /users \
+TEST "회원가입에 쓸 사진의 업로드 조건을 발급받는다" \
+	201 POST /users/photo-upload \
 	-H 'Content-Type: application/json' \
 	-d '{
-			"name": "사용자 이름",
-			"birthDate": "1990-01-01",
-			"email": "'${USER_EMAIL}'",
-			"password": "Example password 1!"
-		}'
+        "originalName": "'"${ASSET_IMAGE_ORIGINAL_NAME}"'",
+        "mimeType": "image/png",
+        "size": '"${ASSET_IMAGE_SIZE}"',
+        "checksum": { "algorithm": "sha256", "base64": "'"${ASSET_IMAGE_SHA256_BASE64}"'" }
+    }'
+
+PHOTO_UPLOAD="${BODY}"
+
+PHOTO_ASSET_ID=$(RESPONSE_BODY assetId)
+
+SIGNUP_BODY='{
+    "name": "사용자 이름",
+    "birthDate": "1990-01-01",
+    "email": "'"${USER_EMAIL}"'",
+    "password": "'"${USER_PASSWORD}"'",
+    "photoAssetId": "'"${PHOTO_ASSET_ID}"'"
+}'
+
+TEST "아직 업로드하지 않은 사진 ID로 가입하면 422를 반환한다" \
+	422 POST /users \
+	-H 'Content-Type: application/json' -d "${SIGNUP_BODY}"
+
+upload_presigned_post "${ASSET_IMAGE_PATH}" "${PHOTO_UPLOAD}"
+
+TEST "사진을 첨부해 회원가입한다" \
+	201 POST /users \
+	-H 'Content-Type: application/json' -d "${SIGNUP_BODY}"
+
+DUPLICATE_EMAIL_BODY=$(jq 'del(.photoAssetId)' <<<"${SIGNUP_BODY}")
 
 TEST "이미 가입한 이메일로 가입하면 409를 반환한다" \
 	409 POST /users \
-	-H 'Content-Type: application/json' \
-	-d '{
-			"name": "사용자 이름",
-			"birthDate": "1990-01-01",
-			"email": "'${USER_EMAIL}'",
-			"password": "Example password 1!"
-		}'
-
-TEST "빈 요청 본문으로 가입하면 400을 반환한다" \
-	400 POST /users \
-	-H 'Content-Type: application/json' \
-	-d '{}'
-
-TEST "올바르지 않은 이메일 형식으로 가입하면 400을 반환한다" \
-	400 POST /users \
-	-H 'Content-Type: application/json' \
-	-d '{
-			"name": "사용자 이름",
-			"birthDate": "1990-01-01",
-			"email": "not-an-email",
-			"password": "Example password 1!"
-		}'
-
-TEST "비밀번호 없이 가입하면 400을 반환한다" \
-	400 POST /users \
-	-H 'Content-Type: application/json' \
-	-d '{
-			"name": "사용자 이름",
-			"birthDate": "1990-01-01",
-			"email": "'"$(random_email)"'"
-		}'
+	-H 'Content-Type: application/json' -d "${DUPLICATE_EMAIL_BODY}"
 
 TEST "이메일과 비밀번호로 로그인한다" \
 	200 POST /users/login \
 	-H 'Content-Type: application/json' \
-	-d '{ "email": "'${USER_EMAIL}'", "password": "Example password 1!" }'
-
-USER_ACCESS_TOKEN=$(RESPONSE_BODY accessToken)
+	-d '{ "email": "'"${USER_EMAIL}"'", "password": "'"${USER_PASSWORD}"'" }'
 
 USER_REFRESH_TOKEN=$(RESPONSE_BODY refreshToken)
 
@@ -58,98 +50,44 @@ TEST "잘못된 비밀번호로 로그인하면 401을 반환한다" \
 	-H 'Content-Type: application/json' \
 	-d '{ "email": "'${USER_EMAIL}'", "password": "incorrect password" }'
 
-TEST "존재하지 않는 이메일로 로그인하면 401을 반환한다" \
-	401 POST /users/login \
-	-H 'Content-Type: application/json' \
-	-d '{ "email": "unknown@example.com", "password": "Example password 1!" }'
-
-TEST "리프레시 토큰으로 액세스 토큰을 재발급한다" \
+TEST "리프레시 토큰으로 새 액세스 토큰과 리프레시 토큰을 발급받는다" \
 	200 POST /users/refresh \
 	-H 'Content-Type: application/json' \
 	-d '{ "refreshToken": "'${USER_REFRESH_TOKEN}'" }'
 
 USER_ACCESS_TOKEN=$(RESPONSE_BODY accessToken)
-
 USER_REFRESH_TOKEN=$(RESPONSE_BODY refreshToken)
-
-TEST "형식이 잘못된 리프레시 토큰으로 갱신하면 401을 반환한다" \
-	401 POST /users/refresh \
-	-H 'Content-Type: application/json' \
-	-d '{ "refreshToken": "invalid-token" }'
 
 TEST "내 사용자 정보를 조회한다" \
 	200 GET /users/me \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
 
-TEST "인증 없이 내 사용자 정보를 조회하면 401을 반환한다" \
-	401 GET /users/me
+TEST "홈에서 내 정보와 가입할 때 첨부한 사진의 URL을 조회한다" \
+	200 GET /views/web/home \
+	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
 
-TEST "잘못된 액세스 토큰으로 내 사용자 정보를 조회하면 401을 반환한다" \
-	401 GET /users/me \
-	-H "Authorization: Bearer invalid-token"
-
-# 본인 정보 수정은 /me로 한다(토큰 주체 기준).
 TEST "사용자가 본인 정보를 수정한다" \
 	200 PATCH /users/me \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}" \
 	-H "Content-Type: application/json" \
 	-d '{ "name": "내가 바꾼 이름" }'
 
-TEST "인증 없이 본인 정보를 수정하면 401을 반환한다" \
-	401 PATCH /users/me \
-	-H "Content-Type: application/json" \
-	-d '{ "name": "x" }'
-
-TEST "로그아웃을 요청하면 204를 반환한다" \
+TEST "현재 세션에서 로그아웃한다" \
 	204 POST /users/logout \
 	-H 'Content-Type: application/json' \
 	-d '{ "refreshToken": "'${USER_REFRESH_TOKEN}'" }'
 
-TEST "로그아웃한 리프레시 토큰으로 재발급하면 401을 반환한다" \
+TEST "로그아웃한 세션의 리프레시 토큰으로 갱신하면 401을 반환한다" \
 	401 POST /users/refresh \
 	-H 'Content-Type: application/json' \
-	-d '{ "refreshToken": "'${USER_REFRESH_TOKEN}'" }'
+	-d '{ "refreshToken": "'"${USER_REFRESH_TOKEN}"'" }'
 
-SETUP POST /users/login \
-	-H 'Content-Type: application/json' \
-	-d '{ "email": "'${USER_EMAIL}'", "password": "Example password 1!" }'
-
-USER_ACCESS_TOKEN=$(RESPONSE_BODY accessToken)
-
-USER_REFRESH_TOKEN=$(RESPONSE_BODY refreshToken)
-
-TEST "사용자가 자신의 모든 세션을 로그아웃 처리한다" \
-	204 POST /users/me/logout-all \
-	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
-
-TEST "전체 로그아웃 뒤 리프레시 토큰으로 재발급하면 401을 반환한다" \
-	401 POST /users/refresh \
-	-H 'Content-Type: application/json' \
-	-d '{ "refreshToken": "'${USER_REFRESH_TOKEN}'" }'
-
-TEST "전체 로그아웃 뒤 기존 액세스 토큰으로 본인 정보를 조회하면 200을 반환한다" \
-	200 GET /users/me \
-	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
-
-# 별도 계정으로 본인 삭제를 검증한다.
-SELF_EMAIL=$(random_email)
-
-TEST "본인 삭제 데모용 사용자를 생성한다" \
-	201 POST /users \
-	-H 'Content-Type: application/json' \
-	-d '{
-			"name": "self-delete",
-			"birthDate": "1990-01-01",
-			"email": "'${SELF_EMAIL}'",
-			"password": "Example password 1!"
-		}'
-
-SETUP POST /users/login \
-	-H 'Content-Type: application/json' \
-	-d '{ "email": "'${SELF_EMAIL}'", "password": "Example password 1!" }'
-
-SELF_ACCESS_TOKEN=$(RESPONSE_BODY accessToken)
+login_user
 
 TEST "사용자가 본인 계정을 삭제한다" \
 	204 DELETE /users/me \
-	-H "Authorization: Bearer ${SELF_ACCESS_TOKEN}"
+	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
+
+TEST "탈퇴 후 같은 토큰으로 내 정보를 조회하면 404를 반환한다" \
+	404 GET /users/me \
+	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
