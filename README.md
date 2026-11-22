@@ -36,7 +36,7 @@ API 통합 테스트 한 파일만 실행하려면 라이브러리를 빌드한 
 
 ```bash
 pnpm run pretest
-pnpm --filter './apps/api' test users.spec --coverage.enabled=false
+pnpm --dir apps/api exec vitest run users.spec
 ```
 
 ## 구조와 선택

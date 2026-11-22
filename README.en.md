@@ -42,7 +42,7 @@ To run a single API integration test file, build the libraries and pass the file
 
 ```bash
 pnpm run pretest
-pnpm --filter './apps/api' test users.spec --coverage.enabled=false
+pnpm --dir apps/api exec vitest run users.spec
 ```
 
 ## Structure and choices

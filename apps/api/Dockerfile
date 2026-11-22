@@ -28,7 +28,7 @@ RUN pnpm --filter './apps/api' --fail-if-no-match run build
 RUN --mount=type=cache,id=nest-seed-pnpm,target=/pnpm/store,sharing=locked \
     HUSKY=0 pnpm --filter './apps/api' --fail-if-no-match deploy --prod --legacy --store-dir /pnpm/store /workspace/deploy/api
 
-FROM base AS runtime
+FROM base AS api
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
@@ -42,3 +42,13 @@ COPY --from=build /workspace/apps/api/_output/dist/ _output/dist/
 USER node
 
 CMD ["node", "--enable-source-maps", "_output/dist/index.js"]
+
+FROM api AS api-docs
+
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends jq \
+    && rm -rf /var/lib/apt/lists/*
+USER node
+
+FROM api AS runtime

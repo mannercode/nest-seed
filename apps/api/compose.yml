@@ -18,6 +18,29 @@ services:
             retries: 5
             start_period: 10s
 
+    test-api-docs:
+        extends: api
+        profiles: [test]
+        build:
+            target: api-docs
+        init: true
+        volumes:
+            - ./api-docs:/api-docs
+            - ./scripts/register-restate.cjs:/register-restate.cjs:ro
+        environment:
+            PROJECT_ID: ${PROJECT_ID:?}-docs
+            SERVER_URL: http://localhost:${API_PORT:?}
+            LOG_CONSOLE_LEVEL: error
+        entrypoint:
+            - sh
+            - -ec
+            - |
+                npm start &
+                node /register-restate.cjs test-api-docs
+                curl -fsS --retry 10 --retry-delay 1 --retry-connrefused "$$SERVER_URL/health" >/dev/null
+                exec bash /api-docs/run.sh "$$@"
+            - sh
+
 networks:
     default:
         name: ${DEVCONTAINER_NETWORK:?}
