@@ -104,7 +104,7 @@ export default defineConfig({
             rules: { 'allowed-dependencies/dependencies': ['error', apiDependencyOptions] }
         },
         {
-            files: ['apps/api/src/**/__tests__/**/*.ts'],
+            files: ['apps/api/src/**/__tests__/**/*.ts', 'apps/api/vitest.setup.ts'],
             // 루트에서 켜면 correctness 분류의 다른 Vitest 규칙까지 활성화된다.
             plugins: ['typescript', 'unicorn', 'oxc', 'vitest'],
             rules: {

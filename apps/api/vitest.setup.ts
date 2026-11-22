@@ -7,7 +7,7 @@ import { createMongoDriverOptions } from '@mannercode/common'
 import {
     attachSharedTestMongoConnection,
     clearSharedTestMongoConnection
-} from './helpers/shared-mongo-connection.js'
+} from './src/__tests__/helpers/shared-mongo-connection.js'
 
 const resources = createRequire(import.meta.url)('./vitest.resources.cjs')
 

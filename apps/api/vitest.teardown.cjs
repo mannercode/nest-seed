@@ -4,7 +4,7 @@ const { jetstreamManager } = require('@nats-io/jetstream')
 const { connect: connectNats } = require('@nats-io/transport-node')
 const { MongoClient } = require('mongodb')
 const Redis = require('ioredis')
-const { cleanup } = require('./src/__tests__/vitest.resources.cjs')
+const { cleanup } = require('./vitest.resources.cjs')
 
 module.exports = async function globalTeardown() {
     const teardown = createGlobalTeardown({

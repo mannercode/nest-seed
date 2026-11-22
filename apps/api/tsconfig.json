@@ -14,5 +14,5 @@
             "#view": ["./src/services/view/index.ts"]
         }
     },
-    "include": ["src/**/*"]
+    "include": ["src/**/*", "vitest.setup.ts"]
 }
