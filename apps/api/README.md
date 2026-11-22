@@ -1,6 +1,6 @@
 # API — 서비스 구성과 작성 규칙
 
-API의 동작과 보장은 [앱 가이드](../README.md)에, 실행 명령은 [루트 README](../../README.md#실행과-검증)에 있다.
+API의 기능을 추가할 때는 아래 모듈 구성을 따른다. 실행 명령은 [루트 README](../../README.md#실행과-검증)에 있다.
 
 ## 서비스 구성
 
@@ -30,7 +30,7 @@ flowchart TB
 
 중간 계층을 모두 거칠 필요는 없다. 본인 조회·수정은 Gateway → Core로 충분하다. UserRegistration은 Users와 Assets를 조합하므로 Application에, EventDemo·JobDemo는 다른 도메인의 조합 없이 기술 연동을 담당하므로 Infrastructure에 둔다.
 
-View는 화면 응답과 항목의 순서·개수를 결정하는 읽기 전용 계층이다. Users는 사진 ID만 보관하고 WebHomeView가 필요한 URL을 조회하므로, URL이 필요 없는 호출에 자산 조회가 붙지 않는다. 상태 변경·transaction은 View에 두지 않으며 Application·Core가 View를 참조하거나 화면 때문에 도메인 API의 목적을 바꾸지 않는다.
+View는 화면에 보낼 데이터를 읽어 조합하고 항목의 순서·개수를 정한다. 예를 들어 Users는 사진 ID를 보관하고 WebHomeView가 홈 화면에 필요한 사진 URL을 조회한다. 상태를 바꾸는 작업은 Application·Core가 맡는다.
 
 `internal/`·`worker/`는 모듈 내부 폴더다. 루트의 Oxlint가 계층과 import 방향을 검사하고, 리뷰에서 View의 읽기 전용 동작을 확인한다.
 
@@ -45,8 +45,6 @@ SDK 호출과 peer dependency는 [공유 패키지](../../libs/README.md#2-sdk-�
 ## 데이터와 트랜잭션
 
 모듈은 자기 collection만 읽고 쓰며 다른 모듈은 공개 서비스로 호출한다. Repository는 쿼리·인덱스와 DB 오류 변환을, common은 연결·드라이버 실행을 맡는다. 서비스는 MongoDB 오류 번호나 ClientSession을 다루지 않는다.
-
-MongoDB는 문서 모델과 공식 driver 사용을 보여 주기 위한 선택이다. 다른 DB에서도 모듈 구조는 유지할 수 있지만 쿼리·동시성 보장까지 자동으로 바뀌지는 않는다. unique index는 중복 가입을, 조건부 갱신과 transaction은 사진 소유권 경쟁을 제어한다. 다중 문서 transaction을 사용하므로 개발 환경도 Replica Set이다.
 
 여러 모듈을 묶을 transaction은 Application이 결정한다. `TransactionContext`는 콜백 안에서만 유효하고 common이 세션을 생성·종료한다. 콜백은 재실행될 수 있으므로 S3 쓰기나 메시지 발행을 넣지 않는다. ID 변환·쓰기 확인·페이지 조회의 일관성은 [저장소 계약](../../libs/README.md#3-저장소-id와-트랜잭션)을 따른다.
 
@@ -66,17 +64,17 @@ Core는 엔티티 집합을 나타내는 `UsersService`, Application은 유스�
 | `get` / `getMany`       | 요청한 대상 중 하나라도 없으면 NotFoundException |
 | `search` / `searchPage` | 조건 검색 / 페이지 정보를 포함한 검색            |
 
-일반 서비스 조회·삭제는 `getMany`·`deleteMany`를 사용한다. HTTP에서 한 건을 처리해도 `[id]`로 호출하고 한 건만 반환한다. 나중에 여러 건을 호출해도 서비스 계약을 바꾸지 않기 위한 선택이다. 생성·수정·목적별 조회까지 일괄 API로 통일하지 않는다.
+일반 조회·삭제는 한 건과 여러 건을 같은 서비스 메서드로 처리한다. 예를 들어 `GET /users/me`는 `getMany([id])`의 첫 항목을 반환하고, 탈퇴 시에는 `deleteMany([id])`를 호출한다.
 
 ## 오류와 실행 설정
 
 Core·Application도 NestJS DI와 `HttpException`을 사용한다. 예상한 실패는 해당 모듈의 `errors.ts`에 정의하고 조건을 판단한 코드에서 던진다. Repository는 고유 키 충돌 같은 DB 판정을 도메인 예외로 바꾸며 Gateway에서 같은 오류를 다시 변환하지 않는다. 구분할 4xx에는 `code`를, 5xx의 내부 원인은 응답 대신 서버 로그에 남긴다.
 
-`config/`는 필수 env를 부팅 시 검증하고 `modules/`·`app.module.ts`는 연결·provider를 구성한다. `ConfigModule`은 `ignoreEnvFile: true`로 주입된 값만 사용한다. env 변경은 [개발 환경](../../.devcontainer/README.md#1-환경-변수-파일-변경-후-dev-container-재생성)을 따른다. 환경별 설정은 env에, 화면 조회 개수 같은 고정 정책은 관련 코드에 둔다. 내부 필수 값은 `ensure`·`Require.defined`, 필수 shell 변수는 `${VAR:?}`로 확인한다.
+`config/`는 부팅 시 주입된 환경 변수를 검증한다. 환경마다 달라지는 값은 env에, 화면 조회 개수 같은 고정값은 관련 코드에 둔다. [환경 변수 적용 방법](../../.devcontainer/README.md#1-환경-변수-파일-변경-후-dev-container-재생성)
 
-개발 watch는 TSC, production build는 Rspack을 사용한다. common 등 런타임 패키지는 번들에 넣지 않으므로 앱과 함께 별도로 배포한다. 독립 `scripts/`는 common 빌드 없이 실행하도록 SDK를 직접 사용할 수 있다.
+개발 watch는 TSC, production build는 Rspack을 사용한다. common 등 런타임 패키지는 앱 번들에 들어가지 않으므로 앱과 함께 배포한다.
 
-활성화된 로그는 ECS JSON 한 줄로 stdout/stderr에 출력하며 요청·응답 본문과 query는 포함하지 않는다. 검증 스택의 로그 회전은 Docker가 맡고 앱은 별도 로그 파일을 만들지 않는다. 장기 저장·검색은 배포 환경에서 구성한다.
+API 로그는 설정한 로그 수준에 따라 stdout/stderr에 ECS JSON으로 출력한다. 요청·응답 본문과 쿼리는 로그에서 제외한다.
 
 ## 테스트
 
@@ -88,8 +86,14 @@ workflow 테스트는 `enableRestate: true`로 endpoint를 등록하고 작업 �
 
 ### 실행 가능한 API 문서
 
-[api-docs/](api-docs/)의 `.spec` 파일은 curl로 주요 성공·실패 흐름을 보여 주는 API 사용 예제다. 전체 API 카탈로그·SDK 생성이나 SSE·세부 장애 테스트까지 대신하지 않는다. `TEST`는 요청을 보내고 HTTP 상태 코드를 확인한다. `SETUP`은 다음 요청에 필요한 데이터를 준비한다. 응답 본문의 값과 형식은 API 통합 테스트에서 검증한다.
+[api-docs/](api-docs/)의 `.spec` 파일은 curl로 실행하는 API 사용 예제다.
+
+- 사진을 올려 가입하고 로그인·정보 수정·탈퇴까지 진행한다. [users.spec](api-docs/users.spec)
+- 같은 사용자로 두 터미널을 열어 메시지를 보내고 SSE로 받는다. [event-demo.spec](api-docs/event-demo.spec)
+- 문자열 변환 작업을 제출하고 받은 작업 ID로 결과를 조회한다. [job-demo.spec](api-docs/job-demo.spec)
+
+`TEST`는 요청을 보내고 HTTP 상태 코드를 확인한다. `SETUP`은 다음 요청에 필요한 데이터를 준비한다. 응답 본문의 값과 형식은 API 통합 테스트에서 검증한다.
 
 `$(RESPONSE_BODY jobId)`는 직전 JSON 응답에서 `jobId` 값을 읽는다. 중첩된 필드는 `$(RESPONSE_BODY result.text)`처럼 점으로 연결한다.
 
-`run.sh`는 spec마다 `common.fixture`를 불러와 로그인 상태를 초기화한다. `login_user`는 이후 요청에 인증 헤더를 넣고 `as_guest`는 해제한다. 명시한 Authorization이 우선한다. 직접 실행하면 `api-docs/.env`의 서버 주소를 쓰고, `run-api-docs.sh`는 검증용 NGINX 주소를 전달한다. 명령과 응답 로그 위치는 [루트 실행 안내](../../README.md#실행과-검증)에 있다.
+`run.sh`는 각 spec을 게스트 상태에서 시작한다. `login_user`를 호출하면 이후 API 요청에 인증 헤더가 붙고 `as_guest`로 해제된다. 요청에 직접 적은 Authorization 헤더가 우선한다. 단건 실행과 응답 로그 위치는 [루트 실행 안내](../../README.md#실행과-검증)에 있다.

@@ -16,13 +16,13 @@
 
 NestJS·Zod·RxJS·Express 타입·HTTP 미들웨어는 앱에서 직접 사용한다. 독립 실행 스크립트는 common 빌드 없이 실행하도록 SDK를 직접 사용할 수 있고, 테스트도 상태 관찰·장애 주입을 위해 SDK에 접근할 수 있다. web의 BFF·화면은 common으로 옮기지 않는다.
 
-common의 peer dependency는 소비 프로젝트가 설치한다. 테스트 context를 만드는 루트도 API와 같은 Nest HTTP adapter 버전을 사용한다. 중복 로드된 Nest core는 `Reflector` 같은 클래스의 주입 토큰을 다르게 만들 수 있다. API의 MongoDB 연결은 요청마다 연결을 준비하는 비용을 줄이기 위해 예비 연결을 유지하며 짧게 쓰는 테스트에는 이를 요구하지 않는다.
+common의 peer dependency는 소비 프로젝트가 설치한다. 테스트 context를 만드는 루트도 API와 같은 Nest HTTP adapter 버전을 사용한다. Nest core가 중복 로드되면 `Reflector` 같은 클래스의 주입 토큰이 달라질 수 있다.
 
 ### 메시지와 락의 완료 조건
 
 [NATS 구독](common/src/nats/nats-pubsub.service.ts)은 같은 subject·queue의 동시 등록 모두 서버의 SUB 처리를 기다린다. 실패하면 모두에게 오류를 전달하고 구독을 정리한다. 등록 완료는 메시지 저장·소비 완료를 뜻하지 않는다. 종료 훅은 새 handler를 막고, 마지막 구독을 이미 해제했어도 진행 중인 handler가 끝날 때까지 기다린다.
 
-[CacheService](common/src/cache/cache.service.ts)의 TTL은 정수 밀리초다. 잘못된 값은 Redis 쓰기 전에 거절한다. `set`의 0은 영구 저장, `incrementWithExpiry`의 0·음수는 즉시 만료이며 `withLock`은 양수만 허용한다.
+[CacheService](common/src/cache/cache.service.ts)의 TTL은 정수 밀리초다. `set`에서 0은 영구 저장이고, `withLock`은 양수만 받는다. `incrementWithExpiry`는 카운터가 1이 될 때 만료 시간을 설정한다. 이때 TTL이 0 이하이면 키가 즉시 만료된다. 이후 카운터를 증가시켜도 기존 만료 시간은 그대로다.
 
 `withLock`은 중복 작업을 건너뛰고 `withLockBlocking`은 락을 기다린다. 후자는 `waitMs` 안에서만 콜백을 시작하며 기한이 지나면 늦게 얻은 락도 해제하고 503을 던진다. 0이면 획득을 시도하지 않으며 이미 시작한 콜백의 시간은 제한하지 않는다. 현재 Redis Cluster의 단일 키 락은 독립 master 여러 개를 전제로 하는 Redlock과 같은 보장이 아니다.
 
@@ -42,7 +42,7 @@ JSON은 `JSON.parse`로 읽고 DTO 스키마에 복원할 타입을 명시한다
 
 [JsonUtil](common/src/utils/json.ts)·HTTP 응답·Restate는 Instant를 밀리초 3자리의 UTC 문자열로, PlainDate를 날짜 문자열로 저장한다. PlainDate 객체는 입력·저장·직렬화·UTC 날짜 계산에서 같은 날짜의 ISO 달력으로 정규화하며 달력 식별자를 보존하지 않는다. 문자열은 달력 주석 없는 ISO 날짜만 받는다.
 
-Restate의 workflow 입력·step DTO·최종 결과는 각각의 스키마로 복원한다. step 이름·순서·저장 형식 변경은 [진행 중인 작업의 배포 조건](../apps/README.md#진행-중인-작업을-보존하는-배포)을 따른다.
+Restate는 workflow 입력·step DTO·최종 결과를 각각의 스키마로 복원한다. 진행 중인 작업의 step 이름·순서·저장 형식을 바꿀 때는 [새 버전의 등록 방법](../infra/README.md#4-restate에-workflow-실행-주소-등록)을 따른다.
 
 [HttpTestClient](testing/src/http.test-client.ts)의 `schema`는 응답 검증·변환과 `body` 타입을 결정하며 실패하면 테스트도 실패한다. `{ schema, expected }`는 변환한 응답을, `{ expected }`는 원래 JSON을 비교한다. 사용 예시는 [사용자 API 테스트](../apps/api/src/__tests__/core/users.spec.ts)에 있다.
 
@@ -50,17 +50,14 @@ Restate의 workflow 입력·step DTO·최종 결과는 각각의 스키마로 �
 
 `HttpTestClient.sse`의 세 번째 인자인 준비 완료 콜백 뒤에 이벤트를 발생시킬 요청을 보낸다. 첫 이벤트를 기다리면 요청과 이벤트가 서로 기다릴 수 있다. 스트림은 성공·실패와 관계없이 `finally`에서 닫는다.
 
-TCP 청크가 나뉘어도 UTF-8 문자를 보존하고 여러 `data` 줄은 개행으로 연결한다. 빈 `data`도 전달하며 HTTP 오류 본문은 오류 콜백으로 보낸다. 상세 수신 조건은 [client 테스트](testing/src/__tests__/http.test-client.spec.ts)에 있다.
+여러 `data` 줄은 개행으로 연결한다. HTTP 오류 본문은 오류 콜백으로 전달한다. [수신 예제와 테스트](testing/src/__tests__/http.test-client.spec.ts)
 
 ## 6. 공통 유틸의 입력·반환 규칙
 
-유틸은 사용처 수뿐 아니라 공개 계약과 기능을 찾기 쉬운 이름을 기준으로 유지한다. `generateUuid` 같은 기존 래퍼는 유지하되 Node API 전체를 감싸지는 않는다.
-
-- [isEqual](common/src/utils/lodash.ts)은 동일 객체면 getter 없이 true를 반환한다. 다른 값은 Node의 엄격한 비교에 열거 가능한 속성·배열·Map·Set의 Temporal 비교를 더한다. 순환 구조를 처리하며 Temporal 타입·달력·참조 날짜를 구분한다. 날짜 문자열과 Temporal 값은 다르다.
+- [isEqual](common/src/utils/lodash.ts)은 객체·배열·Map·Set에 담긴 Temporal 값을 타입·달력·참조 날짜까지 비교한다. 날짜 문자열과 Temporal 값은 다르다.
 - [TimeUtil](common/src/utils/time.ts)·[ByteUtil](common/src/utils/byte.ts)은 소수 부분을 보존하며 지수 표기 문자열도 수치로 복원한다. 여러 단위의 음수는 `-1h-30m`, `-1KB -0.5B`처럼 항목마다 부호를 붙인다.
 - [Env](common/src/utils/env.ts)의 불리언은 대소문자 무관한 true·false만 받는다. 숫자는 공백만 있는 문자열·NaN·Infinity를 거절한다. [BaseConfigService](common/src/config/base-config.service.ts)도 문자열 getter는 문자열만, 숫자·불리언 getter는 해당 타입 또는 유효한 문자열만 받는다. null·배열·객체를 강제 변환하지 않는다.
-- `countBy`·`pick`·`pickBy`는 `constructor`·`__proto__`를 데이터 키로 보존한다. `assignIfDefined`는 undefined만 건너뛰며 null은 복사하거나 transform에 전달한다.
-- [Require.equals](common/src/utils/validator.ts)는 불일치한 두 값을 예외 메시지에 담는다. BigInt·순환 객체도 메시지 직렬화 오류로 실패하지 않는다.
+- [assignIfDefined](common/src/utils/mapping.ts)는 undefined만 건너뛴다. null은 복사하거나 transform에 전달한다.
 - [PasswordHasher](common/src/auth/password.ts)는 [OWASP 구성](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id)에 따라 Argon2id 메모리 19 MiB·반복 2회·병렬도 1을 사용한다. 저장된 해시가 없어도 비교 연산을 수행하고 false를 반환한다.
 
 ## 7. TypeScript 작성 규칙

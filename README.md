@@ -1,5 +1,7 @@
 # nest-seed
 
+[English](README.en.md)
+
 NestJS 기반 백엔드 프로젝트를 위한 시작 템플릿이다. `apps/api`에 사용자·파일·이벤트·비동기 작업 예제를, `apps/web`에 가입·로그인·본인 조회 화면을 둔다. `libs/`는 다른 NestJS 프로젝트에서도 사용하는 공통 코드다.
 
 ## 시작하기
@@ -8,18 +10,18 @@ NestJS 기반 백엔드 프로젝트를 위한 시작 템플릿이다. `apps/api
 
 지원하는 개발 환경은 Dev Container다. Docker가 있는 호스트의 저장소를 VS Code Remote SSH로 연다. 호스트와 컨테이너의 workspace 절대경로가 같아야 한다. 자세한 구성은 [개발 환경](.devcontainer/README.md)을 따른다.
 
+**Dev Container는 시작할 때마다 이 프로젝트의 개발 인프라를 초기화한다.** 저장된 계정·세션·업로드 파일·이벤트와 진행 중인 작업이 삭제된다. `pnpm run atoz`도 같은 [초기화 스크립트](infra/README.md#2-인프라-시작과-데이터-초기화)를 실행한다.
+
 1. VS Code에서 `Reopen in Container`를 실행한다. 의존성 설치와 인프라 초기화가 끝날 때까지 기다린다.
 2. 컨테이너 터미널에서 `pnpm run test`를 실행한다.
-3. `pnpm run dev`로 API와 web을 실행하고 `curl http://localhost:3000/health`로 확인한다.
+3. `pnpm run dev`로 API와 web을 실행한다. 다른 컨테이너 터미널에서 `curl http://localhost:3000/health`로 API를 확인한다.
 4. VS Code 포트 패널에서 `3200`을 전달해 web을 연다. 자동 포트 전달은 꺼져 있다.
 
-**Dev Container 시작, `bash infra/reset.sh`, `pnpm run atoz`는 MongoDB 데이터·S3 파일·Restate journal·JetStream 이벤트를 삭제한다.** 보존할 데이터나 진행 중인 작업이 있는 환경에서 실행하지 않는다.
-
-루트 `.env.api`와 `.env.infra`는 커밋된 개발 설정이다. 파일을 수정하면 **`Rebuild Container`로 Dev Container를 다시 만든다.** 운영 secret은 저장소 밖에서 주입한다. [환경 변수 주입 방식](.devcontainer/README.md#1-환경-변수-파일-변경-후-dev-container-재생성)을 참고한다.
+루트의 `.env.api`나 `.env.infra`를 수정하면 VS Code에서 `Rebuild Container`를 실행한다. [환경 변수 적용 방법](.devcontainer/README.md#1-환경-변수-파일-변경-후-dev-container-재생성)
 
 ## 실행과 검증
 
-Dev Container의 저장소 루트에서 실행한다. 각 명령은 라이브러리 빌드 등 필요한 준비 단계를 포함한다.
+Dev Container의 저장소 루트에서 실행한다.
 
 | 명령                       | 용도                                                          |
 | -------------------------- | ------------------------------------------------------------- |
@@ -33,20 +35,18 @@ Dev Container의 저장소 루트에서 실행한다. 각 명령은 라이브러
 | `pnpm run race <scenario>` | 다중 복제본의 HTTP/SSE 경쟁·복제본 종료 검증                  |
 | `pnpm run benchmark`       | 같은 조건의 API 성능 비교                                     |
 
-`pnpm run lint`는 각 TypeScript 패키지의 타입을 검사한다. Oxlint와 Prettier는 저장소 루트에서 각각 한 번 실행한다. 서식만 검사하려면 `pnpm run lint:format`을 실행한다.
-
-`pnpm run atoz`는 `lint`와 기본 테스트에 더해 Restate 복구, web 프로덕션 빌드, 브라우저 E2E, API 문서를 검증한다. race와 benchmark는 별도로 실행한다. 같은 API Vitest 명령을 동시에 여러 번 실행하는 것은 지원하지 않는다. 검사별 보장과 한계는 [테스트 가이드](tests/README.md)에 있다.
+서식만 검사하려면 `pnpm run lint:format`을 실행한다. `atoz`에는 Restate 복구 검사도 포함된다. race와 benchmark는 별도로 실행한다. [테스트별 검증 범위](tests/README.md#검증-범위)
 
 ### 선택 실행과 외부 접속
 
-특정 API spec만 실행할 때는 라이브러리를 빌드하고 부분 실행의 커버리지 수집을 끈다. 변경을 마칠 때는 해당 workspace의 전체 테스트와 커버리지 검사를 통과해야 한다.
+API 통합 테스트 한 파일을 실행하려면 라이브러리를 빌드한 뒤 Vitest에 파일명을 넘긴다. 전체 커버리지는 `pnpm run test`로 확인한다.
 
 ```bash
 pnpm run pretest
 pnpm --filter './apps/api' test users.spec --coverage.enabled=false
 ```
 
-실행 중인 개발 API에 [curl 문서](apps/api/api-docs/)를 실행하려면 `bash apps/api/api-docs/run.sh`를 사용한다. 뒤에 `users.spec` 같은 파일명을 붙이면 해당 문서만 실행한다.
+개발 API가 실행 중이면 `bash apps/api/api-docs/run.sh`로 사용 예제를 실행한다. 뒤에 `users.spec` 같은 파일명을 붙이면 해당 예제만 실행한다. [API 사용 예제](apps/api/README.md#실행-가능한-api-문서)
 
 `pnpm run race`는 시나리오를, `pnpm run e2e:list`는 브라우저 테스트를 나열한다. 브라우저 테스트를 선택해 실행하려면 `pnpm run e2e:ui`를 실행하고 VS Code 포트 패널에서 `e2e:9323`을 전달한다. [브라우저 E2E 실행 환경](tests/README.md#브라우저-e2e)
 
@@ -61,18 +61,18 @@ pnpm --filter './apps/api' test users.spec --coverage.enabled=false
 | curl 문서      | `apps/api/api-docs/_output/`의 `logs/`와 `docs/summary.md`                 |
 | benchmark      | `tests/api/benchmark/_output/<실행 시각>/`의 `report.html`·`summary.json`  |
 
-CI 반복 실행의 실패 회차는 `[Run i/N]`에서 찾는다. 스택 종료 후에도 측정 데이터는 남으며, 삭제하려면 [infra reset](infra/README.md#2-인프라-시작과-데이터-초기화)을 실행한다.
+벤치마크 보고서는 저장소에 파일로 남는다. 지우려면 해당 실행 시각의 디렉터리를 삭제한다. CI의 반복 실행 로그에서는 `[Run i/N]`으로 실패한 회차를 찾을 수 있다.
 
 ## 구조와 선택
 
-| 위치                                      | 문서에서 다루는 내용                               |
-| ----------------------------------------- | -------------------------------------------------- |
-| [apps/](apps/README.md)                   | 시드의 범위, 가입·인증·이벤트·작업의 보장, web BFF |
-| [apps/api/](apps/api/README.md)           | 서비스 구성, SoLA 의존 방향, API 작성 규칙         |
-| [libs/](libs/README.md)                   | 공통 패키지의 책임과 사용 계약                     |
-| [.devcontainer/](.devcontainer/README.md) | 개발 환경, env 적용, 호스트 경로 공유              |
-| [infra/](infra/README.md)                 | 개발 인프라 구성과 데이터 초기화                   |
-| [tests/](tests/README.md)                 | 테스트 작성 규칙과 검증 범위                       |
-| [tools/](tools/README.md)                 | 개발·테스트 실행 도구                              |
+| 위치                                      | 주요 내용                                              |
+| ----------------------------------------- | ------------------------------------------------------ |
+| [apps/api/](apps/api/README.md)           | 서비스 구성, SoLA 의존 방향, API 작성 규칙과 사용 예제 |
+| [apps/web/](apps/web/)                    | 사진 첨부 가입·로그인·본인 조회 화면과 API 프록시      |
+| [libs/](libs/README.md)                   | 공통 패키지의 책임과 사용 계약                         |
+| [.devcontainer/](.devcontainer/README.md) | 개발 환경, env 적용, 호스트 경로 공유                  |
+| [infra/](infra/README.md)                 | 개발 인프라 구성과 데이터 초기화                       |
+| [tests/](tests/README.md)                 | 테스트 작성 규칙과 검증 범위                           |
+| [tools/](tools/README.md)                 | 개발·테스트 실행 도구                                  |
 
 저장소 작업과 리뷰의 기준은 [AGENTS.md](AGENTS.md)에 있다.

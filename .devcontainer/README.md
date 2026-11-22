@@ -1,23 +1,21 @@
 # .devcontainer/ — 개발 환경
 
-Dev Container만 공식 개발 환경으로 지원한다. 앱·테스트·도구가 같은 버전의 MongoDB Replica Set·Redis Cluster·S3·NATS·Restate를 사용하고 Redis의 다중 키 제한 같은 분산 구성의 제약을 개발 중 확인하기 위해서다.
-
-Node는 네이티브 Temporal을 사용하는 26 계열이다. API 빌드의 `ts-loader`와 Vitest 변환기는 Nest가 생성자에 주입할 타입을 기록할 때 TypeScript 6의 `transpileModule`을 사용한다. 웹 앱과 브라우저 테스트는 TypeScript 7의 `tsc` 명령으로 타입을 검사한다.
+개발과 CI가 같은 도구를 사용하도록 Node·pnpm·Docker CLI를 Dev Container에 설치한다. 데이터베이스와 메시지 서버는 [개발 인프라](../infra/README.md)에서 실행한다.
 
 ## 1. 환경 변수 파일 변경 후 Dev Container 재생성
 
-| 파일                                                | 역할·주입 시점                                      |
-| --------------------------------------------------- | --------------------------------------------------- |
-| [.env.infra](../.env.infra)                         | 인프라 접속·이미지·포트. Dev Container 생성 시 주입 |
-| [.env.api](../.env.api)                             | 인증·HTTP·앱 설정. Dev Container 생성 시 주입       |
-| [apps/web/.env](../apps/web/.env)                   | Next.js가 읽는 web 설정                             |
-| [apps/api/api-docs/.env](../apps/api/api-docs/.env) | curl 문서 실행기가 읽는 셸 설정                     |
+| 파일                                                | 역할·주입 시점                                                     |
+| --------------------------------------------------- | ------------------------------------------------------------------ |
+| [.env.infra](../.env.infra)                         | 인프라 접속·이미지·포트. Dev Container 생성 시 주입                |
+| [.env.api](../.env.api)                             | 인증·HTTP·앱 설정. Dev Container 생성 시 주입                      |
+| [apps/web/.env](../apps/web/.env)                   | Next.js가 호출할 API 주소. API 포트를 바꾸면 `API_BASE_URL`도 변경 |
+| [apps/api/api-docs/.env](../apps/api/api-docs/.env) | curl 문서 실행기가 읽는 셸 설정                                    |
 
-루트 env 파일을 바꾸면 **VS Code의 `Rebuild Container`로 Dev Container를 다시 만든다.** 앱·컨테이너 재시작만으로는 변경값이 반영되지 않는다. pnpm·앱·테스트·reset은 컨테이너의 환경 변수를 상속하고 루트 파일을 다시 읽지 않는다. API는 주입된 값을 검증한다. 검증용 API·web Compose는 루트 파일을 `env_file`의 `format: raw`로 전달한다.
+루트의 두 파일을 바꾸면 **VS Code에서 `Rebuild Container`를 실행한다.** Dev Container 안에서 시작한 앱과 셸 명령은 컨테이너를 만들 때 받은 값을 상속한다. 검증용 Compose는 API 컨테이너를 만들 때 같은 파일을 `env_file`의 `format: raw`로 읽는다.
 
 루트 env 값에는 변수 치환이나 따옴표 제거가 적용되지 않는다. `API_URL=http://api:3000`처럼 최종 값을 적는다. `http://${API_HOST}:3000`의 변수는 치환되지 않으며 `PASSWORD="secret"`의 따옴표도 값이다. Compose YAML의 `${...}` 치환은 별개다.
 
-공통 env에 `NODE_ENV`를 고정하지 않는다. 개발 명령·검증 스택·Next.js·Vitest가 실행 모드에 맞게 정한다. `WORKSPACE_ROOT`는 저장소 절대경로, `COMPOSE_PROJECT_NAME`은 Docker 프로젝트, `DEVCONTAINER_NETWORK`는 Compose 간 공유 네트워크다.
+개발 서버와 테스트가 각각 실행 모드를 정하므로 루트 env 파일에서는 `NODE_ENV`를 설정하지 않는다.
 
 ## 2. 호스트와 Dev Container에서 같은 경로 사용
 
@@ -29,6 +27,4 @@ VS Code Remote SSH로 호스트 폴더를 열고 `Reopen in Container`를 사용
 
 VS Code는 새 Dev Container를 만들 때 `node` 계정으로 `hunjuly/dotfiles`의 `install.sh`를 실행한다. 포크할 때는 `devcontainer.json`의 `dotfiles.repository`를 사용할 저장소로 바꾸거나 제거한다.
 
-workspace bind mount가 이미지의 같은 경로를 가리므로 `postStartCommand`에서 프로젝트 의존성을 설치한 뒤 [개발 인프라를 초기화한다](../infra/README.md#2-인프라-시작과-데이터-초기화). **Dev Container를 시작할 때마다 MongoDB·S3·Restate journal·JetStream 기록이 삭제된다.** 준비가 끝난 뒤 앱을 실행하며 보존할 데이터·작업이 있는 환경에 이 절차를 적용하지 않는다.
-
-자동 포트 전달은 꺼져 있다. web은 VS Code 포트 패널에서 전달한다.
+Dev Container를 시작할 때마다 `postStartCommand`가 workspace에 의존성을 설치하고 개발 데이터를 삭제한 뒤 인프라를 다시 만든다. 삭제되는 데이터와 준비 완료 조건은 [인프라 초기화](../infra/README.md#2-인프라-시작과-데이터-초기화)에 있다.
