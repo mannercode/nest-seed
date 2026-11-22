@@ -12,6 +12,6 @@ DB와 버킷은 worker별로 준비하고, 종료할 때는 테스트 패키지�
 
 외부에서 web에 접속하려면 개발 서버를 켜고 다른 터미널에서 `pnpm exec tunnel`을 실행한다. 출력된 HTTPS 주소에서는 사진 체크섬 계산에 필요한 Web Crypto를 사용할 수 있다. 터널은 web 포트만 공개하고 API 요청은 web이 전달한다.
 
-## 3. Compose로 실행하는 도구
+## 3. lychee — 문서 링크 검사
 
-링크 검사(lychee)와 벤치마크 부하 생성(k6)은 별도 Compose 프로젝트의 일회성 컨테이너에서 실행한다. [도구 구성](compose.yml)
+`pnpm run lint`는 lychee를 일회성 컨테이너로 실행해 Markdown 파일의 로컬 링크와 문서 내 제목 링크를 검사한다. [검사 대상](lychee/compose.yml)

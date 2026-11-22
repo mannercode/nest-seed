@@ -15,7 +15,7 @@ JSON_SUMMARY="${OUTPUT_DIR}/summary.json"
 mkdir -p _output
 mkdir "${OUTPUT_DIR}"
 
-compose=(docker compose -f ../compose.yml)
+compose=(docker compose -f ../compose.yml -f compose.yml)
 
 cleanup() {
     local exit_code=$?
@@ -44,7 +44,7 @@ run_k6() {
         fi
     done
 
-    pnpm --dir "${WORKSPACE_ROOT}" compose:tools run \
+    "${compose[@]}" run \
         --rm \
         --no-deps \
         --no-TTY \

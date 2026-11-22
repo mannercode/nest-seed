@@ -76,9 +76,10 @@ updates:
     - package-ecosystem: docker-compose
       directories:
           - '/tests/api'
+          - '/tests/api/benchmark'
           - '/infra'
           - '/tests/web'
-          - '/tools'
+          - '/tools/lychee'
       schedule:
           interval: weekly
       allow:
