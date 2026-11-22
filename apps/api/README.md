@@ -1,21 +1,8 @@
 # API — 서비스 구성과 작성 규칙
 
-API의 기능을 추가할 때는 아래 모듈 구성을 따른다. 실행 명령은 [루트 README](../../README.md#실행과-검증)에 있다.
-
-## 서비스 구성
-
-| 서비스                                                                 | 계층           | 책임                                    |
-| ---------------------------------------------------------------------- | -------------- | --------------------------------------- |
-| [UsersService](src/services/core/users/)                               | Core           | 사용자 저장·조회와 인증                 |
-| [UserRegistrationService](src/services/application/user-registration/) | Application    | 선택한 사진과 계정을 함께 등록          |
-| [WebHomeViewService](src/services/view/web/home/)                      | View           | 로그인한 사용자 정보와 사진 URL 조합    |
-| [AssetsService](src/services/infrastructure/assets/)                   | Infrastructure | 파일 업로드·소유권·삭제                 |
-| [EventDemoService](src/services/infrastructure/event-demo/)            | Infrastructure | JetStream 메시지 발행·소비와 SSE 전달   |
-| [JobDemoService](src/services/infrastructure/job-demo/)                | Infrastructure | Restate 문자열 변환 작업 접수·결과 조회 |
-
 ## SoLA의 모듈 의존 방향
 
-모듈은 하위 계층에만 의존하며 같은 계층의 다른 모듈을 직접 참조하지 않는다. 여러 모듈의 조합은 상위 계층이 맡는다. 각 모듈 내부에는 필요한 Service·Repository·모델·DTO를 함께 둔다.
+모듈은 하위 계층에만 의존한다. 여러 모듈을 조합하는 서비스는 그보다 상위 계층에 둔다. Service·Repository·모델·DTO는 해당 모듈에 함께 둔다. [서비스 모듈](src/services/)
 
 ```mermaid
 flowchart TB
@@ -28,35 +15,31 @@ flowchart TB
     Gateway -. CRUD 직접 호출 .-> Core
 ```
 
-중간 계층을 모두 거칠 필요는 없다. 본인 조회·수정은 Gateway → Core로 충분하다. UserRegistration은 Users와 Assets를 조합하므로 Application에, EventDemo·JobDemo는 다른 도메인의 조합 없이 기술 연동을 담당하므로 Infrastructure에 둔다.
-
-View는 화면에 보낼 데이터를 읽어 조합하고 항목의 순서·개수를 정한다. 예를 들어 Users는 사진 ID를 보관하고 WebHomeView가 홈 화면에 필요한 사진 URL을 조회한다. 상태를 바꾸는 작업은 Application·Core가 맡는다.
-
-`internal/`·`worker/`는 모듈 내부 폴더다. 루트의 Oxlint가 계층과 import 방향을 검사하고, 리뷰에서 View의 읽기 전용 동작을 확인한다.
+사진을 첨부한 가입은 계정 생성과 사진 소유권 등록을 함께 처리하므로 Application의 UserRegistration이 맡는다. View의 WebHomeView는 저장된 사진 ID로 URL을 조회해 홈 응답을 만든다. View는 읽기 전용이며 상태 변경은 Application·Core가 맡는다.
 
 ### Gateway와 모듈 공개 진입점
 
-컨트롤러는 `services/gateway`에 두고 `AppModule`에 등록한다. `UsersHttpController`가 가입은 UserRegistration에, 로그인·본인 조회·수정은 Users에 맡겨 사용자 HTTP API를 한곳에서 읽을 수 있게 한다. 이를 UsersModule에 넣으면 Users → UserRegistration → Users 순환이 생긴다. 다른 모듈에서 UsersModule을 import해도 HTTP 경로는 등록되지 않는다.
+컨트롤러는 `services/gateway`에 두고 `AppModule`에 등록한다. 가입을 처리하는 `UsersHttpController`를 UsersModule에 두면 Users → UserRegistration → Users 순환이 생긴다. UsersModule을 import하는 것만으로는 HTTP 경로가 등록되지 않는다.
 
-다른 모듈은 공개 `index.ts`로만 참조한다. `internal/`·`worker/`는 공개하지 않고 앱 조립에 필요한 workflow 정의 등만 export한다. 모듈 내부·부모 참조는 상대 import를 사용하며 자신을 다시 export하는 진입점은 참조하지 않는다. 테스트도 공개 진입점을 사용하되 비공개 구현 자체를 검사해야 할 때만 예외를 둔다.
+다른 모듈은 공개 `index.ts`로 참조한다. `internal/`·`worker/`는 비공개로 두고 workflow 정의처럼 앱 조립에 필요한 항목만 공개한다. 모듈 내부에서는 상대 경로로 직접 import한다. 테스트도 비공개 구현 자체를 검증할 때만 내부 파일을 참조한다.
 
-SDK 호출과 peer dependency는 [공유 패키지](../../libs/README.md#2-sdk-연결과-호출은-common에서-구현한다), ESM import와 타입 표기는 [TypeScript 규칙](../../libs/README.md#7-typescript-작성-규칙)을 따른다.
+루트 Oxlint가 계층과 import 방향을 검사한다. [공유 패키지의 SDK 사용 규칙](../../libs/README.md#2-sdk-연결과-호출은-common에서-구현한다) · [TypeScript 표기](../../libs/README.md#7-typescript-작성-규칙)
 
 ## 데이터와 트랜잭션
 
-모듈은 자기 collection만 읽고 쓰며 다른 모듈은 공개 서비스로 호출한다. Repository는 쿼리·인덱스와 DB 오류 변환을, common은 연결·드라이버 실행을 맡는다. 서비스는 MongoDB 오류 번호나 ClientSession을 다루지 않는다.
+모듈은 자신의 컬렉션만 읽고 쓴다. 다른 모듈의 데이터는 공개 서비스를 통해 다룬다. 쿼리·인덱스·DB 오류 변환은 Repository가, 연결과 드라이버 호출은 common이 맡는다.
 
-여러 모듈을 묶을 transaction은 Application이 결정한다. `TransactionContext`는 콜백 안에서만 유효하고 common이 세션을 생성·종료한다. 콜백은 재실행될 수 있으므로 S3 쓰기나 메시지 발행을 넣지 않는다. ID 변환·쓰기 확인·페이지 조회의 일관성은 [저장소 계약](../../libs/README.md#3-저장소-id와-트랜잭션)을 따른다.
+여러 모듈을 묶는 트랜잭션은 Application이 정한다. `TransactionContext`는 콜백 안에서만 유효하다. 콜백이 재실행될 수 있으므로 S3 쓰기와 메시지 발행은 콜백 밖에서 한다. [저장소 계약](../../libs/README.md#3-저장소-id와-트랜잭션)
 
 ### DTO와 JSON
 
-요청·응답과 JSON에서 복원할 데이터는 Zod 스키마로 정의하고 `z.infer`로 타입을 얻는다. 검증·복원에 같은 스키마를 쓰기 위한 선택이며 내부 DB 모델을 그대로 응답하지 않는다. 타입은 `Dto`, 스키마는 `Schema`로 끝낸다. [CreateUserSchema](src/services/core/users/dtos/create-user.dto.ts)처럼 동작과 대상을 이름에 드러낸다. JSON을 거치지 않는 내부 인자까지 스키마를 만들지는 않는다.
+요청·응답과 JSON에서 복원할 데이터는 Zod 스키마로 정의한다. 응답 DTO는 DB 모델과 구분한다. 이름에는 동작과 대상을 드러내고 스키마는 `Schema`, `z.infer`로 얻은 타입은 `Dto`로 끝낸다. [CreateUserSchema](src/services/core/users/dtos/create-user.dto.ts)
 
-JSON 본문의 숫자·불리언·문자열은 선언한 타입으로 받고, 쿼리 숫자·날짜처럼 변환할 필드만 명시한다. 수정 필드 생략은 기존 값 유지이며 `null`은 모델이 허용할 때만 받는다. 달력 날짜는 `Temporal.PlainDate`, 시점은 `Temporal.Instant`로 구분하고 문자열 모양으로 추측하지 않는다. 직렬화·테스트·workflow 복원은 [JSON 계약](../../libs/README.md#4-json과-dto-복원)을 따른다.
+JSON 본문은 선언한 타입으로 받고, 숫자 쿼리나 날짜처럼 변환이 필요한 필드만 지정한다. 수정할 필드를 생략하면 기존 값을 유지한다. `null`은 모델이 허용할 때만 받는다. [JSON과 DTO 복원](../../libs/README.md#4-json과-dto-복원)
 
 ## 서비스 이름과 조회 계약
 
-Core는 엔티티 집합을 나타내는 `UsersService`, Application은 유스케이스를 나타내는 `UserRegistrationService`처럼 이름 짓는다. 단수·복수는 처리 개수가 아니라 책임을 구분한다. 조회 조건은 `find({ email })`처럼 객체로 받고 인증용 정보처럼 목적이 다르면 `findForAuthentication`으로 드러낸다. 단일 값 유틸까지 객체 인자로 바꾸지는 않는다.
+Core 서비스는 엔티티 집합(`UsersService`), Application 서비스는 유스케이스(`UserRegistrationService`)로 이름 짓는다. 조회 조건은 `find({ email })`처럼 객체로 받는다. 인증용 조회처럼 반환 목적이 다르면 `findForAuthentication`처럼 이름으로 구분한다.
 
 | 이름                    | 계약                                             |
 | ----------------------- | ------------------------------------------------ |
@@ -64,38 +47,26 @@ Core는 엔티티 집합을 나타내는 `UsersService`, Application은 유스�
 | `get` / `getMany`       | 요청한 대상 중 하나라도 없으면 NotFoundException |
 | `search` / `searchPage` | 조건 검색 / 페이지 정보를 포함한 검색            |
 
-일반 조회·삭제는 한 건과 여러 건을 같은 서비스 메서드로 처리한다. 예를 들어 `GET /users/me`는 `getMany([id])`의 첫 항목을 반환하고, 탈퇴 시에는 `deleteMany([id])`를 호출한다.
+일반 조회·삭제는 단건과 여러 건에 같은 서비스 메서드를 사용한다.
 
 ## 오류와 실행 설정
 
-Core·Application도 NestJS DI와 `HttpException`을 사용한다. 예상한 실패는 해당 모듈의 `errors.ts`에 정의하고 조건을 판단한 코드에서 던진다. Repository는 고유 키 충돌 같은 DB 판정을 도메인 예외로 바꾸며 Gateway에서 같은 오류를 다시 변환하지 않는다. 구분할 4xx에는 `code`를, 5xx의 내부 원인은 응답 대신 서버 로그에 남긴다.
+Core·Application도 NestJS DI와 `HttpException`을 사용한다. 예상한 오류는 해당 모듈의 `errors.ts`에 정의하고 조건을 판단한 곳에서 던진다. 클라이언트가 구분해야 하는 4xx 응답에는 `code`를 넣고, 5xx의 내부 원인은 서버 로그에만 남긴다.
 
-`config/`는 부팅 시 주입된 환경 변수를 검증한다. 환경마다 달라지는 값은 env에, 화면 조회 개수 같은 고정값은 관련 코드에 둔다. [환경 변수 적용 방법](../../.devcontainer/README.md#1-환경-변수-파일-변경-후-dev-container-재생성)
+환경마다 달라지는 값은 env에 두고 부팅 시 검증한다. 화면 조회 개수 같은 고정값은 사용하는 코드에 둔다.
 
-개발 watch는 TSC, production build는 Rspack을 사용한다. common 등 런타임 패키지는 앱 번들에 들어가지 않으므로 앱과 함께 배포한다.
+개발 서버는 TSC, 배포 빌드는 Rspack을 쓴다. common 등 런타임 패키지는 번들 밖에 있으므로 앱과 함께 배포한다. [컨테이너 빌드](Dockerfile) · [실행 설정](compose.yml)
 
-[API 컨테이너 실행 설정](compose.yml)은 개발 인프라와 같은 네트워크에서 API 한 개를 띄운다. API 예제·다중 복제본 테스트·벤치마크와 웹 E2E가 이 설정을 공유한다.
-
-API 로그는 설정한 로그 수준에 따라 stdout/stderr에 ECS JSON으로 출력한다. 요청·응답 본문과 쿼리는 로그에서 제외한다.
+API 로그는 stdout/stderr에 ECS JSON으로 출력한다. 요청·응답 본문과 쿼리는 기록하지 않는다.
 
 ## 테스트
 
-`src/__tests__`는 실제 Nest 모듈과 MongoDB·Redis·S3·NATS·Restate에 연결한다. 독립 계산·변환은 직접 검증할 수 있으나 단순 위임마다 단위 테스트를 만들지는 않는다. 작성 규칙과 새 파일 추가 조건은 [테스트 가이드](../../tests/README.md#테스트는-한-행동의-결과를-검증한다)와 [작업 지침](../../AGENTS.md#5-요구사항만-최소한으로-수행한다)을 따른다.
+단순 위임은 실제 Nest 모듈과 개발 인프라를 연결한 통합 테스트에서 확인한다. 독립적인 계산·변환은 단위 테스트로 검증할 수 있다. [테스트 작성 규칙](../../tests/README.md#테스트는-한-행동의-결과를-검증한다)
 
-`createAppTestContext`와 공통 훅이 앱을 준비·정리하고 데이터 준비·상태 조회·장애 주입 함수는 대응하는 `*.utils.ts`에 둔다. worker별 DB·bucket과 테스트별 `PROJECT_ID`로 자원을 나눈다. prefix·subject·workflow 이름은 모듈 import 시점의 `process.env`가 아니라 provider에 주입된 설정으로 정한다.
+`createAppTestContext`와 공통 훅이 앱을 준비하고 정리한다. 데이터 준비·조회·장애 주입 함수는 해당 `*.utils.ts`에 둔다. DB와 버킷은 worker별로, `PROJECT_ID`는 테스트별로 나누므로 키 접두어·subject·workflow 이름은 provider에 주입된 설정으로 정한다.
 
-workflow 테스트는 `enableRestate: true`로 endpoint를 등록하고 작업 종료 후 제거한다. 다른 테스트의 workflow 제출은 거절한다. 202 접수·DB 반영·SSE 수신은 별도 결과이므로 검증할 작업의 완료를 기다리고 결과를 조회한다. SSE 준비와 정리는 [테스트 client 계약](../../libs/README.md#5-sse-이벤트를-받는-테스트-작성)을 따른다.
+workflow를 제출하는 테스트는 `enableRestate: true`로 endpoint를 등록한다. 테스트가 끝나면 `teardown`이 작업 완료를 기다린 뒤 등록을 해제한다. [비동기 작업 테스트](src/__tests__/infrastructure/job-demo.spec.ts) · [SSE 수신 테스트 작성법](../../libs/README.md#5-sse-이벤트를-받는-테스트-작성)
 
 ### 실행 가능한 API 문서
 
-루트에서 `pnpm run api-docs`를 실행하면 [curl 예제](api-docs/)의 요청을 실제 API에 보내고 결과 문서와 응답 로그의 위치를 출력한다.
-
-- 사진을 올려 가입하고 로그인·정보 수정·탈퇴까지 진행한다. [users.spec](api-docs/users.spec)
-- 같은 사용자로 두 터미널을 열어 메시지를 보내고 SSE로 받는다. [event-demo.spec](api-docs/event-demo.spec)
-- 문자열 변환 작업을 제출하고 받은 작업 ID로 결과를 조회한다. [job-demo.spec](api-docs/job-demo.spec)
-
-`TEST`는 요청을 보내고 HTTP 상태 코드를 확인한다. `SETUP`은 다음 요청에 필요한 데이터를 준비한다. 응답 본문의 값과 형식은 API 통합 테스트에서 검증한다.
-
-`$(RESPONSE_BODY jobId)`는 직전 JSON 응답에서 `jobId` 값을 읽는다. 중첩된 필드는 `$(RESPONSE_BODY result.text)`처럼 점으로 연결한다.
-
-`run.sh`는 각 spec을 게스트 상태에서 시작한다. `login_user`를 호출하면 이후 API 요청에 인증 헤더가 붙고 `as_guest`로 해제된다. 요청에 직접 적은 Authorization 헤더가 우선한다.
+외부에 `api-docs/`를 전달하기 전에 `run.cfg`의 API 주소를 수정한다. 전달받은 사람은 그 폴더에서 `bash run.sh`를 실행한다.

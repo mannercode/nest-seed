@@ -1,6 +1,6 @@
 const adminUrl = requiredEnvironment('RESTATE_ADMIN_URL')
 const servicePort = requiredEnvironment('RESTATE_SERVICE_PORT')
-const containerName = requiredEnvironment('COMPOSE_PROJECT_NAME')
+const containerName = process.argv[2] ?? requiredEnvironment('COMPOSE_PROJECT_NAME')
 const deploymentUri = `http://${containerName}:${servicePort}`
 
 register().catch((error) => {

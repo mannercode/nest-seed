@@ -3,21 +3,15 @@
     "version": "0.0.2",
     "private": true,
     "type": "module",
-    "imports": {
-        "#application": "./_output/build/src/services/application/index.js",
-        "#config": "./_output/build/src/config/index.js",
-        "#core": "./_output/build/src/services/core/index.js",
-        "#gateway": "./_output/build/src/services/gateway/index.js",
-        "#infrastructure": "./_output/build/src/services/infrastructure/index.js",
-        "#view": "./_output/build/src/services/view/index.js"
-    },
     "scripts": {
         "start": "node --enable-source-maps _output/dist/index.js",
-        "lint": "tsc --noEmit -p tsconfig.build.json && tsc --noEmit -p tsconfig.test.json",
+        "lint": "tsc --noEmit -p tsconfig.build.json && tsc --noEmit -p tsconfig.json",
         "build": "nest build -b rspack --rspackPath rspack.config.cjs",
         "predev": "free-port ${API_PORT:?}",
         "dev": "nest start --watch",
-        "test": "vitest run --coverage"
+        "test": "vitest run --coverage",
+        "posttest": "pnpm run test:api-docs",
+        "test:api-docs": "docker compose run --rm test-api-docs"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "3.1173.0",

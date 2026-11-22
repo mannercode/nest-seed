@@ -1,12 +1,14 @@
 const { S3Client } = require('@aws-sdk/client-s3')
+const { createGlobalTeardown } = require('@mannercode/vitest-helpers')
 const { jetstreamManager } = require('@nats-io/jetstream')
 const { connect: connectNats } = require('@nats-io/transport-node')
 const { MongoClient } = require('mongodb')
 const Redis = require('ioredis')
-const { createApiVitestGlobalTeardown } = require('./scripts/vitest-resource-wiring.cjs')
+const { cleanup } = require('./vitest.resources.cjs')
 
 module.exports = async function globalTeardown() {
-    const teardown = createApiVitestGlobalTeardown({
+    const teardown = createGlobalTeardown({
+        ...cleanup,
         connectMongo: async () => {
             const client = new MongoClient(process.env.MONGO_URI)
             await client.connect()

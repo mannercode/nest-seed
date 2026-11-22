@@ -22,13 +22,14 @@ COPY tsconfig.json ./
 COPY libs/common/ libs/common/
 RUN pnpm --filter './libs/common' --fail-if-no-match run build
 
-COPY apps/api/ apps/api/
+COPY apps/api/nest-cli.json apps/api/rspack.config.cjs apps/api/tsconfig*.json apps/api/
+COPY apps/api/src/ apps/api/src/
 RUN pnpm --filter './apps/api' --fail-if-no-match run build
 # pnpm의 isolated node_modules 링크를 평탄화하지 않고 API 전용 production tree로 배포한다.
 RUN --mount=type=cache,id=nest-seed-pnpm,target=/pnpm/store,sharing=locked \
     HUSKY=0 pnpm --filter './apps/api' --fail-if-no-match deploy --prod --legacy --store-dir /pnpm/store /workspace/deploy/api
 
-FROM base AS runtime
+FROM base AS api
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
@@ -42,3 +43,15 @@ COPY --from=build /workspace/apps/api/_output/dist/ _output/dist/
 USER node
 
 CMD ["node", "--enable-source-maps", "_output/dist/index.js"]
+
+FROM api AS api-docs
+
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends jq \
+    && rm -rf /var/lib/apt/lists/*
+COPY --chown=node:node apps/api/api-docs/ /api-docs/
+COPY apps/api/scripts/register-restate.cjs /register-restate.cjs
+USER node
+
+FROM api AS runtime

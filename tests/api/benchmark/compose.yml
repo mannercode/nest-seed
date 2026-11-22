@@ -1,0 +1,8 @@
+services:
+    k6:
+        profiles: [benchmark]
+        image: grafana/k6:2.4.0@sha256:d41bb79cd8de5a7ad619b53570e3712633e8bff0937010a5c6c57a4747e7a276
+        working_dir: ${WORKSPACE_ROOT:?}
+        environment:
+            WORKSPACE_ROOT: ${WORKSPACE_ROOT:?}
+        volumes: ['${WORKSPACE_ROOT:?}:${WORKSPACE_ROOT:?}']

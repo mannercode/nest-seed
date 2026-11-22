@@ -20,7 +20,8 @@
 !/apps/api/tsconfig.build.json
 !/apps/api/nest-cli.json
 !/apps/api/src/
-!/apps/api/scripts/
+!/apps/api/api-docs/
+!/apps/api/scripts/register-restate.cjs
 
 !/apps/web/package.json
 !/apps/web/next-env.d.ts

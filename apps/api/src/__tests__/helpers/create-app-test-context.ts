@@ -15,10 +15,10 @@ import compression from 'compression'
 import express from 'express'
 import { DEMO_EVENTS_MAX_BYTES } from '#infrastructure'
 import { AppConfigService } from '#config'
-import { getSharedTestMongoConnection } from '../../../scripts/shared-test-mongo-connection.cjs'
 import { AppModule } from '../../app.module.js'
 import { configureTemporalJson } from '../../configure-temporal-json.js'
 import { TextJobWorkflowClient } from '../../services/infrastructure/job-demo/worker.js'
+import { getSharedTestMongoConnection } from './shared-mongo-connection.js'
 
 type AppTestOptions = TestModuleOptions & { enableRestate?: boolean }
 

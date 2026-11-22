@@ -34,6 +34,6 @@ export default defineConfig({
             thresholds: { 100: true }
         },
         globalSetup: [path.join(appDirectory, 'vitest.global.cjs')],
-        setupFiles: [path.join(appDirectory, 'src/__tests__/vitest.setup.ts')]
+        setupFiles: [path.join(appDirectory, 'vitest.setup.ts')]
     }
 })
