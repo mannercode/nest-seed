@@ -1,11 +1,11 @@
 {
     "name": "api",
-    "version": "0.0.2",
+    "version": "0.0.0",
     "private": true,
     "type": "module",
     "scripts": {
         "start": "node --enable-source-maps _output/dist/index.js",
-        "lint": "tsc --noEmit -p tsconfig.build.json && tsc --noEmit -p tsconfig.json",
+        "lint": "tsc --noEmit",
         "build": "nest build -b rspack --rspackPath rspack.config.cjs",
         "predev": "free-port ${API_PORT:?}",
         "dev": "nest start --watch",
