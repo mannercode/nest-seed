@@ -8,7 +8,9 @@
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
         "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
-        "lint": "tsc --noEmit -p tsconfig.build.json && tsc --noEmit -p tsconfig.test.json",
+        "lint": "pnpm run '/^lint:/'",
+        "lint:build": "tsc --noEmit -p tsconfig.build.json",
+        "lint:test": "tsc --noEmit -p tsconfig.test.json",
         "test": "vitest run"
     },
     "dependencies": {
