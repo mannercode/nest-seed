@@ -79,7 +79,6 @@ updates:
           - '/tests/api/benchmark'
           - '/infra'
           - '/tests/web'
-          - '/tools'
       schedule:
           interval: weekly
       allow:
