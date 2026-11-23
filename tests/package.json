@@ -5,9 +5,7 @@
     "type": "module",
     "scripts": {
         "lint": "tsc --noEmit -p web/tsconfig.json",
-        "test": "bash web/run-e2e.sh",
-        "race": "bash api/race/runner.sh",
-        "benchmark": "bash api/benchmark/run.sh"
+        "test": "bash web/run-e2e.sh"
     },
     "devDependencies": {
         "@playwright/test": "1.65.1",

@@ -76,7 +76,7 @@ updates:
     - package-ecosystem: docker-compose
       directories:
           - '/infra'
-          - '/tests/api/benchmark'
+          - '/infra/tests/api/benchmark'
           - '/tests/web'
       schedule:
           interval: weekly

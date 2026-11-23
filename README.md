@@ -23,7 +23,7 @@ Compose도 API 컨테이너를 만들 때 두 파일을 그대로 읽는다. 변
 
 ## 실행과 검증
 
-Dev Container의 저장소 루트에서 실행한다. 루트 명령은 `pnpm run`, 테스트 워크스페이스의 명령은 `pnpm -C tests run`으로 확인한다.
+Dev Container의 저장소 루트에서 실행한다. 루트 명령은 `pnpm run`, 브라우저 E2E 워크스페이스의 명령은 `pnpm -C tests run`으로 확인한다.
 
 | 명령                 | 용도                                                         |
 | -------------------- | ------------------------------------------------------------ |
@@ -60,7 +60,7 @@ pnpm --dir apps/api exec vitest run users.spec
 | [apps/web/](apps/web/)                            | 사진 첨부 가입·로그인·본인 조회 화면과 API 프록시      |
 | [libs/](libs/README.md)                           | 공통 패키지의 책임과 사용 계약                         |
 | [.devcontainer/](.devcontainer/devcontainer.json) | Dev Container 시작 명령과 VS Code 설정                 |
-| [infra/](infra/README.md)                         | 앱 컨테이너 실행과 공용 개발 인프라 초기화             |
+| [infra/](infra/README.md)                         | 앱 컨테이너 실행, 개발 인프라 초기화와 복제본 검증     |
 | [tests/](tests/README.md)                         | 테스트 작성 규칙, 검증 범위와 브라우저 테스트 실행법   |
 | [tools/](tools/README.md)                         | 웹 개발 서버 외부 접속과 테스트 도구                   |
 

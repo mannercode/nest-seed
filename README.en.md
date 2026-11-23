@@ -29,7 +29,7 @@ Compose also reads both files when it creates the API container. It treats varia
 
 ## Running and verifying
 
-Run these commands from the repository root inside the Dev Container. Use `pnpm run` to list root commands and `pnpm -C tests run` to list test workspace commands.
+Run these commands from the repository root inside the Dev Container. Use `pnpm run` to list root commands and `pnpm -C tests run` to list browser E2E workspace commands.
 
 | Command              | Purpose                                                                      |
 | -------------------- | ---------------------------------------------------------------------------- |
@@ -60,7 +60,7 @@ pnpm --dir apps/api exec vitest run users.spec
 | [apps/web/](apps/web/)                            | Photo sign-up, login, profile screens and API proxy             |
 | [libs/](libs/README.md)                           | Shared package responsibilities and contracts                   |
 | [.devcontainer/](.devcontainer/devcontainer.json) | Dev Container startup commands and VS Code settings             |
-| [infra/](infra/README.md)                         | App containers and shared development infrastructure setup      |
+| [infra/](infra/README.md)                         | App containers, development infrastructure reset, replica tests |
 | [tests/](tests/README.md)                         | Test conventions, coverage, and running browser tests           |
 | [tools/](tools/README.md)                         | External access to the web dev server and test tools            |
 

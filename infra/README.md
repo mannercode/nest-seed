@@ -25,3 +25,11 @@ API의 HTTP·workflow 포트를 바꾸면 NGINX upstream을 맞춘다. NGINX가 
 ## 5. 인프라 테스트
 
 루트의 `pnpm run test`는 `infra/tests/` 아래의 `*.test.js` 파일을 하나씩 실행한다. Restate 복구 테스트는 개발 서버와 공유하는 Restate 컨테이너를 강제 종료하고 다시 시작해, 중단된 workflow 단계만 재실행되는지 확인한다. [Restate 복구 테스트](tests/restate-journal-recovery.test.js)
+
+### API 복제본의 Race와 Benchmark
+
+`race`와 `benchmark`는 NGINX와 API 복제본 4개를 테스트 전용 Compose 프로젝트에 띄운다. 두 검사와 수동으로 띄운 복제본 구성은 모두 호스트의 `127.0.0.1:3000`을 사용하므로 한 번에 하나씩 실행한다. 종료할 때 테스트 컨테이너를 내리고, 생성한 계정·파일·작업 기록은 공유 개발 인프라에 남는다. [복제본 Compose 설정](compose.apps.yml) · [인프라 초기화](#2-인프라-시작과-데이터-초기화)
+
+`pnpm run race`로 시나리오와 실행법을 확인한다. 가입·토큰 갱신은 한 회차 전체에서 여러 복제본이 응답했는지, SSE는 구독 연결이 여러 복제본에 분산됐는지 검증한다. [실행 가능한 시나리오](tests/api/race/)
+
+`pnpm run benchmark`는 API가 준비되면 같은 네트워크에 k6 컨테이너를 띄워 본인 정보 읽기·수정의 처리량과 p95·p99 지연 시간을 측정한다. 같은 머신·이미지·데이터에서 결과를 비교한다. 가입·로그인·토큰 갱신은 측정에서 제외되지만 인증에 실패하면 벤치마크도 실패한다. [벤치마크 전용 Compose 설정](tests/api/benchmark/compose.yml)
