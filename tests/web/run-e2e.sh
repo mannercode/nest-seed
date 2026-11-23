@@ -8,12 +8,6 @@ cd -- "$(dirname -- "$0")"
 
 mkdir -p _output
 
-for argument in "$@"; do
-    if [[ "${argument}" == --list ]]; then
-        exec pnpm exec playwright test "$@"
-    fi
-done
-
 PLAYWRIGHT_VERSION=$(node -p "require('@playwright/test/package.json').version")
 export PLAYWRIGHT_VERSION
 compose=(

@@ -42,7 +42,7 @@ API의 context·공통 훅·보조 함수 배치는 [API 테스트 안내](../ap
 
 루트 Compose에 E2E 설정을 더해 프로덕션 빌드의 `api`와 `web`을 테스트 전용 프로젝트에 띄운다. 같은 네트워크의 Playwright 컨테이너에서 Chromium을 실행하며 이미지 태그는 설치된 `@playwright/test` 버전을 따른다. [E2E 설정](web/compose.e2e.yml) · [실행기](web/run-e2e.sh)
 
-목록은 `pnpm run e2e:list`로 확인하고 보고서는 `pnpm run e2e:report`로 연다. 하나만 실행하려면 `pnpm run e2e:ui`를 실행하고 VS Code 포트 패널에서 `e2e:<출력된 UI 포트>`를 전달한다. `test.only`는 로컬과 CI 모두에서 실패한다.
+`test.only`는 로컬과 CI 모두에서 실패한다.
 
 ## 반복 CI
 

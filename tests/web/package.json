@@ -5,9 +5,6 @@
     "type": "module",
     "scripts": {
         "e2e": "bash run-e2e.sh",
-        "e2e:list": "bash run-e2e.sh --list --reporter=list",
-        "e2e:report": "playwright show-report _output/report --host=127.0.0.1",
-        "e2e:ui": "bash run-e2e.sh --ui --ui-host=0.0.0.0 --ui-port=9323",
         "lint": "tsc --noEmit"
     },
     "devDependencies": {

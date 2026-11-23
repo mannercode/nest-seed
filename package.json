@@ -34,9 +34,6 @@
         "XXXdev:api": "pnpm --dir apps/api run dev",
         "XXXdev:web": "pnpm --dir apps/web run dev",
         "XXXformat": "prettier --write .",
-        "XXXe2e:list": "pnpm --dir tests/web run e2e:list",
-        "XXXe2e:ui": "pnpm --dir tests/web run e2e:ui",
-        "XXXe2e:report": "pnpm --dir tests/web run e2e:report",
         "XXXbenchmark": "pnpm --dir tests/api run benchmark"
     },
     "devDependencies": {
