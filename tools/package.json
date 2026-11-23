@@ -5,8 +5,6 @@
     "type": "commonjs",
     "bin": {
         "free-port": "./free-port.js",
-        "lint-links": "./lint-links.sh",
-        "lint-shell": "./lint-shell.sh",
         "tunnel": "./tunnel.sh"
     },
     "exports": {
