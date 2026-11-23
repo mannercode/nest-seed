@@ -3,14 +3,11 @@
     "version": "0.0.1",
     "private": true,
     "type": "commonjs",
-    "scripts": {
-        "tunnel": "./dev-tools/tunnel.sh",
-        "lint:links": "docker compose -p \"${COMPOSE_PROJECT_NAME}-lint\" -f lychee/compose.yml run --rm lychee",
-        "lint:shell": "cd .. && git ls-files -z '*.sh' '.husky/*' | xargs -0 shellcheck --severity=warning -x"
-    },
     "bin": {
-        "free-port": "./dev-tools/free-port.js",
-        "tunnel": "./dev-tools/tunnel.sh"
+        "free-port": "./free-port.js",
+        "lint-links": "./lint-links.sh",
+        "lint-shell": "./lint-shell.sh",
+        "tunnel": "./tunnel.sh"
     },
     "exports": {
         "./vitest-helpers": "./vitest-helpers/index.js"

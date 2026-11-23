@@ -79,7 +79,7 @@ updates:
           - '/tests/api/benchmark'
           - '/infra'
           - '/tests/web'
-          - '/tools/lychee'
+          - '/tools'
       schedule:
           interval: weekly
       allow:

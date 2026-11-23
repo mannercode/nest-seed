@@ -19,12 +19,7 @@
             "id": "toolCommand",
             "type": "pickString",
             "description": "tool",
-            "options": [
-                "pnpm run build",
-                "pnpm run lint",
-                "pnpm run format",
-                "pnpm -C tools run tunnel"
-            ]
+            "options": ["pnpm run build", "pnpm run lint", "pnpm run format", "pnpm run tunnel"]
         },
         {
             "id": "testCommand",

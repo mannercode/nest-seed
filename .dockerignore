@@ -31,8 +31,10 @@
 !/apps/web/src/
 
 !/tools/package.json
-!/tools/dev-tools/free-port.js
-!/tools/dev-tools/tunnel.sh
+!/tools/free-port.js
+!/tools/lint-links.sh
+!/tools/lint-shell.sh
+!/tools/tunnel.sh
 
 **/node_modules
 **/_output
