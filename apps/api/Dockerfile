@@ -41,6 +41,8 @@ COPY --from=build /workspace/apps/api/_output/dist/ _output/dist/
 
 USER node
 
+# npm start는 셸을 거치므로 docker stop의 SIGTERM이 Node까지 전달되지 않을 수 있다.
+# Node를 직접 실행해 Nest가 종료 훅에서 연결을 정리할 수 있게 한다.
 CMD ["node", "--enable-source-maps", "_output/dist/index.js"]
 
 FROM api AS api-docs
