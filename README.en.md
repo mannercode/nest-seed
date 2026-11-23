@@ -25,15 +25,15 @@ The infrastructure is for development and testing. When forking, replace the pro
 
 Run these commands from the repository root inside the Dev Container. Use `pnpm run` to list root commands and `pnpm -C tests run` to list test workspace commands.
 
-| Command                   | Purpose                                                                      |
-| ------------------------- | ---------------------------------------------------------------------------- |
-| `pnpm run dev`            | Run the API and web in watch mode                                            |
-| `pnpm test`               | Run unit, integration, API example, and browser E2E tests (restarts Restate) |
-| `pnpm run lint`           | Check types, code, formatting, shell scripts, and documentation links        |
-| `pnpm run format`         | Format the repository with Prettier                                          |
-| `pnpm -C tests test`      | Verify the production build of web and its API connection                    |
-| `pnpm -C tests race`      | List the multi-replica test scenarios and how to run them                    |
-| `pnpm -C tests benchmark` | Compare API performance under the same conditions                            |
+| Command              | Purpose                                                                      |
+| -------------------- | ---------------------------------------------------------------------------- |
+| `pnpm run dev`       | Run the API and web in watch mode                                            |
+| `pnpm test`          | Run unit, integration, API example, and browser E2E tests (restarts Restate) |
+| `pnpm run lint`      | Check types, code, formatting, shell scripts, and documentation links        |
+| `pnpm run format`    | Format the repository with Prettier                                          |
+| `pnpm -C tests test` | Verify the production build of web and its API connection                    |
+| `pnpm run race`      | List the multi-replica test scenarios and how to run them                    |
+| `pnpm run benchmark` | Compare API performance under the same conditions                            |
 
 `docker compose up -d --build --wait` starts one API instance and the web app. Append `api` to start the API alone, or `nginx` to start NGINX and four API replicas. Each configuration connects to the running infrastructure. [Root Compose file](compose.yml)
 

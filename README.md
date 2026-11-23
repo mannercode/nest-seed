@@ -19,15 +19,15 @@ NestJS 백엔드 프로젝트를 위한 시작 템플릿이다. 사용자·파�
 
 Dev Container의 저장소 루트에서 실행한다. 루트 명령은 `pnpm run`, 테스트 워크스페이스의 명령은 `pnpm -C tests run`으로 확인한다.
 
-| 명령                      | 용도                                                         |
-| ------------------------- | ------------------------------------------------------------ |
-| `pnpm run dev`            | API와 web을 watch mode로 실행                                |
-| `pnpm test`               | 단위·통합·API 예제·브라우저 E2E 테스트 (Restate 재시작 포함) |
-| `pnpm run lint`           | 타입·코드·서식·셸·문서 링크 검사                             |
-| `pnpm run format`         | Prettier로 저장소 전체의 서식 정리                           |
-| `pnpm -C tests test`      | production build의 web과 API 연결 검증                       |
-| `pnpm -C tests race`      | 다중 복제본 테스트의 시나리오 목록과 실행법 확인             |
-| `pnpm -C tests benchmark` | 같은 조건의 API 성능 비교                                    |
+| 명령                 | 용도                                                         |
+| -------------------- | ------------------------------------------------------------ |
+| `pnpm run dev`       | API와 web을 watch mode로 실행                                |
+| `pnpm test`          | 단위·통합·API 예제·브라우저 E2E 테스트 (Restate 재시작 포함) |
+| `pnpm run lint`      | 타입·코드·서식·셸·문서 링크 검사                             |
+| `pnpm run format`    | Prettier로 저장소 전체의 서식 정리                           |
+| `pnpm -C tests test` | production build의 web과 API 연결 검증                       |
+| `pnpm run race`      | 다중 복제본 테스트의 시나리오 목록과 실행법 확인             |
+| `pnpm run benchmark` | 같은 조건의 API 성능 비교                                    |
 
 `docker compose up -d --build --wait`는 API 한 개와 web을 띄운다. 명령 끝에 `api`를 붙이면 API 한 개만, `nginx`를 붙이면 NGINX와 API 복제본 4개를 띄운다. 모두 실행 중인 인프라에 연결한다. [루트 Compose](compose.yml)
 

@@ -40,7 +40,7 @@ jobs:
                       run=1
                       while [ "$run" -le 25 ]; do
                           echo "[Run ${run}/25]"
-                          pnpm -C tests race ${{ matrix.scenario }}
+                          pnpm run race ${{ matrix.scenario }}
                           run=$((run + 1))
                       done
             - name: Finish runner diagnostics
