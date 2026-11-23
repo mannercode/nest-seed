@@ -1,9 +1,0 @@
-{
-    "name": "@mannercode/dev-tools",
-    "version": "0.0.1",
-    "private": true,
-    "bin": {
-        "free-port": "./free-port.js",
-        "tunnel": "./tunnel.sh"
-    }
-}

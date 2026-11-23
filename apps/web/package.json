@@ -17,7 +17,7 @@
         "react-dom": "19.3.1"
     },
     "devDependencies": {
-        "@mannercode/dev-tools": "workspace:*",
+        "@mannercode/tools": "workspace:*",
         "@tailwindcss/postcss": "4.3.5",
         "@types/node": "26.6.6",
         "@types/react": "19.3.0",

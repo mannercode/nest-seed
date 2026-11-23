@@ -11,8 +11,7 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/api/package.json apps/api/
 COPY libs/common/package.json libs/common/
 COPY libs/testing/package.json libs/testing/
-COPY tools/dev-tools/package.json tools/dev-tools/free-port.js tools/dev-tools/tunnel.sh tools/dev-tools/
-COPY tools/vitest-helpers/package.json tools/vitest-helpers/
+COPY tools/ tools/
 
 # install 결과는 image layer에 남고, registry fetch 재시도는 pnpm의 기본 정책에 맡긴다.
 RUN --mount=type=cache,id=nest-seed-pnpm,target=/pnpm/store,sharing=locked \
