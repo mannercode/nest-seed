@@ -1,12 +1,12 @@
 {
-    "name": "infra-tests",
+    "name": "infra",
     "version": "0.0.1",
     "private": true,
     "type": "module",
     "scripts": {
         "test": "node --test --test-concurrency=1 --test-reporter=spec",
-        "race": "bash api/race/runner.sh",
-        "benchmark": "bash api/benchmark/run.sh"
+        "race": "bash tests/api/race/runner.sh",
+        "benchmark": "bash tests/api/benchmark/run.sh"
     },
     "devDependencies": {
         "@restatedev/restate-sdk": "1.18.4",

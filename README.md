@@ -25,15 +25,15 @@ Compose도 API 컨테이너를 만들 때 두 파일을 그대로 읽는다. 변
 
 Dev Container의 저장소 루트에서 실행한다. 루트 명령은 `pnpm run`, 웹 앱 명령은 `pnpm -C apps/web run`으로 확인한다.
 
-| 명령                    | 용도                                                         |
-| ----------------------- | ------------------------------------------------------------ |
-| `pnpm run dev`          | API와 web을 watch mode로 실행                                |
-| `pnpm test`             | 단위·통합·API 예제·브라우저 E2E 테스트 (Restate 재시작 포함) |
-| `pnpm run lint`         | 타입·코드·서식·셸·문서 링크 검사                             |
-| `pnpm run format`       | Prettier로 저장소 전체의 서식 정리                           |
-| `pnpm -C apps/web test` | production build의 web과 API 연결 검증                       |
-| `pnpm run race`         | 다중 복제본 테스트의 시나리오 목록과 실행법 확인             |
-| `pnpm run benchmark`    | 같은 조건의 API 성능 비교                                    |
+| 명령                          | 용도                                                         |
+| ----------------------------- | ------------------------------------------------------------ |
+| `pnpm run dev`                | API와 web을 watch mode로 실행                                |
+| `pnpm test`                   | 단위·통합·API 예제·브라우저 E2E 테스트 (Restate 재시작 포함) |
+| `pnpm run lint`               | 타입·코드·서식·셸·문서 링크 검사                             |
+| `pnpm run format`             | Prettier로 저장소 전체의 서식 정리                           |
+| `pnpm -C apps/web test`       | production build의 web과 API 연결 검증                       |
+| `pnpm -C infra run race`      | 다중 복제본 테스트의 시나리오 목록과 실행법 확인             |
+| `pnpm -C infra run benchmark` | 같은 조건의 API 성능 비교                                    |
 
 `docker compose -f infra/compose.apps.yml up -d --build --wait`는 API 한 개와 web을 띄운다. 명령 끝에 `api`를 붙이면 API 한 개만, `nginx`를 붙이면 NGINX와 API 복제본 4개를 띄운다. 모두 실행 중인 인프라에 연결한다. [앱 Compose](infra/compose.apps.yml)
 

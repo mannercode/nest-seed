@@ -28,11 +28,11 @@
             "options": [
                 "pnpm run dev",
                 "pnpm test",
-                "pnpm run race jwt-refresh-race",
-                "pnpm run race replica-chaos",
-                "pnpm run race sse-fanout-race",
-                "pnpm run race user-signup-race",
-                "pnpm run benchmark"
+                "pnpm -C infra run race jwt-refresh-race",
+                "pnpm -C infra run race replica-chaos",
+                "pnpm -C infra run race sse-fanout-race",
+                "pnpm -C infra run race user-signup-race",
+                "pnpm -C infra run benchmark"
             ]
         }
     ]

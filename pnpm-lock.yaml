@@ -436,7 +436,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
 
-  infra/tests:
+  infra:
     devDependencies:
       '@restatedev/restate-sdk':
         specifier: 1.18.4

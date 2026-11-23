@@ -31,15 +31,15 @@ Compose also reads both files when it creates the API container. It treats varia
 
 Run these commands from the repository root inside the Dev Container. Use `pnpm run` to list root commands and `pnpm -C apps/web run` to list web app commands.
 
-| Command                 | Purpose                                                                      |
-| ----------------------- | ---------------------------------------------------------------------------- |
-| `pnpm run dev`          | Run the API and web in watch mode                                            |
-| `pnpm test`             | Run unit, integration, API example, and browser E2E tests (restarts Restate) |
-| `pnpm run lint`         | Check types, code, formatting, shell scripts, and documentation links        |
-| `pnpm run format`       | Format the repository with Prettier                                          |
-| `pnpm -C apps/web test` | Verify the production build of web and its API connection                    |
-| `pnpm run race`         | List the multi-replica test scenarios and how to run them                    |
-| `pnpm run benchmark`    | Compare API performance under the same conditions                            |
+| Command                       | Purpose                                                                      |
+| ----------------------------- | ---------------------------------------------------------------------------- |
+| `pnpm run dev`                | Run the API and web in watch mode                                            |
+| `pnpm test`                   | Run unit, integration, API example, and browser E2E tests (restarts Restate) |
+| `pnpm run lint`               | Check types, code, formatting, shell scripts, and documentation links        |
+| `pnpm run format`             | Format the repository with Prettier                                          |
+| `pnpm -C apps/web test`       | Verify the production build of web and its API connection                    |
+| `pnpm -C infra run race`      | List the multi-replica test scenarios and how to run them                    |
+| `pnpm -C infra run benchmark` | Compare API performance under the same conditions                            |
 
 `docker compose -f infra/compose.apps.yml up -d --build --wait` starts one API instance and the web app. Append `api` to start the API alone, or `nginx` to start NGINX and four API replicas. Each configuration connects to the running infrastructure. [App Compose file](infra/compose.apps.yml)
 

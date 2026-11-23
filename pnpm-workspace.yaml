@@ -1,7 +1,7 @@
 packages:
     - 'apps/*'
     - 'libs/*'
-    - 'infra/tests'
+    - 'infra'
     - 'tools'
 
 saveExact: true

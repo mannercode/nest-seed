@@ -19,8 +19,6 @@
         "lint:shell": "bash -o pipefail -c \"git ls-files -z -- '*.sh' '.husky/*' | xargs -0 shellcheck --severity=warning -x\"",
         "pretest": "pnpm run build:libs",
         "test": "pnpm -r --workspace-concurrency=1 run --if-present test",
-        "race": "pnpm -C infra/tests run race",
-        "benchmark": "pnpm -C infra/tests run benchmark",
         "XXXbuild": "pnpm --recursive --if-present run build",
         "XXXpredev": "pnpm run build:libs",
         "XXXdev": "pnpm run --workspace-concurrency=Infinity '/^XXXdev:/'",
