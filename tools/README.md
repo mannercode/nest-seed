@@ -8,7 +8,7 @@ DB와 버킷은 worker별로 준비하고, 종료할 때는 테스트 패키지�
 
 ## 2. 개발 포트와 HTTPS 터널
 
-`pnpm run dev`는 API와 web을 시작하기 전에 `free-port`로 각 포트를 사용 중인 프로세스를 종료한다.
+`pnpm run dev`는 API와 web을 시작하기 전에 `free-port`로 각 포트를 사용 중인 프로세스를 종료한다. 빌드된 web을 `pnpm -C apps/web run start`로 실행할 때는 다른 프로세스가 `WEB_PORT`를 사용 중이면 서버 시작이 실패하고 기존 프로세스는 계속 실행된다.
 
 외부에서 web에 접속하려면 개발 서버를 켜고 다른 터미널의 저장소 루트에서 `pnpm run tunnel`을 실행한다. 출력된 HTTPS 주소에서는 사진 체크섬 계산에 필요한 Web Crypto를 사용할 수 있다. 터널은 web 포트만 공개하고 API 요청은 web이 전달한다.
 
