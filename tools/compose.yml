@@ -5,13 +5,4 @@ services:
         working_dir: /workspace
         volumes:
             - ${WORKSPACE_ROOT:?}:/workspace
-        command:
-            - --offline
-            - --include-fragments
-            - '*.md'
-            - '.devcontainer/README.md'
-            - 'apps/api/README.md'
-            - 'infra/README.md'
-            - 'libs/README.md'
-            - 'tests/README.md'
-            - 'tools/README.md'
+        command: [--offline, --include-fragments, --hidden, --extensions=md, .]
