@@ -21,7 +21,7 @@
     "containerEnv": {
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}",
         "COMPOSE_PROJECT_NAME": "${localEnv:USER:unknown}-${localWorkspaceFolderBasename}",
-        // 루트 compose.yml과 infra/compose.yml이 같은 프로젝트를 사용하므로 다른 파일에 정의된 컨테이너에 대한 경고를 끈다.
+        // 앱과 공용 인프라가 같은 Compose 프로젝트를 사용하므로 다른 파일에 정의된 컨테이너에 대한 경고를 끈다.
         "COMPOSE_IGNORE_ORPHANS": "true",
         // 복제본 테스트와 웹 E2E는 각각 별도 Compose 프로젝트에서 이 네트워크를 통해 개발 인프라에 연결한다.
         "DEVCONTAINER_NETWORK": "${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"

@@ -32,7 +32,7 @@ API의 context·공통 훅·보조 함수 배치는 [API 테스트 안내](../ap
 
 ## Race와 Benchmark
 
-`race`와 `benchmark`는 루트의 NGINX와 API 복제본을 테스트 전용 Compose 프로젝트에 띄운다. 두 검사와 수동으로 띄운 복제본 구성은 모두 호스트의 `127.0.0.1:3000`을 사용하므로 한 번에 하나씩 실행한다. 종료할 때 테스트 컨테이너를 내리고, 생성한 계정·파일·작업 기록은 공유 개발 인프라에 남는다. [복제본 Compose 설정](../compose.yml) · [인프라 초기화](../infra/README.md#2-인프라-시작과-데이터-초기화)
+`race`와 `benchmark`는 NGINX와 API 복제본을 테스트 전용 Compose 프로젝트에 띄운다. 두 검사와 수동으로 띄운 복제본 구성은 모두 호스트의 `127.0.0.1:3000`을 사용하므로 한 번에 하나씩 실행한다. 종료할 때 테스트 컨테이너를 내리고, 생성한 계정·파일·작업 기록은 공유 개발 인프라에 남는다. [복제본 Compose 설정](../infra/compose.apps.yml) · [인프라 초기화](../infra/README.md#2-인프라-시작과-데이터-초기화)
 
 `pnpm run race`로 시나리오와 실행법을 확인한다. VS Code의 `Tests` 작업에서도 시나리오나 벤치마크를 골라 실행할 수 있다. 가입·토큰 갱신은 한 회차 전체에서 여러 복제본이 응답했는지, SSE는 구독 연결이 여러 복제본에 분산됐는지 검증한다. [실행 가능한 시나리오](api/race/)
 
@@ -40,7 +40,7 @@ API의 context·공통 훅·보조 함수 배치는 [API 테스트 안내](../ap
 
 ## 브라우저 E2E
 
-루트 Compose에 E2E 설정을 더해 프로덕션 빌드의 `api`와 `web`을 테스트 전용 프로젝트에 띄운다. 같은 네트워크의 Playwright 컨테이너에서 Chromium을 실행하며 이미지 태그는 설치된 `@playwright/test` 버전을 따른다. [E2E 설정](web/compose.e2e.yml) · [실행기](web/run-e2e.sh)
+앱 Compose에 E2E 설정을 더해 프로덕션 빌드의 `api`와 `web`을 테스트 전용 프로젝트에 띄운다. 같은 네트워크의 Playwright 컨테이너에서 Chromium을 실행하며 이미지 태그는 설치된 `@playwright/test` 버전을 따른다. [E2E 설정](web/compose.e2e.yml) · [실행기](web/run-e2e.sh)
 
 `test.only`는 로컬과 CI 모두에서 실패한다.
 

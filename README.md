@@ -19,7 +19,7 @@ NestJS 백엔드 프로젝트를 위한 시작 템플릿이다. 사용자·파�
 
 Dev Container는 생성할 때 루트의 `.env.infra`와 `.env.api`를 읽는다. 둘 중 하나를 수정하면 VS Code에서 **`Rebuild Container`**를 실행한다. `.env.infra`의 `API_PORT`를 바꾸면 web 개발 서버의 `API_BASE_URL`도 새 포트에 맞춘다. [웹 설정](apps/web/.env)
 
-Compose도 API 컨테이너를 만들 때 두 파일을 그대로 읽는다. 변수 참조와 따옴표가 값에 포함되므로 `API_PORT=3000`처럼 최종 값을 적는다. `NODE_ENV`는 개발 서버와 테스트가 각각 설정한다. [API Compose 설정](compose.yml)
+Compose도 API 컨테이너를 만들 때 두 파일을 그대로 읽는다. 변수 참조와 따옴표가 값에 포함되므로 `API_PORT=3000`처럼 최종 값을 적는다. `NODE_ENV`는 개발 서버와 테스트가 각각 설정한다. [API Compose 설정](infra/compose.apps.yml)
 
 ## 실행과 검증
 
@@ -35,7 +35,7 @@ Dev Container의 저장소 루트에서 실행한다. 루트 명령은 `pnpm run
 | `pnpm run race`      | 다중 복제본 테스트의 시나리오 목록과 실행법 확인             |
 | `pnpm run benchmark` | 같은 조건의 API 성능 비교                                    |
 
-`docker compose up -d --build --wait`는 API 한 개와 web을 띄운다. 명령 끝에 `api`를 붙이면 API 한 개만, `nginx`를 붙이면 NGINX와 API 복제본 4개를 띄운다. 모두 실행 중인 인프라에 연결한다. [루트 Compose](compose.yml)
+`docker compose -f infra/compose.apps.yml up -d --build --wait`는 API 한 개와 web을 띄운다. 명령 끝에 `api`를 붙이면 API 한 개만, `nginx`를 붙이면 NGINX와 API 복제본 4개를 띄운다. 모두 실행 중인 인프라에 연결한다. [앱 Compose](infra/compose.apps.yml)
 
 실행 중인 개발 서버에서 curl 예제를 검증하려면 `bash apps/api/api-docs/run.sh`를 실행한다. 단일 API 컨테이너를 대상으로 할 때는 `SERVER_URL="http://api:${API_PORT:?}" bash apps/api/api-docs/run.sh`를 사용한다. 예제 파일명을 인자로 주면 해당 파일만 실행한다.
 
@@ -60,7 +60,7 @@ pnpm --dir apps/api exec vitest run users.spec
 | [apps/web/](apps/web/)                            | 사진 첨부 가입·로그인·본인 조회 화면과 API 프록시      |
 | [libs/](libs/README.md)                           | 공통 패키지의 책임과 사용 계약                         |
 | [.devcontainer/](.devcontainer/devcontainer.json) | Dev Container 시작 명령과 VS Code 설정                 |
-| [infra/](infra/README.md)                         | 개발 인프라 구성과 데이터 초기화                       |
+| [infra/](infra/README.md)                         | 앱 컨테이너 실행과 공용 개발 인프라 초기화             |
 | [tests/](tests/README.md)                         | 테스트 작성 규칙, 검증 범위와 브라우저 테스트 실행법   |
 | [tools/](tools/README.md)                         | 웹 개발 서버 외부 접속과 테스트 도구                   |
 

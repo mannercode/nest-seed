@@ -1,4 +1,4 @@
-# 개발 인프라
+# 앱 컨테이너와 개발 인프라
 
 ## 1. 로컬에서 실행하는 서비스
 
@@ -12,13 +12,13 @@ Dev Container에서 `bash infra/reset.sh`를 실행하면 개발 인프라의 �
 
 ## 3. 네트워크와 포트
 
-Dev Container와 각 Compose 프로젝트는 같은 외부 Docker 네트워크에서 서비스 이름으로 통신한다. 인프라 포트는 호스트에 공개하지 않는다. MongoDB·Redis의 주소를 바꾸면 앱의 접속 설정뿐 아니라 각 노드가 클라이언트에 알려 주는 주소와 초기화 스크립트도 맞춘다.
+Dev Container와 각 Compose 프로젝트는 같은 외부 Docker 네트워크에서 서비스 이름으로 통신한다. 공용 개발 인프라의 포트는 호스트에 공개하지 않는다. MongoDB·Redis의 주소를 바꾸면 앱의 접속 설정뿐 아니라 각 노드가 클라이언트에 알려 주는 주소와 초기화 스크립트도 맞춘다.
 
 ## 4. Restate에 workflow 실행 주소 등록
 
-API는 workflow 리스너를 연 뒤 `RESTATE_ADMIN_URL`에 `RESTATE_DEPLOYMENT_URI`를 등록한다. 등록에 성공해야 HTTP 요청을 받는다. 배포할 때는 Restate에서 접속할 수 있는 workflow 주소를 지정한다. 단일 서버는 자신의 주소를, 같은 버전의 복제본은 모두 같은 로드 밸런서 주소를 사용한다. 같은 주소와 서비스 정의로 다시 시작하면 기존 등록을 재사용한다. [단일 서버와 복제본 설정](../compose.yml)
+API는 workflow 리스너를 연 뒤 `RESTATE_ADMIN_URL`에 `RESTATE_DEPLOYMENT_URI`를 등록한다. 등록에 성공해야 HTTP 요청을 받는다. 배포할 때는 Restate에서 접속할 수 있는 workflow 주소를 지정한다. 단일 서버는 자신의 주소를, 같은 버전의 복제본은 모두 같은 로드 밸런서 주소를 사용한다. 같은 주소와 서비스 정의로 다시 시작하면 기존 등록을 재사용한다. [단일 서버와 복제본 설정](compose.apps.yml)
 
-API의 HTTP·workflow 포트를 바꾸면 NGINX upstream을 맞춘다. NGINX가 workflow 요청을 받는 포트를 바꾸면 Compose의 등록 주소도 바꾼다. [NGINX 설정](../nginx.conf)
+API의 HTTP·workflow 포트를 바꾸면 NGINX upstream을 맞춘다. NGINX가 workflow 요청을 받는 포트를 바꾸면 Compose의 등록 주소도 바꾼다. [NGINX 설정](nginx.conf)
 
 진행 중인 작업을 유지하며 배포하려면 새 버전을 별도 주소에 등록한다. 기존 작업이 끝날 때까지 이전 주소에서 이전 코드를 실행한다.
 

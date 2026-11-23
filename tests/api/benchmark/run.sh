@@ -15,7 +15,7 @@ mkdir "${OUTPUT_DIR}"
 
 compose=(
     docker compose --project-name "${COMPOSE_PROJECT_NAME:?}-replicas" --profile replicas
-    -f "${WORKSPACE_ROOT}/compose.yml" -f compose.yml
+    -f "${WORKSPACE_ROOT}/infra/compose.apps.yml" -f compose.yml
 )
 
 cleanup() {

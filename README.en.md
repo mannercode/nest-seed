@@ -25,7 +25,7 @@ The infrastructure is for development and testing. When forking, replace the pro
 
 The Dev Container reads `.env.infra` and `.env.api` from the repository root when it is created. If you edit either file, run **`Rebuild Container`** in VS Code. If you change `API_PORT` in `.env.infra`, update the port in the web development server's `API_BASE_URL` as well. [Web settings](apps/web/.env)
 
-Compose also reads both files when it creates the API container. It treats variable references and quotation marks as part of the value, so write the final value directly, as in `API_PORT=3000`. The development server and tests each set `NODE_ENV`. [API Compose configuration](compose.yml)
+Compose also reads both files when it creates the API container. It treats variable references and quotation marks as part of the value, so write the final value directly, as in `API_PORT=3000`. The development server and tests each set `NODE_ENV`. [API Compose configuration](infra/compose.apps.yml)
 
 ## Running and verifying
 
@@ -41,7 +41,7 @@ Run these commands from the repository root inside the Dev Container. Use `pnpm 
 | `pnpm run race`      | List the multi-replica test scenarios and how to run them                    |
 | `pnpm run benchmark` | Compare API performance under the same conditions                            |
 
-`docker compose up -d --build --wait` starts one API instance and the web app. Append `api` to start the API alone, or `nginx` to start NGINX and four API replicas. Each configuration connects to the running infrastructure. [Root Compose file](compose.yml)
+`docker compose -f infra/compose.apps.yml up -d --build --wait` starts one API instance and the web app. Append `api` to start the API alone, or `nginx` to start NGINX and four API replicas. Each configuration connects to the running infrastructure. [App Compose file](infra/compose.apps.yml)
 
 Run `bash apps/api/api-docs/run.sh` to check the curl examples against the running dev server. To target the single API container, use `SERVER_URL="http://api:${API_PORT:?}" bash apps/api/api-docs/run.sh`. Pass an example filename to run just that file.
 
@@ -60,7 +60,7 @@ pnpm --dir apps/api exec vitest run users.spec
 | [apps/web/](apps/web/)                            | Photo sign-up, login, profile screens and API proxy             |
 | [libs/](libs/README.md)                           | Shared package responsibilities and contracts                   |
 | [.devcontainer/](.devcontainer/devcontainer.json) | Dev Container startup commands and VS Code settings             |
-| [infra/](infra/README.md)                         | Development infrastructure and data reset                       |
+| [infra/](infra/README.md)                         | App containers and shared development infrastructure setup      |
 | [tests/](tests/README.md)                         | Test conventions, coverage, and running browser tests           |
 | [tools/](tools/README.md)                         | External access to the web dev server and test tools            |
 

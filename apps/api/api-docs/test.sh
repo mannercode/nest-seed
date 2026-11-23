@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 cd -- "${WORKSPACE_ROOT:?}"
 
+export COMPOSE_FILE=infra/compose.apps.yml
 api_host="${COMPOSE_PROJECT_NAME:?}-api-docs"
 export SERVER_URL="http://${api_host}:${API_PORT:?}"
 docs_dir=$(mktemp -d)

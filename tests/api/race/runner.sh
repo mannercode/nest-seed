@@ -6,7 +6,7 @@ cd -- "$(dirname -- "$0")"
 # 사용: pnpm run race <scenario-name>
 #  예) pnpm run race sse-fanout-race
 
-: "${WORKSPACE_ROOT:?}"
+export COMPOSE_FILE="${WORKSPACE_ROOT:?}/infra/compose.apps.yml"
 
 replica_project="${COMPOSE_PROJECT_NAME:?}-replicas"
 compose=(docker compose --project-name "${replica_project}" --profile replicas)

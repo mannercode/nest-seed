@@ -12,7 +12,7 @@ PLAYWRIGHT_VERSION=$(node -p "require('@playwright/test/package.json').version")
 export PLAYWRIGHT_VERSION
 compose=(
     docker compose --project-name "${COMPOSE_PROJECT_NAME}-web"
-    -f "${WORKSPACE_ROOT}/compose.yml" -f compose.e2e.yml
+    -f "${WORKSPACE_ROOT}/infra/compose.apps.yml" -f compose.e2e.yml
 )
 
 cleanup() {
