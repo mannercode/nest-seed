@@ -16,5 +16,5 @@ DB와 버킷은 worker별로 준비하고, 종료할 때는 테스트 패키지�
 
 루트의 `pnpm run lint`는 두 검사를 모두 실행한다. 각각 실행하려면 다음 명령을 사용한다.
 
-- `pnpm run lint:links`는 lychee를 일회성 컨테이너로 실행해 로컬 링크와 문서 내 제목 링크를 검사한다. 저장소 루트부터 숨김 폴더까지 `.md` 파일을 찾으며 `.gitignore`를 따른다. [루트 스크립트](../package.json)
+- `pnpm run lint:md`는 lychee를 일회성 컨테이너로 실행해 로컬 링크와 문서 내 제목 링크를 검사한다. 저장소 루트부터 숨김 폴더까지 `.md` 파일을 찾으며 `.gitignore`를 따른다. [루트 스크립트](../package.json)
 - `pnpm run lint:shell`은 Git이 추적하는 `*.sh` 파일과 `.husky/`의 훅을 ShellCheck로 검사한다.
