@@ -21,6 +21,12 @@ The infrastructure is for development and testing. When forking, replace the pro
 3. Run `pnpm run dev` to start the API and web. From another terminal in the same container, run `curl "http://localhost:${API_PORT}/health"` to check the API.
 4. Run `echo "$WEB_PORT"` and forward that port in the VS Code **Ports** panel to open the web app.
 
+### Rebuilding the Dev Container after editing environment files
+
+The Dev Container reads `.env.infra` and `.env.api` from the repository root when it is created. If you edit either file, run **`Rebuild Container`** in VS Code. If you change `API_PORT` in `.env.infra`, update the port in the web development server's `API_BASE_URL` as well. [Web settings](apps/web/.env)
+
+Compose also reads both files when it creates the API container. It treats variable references and quotation marks as part of the value, so write the final value directly, as in `API_PORT=3000`. The development server and tests each set `NODE_ENV`. [API Compose configuration](compose.yml)
+
 ## Running and verifying
 
 Run these commands from the repository root inside the Dev Container. Use `pnpm run` to list root commands and `pnpm -C tests run` to list test workspace commands.
@@ -48,14 +54,14 @@ pnpm --dir apps/api exec vitest run users.spec
 
 ## Structure and choices
 
-| Location                                  | Contents                                                        |
-| ----------------------------------------- | --------------------------------------------------------------- |
-| [apps/api/](apps/api/README.md)           | Services, SoLA dependencies, API conventions and usage examples |
-| [apps/web/](apps/web/)                    | Photo sign-up, login, profile screens and API proxy             |
-| [libs/](libs/README.md)                   | Shared package responsibilities and contracts                   |
-| [.devcontainer/](.devcontainer/README.md) | Environment file values and when to rebuild the Dev Container   |
-| [infra/](infra/README.md)                 | Development infrastructure and data reset                       |
-| [tests/](tests/README.md)                 | Test conventions, coverage, and running browser tests           |
-| [tools/](tools/README.md)                 | External access to the web dev server and test tools            |
+| Location                                          | Contents                                                        |
+| ------------------------------------------------- | --------------------------------------------------------------- |
+| [apps/api/](apps/api/README.md)                   | Services, SoLA dependencies, API conventions and usage examples |
+| [apps/web/](apps/web/)                            | Photo sign-up, login, profile screens and API proxy             |
+| [libs/](libs/README.md)                           | Shared package responsibilities and contracts                   |
+| [.devcontainer/](.devcontainer/devcontainer.json) | Dev Container startup commands and VS Code settings             |
+| [infra/](infra/README.md)                         | Development infrastructure and data reset                       |
+| [tests/](tests/README.md)                         | Test conventions, coverage, and running browser tests           |
+| [tools/](tools/README.md)                         | External access to the web dev server and test tools            |
 
 See [AGENTS.md](AGENTS.md) for repository work and review rules.

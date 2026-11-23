@@ -15,6 +15,12 @@ NestJS 백엔드 프로젝트를 위한 시작 템플릿이다. 사용자·파�
 3. `pnpm run dev`로 API와 web을 실행한다. 같은 컨테이너의 다른 터미널에서 `curl "http://localhost:${API_PORT}/health"`로 API를 확인한다.
 4. `echo "$WEB_PORT"`로 web의 포트 번호를 확인하고 VS Code 포트 패널에서 그 포트를 전달해 web을 연다.
 
+### 환경 변수 파일 변경 후 Dev Container 재생성
+
+Dev Container는 생성할 때 루트의 `.env.infra`와 `.env.api`를 읽는다. 둘 중 하나를 수정하면 VS Code에서 **`Rebuild Container`**를 실행한다. `.env.infra`의 `API_PORT`를 바꾸면 web 개발 서버의 `API_BASE_URL`도 새 포트에 맞춘다. [웹 설정](apps/web/.env)
+
+Compose도 API 컨테이너를 만들 때 두 파일을 그대로 읽는다. 변수 참조와 따옴표가 값에 포함되므로 `API_PORT=3000`처럼 최종 값을 적는다. `NODE_ENV`는 개발 서버와 테스트가 각각 설정한다. [API Compose 설정](compose.yml)
+
 ## 실행과 검증
 
 Dev Container의 저장소 루트에서 실행한다. 루트 명령은 `pnpm run`, 테스트 워크스페이스의 명령은 `pnpm -C tests run`으로 확인한다.
@@ -48,14 +54,14 @@ pnpm --dir apps/api exec vitest run users.spec
 
 ## 구조와 선택
 
-| 위치                                      | 주요 내용                                              |
-| ----------------------------------------- | ------------------------------------------------------ |
-| [apps/api/](apps/api/README.md)           | 서비스 구성, SoLA 의존 방향, API 작성 규칙과 사용 예제 |
-| [apps/web/](apps/web/)                    | 사진 첨부 가입·로그인·본인 조회 화면과 API 프록시      |
-| [libs/](libs/README.md)                   | 공통 패키지의 책임과 사용 계약                         |
-| [.devcontainer/](.devcontainer/README.md) | 환경 변수 파일 작성과 변경 후 Dev Container 재생성     |
-| [infra/](infra/README.md)                 | 개발 인프라 구성과 데이터 초기화                       |
-| [tests/](tests/README.md)                 | 테스트 작성 규칙, 검증 범위와 브라우저 테스트 실행법   |
-| [tools/](tools/README.md)                 | 웹 개발 서버 외부 접속과 테스트 도구                   |
+| 위치                                              | 주요 내용                                              |
+| ------------------------------------------------- | ------------------------------------------------------ |
+| [apps/api/](apps/api/README.md)                   | 서비스 구성, SoLA 의존 방향, API 작성 규칙과 사용 예제 |
+| [apps/web/](apps/web/)                            | 사진 첨부 가입·로그인·본인 조회 화면과 API 프록시      |
+| [libs/](libs/README.md)                           | 공통 패키지의 책임과 사용 계약                         |
+| [.devcontainer/](.devcontainer/devcontainer.json) | Dev Container 시작 명령과 VS Code 설정                 |
+| [infra/](infra/README.md)                         | 개발 인프라 구성과 데이터 초기화                       |
+| [tests/](tests/README.md)                         | 테스트 작성 규칙, 검증 범위와 브라우저 테스트 실행법   |
+| [tools/](tools/README.md)                         | 웹 개발 서버 외부 접속과 테스트 도구                   |
 
 저장소 작업과 리뷰의 기준은 [AGENTS.md](AGENTS.md)에 있다.
