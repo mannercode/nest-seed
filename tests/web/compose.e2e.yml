@@ -1,19 +1,19 @@
 services:
-    web-e2e-api:
-        extends: { file: '${WORKSPACE_ROOT:?}/compose.yml', service: api }
+    # 공유 네트워크에 직접 연결해 기본 앱은 api·web으로, 테스트 앱은 각 hostname으로 찾는다.
+    api:
+        network_mode: ${DEVCONTAINER_NETWORK:?}
         hostname: web-e2e-api
         environment:
             PROJECT_ID: ${PROJECT_ID:?}-web-e2e
             RESTATE_DEPLOYMENT_URI: http://web-e2e-api:${RESTATE_SERVICE_PORT:?}
 
-    web-e2e:
-        extends: { file: '${WORKSPACE_ROOT:?}/compose.yml', service: web }
+    web:
+        network_mode: ${DEVCONTAINER_NETWORK:?}
+        hostname: web-e2e
         environment:
             API_BASE_URL: http://web-e2e-api:${API_PORT:?}
             BFF_COOKIE_SECURE: 'false'
             BFF_TRUST_PROXY_HEADERS: 'true'
-        depends_on: !override
-            web-e2e-api: { condition: service_healthy }
 
     e2e:
         image: mcr.microsoft.com/playwright:v${PLAYWRIGHT_VERSION:?}-noble
@@ -22,8 +22,3 @@ services:
         volumes: ['${WORKSPACE_ROOT:?}:${WORKSPACE_ROOT:?}']
         environment: [API_PORT, WEB_PORT, WORKSPACE_ROOT]
         entrypoint: ['./node_modules/.bin/playwright', 'test']
-
-networks:
-    default:
-        name: ${DEVCONTAINER_NETWORK:?}
-        external: true
