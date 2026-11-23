@@ -1,6 +1,6 @@
 #!/bin/bash
 set -Eeuo pipefail
-cd -- "$(dirname -- "$0")/../.."
+cd -- "${WORKSPACE_ROOT:?}"
 
 api_host="${COMPOSE_PROJECT_NAME:?}-api-docs"
 export SERVER_URL="http://${api_host}:${API_PORT:?}"

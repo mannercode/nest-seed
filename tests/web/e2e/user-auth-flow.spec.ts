@@ -1,7 +1,7 @@
 import { expect, request, test, type BrowserContext, type Page } from '@playwright/test'
 import { randomUUID } from 'node:crypto'
 
-import { API_BASE_URL, WEB_BASE_URL } from '../playwright.config'
+import { API_BASE_URL, WEB_BASE_URL, WORKSPACE_ROOT } from '../playwright.config'
 
 const PASSWORD = 'DevPassword1234!'
 const ACCESS_COOKIE = 'nest-seed-user-access'
@@ -289,7 +289,7 @@ test.describe('사진을 첨부해 가입하면', () => {
         await page.getByLabel('비밀번호').fill(PASSWORD)
         await page
             .getByLabel('사진 (선택)')
-            .setInputFiles('../../apps/api/api-docs/assets/image.png')
+            .setInputFiles(`${WORKSPACE_ROOT}/apps/api/api-docs/assets/image.png`)
     })
     test('로그인 후 본인 정보와 업로드한 사진을 표시한다', async ({ page }) => {
         await page.getByRole('button', { name: '회원가입' }).click()

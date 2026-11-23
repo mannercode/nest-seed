@@ -8,6 +8,7 @@ function requiredEnvironment(name: string): string {
 
 export const API_BASE_URL = `http://web-e2e-api:${requiredEnvironment('API_PORT')}`
 export const WEB_BASE_URL = `http://web.localhost:${requiredEnvironment('WEB_PORT')}`
+export const WORKSPACE_ROOT = requiredEnvironment('WORKSPACE_ROOT')
 
 export default defineConfig({
     testDir: './e2e',
