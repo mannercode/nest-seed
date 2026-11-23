@@ -1,6 +1,6 @@
 {
     "files.associations": { "*.spec": "shellscript" },
-    "files.exclude": { "**/node_modules": true },
+    "files.exclude": { "**/node_modules": true, "**/.pnpm-store": true },
     "files.watcherExclude": { "**/_output/**": true },
     "search.exclude": { "**/_output/**": true },
     "js/ts.tsc.autoDetect": "off",
