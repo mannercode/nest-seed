@@ -23,17 +23,17 @@ Compose도 API 컨테이너를 만들 때 두 파일을 그대로 읽는다. 변
 
 ## 실행과 검증
 
-Dev Container의 저장소 루트에서 실행한다. 루트 명령은 `pnpm run`, 브라우저 E2E 워크스페이스의 명령은 `pnpm -C tests run`으로 확인한다.
+Dev Container의 저장소 루트에서 실행한다. 루트 명령은 `pnpm run`, 웹 앱 명령은 `pnpm -C apps/web run`으로 확인한다.
 
-| 명령                 | 용도                                                         |
-| -------------------- | ------------------------------------------------------------ |
-| `pnpm run dev`       | API와 web을 watch mode로 실행                                |
-| `pnpm test`          | 단위·통합·API 예제·브라우저 E2E 테스트 (Restate 재시작 포함) |
-| `pnpm run lint`      | 타입·코드·서식·셸·문서 링크 검사                             |
-| `pnpm run format`    | Prettier로 저장소 전체의 서식 정리                           |
-| `pnpm -C tests test` | production build의 web과 API 연결 검증                       |
-| `pnpm run race`      | 다중 복제본 테스트의 시나리오 목록과 실행법 확인             |
-| `pnpm run benchmark` | 같은 조건의 API 성능 비교                                    |
+| 명령                    | 용도                                                         |
+| ----------------------- | ------------------------------------------------------------ |
+| `pnpm run dev`          | API와 web을 watch mode로 실행                                |
+| `pnpm test`             | 단위·통합·API 예제·브라우저 E2E 테스트 (Restate 재시작 포함) |
+| `pnpm run lint`         | 타입·코드·서식·셸·문서 링크 검사                             |
+| `pnpm run format`       | Prettier로 저장소 전체의 서식 정리                           |
+| `pnpm -C apps/web test` | production build의 web과 API 연결 검증                       |
+| `pnpm run race`         | 다중 복제본 테스트의 시나리오 목록과 실행법 확인             |
+| `pnpm run benchmark`    | 같은 조건의 API 성능 비교                                    |
 
 `docker compose -f infra/compose.apps.yml up -d --build --wait`는 API 한 개와 web을 띄운다. 명령 끝에 `api`를 붙이면 API 한 개만, `nginx`를 붙이면 NGINX와 API 복제본 4개를 띄운다. 모두 실행 중인 인프라에 연결한다. [앱 Compose](infra/compose.apps.yml)
 
@@ -57,11 +57,10 @@ pnpm --dir apps/api exec vitest run users.spec
 | 위치                                              | 주요 내용                                              |
 | ------------------------------------------------- | ------------------------------------------------------ |
 | [apps/api/](apps/api/README.md)                   | 서비스 구성, SoLA 의존 방향, API 작성 규칙과 사용 예제 |
-| [apps/web/](apps/web/)                            | 사진 첨부 가입·로그인·본인 조회 화면과 API 프록시      |
+| [apps/web/](apps/web/README.md)                   | 사진 첨부 가입·로그인·본인 조회, API 프록시와 E2E      |
 | [libs/](libs/README.md)                           | 공통 패키지의 책임과 사용 계약                         |
 | [.devcontainer/](.devcontainer/devcontainer.json) | Dev Container 시작 명령과 VS Code 설정                 |
 | [infra/](infra/README.md)                         | 앱 컨테이너 실행, 개발 인프라 초기화와 복제본 검증     |
-| [tests/](tests/README.md)                         | 테스트 작성 규칙, 검증 범위와 브라우저 테스트 실행법   |
 | [tools/](tools/README.md)                         | 웹 개발 서버 외부 접속과 테스트 도구                   |
 
-저장소 작업과 리뷰의 기준은 [AGENTS.md](AGENTS.md)에 있다.
+저장소 작업·테스트 작성·리뷰 기준은 [AGENTS.md](AGENTS.md)에 있다.

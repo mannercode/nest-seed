@@ -61,7 +61,9 @@ API 로그는 stdout/stderr에 ECS JSON으로 출력한다. 요청·응답 본�
 
 ## 테스트
 
-단순 위임은 실제 Nest 모듈과 개발 인프라를 연결한 통합 테스트에서 확인한다. 독립적인 계산·변환은 단위 테스트로 검증할 수 있다. [테스트 작성 규칙](../../tests/README.md#테스트는-한-행동의-결과를-검증한다)
+단순 위임은 실제 Nest 모듈과 개발 인프라를 연결한 통합 테스트에서 확인한다. 독립적인 계산·변환은 단위 테스트로 검증할 수 있다. [테스트 작성 규칙](../../AGENTS.md#테스트는-한-행동의-결과를-검증한다)
+
+API 자체의 동시 요청 처리는 앱의 통합 테스트에서 검증한다. NGINX와 API 복제본 4개를 띄웠을 때의 요청 분산, 장애 복구와 성능은 인프라 테스트에서 확인한다. [API 테스트](src/__tests__/) · [인프라 테스트](../../infra/README.md#5-인프라-테스트)
 
 `createAppTestContext`와 공통 훅이 앱을 준비하고 정리한다. 데이터 준비·조회·장애 주입 함수는 해당 `*.utils.ts`에 둔다. DB와 버킷은 worker별로, `PROJECT_ID`는 테스트별로 나누므로 키 접두어·subject·workflow 이름은 provider에 주입된 설정으로 정한다.
 
@@ -72,3 +74,5 @@ API 서버와 통합 테스트는 `configureHttpApp`으로 HTTP 설정을 적용
 ### 실행 가능한 API 문서
 
 외부에 `api-docs/`를 전달하기 전에 `run.cfg`의 API 주소를 수정한다. 전달받은 사람은 그 폴더에서 `bash run.sh`를 실행한다.
+
+`pnpm --dir apps/api run test:api-docs`는 API 배포 이미지로 컨테이너를 띄우고 Dev Container에서 curl 예제를 실행한다. 결과를 터미널에 표시한 뒤 해당 컨테이너를 정리한다. 보고서를 로컬에 남기려면 실행 중인 API를 대상으로 `bash apps/api/api-docs/run.sh`를 실행한다. 예제가 만든 계정과 파일은 개발 DB와 S3에 남고, Restate는 다음 실행에서 같은 테스트 서비스 등록을 재사용한다. [예제 테스트 스크립트](api-docs/test.sh)

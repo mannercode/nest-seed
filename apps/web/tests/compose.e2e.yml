@@ -18,7 +18,7 @@ services:
     e2e:
         image: mcr.microsoft.com/playwright:v${PLAYWRIGHT_VERSION:?}-noble
         init: true
-        working_dir: ${WORKSPACE_ROOT:?}/tests/web
+        working_dir: ${WORKSPACE_ROOT:?}/apps/web/tests
         volumes: ['${WORKSPACE_ROOT:?}:${WORKSPACE_ROOT:?}']
         environment: [API_PORT, WEB_PORT, WORKSPACE_ROOT]
-        entrypoint: ['${WORKSPACE_ROOT:?}/tests/node_modules/.bin/playwright', 'test']
+        entrypoint: ['${WORKSPACE_ROOT:?}/apps/web/node_modules/.bin/playwright', 'test']

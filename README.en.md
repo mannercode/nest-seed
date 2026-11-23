@@ -29,17 +29,17 @@ Compose also reads both files when it creates the API container. It treats varia
 
 ## Running and verifying
 
-Run these commands from the repository root inside the Dev Container. Use `pnpm run` to list root commands and `pnpm -C tests run` to list browser E2E workspace commands.
+Run these commands from the repository root inside the Dev Container. Use `pnpm run` to list root commands and `pnpm -C apps/web run` to list web app commands.
 
-| Command              | Purpose                                                                      |
-| -------------------- | ---------------------------------------------------------------------------- |
-| `pnpm run dev`       | Run the API and web in watch mode                                            |
-| `pnpm test`          | Run unit, integration, API example, and browser E2E tests (restarts Restate) |
-| `pnpm run lint`      | Check types, code, formatting, shell scripts, and documentation links        |
-| `pnpm run format`    | Format the repository with Prettier                                          |
-| `pnpm -C tests test` | Verify the production build of web and its API connection                    |
-| `pnpm run race`      | List the multi-replica test scenarios and how to run them                    |
-| `pnpm run benchmark` | Compare API performance under the same conditions                            |
+| Command                 | Purpose                                                                      |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `pnpm run dev`          | Run the API and web in watch mode                                            |
+| `pnpm test`             | Run unit, integration, API example, and browser E2E tests (restarts Restate) |
+| `pnpm run lint`         | Check types, code, formatting, shell scripts, and documentation links        |
+| `pnpm run format`       | Format the repository with Prettier                                          |
+| `pnpm -C apps/web test` | Verify the production build of web and its API connection                    |
+| `pnpm run race`         | List the multi-replica test scenarios and how to run them                    |
+| `pnpm run benchmark`    | Compare API performance under the same conditions                            |
 
 `docker compose -f infra/compose.apps.yml up -d --build --wait` starts one API instance and the web app. Append `api` to start the API alone, or `nginx` to start NGINX and four API replicas. Each configuration connects to the running infrastructure. [App Compose file](infra/compose.apps.yml)
 
@@ -57,11 +57,10 @@ pnpm --dir apps/api exec vitest run users.spec
 | Location                                          | Contents                                                        |
 | ------------------------------------------------- | --------------------------------------------------------------- |
 | [apps/api/](apps/api/README.md)                   | Services, SoLA dependencies, API conventions and usage examples |
-| [apps/web/](apps/web/)                            | Photo sign-up, login, profile screens and API proxy             |
+| [apps/web/](apps/web/README.md)                   | Photo sign-up, login, profile, API proxy and browser E2E tests  |
 | [libs/](libs/README.md)                           | Shared package responsibilities and contracts                   |
 | [.devcontainer/](.devcontainer/devcontainer.json) | Dev Container startup commands and VS Code settings             |
 | [infra/](infra/README.md)                         | App containers, development infrastructure reset, replica tests |
-| [tests/](tests/README.md)                         | Test conventions, coverage, and running browser tests           |
 | [tools/](tools/README.md)                         | External access to the web dev server and test tools            |
 
-See [AGENTS.md](AGENTS.md) for repository work and review rules.
+See [AGENTS.md](AGENTS.md) for repository work, test writing, and review rules.

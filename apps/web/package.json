@@ -8,6 +8,7 @@
         "dev": "next dev -p ${WEB_PORT:?}",
         "build": "next build",
         "start": "next start -p ${WEB_PORT:?}",
+        "test": "bash tests/run-e2e.sh",
         "lint": "tsc --noEmit"
     },
     "dependencies": {
@@ -17,6 +18,7 @@
     },
     "devDependencies": {
         "@mannercode/tools": "workspace:*",
+        "@playwright/test": "1.65.1",
         "@tailwindcss/postcss": "4.3.5",
         "@types/node": "26.6.6",
         "@types/react": "19.3.0",

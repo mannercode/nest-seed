@@ -411,6 +411,9 @@ importers:
       '@mannercode/tools':
         specifier: workspace:*
         version: link:../../tools
+      '@playwright/test':
+        specifier: 1.65.1
+        version: 1.65.1
       '@tailwindcss/postcss':
         specifier: 4.3.5
         version: 4.3.5
@@ -545,18 +548,6 @@ importers:
       vitest:
         specifier: 5.1.1
         version: 5.1.1(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.3)(yaml@2.9.1))
-
-  tests:
-    devDependencies:
-      '@playwright/test':
-        specifier: 1.65.1
-        version: 1.65.1
-      '@types/node':
-        specifier: 26.6.6
-        version: 26.6.6
-      typescript:
-        specifier: 7.0.2
-        version: 7.0.2
 
   tools:
     dependencies:
