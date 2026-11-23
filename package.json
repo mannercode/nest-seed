@@ -15,7 +15,7 @@
         "lint:workspaces": "pnpm -r run --if-present lint",
         "lint:format": "prettier --check .",
         "lint:code": "oxlint .",
-        "lint:links": "docker run --rm --network none -v \"${WORKSPACE_ROOT:?}:/workspace\" -w /workspace lycheeverse/lychee --offline --include-fragments --hidden --extensions=md .",
+        "lint:links": "docker run --rm -v \"${WORKSPACE_ROOT:?}:/workspace\" lycheeverse/lychee --offline --include-fragments --hidden --extensions=md /workspace",
         "lint:shell": "bash -o pipefail -c \"git ls-files -z -- '*.sh' '.husky/*' | xargs -0 shellcheck --severity=warning -x\"",
         "pretest": "pnpm run build:libs",
         "test": "pnpm -r --workspace-concurrency=1 run --if-present test",
