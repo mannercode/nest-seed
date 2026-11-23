@@ -13,13 +13,9 @@ import {
     type TestModuleOptions
 } from '@mannercode/testing'
 import { SchedulerRegistry } from '@nestjs/schedule'
-import compression from 'compression'
-import express from 'express'
 import { DEMO_EVENTS_MAX_BYTES } from '#infrastructure'
-import { AppConfigService } from '#config'
 import { AppModule } from '../../app.module.js'
-import { initializeApi } from '../../bootstrap.js'
-import { configureTemporalJson } from '../../configure-temporal-json.js'
+import { configureHttpApp, initializeApi } from '../../bootstrap.js'
 import { TextJobWorkflowClient } from '../../services/infrastructure/job-demo/worker.js'
 import { getSharedTestMongoConnection } from './shared-mongo-connection.js'
 
@@ -40,21 +36,17 @@ export async function createAppTestContext(metadata: TestModuleOptions = {}) {
 
     await using setup = new AsyncDisposableStack()
     const ctx = await createTestContext({
+        ...metadata,
+        imports,
+        overrideProviders,
         configureApp: async (app) => {
-            const { http } = app.get(AppConfigService)
-
-            configureTemporalJson(app)
-            app.use(compression())
-            app.use(express.json({ limit: http.requestPayloadLimit }))
-
+            configureHttpApp(app)
             if (isDebuggingEnabled()) {
                 const logger = app.get(AppLoggerService)
                 app.useLogger(logger)
             }
-        },
-        ...metadata,
-        imports,
-        overrideProviders
+            await metadata.configureApp?.(app)
+        }
     })
 
     setup.defer(ctx.close)

@@ -1,4 +1,4 @@
-import { AppLoggerService, RestateEndpoint } from '@mannercode/common'
+import { AppLoggerService, JsonUtil, RestateEndpoint } from '@mannercode/common'
 import type { INestApplication } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import compression from 'compression'
@@ -6,7 +6,6 @@ import express from 'express'
 import { hostname } from 'os'
 import { AppConfigService } from '#config'
 import { AppModule } from './app.module.js'
-import { configureTemporalJson } from './configure-temporal-json.js'
 
 export async function bootstrap() {
     // Nest 초기화 로그도 ECS stdout 계약을 따르도록 로거 준비 전까지 버퍼링한다.
@@ -15,12 +14,6 @@ export async function bootstrap() {
     const logger = app.get(AppLoggerService)
     app.useLogger(logger)
 
-    // 외부가 보낸 X-Forwarded-For는 NGINX가 실제 원격 주소를 뒤에 붙인다.
-    // 사설 프록시 홉만 신뢰하면 Express가 오른쪽부터 첫 외부 주소를 클라이언트 IP로 고른다.
-    const expressApp = app.getHttpAdapter().getInstance()
-    expressApp.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal'])
-    configureTemporalJson(app)
-
     // Docker hostname을 노출해 분산 테스트에서 응답한 복제본을 식별한다.
     const replicaId = hostname()
     app.use((_req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -28,9 +21,7 @@ export async function bootstrap() {
         next()
     })
 
-    app.use(compression())
-    app.use(express.json({ limit: http.requestPayloadLimit }))
-
+    configureHttpApp(app)
     app.enableShutdownHooks()
 
     try {
@@ -45,6 +36,18 @@ export async function bootstrap() {
         await app.close()
         throw error
     }
+}
+
+export function configureHttpApp(app: INestApplication): void {
+    const { requestPayloadLimit } = app.get(AppConfigService).http
+    const expressApp: express.Application = app.getHttpAdapter().getInstance()
+
+    // 외부가 보낸 X-Forwarded-For는 NGINX가 실제 원격 주소를 뒤에 붙인다.
+    // 사설 프록시 홉만 신뢰하면 Express가 오른쪽부터 첫 외부 주소를 클라이언트 IP로 고른다.
+    expressApp.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal'])
+    expressApp.set('json replacer', JsonUtil.temporalReplacer)
+    app.use(compression())
+    app.use(express.json({ limit: requestPayloadLimit }))
 }
 
 export async function initializeApi(app: INestApplication) {
