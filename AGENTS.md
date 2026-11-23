@@ -44,7 +44,7 @@
 
 관련 검사를 실행하고 결과를 알린다. 실행하지 못한 검사는 이유를 밝힌다. 동작이나 보장이 바뀌면 해당 테스트와 문서를 함께 갱신한다. 모든 영역에 [테스트 작성 규칙](tests/README.md#테스트는-한-행동의-결과를-검증한다)을 적용한다.
 
-개발자와 CI는 루트의 package script로 실행한다. `format`은 루트 `package.json`에만 정의한다. 각 workspace가 제공하는 `dev`, `build`, `test`, `lint`는 같은 뜻으로 사용한다. 실행이나 정리에 실패하면 종료 코드에 반영한다.
+개발자와 CI는 루트의 package script로 실행한다. Race와 Benchmark는 저장소 루트에서 `tests` workspace의 package script로 실행한다. `format`은 루트 `package.json`에만 정의한다. 각 workspace가 제공하는 `dev`, `build`, `test`, `lint`는 같은 뜻으로 사용한다. 실행이나 정리에 실패하면 종료 코드에 반영한다.
 
 ## 7. 커밋·푸시·병합
 

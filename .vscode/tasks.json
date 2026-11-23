@@ -25,7 +25,15 @@
             "id": "testCommand",
             "type": "pickString",
             "description": "test",
-            "options": ["pnpm run dev", "pnpm test"]
+            "options": [
+                "pnpm run dev",
+                "pnpm test",
+                "pnpm -C tests race jwt-refresh-race",
+                "pnpm -C tests race replica-chaos",
+                "pnpm -C tests race sse-fanout-race",
+                "pnpm -C tests race user-signup-race",
+                "pnpm -C tests benchmark"
+            ]
         }
     ]
 }
