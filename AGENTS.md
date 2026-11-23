@@ -2,7 +2,7 @@
 
 ## 1. 문서를 먼저 읽는다
 
-[루트 README](README.md)에서 시작해 ‘구조와 선택’에 있는 작업 영역의 문서를 읽는다. `apps/`를 변경할 때는 [API 구조](apps/api/README.md)를, `infra/`를 변경할 때는 [환경 변수 주입 방식](.devcontainer/README.md#1-환경-변수-파일-변경-후-dev-container-재생성)도 확인한다.
+[루트 README](README.md)에서 시작해 ‘구조와 선택’에 있는 작업 영역의 문서를 읽는다. `apps/`를 변경할 때는 [API 구조](apps/api/README.md)를, `infra/`를 변경할 때는 [환경 변수 주입 방식](.devcontainer/README.md#환경-변수-파일-변경-후-dev-container-재생성)도 확인한다.
 
 문서와 코드가 충돌해 어느 쪽이 의도인지 판단해야 하면 작업을 중단하고 사용자에게 묻는다.
 

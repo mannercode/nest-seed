@@ -53,7 +53,7 @@ pnpm --dir apps/api exec vitest run users.spec
 | [apps/api/](apps/api/README.md)           | Services, SoLA dependencies, API conventions and usage examples |
 | [apps/web/](apps/web/)                    | Photo sign-up, login, profile screens and API proxy             |
 | [libs/](libs/README.md)                   | Shared package responsibilities and contracts                   |
-| [.devcontainer/](.devcontainer/README.md) | Rebuilding after root env changes, shared host paths            |
+| [.devcontainer/](.devcontainer/README.md) | Environment file values and when to rebuild the Dev Container   |
 | [infra/](infra/README.md)                 | Development infrastructure and data reset                       |
 | [tests/](tests/README.md)                 | Test conventions, coverage, and running browser tests           |
 | [tools/](tools/README.md)                 | External access to the web dev server and test tools            |

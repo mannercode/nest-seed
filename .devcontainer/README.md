@@ -1,20 +1,12 @@
 # .devcontainer/ — 개발 환경
 
-## 1. 환경 변수 파일 변경 후 Dev Container 재생성
+## 환경 변수 파일 변경 후 Dev Container 재생성
 
-Dev Container는 생성할 때 루트의 `.env.infra`와 `.env.api`를 읽는다. 둘 중 하나를 수정하면 VS Code에서 **`Rebuild Container`**를 실행한다. API 포트를 바꾸면 web의 `API_BASE_URL`도 맞춘다. [웹 설정](../apps/web/.env)
+Dev Container는 생성할 때 루트의 `.env.infra`와 `.env.api`를 읽는다. 둘 중 하나를 수정하면 VS Code에서 **`Rebuild Container`**를 실행한다. `.env.infra`의 `API_PORT`를 바꾸면 web 개발 서버의 `API_BASE_URL`도 새 포트에 맞춘다. [웹 설정](../apps/web/.env)
 
-Compose도 API 컨테이너를 만들 때 두 파일을 그대로 읽는다. 변수 참조와 따옴표가 값에 포함되므로 `API_URL=http://api:3000`처럼 최종 값을 적는다. `NODE_ENV`는 개발 서버와 테스트가 각각 설정한다.
+Compose도 API 컨테이너를 만들 때 두 파일을 그대로 읽는다. 변수 참조와 따옴표가 값에 포함되므로 `API_PORT=3000`처럼 최종 값을 적는다. `NODE_ENV`는 개발 서버와 테스트가 각각 설정한다. [API Compose 설정](../compose.yml)
 
-## 2. 호스트와 Dev Container에서 같은 경로 사용
-
-Remote SSH로 호스트의 저장소 폴더를 연다. 호스트의 Docker가 bind mount 경로를 찾으므로 저장소의 절대 경로는 호스트와 Dev Container에서 같아야 한다.
-
-컨테이너와 네트워크 이름에는 사용자명과 저장소 폴더명이 들어간다. 같은 사용자가 여러 복사본을 동시에 열 때는 폴더명을 다르게 둔다.
-
-루트의 앱과 링크 검사는 개발 인프라와 같은 프로젝트 이름으로 서로 다른 Compose 파일을 사용한다. Dev Container에서는 `COMPOSE_IGNORE_ORPHANS=true`를 설정해 현재 파일에 정의되지 않은 컨테이너에 대한 경고를 끈다. 복제본 테스트와 웹 E2E는 각각 별도 Compose 프로젝트에서 같은 네트워크에 연결한다.
-
-## 3. 시작 순서와 데이터 초기화
+## 시작 순서와 데이터 초기화
 
 Dev Container를 처음 만들면 VS Code가 `node` 계정에 `hunjuly/dotfiles`를 설치한다. 포크할 때는 `devcontainer.json`의 `dotfiles.repository`를 바꾸거나 제거한다.
 

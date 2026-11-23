@@ -53,7 +53,7 @@ pnpm --dir apps/api exec vitest run users.spec
 | [apps/api/](apps/api/README.md)           | 서비스 구성, SoLA 의존 방향, API 작성 규칙과 사용 예제 |
 | [apps/web/](apps/web/)                    | 사진 첨부 가입·로그인·본인 조회 화면과 API 프록시      |
 | [libs/](libs/README.md)                   | 공통 패키지의 책임과 사용 계약                         |
-| [.devcontainer/](.devcontainer/README.md) | 루트 env 변경 후 컨테이너 재생성, 호스트 경로 공유     |
+| [.devcontainer/](.devcontainer/README.md) | 환경 변수 파일 작성과 변경 후 Dev Container 재생성     |
 | [infra/](infra/README.md)                 | 개발 인프라 구성과 데이터 초기화                       |
 | [tests/](tests/README.md)                 | 테스트 작성 규칙, 검증 범위와 브라우저 테스트 실행법   |
 | [tools/](tools/README.md)                 | 웹 개발 서버 외부 접속과 테스트 도구                   |
