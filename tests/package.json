@@ -5,7 +5,7 @@
     "type": "module",
     "scripts": {
         "lint": "tsc --noEmit -p web/tsconfig.json",
-        "e2e": "bash web/run-e2e.sh",
+        "test": "bash web/run-e2e.sh",
         "race": "bash api/race/runner.sh",
         "benchmark": "bash api/benchmark/run.sh"
     },

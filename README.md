@@ -25,7 +25,7 @@ Dev Container의 저장소 루트에서 실행한다. 전체 명령 목록은 `p
 | `pnpm test`          | 단위·통합·API 예제·브라우저 E2E 테스트 (Restate 재시작 포함) |
 | `pnpm run lint`      | 타입·코드·서식·셸·문서 링크 검사                             |
 | `pnpm run format`    | Prettier로 저장소 전체의 서식 정리                           |
-| `pnpm run test:e2e`  | production build의 web과 API 연결 검증                       |
+| `pnpm -C tests test` | production build의 web과 API 연결 검증                       |
 | `pnpm run race`      | 다중 복제본 테스트의 시나리오 목록과 실행법 확인             |
 | `pnpm run benchmark` | 같은 조건의 API 성능 비교                                    |
 

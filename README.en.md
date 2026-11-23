@@ -31,7 +31,7 @@ Run these commands from the repository root inside the Dev Container. Use `pnpm 
 | `pnpm test`          | Run unit, integration, API example, and browser E2E tests (restarts Restate) |
 | `pnpm run lint`      | Check types, code, formatting, shell scripts, and documentation links        |
 | `pnpm run format`    | Format the repository with Prettier                                          |
-| `pnpm run test:e2e`  | Verify the production build of web and its API connection                    |
+| `pnpm -C tests test` | Verify the production build of web and its API connection                    |
 | `pnpm run race`      | List the multi-replica test scenarios and how to run them                    |
 | `pnpm run benchmark` | Compare API performance under the same conditions                            |
 
