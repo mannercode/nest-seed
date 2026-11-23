@@ -1,5 +1,5 @@
 const { S3Client } = require('@aws-sdk/client-s3')
-const { createGlobalTeardown } = require('@mannercode/vitest-helpers')
+const { createGlobalTeardown } = require('@mannercode/tools/vitest-helpers')
 const { jetstreamManager } = require('@nats-io/jetstream')
 const { connect: connectNats } = require('@nats-io/transport-node')
 const { MongoClient } = require('mongodb')

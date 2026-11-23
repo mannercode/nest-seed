@@ -3,7 +3,7 @@ packages:
     - 'libs/*'
     - 'infra/tests'
     - 'tests/*'
-    - 'tools/*'
+    - 'tools'
 
 saveExact: true
 

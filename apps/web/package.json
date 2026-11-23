@@ -7,7 +7,6 @@
         "predev": "free-port ${WEB_PORT:?}",
         "dev": "next dev -p ${WEB_PORT:?}",
         "build": "next build",
-        "prestart": "free-port ${WEB_PORT:?}",
         "start": "next start -p ${WEB_PORT:?}",
         "lint": "tsc --noEmit"
     },
@@ -17,7 +16,7 @@
         "react-dom": "19.3.1"
     },
     "devDependencies": {
-        "@mannercode/dev-tools": "workspace:*",
+        "@mannercode/tools": "workspace:*",
         "@tailwindcss/postcss": "4.3.5",
         "@types/node": "26.6.6",
         "@types/react": "19.3.0",

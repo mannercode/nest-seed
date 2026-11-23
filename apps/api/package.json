@@ -1,11 +1,11 @@
 {
     "name": "api",
-    "version": "0.0.2",
+    "version": "0.0.0",
     "private": true,
     "type": "module",
     "scripts": {
         "start": "node --enable-source-maps _output/dist/index.js",
-        "lint": "tsc --noEmit -p tsconfig.build.json && tsc --noEmit -p tsconfig.json",
+        "lint": "tsc --noEmit",
         "build": "nest build -b rspack --rspackPath rspack.config.cjs",
         "predev": "free-port ${API_PORT:?}",
         "dev": "nest start --watch",
@@ -38,9 +38,8 @@
         "zod": "4.6.7"
     },
     "devDependencies": {
-        "@mannercode/dev-tools": "workspace:*",
         "@mannercode/testing": "workspace:*",
-        "@mannercode/vitest-helpers": "workspace:*",
+        "@mannercode/tools": "workspace:*",
         "@nestjs/cli": "12.0.15",
         "@nestjs/schematics": "12.0.16",
         "@nestjs/testing": "12.6.0",

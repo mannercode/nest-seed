@@ -8,7 +8,7 @@ RUN npm install -g pnpm@12.21.0
 WORKDIR /workspace
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/web/package.json apps/web/
-COPY tools/dev-tools/package.json tools/dev-tools/free-port.js tools/dev-tools/tunnel.sh tools/dev-tools/
+COPY tools/ tools/
 
 RUN --mount=type=cache,id=nest-seed-pnpm,target=/pnpm/store,sharing=locked \
     HUSKY=0 pnpm install --frozen-lockfile --filter './apps/web...' --store-dir /pnpm/store
