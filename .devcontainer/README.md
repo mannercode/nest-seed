@@ -12,6 +12,8 @@ Remote SSH로 호스트의 저장소 폴더를 연다. 호스트의 Docker가 bi
 
 컨테이너와 네트워크 이름에는 사용자명과 저장소 폴더명이 들어간다. 같은 사용자가 여러 복사본을 동시에 열 때는 폴더명을 다르게 둔다.
 
+링크 검사, API 문서 예제, 복제본 테스트는 개발 인프라와 같은 프로젝트 이름으로 서로 다른 Compose 파일을 사용한다. Dev Container에서는 `COMPOSE_IGNORE_ORPHANS=true`를 설정해 현재 파일에 정의되지 않은 컨테이너에 대한 경고를 끈다.
+
 ## 3. 시작 순서와 데이터 초기화
 
 Dev Container를 처음 만들면 VS Code가 `node` 계정에 `hunjuly/dotfiles`를 설치한다. 포크할 때는 `devcontainer.json`의 `dotfiles.repository`를 바꾸거나 제거한다.

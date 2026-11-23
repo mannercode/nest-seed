@@ -5,8 +5,6 @@ cd -- "$(dirname -- "$0")"
 : "${WORKSPACE_ROOT:?}"
 : "${COMPOSE_PROJECT_NAME:?}"
 
-export COMPOSE_IGNORE_ORPHANS=True
-
 SERVER_URL="http://nginx"
 OUTPUT_DIR="_output/$(date '+%Y%m%d-%H%M%S')"
 HTML_REPORT="${OUTPUT_DIR}/report.html"

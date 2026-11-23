@@ -8,10 +8,6 @@ cd -- "$(dirname -- "$0")"
 
 : "${WORKSPACE_ROOT:?}"
 
-# infra compose와 docker network를 공유하므로 docker compose가 infra 컨테이너를 orphan으로 표시한다.
-# 개발 인프라는 별도로 관리하므로 orphan 경고만 끄고 해당 컨테이너는 삭제하지 않는다.
-export COMPOSE_IGNORE_ORPHANS=True
-
 compose=(docker compose -f ../compose.yml)
 
 list_scenarios() {

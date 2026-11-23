@@ -20,6 +20,7 @@
     "containerEnv": {
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}",
         "COMPOSE_PROJECT_NAME": "${localEnv:USER:unknown}-${localWorkspaceFolderBasename}",
+        "COMPOSE_IGNORE_ORPHANS": "true",
         "DEVCONTAINER_NETWORK": "${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
     },
     "remoteEnv": {
