@@ -1,6 +1,6 @@
 import 'reflect-metadata'
 import { S3Client } from '@aws-sdk/client-s3'
-import { setupVitestLifecycle } from '@mannercode/vitest-helpers'
+import { setupVitestLifecycle } from '@mannercode/tools/vitest-helpers'
 import { MongoClient } from 'mongodb'
 import { createRequire } from 'node:module'
 import { createMongoDriverOptions } from '@mannercode/common'
@@ -55,6 +55,7 @@ setupVitestLifecycle({
 })
 
 afterAll(clearSharedTestMongoConnection)
+afterEach(() => vi.unstubAllEnvs())
 
 function requiredEnvironment(name: string): string {
     const value = process.env[name]

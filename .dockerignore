@@ -21,7 +21,6 @@
 !/apps/api/nest-cli.json
 !/apps/api/src/
 !/apps/api/api-docs/
-!/apps/api/scripts/register-restate.cjs
 
 !/apps/web/package.json
 !/apps/web/next-env.d.ts
@@ -30,10 +29,7 @@
 !/apps/web/tsconfig.json
 !/apps/web/src/
 
-!/tools/dev-tools/package.json
-!/tools/dev-tools/free-port.js
-!/tools/dev-tools/tunnel.sh
-!/tools/vitest-helpers/package.json
+!/tools/package.json
 
 **/node_modules
 **/_output

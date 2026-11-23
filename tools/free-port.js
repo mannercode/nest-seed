@@ -4,7 +4,7 @@
  * 해당 포트의 리스너를 SIGKILL로 종료한 뒤, 새 listen()이 성공할 때까지 확인한다.
  * Linux devcontainer에 기본 설치된 `ss`만 사용한다.
  *
- *   node tools/dev-tools/free-port.js 3000
+ *   pnpm exec free-port 3000
  */
 const net = require('net')
 const { execFileSync } = require('child_process')

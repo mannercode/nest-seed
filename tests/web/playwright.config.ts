@@ -6,7 +6,7 @@ function requiredEnvironment(name: string): string {
     return value
 }
 
-export const API_BASE_URL = `http://api:${requiredEnvironment('API_PORT')}`
+export const API_BASE_URL = `http://web-e2e-api:${requiredEnvironment('API_PORT')}`
 export const WEB_BASE_URL = `http://web.localhost:${requiredEnvironment('WEB_PORT')}`
 
 export default defineConfig({

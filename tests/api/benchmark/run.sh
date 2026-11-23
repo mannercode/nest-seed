@@ -69,7 +69,6 @@ wait_for_api() {
 
 echo "Building API benchmark stack"
 "${compose[@]}" up -d --build --wait
-"${compose[@]}" run --rm --no-deps restate-register
 wait_for_api
 
 k6_arguments=(

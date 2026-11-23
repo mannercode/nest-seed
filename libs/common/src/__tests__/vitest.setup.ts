@@ -1,6 +1,6 @@
 import 'reflect-metadata'
 import { S3Client } from '@aws-sdk/client-s3'
-import { setupVitestLifecycle } from '@mannercode/vitest-helpers'
+import { setupVitestLifecycle } from '@mannercode/tools/vitest-helpers'
 import { MongoClient } from 'mongodb'
 
 // `vitest.global.cjs`가 컨테이너를 시작하면서 채워 두는 환경 변수이다.

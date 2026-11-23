@@ -13,7 +13,7 @@ describe('JobDemoService', () => {
     let fix: AppTestContext
     let token: string
     beforeEach(async () => {
-        fix = await createAppTestContext({ enableRestate: true })
+        fix = await createAppTestContext()
         token = (await createAndLoginUser(fix)).accessToken
     })
     afterEach(() => fix?.teardown())

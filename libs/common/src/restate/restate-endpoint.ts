@@ -6,6 +6,9 @@ import {
     type RestateLogLevel
 } from '@restatedev/restate-sdk'
 import { createServer, type Http2Server, type ServerHttp2Session } from 'node:http2'
+import { z } from 'zod'
+
+const deploymentSchema = z.object({ id: z.string().min(1) })
 
 export class RestateEndpoint implements OnApplicationBootstrap, OnApplicationShutdown {
     private boundPort = 0
@@ -47,6 +50,24 @@ export class RestateEndpoint implements OnApplicationBootstrap, OnApplicationShu
 
         // 시작 이후 HTTP/2 server의 error listener는 일부러 두지 않는다. 서버 오류로
         // 프로세스가 종료되면 Restate가 invocation을 다른 복제본에서 재시도한다.
+    }
+
+    async register(adminUrl: string, uri: string): Promise<URL> {
+        const deploymentsUrl = `${adminUrl.replace(/\/$/, '')}/deployments`
+        const response = await fetch(deploymentsUrl, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ uri, force: false, use_http_11: false })
+        })
+
+        if (!response.ok) {
+            throw new Error(
+                `Restate registration failed for ${uri} (HTTP ${response.status}): ${await response.text()}`
+            )
+        }
+
+        const { id } = deploymentSchema.parse(await response.json())
+        return new URL(`${deploymentsUrl}/${encodeURIComponent(id)}`)
     }
 
     async onApplicationShutdown() {

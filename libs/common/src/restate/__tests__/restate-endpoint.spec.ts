@@ -1,10 +1,57 @@
 import type { AppLoggerService } from '../../index.js'
+import type { MockInstance } from 'vitest'
 import { type LoggerTransport, workflow } from '@restatedev/restate-sdk'
 import { once } from 'node:events'
 import { connect } from 'node:http2'
 import { RestateEndpoint } from '../index.js'
 
 describe('RestateEndpoint', () => {
+    describe('Restate에 등록할 workflow 주소를 지정하면', () => {
+        const uri = 'http://nginx:9080'
+        const adminUrl = 'http://restate:9070/'
+        let request: MockInstance<typeof fetch>
+
+        beforeEach(() => {
+            request = vi.spyOn(globalThis, 'fetch')
+        })
+        afterEach(() => request.mockRestore())
+
+        describe.each([201, 200])('등록 응답이 %i이면', (status) => {
+            beforeEach(() => {
+                request.mockResolvedValue(Response.json({ id: 'dp_123' }, { status }))
+            })
+            it('workflow 주소를 강제 덮어쓰기 없이 등록하고 deployment 주소를 반환한다', async () => {
+                const resource = await createEndpoint().register(adminUrl, uri)
+                expect(resource.href).toBe('http://restate:9070/deployments/dp_123')
+                expect(request).toHaveBeenCalledWith('http://restate:9070/deployments', {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({ uri, force: false, use_http_11: false })
+                })
+            })
+        })
+
+        describe('Restate가 등록을 거부하면', () => {
+            beforeEach(() => {
+                request.mockResolvedValue(new Response('discovery failed', { status: 400 }))
+            })
+            it('등록을 시도하면 상태 코드와 실패 이유를 담은 예외를 던진다', async () => {
+                await expect(createEndpoint().register(adminUrl, uri)).rejects.toThrow(
+                    'Restate registration failed for http://nginx:9080 (HTTP 400): discovery failed'
+                )
+            })
+        })
+
+        describe('등록 응답에 deployment ID가 없으면', () => {
+            beforeEach(() => {
+                request.mockResolvedValue(Response.json({}))
+            })
+            it('등록 결과를 읽으면 누락된 필드를 담은 예외를 던진다', async () => {
+                await expect(createEndpoint().register(adminUrl, uri)).rejects.toThrow('id')
+            })
+        })
+    })
+
     describe('endpoint 포트가 0이고 서버를 시작하지 않았으면', () => {
         let endpoint: RestateEndpoint
         let logger: AppLoggerService
