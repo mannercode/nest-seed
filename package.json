@@ -8,7 +8,7 @@
     },
     "scripts": {
         "prepare": "husky",
-        "build:libs": "pnpm -r -F './libs/**' --fail-if-no-match run build",
+        "build:libs": "pnpm -F './libs/**' --fail-if-no-match build",
         "tunnel": "tunnel",
         "prelint": "pnpm run build:libs",
         "lint": "run-p lint:**",
