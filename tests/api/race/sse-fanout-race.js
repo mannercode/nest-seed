@@ -1,6 +1,6 @@
 // 같은 사용자의 SSE 연결을 여러 복제본에 열고 모든 발행 메시지가 도착하는지 검증한다.
-const { test } = require('node:test')
-const {
+import { test } from 'node:test'
+import {
     createAndLoginUser,
     refreshUserAccessTokens,
     readPositiveInt,
@@ -8,7 +8,7 @@ const {
     SERVER_URL,
     openEventStream,
     waitUntil
-} = require('./race-common')
+} from './race-common.js'
 
 const SSE_CLIENT_COUNT = readPositiveInt('SSE_CLIENT_COUNT', 100)
 const MESSAGES_PER_INNER = readPositiveInt('MESSAGES_PER_INNER', 10)

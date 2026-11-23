@@ -3,9 +3,9 @@
  * 전송 오류와 5xx 응답의 비율은 1% 이하여야 하고 복구 구간에는 네 복제본이 모두 응답해야 한다.
  */
 
-const { test } = require('node:test')
-const { execSync } = require('child_process')
-const { readPositiveInt, request, secureRandomHex, secureRandomIndex } = require('./race-common')
+import { execSync } from 'node:child_process'
+import { test } from 'node:test'
+import { readPositiveInt, request, secureRandomHex, secureRandomIndex } from './race-common.js'
 
 const KILL_AT_MS = readPositiveInt('CHAOS_KILL_AT_MS', 30_000)
 const RESTART_AFTER_MS = readPositiveInt('CHAOS_RESTART_AFTER_MS', 30_000)

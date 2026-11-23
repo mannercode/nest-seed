@@ -1,11 +1,13 @@
 {
-    "name": "web-tests",
+    "name": "tests",
     "version": "0.0.1",
     "private": true,
     "type": "module",
     "scripts": {
-        "e2e": "bash run-e2e.sh",
-        "lint": "tsc --noEmit"
+        "lint": "tsc --noEmit -p web/tsconfig.json",
+        "e2e": "bash web/run-e2e.sh",
+        "race": "bash api/race/runner.sh",
+        "benchmark": "bash api/benchmark/run.sh"
     },
     "devDependencies": {
         "@playwright/test": "1.65.1",

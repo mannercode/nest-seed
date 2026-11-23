@@ -546,7 +546,7 @@ importers:
         specifier: 5.1.1
         version: 5.1.1(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.3)(yaml@2.9.1))
 
-  tests/web:
+  tests:
     devDependencies:
       '@playwright/test':
         specifier: 1.65.1

@@ -1,5 +1,5 @@
-const http = require('http')
-const { randomBytes, randomInt } = require('node:crypto')
+import { randomBytes, randomInt } from 'node:crypto'
+import http from 'node:http'
 
 // race 시나리오는 runner.sh가 띄운 4-replica API 테스트 스택을 전제한다.
 // 기본값으로 단일 dev 서버에 조용히 붙으면 경쟁이 재현되지 않아 결과가 왜곡되므로 필수로 받는다.
@@ -307,7 +307,7 @@ async function refreshUserAccessTokens(users) {
     )
 }
 
-module.exports = {
+export {
     SERVER_URL,
     createAndLoginUser,
     readPositiveInt,

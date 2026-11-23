@@ -4,8 +4,8 @@
  * 성공한 요청이 받은 새 refresh token으로 다시 갱신해 현재 로그인 세션을 계속 사용할 수 있는지 확인한다.
  */
 
-const { test } = require('node:test')
-const { readPositiveInt, request, secureRandomHex, SERVER_URL } = require('./race-common')
+import { test } from 'node:test'
+import { readPositiveInt, request, secureRandomHex, SERVER_URL } from './race-common.js'
 
 const USER_GROUPS = readPositiveInt('RACE_USER_GROUPS', 5)
 const CLIENTS_PER_USER = readPositiveInt('RACE_CLIENT_COUNT', 20)

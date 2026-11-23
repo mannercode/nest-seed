@@ -1,7 +1,7 @@
 // 복제본 스택에 같은 이메일의 가입을 동시에 보내 정확히 한 건만 201이 되는지 검증한다.
 
-const { test } = require('node:test')
-const { readPositiveInt, request, secureRandomHex, SERVER_URL } = require('./race-common')
+import { test } from 'node:test'
+import { readPositiveInt, request, secureRandomHex, SERVER_URL } from './race-common.js'
 
 const EMAIL_GROUPS = readPositiveInt('RACE_EMAIL_GROUPS', 10)
 const CLIENTS_PER_GROUP = readPositiveInt('RACE_CLIENT_COUNT', 50)
