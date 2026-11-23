@@ -25,7 +25,7 @@
             "id": "testCommand",
             "type": "pickString",
             "description": "test",
-            "options": ["pnpm run dev", "pnpm test", "pnpm run atoz"]
+            "options": ["pnpm run dev", "pnpm test"]
         }
     ]
 }

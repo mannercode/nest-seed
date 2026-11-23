@@ -2,7 +2,7 @@
 
 [한국어](README.md)
 
-[![Test AtoZ](https://github.com/mannercode/nest-seed/actions/workflows/test-atoz.yaml/badge.svg)](https://github.com/mannercode/nest-seed/actions/workflows/test-atoz.yaml)
+[![Lint and Test](https://github.com/mannercode/nest-seed/actions/workflows/lint-test.yaml/badge.svg)](https://github.com/mannercode/nest-seed/actions/workflows/lint-test.yaml)
 [![Test Stability](https://github.com/mannercode/nest-seed/actions/workflows/test-stability.yaml/badge.svg)](https://github.com/mannercode/nest-seed/actions/workflows/test-stability.yaml)
 [![Test API Race](https://github.com/mannercode/nest-seed/actions/workflows/test-api-race.yaml/badge.svg)](https://github.com/mannercode/nest-seed/actions/workflows/test-api-race.yaml)
 
@@ -14,10 +14,10 @@ A starter template for NestJS backends with user, file, event, and background-jo
 
 The infrastructure is for development and testing. When forking, replace the project name `nest-seed` and organization name `mannercode`, including the `@mannercode` package scope.
 
-**Starting the Dev Container or running `pnpm run atoz` deletes this project's development data.** [What the reset deletes](infra/README.md#2-인프라-시작과-데이터-초기화)
+**Starting the Dev Container deletes this project's development data.** [What the reset deletes](infra/README.md#2-인프라-시작과-데이터-초기화)
 
 1. Open the repository on the Docker host with VS Code Remote SSH. Run `Reopen in Container` and wait for dependency installation and infrastructure reset.
-2. Run `pnpm run test` in the container terminal.
+2. Run `pnpm run lint` and `pnpm test` in the container terminal.
 3. Run `pnpm run dev` to start the API and web. From another terminal in the same container, run `curl "http://localhost:${API_PORT}/health"` to check the API.
 4. Run `echo "$WEB_PORT"` and forward that port in the VS Code **Ports** panel to open the web app.
 
@@ -25,16 +25,15 @@ The infrastructure is for development and testing. When forking, replace the pro
 
 Run these commands from the repository root inside the Dev Container. Use `pnpm run` for the full list.
 
-| Command              | Purpose                                                               |
-| -------------------- | --------------------------------------------------------------------- |
-| `pnpm run dev`       | Run the API and web in watch mode                                     |
-| `pnpm run test`      | Run unit, integration, and API example tests (restarts Restate)       |
-| `pnpm run lint`      | Check types, code, formatting, shell scripts, and documentation links |
-| `pnpm run format`    | Format the repository with Prettier                                   |
-| `pnpm run atoz`      | Initialize the test environment and run the standard CI checks        |
-| `pnpm run e2e`       | Verify the production build of web and its API connection             |
-| `pnpm run race`      | List the multi-replica test scenarios and how to run them             |
-| `pnpm run benchmark` | Compare API performance under the same conditions                     |
+| Command              | Purpose                                                                      |
+| -------------------- | ---------------------------------------------------------------------------- |
+| `pnpm run dev`       | Run the API and web in watch mode                                            |
+| `pnpm test`          | Run unit, integration, API example, and browser E2E tests (restarts Restate) |
+| `pnpm run lint`      | Check types, code, formatting, shell scripts, and documentation links        |
+| `pnpm run format`    | Format the repository with Prettier                                          |
+| `pnpm run test:e2e`  | Verify the production build of web and its API connection                    |
+| `pnpm run race`      | List the multi-replica test scenarios and how to run them                    |
+| `pnpm run benchmark` | Compare API performance under the same conditions                            |
 
 `docker compose up -d --build --wait` starts one API instance and the web app. Append `api` to start the API alone, or `nginx` to start NGINX and four API replicas. Each configuration connects to the running infrastructure. [Root Compose file](compose.yml)
 

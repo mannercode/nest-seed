@@ -1,4 +1,4 @@
-name: Test AtoZ
+name: Lint and Test
 on:
     pull_request:
         branches: ['main']
@@ -11,6 +11,7 @@ on:
 permissions:
     contents: read
 jobs:
+    # main 브랜치의 보호 규칙이 이 이름으로 검사 결과를 확인한다.
     test-atoz:
         runs-on: ubuntu-26.04-arm
         timeout-minutes: 60
@@ -20,4 +21,4 @@ jobs:
               uses: devcontainers/ci@v0.3.1900000450
               with:
                   push: never
-                  runCmd: pnpm run atoz
+                  runCmd: pnpm run lint && pnpm test

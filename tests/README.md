@@ -46,4 +46,4 @@ API의 context·공통 훅·보조 함수 배치는 [API 테스트 안내](../ap
 
 ## 반복 CI
 
-AtoZ는 커버리지를 포함한 기본 검증이다. Stability·API Race는 간헐 실패를 찾는 반복 검사이며 Stability에서는 커버리지를 수집하지 않는다. [CI 설정](../.github/workflows/)
+기본 CI는 `pnpm run lint`와 `pnpm test`를 실행한다. `pnpm test`는 워크스페이스 테스트에서 커버리지를 검사한 뒤 브라우저 E2E를 실행한다. Stability·API Race는 간헐 실패를 찾는 반복 검사이며 Stability에서는 커버리지를 수집하지 않는다. [CI 설정](../.github/workflows/)

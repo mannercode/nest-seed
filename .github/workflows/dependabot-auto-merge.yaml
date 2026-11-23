@@ -1,7 +1,7 @@
 name: Dependabot Auto Merge
 on:
     workflow_run:
-        workflows: ['Test AtoZ']
+        workflows: ['Lint and Test']
         types: [completed]
         branches: ['dependabot/**']
 permissions:

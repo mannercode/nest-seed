@@ -6,7 +6,7 @@
 
 ## 2. 인프라 시작과 데이터 초기화
 
-Dev Container에서 `bash infra/reset.sh`를 실행하면 개발 인프라의 컨테이너와 볼륨을 다시 만든다. **계정, 세션, 업로드 파일, 메시지, 작업 기록이 모두 삭제된다.** Dev Container를 시작하거나 `pnpm run atoz`를 실행할 때도 같은 스크립트가 동작한다.
+Dev Container에서 `bash infra/reset.sh`를 실행하면 개발 인프라의 컨테이너와 볼륨을 다시 만든다. **계정, 세션, 업로드 파일, 메시지, 작업 기록이 모두 삭제된다.** Dev Container를 시작할 때도 같은 스크립트가 동작한다.
 
 스크립트는 MongoDB 과반수 쓰기와 나머지 서비스의 준비를 확인한 뒤 종료한다. 초기 계정은 web이나 가입 API에서 만든다. [초기화 스크립트](reset.sh)
 

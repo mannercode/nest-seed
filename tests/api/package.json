@@ -1,9 +1,0 @@
-{
-    "name": "api-tests",
-    "version": "0.0.1",
-    "private": true,
-    "scripts": {
-        "race": "bash race/runner.sh",
-        "benchmark": "bash benchmark/run.sh"
-    }
-}
