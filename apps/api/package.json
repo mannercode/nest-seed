@@ -9,9 +9,9 @@
         "build": "nest build -b rspack --rspackPath rspack.config.cjs",
         "predev": "free-port ${API_PORT:?}",
         "dev": "nest start --watch",
-        "test": "vitest run --coverage",
-        "posttest": "pnpm run test:api-docs",
-        "test:api-docs": "bash \"${WORKSPACE_ROOT:?}/tests/api/run-api-docs.sh\""
+        "test": "pnpm run -s '/^test:/'",
+        "test:vitest": "vitest run --coverage",
+        "test:api-docs": "bash api-docs/test.sh"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "3.1173.0",
