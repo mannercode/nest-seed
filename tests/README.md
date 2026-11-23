@@ -16,7 +16,7 @@ API와 common의 전체 테스트는 커버리지 100%를 요구한다. API Vite
 
 웹 E2E와 복제본 검증은 각각 전용 `PROJECT_ID`와 workflow 주소를 사용한다. Restate가 개발 서버의 새 작업을 종료된 테스트 컨테이너로 보내지 않도록 각 환경의 workflow 이름을 구분한다.
 
-`pnpm --dir apps/api run test:api-docs`는 문서 예제의 통과 여부를 터미널에 표시한다. 보고서를 로컬에 남기려면 실행 중인 API를 대상으로 `bash apps/api/api-docs/run.sh`를 실행한다. 예제가 만든 계정과 파일은 개발 DB와 S3에 남고, Restate는 다음 실행에서 같은 테스트 서비스 등록을 재사용한다.
+`pnpm --dir apps/api run test:api-docs`는 API 배포 이미지로 컨테이너를 띄우고 Dev Container에서 curl 예제를 실행한다. 결과를 터미널에 표시한 뒤 해당 컨테이너를 정리한다. 보고서를 로컬에 남기려면 실행 중인 API를 대상으로 `bash apps/api/api-docs/run.sh`를 실행한다. 예제가 만든 계정과 파일은 개발 DB와 S3에 남고, Restate는 다음 실행에서 같은 테스트 서비스 등록을 재사용한다. [예제 실행기](api/run-api-docs.sh)
 
 ## 테스트는 한 행동의 결과를 검증한다
 
@@ -32,7 +32,7 @@ API의 context·공통 훅·보조 함수 배치는 [API 테스트 안내](../ap
 
 ## Race와 Benchmark
 
-`race`와 `benchmark`는 같은 NGINX와 API 복제본을 사용하고 종료할 때 컨테이너를 내린다. 두 명령은 한 번에 하나씩 실행한다. 생성한 계정·파일·작업 기록은 공유 개발 인프라에 남는다. [Compose 설정](api/compose.yml) · [인프라 초기화](../infra/README.md#2-인프라-시작과-데이터-초기화)
+`race`와 `benchmark`는 루트의 NGINX와 API 복제본을 테스트 전용 Compose 프로젝트에 띄운다. 두 검사와 수동으로 띄운 복제본 구성은 모두 호스트의 `127.0.0.1:3000`을 사용하므로 한 번에 하나씩 실행한다. 종료할 때 테스트 컨테이너를 내리고, 생성한 계정·파일·작업 기록은 공유 개발 인프라에 남는다. [복제본 Compose 설정](../compose.yml) · [인프라 초기화](../infra/README.md#2-인프라-시작과-데이터-초기화)
 
 `pnpm run race`로 시나리오와 실행법을 확인한다. 가입·토큰 갱신은 한 회차 전체에서 여러 복제본이 응답했는지, SSE는 구독 연결이 여러 복제본에 분산됐는지 검증한다. [실행 가능한 시나리오](api/race/)
 

@@ -16,7 +16,7 @@ done
 
 PLAYWRIGHT_VERSION=$(node -p "require('@playwright/test/package.json').version")
 export PLAYWRIGHT_VERSION
-compose=(docker compose --project-name "${COMPOSE_PROJECT_NAME}-web" -f compose.yml -f compose.e2e.yml)
+compose=(docker compose --project-name "${COMPOSE_PROJECT_NAME}-web" -f compose.e2e.yml)
 
 cleanup() {
     local exit_code=$?
@@ -37,7 +37,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-"${compose[@]}" build api web
-"${compose[@]}" up --detach --no-build --wait api web
+"${compose[@]}" build web-e2e-api web-e2e
+"${compose[@]}" up --detach --no-build --wait web-e2e-api web-e2e
 
 "${compose[@]}" run --rm --use-aliases --user "$(id -u):$(id -g)" e2e "$@"

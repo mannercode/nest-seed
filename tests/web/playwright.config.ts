@@ -20,7 +20,7 @@ export default defineConfig({
         screenshot: 'only-on-failure',
         trace: 'retain-on-failure',
         // localhost 도메인을 Docker web에 연결해 Web Crypto를 표준 secure context에서 사용한다.
-        launchOptions: { args: ['--host-resolver-rules=MAP web.localhost web'] }
+        launchOptions: { args: ['--host-resolver-rules=MAP web.localhost web-e2e'] }
     },
     projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }]
 })

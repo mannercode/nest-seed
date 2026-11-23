@@ -16,9 +16,9 @@ Dev Container와 각 Compose 프로젝트는 같은 외부 Docker 네트워크�
 
 ## 4. Restate에 workflow 실행 주소 등록
 
-API는 workflow 리스너를 연 뒤 `RESTATE_ADMIN_URL`에 `RESTATE_DEPLOYMENT_URI`를 등록한다. 등록에 성공해야 HTTP 요청을 받는다. 배포할 때는 Restate에서 접속할 수 있는 workflow 주소를 지정한다. 단일 서버는 자신의 주소를, 같은 버전의 복제본은 모두 같은 로드 밸런서 주소를 사용한다. 같은 주소와 서비스 정의로 다시 시작하면 기존 등록을 재사용한다. [단일 서버 설정](../apps/api/compose.yml) · [복제본 설정](../tests/api/compose.yml)
+API는 workflow 리스너를 연 뒤 `RESTATE_ADMIN_URL`에 `RESTATE_DEPLOYMENT_URI`를 등록한다. 등록에 성공해야 HTTP 요청을 받는다. 배포할 때는 Restate에서 접속할 수 있는 workflow 주소를 지정한다. 단일 서버는 자신의 주소를, 같은 버전의 복제본은 모두 같은 로드 밸런서 주소를 사용한다. 같은 주소와 서비스 정의로 다시 시작하면 기존 등록을 재사용한다. [단일 서버와 복제본 설정](../compose.yml)
 
-API의 HTTP·workflow 포트를 바꾸면 NGINX upstream을 맞춘다. NGINX가 workflow 요청을 받는 포트를 바꾸면 Compose의 등록 주소도 바꾼다. [NGINX 설정](../tests/api/nginx.conf)
+API의 HTTP·workflow 포트를 바꾸면 NGINX upstream을 맞춘다. NGINX가 workflow 요청을 받는 포트를 바꾸면 Compose의 등록 주소도 바꾼다. [NGINX 설정](../nginx.conf)
 
 진행 중인 작업을 유지하며 배포하려면 새 버전을 별도 주소에 등록한다. 기존 작업이 끝날 때까지 이전 주소에서 이전 코드를 실행한다.
 

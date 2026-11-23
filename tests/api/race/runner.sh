@@ -8,7 +8,8 @@ cd -- "$(dirname -- "$0")"
 
 : "${WORKSPACE_ROOT:?}"
 
-compose=(docker compose -f ../compose.yml)
+replica_project="${COMPOSE_PROJECT_NAME:?}-replicas"
+compose=(docker compose --project-name "${replica_project}" --profile replicas)
 
 list_scenarios() {
     echo "Scenarios:"
@@ -34,10 +35,11 @@ if [ ! -f "${TEST_SCRIPT}" ]; then
 fi
 
 SERVER_URL="http://nginx"
+export PROJECT_ID="${PROJECT_ID:?}-replicas"
 cleanup() {
     echo ""
     echo "Tearing down..."
-    "${compose[@]}" down -v -t 0
+    "${compose[@]}" down -v -t 0 nginx replica-api
 }
 trap cleanup EXIT
 
@@ -98,7 +100,7 @@ dump_diagnostics() {
 bring_up_stack() {
     echo "Building 4-replica api test stack..."
 
-    if ! "${compose[@]}" up -d --build --wait; then
+    if ! "${compose[@]}" up -d --build --wait nginx; then
         echo "[FAIL] compose up failed before ${TEST_NAME} could start"
         dump_diagnostics
         exit 1
@@ -111,7 +113,7 @@ bring_up_stack() {
 run_scenario() {
     echo ""
     echo "=== ${TEST_NAME} ==="
-    if SERVER_URL="${SERVER_URL}" node --test --test-reporter=spec "${TEST_SCRIPT}"; then
+    if COMPOSE_PROJECT_NAME="${replica_project}" SERVER_URL="${SERVER_URL}" node --test --test-reporter=spec "${TEST_SCRIPT}"; then
         echo "[PASS] ${TEST_NAME}"
         return 0
     fi

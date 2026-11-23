@@ -3,9 +3,9 @@ set -Eeuo pipefail
 cd -- "$(dirname -- "$0")"
 
 : "${WORKSPACE_ROOT:?}"
-: "${COMPOSE_PROJECT_NAME:?}"
 
 SERVER_URL="http://nginx"
+export PROJECT_ID="${PROJECT_ID:?}-replicas"
 OUTPUT_DIR="_output/$(date '+%Y%m%d-%H%M%S')"
 HTML_REPORT="${OUTPUT_DIR}/report.html"
 JSON_SUMMARY="${OUTPUT_DIR}/summary.json"
@@ -13,7 +13,10 @@ JSON_SUMMARY="${OUTPUT_DIR}/summary.json"
 mkdir -p _output
 mkdir "${OUTPUT_DIR}"
 
-compose=(docker compose -f ../compose.yml -f compose.yml)
+compose=(
+    docker compose --project-name "${COMPOSE_PROJECT_NAME:?}-replicas" --profile replicas
+    -f "${WORKSPACE_ROOT}/compose.yml" -f compose.yml
+)
 
 cleanup() {
     local exit_code=$?
@@ -24,7 +27,7 @@ cleanup() {
         "${compose[@]}" ps --all >&2
         "${compose[@]}" logs --no-color --timestamps >&2
     fi
-    "${compose[@]}" down -v -t 0
+    "${compose[@]}" down -v -t 0 nginx replica-api
     local cleanup_exit_code=$?
     if [[ "${exit_code}" -eq 0 ]]; then
         exit_code=${cleanup_exit_code}
@@ -66,7 +69,7 @@ wait_for_api() {
 }
 
 echo "Building API benchmark stack"
-"${compose[@]}" up -d --build --wait
+"${compose[@]}" up -d --build --wait nginx
 wait_for_api
 
 k6_arguments=(

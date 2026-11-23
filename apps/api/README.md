@@ -55,7 +55,7 @@ Core·Application도 NestJS DI와 `HttpException`을 사용한다. 예상한 오
 
 환경마다 달라지는 값은 env에 두고 부팅 시 검증한다. 화면 조회 개수 같은 고정값은 사용하는 코드에 둔다.
 
-개발 서버는 TSC, 배포 빌드는 Rspack을 쓴다. common 등 런타임 패키지는 번들 밖에 있으므로 앱과 함께 배포한다. [컨테이너 빌드](Dockerfile) · [실행 설정](compose.yml)
+개발 서버는 TSC, 배포 빌드는 Rspack을 쓴다. common 등 런타임 패키지는 번들 밖에 있으므로 앱과 함께 배포한다. [컨테이너 빌드](Dockerfile) · [실행 설정](../../compose.yml)
 
 API 로그는 stdout/stderr에 ECS JSON으로 출력한다. 요청·응답 본문과 쿼리는 기록하지 않는다.
 

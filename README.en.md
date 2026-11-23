@@ -36,7 +36,9 @@ Run these commands from the repository root inside the Dev Container. Use `pnpm 
 | `pnpm run race`      | List the multi-replica test scenarios and how to run them             |
 | `pnpm run benchmark` | Compare API performance under the same conditions                     |
 
-Run `bash apps/api/api-docs/run.sh` to check the curl examples against a running API. Pass an example filename to run just that file.
+`docker compose up -d --build --wait` starts one API instance and the web app. Append `api` to start the API alone, or `nginx` to start NGINX and four API replicas. Each configuration connects to the running infrastructure. [Root Compose file](compose.yml)
+
+Run `bash apps/api/api-docs/run.sh` to check the curl examples against the running dev server. To target the single API container, use `SERVER_URL="http://api:${API_PORT:?}" bash apps/api/api-docs/run.sh`. Pass an example filename to run just that file.
 
 To run a single API integration test file, build the libraries and pass the filename to Vitest.
 

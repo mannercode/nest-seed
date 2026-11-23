@@ -28,7 +28,7 @@ RUN pnpm --filter './apps/api' --fail-if-no-match run build
 RUN --mount=type=cache,id=nest-seed-pnpm,target=/pnpm/store,sharing=locked \
     HUSKY=0 pnpm --filter './apps/api' --fail-if-no-match deploy --prod --legacy --store-dir /pnpm/store /workspace/deploy/api
 
-FROM base AS api
+FROM base AS runtime
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
@@ -44,14 +44,3 @@ USER node
 # npm start는 셸을 거치므로 docker stop의 SIGTERM이 Node까지 전달되지 않을 수 있다.
 # Node를 직접 실행해 Nest가 종료 훅에서 연결을 정리할 수 있게 한다.
 CMD ["node", "--enable-source-maps", "_output/dist/index.js"]
-
-FROM api AS api-docs
-
-USER root
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends jq \
-    && rm -rf /var/lib/apt/lists/*
-COPY --chown=node:node apps/api/api-docs/ /api-docs/
-USER node
-
-FROM api AS runtime

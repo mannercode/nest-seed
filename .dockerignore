@@ -20,7 +20,6 @@
 !/apps/api/tsconfig.build.json
 !/apps/api/nest-cli.json
 !/apps/api/src/
-!/apps/api/api-docs/
 
 !/apps/web/package.json
 !/apps/web/next-env.d.ts

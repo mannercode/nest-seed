@@ -30,7 +30,9 @@ Dev Container의 저장소 루트에서 실행한다. 전체 명령 목록은 `p
 | `pnpm run race`      | 다중 복제본 테스트의 시나리오 목록과 실행법 확인 |
 | `pnpm run benchmark` | 같은 조건의 API 성능 비교                        |
 
-실행 중인 API에서 curl 예제를 검증하려면 `bash apps/api/api-docs/run.sh`를 실행한다. 예제 파일명을 인자로 주면 해당 파일만 실행한다.
+`docker compose up -d --build --wait`는 API 한 개와 web을 띄운다. 명령 끝에 `api`를 붙이면 API 한 개만, `nginx`를 붙이면 NGINX와 API 복제본 4개를 띄운다. 모두 실행 중인 인프라에 연결한다. [루트 Compose](compose.yml)
+
+실행 중인 개발 서버에서 curl 예제를 검증하려면 `bash apps/api/api-docs/run.sh`를 실행한다. 단일 API 컨테이너를 대상으로 할 때는 `SERVER_URL="http://api:${API_PORT:?}" bash apps/api/api-docs/run.sh`를 사용한다. 예제 파일명을 인자로 주면 해당 파일만 실행한다.
 
 API 통합 테스트 한 파일만 실행하려면 라이브러리를 빌드한 뒤 파일명을 지정한다.
 
