@@ -39,6 +39,12 @@ pnpm run pretest
 pnpm --dir apps/api exec vitest run users.spec
 ```
 
+## 프로젝트 태스크
+
+- `mannercode/nest-seed`에서 할 일이 정해지면 같은 작업의 태스크를 찾고, 없으면 요청받은 내용으로 `Todo`에 등록한다. [프로젝트 보드](https://github.com/orgs/mannercode/projects/2/views/1)
+- 작업을 시작하면 태스크를 `Progress`로 옮긴다. 주요 결정과 이유, 막힌 점, 검증 결과를 태스크에 기록하고 PR을 열면 링크를 추가한다.
+- 해당 PR이 `main`에 병합된 것을 확인한 뒤 태스크를 `Done`으로 옮긴다.
+
 ## 구조와 선택
 
 | 위치                                      | 주요 내용                                              |
