@@ -1,4 +1,4 @@
-import type { ConfigService } from '@nestjs/config'
+import { ConfigService } from '@nestjs/config'
 import { AppConfigService } from '../index.js'
 
 describe('AppConfigService.schema', () => {
@@ -89,5 +89,24 @@ describe('AppConfigService.mongo', () => {
 
     it('MongoDB 접속 주소와 데이터베이스 이름을 반환한다', () => {
         expect(config.mongo).toEqual({ dbName: 'test-database', uri: 'mongodb://mongo.test' })
+    })
+})
+
+describe('AppConfigService.restateDeployment', () => {
+    const config = new AppConfigService(
+        new ConfigService({ RESTATE_ADMIN_URL: 'http://restate:9070' }),
+        'test-project'
+    )
+
+    describe.each([
+        { condition: '없으면', uri: undefined },
+        { condition: 'HTTP 주소가 아니면', uri: 'ftp://worker:9080' }
+    ])('RESTATE_DEPLOYMENT_URI가 $condition', ({ uri }) => {
+        beforeEach(() => {
+            vi.stubEnv('RESTATE_DEPLOYMENT_URI', uri)
+        })
+        it('등록 설정을 읽으면 누락되거나 잘못된 변수 이름을 알린다', () => {
+            expect(() => config.restateDeployment).toThrow('RESTATE_DEPLOYMENT_URI')
+        })
     })
 })

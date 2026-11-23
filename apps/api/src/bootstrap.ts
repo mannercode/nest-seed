@@ -1,4 +1,5 @@
-import { AppLoggerService } from '@mannercode/common'
+import { AppLoggerService, RestateEndpoint } from '@mannercode/common'
+import type { INestApplication } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import compression from 'compression'
 import express from 'express'
@@ -32,10 +33,22 @@ export async function bootstrap() {
 
     app.enableShutdownHooks()
 
-    const server = await app.listen(http.port)
-    // NGINX가 60초에 upstream 유휴 연결을 먼저 닫도록 Node keep-alive를 65초로 둔다.
-    server.keepAliveTimeout = 65_000
-    server.headersTimeout = 66_000
+    try {
+        await initializeApi(app)
+        const server = await app.listen(http.port)
+        // NGINX가 60초에 upstream 유휴 연결을 먼저 닫도록 Node keep-alive를 65초로 둔다.
+        server.keepAliveTimeout = 65_000
+        server.headersTimeout = 66_000
 
-    logger.log('Application is running', { url: await app.getUrl() })
+        logger.log('Application is running', { url: await app.getUrl() })
+    } catch (error) {
+        await app.close()
+        throw error
+    }
+}
+
+export async function initializeApi(app: INestApplication) {
+    const { adminUrl, uri } = app.get(AppConfigService).restateDeployment
+    await app.init()
+    return app.get(RestateEndpoint).register(adminUrl, uri)
 }

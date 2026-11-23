@@ -22,6 +22,9 @@
         "COMPOSE_PROJECT_NAME": "${localEnv:USER:unknown}-${localWorkspaceFolderBasename}",
         "DEVCONTAINER_NETWORK": "${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
     },
+    "remoteEnv": {
+        "RESTATE_DEPLOYMENT_URI": "http://${containerEnv:COMPOSE_PROJECT_NAME}:${containerEnv:RESTATE_SERVICE_PORT}"
+    },
     // docker-outside-of-docker는 호스트 daemon을 사용하기 때문에 workspace를 같은 절대 경로에 마운트한다.
     "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind",
     "workspaceFolder": "${localWorkspaceFolder}",

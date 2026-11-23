@@ -10,6 +10,7 @@ services:
               format: raw
         environment:
             NODE_ENV: production
+            RESTATE_DEPLOYMENT_URI: http://api:${RESTATE_SERVICE_PORT:?}
         logging: { driver: json-file, options: { max-size: '10m', max-file: '3' } }
         healthcheck:
             test: 'curl -fsS http://localhost:$${API_PORT:?}/health'
@@ -28,6 +29,7 @@ services:
         init: true
         environment:
             PROJECT_ID: ${PROJECT_ID:?}-docs
+            RESTATE_DEPLOYMENT_URI: http://test-api-docs:${RESTATE_SERVICE_PORT:?}
             SERVER_URL: http://localhost:${API_PORT:?}
             LOG_CONSOLE_LEVEL: error
         entrypoint:
@@ -35,7 +37,6 @@ services:
             - -ec
             - |
                 npm start &
-                node /register-restate.cjs "$$HOSTNAME"
                 curl -fsS --retry 10 --retry-delay 1 --retry-connrefused "$$SERVER_URL/health" >/dev/null
                 exec bash /api-docs/run.sh "$$@"
             - sh

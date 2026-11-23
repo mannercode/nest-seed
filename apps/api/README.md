@@ -65,7 +65,7 @@ API 로그는 stdout/stderr에 ECS JSON으로 출력한다. 요청·응답 본�
 
 `createAppTestContext`와 공통 훅이 앱을 준비하고 정리한다. 데이터 준비·조회·장애 주입 함수는 해당 `*.utils.ts`에 둔다. DB와 버킷은 worker별로, `PROJECT_ID`는 테스트별로 나누므로 키 접두어·subject·workflow 이름은 provider에 주입된 설정으로 정한다.
 
-workflow를 제출하는 테스트는 `enableRestate: true`로 endpoint를 등록한다. 테스트가 끝나면 `teardown`이 작업 완료를 기다린 뒤 등록을 해제한다. [비동기 작업 테스트](src/__tests__/infrastructure/job-demo.spec.ts) · [SSE 수신 테스트 작성법](../../libs/README.md#5-sse-이벤트를-받는-테스트-작성)
+모든 API 통합 테스트에서 실제 Restate를 사용한다. `beforeEach`에서 앱을 준비할 때 workflow 리스너에 배정된 포트로 `RESTATE_DEPLOYMENT_URI`를 설정하면 API가 운영과 같은 절차로 등록한다. `teardown`은 제출한 작업이 끝난 뒤 그 테스트의 등록을 해제하고 앱을 닫는다. [배포 환경의 주소 설정](../../infra/README.md#4-restate에-workflow-실행-주소-등록) · [비동기 작업 테스트](src/__tests__/infrastructure/job-demo.spec.ts) · [SSE 수신 테스트 작성법](../../libs/README.md#5-sse-이벤트를-받는-테스트-작성)
 
 ### 실행 가능한 API 문서
 

@@ -55,6 +55,7 @@ setupVitestLifecycle({
 })
 
 afterAll(clearSharedTestMongoConnection)
+afterEach(() => vi.unstubAllEnvs())
 
 function requiredEnvironment(name: string): string {
     const value = process.env[name]

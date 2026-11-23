@@ -31,7 +31,6 @@
         "XXXdev": "concurrently 'pnpm:dev:*'",
         "XXXdev:common": "pnpm --dir libs/common run dev",
         "XXXdev:api": "pnpm --dir apps/api run dev",
-        "XXXdev:restate": "node apps/api/scripts/register-restate.cjs",
         "XXXdev:web": "pnpm --dir apps/web run dev",
         "XXXformat": "prettier --write .",
         "XXXe2e:list": "pnpm --dir tests/web run e2e:list",

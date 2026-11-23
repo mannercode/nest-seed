@@ -1,13 +1,15 @@
 import {
     AppLoggerService,
+    Env,
     MongoConnection,
     RestateEndpoint,
     type DurableWorkflowSubmission
 } from '@mannercode/common'
 import {
-    createHttpTestContext,
+    createTestContext,
+    HttpTestClient,
     isDebuggingEnabled,
-    type HttpTestContext,
+    type TestContext,
     type TestModuleOptions
 } from '@mannercode/testing'
 import { SchedulerRegistry } from '@nestjs/schedule'
@@ -16,19 +18,14 @@ import express from 'express'
 import { DEMO_EVENTS_MAX_BYTES } from '#infrastructure'
 import { AppConfigService } from '#config'
 import { AppModule } from '../../app.module.js'
+import { initializeApi } from '../../bootstrap.js'
 import { configureTemporalJson } from '../../configure-temporal-json.js'
 import { TextJobWorkflowClient } from '../../services/infrastructure/job-demo/worker.js'
 import { getSharedTestMongoConnection } from './shared-mongo-connection.js'
 
-type AppTestOptions = TestModuleOptions & { enableRestate?: boolean }
-
 const TEST_DEMO_EVENTS_MAX_BYTES = 1024 * 1024
 
-export async function createAppTestContext({
-    enableRestate = false,
-    ...metadata
-}: AppTestOptions = {}) {
-    let restateDeploymentId: string | undefined
+export async function createAppTestContext(metadata: TestModuleOptions = {}) {
     const restateCompletions = new Set<Promise<void>>()
     const imports = [AppModule, ...(metadata.imports ?? [])]
     const sharedMongo = getSharedTestMongoConnection()
@@ -38,26 +35,11 @@ export async function createAppTestContext({
             original: MongoConnection,
             replacement: new MongoConnection(sharedMongo.client, sharedMongo.db, false)
         },
-        ...(enableRestate
-            ? []
-            : [
-                  {
-                      original: RestateEndpoint,
-                      replacement: { onApplicationBootstrap() {}, onApplicationShutdown() {} }
-                  },
-                  ...[TextJobWorkflowClient].map((original) => ({
-                      original,
-                      replacement: {
-                          submit() {
-                              throw new Error('Restate is disabled for this test context.')
-                          }
-                      }
-                  }))
-              ]),
         ...(metadata.overrideProviders ?? [])
     ]
 
-    const ctx = await createHttpTestContext({
+    await using setup = new AsyncDisposableStack()
+    const ctx = await createTestContext({
         configureApp: async (app) => {
             const { http } = app.get(AppConfigService)
 
@@ -75,35 +57,22 @@ export async function createAppTestContext({
         overrideProviders
     })
 
-    try {
-        if (enableRestate) {
-            restateDeploymentId = await registerRestateEndpoint(ctx)
-            trackRestateCompletions(ctx.module.get(TextJobWorkflowClient), restateCompletions)
-        }
-        await stopAllCronJobs(ctx)
-    } catch (setupError) {
-        try {
-            await ctx.close()
-        } catch {
-            // 설정 오류가 정리 오류에 가려지지 않게 원래 오류를 유지한다.
-        }
+    setup.defer(ctx.close)
+    const port = ctx.app.get(RestateEndpoint).port
+    vi.stubEnv('RESTATE_DEPLOYMENT_URI', `http://${Env.getString('COMPOSE_PROJECT_NAME')}:${port}`)
+    const deploymentUrl = await initializeApi(ctx.app)
+    setup.defer(() => unregisterRestateDeployment(deploymentUrl))
 
-        throw setupError
-    }
+    trackRestateCompletions(ctx.module.get(TextJobWorkflowClient), restateCompletions)
+    setup.defer(async () => {
+        while (restateCompletions.size > 0) await Promise.all(restateCompletions)
+    })
+    await stopAllCronJobs(ctx)
 
-    // 앱별 자원은 close에서 정리하고, 파일이 공유하는 MongoClient는 Vitest afterAll에서 닫는다.
-    const teardown = async () => {
-        try {
-            if (enableRestate) {
-                while (restateCompletions.size > 0) await Promise.all(restateCompletions)
-                await unregisterRestateDeployment(restateDeploymentId)
-            }
-        } finally {
-            await ctx.close()
-        }
-    }
-
-    return { ...ctx, teardown }
+    await ctx.app.listen(0, '127.0.0.1')
+    const httpClient = new HttpTestClient(await ctx.app.getUrl())
+    const resources = setup.move()
+    return { ...ctx, httpClient, teardown: () => resources.disposeAsync() }
 }
 
 function trackRestateCompletions<Input, Output>(
@@ -129,53 +98,18 @@ function trackRestateCompletions<Input, Output>(
     }
 }
 
-async function registerRestateEndpoint(ctx: HttpTestContext) {
-    const adminUrl = requiredEnvironment('RESTATE_ADMIN_URL')
-    const containerName = requiredEnvironment('COMPOSE_PROJECT_NAME')
-    const endpoint = ctx.module.get(RestateEndpoint)
-    const uri = `http://${containerName}:${endpoint.port}`
-    const response = await fetch(`${adminUrl}/deployments`, {
-        body: JSON.stringify({ force: false, uri, use_http_11: false }),
-        headers: { 'content-type': 'application/json' },
-        method: 'POST'
-    })
-
-    if (!response.ok) {
-        throw new Error(`Restate test endpoint registration failed: ${await response.text()}`)
-    }
-
-    const registration = (await response.json()) as { id?: unknown }
-    if (typeof registration.id !== 'string') {
-        throw new Error('Restate test endpoint registration did not return a deployment ID.')
-    }
-    return registration.id
-}
-
-async function unregisterRestateDeployment(deploymentId: string | undefined) {
-    if (!deploymentId) return
-
-    const adminUrl = requiredEnvironment('RESTATE_ADMIN_URL')
-    // 현재 테스트의 workflow가 끝난 뒤 임시 deployment만 지운다. Restate의 일반 삭제는
-    // 완료된 invocation retention 때문에 막힐 수 있어 테스트 teardown에서는 force가 필요하다.
-    const response = await fetch(
-        `${adminUrl}/deployments/${encodeURIComponent(deploymentId)}?force=true`,
-        { method: 'DELETE' }
-    )
-
+async function unregisterRestateDeployment(deploymentUrl: URL) {
+    // 완료 기록의 retention이 남아 있어도 이 테스트의 임시 deployment를 정리한다.
+    deploymentUrl.searchParams.set('force', 'true')
+    const response = await fetch(deploymentUrl, { method: 'DELETE' })
     if (!response.ok) {
         throw new Error(`Restate test endpoint removal failed: ${await response.text()}`)
     }
 }
 
-function requiredEnvironment(name: string) {
-    const value = process.env[name]
-    if (!value) throw new Error(`${name} must be defined.`)
-    return value
-}
-
 export type AppTestContext = Awaited<ReturnType<typeof createAppTestContext>>
 
-async function stopAllCronJobs(ctx: HttpTestContext) {
+async function stopAllCronJobs(ctx: TestContext) {
     const scheduler = ctx.module.get(SchedulerRegistry)
 
     const cronJobs = scheduler.getCronJobs()

@@ -14,6 +14,8 @@
 
 API와 common의 전체 테스트는 커버리지 100%를 요구한다. API Vitest 명령을 동시에 여러 번 실행하면 테스트 DB와 버킷 이름이 겹친다.
 
+웹 E2E와 복제본 검증은 각각 전용 `PROJECT_ID`와 workflow 주소를 사용한다. Restate가 개발 서버의 새 작업을 종료된 테스트 컨테이너로 보내지 않도록 각 환경의 workflow 이름을 구분한다.
+
 `pnpm --dir apps/api run test:api-docs`는 문서 예제의 통과 여부를 터미널에 표시한다. 보고서를 로컬에 남기려면 실행 중인 API를 대상으로 `bash apps/api/api-docs/run.sh`를 실행한다. 예제가 만든 계정과 파일은 개발 DB와 S3에 남고, Restate는 다음 실행에서 같은 테스트 서비스 등록을 재사용한다.
 
 ## 테스트는 한 행동의 결과를 검증한다

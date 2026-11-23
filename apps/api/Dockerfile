@@ -51,7 +51,6 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends jq \
     && rm -rf /var/lib/apt/lists/*
 COPY --chown=node:node apps/api/api-docs/ /api-docs/
-COPY apps/api/scripts/register-restate.cjs /register-restate.cjs
 USER node
 
 FROM api AS runtime
