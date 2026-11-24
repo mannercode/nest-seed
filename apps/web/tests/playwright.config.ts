@@ -6,7 +6,7 @@ function requiredEnvironment(name: string): string {
     return value
 }
 
-export const API_BASE_URL = `http://web-e2e-api:${requiredEnvironment('API_PORT')}`
+export const API_BASE_URL = `http://api:${requiredEnvironment('API_PORT')}`
 export const WEB_BASE_URL = `http://web.localhost:${requiredEnvironment('WEB_PORT')}`
 export const WORKSPACE_ROOT = requiredEnvironment('WORKSPACE_ROOT')
 
@@ -21,7 +21,7 @@ export default defineConfig({
         screenshot: 'only-on-failure',
         trace: 'retain-on-failure',
         // localhost 도메인을 Docker web에 연결해 Web Crypto를 표준 secure context에서 사용한다.
-        launchOptions: { args: ['--host-resolver-rules=MAP web.localhost web-e2e'] }
+        launchOptions: { args: ['--host-resolver-rules=MAP web.localhost web'] }
     },
     projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }]
 })

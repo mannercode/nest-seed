@@ -12,7 +12,7 @@ Dev Container의 저장소 루트에서 `pnpm -C infra run reset`을 실행하�
 
 ## 3. 네트워크와 포트
 
-Dev Container와 각 Compose 프로젝트는 같은 외부 Docker 네트워크에서 서비스 이름으로 통신한다. 공용 개발 인프라의 포트는 호스트에 공개하지 않는다. MongoDB·Redis의 주소를 바꾸면 앱의 접속 설정뿐 아니라 각 노드가 클라이언트에 알려 주는 주소와 초기화 스크립트도 맞춘다.
+Dev Container와 앱·인프라 컨테이너는 워크스페이스의 `COMPOSE_PROJECT_NAME`과 같은 이름의 외부 Docker 네트워크에서 서비스 이름으로 통신한다. 공용 개발 인프라의 포트는 호스트에 공개하지 않는다. MongoDB·Redis의 주소를 바꾸면 앱의 접속 설정뿐 아니라 각 노드가 클라이언트에 알려 주는 주소와 초기화 스크립트도 맞춘다.
 
 ## 4. Restate에 workflow 실행 주소 등록
 
@@ -24,11 +24,13 @@ API의 HTTP·workflow 포트를 바꾸면 NGINX upstream을 맞춘다. NGINX가 
 
 ## 5. 인프라 테스트
 
+앱 시작·종료 명령과 앱 컨테이너를 띄우는 테스트는 같은 Compose 프로젝트를 사용한다. 두 터미널에서 이 명령들을 실행하면 `flock`이 워크스페이스의 `infra/` 디렉터리를 잠가 먼저 시작한 명령이 끝날 때까지 다음 명령을 기다리게 한다. 테스트는 앱 컨테이너 정리까지 잠금을 유지한다.
+
 저장소 루트에서 `pnpm -C infra test`를 실행하면 `infra/tests/` 아래의 `*.test.js` 파일을 하나씩 실행한다. 루트의 `pnpm test`에도 포함된다. Restate 복구 테스트는 개발 서버와 공유하는 Restate 컨테이너를 강제 종료하고 다시 시작해, 중단된 workflow 단계만 재실행되는지 확인한다. [Restate 복구 테스트](tests/restate-journal-recovery.test.js)
 
 ### API 복제본의 Race와 Benchmark
 
-`race`와 `benchmark`는 NGINX와 API 복제본 4개를 테스트 전용 Compose 프로젝트에 띄운다. 두 검사와 수동으로 띄운 복제본 구성은 모두 호스트의 `127.0.0.1:3000`을 사용하므로 한 번에 하나씩 실행한다. 종료할 때 테스트 컨테이너를 내리고, 생성한 계정·파일·작업 기록은 공유 개발 인프라에 남는다. [복제본 Compose 설정](compose.apps.yml) · [인프라 초기화](#2-인프라-시작과-데이터-초기화)
+`race`와 `benchmark`는 수동 실행과 같은 Compose 프로젝트에 NGINX와 API 복제본 4개를 띄운다. NGINX는 호스트의 `127.0.0.1:3000`을 사용한다. 종료할 때 테스트 컨테이너를 내리고, 생성한 계정·파일·작업 기록은 공유 개발 인프라에 남는다. [복제본 Compose 설정](compose.apps.yml) · [인프라 초기화](#2-인프라-시작과-데이터-초기화)
 
 `pnpm -C infra run race`로 시나리오와 실행법을 확인한다. 가입·토큰 갱신은 한 회차 전체에서 여러 복제본이 응답했는지, SSE는 구독 연결이 여러 복제본에 분산됐는지 검증한다. [실행 가능한 시나리오](tests/api/race/)
 

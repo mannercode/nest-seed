@@ -8,8 +8,7 @@ cd -- "$(dirname -- "$0")"
 
 export COMPOSE_FILE="${WORKSPACE_ROOT:?}/infra/compose.apps.yml"
 
-replica_project="${COMPOSE_PROJECT_NAME:?}-replicas"
-compose=(docker compose --project-name "${replica_project}" --profile replicas)
+compose=(docker compose --profile replicas)
 
 list_scenarios() {
     echo "Scenarios:"
@@ -41,7 +40,6 @@ cleanup() {
     echo "Tearing down..."
     "${compose[@]}" down -v -t 0 nginx replica-api
 }
-trap cleanup EXIT
 
 dump_diagnostics() {
     local service cid cname
@@ -49,12 +47,14 @@ dump_diagnostics() {
     echo ""
     echo "=== container diagnostics ==="
     date --utc --iso-8601=seconds
-    "${compose[@]}" ps -a || true
+    "${compose[@]}" ps -a nginx replica-api || true
 
-    timeout --kill-after=2s 10s "${compose[@]}" stats --all --no-stream --format json \
-        || echo "[diagnostics] container resource collection failed" >&2
+    for service in nginx replica-api; do
+        timeout --kill-after=2s 10s "${compose[@]}" stats --all --no-stream --format json "${service}" \
+            || echo "[diagnostics] container resource collection failed: ${service}" >&2
+    done
 
-    for cid in $("${compose[@]}" ps -aq 2>/dev/null); do
+    for cid in $("${compose[@]}" ps -aq nginx replica-api 2>/dev/null); do
         cname=$(docker inspect --format '{{.Name}} ({{.State.Status}})' "${cid}" 2>/dev/null || echo "${cid}")
         docker inspect --format 'name={{.Name}} state={{json .State}} restarts={{.RestartCount}}' "${cid}" \
             || echo "[diagnostics] container state collection failed: ${cid}" >&2
@@ -107,13 +107,13 @@ bring_up_stack() {
     fi
 
     echo ""
-    "${compose[@]}" ps
+    "${compose[@]}" ps nginx replica-api
 }
 
 run_scenario() {
     echo ""
     echo "=== ${TEST_NAME} ==="
-    if COMPOSE_PROJECT_NAME="${replica_project}" SERVER_URL="${SERVER_URL}" node --test --test-reporter=spec "${TEST_SCRIPT}"; then
+    if SERVER_URL="${SERVER_URL}" node --test --test-reporter=spec "${TEST_SCRIPT}"; then
         echo "[PASS] ${TEST_NAME}"
         return 0
     fi
@@ -123,5 +123,7 @@ run_scenario() {
     return 1
 }
 
+"${compose[@]}" down
+trap cleanup EXIT
 bring_up_stack
 run_scenario

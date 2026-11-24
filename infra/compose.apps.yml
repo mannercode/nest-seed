@@ -1,3 +1,5 @@
+name: ${COMPOSE_PROJECT_NAME:?}
+
 services:
     api:
         build:
@@ -72,5 +74,5 @@ services:
 
 networks:
     default:
-        name: ${DEVCONTAINER_NETWORK:?}
+        name: ${COMPOSE_PROJECT_NAME:?}
         external: true

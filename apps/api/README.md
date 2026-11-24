@@ -75,4 +75,4 @@ API 서버와 통합 테스트는 `configureHttpApp`으로 HTTP 설정을 적용
 
 외부에 `api-docs/`를 전달하기 전에 `run.cfg`의 API 주소를 수정한다. 전달받은 사람은 그 폴더에서 `bash run.sh`를 실행한다.
 
-`pnpm --dir apps/api run test:api-docs`는 API 배포 이미지로 컨테이너를 띄우고 Dev Container에서 curl 예제를 실행한다. 결과를 터미널에 표시한 뒤 해당 컨테이너를 정리한다. 보고서를 로컬에 남기려면 실행 중인 API를 대상으로 `bash apps/api/api-docs/run.sh`를 실행한다. 예제가 만든 계정과 파일은 개발 DB와 S3에 남고, Restate는 다음 실행에서 같은 테스트 서비스 등록을 재사용한다. [예제 테스트 스크립트](api-docs/test.sh)
+`pnpm --dir apps/api run test:api-docs`는 워크스페이스의 앱 컨테이너를 내리고 API 배포 이미지로 문서 검증용 컨테이너를 띄운다. Dev Container에서 curl 예제를 실행하고 결과를 터미널에 표시한 뒤 해당 컨테이너를 정리한다. 보고서를 로컬에 남기려면 실행 중인 API를 대상으로 `bash apps/api/api-docs/run.sh`를 실행한다. 예제가 만든 계정과 파일은 개발 DB와 S3에 남고, Restate는 다음 실행에서 같은 테스트 서비스 등록을 재사용한다. [예제 테스트 스크립트](api-docs/test.sh)

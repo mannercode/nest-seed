@@ -26,6 +26,7 @@ trap 'exit 143' TERM
 
 # 자동 검증은 배포할 예제 사본에서 실행해 개발자가 저장한 보고서를 보존한다.
 tar -C apps/api/api-docs --exclude=./_output -cf - . | tar -C "${docs_dir}" -xf -
+docker compose --profile '*' down
 docker compose build api
 container_id=$(docker compose run --detach --name "${api_host}" \
     --env "PROJECT_ID=${PROJECT_ID:?}-docs" \

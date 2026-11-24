@@ -14,7 +14,7 @@ mkdir -p _output
 mkdir "${OUTPUT_DIR}"
 
 compose=(
-    docker compose --project-name "${COMPOSE_PROJECT_NAME:?}-replicas" --profile replicas
+    docker compose --profile replicas
     -f "${WORKSPACE_ROOT}/infra/compose.apps.yml" -f compose.yml
 )
 
@@ -24,8 +24,8 @@ cleanup() {
     set +e
 
     if [[ "${exit_code}" -ne 0 ]]; then
-        "${compose[@]}" ps --all >&2
-        "${compose[@]}" logs --no-color --timestamps >&2
+        "${compose[@]}" ps --all nginx replica-api >&2
+        "${compose[@]}" logs --no-color --timestamps nginx replica-api >&2
     fi
     "${compose[@]}" down -v -t 0 nginx replica-api
     local cleanup_exit_code=$?
@@ -34,7 +34,6 @@ cleanup() {
     fi
     exit "${exit_code}"
 }
-trap cleanup EXIT
 
 run_k6() {
     local -a environment=()
@@ -69,6 +68,8 @@ wait_for_api() {
 }
 
 echo "Building API benchmark stack"
+"${compose[@]}" down
+trap cleanup EXIT
 "${compose[@]}" up -d --build --wait nginx
 wait_for_api
 

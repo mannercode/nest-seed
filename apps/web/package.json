@@ -8,7 +8,7 @@
         "dev": "next dev -p ${WEB_PORT:?}",
         "build": "next build",
         "start": "next start -p ${WEB_PORT:?}",
-        "test": "bash tests/run-e2e.sh",
+        "test": "flock \"${WORKSPACE_ROOT:?}/infra\" bash tests/run-e2e.sh",
         "lint": "tsc --noEmit"
     },
     "dependencies": {
