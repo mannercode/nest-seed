@@ -35,7 +35,7 @@ Dev Container의 저장소 루트에서 실행한다. 루트 명령은 `pnpm run
 | `pnpm -C infra run race`      | 다중 복제본 테스트의 시나리오 목록과 실행법 확인             |
 | `pnpm -C infra run benchmark` | 같은 조건의 API 성능 비교                                    |
 
-`docker compose -f infra/compose.apps.yml up -d --build --wait`는 API 한 개와 web을 띄운다. 명령 끝에 `api`를 붙이면 API 한 개만, `nginx`를 붙이면 NGINX와 API 복제본 4개를 띄운다. 모두 실행 중인 인프라에 연결한다. [앱 Compose](infra/compose.apps.yml)
+개발 인프라가 실행 중일 때 `pnpm -C infra run apps:up`으로 API 한 개와 web을 띄운다. 명령 끝에 `api`를 붙이면 API 한 개만, `nginx`를 붙이면 NGINX와 API 복제본 4개를 띄운다. `pnpm -C infra run apps:down`으로 앱 컨테이너를 내린다. [앱 Compose](infra/compose.apps.yml)
 
 실행 중인 개발 서버에서 curl 예제를 검증하려면 `bash apps/api/api-docs/run.sh`를 실행한다. 단일 API 컨테이너를 대상으로 할 때는 `SERVER_URL="http://api:${API_PORT:?}" bash apps/api/api-docs/run.sh`를 사용한다. 예제 파일명을 인자로 주면 해당 파일만 실행한다.
 

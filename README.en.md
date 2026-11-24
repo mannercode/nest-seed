@@ -41,7 +41,7 @@ Run these commands from the repository root inside the Dev Container. Use `pnpm 
 | `pnpm -C infra run race`      | List the multi-replica test scenarios and how to run them                    |
 | `pnpm -C infra run benchmark` | Compare API performance under the same conditions                            |
 
-`docker compose -f infra/compose.apps.yml up -d --build --wait` starts one API instance and the web app. Append `api` to start the API alone, or `nginx` to start NGINX and four API replicas. Each configuration connects to the running infrastructure. [App Compose file](infra/compose.apps.yml)
+With the development infrastructure running, use `pnpm -C infra run apps:up` to start one API instance and the web app. Append `api` to start the API alone, or `nginx` to start NGINX and four API replicas. Run `pnpm -C infra run apps:down` to stop and remove the app containers. [App Compose file](infra/compose.apps.yml)
 
 Run `bash apps/api/api-docs/run.sh` to check the curl examples against the running dev server. To target the single API container, use `SERVER_URL="http://api:${API_PORT:?}" bash apps/api/api-docs/run.sh`. Pass an example filename to run just that file.
 

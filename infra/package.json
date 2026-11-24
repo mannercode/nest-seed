@@ -4,6 +4,8 @@
     "private": true,
     "type": "module",
     "scripts": {
+        "apps:up": "docker compose -f compose.apps.yml up -d --build --wait",
+        "apps:down": "docker compose -f compose.apps.yml --profile '*' down",
         "reset": "bash reset.sh",
         "test": "node --test --test-concurrency=1 --test-reporter=spec",
         "race": "bash tests/api/race/runner.sh",
