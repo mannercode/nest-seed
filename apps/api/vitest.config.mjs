@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
 import { defineConfig } from 'vitest/config'
-
 import { createVitestBase } from '../../vitest.config.base.mjs'
 
 const appDirectory = path.dirname(fileURLToPath(import.meta.url))

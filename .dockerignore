@@ -11,7 +11,7 @@
 !/libs/common/tsconfig.json
 !/libs/common/tsconfig.build.json
 !/libs/common/src/
-# API의 개발 의존성인 workspace link를 해석하는 데 manifest만 필요하다.
+# workspace link를 해석하는 데 필요하다.
 !/libs/testing/package.json
 
 !/apps/api/package.json
@@ -28,8 +28,7 @@
 !/apps/web/tsconfig.json
 !/apps/web/src/
 
+# workspace link를 해석하는 데 필요하다.
 !/tools/package.json
 
-**/node_modules
-**/_output
 **/__tests__
