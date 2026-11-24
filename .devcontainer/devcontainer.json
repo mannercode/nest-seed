@@ -1,6 +1,6 @@
 {
     "name": "${containerWorkspaceFolderBasename}",
-    "build": { "dockerfile": "Dockerfile" },
+    "build": { "dockerfile": "Dockerfile", "context": ".." },
     "features": {
         "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
             "moby": false,
@@ -13,6 +13,7 @@
         ".env.infra",
         "--env-file",
         ".env.api",
+        // 같은 Docker 호스트에서 한 사용자가 여러 복사본을 동시에 열 때는 컨테이너와 네트워크 이름이 겹치지 않도록 폴더명을 다르게 둔다.
         "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}",
         "--network=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
     ],
@@ -20,12 +21,13 @@
     "containerEnv": {
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}",
         "COMPOSE_PROJECT_NAME": "${localEnv:USER:unknown}-${localWorkspaceFolderBasename}",
-        "DEVCONTAINER_NETWORK": "${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
+        // 앱과 공용 인프라가 같은 Compose 프로젝트를 사용하므로 다른 파일에 정의된 컨테이너에 대한 경고를 끈다.
+        "COMPOSE_IGNORE_ORPHANS": "true"
     },
     "remoteEnv": {
         "RESTATE_DEPLOYMENT_URI": "http://${containerEnv:COMPOSE_PROJECT_NAME}:${containerEnv:RESTATE_SERVICE_PORT}"
     },
-    // docker-outside-of-docker는 호스트 daemon을 사용하기 때문에 workspace를 같은 절대 경로에 마운트한다.
+    // 호스트 Docker가 bind mount의 원본 경로를 해석하므로 WORKSPACE_ROOT가 양쪽에서 같은 절대 경로를 가리키게 한다.
     "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind",
     "workspaceFolder": "${localWorkspaceFolder}",
     "mounts": [
@@ -39,7 +41,7 @@
         "github": "mkdir -p ${localEnv:HOME}/.config/gh"
     },
     "postCreateCommand": "for entry in config.toml auth.json skills; do ln -sfn \"/home/node/.codex-shared/$entry\" \"/home/node/.codex/$entry\" || exit; done",
-    "postStartCommand": "pnpm install --frozen-lockfile && bash infra/reset.sh",
+    "postStartCommand": "pnpm install --frozen-lockfile && pnpm -C infra run reset",
     "waitFor": "postStartCommand",
     "customizations": {
         "vscode": {

@@ -1,6 +1,5 @@
 import {
     AppLoggerService,
-    Env,
     MongoConnection,
     RestateEndpoint,
     type DurableWorkflowSubmission
@@ -13,13 +12,10 @@ import {
     type TestModuleOptions
 } from '@mannercode/testing'
 import { SchedulerRegistry } from '@nestjs/schedule'
-import compression from 'compression'
-import express from 'express'
-import { DEMO_EVENTS_MAX_BYTES } from '#infrastructure'
 import { AppConfigService } from '#config'
+import { DEMO_EVENTS_MAX_BYTES } from '#infrastructure'
 import { AppModule } from '../../app.module.js'
-import { initializeApi } from '../../bootstrap.js'
-import { configureTemporalJson } from '../../configure-temporal-json.js'
+import { configureHttpApp, initializeApi } from '../../bootstrap.js'
 import { TextJobWorkflowClient } from '../../services/infrastructure/job-demo/worker.js'
 import { getSharedTestMongoConnection } from './shared-mongo-connection.js'
 
@@ -40,27 +36,24 @@ export async function createAppTestContext(metadata: TestModuleOptions = {}) {
 
     await using setup = new AsyncDisposableStack()
     const ctx = await createTestContext({
+        ...metadata,
+        imports,
+        overrideProviders,
         configureApp: async (app) => {
-            const { http } = app.get(AppConfigService)
-
-            configureTemporalJson(app)
-            app.use(compression())
-            app.use(express.json({ limit: http.requestPayloadLimit }))
-
+            configureHttpApp(app)
             if (isDebuggingEnabled()) {
                 const logger = app.get(AppLoggerService)
                 app.useLogger(logger)
             }
-        },
-        ...metadata,
-        imports,
-        overrideProviders
+            await metadata.configureApp?.(app)
+        }
     })
 
     setup.defer(ctx.close)
-    const port = ctx.app.get(RestateEndpoint).port
-    vi.stubEnv('RESTATE_DEPLOYMENT_URI', `http://${Env.getString('COMPOSE_PROJECT_NAME')}:${port}`)
-    const deploymentUrl = await initializeApi(ctx.app)
+    const { adminUrl, uri } = ctx.app.get(AppConfigService).restateDeployment
+    const address = new URL(uri)
+    address.port = String(ctx.app.get(RestateEndpoint).port)
+    const deploymentUrl = await initializeApi(ctx.app, { adminUrl, uri: address.href })
     setup.defer(() => unregisterRestateDeployment(deploymentUrl))
 
     trackRestateCompletions(ctx.module.get(TextJobWorkflowClient), restateCompletions)

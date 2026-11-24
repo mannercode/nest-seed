@@ -113,6 +113,10 @@ export class S3ObjectService implements OnModuleDestroy {
     }
 
     async presignDownloadUrl(options: S3PresignDownloadOptions): Promise<string> {
+        return (await this.presignDownload(options)).url
+    }
+
+    async presignDownload(options: S3PresignDownloadOptions) {
         const { expiresInSec, filename, key, responseContentDisposition, responseContentType } =
             options
 
@@ -128,7 +132,13 @@ export class S3ObjectService implements OnModuleDestroy {
             ResponseContentType: responseContentType
         })
 
-        return getSignedUrl(this.s3, command, { expiresIn: expiresInSec })
+        // SigV4는 서명 시각을 초 단위로 기록한다.
+        const signedAt = DateUtil.now().round({ smallestUnit: 'second', roundingMode: 'floor' })
+        const url = await getSignedUrl(this.s3, command, {
+            expiresIn: expiresInSec,
+            signingDate: DateUtil.toDate(signedAt)
+        })
+        return { url, expiresAt: DateUtil.add({ base: signedAt, seconds: expiresInSec }) }
     }
 
     async presignUploadPost(

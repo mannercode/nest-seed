@@ -1,4 +1,4 @@
-import { HttpStatus, type INestApplication } from '@nestjs/common'
+import { HttpStatus } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { AppConfigService } from '#config'
 import { type UserDto, UsersService, UsersRepository, UserSchema } from '#core'
@@ -17,10 +17,6 @@ const IP_FAILURE_LIMIT = 50
 const LOGIN_RATE_LIMITED_ERROR = {
     code: 'ERR_AUTH_LOGIN_RATE_LIMITED',
     message: 'Too many login attempts'
-}
-
-function trustPrivateProxy(app: INestApplication) {
-    app.getHttpAdapter().getInstance().set('trust proxy', ['loopback', 'linklocal', 'uniquelocal'])
 }
 
 type JwtAuthInternals = {
@@ -53,7 +49,7 @@ describe('UserAuthentication', () => {
     beforeEach(async () => {
         teardown = undefined
 
-        fix = await createAppTestContext({ configureApp: async (app) => trustPrivateProxy(app) })
+        fix = await createAppTestContext()
         teardown = fix.teardown
 
         await createUser(fix, credentials)
@@ -310,21 +306,23 @@ describe('UserAuthentication', () => {
             })
         })
 
-        describe('같은 Redis를 쓰는 다른 앱에서 해당 IP의 로그인 실패 횟수가 한도에 도달했으면', () => {
+        describe('경로 접두어가 다른 두 앱이 Redis를 공유하고 한 앱에서 해당 IP의 로그인 실패 횟수가 한도에 도달했으면', () => {
             let replica: AppTestContext | undefined
             beforeEach(async () => {
                 replica = undefined
                 replica = await createAppTestContext({
-                    configureApp: async (app) => trustPrivateProxy(app)
+                    configureApp: async (app) => {
+                        app.setGlobalPrefix('replica')
+                    }
                 })
                 const limiter = fix.module.get(LoginRateLimiterService)
                 for (let index = 0; index < IP_FAILURE_LIMIT; index++)
                     await limiter.recordFailure('203.0.113.2')
             })
             afterEach(() => replica?.teardown())
-            it('이 앱에서도 같은 IP의 로그인 요청에 429를 반환한다', async () => {
+            it('다른 앱에서도 같은 IP의 로그인 요청에 429를 반환한다', async () => {
                 await ensure(replica)
-                    .httpClient.post('/users/login')
+                    .httpClient.post('/replica/users/login')
                     .headers({ 'X-Forwarded-For': '203.0.113.2' })
                     .body(credentials)
                     .send(HttpStatus.TOO_MANY_REQUESTS, { expected: LOGIN_RATE_LIMITED_ERROR })

@@ -1,0 +1,370 @@
+import { expect, request, test, type BrowserContext, type Page } from '@playwright/test'
+import { randomUUID } from 'node:crypto'
+
+import {
+    API_BASE_URL,
+    S3_BUCKET,
+    S3_ENDPOINT,
+    WEB_BASE_URL,
+    WORKSPACE_ROOT
+} from '../playwright.config'
+import { photoUrl } from '../../src/lib/photos'
+
+const PASSWORD = 'DevPassword1234!'
+const ACCESS_COOKIE = 'nest-seed-user-access'
+const REFRESH_COOKIE = 'nest-seed-user-refresh'
+
+async function signupAndLogin(page: Page, password = PASSWORD): Promise<string> {
+    const email = `e2e-user-${randomUUID()}@example.com`
+
+    await page.goto(`${WEB_BASE_URL}/signup`)
+    await page.getByRole('textbox', { name: '이름' }).fill('E2E User')
+    await page.getByRole('textbox', { name: '이메일' }).fill(email)
+    await page.getByLabel('비밀번호').fill(password)
+    await page.getByRole('button', { name: '회원가입' }).click()
+    await expect(page).toHaveURL(`${WEB_BASE_URL}/login`)
+
+    await page.getByRole('textbox', { name: '이메일' }).fill(email)
+    await page.getByLabel('비밀번호').fill(password)
+    await page.getByRole('button', { name: '로그인' }).click()
+    await expect(page).toHaveURL(`${WEB_BASE_URL}/`)
+
+    return email
+}
+
+async function getSessionCookie(context: BrowserContext, name: string) {
+    const cookies = await context.cookies(WEB_BASE_URL)
+    return cookies.find((cookie) => cookie.name === name)
+}
+
+const storage = new URL(S3_ENDPOINT)
+const otherBucket = S3_BUCKET + '-other'
+for (const [condition, target] of [
+    ['다른 저장소', 'https://other-storage.example/photo.png'],
+    ['경로에 있는 다른 버킷', `${storage.href.replace(/\/$/, '')}/${otherBucket}/photo.png`],
+    ['호스트명에 있는 다른 버킷', `${storage.protocol}//${otherBucket}.${storage.host}/photo.png`]
+] as const) {
+    test.describe(`사진 주소의 대상이 ${condition}이면`, () => {
+        test('사진 프록시가 요청을 400으로 거절한다', async ({ page }) => {
+            const response = await page.goto(photoUrl(target))
+            expect(response?.status()).toBe(400)
+        })
+    })
+}
+
+for (const { condition, password } of [
+    { condition: '이모지 15자', password: '🌱'.repeat(15) },
+    { condition: '이모지 128자', password: '🌱'.repeat(128) },
+    { condition: '앞뒤 공백을 포함한 20자', password: '  browser password  ' }
+]) {
+    test.describe(`가입할 비밀번호가 ${condition}이면`, () => {
+        test('가입과 로그인 화면에서 원문을 그대로 사용할 수 있다', async ({ page }) => {
+            const email = await signupAndLogin(page, password)
+            const result = await page.evaluate(async () => {
+                const response = await fetch('/api/users/me')
+                return { status: response.status, body: await response.json() }
+            })
+            expect(result.status).toBe(200)
+            expect(result.body.email).toBe(email)
+        })
+    })
+}
+
+for (const { name, pathname } of [
+    { name: '가입', pathname: '/signup' },
+    { name: '로그인', pathname: '/login' }
+]) {
+    for (const { condition, password } of [
+        { condition: '이모지 14자', password: '🌱'.repeat(14) },
+        { condition: '이모지 129자', password: '🌱'.repeat(129) }
+    ]) {
+        test.describe(`${name} 화면의 비밀번호가 ${condition}이면`, () => {
+            test.beforeEach(async ({ page }) => {
+                await page.goto(`${WEB_BASE_URL}${pathname}`)
+                await page.getByLabel('비밀번호').fill(password)
+            })
+            test('입력 원문을 유지하면서 길이 오류를 표시한다', async ({ page }) => {
+                const input = page.getByLabel('비밀번호')
+                await expect(input).toHaveValue(password)
+                expect(
+                    await input.evaluate((element) => (element as HTMLInputElement).checkValidity())
+                ).toBe(false)
+                expect(
+                    await input.evaluate(
+                        (element) => (element as HTMLInputElement).validity.patternMismatch
+                    )
+                ).toBe(true)
+            })
+        })
+    }
+}
+
+test.describe('로그인하지 않았으면', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.goto(`${WEB_BASE_URL}/login`)
+    })
+    test('사용자 앱에서 토큰 갱신 경로를 직접 요청하면 404를 반환한다', async ({ page }) => {
+        const result = await page.evaluate(async () => {
+            const response = await fetch('/api/users/refresh', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken: 'client-controlled-refresh-token' })
+            })
+            const body = await response.text()
+            return {
+                exposesToken: /"(?:accessToken|refreshToken)"\s*:/.test(body),
+                status: response.status
+            }
+        })
+
+        expect(result).toEqual({ exposesToken: false, status: 404 })
+    })
+})
+
+test.describe('사용자로 로그인했으면', () => {
+    let email: string
+    let accessCookie: Awaited<ReturnType<typeof getSessionCookie>>
+    let refreshCookieBefore: Awaited<ReturnType<typeof getSessionCookie>>
+    let loginHeaders: Array<{ name: string; value: string }>
+    test.beforeEach(async ({ context, page }) => {
+        const response = page.waitForResponse(
+            (response) => new URL(response.url()).pathname === '/api/users/login'
+        )
+        email = await signupAndLogin(page)
+        accessCookie = await getSessionCookie(context, ACCESS_COOKIE)
+        refreshCookieBefore = await getSessionCookie(context, REFRESH_COOKIE)
+        loginHeaders = await (await response).headersArray()
+    })
+    test('로그인 응답은 쿠키에 HttpOnly·SameSite=Lax와 토큰의 만료 시각을 지정한다', async () => {
+        expect(accessCookie).toMatchObject({ httpOnly: true, sameSite: 'Lax' })
+        expect(refreshCookieBefore).toMatchObject({ httpOnly: true, sameSite: 'Lax' })
+        // Chromium은 Date 헤더로 시계 차이를 보정하므로 서버가 보낸 Expires 자체를 검증한다.
+        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie#expiresdate
+        for (const cookie of [accessCookie!, refreshCookieBefore!]) {
+            const payload = JSON.parse(
+                Buffer.from(cookie.value.split('.')[1]!, 'base64url').toString('utf8')
+            ) as { exp: number }
+            const header = loginHeaders.find(
+                ({ name, value }) =>
+                    name.toLowerCase() === 'set-cookie' && value.startsWith(cookie.name + '=')
+            )
+            expect(header?.value).toContain(`Expires=${new Date(payload.exp * 1000).toUTCString()}`)
+        }
+    })
+    test('보호 API와 홈을 요청하면 본인 정보만 반환한다', async ({ page }) => {
+        const me = await page.evaluate(async () => {
+            const response = await fetch('/api/users/me')
+            return { body: (await response.json()) as { email: string }, status: response.status }
+        })
+        expect(me).toEqual({ body: expect.objectContaining({ email }), status: 200 })
+
+        const home = await page.evaluate(async () => {
+            const response = await fetch('/api/views/web/home')
+            return {
+                body: (await response.json()) as {
+                    user: { email: string }
+                    photoUrl: string | null
+                },
+                status: response.status
+            }
+        })
+        expect(home).toEqual({
+            body: { user: expect.objectContaining({ email, photoAssetId: null }), photoUrl: null },
+            status: 200
+        })
+        await expect(page.getByText(email)).toBeVisible()
+    })
+    test('로그인 경로의 대소문자가 달라도 토큰은 본문 없이 쿠키로 전달한다', async ({
+        context,
+        page
+    }) => {
+        const result = await page.evaluate(
+            async ({ email, password }) => {
+                const response = await fetch('/api/Users/Login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                })
+                const body = await response.text()
+                return {
+                    exposesToken: /"(?:accessToken|refreshToken)"\s*:/.test(body),
+                    hasBody: body.length > 0,
+                    status: response.status
+                }
+            },
+            { email, password: PASSWORD }
+        )
+
+        expect(result).toEqual({ exposesToken: false, hasBody: false, status: 204 })
+        const refreshCookie = await getSessionCookie(context, REFRESH_COOKIE)
+        expect(refreshCookie).toMatchObject({ httpOnly: true, value: expect.any(String) })
+        expect(refreshCookie?.value === refreshCookieBefore?.value).toBe(false)
+    })
+    test('유효한 토큰으로 대소문자가 다른 갱신 경로를 요청하면 세션을 바꾸지 않고 404를 반환한다', async ({
+        page,
+        request: api
+    }) => {
+        expect(refreshCookieBefore).toBeDefined()
+        const result = await page.evaluate(async (refreshToken) => {
+            const response = await fetch('/api/Users/Refresh', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken })
+            })
+            const body = await response.text()
+            return {
+                exposesToken: /"(?:accessToken|refreshToken)"\s*:/.test(body),
+                status: response.status
+            }
+        }, refreshCookieBefore!.value)
+        const refresh = await api.post(`${API_BASE_URL}/users/refresh`, {
+            data: { refreshToken: refreshCookieBefore!.value }
+        })
+
+        expect({ ...result, originalTokenStatus: refresh.status() }).toEqual({
+            exposesToken: false,
+            originalTokenStatus: 200,
+            status: 404
+        })
+    })
+    for (const method of ['GET', 'HEAD']) {
+        test(`${method} 로그아웃 요청은 404를 반환하고 쿠키와 서버 세션을 유지한다`, async ({
+            context,
+            page,
+            request: api
+        }) => {
+            expect(accessCookie).toBeDefined()
+            expect(refreshCookieBefore).toBeDefined()
+            const status = await page.evaluate(
+                async (method) => (await fetch('/api/users/logout', { method })).status,
+                method
+            )
+            const accessAfter = await getSessionCookie(context, ACCESS_COOKIE)
+            const refreshAfter = await getSessionCookie(context, REFRESH_COOKIE)
+            const refresh = await api.post(`${API_BASE_URL}/users/refresh`, {
+                data: { refreshToken: refreshCookieBefore!.value }
+            })
+
+            expect({
+                accessCookieRetained: accessAfter?.value === accessCookie!.value,
+                refreshCookieRetained: refreshAfter?.value === refreshCookieBefore!.value,
+                refreshStatus: refresh.status(),
+                status
+            }).toEqual({
+                accessCookieRetained: true,
+                refreshCookieRetained: true,
+                refreshStatus: 200,
+                status: 404
+            })
+        })
+    }
+    test('로그아웃하면 브라우저 쿠키와 서버의 리프레시 토큰을 폐기한다', async ({
+        context,
+        page
+    }) => {
+        expect(refreshCookieBefore).toMatchObject({ httpOnly: true, sameSite: 'Lax' })
+
+        await page.getByRole('button', { name: '로그아웃' }).click()
+
+        await expect.poll(async () => getSessionCookie(context, ACCESS_COOKIE)).toBeUndefined()
+        expect(await getSessionCookie(context, REFRESH_COOKIE)).toBeUndefined()
+        expect(await page.evaluate(async () => (await fetch('/api/users/me')).status)).toBe(401)
+
+        const api = await request.newContext()
+        try {
+            const response = await api.post(`${API_BASE_URL}/users/refresh`, {
+                data: { refreshToken: refreshCookieBefore!.value }
+            })
+            expect(response.status()).toBe(401)
+        } finally {
+            await api.dispose()
+        }
+    })
+    test.describe('액세스 쿠키의 토큰이 잘못되었으면', () => {
+        test.beforeEach(async ({ context }) => {
+            await context.addCookies([{ ...accessCookie!, value: 'invalid-access-token' }])
+        })
+        test.describe('다른 요청이 갱신 토큰을 먼저 교체했으면', () => {
+            test.beforeEach(async ({ request: api }) => {
+                const refresh = await api.post(`${API_BASE_URL}/users/refresh`, {
+                    data: { refreshToken: refreshCookieBefore!.value }
+                })
+                expect(refresh.status()).toBe(200)
+            })
+            test('보호 API 요청에 갱신 충돌을 전달하고 쿠키를 덮어쓰지 않는다', async ({
+                page,
+                request: api
+            }) => {
+                const conflict = await api.post(`${API_BASE_URL}/users/refresh`, {
+                    data: { refreshToken: refreshCookieBefore!.value }
+                })
+                expect(conflict.status()).toBe(409)
+                const { code, message } = await conflict.json()
+                const response = await page.goto('/api/users/me')
+                expect(response?.status()).toBe(409)
+                expect(await response?.json()).toEqual({ code, message })
+                expect(await response?.headerValue('set-cookie')).toBeNull()
+            })
+        })
+        test('보호 API를 요청하면 토큰을 갱신하고 성공 응답을 반환한다', async ({
+            context,
+            page
+        }) => {
+            const status = await page.evaluate(async () => (await fetch('/api/users/me')).status)
+            expect(status).toBe(200)
+
+            const accessCookieAfter = await getSessionCookie(context, ACCESS_COOKIE)
+            const refreshCookieAfter = await getSessionCookie(context, REFRESH_COOKIE)
+            expect(accessCookieAfter).toMatchObject({ value: expect.any(String) })
+            expect(refreshCookieAfter).toMatchObject({ value: expect.any(String) })
+            expect(accessCookieAfter?.value).not.toBe('invalid-access-token')
+            expect(refreshCookieAfter?.value).not.toBe(refreshCookieBefore?.value)
+        })
+    })
+})
+
+test.describe('사진을 첨부해 가입하면', () => {
+    let email: string
+    test.beforeEach(async ({ page }) => {
+        email = `photo-${randomUUID()}@example.com`
+        await page.goto(`${WEB_BASE_URL}/signup`)
+        await page.getByRole('textbox', { name: '이름' }).fill('Photo User')
+        await page.getByRole('textbox', { name: '이메일' }).fill(email)
+        await page.getByLabel('비밀번호').fill(PASSWORD)
+        await page
+            .getByLabel('사진 (선택)')
+            .setInputFiles(`${WORKSPACE_ROOT}/apps/api/api-docs/assets/image.png`)
+    })
+    test('로그인 후 본인 정보와 업로드한 사진을 표시한다', async ({ page }) => {
+        await page.getByRole('button', { name: '회원가입' }).click()
+        await expect(page).toHaveURL(`${WEB_BASE_URL}/login`)
+        await page.getByRole('textbox', { name: '이메일' }).fill(email)
+        await page.getByLabel('비밀번호').fill(PASSWORD)
+        await page.getByRole('button', { name: '로그인' }).click()
+        await expect(page.getByText(email)).toBeVisible()
+        const photo = page.getByRole('img', { name: 'Photo User의 프로필 사진' })
+        await expect(photo).toBeVisible()
+        await expect
+            .poll(() => photo.evaluate((image) => (image as HTMLImageElement).naturalWidth))
+            .toBeGreaterThan(0)
+    })
+    test.describe('사진 전송이 실패하면', () => {
+        test.beforeEach(async ({ page }) => {
+            await page.route(
+                (url) => url.pathname === '/storage',
+                (route) => route.fulfill({ status: 503, body: 'Storage unavailable' })
+            )
+        })
+        test('가입 화면에 실패를 표시하고 계정을 만들지 않는다', async ({ page, request: api }) => {
+            await page.getByRole('button', { name: '회원가입' }).click()
+            await expect(page.getByRole('alert').filter({ hasText: '사진' })).toContainText(
+                '사진 업로드에 실패했습니다.'
+            )
+            await expect(page).toHaveURL(`${WEB_BASE_URL}/signup`)
+            const login = await api.post(`${API_BASE_URL}/users/login`, {
+                data: { email, password: PASSWORD }
+            })
+            expect(login.status()).toBe(401)
+        })
+    })
+})

@@ -20,10 +20,12 @@ jobs:
                     - name: api
                       repeat: 30
                       setup: pnpm run pretest
-                      command: pnpm --filter './apps/api' --fail-if-no-match run test --coverage.enabled=false
+                      command: |
+                          pnpm --dir apps/api run test:vitest --coverage.enabled=false
+                          pnpm --dir apps/api run test:api-docs
                     - name: infra-reset
                       repeat: 25
-                      command: bash infra/reset.sh
+                      command: pnpm -C infra run reset
         runs-on: ubuntu-26.04-arm
         steps:
             - uses: actions/checkout@v7.0.1

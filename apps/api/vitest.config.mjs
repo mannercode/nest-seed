@@ -1,27 +1,15 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
 import { defineConfig } from 'vitest/config'
-
 import { createVitestBase } from '../../vitest.config.base.mjs'
 
 const appDirectory = path.dirname(fileURLToPath(import.meta.url))
 const base = createVitestBase({ tsconfigPath: path.join(appDirectory, 'tsconfig.json') })
-const source = (relativePath) => path.join(appDirectory, 'src', relativePath)
 
 export default defineConfig({
     ...base,
     cacheDir: path.join(appDirectory, '_output/vite-cache'),
-    resolve: {
-        alias: {
-            '#application': source('services/application/index.ts'),
-            '#config': source('config/index.ts'),
-            '#core': source('services/core/index.ts'),
-            '#gateway': source('services/gateway/index.ts'),
-            '#infrastructure': source('services/infrastructure/index.ts'),
-            '#view': source('services/view/index.ts')
-        }
-    },
+    resolve: { tsconfigPaths: true },
     test: {
         ...base.test,
         coverage: {
@@ -33,7 +21,7 @@ export default defineConfig({
             reportOnFailure: true,
             thresholds: { 100: true }
         },
-        globalSetup: [path.join(appDirectory, 'vitest.global.cjs')],
+        globalSetup: [path.join(appDirectory, 'vitest.global.mjs')],
         setupFiles: [path.join(appDirectory, 'vitest.setup.ts')]
     }
 })

@@ -75,6 +75,18 @@ describe('AppConfigService.schema', () => {
             })
         })
     })
+
+    const deploymentSchema = AppConfigService.schema.pick({ RESTATE_DEPLOYMENT_URI: true })
+    describe.each([
+        { condition: '없으면', uri: undefined },
+        { condition: 'HTTP 주소가 아니면', uri: 'ftp://worker:9080' }
+    ])('RESTATE_DEPLOYMENT_URI가 $condition', ({ uri }) => {
+        it('부팅 설정을 검증하면 누락되거나 잘못된 변수 이름을 알린다', () => {
+            expect(() => deploymentSchema.parse({ RESTATE_DEPLOYMENT_URI: uri })).toThrow(
+                'RESTATE_DEPLOYMENT_URI'
+            )
+        })
+    })
 })
 
 describe('AppConfigService.mongo', () => {
@@ -92,21 +104,14 @@ describe('AppConfigService.mongo', () => {
     })
 })
 
-describe('AppConfigService.restateDeployment', () => {
-    const config = new AppConfigService(
-        new ConfigService({ RESTATE_ADMIN_URL: 'http://restate:9070' }),
-        'test-project'
-    )
-
-    describe.each([
-        { condition: '없으면', uri: undefined },
-        { condition: 'HTTP 주소가 아니면', uri: 'ftp://worker:9080' }
-    ])('RESTATE_DEPLOYMENT_URI가 $condition', ({ uri }) => {
-        beforeEach(() => {
-            vi.stubEnv('RESTATE_DEPLOYMENT_URI', uri)
-        })
-        it('등록 설정을 읽으면 누락되거나 잘못된 변수 이름을 알린다', () => {
-            expect(() => config.restateDeployment).toThrow('RESTATE_DEPLOYMENT_URI')
+describe('AppConfigService.log', () => {
+    describe('주입된 프로젝트 ID와 원시 환경 값이 다르면', () => {
+        const config = new AppConfigService(
+            new ConfigService({ PROJECT_ID: 'raw', NODE_ENV: 'test', LOG_CONSOLE_LEVEL: 'silent' }),
+            'injected'
+        )
+        it('로그 서비스 이름으로 주입된 프로젝트 ID를 반환한다', () => {
+            expect(config.log.serviceName).toBe('injected')
         })
     })
 })

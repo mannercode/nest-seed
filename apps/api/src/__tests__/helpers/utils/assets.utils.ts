@@ -1,5 +1,5 @@
 import type { TestContext } from '@mannercode/testing'
-import { pick, S3ObjectService } from '@mannercode/common'
+import { ensure, pick, S3ObjectService } from '@mannercode/common'
 import { readFile } from 'fs/promises'
 import { basename } from 'path'
 import {
@@ -45,7 +45,7 @@ export async function downloadAsset({ download }: AssetDto) {
 }
 
 export async function uploadAndFinalizeAsset(ctx: TestContext, file: TestAsset) {
-    const assetId = await uploadFile(ctx, file)
+    const { assetId } = await uploadFile(ctx, file)
 
     const assetsService = ctx.module.get(AssetsService)
 
@@ -76,7 +76,7 @@ export async function uploadFile(ctx: TestContext, file: TestAsset) {
         true
     )
 
-    return uploadRequest.assetId
+    return { assetId: uploadRequest.assetId, key: ensure(uploadRequest.fields.key) }
 }
 
 export function pauseNextAssetOwnerAssignment(ctx: TestContext) {

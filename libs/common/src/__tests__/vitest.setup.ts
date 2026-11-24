@@ -9,9 +9,7 @@ import { MongoClient } from 'mongodb'
 const REQUIRED_TESTLIB_ENV = [
     'TESTLIB_MONGO_URI',
     'TESTLIB_REDIS_URL',
-    'TESTLIB_S3_ENDPOINT',
-    'TESTLIB_S3_ACCESS_KEY',
-    'TESTLIB_S3_SECRET_KEY',
+    'TESTLIB_S3_OPTIONS',
     'TESTLIB_NATS_OPTIONS'
 ]
 
@@ -36,20 +34,7 @@ setupVitestLifecycle({
         // 기본값은 60초라 테스트 안에서 만료를 기다리기 어렵다.
         await client.db('admin').command({ setParameter: 1, ttlMonitorSleepSecs: 1 })
     },
-    createS3Client: () => {
-        process.env.TESTLIB_S3_REGION = 'us-east-1'
-        process.env.TESTLIB_S3_FORCE_PATH_STYLE = 'true'
-        return new S3Client({
-            endpoint: requiredEnvironment('TESTLIB_S3_ENDPOINT'),
-            region: requiredEnvironment('TESTLIB_S3_REGION'),
-            credentials: {
-                accessKeyId: requiredEnvironment('TESTLIB_S3_ACCESS_KEY'),
-                secretAccessKey: requiredEnvironment('TESTLIB_S3_SECRET_KEY')
-            },
-            forcePathStyle:
-                requiredEnvironment('TESTLIB_S3_FORCE_PATH_STYLE').toLowerCase() === 'true'
-        })
-    },
+    createS3Client: () => new S3Client(JSON.parse(requiredEnvironment('TESTLIB_S3_OPTIONS'))),
     bucketName: (workerId) => {
         const bucket = `s3bucket-w${workerId}`
         process.env.TESTLIB_S3_BUCKET = bucket

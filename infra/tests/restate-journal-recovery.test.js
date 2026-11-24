@@ -1,15 +1,15 @@
-const assert = require('node:assert/strict')
-const { execFileSync } = require('node:child_process')
-const { randomUUID } = require('node:crypto')
-const { once } = require('node:events')
-const { createServer } = require('node:http2')
-const test = require('node:test')
-const path = require('node:path')
-const restate = require('@restatedev/restate-sdk')
-const { connect } = require('@restatedev/restate-sdk-clients')
+import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
+import { once } from 'node:events'
+import { createServer } from 'node:http2'
+import path from 'node:path'
+import test from 'node:test'
+import * as restate from '@restatedev/restate-sdk'
+import { connect } from '@restatedev/restate-sdk-clients'
 
 const ADMIN_URL = requiredEnvironment('RESTATE_ADMIN_URL')
-const COMPOSE_PROJECT_NAME = requiredEnvironment('COMPOSE_PROJECT_NAME')
+const DEPLOYMENT_URI = requiredEnvironment('RESTATE_DEPLOYMENT_URI')
 const INGRESS_URL = requiredEnvironment('RESTATE_INGRESS_URL')
 
 test(
@@ -158,12 +158,10 @@ async function createEndpoint(definition) {
 }
 
 async function registerEndpoint(serviceName, port) {
+    const uri = new URL(DEPLOYMENT_URI)
+    uri.port = String(port)
     const response = await fetch(`${ADMIN_URL}/deployments`, {
-        body: JSON.stringify({
-            force: false,
-            uri: `http://${COMPOSE_PROJECT_NAME}:${port}`,
-            use_http_11: false
-        }),
+        body: JSON.stringify({ force: false, uri: uri.href, use_http_11: false }),
         headers: { 'content-type': 'application/json' },
         method: 'POST',
         signal: AbortSignal.timeout(10_000)
@@ -186,7 +184,7 @@ async function unregisterEndpoint(deploymentId) {
 }
 
 function findRestateContainer() {
-    const composeFile = path.join(path.dirname(__dirname), 'compose.yml')
+    const composeFile = path.join(path.dirname(import.meta.dirname), 'compose.yml')
     const containerId = execFileSync(
         'docker',
         [

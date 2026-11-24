@@ -2,8 +2,49 @@ import { type DurableMessages, type DurableMessage } from '@mannercode/common'
 import { Logger } from '@nestjs/common'
 import { MessageConsumer } from '../../services/infrastructure/event-demo/internal/message-consumer.js'
 import { HttpTestClient } from '@mannercode/testing'
-import { EventDemoService } from '#infrastructure'
-import { createAppTestContext, createAndLoginUser, type AppTestContext } from '../helpers/index.js'
+import { EventDemoService, eventDemoResources } from '#infrastructure'
+import {
+    createAppTestContext,
+    createAndLoginUser,
+    ownsEventStream,
+    projectId,
+    type AppTestContext
+} from '../helpers/index.js'
+
+describe('JetStream 테스트 자원 정리', () => {
+    const event = eventDemoResources(projectId('worker-1'))
+    const appEvent = eventDemoResources('app')
+    describe.each([
+        {
+            condition: '테스트 스트림과 단일 subject가 일치하면',
+            name: event.streamName,
+            subjects: [event.subjects.queued],
+            owned: true
+        },
+        {
+            condition: '다른 스트림이 테스트 subject를 사용하면',
+            name: 'other',
+            subjects: [event.subjects.queued],
+            owned: false
+        },
+        {
+            condition: '다른 subject도 함께 사용하면',
+            name: event.streamName,
+            subjects: [event.subjects.queued, 'other'],
+            owned: false
+        },
+        {
+            condition: '앱이 생성한 스트림이면',
+            name: appEvent.streamName,
+            subjects: [appEvent.subjects.queued],
+            owned: false
+        }
+    ])('$condition', ({ name, subjects, owned }) => {
+        it(`스트림을 검사하면 정리 대상 여부로 ${owned}를 반환한다`, () => {
+            expect(ownsEventStream({ name, subjects })).toBe(owned)
+        })
+    })
+})
 
 describe('EventDemoService', () => {
     let fix: AppTestContext

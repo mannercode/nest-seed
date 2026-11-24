@@ -55,18 +55,24 @@ Core·Application도 NestJS DI와 `HttpException`을 사용한다. 예상한 오
 
 환경마다 달라지는 값은 env에 두고 부팅 시 검증한다. 화면 조회 개수 같은 고정값은 사용하는 코드에 둔다.
 
-개발 서버는 TSC, 배포 빌드는 Rspack을 쓴다. common 등 런타임 패키지는 번들 밖에 있으므로 앱과 함께 배포한다. [컨테이너 빌드](Dockerfile) · [실행 설정](compose.yml)
+개발 서버는 TSC, 배포 빌드는 Rspack을 쓴다. common 등 런타임 패키지는 번들 밖에 있으므로 앱과 함께 배포한다. [컨테이너 빌드](Dockerfile) · [실행 설정](../../infra/compose.apps.yml)
 
 API 로그는 stdout/stderr에 ECS JSON으로 출력한다. 요청·응답 본문과 쿼리는 기록하지 않는다.
 
 ## 테스트
 
-단순 위임은 실제 Nest 모듈과 개발 인프라를 연결한 통합 테스트에서 확인한다. 독립적인 계산·변환은 단위 테스트로 검증할 수 있다. [테스트 작성 규칙](../../tests/README.md#테스트는-한-행동의-결과를-검증한다)
+단순 위임은 실제 Nest 모듈과 개발 인프라를 연결한 통합 테스트에서 확인한다. 독립적인 계산·변환은 단위 테스트로 검증할 수 있다. [테스트 작성 규칙](../../AGENTS.md#테스트는-한-행동의-결과를-검증한다)
+
+API 자체의 동시 요청 처리는 앱의 통합 테스트에서 검증한다. NGINX와 API 복제본 4개를 띄웠을 때의 요청 분산, 장애 복구와 성능은 인프라 테스트에서 확인한다. [API 테스트](src/__tests__/) · [인프라 테스트](../../infra/README.md#5-인프라-테스트)
 
 `createAppTestContext`와 공통 훅이 앱을 준비하고 정리한다. 데이터 준비·조회·장애 주입 함수는 해당 `*.utils.ts`에 둔다. DB와 버킷은 worker별로, `PROJECT_ID`는 테스트별로 나누므로 키 접두어·subject·workflow 이름은 provider에 주입된 설정으로 정한다.
 
-모든 API 통합 테스트에서 실제 Restate를 사용한다. `beforeEach`에서 앱을 준비할 때 workflow 리스너에 배정된 포트로 `RESTATE_DEPLOYMENT_URI`를 설정하면 API가 운영과 같은 절차로 등록한다. `teardown`은 제출한 작업이 끝난 뒤 그 테스트의 등록을 해제하고 앱을 닫는다. [배포 환경의 주소 설정](../../infra/README.md#4-restate에-workflow-실행-주소-등록) · [비동기 작업 테스트](src/__tests__/infrastructure/job-demo.spec.ts) · [SSE 수신 테스트 작성법](../../libs/README.md#5-sse-이벤트를-받는-테스트-작성)
+API 서버와 통합 테스트는 `configureHttpApp`으로 HTTP 설정을 적용한다. 테스트에 경로 접두어 같은 설정이 더 필요하면 `createAppTestContext({ configureApp })`으로 전달한다. 이 콜백은 공통 설정을 적용한 뒤 Nest가 경로를 등록하기 전에 실행된다. [HTTP 설정](src/bootstrap.ts)
+
+모든 API 통합 테스트에서 실제 Restate를 사용한다. 테스트 앱은 환경에서 받은 `RESTATE_DEPLOYMENT_URI`의 포트만 자기 workflow 리스너에 배정된 값으로 바꿔 등록한다. `teardown`은 제출한 작업이 끝난 뒤 그 테스트의 등록을 해제하고 앱을 닫는다. [배포 환경의 주소 설정](../../infra/README.md#4-restate에-workflow-실행-주소-등록) · [비동기 작업 테스트](src/__tests__/infrastructure/job-demo.spec.ts) · [SSE 수신 테스트 작성법](../../libs/README.md#5-sse-이벤트를-받는-테스트-작성)
 
 ### 실행 가능한 API 문서
 
 외부에 `api-docs/`를 전달하기 전에 `run.cfg`의 API 주소를 수정한다. 전달받은 사람은 그 폴더에서 `bash run.sh`를 실행한다.
+
+`pnpm --dir apps/api run test:api-docs`는 워크스페이스의 앱 컨테이너를 내리고 API 배포 이미지로 문서 검증용 컨테이너를 띄운다. Dev Container에서 curl 예제를 실행하고 결과를 터미널에 표시한 뒤 해당 컨테이너를 정리한다. 보고서를 로컬에 남기려면 실행 중인 API를 대상으로 `bash apps/api/api-docs/run.sh`를 실행한다. 예제가 만든 계정과 파일은 개발 DB와 S3에 남고, Restate는 다음 실행에서 같은 테스트 서비스 등록을 재사용한다. [예제 테스트 스크립트](api-docs/test.sh)

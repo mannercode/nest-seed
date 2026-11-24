@@ -202,9 +202,7 @@ export class AssetsService {
 
     private async withDownloadInfo(assetDto: AssetDto): Promise<AssetDto> {
         const expiresInSec = this.config.asset.downloadExpiresInSec
-        const url = await this.s3Service.presignDownloadUrl({ expiresInSec, key: assetDto.id })
-        const expiresAt = DateUtil.add({ seconds: expiresInSec })
-
-        return { ...assetDto, download: { expiresAt, url } }
+        const download = await this.s3Service.presignDownload({ expiresInSec, key: assetDto.id })
+        return { ...assetDto, download }
     }
 }

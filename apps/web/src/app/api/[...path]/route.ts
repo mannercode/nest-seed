@@ -7,10 +7,6 @@ const REFRESH_COOKIE = 'nest-seed-user-refresh'
 const AUTH_PREFIX = 'users'
 const MAX_REQUEST_BODY_BYTES = 1024 * 1024
 const REFRESH_RESULT_GRACE_MS = 1000
-const REFRESH_REPLACED_ERROR = {
-    code: 'ERR_JWT_AUTH_REFRESH_TOKEN_REPLACED',
-    message: 'The refresh token has already been replaced'
-}
 const AUTH_OPERATIONS = new Set(['login', 'logout', 'refresh'])
 const TRUST_PROXY_HEADERS = process.env.BFF_TRUST_PROXY_HEADERS === 'true'
 const PRIVATE_RESPONSE_HEADERS = { 'Cache-Control': 'private, no-store' }
@@ -22,7 +18,11 @@ const COOKIE_OPTIONS = {
 }
 
 type RouteContext = { params: Promise<{ path: string[] }> }
-type RefreshResult = { status: number; tokens: AuthTokens | null }
+type RefreshResult = {
+    status: number
+    tokens: AuthTokens | null
+    conflict?: { code: string; message: string }
+}
 
 const refreshFlights = new Map<string, Promise<RefreshResult>>()
 
@@ -113,8 +113,8 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<NextR
 
         // 다른 BFF 인스턴스가 먼저 갱신해 발급한 새 쿠키를, 늦게 도착한 실패 응답이 지우면 안 된다.
         // 토큰이 이미 교체됐다는 409만 전달하고 쿠키는 유지한다.
-        if (refreshed.status === 409) {
-            return jsonResponse(REFRESH_REPLACED_ERROR, 409)
+        if (refreshed.conflict) {
+            return jsonResponse(refreshed.conflict, refreshed.status)
         }
         if (refreshed.status >= 500) {
             return jsonResponse({ message: 'Authentication service unavailable' }, 502)
@@ -233,6 +233,12 @@ async function performRefresh(authPath: string, refreshToken: string): Promise<R
             body: JSON.stringify({ refreshToken }),
             cache: 'no-store'
         })
+        if (response.status === 409) {
+            const { code, message } = await response.json()
+            if (typeof code !== 'string' || typeof message !== 'string')
+                return { status: 502, tokens: null }
+            return { status: response.status, tokens: null, conflict: { code, message } }
+        }
         if (!response.ok) return { status: response.status, tokens: null }
 
         const tokens = await parseTokens(response)

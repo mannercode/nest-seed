@@ -11,15 +11,8 @@ class TestInjectS3ObjectService {
 
 export async function createS3ObjectServiceFixture() {
     const config: S3ServiceConfig = {
-        bucket: process.env.TESTLIB_S3_BUCKET as string,
-        credentials: {
-            accessKeyId: process.env.TESTLIB_S3_ACCESS_KEY as string,
-            secretAccessKey: process.env.TESTLIB_S3_SECRET_KEY as string
-        },
-        endpoint: process.env.TESTLIB_S3_ENDPOINT,
-        forcePathStyle:
-            (process.env.TESTLIB_S3_FORCE_PATH_STYLE as string).toLowerCase() === 'true',
-        region: process.env.TESTLIB_S3_REGION
+        ...JSON.parse(process.env.TESTLIB_S3_OPTIONS!),
+        bucket: process.env.TESTLIB_S3_BUCKET as string
     }
 
     const { close, module } = await createTestContext({

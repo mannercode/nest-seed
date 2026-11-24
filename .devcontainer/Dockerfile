@@ -18,4 +18,5 @@ RUN set -eu; \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends cloudflared; \
     rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g pnpm@12.21.0
+RUN --mount=type=bind,source=package.json,target=/package.json \
+    npm install -g "$(node -p 'require("/package.json").packageManager')"

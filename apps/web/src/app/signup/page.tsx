@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { postJson } from '@/lib/api-client'
+import { passwordInput } from '@/lib/password-input'
 import { uploadRegistrationPhoto } from '@/lib/photos'
 
 export default function SignupPage() {
@@ -22,13 +23,7 @@ export default function SignupPage() {
         setBusy(true)
         try {
             const photoAssetId = photo ? await uploadRegistrationPhoto(photo) : undefined
-            await postJson('/users', {
-                name,
-                email: email.trim().toLowerCase(),
-                password,
-                birthDate,
-                photoAssetId
-            })
+            await postJson('/users', { name, email, password, birthDate, photoAssetId })
             router.push('/login')
         } catch (err) {
             setError(err instanceof Error ? err.message : '회원가입 실패')
@@ -67,8 +62,7 @@ export default function SignupPage() {
                     비밀번호
                     <input
                         type="password"
-                        pattern={'[\\s\\S]{15,128}'}
-                        title="비밀번호는 공백을 포함해 15~128자로 입력하세요."
+                        {...passwordInput}
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}

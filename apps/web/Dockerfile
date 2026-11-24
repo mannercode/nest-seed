@@ -3,15 +3,17 @@ FROM node:26.13-slim AS base
 
 FROM base AS build
 
-RUN npm install -g pnpm@12.21.0
+ENV pnpm_config_store_dir=/pnpm/store
 
 WORKDIR /workspace
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY package.json ./
+RUN npm install -g "$(node -p 'require("./package.json").packageManager')"
+COPY pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/web/package.json apps/web/
 COPY tools/ tools/
 
-RUN --mount=type=cache,id=nest-seed-pnpm,target=/pnpm/store,sharing=locked \
-    HUSKY=0 pnpm install --frozen-lockfile --filter './apps/web...' --store-dir /pnpm/store
+RUN --mount=type=cache,id=nest-seed-pnpm,target=$pnpm_config_store_dir,sharing=locked \
+    HUSKY=0 pnpm install --frozen-lockfile --filter './apps/web...'
 
 COPY apps/web/ apps/web/
 RUN pnpm --filter './apps/web' --fail-if-no-match run build

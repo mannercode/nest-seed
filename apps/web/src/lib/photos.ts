@@ -3,8 +3,7 @@ import { postJson } from './api-client'
 type Upload = { assetId: string; url: string; fields: Record<string, string>; method: 'POST' }
 
 export function photoUrl(url: string): string {
-    const storage = new URL(url)
-    return `/storage${storage.pathname}${storage.search}`
+    return `/storage?${new URLSearchParams({ url })}`
 }
 
 export async function uploadRegistrationPhoto(file: File): Promise<string> {

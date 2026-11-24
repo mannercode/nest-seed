@@ -1,0 +1,24 @@
+name: Lint and Test
+on:
+    pull_request:
+        branches: ['main']
+    push:
+        branches: ['main']
+    schedule:
+        # UTC 기준 3시간마다 실행한다.
+        - cron: '27 */3 * * *'
+    workflow_dispatch:
+permissions:
+    contents: read
+jobs:
+    # main 브랜치의 보호 규칙이 이 이름으로 검사 결과를 확인한다.
+    test-atoz:
+        runs-on: ubuntu-26.04-arm
+        timeout-minutes: 60
+        steps:
+            - uses: actions/checkout@v7.0.1
+            - name: Run in devcontainer
+              uses: devcontainers/ci@v0.3.1900000450
+              with:
+                  push: never
+                  runCmd: pnpm run lint && pnpm test
