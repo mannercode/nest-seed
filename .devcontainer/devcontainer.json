@@ -43,7 +43,7 @@
         "github": "mkdir -p ${localEnv:HOME}/.config/gh"
     },
     "postCreateCommand": "for entry in config.toml auth.json skills; do ln -sfn \"/home/node/.codex-shared/$entry\" \"/home/node/.codex/$entry\" || exit; done",
-    "postStartCommand": "pnpm install --frozen-lockfile && bash infra/reset.sh",
+    "postStartCommand": "pnpm install --frozen-lockfile && pnpm -C infra run reset",
     "waitFor": "postStartCommand",
     "customizations": {
         "vscode": {

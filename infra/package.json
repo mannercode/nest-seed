@@ -4,6 +4,7 @@
     "private": true,
     "type": "module",
     "scripts": {
+        "reset": "bash reset.sh",
         "test": "node --test --test-concurrency=1 --test-reporter=spec",
         "race": "bash tests/api/race/runner.sh",
         "benchmark": "bash tests/api/benchmark/run.sh"

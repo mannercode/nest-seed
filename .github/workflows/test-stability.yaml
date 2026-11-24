@@ -25,7 +25,7 @@ jobs:
                           pnpm --dir apps/api run test:api-docs
                     - name: infra-reset
                       repeat: 25
-                      command: bash infra/reset.sh
+                      command: pnpm -C infra run reset
         runs-on: ubuntu-26.04-arm
         steps:
             - uses: actions/checkout@v7.0.1
