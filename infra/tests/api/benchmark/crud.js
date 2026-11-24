@@ -37,14 +37,15 @@ function createScenario(
     if (vus === 0) return
 
     const metricName = name.replaceAll('-', '_')
-    metrics.set(name, {
+    const metric = {
         failed: new Rate(`${metricName}_failed`),
         latency: new Trend(`${metricName}_latency`, true),
         requests: new Counter(`${metricName}_requests`),
         acceptEncoding
-    })
-    thresholds[`${metricName}_failed`] = ['rate==0']
-    thresholds[`${metricName}_requests`] = ['count>0']
+    }
+    metrics.set(name, metric)
+    thresholds[metric.failed.name] = ['rate==0']
+    thresholds[metric.requests.name] = ['count>0']
     scenarios[name] = {
         executor: 'constant-vus',
         exec: operation,
@@ -168,13 +169,14 @@ function record(response, expectedStatus, metric) {
 }
 
 function metricSummary(data, name, vus) {
-    const failed = data.metrics[`${name}_failed`].values
-    const latency = data.metrics[`${name}_latency`].values
-    const requests = data.metrics[`${name}_requests`].values.count
+    const metric = metrics.get(name)
+    const failed = data.metrics[metric.failed.name].values
+    const latency = data.metrics[metric.latency.name].values
+    const requests = data.metrics[metric.requests.name].values.count
 
     return {
         vus,
-        acceptEncoding: metrics.get(name).acceptEncoding,
+        acceptEncoding: metric.acceptEncoding,
         requests,
         requestsPerSecond: round2(requests / (DURATION_MS / 1000)),
         failedRate: failed.rate,

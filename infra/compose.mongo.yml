@@ -38,6 +38,8 @@ services:
     mongo-setup:
         extends: { file: ./compose.common.yml, service: common-options }
         image: ${MONGO_IMAGE}
+        environment:
+            MONGO_URI: ${MONGO_URI:?}
         depends_on:
             {
                 mongo1: { condition: service_healthy },
@@ -45,7 +47,7 @@ services:
                 mongo3: { condition: service_healthy }
             }
         command: |
-            sh -eucx '
+            sh -euc '
                 # `rs.initiate`에 등록한 host는 드라이버가 이후 Replica Set 멤버를 찾아갈 때 그대로 사용한다.
                 # devcontainer도 같은 compose 네트워크에 있으므로 서비스 이름(mongo1/mongo2/mongo3)을 등록한다.
                 url="mongodb://mongo1:27017/?directConnection=true"
@@ -78,9 +80,8 @@ services:
                     sleep 1
                 done
 
-                replica_url="mongodb://mongo1:27017,mongo2:27017,mongo3:27017/?replicaSet=mongo"
                 i=0
-                until mongosh "$$replica_url" --quiet --eval "
+                until mongosh "$$MONGO_URI" --quiet --eval "
                     const result = db.getSiblingDB(\"infra_readiness\").runCommand({
                         insert: \"probe\",
                         documents: [{ readyAt: new Date() }],

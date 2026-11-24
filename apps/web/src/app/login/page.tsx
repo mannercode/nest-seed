@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { ApiError, postJson } from '@/lib/api-client'
+import { passwordInput } from '@/lib/password-input'
 
 export default function LoginPage() {
     const router = useRouter()
@@ -17,7 +18,7 @@ export default function LoginPage() {
         setError(null)
         setBusy(true)
         try {
-            await postJson('/users/login', { email: email.trim().toLowerCase(), password })
+            await postJson('/users/login', { email, password })
             router.push('/')
         } catch (err) {
             setError(err instanceof ApiError ? err.message : '로그인 실패')
@@ -47,8 +48,7 @@ export default function LoginPage() {
                     비밀번호
                     <input
                         type="password"
-                        pattern={'[\\s\\S]{15,128}'}
-                        title="비밀번호는 공백을 포함해 15~128자로 입력하세요."
+                        {...passwordInput}
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}

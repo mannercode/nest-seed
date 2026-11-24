@@ -1,7 +1,14 @@
 import { expect, request, test, type BrowserContext, type Page } from '@playwright/test'
 import { randomUUID } from 'node:crypto'
 
-import { API_BASE_URL, WEB_BASE_URL, WORKSPACE_ROOT } from '../playwright.config'
+import {
+    API_BASE_URL,
+    S3_BUCKET,
+    S3_ENDPOINT,
+    WEB_BASE_URL,
+    WORKSPACE_ROOT
+} from '../playwright.config'
+import { photoUrl } from '../../src/lib/photos'
 
 const PASSWORD = 'DevPassword1234!'
 const ACCESS_COOKIE = 'nest-seed-user-access'
@@ -28,6 +35,21 @@ async function signupAndLogin(page: Page, password = PASSWORD): Promise<string> 
 async function getSessionCookie(context: BrowserContext, name: string) {
     const cookies = await context.cookies(WEB_BASE_URL)
     return cookies.find((cookie) => cookie.name === name)
+}
+
+const storage = new URL(S3_ENDPOINT)
+const otherBucket = S3_BUCKET + '-other'
+for (const [condition, target] of [
+    ['다른 저장소', 'https://other-storage.example/photo.png'],
+    ['경로에 있는 다른 버킷', `${storage.href.replace(/\/$/, '')}/${otherBucket}/photo.png`],
+    ['호스트명에 있는 다른 버킷', `${storage.protocol}//${otherBucket}.${storage.host}/photo.png`]
+] as const) {
+    test.describe(`사진 주소의 대상이 ${condition}이면`, () => {
+        test('사진 프록시가 요청을 400으로 거절한다', async ({ page }) => {
+            const response = await page.goto(photoUrl(target))
+            expect(response?.status()).toBe(400)
+        })
+    })
 }
 
 for (const { condition, password } of [
@@ -262,6 +284,28 @@ test.describe('사용자로 로그인했으면', () => {
         test.beforeEach(async ({ context }) => {
             await context.addCookies([{ ...accessCookie!, value: 'invalid-access-token' }])
         })
+        test.describe('다른 요청이 갱신 토큰을 먼저 교체했으면', () => {
+            test.beforeEach(async ({ request: api }) => {
+                const refresh = await api.post(`${API_BASE_URL}/users/refresh`, {
+                    data: { refreshToken: refreshCookieBefore!.value }
+                })
+                expect(refresh.status()).toBe(200)
+            })
+            test('보호 API 요청에 갱신 충돌을 전달하고 쿠키를 덮어쓰지 않는다', async ({
+                page,
+                request: api
+            }) => {
+                const conflict = await api.post(`${API_BASE_URL}/users/refresh`, {
+                    data: { refreshToken: refreshCookieBefore!.value }
+                })
+                expect(conflict.status()).toBe(409)
+                const { code, message } = await conflict.json()
+                const response = await page.goto('/api/users/me')
+                expect(response?.status()).toBe(409)
+                expect(await response?.json()).toEqual({ code, message })
+                expect(await response?.headerValue('set-cookie')).toBeNull()
+            })
+        })
         test('보호 API를 요청하면 토큰을 갱신하고 성공 응답을 반환한다', async ({
             context,
             page
@@ -306,8 +350,9 @@ test.describe('사진을 첨부해 가입하면', () => {
     })
     test.describe('사진 전송이 실패하면', () => {
         test.beforeEach(async ({ page }) => {
-            await page.route('**/storage/**', (route) =>
-                route.fulfill({ status: 503, body: 'Storage unavailable' })
+            await page.route(
+                (url) => url.pathname === '/storage',
+                (route) => route.fulfill({ status: 503, body: 'Storage unavailable' })
             )
         })
         test('가입 화면에 실패를 표시하고 계정을 만들지 않는다', async ({ page, request: api }) => {

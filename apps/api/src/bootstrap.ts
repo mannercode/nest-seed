@@ -10,7 +10,7 @@ import { AppModule } from './app.module.js'
 export async function bootstrap() {
     // Nest 초기화 로그도 ECS stdout 계약을 따르도록 로거 준비 전까지 버퍼링한다.
     const app = await NestFactory.create(AppModule, { bufferLogs: true })
-    const { http } = app.get(AppConfigService)
+    const { http, restateDeployment } = app.get(AppConfigService)
     const logger = app.get(AppLoggerService)
     app.useLogger(logger)
 
@@ -25,7 +25,7 @@ export async function bootstrap() {
     app.enableShutdownHooks()
 
     try {
-        await initializeApi(app)
+        await initializeApi(app, restateDeployment)
         const server = await app.listen(http.port)
         // NGINX가 60초에 upstream 유휴 연결을 먼저 닫도록 Node keep-alive를 65초로 둔다.
         server.keepAliveTimeout = 65_000
@@ -50,8 +50,10 @@ export function configureHttpApp(app: INestApplication): void {
     app.use(express.json({ limit: requestPayloadLimit }))
 }
 
-export async function initializeApi(app: INestApplication) {
-    const { adminUrl, uri } = app.get(AppConfigService).restateDeployment
+export async function initializeApi(
+    app: INestApplication,
+    { adminUrl, uri }: AppConfigService['restateDeployment']
+) {
     await app.init()
     return app.get(RestateEndpoint).register(adminUrl, uri)
 }

@@ -69,7 +69,7 @@ API 자체의 동시 요청 처리는 앱의 통합 테스트에서 검증한다
 
 API 서버와 통합 테스트는 `configureHttpApp`으로 HTTP 설정을 적용한다. 테스트에 경로 접두어 같은 설정이 더 필요하면 `createAppTestContext({ configureApp })`으로 전달한다. 이 콜백은 공통 설정을 적용한 뒤 Nest가 경로를 등록하기 전에 실행된다. [HTTP 설정](src/bootstrap.ts)
 
-모든 API 통합 테스트에서 실제 Restate를 사용한다. `beforeEach`에서 앱을 준비할 때 workflow 리스너에 배정된 포트로 `RESTATE_DEPLOYMENT_URI`를 설정하면 API가 운영과 같은 절차로 등록한다. `teardown`은 제출한 작업이 끝난 뒤 그 테스트의 등록을 해제하고 앱을 닫는다. [배포 환경의 주소 설정](../../infra/README.md#4-restate에-workflow-실행-주소-등록) · [비동기 작업 테스트](src/__tests__/infrastructure/job-demo.spec.ts) · [SSE 수신 테스트 작성법](../../libs/README.md#5-sse-이벤트를-받는-테스트-작성)
+모든 API 통합 테스트에서 실제 Restate를 사용한다. 테스트 앱은 환경에서 받은 `RESTATE_DEPLOYMENT_URI`의 포트만 자기 workflow 리스너에 배정된 값으로 바꿔 등록한다. `teardown`은 제출한 작업이 끝난 뒤 그 테스트의 등록을 해제하고 앱을 닫는다. [배포 환경의 주소 설정](../../infra/README.md#4-restate에-workflow-실행-주소-등록) · [비동기 작업 테스트](src/__tests__/infrastructure/job-demo.spec.ts) · [SSE 수신 테스트 작성법](../../libs/README.md#5-sse-이벤트를-받는-테스트-작성)
 
 ### 실행 가능한 API 문서
 

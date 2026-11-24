@@ -6,8 +6,10 @@ function requiredEnvironment(name: string): string {
     return value
 }
 
-export const API_BASE_URL = `http://api:${requiredEnvironment('API_PORT')}`
-export const WEB_BASE_URL = `http://web.localhost:${requiredEnvironment('WEB_PORT')}`
+export const API_BASE_URL = requiredEnvironment('API_BASE_URL')
+export const WEB_BASE_URL = requiredEnvironment('WEB_BASE_URL')
+export const S3_ENDPOINT = requiredEnvironment('S3_ENDPOINT')
+export const S3_BUCKET = requiredEnvironment('S3_BUCKET')
 export const WORKSPACE_ROOT = requiredEnvironment('WORKSPACE_ROOT')
 
 export default defineConfig({

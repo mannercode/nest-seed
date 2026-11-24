@@ -4,7 +4,7 @@
 
 API와 common 테스트는 `@mannercode/tools/vitest-helpers`에서 준비·정리 함수를 가져온다. Vitest가 소스 변환 전에 불러올 수 있도록 CommonJS와 타입 선언으로 제공한다.
 
-DB와 버킷은 worker별로 준비하고, 종료할 때는 테스트 패키지가 지정한 자원만 삭제한다. 같은 파일의 테스트들은 MongoClient를 공유하며 마지막 테스트가 끝나면 연결을 닫는다. [API 테스트 설정](../apps/api/vitest.setup.ts) · [자원 이름](../apps/api/vitest.resources.cjs)
+DB와 버킷은 worker별로 준비한다. 같은 파일의 테스트들은 MongoClient를 공유하며 마지막 테스트가 끝나면 연결을 닫는다. 전체 테스트가 끝나면 API는 공유 인프라에서 자기 테스트 자원만 지우고, common은 이번 실행에서 시작한 컨테이너를 종료한다. [API 테스트 자원](../apps/api/src/__tests__/helpers/resources.ts) · [common 테스트 컨테이너](../libs/common/vitest.global.cjs)
 
 ## 2. 개발 포트와 HTTPS 터널
 

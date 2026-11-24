@@ -1,6 +1,5 @@
 import {
     AppLoggerService,
-    Env,
     MongoConnection,
     RestateEndpoint,
     type DurableWorkflowSubmission
@@ -13,6 +12,7 @@ import {
     type TestModuleOptions
 } from '@mannercode/testing'
 import { SchedulerRegistry } from '@nestjs/schedule'
+import { AppConfigService } from '#config'
 import { DEMO_EVENTS_MAX_BYTES } from '#infrastructure'
 import { AppModule } from '../../app.module.js'
 import { configureHttpApp, initializeApi } from '../../bootstrap.js'
@@ -50,9 +50,10 @@ export async function createAppTestContext(metadata: TestModuleOptions = {}) {
     })
 
     setup.defer(ctx.close)
-    const port = ctx.app.get(RestateEndpoint).port
-    vi.stubEnv('RESTATE_DEPLOYMENT_URI', `http://${Env.getString('COMPOSE_PROJECT_NAME')}:${port}`)
-    const deploymentUrl = await initializeApi(ctx.app)
+    const { adminUrl, uri } = ctx.app.get(AppConfigService).restateDeployment
+    const address = new URL(uri)
+    address.port = String(ctx.app.get(RestateEndpoint).port)
+    const deploymentUrl = await initializeApi(ctx.app, { adminUrl, uri: address.href })
     setup.defer(() => unregisterRestateDeployment(deploymentUrl))
 
     trackRestateCompletions(ctx.module.get(TextJobWorkflowClient), restateCompletions)

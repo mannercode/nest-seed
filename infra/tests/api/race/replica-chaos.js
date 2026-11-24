@@ -1,6 +1,6 @@
 /**
  * 요청을 보내는 중 복제본 하나를 종료·재시작해 NGINX가 남은 복제본으로 요청을 보내는지와 재시작 후 복구를 검증한다.
- * 전송 오류와 5xx 응답의 비율은 1% 이하여야 하고 복구 구간에는 네 복제본이 모두 응답해야 한다.
+ * 전송 오류와 5xx 응답의 비율은 1% 이하여야 하고 복구 구간에는 설정한 복제본이 모두 응답해야 한다.
  */
 
 import { execSync } from 'node:child_process'
@@ -73,10 +73,16 @@ function summarize(label, bucket) {
     return `${label}: total=${bucket.total} replicas=${replicas} | ${status}`
 }
 
-test('요청 중 복제본 하나를 재시작하면 오류율은 1% 이하이고 복구 후 네 복제본이 모두 응답한다', async () => {
+test('요청 중 복제본 하나를 재시작하면 오류율은 1% 이하이고 복구 후 설정한 복제본이 모두 응답한다', async () => {
+    const { services } = JSON.parse(
+        execSync('docker compose --profile replicas config --format json', { encoding: 'utf8' })
+    )
+    const expectedReplicas = services['replica-api'].deploy.replicas
     const replicas = dockerReplicaIds()
-    if (replicas.length < 4) {
-        throw new Error(`expected 4 app replicas, got ${replicas.length}: ${replicas.join(',')}`)
+    if (expectedReplicas < 2 || replicas.length !== expectedReplicas) {
+        throw new Error(
+            `failover requires at least 2 replicas: configured ${expectedReplicas}, running ${replicas.length}`
+        )
     }
     const target = replicas[secureRandomIndex(replicas.length)]
     console.log(`[chaos] target=${target.slice(0, 12)} alive=${replicas.length}`)
@@ -150,12 +156,12 @@ test('요청 중 복제본 하나를 재시작하면 오류율은 1% 이하이�
         )
     }
     const recoveredReplicas = Object.keys(state.byPhase.recovered?.replicas || {}).length
-    if (recoveredReplicas < 4) {
+    if (recoveredReplicas !== expectedReplicas) {
         throw new Error(
             `post-recovery: only ${recoveredReplicas} replicas served — restarted replica did not rejoin`
         )
     }
-    if (allReplicas.size < 4) {
+    if (allReplicas.size !== expectedReplicas) {
         throw new Error(`overall: only ${allReplicas.size} distinct replicas served`)
     }
     console.log('[chaos] PASS')

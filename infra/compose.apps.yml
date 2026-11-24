@@ -29,6 +29,7 @@ services:
         environment:
             API_BASE_URL: http://api:${API_PORT:?}
             S3_ENDPOINT: ${S3_ENDPOINT:?}
+            S3_BUCKET: ${S3_BUCKET:?}
             PORT: ${WEB_PORT:?}
         depends_on:
             api: { condition: service_healthy }
@@ -51,6 +52,7 @@ services:
         profiles: [replicas]
         image: nest-seed-api
         environment:
+            PROJECT_ID: ${PROJECT_ID:?}-replicas
             RESTATE_DEPLOYMENT_URI: http://replica-nginx:9080
             # 비밀번호 해싱과 파일 작업이 같은 작업 스레드를 사용하므로 동시 요청을 위해 16개로 늘린다.
             UV_THREADPOOL_SIZE: '16'
@@ -61,7 +63,12 @@ services:
         hostname: replica-nginx
         image: nginx:1.31.9-alpine@sha256:fb4658584bd9a916ffb6f6e365f97c25cfdb2923801f551ea08356e695f14ff7
         ports: ['127.0.0.1:3000:80']
-        volumes: ['./nginx.conf:/etc/nginx/nginx.conf:ro']
+        environment:
+            API_PORT: ${API_PORT:?}
+            RESTATE_SERVICE_PORT: ${RESTATE_SERVICE_PORT:?}
+            NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
+            NGINX_ENVSUBST_FILTER: '^(API_PORT|RESTATE_SERVICE_PORT)$$'
+        volumes: ['./nginx.conf:/etc/nginx/templates/nginx.conf.template:ro']
         depends_on:
             replica-api: { condition: service_started }
         logging: { driver: json-file, options: { max-size: '10m', max-file: '3' } }

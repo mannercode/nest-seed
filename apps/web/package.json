@@ -9,7 +9,7 @@
         "build": "next build",
         "start": "next start -p ${WEB_PORT:?}",
         "test": "flock \"${WORKSPACE_ROOT:?}/infra\" bash tests/run-e2e.sh",
-        "lint": "tsc --noEmit"
+        "lint": "next typegen && tsc --noEmit"
     },
     "dependencies": {
         "next": "16.4.6",

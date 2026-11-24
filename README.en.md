@@ -23,7 +23,7 @@ The infrastructure is for development and testing. When forking, replace the pro
 
 ### Rebuilding the Dev Container after editing environment files
 
-The Dev Container reads `.env.infra` and `.env.api` from the repository root when it is created. If you edit either file, run **`Rebuild Container`** in VS Code. If you change `API_PORT` in `.env.infra`, update the port in the web development server's `API_BASE_URL` as well. [Web settings](apps/web/.env)
+The Dev Container reads `.env.infra` and `.env.api` from the repository root when it is created. If you edit either file, run **`Rebuild Container`** in VS Code. The web development server uses the supplied `API_PORT` to reach the local API. [Web settings](apps/web/.env)
 
 Compose also reads both files when it creates the API container. It treats variable references and quotation marks as part of the value, so write the final value directly, as in `API_PORT=3000`. The development server and tests each set `NODE_ENV`. [API Compose configuration](infra/compose.apps.yml)
 

@@ -34,7 +34,6 @@ if [ ! -f "${TEST_SCRIPT}" ]; then
 fi
 
 SERVER_URL="http://nginx"
-export PROJECT_ID="${PROJECT_ID:?}-replicas"
 cleanup() {
     echo ""
     echo "Tearing down..."

@@ -5,13 +5,13 @@ import {
     JetStreamChannel,
     JsonUtil,
     NatsPubSubService,
-    sha256,
     type NatsConnection
 } from '@mannercode/common'
 import { Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { filter, Subject } from 'rxjs'
 import { AppConfigService, NATS_CONNECTION_NAME } from '#config'
 import { DemoMessageSchema, type DemoMessage, type PublishMessageDto } from './dtos.js'
+import { eventDemoResources } from './event-demo.resources.js'
 
 export const DEMO_EVENTS_MAX_BYTES = Symbol('DEMO_EVENTS_MAX_BYTES')
 @Injectable()
@@ -27,14 +27,11 @@ export class EventDemoService implements OnModuleInit, OnModuleDestroy {
         config: AppConfigService,
         @Inject(DEMO_EVENTS_MAX_BYTES) maxBytes: number
     ) {
-        const resourceId = sha256(config.projectId, 'hex').slice(0, 24).toUpperCase()
-        this.subjects = {
-            queued: config.projectId + '.event-demo.queued',
-            received: config.projectId + '.event-demo.received'
-        }
+        const { streamName, consumerName, subjects } = eventDemoResources(config.projectId)
+        this.subjects = subjects
         this.channel = new JetStreamChannel(connection, {
-            streamName: 'DEMO_EVENTS_' + resourceId,
-            consumerName: 'DEMO_MESSAGES_' + resourceId,
+            streamName,
+            consumerName,
             subject: this.subjects.queued,
             description: 'Message delivery example',
             maxAgeMs: 7 * 24 * 60 * 60 * 1000,

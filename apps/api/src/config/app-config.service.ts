@@ -18,7 +18,6 @@ const numberFromEnvironment = z.union([
 ])
 const requiredString = z.string().min(1)
 const httpUrl = z.url({ protocol: /^https?$/ })
-const deploymentEnvironment = z.object({ RESTATE_DEPLOYMENT_URI: httpUrl })
 
 @Injectable()
 export class AppConfigService extends BaseConfigService {
@@ -54,6 +53,7 @@ export class AppConfigService extends BaseConfigService {
         NATS_PORT: numberFromEnvironment,
 
         RESTATE_ADMIN_URL: httpUrl,
+        RESTATE_DEPLOYMENT_URI: httpUrl,
         RESTATE_INGRESS_URL: z.url(),
         RESTATE_SERVICE_PORT: numberFromEnvironment.pipe(z.number().int().min(0).max(65_535)),
 
@@ -101,7 +101,7 @@ export class AppConfigService extends BaseConfigService {
         return {
             consoleLogLevel: this.getString('LOG_CONSOLE_LEVEL'),
             environment: this.getString('NODE_ENV'),
-            serviceName: this.getString('PROJECT_ID')
+            serviceName: this.projectId
         }
     }
 
@@ -131,9 +131,10 @@ export class AppConfigService extends BaseConfigService {
     }
 
     get restateDeployment() {
-        // 테스트에서는 workflow 리스너가 실제 포트를 받은 뒤 주소를 설정한다.
-        const { RESTATE_DEPLOYMENT_URI: uri } = deploymentEnvironment.parse(process.env)
-        return { adminUrl: this.getString('RESTATE_ADMIN_URL'), uri }
+        return {
+            adminUrl: this.getString('RESTATE_ADMIN_URL'),
+            uri: this.getString('RESTATE_DEPLOYMENT_URI')
+        }
     }
 
     get s3() {

@@ -16,5 +16,10 @@ services:
         init: true
         working_dir: ${WORKSPACE_ROOT:?}/apps/web/tests
         volumes: ['${WORKSPACE_ROOT:?}:${WORKSPACE_ROOT:?}']
-        environment: [API_PORT, WEB_PORT, WORKSPACE_ROOT]
+        environment:
+            API_BASE_URL: http://api:${API_PORT:?}
+            WEB_BASE_URL: http://web.localhost:${WEB_PORT:?}
+            S3_ENDPOINT: ${S3_ENDPOINT:?}
+            S3_BUCKET: ${S3_BUCKET:?}
+            WORKSPACE_ROOT: ${WORKSPACE_ROOT:?}
         entrypoint: ['${WORKSPACE_ROOT:?}/apps/web/node_modules/.bin/playwright', 'test']

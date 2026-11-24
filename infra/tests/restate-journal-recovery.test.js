@@ -9,7 +9,7 @@ import * as restate from '@restatedev/restate-sdk'
 import { connect } from '@restatedev/restate-sdk-clients'
 
 const ADMIN_URL = requiredEnvironment('RESTATE_ADMIN_URL')
-const COMPOSE_PROJECT_NAME = requiredEnvironment('COMPOSE_PROJECT_NAME')
+const DEPLOYMENT_URI = requiredEnvironment('RESTATE_DEPLOYMENT_URI')
 const INGRESS_URL = requiredEnvironment('RESTATE_INGRESS_URL')
 
 test(
@@ -158,12 +158,10 @@ async function createEndpoint(definition) {
 }
 
 async function registerEndpoint(serviceName, port) {
+    const uri = new URL(DEPLOYMENT_URI)
+    uri.port = String(port)
     const response = await fetch(`${ADMIN_URL}/deployments`, {
-        body: JSON.stringify({
-            force: false,
-            uri: `http://${COMPOSE_PROJECT_NAME}:${port}`,
-            use_http_11: false
-        }),
+        body: JSON.stringify({ force: false, uri: uri.href, use_http_11: false }),
         headers: { 'content-type': 'application/json' },
         method: 'POST',
         signal: AbortSignal.timeout(10_000)

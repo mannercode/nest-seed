@@ -5,7 +5,6 @@ cd -- "$(dirname -- "$0")"
 : "${WORKSPACE_ROOT:?}"
 
 SERVER_URL="http://nginx"
-export PROJECT_ID="${PROJECT_ID:?}-replicas"
 OUTPUT_DIR="_output/$(date '+%Y%m%d-%H%M%S')"
 HTML_REPORT="${OUTPUT_DIR}/report.html"
 JSON_SUMMARY="${OUTPUT_DIR}/summary.json"

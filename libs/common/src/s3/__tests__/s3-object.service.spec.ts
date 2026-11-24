@@ -1,6 +1,6 @@
 import { toAny } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
-import { Checksum, HttpUtil } from '../../utils/index.js'
+import { Checksum, DateUtil, HttpUtil } from '../../utils/index.js'
 import {
     testBuffer,
     uploadObject,
@@ -319,6 +319,24 @@ describe('S3ObjectService', () => {
                     expect(await response.text()).toContain('<Code>EntityTooSmall</Code>')
                 })
             })
+        })
+    })
+
+    describe('서명 시각에 밀리초가 있으면', () => {
+        beforeEach(() => {
+            vi.spyOn(DateUtil, 'now').mockReturnValue(
+                Temporal.Instant.from('2026-01-31T23:59:59.900Z')
+            )
+        })
+        it('다운로드 URL과 서명 유효기간이 끝나는 시각을 함께 반환한다', async () => {
+            const { url, expiresAt } = await fix.s3Service.presignDownload({
+                key: 'photo.png',
+                expiresInSec: 60
+            })
+            const query = new URL(url).searchParams
+            expect(query.get('X-Amz-Date')).toBe('20260131T235959Z')
+            expect(query.get('X-Amz-Expires')).toBe('60')
+            expect(expiresAt.toString()).toBe('2026-02-01T00:00:59Z')
         })
     })
 
