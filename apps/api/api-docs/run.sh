@@ -13,11 +13,6 @@ CYAN='\033[36m'
 YELLOW='\033[33m'
 MAGENTA='\033[35m'
 
-RUN_ID="$(date '+%Y%m%d_%H%M%S')"
-DOC_DIR="$(pwd)/_output/docs"
-SUMMARY_MD="${DOC_DIR}/summary.md"
-LOG_DIR_LINK="../logs/${RUN_ID}"
-
 LOG_LINE() {
 	echo "$*" >>"${LOG_FILE}"
 }
@@ -59,7 +54,12 @@ CURL() {
 	response=$(curl -sSX "${method}" -w "%{http_code}" "${url}" "${args[@]}") || curl_exit=$?
 
 	if [[ "${curl_exit}" -ne 0 ]]; then
-		printf '%b %s %s\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method "${method}")" "$(format_endpoint "${url}")"
+		local endpoint
+		endpoint=$(format_endpoint "${url}")
+		LOG_LINE "${method} ${endpoint} (curl 종료 코드: ${curl_exit})"
+		printf '\n`%s %s`의 HTTP 응답을 끝까지 받지 못했다 (curl 종료 코드 %d). [로그](%s)\n' \
+			"${method}" "$(markdown_escape "${endpoint}")" "${curl_exit}" "${LOG_FILE_LINK}" >>"${SUMMARY_MD}"
+		printf '%b %s %s\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method "${method}")" "${endpoint}"
 		printf '  curl 종료 코드: %d\n' "${curl_exit}"
 		exit 1
 	fi
@@ -138,7 +138,13 @@ markdown_escape() {
 }
 
 init_summary() {
-	mkdir -p "${DOC_DIR}" "${DOC_DIR}/${LOG_DIR_LINK}"
+	local output_dir="${PWD}/_output"
+	DOC_DIR="${output_dir}/docs"
+	mkdir -p -- "${DOC_DIR}" "${output_dir}/logs"
+	LOG_DIR=$(mktemp -d -- "${output_dir}/logs/$(date '+%Y%m%d_%H%M%S').XXXXXX")
+	local run_id=${LOG_DIR##*/}
+	LOG_DIR_LINK=$(realpath --relative-to="${DOC_DIR}" -- "${LOG_DIR}")
+	SUMMARY_MD="${DOC_DIR}/${run_id}.md"
 
 	{
 		printf '# API 문서\n\n'
@@ -146,10 +152,23 @@ init_summary() {
 		printf -- '- `%s`\n' "$@"
 		printf '\n'
 		printf -- '- 생성 시각: `%s`\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-		printf -- '- 상세 로그: [%s](%s/)\n\n' "${RUN_ID}" "${LOG_DIR_LINK}"
+		printf -- '- 상세 로그: [%s](%s/)\n\n' "${run_id}" "${LOG_DIR_LINK}"
 		printf '| 그룹 | 설명 | Method | Endpoint | 기대 | 실제 | 결과 | 상세 |\n'
 		printf '| --- | --- | --- | --- | ---: | ---: | --- | --- |\n'
 	} >"${SUMMARY_MD}"
+}
+
+finish_summary() {
+	local status=$1
+	local result=완료
+	if (( status != 0 )); then result=실패; fi
+	printf '\n실행 %s (종료 코드 %d).\n' "${result}" "${status}" >>"${SUMMARY_MD}"
+
+	# 다른 실행에서 읽는 도중에도 마지막으로 끝난 한 실행의 보고서 전체를 제공한다.
+	cp -- "${SUMMARY_MD}" "${SUMMARY_MD}.tmp"
+	mv -fT -- "${SUMMARY_MD}.tmp" "${DOC_DIR}/summary.md"
+	printf '\n%b로그%b : %b%s%b\n' "${BOLD}" "${RESET}" "${CYAN}" "${LOG_DIR}" "${RESET}"
+	printf '%b문서%b : %b%s%b\n' "${BOLD}" "${RESET}" "${CYAN}" "${SUMMARY_MD}" "${RESET}"
 }
 
 record_summary() {
@@ -256,7 +275,9 @@ PASSED_TESTS=0
 FAILED_TESTS=0
 
 init_summary "${specs[@]}"
-LOG_DIR=$(cd -- "${DOC_DIR}/${LOG_DIR_LINK}" && pwd)
+trap 'finish_summary "$?"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 for spepath in "${specs[@]}"; do
 	count_before=$((PASSED_TESTS + FAILED_TESTS))
@@ -264,7 +285,7 @@ for spepath in "${specs[@]}"; do
 	LOG_FILE="${DOC_DIR}/${LOG_FILE_LINK}"
 	CURRENT_GROUP="$(basename "${spepath}" .spec)"
 	mkdir -p "$(dirname "${LOG_FILE}")"
-	: >"${LOG_FILE}"
+	: >>"${LOG_FILE}"
 
 	. ./common.fixture
 	pushd "$(dirname "${spepath}")" >/dev/null
@@ -278,8 +299,6 @@ for spepath in "${specs[@]}"; do
 done
 
 echo ""
-echo -e "${BOLD}로그${RESET} : ${CYAN}${LOG_DIR}${RESET}"
-echo -e "${BOLD}문서${RESET} : ${CYAN}${SUMMARY_MD}${RESET}"
 echo -e "${BOLD}성공${RESET} : ${GREEN}${PASSED_TESTS}${RESET}"
 echo -e "${BOLD}실패${RESET} : ${RED}${FAILED_TESTS}${RESET}"
 

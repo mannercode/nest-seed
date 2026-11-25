@@ -72,4 +72,6 @@ API 통합 테스트는 `createAppTestContext`로 실제 Nest 모듈과 개발 �
 
 외부에 예제를 전달할 때는 저장소 루트에서 `bash apps/api/pack-api-docs.sh > /tmp/api-docs.tar.gz`를 실행한다. 압축 파일에는 실행기와 예제·fixture·사진이 들어간다. 로컬 실행에서 받은 응답 본문은 `_output/`에 저장되므로 배포본에서 제외한다. CI도 이 압축을 풀어 배포용 API 이미지에 요청을 보낸다. [배포본 검증](api-docs/test.sh)
 
-받은 사람은 Bash·curl·jq가 설치된 Linux 환경에서 압축을 풀고, 그 폴더에서 대상 API 주소를 `SERVER_URL`로 지정해 `bash run.sh`를 실행한다. `bash run.sh users.spec`는 회원가입 예제만 실행한다. 보고서에는 선택한 예제와 각 요청의 기대·실제 HTTP 상태가 표시된다. 사진 예제는 발급받은 S3 주소로 직접 업로드하므로 실행 환경에서 그 주소에도 접속할 수 있어야 한다. [주소 지정 예시](api-docs/run.cfg) · [회원가입 요청과 기대 응답](api-docs/users.spec)
+받은 사람은 Bash·curl·jq가 설치된 Linux 환경에서 압축을 풀고, 그 폴더에서 대상 API 주소를 `SERVER_URL`로 지정해 `bash run.sh`를 실행한다. `bash run.sh users.spec`는 회원가입 예제만 실행한다. 사진 예제는 발급받은 S3 주소로 직접 업로드하므로 실행 환경에서 그 주소에도 접속할 수 있어야 한다. [주소 지정 예시](api-docs/run.cfg) · [회원가입 요청과 기대 응답](api-docs/users.spec)
+
+실행기가 출력한 보고서에는 그때 선택한 예제와 요청별 기대·실제 HTTP 상태가 남는다. 연결이 끊기면 해당 요청과 curl 오류를 기록하고 실패로 종료한다. 같은 폴더에서 다시 실행해도 각 실행의 보고서와 로그를 볼 수 있다. `_output/docs/summary.md`는 가장 최근에 끝난 실행의 보고서다.
