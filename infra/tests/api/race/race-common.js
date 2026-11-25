@@ -153,7 +153,6 @@ function request(method, path, opts = {}) {
 function openEventStream(opts = {}) {
     const { label, onParseError, accessToken } = opts
     const url = new URL('/event-demo/event-stream', SERVER_URL)
-    const agent = new http.Agent({ keepAlive: false })
     const events = []
     const requestPath = url.pathname + url.search
     const diagnostic = `SSE GET ${requestPath}${label ? ` [${label}]` : ''}`
@@ -169,7 +168,6 @@ function openEventStream(opts = {}) {
         if (handshakeDeadline) clearTimeout(handshakeDeadline)
         if (res && !res.destroyed) res.destroy()
         if (req && !req.destroyed) req.destroy()
-        agent.destroy()
     }
     const failHandshake = (error) => {
         if (handshakeSettled) return
@@ -193,7 +191,7 @@ function openEventStream(opts = {}) {
         try {
             req = http.request(
                 {
-                    agent,
+                    agent: false,
                     hostname: url.hostname,
                     port: url.port,
                     path: requestPath,
@@ -249,14 +247,18 @@ function openEventStream(opts = {}) {
         closed = true
         if (!handshakeSettled) {
             failHandshake(new Error(`${diagnostic} closed before handshake completed`))
-        } else {
-            destroy()
         }
         try {
             await connected
         } catch {
-            // 연결 자체가 실패했으면 정리할 스트림이 없다.
+            // 연결 실패는 connected가 호출자에게 전달한다.
         }
+        if (!req || req.closed) return
+        const disconnected = new Promise((resolve) => req.once('close', resolve))
+        // SSE 응답은 끝나지 않으므로 구독을 TCP reset으로 취소한다.
+        // 매 회차 새 구독을 여는 클라이언트가 TIME_WAIT로 임시 포트를 소진하지 않게 한다.
+        if (res?.socket && !res.socket.destroyed) res.socket.resetAndDestroy()
+        await disconnected
     }
 
     return { events, connected, close, getReplicaId: () => replicaId }

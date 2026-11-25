@@ -13,6 +13,7 @@
         ".env.infra",
         "--env-file",
         ".env.api",
+        "--hostname=devcontainer",
         // 같은 Docker 호스트에서 한 사용자가 여러 복사본을 동시에 열 때는 컨테이너와 네트워크 이름이 겹치지 않도록 폴더명을 다르게 둔다.
         "--name=${localEnv:USER}-${localWorkspaceFolderBasename}",
         "--network=${localEnv:USER}-${localWorkspaceFolderBasename}"
@@ -39,10 +40,9 @@
         "project-network": [
             "sh",
             "-ec",
-            "user=$1; [ -n \"$user\" ] || { echo \"Dev Container requires the host USER\" >&2; exit 1; }; n=$user-$2; docker network inspect \"$n\" >/dev/null 2>&1 || docker network create \"$n\" >/dev/null",
+            ": \"${USER:?Dev Container requires the host USER}\"; docker network inspect \"$1\" >/dev/null 2>&1 || docker network create \"$1\" >/dev/null",
             "project-network",
-            "${localEnv:USER}",
-            "${localWorkspaceFolderBasename}"
+            "${localEnv:USER}-${localWorkspaceFolderBasename}"
         ],
         "codex": "mkdir -p \"${localEnv:HOME}/.codex/${localWorkspaceFolderBasename}\" \"${localEnv:HOME}/.codex/skills\"",
         "github": "mkdir -p ${localEnv:HOME}/.config/gh"

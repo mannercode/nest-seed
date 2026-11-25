@@ -1,15 +1,8 @@
 import { InternalServerErrorException } from '@nestjs/common'
 import { type CacheServiceFixture, createCacheServiceFixture } from './cache.service.fixture.js'
 import { sleep } from '../../utils/index.js'
-import { cacheLockKey } from '../cache-lock-key.js'
 
-const jobLockKey = cacheLockKey('job')
-
-describe('cacheLockKey', () => {
-    it('기존 락과 같은 Redis 키를 반환한다', () => {
-        expect(jobLockKey).toBe('lock:job')
-    })
-})
+const jobLockKey = 'lock:job'
 
 describe('CacheService', () => {
     let fix: CacheServiceFixture
@@ -283,7 +276,7 @@ describe('CacheService', () => {
             expect(executedCount).toBeGreaterThanOrEqual(1)
         }, 30_000)
 
-        describe('다른 호출자가 락을 점유했으면', () => {
+        describe('다른 호출자가 기존 Redis 키 lock:job으로 락을 점유했으면', () => {
             beforeEach(async () => {
                 await fix.cacheService.set(jobLockKey, 'other-runner', 10_000)
             })

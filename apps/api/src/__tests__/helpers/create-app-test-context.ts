@@ -7,6 +7,7 @@ import {
     type TestModuleOptions
 } from '@mannercode/testing'
 import { SchedulerRegistry } from '@nestjs/schedule'
+import { hostname } from 'node:os'
 import { AppConfigService } from '#config'
 import { DEMO_EVENTS_MAX_BYTES } from '#infrastructure'
 import { AppModule } from '../../app.module.js'
@@ -44,10 +45,10 @@ export async function createAppTestContext(metadata: TestModuleOptions = {}) {
     })
 
     setup.defer(ctx.close)
-    const { adminUrl, uri } = ctx.app.get(AppConfigService).restateDeployment
+    const { adminUrl } = ctx.app.get(AppConfigService).restateDeployment
     const deploymentUrl = await initializeApi(ctx.app, {
         adminUrl,
-        uri: testDeploymentUri(uri, ctx.app.get(RestateEndpoint).port)
+        uri: testDeploymentUri(ctx.app.get(RestateEndpoint).port)
     })
     const waitForWorkflows = trackRestateCompletions(ctx.module.get(TextJobWorkflowClient))
     setup.defer(async () => {
@@ -85,10 +86,8 @@ export function trackRestateCompletions<Input, Submission>(client: {
     }
 }
 
-export function testDeploymentUri(uri: string, port: number) {
-    const address = new URL(uri)
-    address.port = String(port)
-    return address.href
+export function testDeploymentUri(port: number) {
+    return `http://${hostname()}:${port}`
 }
 
 export async function unregisterRestateDeployment(deploymentUrl: URL) {

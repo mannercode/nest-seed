@@ -97,10 +97,9 @@ describe('API 시작', () => {
             const register = RestateEndpoint.prototype.register
             vi.spyOn(RestateEndpoint.prototype, 'register').mockImplementationOnce(async function (
                 this: RestateEndpoint,
-                admin,
-                uri
+                admin
             ) {
-                deployment = await register.call(this, admin, testDeploymentUri(uri, this.port))
+                deployment = await register.call(this, admin, testDeploymentUri(this.port))
                 return deployment
             })
         })
@@ -114,6 +113,10 @@ describe('API 시작', () => {
         it('배포 진입점을 실행하면 복제본 ID와 함께 상태 확인 요청에 200을 반환한다', async () => {
             await import('../main.js')
             app = await created.mock.results[0]!.value
+            expect(RestateEndpoint.prototype.register).toHaveBeenCalledWith(
+                process.env.RESTATE_ADMIN_URL,
+                process.env.RESTATE_DEPLOYMENT_URI
+            )
             const response = await fetch(new URL('/health', await app!.getUrl()))
             expect(response.status).toBe(200)
             expect(response.headers.get('x-replica-id')).toBe(hostname())

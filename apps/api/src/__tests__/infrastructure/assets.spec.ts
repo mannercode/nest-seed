@@ -1,13 +1,12 @@
 import type { MockInstance } from 'vitest'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import {
+    CacheService,
     Checksum,
     DateUtil,
     ensure,
-    getRedisConnectionToken,
     objectId,
     pickIds,
-    type RedisConnection,
     S3ObjectService,
     sleep
 } from '@mannercode/common'
@@ -30,7 +29,7 @@ import {
     createAppTestContext
 } from '../helpers/index.js'
 import { AssetsRepository } from '../../services/infrastructure/assets/assets.repository.js'
-import { AppConfigService, REDIS_CONNECTION_NAME } from '#config'
+import { AppConfigService } from '#config'
 
 type UploadedFile = Awaited<ReturnType<typeof uploadFile>>
 
@@ -200,13 +199,17 @@ describe('AssetsService', () => {
         })
     })
 
-    describe('첫 번째 만료 정리가 파일 삭제를 기다리고 있으면', () => {
+    describe('만료된 업로드와 완료된 파일이 있으면', () => {
         let uploaded: UploadedFile
         let owned: AssetDto
         let gate: ReturnType<typeof pauseNextStorageDelete> | undefined
         let cleanup: Promise<void> | undefined
         let storage: S3ObjectService
-        let expireCleanupLock: () => Promise<number>
+        async function startCleanupUntilDelete() {
+            cleanup = assetsService.cleanupExpiredUploads()
+            await ensure(gate).started
+        }
+
         beforeEach(async () => {
             gate = undefined
             cleanup = undefined
@@ -215,32 +218,32 @@ describe('AssetsService', () => {
             await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
             storage = fix.module.get<S3ObjectService>(S3ObjectService.getName())
             gate = pauseNextStorageDelete(fix)
-            const redis = fix.module.get<RedisConnection>(
-                getRedisConnectionToken(REDIS_CONNECTION_NAME)
-            )
-            using set = vi.spyOn(redis, 'set')
-            cleanup = assetsService.cleanupExpiredUploads()
-            await gate.started
-            expect(set).toHaveBeenCalledTimes(1)
-            const [lockKey] = ensure(set.mock.calls[0])
-            expireCleanupLock = () => redis.pexpire(lockKey, 0)
         })
         afterEach(async () => {
             gate?.release()
             await cleanup
         })
-        it('다른 정리를 실행해도 락이 유지되는 동안 파일 삭제를 중복 실행하지 않는다', async () => {
-            await assetsService.cleanupExpiredUploads()
-            expect(storage.deleteObject).toHaveBeenCalledTimes(1)
-            ensure(gate).release()
-            await cleanup
-            await expect(assetsService.findOwner(uploaded.assetId)).resolves.toBeUndefined()
-            await expect(assetsService.isUploadComplete(owned.id)).resolves.toBe(true)
+        describe('첫 번째 정리가 락을 보유한 채 파일 삭제를 기다리면', () => {
+            beforeEach(startCleanupUntilDelete)
+            it('다른 정리를 실행해도 파일 삭제를 중복 실행하지 않는다', async () => {
+                await assetsService.cleanupExpiredUploads()
+                expect(storage.deleteObject).toHaveBeenCalledTimes(1)
+                ensure(gate).release()
+                await cleanup
+                await expect(assetsService.findOwner(uploaded.assetId)).resolves.toBeUndefined()
+                await expect(assetsService.isUploadComplete(owned.id)).resolves.toBe(true)
+            })
         })
 
-        describe('정리 도중 Redis 락을 만료시켰으면', () => {
+        describe('첫 번째 정리가 파일 삭제를 기다리는 동안 락이 만료되면', () => {
             beforeEach(async () => {
-                await expect(expireCleanupLock()).resolves.toBe(1)
+                const ttlMs = 1
+                const cache = fix.module.get<CacheService>(CacheService.getName('assets'))
+                const withLock = cache.withLock.bind(cache)
+                using lock = vi.spyOn(cache, 'withLock')
+                lock.mockImplementationOnce((key, _ttl, work) => withLock(key, ttlMs, work))
+                await startCleanupUntilDelete()
+                await sleep(ttlMs)
             })
             it('다른 정리와 겹쳐 실행해도 만료 파일만 제거하고 완료된 파일은 보존한다', async () => {
                 await assetsService.cleanupExpiredUploads()

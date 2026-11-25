@@ -3,13 +3,13 @@ import { execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { once } from 'node:events'
 import { createServer } from 'node:http2'
+import { hostname } from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
 import * as restate from '@restatedev/restate-sdk'
 import { connect } from '@restatedev/restate-sdk-clients'
 
 const ADMIN_URL = requiredEnvironment('RESTATE_ADMIN_URL').replace(/\/+$/, '')
-const DEPLOYMENT_URI = requiredEnvironment('RESTATE_DEPLOYMENT_URI')
 const INGRESS_URL = requiredEnvironment('RESTATE_INGRESS_URL')
 
 test(
@@ -60,7 +60,7 @@ test(
         try {
             endpoint = await createEndpoint(definition)
             restateContainerId = findRestateContainer()
-            deploymentUrl = await registerEndpoint(definition.name, endpoint.port)
+            deploymentUrl = await registerEndpoint(definition.name, endpoint.uri)
             const ingress = connect({
                 retry: {
                     initialInterval: 250,
@@ -147,22 +147,20 @@ async function createEndpoint(definition) {
             sessions.forEach((session) => session.destroy())
             await closed
         },
-        get port() {
+        get uri() {
             const address = server.address()
             if (!address || typeof address === 'string') {
                 throw new Error('Restate recovery endpoint is not listening.')
             }
-            return address.port
+            return `http://${hostname()}:${address.port}`
         }
     }
 }
 
-async function registerEndpoint(serviceName, port) {
-    const uri = new URL(DEPLOYMENT_URI)
-    uri.port = String(port)
+async function registerEndpoint(serviceName, uri) {
     const deploymentsUrl = `${ADMIN_URL}/deployments`
     const response = await fetch(deploymentsUrl, {
-        body: JSON.stringify({ force: false, uri: uri.href, use_http_11: false }),
+        body: JSON.stringify({ force: false, uri, use_http_11: false }),
         headers: { 'content-type': 'application/json' },
         method: 'POST',
         signal: AbortSignal.timeout(10_000)

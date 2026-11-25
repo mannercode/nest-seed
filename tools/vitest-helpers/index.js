@@ -7,9 +7,6 @@ const {
 } = require('@aws-sdk/client-s3')
 const { randomInt } = require('node:crypto')
 
-const WORKER_DB_PATTERN = /^mongo-w\d+$/
-const WORKER_BUCKET_PATTERN = /^s3bucket-w\d+$/
-
 function getVitestWorkerId() {
     const id = process.env.VITEST_POOL_ID
     if (!id || !/^[1-9]\d*$/.test(id)) throw new Error('VITEST_POOL_ID must be a positive integer')
@@ -144,51 +141,38 @@ function setupVitestLifecycle({
  * 워커 풀이 끝난 뒤 해당 워크스페이스의 MongoDB·S3·Redis 자원을 정리한다.
  *
  * @param {object} options
- * @param {boolean} [options.allowRedisFlushAll=false]
  * @param {() => Promise<MongoClient>} options.connectMongo
  * @param {() => import('@aws-sdk/client-s3').S3Client} options.createS3Client
  * @param {() => import('ioredis').Redis | import('ioredis').Cluster} options.connectRedis
- * @param {RegExp} [options.databasePattern]
- * @param {RegExp} [options.bucketPattern]
- * @param {string} [options.redisKeyPattern]
- * @param {string} [options.redisKeyScope]
+ * @param {RegExp} options.databasePattern
+ * @param {RegExp} options.bucketPattern
+ * @param {string} options.redisKeyPattern
+ * @param {string} options.redisKeyScope
  */
 function createGlobalTeardown({
-    allowRedisFlushAll = false,
     connectMongo,
     createS3Client,
     connectRedis,
-    databasePattern = WORKER_DB_PATTERN,
-    bucketPattern = WORKER_BUCKET_PATTERN,
+    databasePattern,
+    bucketPattern,
     redisKeyPattern,
     redisKeyScope
 }) {
-    if (redisKeyPattern !== undefined && allowRedisFlushAll) {
-        throw new Error(
-            'createGlobalTeardown must not combine redisKeyPattern and allowRedisFlushAll'
-        )
+    if (!(databasePattern instanceof RegExp) || !(bucketPattern instanceof RegExp)) {
+        throw new Error('createGlobalTeardown requires databasePattern and bucketPattern')
     }
-    if (redisKeyPattern === undefined && !allowRedisFlushAll) {
-        throw new Error(
-            'createGlobalTeardown requires redisKeyPattern or explicit allowRedisFlushAll: true'
-        )
-    }
-    if (redisKeyPattern !== undefined) {
-        assertScopedRedisKeyPattern(redisKeyPattern, redisKeyScope)
-    }
+    assertScopedRedisKeyPattern(redisKeyPattern, redisKeyScope)
 
     return async function globalTeardown() {
         await Promise.all([
             cleanupMongoMatching(connectMongo, databasePattern),
             cleanupS3Matching(createS3Client, bucketPattern),
-            redisKeyPattern === undefined
-                ? cleanupRedisAll(connectRedis)
-                : cleanupRedisMatching(connectRedis, redisKeyPattern, redisKeyScope)
+            cleanupRedisMatching(connectRedis, redisKeyPattern, redisKeyScope)
         ])
     }
 }
 
-async function cleanupMongoMatching(connectMongo, pattern = WORKER_DB_PATTERN) {
+async function cleanupMongoMatching(connectMongo, pattern) {
     const client = await connectMongo()
     try {
         await dropMatchingDatabases(client, pattern)
@@ -197,7 +181,7 @@ async function cleanupMongoMatching(connectMongo, pattern = WORKER_DB_PATTERN) {
     }
 }
 
-async function cleanupS3Matching(createS3Client, pattern = WORKER_BUCKET_PATTERN) {
+async function cleanupS3Matching(createS3Client, pattern) {
     const client = createS3Client()
     try {
         await dropMatchingBuckets(client, pattern)
@@ -206,22 +190,12 @@ async function cleanupS3Matching(createS3Client, pattern = WORKER_BUCKET_PATTERN
     }
 }
 
-async function cleanupRedisAll(connectRedis) {
-    const redis = connectRedis()
-    try {
-        const targets = await redisWriteTargets(redis, 'cleanupRedisAll')
-        await Promise.all(targets.map((target) => target.flushall()))
-    } finally {
-        await redis.quit()
-    }
-}
-
 async function cleanupRedisMatching(connectRedis, keyPattern, redisKeyScope) {
     assertScopedRedisKeyPattern(keyPattern, redisKeyScope)
 
     const redis = connectRedis()
     try {
-        const targets = await redisWriteTargets(redis, 'cleanupRedisMatching')
+        const targets = await redisWriteTargets(redis)
         await Promise.all(targets.map((target) => deleteMatchingRedisKeys(target, keyPattern)))
     } finally {
         await redis.quit()
@@ -245,7 +219,7 @@ function assertScopedRedisKeyPattern(keyPattern, redisKeyScope) {
     }
 }
 
-async function redisWriteTargets(redis, operation) {
+async function redisWriteTargets(redis) {
     if (typeof redis.nodes !== 'function') return [redis]
 
     // Redis Cluster 연결 직후에는 nodes()가 빈 배열을 반환할 수 있다.
@@ -258,7 +232,7 @@ async function redisWriteTargets(redis, operation) {
     }
     const masters = redis.nodes('master')
     if (masters.length === 0) {
-        throw new Error(`${operation}: no master nodes — cleanup would be a no-op`)
+        throw new Error('cleanupRedisMatching: no master nodes — cleanup would be a no-op')
     }
     return masters
 }
@@ -274,8 +248,6 @@ async function deleteMatchingRedisKeys(redis, keyPattern) {
 }
 
 module.exports = {
-    WORKER_BUCKET_PATTERN,
-    WORKER_DB_PATTERN,
     cleanCollections,
     cleanupRedisMatching,
     createGlobalTeardown,
