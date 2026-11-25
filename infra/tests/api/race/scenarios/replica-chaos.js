@@ -1,11 +1,11 @@
 /**
  * 요청을 보내는 중 복제본 하나를 종료·재시작해 NGINX가 남은 복제본으로 요청을 보내는지와 재시작 후 복구를 검증한다.
- * 전송 오류와 5xx 응답의 비율은 1% 이하여야 하고 복구 구간에는 설정한 복제본이 모두 응답해야 한다.
+ * 장애 구간에 시작한 가입이 성공해야 한다. 전체 전송 오류와 5xx 응답의 비율은 1% 이하여야 하고 복구 구간에는 설정한 복제본이 모두 응답해야 한다.
  */
 
 import { execSync } from 'node:child_process'
 import { test } from 'node:test'
-import { readPositiveInt, request, secureRandomHex, secureRandomIndex } from './race-common.js'
+import { readPositiveInt, request, secureRandomHex, secureRandomIndex } from '../race-common.js'
 
 const KILL_AT_MS = readPositiveInt('CHAOS_KILL_AT_MS', 30_000)
 const RESTART_AFTER_MS = readPositiveInt('CHAOS_RESTART_AFTER_MS', 30_000)
@@ -42,6 +42,7 @@ function bucketFor(state) {
 
 async function trafficWorker(workerId, state) {
     while (!state.stop) {
+        const startedPhase = state.phase
         const email = `chaos.${workerId}.${secureRandomHex()}@example.com`
         try {
             const r = await request('POST', '/users', {
@@ -55,7 +56,9 @@ async function trafficWorker(workerId, state) {
             const b = bucketFor(state)
             b.total++
             b.byStatus[r.status] = (b.byStatus[r.status] || 0) + 1
-            if (r.replicaId) b.replicas[r.replicaId] = (b.replicas[r.replicaId] || 0) + 1
+            if (startedPhase === state.phase && r.status === 201 && r.replicaId) {
+                b.replicas[r.replicaId] = (b.replicas[r.replicaId] || 0) + 1
+            }
         } catch {
             const b = bucketFor(state)
             b.total++
@@ -73,7 +76,7 @@ function summarize(label, bucket) {
     return `${label}: total=${bucket.total} replicas=${replicas} | ${status}`
 }
 
-test('요청 중 복제본 하나를 재시작하면 오류율은 1% 이하이고 복구 후 설정한 복제본이 모두 응답한다', async () => {
+test('복제본 하나를 재시작하면 중단 중에도 가입에 성공하고 전체 오류율은 1% 이하이며 복구 후 모든 복제본이 응답한다', async () => {
     const { services } = JSON.parse(
         execSync('docker compose --profile replicas config --format json', { encoding: 'utf8' })
     )
@@ -129,6 +132,9 @@ test('요청 중 복제본 하나를 재시작하면 오류율은 1% 이하이�
     const phases = ['warmup', 'after-kill', 'after-restart', 'recovered']
     for (const p of phases) console.log(`[chaos] ${summarize(p, state.byPhase[p])}`)
 
+    if (!Object.keys(state.byPhase['after-kill']?.replicas ?? {}).length) {
+        throw new Error('No replica completed a signup started during the outage')
+    }
     const allByStatus = {}
     const allReplicas = new Set()
     for (const p of phases) {
@@ -147,7 +153,7 @@ test('요청 중 복제본 하나를 재시작하면 오류율은 1% 이하이�
     const errs = Object.entries(allByStatus)
         .filter(([s]) => s === 'err' || (typeof s === 'string' && /^5\d\d$/.test(s)))
         .reduce((a, [, c]) => a + c, 0)
-    const rate = total ? errs / total : 0
+    const rate = errs / total
     console.log(`[chaos] total=${total} 5xx-or-err=${errs} (${(rate * 100).toFixed(3)}%)`)
 
     if (rate > 0.01) {

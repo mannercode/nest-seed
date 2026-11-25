@@ -584,6 +584,17 @@ describe('S3ObjectService', () => {
     })
 
     describe('deleteObject', () => {
+        describe('SDK가 응답의 HTTP 상태를 생략하면', () => {
+            beforeEach(() => {
+                vi.spyOn(toAny(fix.s3Service).s3, 'send').mockResolvedValueOnce({ $metadata: {} })
+            })
+            it('삭제 결과를 요청하면 상태 누락 오류를 던진다', async () => {
+                await expect(fix.s3Service.deleteObject('key')).rejects.toThrow(
+                    'S3 delete response has no HTTP status'
+                )
+            })
+        })
+
         describe('객체가 존재할 때', () => {
             const key = 'foo/data2.json'
 

@@ -18,7 +18,7 @@ The infrastructure is for development and testing. When forking, replace the pro
 
 1. Open the repository on the Docker host with VS Code Remote SSH. Run `Reopen in Container` and wait for dependency installation and infrastructure reset.
 2. Run `pnpm run lint` and `pnpm test` in the container terminal.
-3. Run `pnpm run dev` to start the API and web. From another terminal in the same container, run `curl "http://localhost:${API_PORT}/health"` to check the API.
+3. Run `pnpm run build:libs`, then start `pnpm -C apps/api run dev` and `pnpm -C apps/web run dev` in separate terminals. From another terminal in the same container, run `curl "http://localhost:${API_PORT}/health"` to check the API.
 4. Run `echo "$WEB_PORT"` and forward that port in the VS Code **Ports** panel to open the web app.
 
 ### Rebuilding the Dev Container after editing environment files
@@ -31,15 +31,15 @@ Compose also reads both files when it creates the API container. It treats varia
 
 Run these commands from the repository root inside the Dev Container. Use `pnpm run` to list root commands and `pnpm -C apps/web run` to list web app commands.
 
-| Command                       | Purpose                                                                      |
-| ----------------------------- | ---------------------------------------------------------------------------- |
-| `pnpm run dev`                | Run the API and web in watch mode                                            |
-| `pnpm test`                   | Run unit, integration, API example, and browser E2E tests (restarts Restate) |
-| `pnpm run lint`               | Check types, code, formatting, shell scripts, and documentation links        |
-| `pnpm run format`             | Format the repository with Prettier                                          |
-| `pnpm -C apps/web test`       | Verify the production build of web and its API connection                    |
-| `pnpm -C infra run race`      | List the multi-replica test scenarios and how to run them                    |
-| `pnpm -C infra run benchmark` | Compare API performance under the same conditions                            |
+| Command                                                 | Purpose                                                                      |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `pnpm -C apps/api run dev` · `pnpm -C apps/web run dev` | Run each app in watch mode                                                   |
+| `pnpm test`                                             | Run unit, integration, API example, and browser E2E tests (restarts Restate) |
+| `pnpm run lint`                                         | Check types, code, formatting, shell scripts, and documentation links        |
+| `pnpm exec prettier --write .`                          | Format the repository with Prettier                                          |
+| `pnpm -C apps/web test`                                 | Verify the production build of web and its API connection                    |
+| `pnpm -C infra run race`                                | List the multi-replica test scenarios and how to run them                    |
+| `pnpm -C infra run benchmark`                           | Compare API performance under the same conditions                            |
 
 With the development infrastructure running, use `pnpm -C infra run apps:up` to start one API instance and the web app. Append `api` to start the API alone, or `nginx` to start NGINX and four API replicas. To switch configurations manually, run `pnpm -C infra run apps:down` first. The API docs tests, web E2E, race, and benchmark stop the current apps before starting their test configuration. [App Compose file](infra/compose.apps.yml)
 

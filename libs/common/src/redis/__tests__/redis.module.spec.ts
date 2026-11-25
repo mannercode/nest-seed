@@ -16,12 +16,18 @@ describe('RedisConnectionRegistry', () => {
         let connection: { quit: ReturnType<typeof vi.fn> }
         beforeEach(() => {
             registry = new RedisConnectionRegistry()
-            connection = { quit: vi.fn().mockRejectedValue(new Error('boom')) }
+            connection = {
+                quit: vi.fn().mockRejectedValueOnce(new Error('boom')).mockResolvedValue(undefined)
+            }
             registry.add(connection as any)
         })
-        it('종료 시 연결의 quit을 호출하고 오류는 전파하지 않는다', async () => {
-            await expect(registry.onModuleDestroy()).resolves.toBeUndefined()
-            expect(connection.quit).toHaveBeenCalled()
+        it('종료 오류를 전달하고 다음 종료 때 실패한 연결을 다시 닫는다', async () => {
+            const first = registry.onModuleDestroy()
+            expect(registry.onModuleDestroy()).toBe(first)
+            await expect(first).rejects.toMatchObject({ errors: [new Error('boom')] })
+            await registry.onModuleDestroy()
+            await registry.onModuleDestroy()
+            expect(connection.quit).toHaveBeenCalledTimes(2)
         })
     })
 })

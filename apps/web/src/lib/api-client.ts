@@ -9,24 +9,14 @@ export class ApiError extends Error {
     }
 }
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-    const headers: Record<string, string> = {}
-    if (body !== undefined) headers['Content-Type'] = 'application/json'
-
+async function request(method: string, path: string, body?: unknown): Promise<Response> {
     const response = await fetch(`/api${path}`, {
         method,
-        headers,
+        headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
         body: body === undefined ? undefined : JSON.stringify(body)
     })
-
-    if (response.status === 204) {
-        return undefined as T
-    }
-
-    const text = await response.text()
-    const parsed = text ? (JSON.parse(text) as unknown) : null
-
     if (!response.ok) {
+        const parsed: unknown = await response.json().catch(() => null)
         const code =
             parsed && typeof parsed === 'object' && 'code' in parsed
                 ? String(parsed.code)
@@ -37,9 +27,24 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
                 : `${method} ${path} failed with ${response.status}`
         throw new ApiError(response.status, code, message)
     }
-
-    return parsed as T
+    return response
 }
 
-export const getJson = <T>(path: string) => request<T>('GET', path)
-export const postJson = <T>(path: string, body: unknown) => request<T>('POST', path, body)
+export async function getJson<T>(path: string): Promise<T> {
+    return (await request('GET', path)).json()
+}
+
+export async function postJson<T>(path: string, body: unknown): Promise<T> {
+    return (await request('POST', path, body)).json()
+}
+
+export async function postNoContent(path: string, body: unknown): Promise<void> {
+    const response = await request('POST', path, body)
+    if (response.status !== 204) {
+        throw new ApiError(
+            response.status,
+            undefined,
+            `POST ${path} expected HTTP 204, received ${response.status}`
+        )
+    }
+}

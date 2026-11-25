@@ -12,9 +12,8 @@ compose=(docker compose --profile replicas)
 
 list_scenarios() {
     echo "Scenarios:"
-    for f in ./*.js; do
+    for f in scenarios/*.js; do
         name="$(basename "$f" .js)"
-        [ "$name" = "race-common" ] && continue
         echo "  $name"
     done
 }
@@ -25,9 +24,9 @@ if [ -z "${TEST_NAME}" ]; then
     list_scenarios
     exit 0
 fi
-TEST_SCRIPT="${TEST_NAME}.js"
+TEST_SCRIPT="scenarios/${TEST_NAME}.js"
 
-if [ ! -f "${TEST_SCRIPT}" ]; then
+if [[ "$TEST_NAME" == */* || ! -f "$TEST_SCRIPT" ]]; then
     echo "Error: no test script at ${TEST_SCRIPT}"
     list_scenarios
     exit 1
@@ -122,7 +121,7 @@ run_scenario() {
     return 1
 }
 
-"${compose[@]}" down
+bash "${WORKSPACE_ROOT}/infra/compose-down.sh"
 trap cleanup EXIT
 bring_up_stack
 run_scenario

@@ -103,6 +103,27 @@ test.describe('로그인하지 않았으면', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(`${WEB_BASE_URL}/login`)
     })
+    for (const { condition, status, body } of [
+        { condition: '빈 HTTP 200', status: 200, body: '' },
+        { condition: 'HTML 본문이 있는 HTTP 503', status: 503, body: '<h1>Unavailable</h1>' }
+    ]) {
+        test.describe(`로그인 API가 ${condition}을 반환하면`, () => {
+            test.beforeEach(async ({ page }) => {
+                await page.route('**/api/users/login', (route) =>
+                    route.fulfill({ status, contentType: 'text/html', body })
+                )
+                await page.getByLabel('이메일').fill('login@example.com')
+                await page.getByLabel('비밀번호').fill(PASSWORD)
+            })
+            test('로그인을 시도하면 같은 화면에 HTTP 상태를 표시한다', async ({ page }) => {
+                await page.getByRole('button', { name: '로그인' }).click()
+                await expect(page.getByRole('main').getByRole('alert')).toContainText(
+                    String(status)
+                )
+                await expect(page).toHaveURL(`${WEB_BASE_URL}/login`)
+            })
+        })
+    }
     test('사용자 앱에서 토큰 갱신 경로를 직접 요청하면 404를 반환한다', async ({ page }) => {
         const result = await page.evaluate(async () => {
             const response = await fetch('/api/users/refresh', {

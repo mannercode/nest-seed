@@ -2,7 +2,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { ApiError, getJson, postJson } from '@/lib/api-client'
+import { ApiError, getJson, postNoContent } from '@/lib/api-client'
 import { photoUrl } from '@/lib/photos'
 
 type HomeView = {
@@ -42,7 +42,7 @@ export default function HomePage() {
         setLoggingOut(true)
         setError(null)
         try {
-            await postJson('/users/logout', {})
+            await postNoContent('/users/logout', {})
             setHome(null)
         } catch (err) {
             setHome(null)

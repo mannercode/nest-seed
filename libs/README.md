@@ -20,7 +20,9 @@ common의 peer dependency는 사용하는 프로젝트가 설치한다. 루트 �
 
 ### 메시지와 락의 완료 조건
 
-같은 NATS subject·queue에 동시에 구독하면 모든 호출이 서버의 SUB 처리를 기다린다. 등록에 실패하면 모두 오류를 받고 구독은 정리된다. 종료할 때는 새 handler를 막고, 이미 구독을 해제했어도 실행 중인 handler를 기다린다. [구독 테스트](common/src/nats/__tests__/nats-pubsub.service.spec.ts)
+같은 NATS subject·queue에 동시에 구독하면 모든 호출이 서버의 SUB 처리를 기다린다. 등록에 실패하면 모두 오류를 받고 구독은 정리된다. 수신 루프가 종료된 채널을 다시 구독하면 새 구독을 연다. 종료할 때는 새 handler를 막고, 이미 구독을 해제했어도 실행 중인 handler를 기다린다. [구독 테스트](common/src/nats/__tests__/nats-pubsub.service.spec.ts)
+
+Redis·NATS 모듈은 종료할 때 등록된 연결을 모두 닫는다. 실패하면 호출자가 `AggregateError.errors`에서 원인을 확인할 수 있다. 다시 종료하면 이전에 실패한 연결만 처리한다.
 
 캐시 TTL은 정수 밀리초다. `set`의 0은 영구 저장이고, 락 TTL은 양수여야 한다. `incrementWithExpiry`는 카운터가 1이 될 때만 만료 시각을 설정한다. 이때 TTL이 0 이하이면 즉시 만료된다.
 
@@ -48,10 +50,11 @@ Restate는 workflow 입력·step DTO·최종 결과를 각각의 스키마로 �
 
 ## 5. SSE 이벤트를 받는 테스트 작성
 
-`HttpTestClient.sse`의 세 번째 인자인 준비 완료 콜백이 호출되면 이벤트를 발생시킬 요청을 보낸다. 스트림은 `finally`에서 닫는다. [수신 예제와 오류 처리](testing/src/__tests__/http.test-client.spec.ts)
+HTTP 200과 `text/event-stream`을 확인한 뒤 `HttpTestClient.sse`의 세 번째 인자인 준비 완료 콜백이 호출되면 이벤트를 발생시킬 요청을 보낸다. 스트림은 `finally`에서 닫는다. [수신 예제와 오류 처리](testing/src/__tests__/http.test-client.spec.ts)
 
 ## 6. 공통 유틸의 입력·반환 규칙
 
+- `PathUtil.move`는 대상 파일시스템에서 최종 이름으로 교체한다. 대상에 비어 있지 않은 디렉터리가 있으면 원본과 대상의 내용을 보존하고 오류를 던진다. `PathUtil.exists`는 접근 권한이나 I/O 오류를 호출자에게 전달한다. [파일 작업 테스트](common/src/utils/__tests__/path.spec.ts)
 - `isEqual`은 중첩된 Temporal 값의 타입·달력·참조 날짜까지 비교한다. [비교 예제](common/src/utils/__tests__/lodash.spec.ts)
 - 시간·바이트 단위는 소수와 지수 표기를 지원한다. 여러 단위의 음수는 `-1h-30m`, `-1KB -0.5B`처럼 항목마다 부호를 붙인다. [시간](common/src/utils/__tests__/time.spec.ts) · [바이트](common/src/utils/__tests__/byte.spec.ts)
 - `Env`는 대소문자 구분 없이 `true`·`false`만 불리언으로 받는다. 숫자 필드에서 공백 문자열·`NaN`·`Infinity`는 오류다. `BaseConfigService`는 getter 타입에 맞는 값만 변환한다. [환경 변수](common/src/utils/__tests__/env.spec.ts) · [설정 getter](common/src/config/__tests__/base-config.service.spec.ts)

@@ -14,7 +14,7 @@ export default defineConfig({
         ...base.test,
         coverage: {
             reportsDirectory: path.join(appDirectory, '_output/coverage'),
-            exclude: ['src/**/__tests__/**', 'src/*.ts', 'src/**/index.ts', 'src/**/*.module.ts'],
+            exclude: ['src/**/__tests__/**', 'src/**/index.ts'],
             include: ['src/**/*.ts'],
             provider: 'v8',
             reporter: ['lcov', 'text-summary'],

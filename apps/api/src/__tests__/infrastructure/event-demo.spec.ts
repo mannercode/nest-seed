@@ -1,8 +1,7 @@
 import { type DurableMessages, type DurableMessage } from '@mannercode/common'
 import { Logger } from '@nestjs/common'
-import { MessageConsumer } from '../../services/infrastructure/event-demo/internal/message-consumer.js'
 import { HttpTestClient } from '@mannercode/testing'
-import { EventDemoService, eventDemoResources } from '#infrastructure'
+import { EventDemoService, eventDemoResources, MessageConsumer } from '#infrastructure'
 import {
     createAppTestContext,
     createAndLoginUser,
@@ -134,9 +133,10 @@ describe('EventDemoService', () => {
             beforeEach(() => {
                 next.mockResolvedValue({ done: true, value: undefined })
             })
-            it('오류를 기록한다', async () => {
+            it('소비 중단 상태와 원인을 남긴다', async () => {
                 await consumer.onModuleInit()
                 expect(errors).toHaveBeenCalledWith('Message consumer stopped unexpectedly')
+                expect(consumer.isRunning).toBe(false)
             })
         })
         describe('소비 도중 연결 오류가 발생하면', () => {
@@ -144,9 +144,10 @@ describe('EventDemoService', () => {
             beforeEach(() => {
                 next.mockRejectedValue(error)
             })
-            it('실패 원인을 기록한다', async () => {
+            it('소비 중단 상태와 실패 원인을 남긴다', async () => {
                 await consumer.onModuleInit()
                 expect(errors).toHaveBeenCalledWith('Message consumer failed', error)
+                expect(consumer.isRunning).toBe(false)
             })
         })
         describe('종료 중에 대기하던 읽기가 거절되면', () => {

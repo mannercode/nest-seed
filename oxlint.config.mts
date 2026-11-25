@@ -208,13 +208,15 @@ export default defineConfig({
                                     '../**/*.js',
                                     '!../index.js',
                                     '!../**/index.js',
+                                    // 서버의 기동과 실패 정리를 실제 진입점에서 검증한다.
+                                    '!../main.js',
+                                    '!../development.js',
                                     // 공개 API가 아닌 구현 단위 테스트에서만 허용하는 직접 import다.
                                     '!../cache-lock-key.js',
                                     '!../user-session-keys.js',
                                     '!../../services/infrastructure/assets/assets.repository.js',
                                     '!../../services/infrastructure/job-demo/job-demo.repository.js',
-                                    '!../../services/infrastructure/job-demo/worker.js',
-                                    '!../../services/infrastructure/event-demo/internal/message-consumer.js'
+                                    '!../../services/infrastructure/job-demo/worker.js'
                                 ],
                                 message:
                                     '공개 항목은 해당 모듈의 index.js에서 가져오세요. 비공개 구현 테스트는 oxlint.config.mts의 명시적 허용 목록에 추가하세요.'

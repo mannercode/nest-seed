@@ -165,6 +165,11 @@ class HttpTestClientController {
         // SSE 클라이언트가 비-SSE 응답(한 줄 JSON)을 받는 시나리오이다.
         res.status(404).json({ error: 'Not Found', message: 'Cannot GET' })
     }
+
+    @Get('unavailable-event-stream')
+    unavailableEventStream(@Res() res: Response) {
+        res.status(503).type('text/event-stream').end()
+    }
 }
 
 export async function receiveRawEvents({

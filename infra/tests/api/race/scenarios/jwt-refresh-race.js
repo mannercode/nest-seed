@@ -5,7 +5,7 @@
  */
 
 import { test } from 'node:test'
-import { readPositiveInt, request, secureRandomHex, SERVER_URL } from './race-common.js'
+import { readPositiveInt, request, secureRandomHex, SERVER_URL } from '../race-common.js'
 
 const USER_GROUPS = readPositiveInt('RACE_USER_GROUPS', 5)
 const CLIENTS_PER_USER = readPositiveInt('RACE_CLIENT_COUNT', 20)

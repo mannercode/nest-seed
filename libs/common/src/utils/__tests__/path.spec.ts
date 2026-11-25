@@ -1,7 +1,6 @@
 import fs from 'fs/promises'
 import os from 'os'
 import p from 'path'
-import type { MockInstance } from 'vitest'
 import { PathUtil } from '../index.js'
 
 describe('PathUtil', () => {
@@ -55,6 +54,15 @@ describe('PathUtil', () => {
         })
 
         describe('exists', () => {
+            describe('파일 접근이 거절되면', () => {
+                const denied = Object.assign(new Error('permission denied'), { code: 'EACCES' })
+                beforeEach(() => {
+                    vi.spyOn(fs, 'stat').mockRejectedValueOnce(denied)
+                })
+                it('존재 여부를 조회하면 권한 오류를 던진다', async () => {
+                    await expect(PathUtil.exists(tempDir)).rejects.toBe(denied)
+                })
+            })
             describe('파일이 존재하면', () => {
                 let filePath: string
                 beforeEach(async () => {
@@ -213,29 +221,36 @@ describe('PathUtil', () => {
                 })
             })
 
-            describe('rename이 EXDEV 오류로 실패하도록 설정하면', () => {
+            describe('두 경로가 서로 다른 파일시스템에 있으면', () => {
                 let src: string
                 let dest: string
-                let renameSpy: MockInstance<typeof fs.rename>
-                let copySpy: MockInstance<typeof PathUtil.copy>
-                let deleteSpy: MockInstance<typeof PathUtil.delete>
-                beforeEach(() => {
-                    src = '/tmp/src.txt'
-                    dest = '/tmp/dest.txt'
-
-                    const exdevError = new Error('cross-device link') as NodeJS.ErrnoException
-                    exdevError.code = 'EXDEV'
-
-                    renameSpy = vi.spyOn(fs, 'rename').mockRejectedValueOnce(exdevError)
-                    copySpy = vi.spyOn(PathUtil, 'copy').mockResolvedValueOnce()
-                    deleteSpy = vi.spyOn(PathUtil, 'delete').mockResolvedValueOnce()
+                beforeEach(async () => {
+                    src = p.join(tempDir, 'source')
+                    dest = p.join(tempDir, 'target')
+                    await fs.mkdir(src)
+                    await fs.writeFile(p.join(src, 'file'), 'new')
+                    await fs.symlink('file', p.join(src, 'link'))
+                    vi.spyOn(fs, 'rename').mockRejectedValueOnce(
+                        Object.assign(new Error('cross-device link'), { code: 'EXDEV' })
+                    )
                 })
-                it('이동 시 파일을 복사한 뒤 원본을 삭제한다', async () => {
+                it('이동하면 파일과 상대 링크를 보존하고 원본을 지운다', async () => {
                     await PathUtil.move(src, dest)
-
-                    expect(renameSpy).toHaveBeenCalledWith(src, dest)
-                    expect(copySpy).toHaveBeenCalledWith(src, dest)
-                    expect(deleteSpy).toHaveBeenCalledWith(src)
+                    expect(await fs.readdir(tempDir)).toEqual(['target'])
+                    expect(await fs.readFile(p.join(dest, 'link'), 'utf8')).toBe('new')
+                    expect(await fs.readlink(p.join(dest, 'link'))).toBe('file')
+                })
+                describe('대상 디렉터리에 동명 파일이 있으면', () => {
+                    beforeEach(async () => {
+                        await fs.mkdir(dest)
+                        await fs.writeFile(p.join(dest, 'file'), 'old')
+                    })
+                    it('이동하면 실패하고 원본과 대상을 모두 보존한다', async () => {
+                        await expect(PathUtil.move(src, dest)).rejects.toThrow()
+                        expect((await fs.readdir(tempDir)).sort()).toEqual(['source', 'target'])
+                        expect(await fs.readFile(p.join(src, 'file'), 'utf8')).toBe('new')
+                        expect(await fs.readFile(p.join(dest, 'file'), 'utf8')).toBe('old')
+                    })
                 })
             })
 

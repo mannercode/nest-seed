@@ -5,7 +5,7 @@
     "type": "module",
     "scripts": {
         "apps:up": "flock . docker compose -f compose.apps.yml up -d --build --wait",
-        "apps:down": "flock . docker compose -f compose.apps.yml --profile '*' down",
+        "apps:down": "COMPOSE_FILE=compose.apps.yml flock . bash compose-down.sh",
         "reset": "bash reset.sh",
         "test": "node --test --test-concurrency=1 --test-reporter=spec",
         "race": "flock . bash tests/api/race/runner.sh",

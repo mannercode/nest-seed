@@ -42,7 +42,9 @@ export class S3ObjectService implements OnModuleDestroy {
             new DeleteObjectCommand({ Bucket: this.bucket, Key: key })
         )
 
-        return { key, status: defaultTo($metadata.httpStatusCode, 200) }
+        const status = $metadata.httpStatusCode
+        if (status === undefined) throw new Error('S3 delete response has no HTTP status')
+        return { key, status }
     }
 
     async isUploadComplete(options: S3UploadCompleteOptions): Promise<boolean> {

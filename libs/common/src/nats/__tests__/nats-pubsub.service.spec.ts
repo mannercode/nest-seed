@@ -93,7 +93,7 @@ describe('NatsPubSubService', () => {
         let flush: NatsConnection['flush']
         let ready: ReturnType<typeof Promise.withResolvers<void>>
         beforeEach(async () => {
-            const connection = (fix.pubSubB as any).connection as NatsConnection
+            const connection = fix.connectionB
             flush = connection.flush.bind(connection)
             ready = Promise.withResolvers<void>()
             vi.spyOn(connection, 'flush').mockImplementationOnce(async () => {
@@ -130,7 +130,7 @@ describe('NatsPubSubService', () => {
     describe('첫 구독의 flush가 실패하도록 설정하면', () => {
         let failure: Error
         beforeEach(() => {
-            const connection = (fix.pubSubB as any).connection as NatsConnection
+            const connection = fix.connectionB
             failure = new Error('SUB flush failed')
             vi.spyOn(connection, 'flush').mockRejectedValueOnce(failure)
         })
@@ -170,9 +170,7 @@ describe('NatsPubSubService', () => {
             await fix.pubSubB.unsubscribe(subject, handler)
 
             await fix.pubSubA.publish(subject, 'after-unsub')
-            // "아무 메시지도 오지 않음"을 보장할 신호가 없어 잠깐 대기 후 검사한다.
-            // 부하 시 50ms는 부족하므로 200ms 여유를 둔다.
-            await new Promise((r) => setTimeout(r, 200))
+            await fix.drainReceivers()
 
             expect(received).toEqual(['before-unsub'])
         })
@@ -187,11 +185,12 @@ describe('NatsPubSubService', () => {
             // 실제 배치에서는 연결을 전역 NatsModule이 소유하므로, 연결 종료 없이 서비스 destroy만으로 구독이 끊겨야 한다.
             await fix.pubSubB.onModuleDestroy()
         })
+        it('다시 구독하면 종료 오류를 던진다', async () => {
+            await expect(fix.pubSubB.subscribe(subject, vi.fn())).rejects.toThrow('stopping')
+        })
         it('공유 연결로 메시지를 발행해도 종료한 서비스의 핸들러는 호출되지 않는다', async () => {
             await fix.pubSubA.publish(subject, 'after-destroy')
-            // "아무 메시지도 오지 않음"을 보장할 신호가 없어 잠깐 대기 후 검사한다.
-            // 부하 시 50ms는 부족하므로 200ms 여유를 둔다.
-            await new Promise((r) => setTimeout(r, 200))
+            await fix.drainReceivers()
 
             expect(received).toEqual([])
         })
@@ -311,8 +310,7 @@ describe('NatsPubSubService', () => {
         it('메시지를 발행하면 두 인스턴스 중 하나만 수신한다', async () => {
             await fix.pubSubA.publish(subject, 'queued')
             await waitFor(() => receivedA.length + receivedB.length > 0)
-            // 중복 전달이 있었다면 도달했을 시간만큼 잠깐 기다린다.
-            await new Promise((r) => setTimeout(r, 50))
+            await fix.drainReceivers()
 
             expect(receivedA.length + receivedB.length).toBe(1)
         })
@@ -340,8 +338,7 @@ describe('NatsPubSubService', () => {
                     broadcastReceived.length === 1 &&
                     queueReceivedA.length + queueReceivedB.length === 1
             )
-            // 중복 전달이 있었다면 도달했을 시간만큼 잠깐 기다린다.
-            await new Promise((r) => setTimeout(r, 50))
+            await fix.drainReceivers()
 
             expect(broadcastReceived).toEqual(['mixed'])
             expect(queueReceivedA.length + queueReceivedB.length).toBe(1)
@@ -374,52 +371,47 @@ describe('NatsPubSubService', () => {
         })
     })
 
-    describe('소비 루프의 이터레이터가 예외를 던지면', () => {
-        let errorSpy: MockInstance
-        let errorSubject: string
-
-        // 이터레이터를 강제로 실패시킨다. 같은 실행 영역의 Logger를 감시한다.
+    describe('소비 중 이터레이터가 실패했으면', () => {
+        let previous: ReturnType<typeof vi.fn<(message: string) => void>>
+        let errors: MockInstance
         beforeEach(async () => {
-            errorSpy = vi.spyOn(NestLogger.prototype, 'error').mockImplementation(() => undefined)
-
-            errorSubject = withTestId('erroring')
-            const fakeSub: any = {
+            previous = vi.fn()
+            const read = Promise.withResolvers<IteratorResult<never>>()
+            const logged = Promise.withResolvers<void>()
+            errors = vi
+                .spyOn(NestLogger.prototype, 'error')
+                .mockImplementation(() => logged.resolve())
+            vi.spyOn(fix.connectionB, 'subscribe').mockReturnValueOnce({
                 unsubscribe: vi.fn(),
-                [Symbol.asyncIterator]: () => ({
-                    next: () => Promise.reject(new Error('iterator boom')),
-                    return: () => Promise.resolve({ done: true, value: undefined })
-                })
-            }
-
-            vi.spyOn((fix.pubSubB as any).connection, 'subscribe').mockReturnValueOnce(fakeSub)
-
-            await fix.pubSubB.subscribe(errorSubject, () => {})
-
-            // 이터레이터가 한 번의 이벤트 루프 안에서 거부되고 catch 블록이 실행될 시간을 준다.
-            await waitFor(() => errorSpy.mock.calls.length > 0)
+                [Symbol.asyncIterator]: () => ({ next: () => read.promise })
+            } as unknown as ReturnType<NatsConnection['subscribe']>)
+            await fix.pubSubB.subscribe(subject, previous)
+            read.reject(new Error('iterator boom'))
+            await logged.promise
         })
-
-        it('수신 오류를 로그에 한 번 기록한다', () => {
-            const errorCalls = errorSpy.mock.calls.filter((call) =>
-                String(call[0]).includes(errorSubject)
-            )
-            expect(errorCalls).toHaveLength(1)
+        it('수신 오류를 한 번 기록한다', () => {
+            expect(errors).toHaveBeenCalledTimes(1)
         })
+        it('다시 구독하면 새 핸들러가 다음 발행을 수신한다', async () => {
+            const received = Promise.withResolvers<string>()
+            await fix.pubSubB.subscribe(subject, received.resolve)
+            await fix.pubSubA.publish(subject, 'after-error')
+            expect(await received.promise).toBe('after-error')
+            expect(previous).not.toHaveBeenCalled()
+        })
+    })
 
-        it('이후에 발행한 메시지는 더 이상 핸들러에 전달되지 않는다', async () => {
-            const received: string[] = []
-
-            // 셋업 이후 추가 핸들러를 등록해도 fakeSub에서는 메시지가 오지 않는다.
-            const state = [...(fix.pubSubB as any).subscriptions.values()].find(
-                (s: any) => s.subject === errorSubject
+    describe('서버의 구독 확인 전에 수신이 끝나면', () => {
+        beforeEach(() => {
+            vi.spyOn(fix.connectionB, 'subscribe').mockReturnValueOnce({
+                unsubscribe: vi.fn(),
+                [Symbol.asyncIterator]: async function* () {}
+            } as unknown as ReturnType<NatsConnection['subscribe']>)
+        })
+        it('구독 요청에 종료 오류를 전달한다', async () => {
+            await expect(fix.pubSubB.subscribe(subject, vi.fn())).rejects.toThrow(
+                'ended before it was ready'
             )
-            state?.handlers.add((msg: string) => received.push(msg))
-
-            await fix.pubSubA.publish(errorSubject, 'after-throw')
-            // 도달할 가능성을 충분히 줘도 비어 있어야 한다.
-            await new Promise((r) => setTimeout(r, 100))
-
-            expect(received).toEqual([])
         })
     })
 

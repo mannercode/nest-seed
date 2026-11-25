@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { ApiError, postJson } from '@/lib/api-client'
+import { ApiError, postNoContent } from '@/lib/api-client'
 import { passwordInput } from '@/lib/password-input'
 
 export default function LoginPage() {
@@ -18,7 +18,7 @@ export default function LoginPage() {
         setError(null)
         setBusy(true)
         try {
-            await postJson('/users/login', { email, password })
+            await postNoContent('/users/login', { email, password })
             router.push('/')
         } catch (err) {
             setError(err instanceof ApiError ? err.message : '로그인 실패')

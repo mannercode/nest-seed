@@ -10,6 +10,8 @@ import {
 export type NatsPubSubServiceFixture = {
     pubSubA: NatsPubSubService
     pubSubB: NatsPubSubService
+    connectionB: NatsConnection
+    drainReceivers: () => Promise<void>
     teardown: () => Promise<void>
 }
 
@@ -64,7 +66,11 @@ export async function createNatsPubSubServiceFixture(): Promise<NatsPubSubServic
         // 이후 테스트의 timeout 범위에는 컨테이너 콜드 스타트나 TCP 핸드셰이크 비용이 포함되지 않고, 순수 메시지 왕복 시간만 들어간다.
         await Promise.all([ncA.flush(), ncB.flush()])
 
-        return { pubSubA, pubSubB, teardown }
+        const drainReceivers = async () => {
+            await Promise.all([ncA.drain(), ncB.drain()])
+            await Promise.all([pubSubA.onModuleDestroy(), pubSubB.onModuleDestroy()])
+        }
+        return { pubSubA, pubSubB, connectionB: ncB, drainReceivers, teardown }
     } catch (error) {
         // 정리 실패가 원래 초기화 오류를 덮지 않게 한다.
         await teardown().catch(() => undefined)

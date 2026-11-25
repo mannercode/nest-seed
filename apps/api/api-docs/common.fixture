@@ -5,7 +5,7 @@ random_email() {
 }
 
 RESPONSE_BODY() {
-	jq -r --arg path "$1" 'getpath($path | split("."))' <<<"${BODY}"
+	jq -er --arg path "$1" 'getpath($path | split("."))' <<<"${BODY}"
 }
 
 USER_NAME="사용자 이름"
@@ -15,7 +15,7 @@ USER_PASSWORD="Example password 1!"
 create_user() {
 	USER_EMAIL=$(random_email)
 
-	SETUP POST /users \
+	SETUP 201 POST /users \
 		-H 'Content-Type: application/json' \
 		-d '{
 				"name": "'"${USER_NAME}"'",
@@ -26,13 +26,11 @@ create_user() {
 }
 
 login_user() {
-	SETUP POST /users/login \
+	SETUP 200 POST /users/login \
 		-H 'Content-Type: application/json' \
 		-d '{ "email": "'"${USER_EMAIL}"'", "password": "'"${USER_PASSWORD}"'" }'
 
-	USER_ACCESS_TOKEN=$(RESPONSE_BODY accessToken)
-	USER_REFRESH_TOKEN=$(RESPONSE_BODY refreshToken)
-	CURRENT_AUTH_TOKEN="${USER_ACCESS_TOKEN}"
+	CURRENT_AUTH_TOKEN=$(RESPONSE_BODY accessToken)
 }
 
 create_and_login_user() {
@@ -47,13 +45,15 @@ as_guest() {
 upload_presigned_post() {
 	local filePath=$1
 	local uploadInfo=$2
-	local URL=$(printf '%s' "${uploadInfo}" | jq -r '.url')
-	local METHOD=$(printf '%s' "${uploadInfo}" | jq -r '.method')
+	local URL METHOD fields
+	URL=$(jq -er '.url' <<<"${uploadInfo}")
+	METHOD=$(jq -er '.method' <<<"${uploadInfo}")
+	fields=$(jq -er '.fields | to_entries[] | [.key, .value] | @tsv' <<<"${uploadInfo}")
 
 	local -a formArgs=()
 	while IFS=$'\t' read -r key value; do
 		formArgs+=(--form-string "${key}=${value}")
-	done < <(printf '%s' "${uploadInfo}" | jq -r '.fields | to_entries[] | [.key, .value] | @tsv')
+	done <<<"${fields}"
 	formArgs+=(-F "file=@${filePath}")
 
 	CURL "${METHOD}" "${URL}" "${formArgs[@]}"

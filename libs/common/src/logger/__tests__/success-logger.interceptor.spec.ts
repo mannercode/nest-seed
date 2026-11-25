@@ -1,7 +1,30 @@
+import { Logger } from '@nestjs/common'
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js'
+import { lastValueFrom, of } from 'rxjs'
+import { HttpSuccessLoggerInterceptor } from '../index.js'
 import {
     type SuccessLoggerInterceptorFixture,
     createSuccessLoggerInterceptorFixture
 } from './success-logger.interceptor.fixture.js'
+
+describe('HttpSuccessLoggerInterceptor가 RPC 경로에 등록됐으면', () => {
+    let context: ExecutionContextHost
+    const spyError = () => vi.spyOn(Logger, 'error')
+    let logger: ReturnType<typeof spyError>
+    beforeEach(() => {
+        context = new ExecutionContextHost([])
+        context.setType('rpc')
+        logger = spyError().mockImplementation(() => undefined)
+    })
+    it('호출 결과를 전달하고 완료 시 잘못된 등록을 기록한다', async () => {
+        const interceptor = new HttpSuccessLoggerInterceptor(undefined)
+        const stream = await interceptor.intercept(context, { handle: () => of('done') })
+        expect(await lastValueFrom(stream)).toBe('done')
+        expect(logger).toHaveBeenCalledWith('HttpSuccessLoggerInterceptor: unknown context type', {
+            contextType: 'rpc'
+        })
+    })
+})
 
 describe('HttpSuccessLoggerInterceptor', () => {
     let fix: SuccessLoggerInterceptorFixture

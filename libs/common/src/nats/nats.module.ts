@@ -1,21 +1,14 @@
 import { connect } from '@nats-io/transport-node'
-import { DynamicModule, Injectable, Module, OnModuleDestroy, Provider } from '@nestjs/common'
+import { DynamicModule, Injectable, Module, Provider } from '@nestjs/common'
+import { ConnectionRegistry } from '../connection-registry.js'
 import { getNatsConnectionToken } from './nats.tokens.js'
 import { NatsConnection, NatsModuleAsyncOptions, NatsModuleOptions } from './nats.types.js'
 
 // 모듈이 만든 연결은 모듈이 닫는다. drain은 전달 중인 메시지를 비운 뒤 닫는다.
 @Injectable()
-export class NatsConnectionRegistry implements OnModuleDestroy {
-    private connections: NatsConnection[] = []
-
-    add(connection: NatsConnection) {
-        this.connections.push(connection)
-    }
-
-    async onModuleDestroy() {
-        const list = this.connections
-        this.connections = []
-        await Promise.all(list.map((c) => c.drain().catch(() => undefined)))
+export class NatsConnectionRegistry extends ConnectionRegistry<NatsConnection> {
+    protected async close(connection: NatsConnection) {
+        if (!connection.isClosed()) await connection.drain()
     }
 }
 

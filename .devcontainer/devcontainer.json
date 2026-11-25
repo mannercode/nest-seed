@@ -14,13 +14,13 @@
         "--env-file",
         ".env.api",
         // 같은 Docker 호스트에서 한 사용자가 여러 복사본을 동시에 열 때는 컨테이너와 네트워크 이름이 겹치지 않도록 폴더명을 다르게 둔다.
-        "--name=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}",
-        "--network=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}"
+        "--name=${localEnv:USER}-${localWorkspaceFolderBasename}",
+        "--network=${localEnv:USER}-${localWorkspaceFolderBasename}"
     ],
     "remoteUser": "node",
     "containerEnv": {
         "WORKSPACE_ROOT": "${containerWorkspaceFolder}",
-        "COMPOSE_PROJECT_NAME": "${localEnv:USER:unknown}-${localWorkspaceFolderBasename}",
+        "COMPOSE_PROJECT_NAME": "${localEnv:USER}-${localWorkspaceFolderBasename}",
         // 앱과 공용 인프라가 같은 Compose 프로젝트를 사용하므로 다른 파일에 정의된 컨테이너에 대한 경고를 끈다.
         "COMPOSE_IGNORE_ORPHANS": "true"
     },
@@ -36,7 +36,14 @@
         "source=${localEnv:HOME}/.config/gh,target=/home/node/.config/gh,type=bind"
     ],
     "initializeCommand": {
-        "project-network": "n=${localEnv:USER:unknown}-${localWorkspaceFolderBasename}; docker network inspect \"$n\" >/dev/null 2>&1 || docker network create \"$n\" >/dev/null",
+        "project-network": [
+            "sh",
+            "-ec",
+            "user=$1; [ -n \"$user\" ] || { echo \"Dev Container requires the host USER\" >&2; exit 1; }; n=$user-$2; docker network inspect \"$n\" >/dev/null 2>&1 || docker network create \"$n\" >/dev/null",
+            "project-network",
+            "${localEnv:USER}",
+            "${localWorkspaceFolderBasename}"
+        ],
         "codex": "mkdir -p \"${localEnv:HOME}/.codex/${localWorkspaceFolderBasename}\" \"${localEnv:HOME}/.codex/skills\"",
         "github": "mkdir -p ${localEnv:HOME}/.config/gh"
     },

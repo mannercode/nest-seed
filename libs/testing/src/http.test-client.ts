@@ -145,12 +145,14 @@ export class HttpTestClient {
         this.currentRequest
             .set('Accept', 'text/event-stream')
             .buffer(true)
-            .parse((response, _unused) => {
+            .ok(() => true)
+            .parse((response, done) => {
                 let buffer = ''
                 let previousChunkEndedWithCR = false
                 const isEventStream =
+                    response.statusCode === 200 &&
                     response.headers['content-type']?.split(';', 1)[0]?.trim().toLowerCase() ===
-                    'text/event-stream'
+                        'text/event-stream'
 
                 response.setEncoding('utf8')
                 response.on('data', (chunk: string) => {
@@ -177,13 +179,15 @@ export class HttpTestClient {
                 response.on('end', () => {
                     if (isEventStream) {
                         if (0 < buffer.length) dispatch(buffer)
-                    } else if (0 < buffer.trim().length) {
-                        // SSE가 아닌 오류 응답(404 JSON 등)은 원문을 전달한다.
-                        errorHandler(buffer.trim())
+                    } else {
+                        errorHandler(
+                            buffer.trim() ||
+                                new Error(`Unexpected SSE response (HTTP ${response.statusCode})`)
+                        )
                     }
+                    done(null, null)
                 })
-                // 첫 이벤트가 없어도 응답 스트림의 수신 준비를 알린다.
-                readyHandler?.()
+                if (isEventStream) readyHandler?.()
             })
             .end((requestError) => {
                 if (requestError) errorHandler(requestError)

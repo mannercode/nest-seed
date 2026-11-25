@@ -8,7 +8,7 @@ import {
     SERVER_URL,
     openEventStream,
     waitUntil
-} from './race-common.js'
+} from '../race-common.js'
 
 const SSE_CLIENT_COUNT = readPositiveInt('SSE_CLIENT_COUNT', 100)
 const MESSAGES_PER_INNER = readPositiveInt('MESSAGES_PER_INNER', 10)

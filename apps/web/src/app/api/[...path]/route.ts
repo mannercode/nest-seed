@@ -218,9 +218,13 @@ async function refreshAuthTokens(authPath: string, refreshToken: string): Promis
 
     const flight = performRefresh(authPath, refreshToken)
     refreshFlights.set(key, flight)
-    void flight.finally(() => {
-        // 최초 보호 요청들의 401 도착 순서가 조금 어긋나도 같은 회전 결과를 공유한다.
-        setTimeout(() => refreshFlights.delete(key), REFRESH_RESULT_GRACE_MS)
+    void flight.then((result) => {
+        if (result.tokens) {
+            // 먼저 회전한 토큰은 뒤늦게 도착한 보호 요청도 사용한다.
+            setTimeout(() => refreshFlights.delete(key), REFRESH_RESULT_GRACE_MS)
+        } else {
+            refreshFlights.delete(key)
+        }
     })
     return flight
 }

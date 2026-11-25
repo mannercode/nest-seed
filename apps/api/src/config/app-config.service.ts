@@ -1,4 +1,4 @@
-import { BaseConfigService } from '@mannercode/common'
+import { BaseConfigService, ConsoleLogLevelSchema } from '@mannercode/common'
 import { Inject, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { z } from 'zod'
@@ -37,7 +37,7 @@ export class AppConfigService extends BaseConfigService {
         HTTP_PAGINATION_MAX_SIZE: numberFromEnvironment,
 
         HTTP_REQUEST_PAYLOAD_LIMIT: requiredString,
-        LOG_CONSOLE_LEVEL: requiredString,
+        LOG_CONSOLE_LEVEL: ConsoleLogLevelSchema,
         MONGO_URI: requiredString,
         MONGO_DATABASE: requiredString,
         NODE_ENV: z.enum(['development', 'production', 'test']),

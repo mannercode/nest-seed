@@ -8,7 +8,8 @@ mkdir -p _output
 
 PLAYWRIGHT_VERSION=$(node -p "require('@playwright/test/package.json').version")
 export PLAYWRIGHT_VERSION
-compose=(docker compose -f "${WORKSPACE_ROOT}/infra/compose.apps.yml" -f compose.e2e.yml)
+export COMPOSE_FILE="${WORKSPACE_ROOT}/infra/compose.apps.yml:${PWD}/compose.e2e.yml"
+compose=(docker compose)
 
 cleanup() {
     local exit_code=$?
@@ -20,7 +21,7 @@ cleanup() {
         "${compose[@]}" logs --no-color --timestamps api web e2e >&2
     fi
 
-    "${compose[@]}" down -t 0
+    bash "${WORKSPACE_ROOT}/infra/compose-down.sh" -t 0
     local cleanup_exit_code=$?
     if [[ "${exit_code}" -eq 0 ]]; then
         exit_code=${cleanup_exit_code}
@@ -28,7 +29,7 @@ cleanup() {
     exit "${exit_code}"
 }
 
-"${compose[@]}" --profile '*' down
+bash "${WORKSPACE_ROOT}/infra/compose-down.sh"
 trap cleanup EXIT
 "${compose[@]}" up --detach --build --wait web
 

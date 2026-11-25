@@ -440,17 +440,37 @@ describe('HttpTestClient', () => {
             })
         })
 
-        describe('SSE 형식이 아닌 본문을 응답하는 경로이면', () => {
+        describe.each([
+            { path: '/not-found-text', expected: 'Not Found' },
+            { path: '/always-200', expected: '{"ok":true}' }
+        ])('$path가 JSON을 응답하면', ({ path, expected }) => {
             let request: typeof fix.httpClient
             beforeEach(() => {
-                request = fix.httpClient.get('/not-found-text')
+                request = fix.httpClient.get(path)
             })
             it('구독하면 errorHandler로 응답 본문을 전달한다', async () => {
+                const ready = vi.fn()
                 const reason = await new Promise<string>((resolve) => {
-                    request.sse(() => {}, resolve)
+                    request.sse(() => {}, resolve, ready)
                 })
 
-                expect(reason).toContain('Not Found')
+                expect(ready).not.toHaveBeenCalled()
+                expect(reason).toContain(expected)
+            })
+        })
+        describe('서버가 이벤트 스트림 헤더와 빈 503 응답을 보내면', () => {
+            let request: typeof fix.httpClient
+            beforeEach(() => {
+                request = fix.httpClient.get('/unavailable-event-stream')
+            })
+            it('구독하면 준비 콜백을 건너뛰고 HTTP 상태를 담은 오류를 전달한다', async () => {
+                const ready = vi.fn()
+                const reason = await new Promise<unknown>((resolve) => {
+                    request.sse(() => {}, resolve, ready)
+                })
+
+                expect(ready).not.toHaveBeenCalled()
+                expect(reason).toEqual(new Error('Unexpected SSE response (HTTP 503)'))
             })
         })
     })

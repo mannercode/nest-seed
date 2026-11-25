@@ -11,7 +11,9 @@ const WORKER_DB_PATTERN = /^mongo-w\d+$/
 const WORKER_BUCKET_PATTERN = /^s3bucket-w\d+$/
 
 function getVitestWorkerId() {
-    return process.env.VITEST_POOL_ID ?? '1'
+    const id = process.env.VITEST_POOL_ID
+    if (!id || !/^[1-9]\d*$/.test(id)) throw new Error('VITEST_POOL_ID must be a positive integer')
+    return id
 }
 
 function generateTestId() {
@@ -39,7 +41,7 @@ async function ensureBucket(s3Client, bucket) {
     try {
         await s3Client.send(new CreateBucketCommand({ Bucket: bucket }))
     } catch (err) {
-        if (err.name !== 'BucketAlreadyOwnedByYou' && err.name !== 'BucketAlreadyExists') {
+        if (err.name !== 'BucketAlreadyOwnedByYou') {
             throw err
         }
     }

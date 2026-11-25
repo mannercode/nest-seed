@@ -44,12 +44,21 @@ services:
                 redis3: { condition: service_healthy }
             }
         command:
-            - redis-cli
-            - --cluster
-            - create
+            - sh
+            - -euc
+            - |
+                redis-cli --cluster create "$$@" --cluster-replicas 0 --cluster-yes
+                deadline=$$(( $$(date +%s) + 60 ))
+                for node do
+                    until redis-cli -e -h "$${node%:*}" -p "$${node##*:}" cluster info | grep -qx 'cluster_state:ok[[:space:]]*'; do
+                        if [ "$$(date +%s)" -ge "$$deadline" ]; then
+                            echo "Redis cluster did not become ready on $$node" >&2
+                            exit 1
+                        fi
+                        sleep 1
+                    done
+                done
+            - redis-setup
             - ${REDIS_HOST1:?}:${REDIS_PORT1:?}
             - ${REDIS_HOST2:?}:${REDIS_PORT2:?}
             - ${REDIS_HOST3:?}:${REDIS_PORT3:?}
-            - --cluster-replicas
-            - '0'
-            - --cluster-yes

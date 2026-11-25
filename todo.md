@@ -10,7 +10,3 @@
 
 - [ ] **Dev Container와 네트워크 이름 생성** — 호스트가 컨테이너 시작 전에 네트워크를 만들고, Docker 실행 인자와 컨테이너 안의 Compose도 같은 이름을 사용한다. 현재의 사용자별·폴더별 이름과 VS Code 시작 절차를 유지하면서 호스트에서 계산한 값을 각 단계에 전달할 방법을 정한다. [Dev Container 설정](.devcontainer/devcontainer.json)
 - [ ] **MongoDB 노드 구성 공유** — 노드별 Compose 서비스명, Replica Set 멤버 ID와 공지 주소를 어디에 정의할지 정한다. 그 정의로 앱의 접속 URI와 초기화·진단 대상을 제공하려면 Dev Container가 최종 환경 값을 읽는 시점도 고려해야 한다. [MongoDB 초기화](infra/compose.mongo.yml) · [Race 진단](infra/tests/api/race/runner.sh) · [환경 변수 주입](README.md#환경-변수-파일-변경-후-dev-container-재생성)
-
-## 검증 중 확인한 기존 동작
-
-- [ ] **Redis 클러스터의 쓰기 준비 시점** — `redis-setup`이 전체 슬롯 할당을 확인하고 종료한 직후에도 첫 쓰기가 `CLUSTERDOWN`을 반환할 수 있다. 변경 전 설정에서도 재현했고, 각 노드가 `cluster_state:ok`를 보고한 뒤 노드 간 읽기·쓰기가 성공했다. 초기화 명령이 끝나자마자 쓰기를 보장해야 한다면 종료 전에 각 노드의 클러스터 상태를 확인한다. [Redis 초기화](infra/compose.redis.yml) · [전체 초기화](infra/reset.sh)

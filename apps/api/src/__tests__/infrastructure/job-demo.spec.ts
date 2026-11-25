@@ -6,8 +6,25 @@ import {
     createAndLoginUser,
     createUser,
     loginUser,
+    trackRestateCompletions,
     type AppTestContext
 } from '../helpers/index.js'
+
+describe('임시 Restate 배포에서 작업의 결과 조회가 실패했으면', () => {
+    const failure = new Error('Result endpoint unavailable')
+    let waitForWorkflows: () => Promise<void>
+    beforeEach(async () => {
+        const client = {
+            submit: async (_input: string, id: string) => id,
+            waitForCompletion: vi.fn().mockRejectedValue(failure)
+        }
+        waitForWorkflows = trackRestateCompletions(client)
+        await client.submit('value', 'job')
+    })
+    it('배포를 정리하기 전 완료를 확인하면 조회 오류를 전달한다', async () => {
+        await expect(waitForWorkflows()).rejects.toMatchObject({ errors: [failure] })
+    })
+})
 
 describe('JobDemoService', () => {
     let fix: AppTestContext

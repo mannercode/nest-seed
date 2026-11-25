@@ -10,9 +10,6 @@ TEST "대문자 변환 작업을 접수하면 작업 ID와 202를 반환한다" 
 
 JOB_ID=$(RESPONSE_BODY jobId)
 
-# 작업 완료를 기다린다.
-sleep 2
-
 TEST "접수한 작업을 ID로 조회한다" \
     200 GET "/job-demo/jobs/${JOB_ID}"
 

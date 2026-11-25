@@ -10,6 +10,7 @@ import {
 } from '@mannercode/common'
 import { Inject, Injectable, ServiceUnavailableException } from '@nestjs/common'
 import { NATS_CONNECTION_NAME, REDIS_CONNECTION_NAME } from '#config'
+import { MessageConsumer } from '#infrastructure'
 import { RestateHealthIndicator } from './restate.health-indicator.js'
 
 type HealthState = { status: 'down' | 'up' } & Record<string, unknown>
@@ -23,6 +24,7 @@ export class HealthService {
         private readonly restateHealth: RestateHealthIndicator,
         private readonly mongoHealth: MongoHealthIndicator,
         private readonly mongo: MongoConnection,
+        private readonly eventConsumer: MessageConsumer,
         @Inject(getRedisConnectionToken(REDIS_CONNECTION_NAME))
         private readonly redisConnection: RedisConnection,
         @Inject(getNatsConnectionToken(NATS_CONNECTION_NAME))
@@ -34,7 +36,9 @@ export class HealthService {
         const results: HealthCheckResult[] = await Promise.all([
             this.mongoHealth.isHealthy('mongodb', this.mongo),
             this.redisHealth.isHealthy('redis', this.redisConnection),
-            this.natsHealth.isHealthy('nats', this.natsConnection),
+            this.eventConsumer.isRunning
+                ? this.natsHealth.isHealthy('nats', this.natsConnection)
+                : { nats: { status: 'down', reason: 'JetStream message consumer is stopped' } },
             this.restateHealth.isHealthy('restate')
         ])
         const info: HealthCheckResult = {}

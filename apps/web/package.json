@@ -4,7 +4,6 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "predev": "free-port ${WEB_PORT:?}",
         "dev": "next dev -p ${WEB_PORT:?}",
         "build": "next build",
         "start": "next start -p ${WEB_PORT:?}",

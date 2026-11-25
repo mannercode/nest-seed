@@ -209,9 +209,10 @@ TEST() {
 }
 
 SETUP() {
-	local method=$1
-	local endpoint=$2
-	shift 2
+	local expected_status=$1
+	local method=$2
+	local endpoint=$3
+	shift 3
 
 	LOG_LINE "# 준비 요청"
 
@@ -221,8 +222,8 @@ SETUP() {
 	LOG_LINE "실제=$(format_response "${STATUS}" "${BODY}")"
 	LOG_LINE ""
 
-	if [[ "${STATUS}" -ge 400 ]]; then
-		LOG_LINE "# 준비 요청 실패"
+	if [[ "${STATUS}" -ne "${expected_status}" ]]; then
+		LOG_LINE "# 준비 요청 실패 (기대 ${expected_status})"
 		printf '%b SETUP %s %s (실제 %s)\n' "${BOLD}${RED}[FAIL]${RESET}" "$(format_method "${method}")" "$(format_endpoint "${endpoint}")" "$(format_response "${STATUS}" "${BODY}")"
 		exit 2
 	fi
@@ -232,10 +233,22 @@ echo ""
 
 specs=()
 if [[ "$#" -eq 0 ]]; then
-	while IFS= read -r -d '' f; do specs+=("$f"); done < <(find . -type f -name '*.spec' -print0 | sort -z)
+	shopt -s globstar nullglob dotglob
+	specs=(**/*.spec)
 else
 	specs=("$@")
 fi
+
+if (( ${#specs[@]} == 0 )); then
+    echo '실행할 .spec 파일이 없습니다.' >&2
+    exit 1
+fi
+for spec in "${specs[@]}"; do
+    if [[ "$spec" != *.spec || ! -f "$spec" ]]; then
+        echo "실행할 수 없는 예제 파일: $spec" >&2
+        exit 1
+    fi
+done
 
 PASSED_TESTS=0
 FAILED_TESTS=0
@@ -244,6 +257,7 @@ init_summary
 LOG_DIR=$(cd -- "${DOC_DIR}/${LOG_DIR_LINK}" && pwd)
 
 for spepath in "${specs[@]}"; do
+	count_before=$((PASSED_TESTS + FAILED_TESTS))
 	LOG_FILE_LINK="${LOG_DIR_LINK}/${spepath#./}.log"
 	LOG_FILE="${DOC_DIR}/${LOG_FILE_LINK}"
 	CURRENT_GROUP="$(basename "${spepath}" .spec)"
@@ -255,6 +269,10 @@ for spepath in "${specs[@]}"; do
 	# shellcheck disable=SC1090 # spec 파일을 목록에서 받아 동적으로 source한다
 	. "./$(basename "${spepath}")"
 	popd >/dev/null
+	if (( PASSED_TESTS + FAILED_TESTS == count_before )); then
+		echo "검증을 한 건도 실행하지 않은 예제 파일: ${spepath}" >&2
+		exit 1
+	fi
 done
 
 echo ""

@@ -1,17 +1,22 @@
 import { type DurableMessage, type DurableMessages } from '@mannercode/common'
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
-import { DemoMessageSchema } from '../dtos.js'
-import { EventDemoService } from '../event-demo.service.js'
+import { DemoMessageSchema } from './dtos.js'
+import { EventDemoService } from './event-demo.service.js'
 
 @Injectable()
 export class MessageConsumer implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(MessageConsumer.name)
     private messages: DurableMessages | undefined
     private task: Promise<void> | undefined
+    private running = false
     private stopping = false
+    get isRunning() {
+        return this.running
+    }
     constructor(private readonly events: EventDemoService) {}
     async onModuleInit() {
         this.messages = await this.events.consume()
+        this.running = true
         this.task = this.consume(this.messages)
     }
     async onModuleDestroy() {
@@ -25,6 +30,8 @@ export class MessageConsumer implements OnModuleInit, OnModuleDestroy {
             if (!this.stopping) this.logger.error('Message consumer stopped unexpectedly')
         } catch (error) {
             if (!this.stopping) this.logger.error('Message consumer failed', error)
+        } finally {
+            this.running = false
         }
     }
     private async process(message: DurableMessage) {

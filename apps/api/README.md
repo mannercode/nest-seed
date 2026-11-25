@@ -57,6 +57,8 @@ Core·Application도 NestJS DI와 `HttpException`을 사용한다. 예상한 오
 
 개발 서버는 TSC, 배포 빌드는 Rspack을 쓴다. common 등 런타임 패키지는 번들 밖에 있으므로 앱과 함께 배포한다. [컨테이너 빌드](Dockerfile) · [실행 설정](../../infra/compose.apps.yml)
 
+`/health`는 NATS 연결과 JetStream 소비자의 실행 상태를 함께 확인한다. 소비자가 중단되면 503을 반환한다.
+
 API 로그는 stdout/stderr에 ECS JSON으로 출력한다. 요청·응답 본문과 쿼리는 기록하지 않는다.
 
 ## 테스트
@@ -69,7 +71,7 @@ API 자체의 동시 요청 처리는 앱의 통합 테스트에서 검증한다
 
 API 서버와 통합 테스트는 `configureHttpApp`으로 HTTP 설정을 적용한다. 테스트에 경로 접두어 같은 설정이 더 필요하면 `createAppTestContext({ configureApp })`으로 전달한다. 이 콜백은 공통 설정을 적용한 뒤 Nest가 경로를 등록하기 전에 실행된다. [HTTP 설정](src/bootstrap.ts)
 
-모든 API 통합 테스트에서 실제 Restate를 사용한다. 테스트 앱은 환경에서 받은 `RESTATE_DEPLOYMENT_URI`의 포트만 자기 workflow 리스너에 배정된 값으로 바꿔 등록한다. `teardown`은 제출한 작업이 끝난 뒤 그 테스트의 등록을 해제하고 앱을 닫는다. [배포 환경의 주소 설정](../../infra/README.md#4-restate에-workflow-실행-주소-등록) · [비동기 작업 테스트](src/__tests__/infrastructure/job-demo.spec.ts) · [SSE 수신 테스트 작성법](../../libs/README.md#5-sse-이벤트를-받는-테스트-작성)
+모든 API 통합 테스트에서 실제 Restate를 사용한다. 테스트 앱은 환경에서 받은 `RESTATE_DEPLOYMENT_URI`의 포트만 자기 workflow 리스너에 배정된 값으로 바꿔 등록한다. `teardown`은 제출한 작업의 결과를 확인한 뒤 테스트 배포를 해제하고 앱을 닫는다. 결과 조회에 실패하면 앱을 닫고 오류를 전달하며, 완료가 확인되지 않은 배포는 강제 삭제하지 않는다. [배포 환경의 주소 설정](../../infra/README.md#4-restate에-workflow-실행-주소-등록) · [비동기 작업 테스트](src/__tests__/infrastructure/job-demo.spec.ts) · [SSE 수신 테스트 작성법](../../libs/README.md#5-sse-이벤트를-받는-테스트-작성)
 
 ### 실행 가능한 API 문서
 

@@ -13,6 +13,9 @@ const SETTLE_MS = 10_000
 
 if (!SERVER_URL) throw new Error('SERVER_URL must be set')
 
+// 두 읽기 전용 사례는 같은 크기의 프로필로 실제 압축 전송을 비교한다.
+const compressionProfileName = 'Benchmark profile '.repeat(64)
+
 const CASES = [
     { name: 'read_identity_200', readVus: 200, writeVus: 0, acceptEncoding: 'identity' },
     { name: 'read_gzip_200', readVus: 200, writeVus: 0, acceptEncoding: 'gzip' },
@@ -36,7 +39,7 @@ function createScenario(
     operation,
     vus,
     startTime,
-    acceptEncoding = 'gzip'
+    acceptEncoding
 ) {
     if (vus === 0) return
 
@@ -46,7 +49,8 @@ function createScenario(
         failed: new Rate(`${metricName}_failed`),
         latency: new Trend(`${metricName}_latency`, true),
         requests: new Counter(`${metricName}_requests`),
-        acceptEncoding
+        compareEncoding: acceptEncoding !== undefined,
+        acceptEncoding: acceptEncoding ?? 'gzip'
     }
     metrics.set(name, metric)
     thresholds[metric.failed.name] = ['rate==0']
@@ -118,15 +122,12 @@ function authenticate(path, body, expectedStatus) {
     return response.json()
 }
 
-function authenticatedHeaders() {
+function authenticatedHeaders(metric) {
     if (!tokens) {
         const email = 'benchmark-' + __VU + '-' + randomHex() + '@example.com'
         const password = 'Benchmark password 123!'
-        authenticate(
-            '/users',
-            { name: 'Benchmark user', birthDate: '1990-01-01', email, password },
-            201
-        )
+        const name = metric.compareEncoding ? compressionProfileName : 'Benchmark user'
+        authenticate('/users', { name, birthDate: '1990-01-01', email, password }, 201)
         tokens = authenticate('/users/login', { email, password }, 200)
         accessExpiresAt = tokenExpiresAt(tokens.accessToken)
     }
@@ -141,7 +142,7 @@ function authenticatedHeaders() {
 export function read() {
     const metric = currentMetric()
     const response = http.get(SERVER_URL + '/users/me', {
-        headers: { ...authenticatedHeaders(), 'Accept-Encoding': metric.acceptEncoding }
+        headers: { ...authenticatedHeaders(metric), 'Accept-Encoding': metric.acceptEncoding }
     })
     record(response, 200, metric)
 }
@@ -151,7 +152,7 @@ export function write() {
     const response = http.patch(
         SERVER_URL + '/users/me',
         JSON.stringify({ name: 'benchmark-' + __VU + '-' + __ITER }),
-        { headers: { ...authenticatedHeaders(), 'Accept-Encoding': metric.acceptEncoding } }
+        { headers: { ...authenticatedHeaders(metric), 'Accept-Encoding': metric.acceptEncoding } }
     )
     record(response, 200, metric)
 }
@@ -164,8 +165,12 @@ function currentMetric() {
 
 function record(response, expectedStatus, metric) {
     const failed = response.status !== expectedStatus
-    metric.failed.add(failed)
-    check(response, { [`status is ${expectedStatus}`]: () => !failed })
+    const checks = { [`status is ${expectedStatus}`]: () => !failed }
+    if (metric.compareEncoding) {
+        checks[`response encoding is ${metric.acceptEncoding}`] = (res) =>
+            (res.headers['Content-Encoding'] ?? 'identity') === metric.acceptEncoding
+    }
+    metric.failed.add(!check(response, checks))
 
     if (exec.scenario.progress >= WARMUP_MS / (WARMUP_MS + DURATION_MS)) {
         metric.latency.add(response.timings.duration)

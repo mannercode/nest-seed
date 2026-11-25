@@ -37,13 +37,7 @@ export class PathUtil {
     }
 
     static async exists(path: string): Promise<boolean> {
-        try {
-            await fs.access(path)
-
-            return true
-        } catch {
-            return false
-        }
+        return (await fs.stat(path, { throwIfNoEntry: false })) !== undefined
     }
 
     static async isDirectory(path: string): Promise<boolean> {
@@ -74,7 +68,15 @@ export class PathUtil {
             const exdev = (error as NodeJS.ErrnoException).code === 'EXDEV'
             if (!exdev) throw error
 
-            await this.copy(src, dest)
+            // 대상 파일시스템에서 rename해야 기존 디렉터리와 합쳐지지 않는다.
+            await using staging = await fs.mkdtempDisposable(p.join(p.dirname(dest), '.move-'))
+            const stagedPath = p.join(staging.path, 'entry')
+            await fs.cp(src, stagedPath, {
+                recursive: true,
+                preserveTimestamps: true,
+                verbatimSymlinks: true
+            })
+            await fs.rename(stagedPath, dest)
             await this.delete(src)
         }
     }

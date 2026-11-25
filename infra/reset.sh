@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 cd -- "$(dirname -- "$0")"
 
-: "${WORKSPACE_ROOT:?}"
+export COMPOSE_FILE="${WORKSPACE_ROOT:?}/infra/compose.yml"
 compose=(docker compose)
 
 diagnose_and_exit() {
@@ -17,7 +17,7 @@ diagnose_and_exit() {
 
 trap 'diagnose_and_exit "$?"' ERR
 
-"${compose[@]}" down -v -t 0
+bash ./compose-down.sh -v -t 0
 "${compose[@]}" up -d
 
 setup_id="$("${compose[@]}" ps -aq infra-setup)"

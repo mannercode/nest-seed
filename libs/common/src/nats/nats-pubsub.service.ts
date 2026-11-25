@@ -25,6 +25,8 @@ export class NatsPubSubService implements OnModuleDestroy {
     private readonly subscriptions = new Map<string, SubscriptionState>()
     private readonly consumeTasks = new Set<Promise<void>>()
 
+    private stopping = false
+
     constructor(private readonly connection: NatsConnection) {}
 
     static getName(name?: string) {
@@ -32,6 +34,7 @@ export class NatsPubSubService implements OnModuleDestroy {
     }
 
     async onModuleDestroy() {
+        this.stopping = true
         for (const { handlers, sub } of this.subscriptions.values()) {
             handlers.clear()
             sub.unsubscribe()
@@ -51,6 +54,7 @@ export class NatsPubSubService implements OnModuleDestroy {
         handler: MessageHandler,
         options: { queue?: string } = {}
     ): Promise<void> {
+        if (this.stopping) throw new Error('NATS subscription service is stopping')
         const key = getSubscriptionKey(subject, options.queue)
         let state = this.subscriptions.get(key)
         if (!state) {
@@ -63,17 +67,18 @@ export class NatsPubSubService implements OnModuleDestroy {
                 subject
             }
             this.subscriptions.set(key, state)
-            this.startConsumeLoop(state)
+            this.startConsumeLoop(key, state)
         }
 
         state.handlers.add(handler)
         try {
             // 동시 등록도 같은 SUB의 서버 처리 확인을 기다린다.
             await state.ready
+            if (this.subscriptions.get(key) !== state) {
+                throw new Error('NATS subscription ended before it was ready')
+            }
         } catch (error) {
-            state.handlers.clear()
-            state.sub.unsubscribe()
-            if (this.subscriptions.get(key) === state) this.subscriptions.delete(key)
+            this.removeSubscription(key, state)
             throw error
         }
     }
@@ -83,14 +88,19 @@ export class NatsPubSubService implements OnModuleDestroy {
             if (state.subject !== subject) continue
 
             state.handlers.delete(handler)
-            if (state.handlers.size === 0) {
-                state.sub.unsubscribe()
-                this.subscriptions.delete(key)
-            }
+            if (state.handlers.size === 0) this.removeSubscription(key, state)
         }
     }
 
-    private startConsumeLoop(state: SubscriptionState) {
+    private removeSubscription(key: string, state: SubscriptionState) {
+        if (this.subscriptions.get(key) === state) {
+            this.subscriptions.delete(key)
+            state.handlers.clear()
+            state.sub.unsubscribe()
+        }
+    }
+
+    private startConsumeLoop(key: string, state: SubscriptionState) {
         // 수신 루프가 실패해 멈춘 상태를 메시지가 없는 상태와 구분할 수 있도록 오류를 기록한다.
         // 작업 Promise의 오류도 처리해 처리되지 않은 rejection이 남지 않게 한다.
         const task = (async () => {
@@ -113,6 +123,8 @@ export class NatsPubSubService implements OnModuleDestroy {
                     `NATS consume loop terminated unexpectedly (subject=${state.subject}, queue=${state.queue ?? 'none'})`,
                     err
                 )
+            } finally {
+                this.removeSubscription(key, state)
             }
         })()
         this.consumeTasks.add(task)

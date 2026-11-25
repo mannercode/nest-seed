@@ -2,7 +2,7 @@ import { NatsPubSubModule } from '@mannercode/common'
 import { Module } from '@nestjs/common'
 import { NATS_CONNECTION_NAME } from '#config'
 import { DEMO_EVENTS_MAX_BYTES, EventDemoService } from './event-demo.service.js'
-import { MessageConsumer } from './internal/message-consumer.js'
+import { MessageConsumer } from './message-consumer.js'
 @Module({
     imports: [NatsPubSubModule.register({ natsName: NATS_CONNECTION_NAME })],
     providers: [
@@ -10,6 +10,6 @@ import { MessageConsumer } from './internal/message-consumer.js'
         MessageConsumer,
         { provide: DEMO_EVENTS_MAX_BYTES, useValue: 256 * 1024 * 1024 }
     ],
-    exports: [EventDemoService]
+    exports: [EventDemoService, MessageConsumer]
 })
 export class EventDemoModule {}

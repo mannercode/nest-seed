@@ -17,7 +17,7 @@
         "lint:format": "prettier --check .",
         "lint:code": "oxlint .",
         "lint:md": "docker run --rm -v \"${WORKSPACE_ROOT:?}:/workspace\" lycheeverse/lychee --offline --include-fragments --hidden --extensions=md /workspace",
-        "lint:shell": "bash -o pipefail -c \"git ls-files -z -- '*.sh' '.husky/*' | xargs -0 shellcheck --severity=warning -x\""
+        "lint:shell": "bash -O globstar -O dotglob -o pipefail -c \"git ls-files -z -- '*.sh' '.husky/*' | xargs -0 shellcheck --severity=warning -ax && shellcheck --shell=bash --severity=warning apps/api/api-docs/**/*.spec apps/api/api-docs/run.cfg\""
     },
     "devDependencies": {
         "@aws-sdk/client-s3": "3.1175.0",

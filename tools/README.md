@@ -8,13 +8,13 @@ DB와 버킷은 worker별로 준비한다. 같은 파일의 테스트들은 Mong
 
 ## 2. 개발 포트와 HTTPS 터널
 
-`pnpm run dev`는 API와 web을 시작하기 전에 `free-port`로 각 포트를 사용 중인 프로세스를 종료한다. 빌드된 web을 `pnpm -C apps/web run start`로 실행할 때는 다른 프로세스가 `WEB_PORT`를 사용 중이면 서버 시작이 실패하고 기존 프로세스는 계속 실행된다.
+API와 web은 지정한 포트에서 시작한다. 포트를 이미 사용 중이면 해당 프로세스를 확인하고 종료하거나 실행 설정에서 포트를 바꾼다.
 
-외부에서 web에 접속하려면 개발 서버를 켜고 다른 터미널의 저장소 루트에서 `pnpm run tunnel`을 실행한다. 출력된 HTTPS 주소에서는 사진 체크섬 계산에 필요한 Web Crypto를 사용할 수 있다. 터널은 web 포트만 공개하고 API 요청은 web이 전달한다.
+외부에서 web에 접속하려면 개발 서버를 켜고 다른 터미널의 저장소 루트에서 `pnpm exec tunnel`을 실행한다. 출력된 HTTPS 주소에서는 사진 체크섬 계산에 필요한 Web Crypto를 사용할 수 있다. 터널은 web 포트만 공개하고 API 요청은 web이 전달한다.
 
 ## 3. 문서 링크와 셸 스크립트 검사
 
 루트의 `pnpm run lint`는 두 검사를 모두 실행한다. 각각 실행하려면 다음 명령을 사용한다.
 
 - `pnpm run lint:md`는 lychee를 일회성 컨테이너로 실행해 로컬 링크와 문서 내 제목 링크를 검사한다. 저장소 루트부터 숨김 폴더까지 `.md` 파일을 찾으며 `.gitignore`를 따른다. [루트 스크립트](../package.json)
-- `pnpm run lint:shell`은 Git이 추적하는 `*.sh` 파일과 `.husky/`의 훅을 ShellCheck로 검사한다.
+- `pnpm run lint:shell`은 Git이 추적하는 `*.sh` 파일과 `.husky/` 훅, API 예제의 셸 설정·fixture·spec을 ShellCheck로 검사한다.

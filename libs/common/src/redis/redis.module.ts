@@ -1,22 +1,15 @@
-import { DynamicModule, Injectable, Module, OnModuleDestroy, Provider } from '@nestjs/common'
+import { DynamicModule, Injectable, Module, Provider } from '@nestjs/common'
 import { Cluster, Redis } from 'ioredis'
+import { ConnectionRegistry } from '../connection-registry.js'
 import { defaultTo } from '../utils/index.js'
 import { getRedisConnectionToken } from './redis.tokens.js'
 import { RedisConnection, RedisModuleAsyncOptions, RedisModuleOptions } from './redis.types.js'
 
 // 모듈이 만든 연결은 모듈이 닫는다. 닫지 않으면 app.close() 뒤에도 소켓이 남아 프로세스가 종료되지 않는다.
 @Injectable()
-export class RedisConnectionRegistry implements OnModuleDestroy {
-    private connections: RedisConnection[] = []
-
-    add(connection: RedisConnection) {
-        this.connections.push(connection)
-    }
-
-    async onModuleDestroy() {
-        const list = this.connections
-        this.connections = []
-        await Promise.all(list.map((c) => c.quit().catch(() => undefined)))
+export class RedisConnectionRegistry extends ConnectionRegistry<RedisConnection> {
+    protected async close(connection: RedisConnection) {
+        await connection.quit()
     }
 }
 

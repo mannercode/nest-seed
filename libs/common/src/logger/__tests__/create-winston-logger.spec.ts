@@ -22,6 +22,16 @@ function createTestLogger(consoleLogLevel: string, environment = 'test') {
 }
 
 describe('createWinstonLogger', () => {
+    describe('설정에 등록되지 않은 로그 수준을 지정하면', () => {
+        let level: string
+        beforeEach(() => {
+            level = 'erorr'
+        })
+        it('로거 생성 시 설정 오류를 던진다', () => {
+            expect(() => createTestLogger(level)).toThrow()
+        })
+    })
+
     describe('consoleLogLevel이 "silent"이면', () => {
         let level: string
         beforeEach(() => {

@@ -50,7 +50,6 @@ services:
     replica-api:
         extends: api
         profiles: [replicas]
-        image: nest-seed-api
         environment:
             PROJECT_ID: ${PROJECT_ID:?}-replicas
             RESTATE_DEPLOYMENT_URI: http://replica-nginx:${NGINX_RESTATE_PORT:?}

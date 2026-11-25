@@ -12,10 +12,8 @@ JSON_SUMMARY="${OUTPUT_DIR}/summary.json"
 mkdir -p _output
 mkdir "${OUTPUT_DIR}"
 
-compose=(
-    docker compose --profile replicas
-    -f "${WORKSPACE_ROOT}/infra/compose.apps.yml" -f compose.yml
-)
+export COMPOSE_FILE="${WORKSPACE_ROOT}/infra/compose.apps.yml:${PWD}/compose.yml"
+compose=(docker compose --profile replicas)
 
 cleanup() {
     local exit_code=$?
@@ -67,7 +65,7 @@ wait_for_api() {
 }
 
 echo "Building API benchmark stack"
-"${compose[@]}" down
+bash "${WORKSPACE_ROOT}/infra/compose-down.sh"
 trap cleanup EXIT
 "${compose[@]}" up -d --build --wait nginx
 wait_for_api
