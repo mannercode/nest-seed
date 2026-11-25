@@ -5,8 +5,14 @@ import type { Mock } from 'vitest'
 import { instant } from '@mannercode/testing'
 import { workflow } from '@restatedev/restate-sdk'
 import { RestateWorkflowClient, TemporalJsonSerde } from '../index.js'
+import { InstantFromInputSchema } from '../../utils/index.js'
 
-type TestResult = { processedCount: number; status: 'succeeded'; workflowId: string }
+type TestResult = {
+    completedAt: Temporal.Instant
+    processedCount: number
+    status: 'succeeded'
+    workflowId: string
+}
 
 const restateMocks = vi.hoisted(() => ({ connect: vi.fn() }))
 
@@ -17,10 +23,12 @@ vi.mock('@restatedev/restate-sdk-clients', async (importOriginal) => {
 
 describe('RestateWorkflowClient', () => {
     const terminal: TestResult = {
+        completedAt: instant('2100-01-01T10:00:00Z'),
         processedCount: 1,
         status: 'succeeded',
         workflowId: 'workflow-id'
     }
+    const storedResult = TemporalJsonSerde.deserialize(TemporalJsonSerde.serialize(terminal))
     const input = {
         payload: {
             count: 1,
@@ -65,10 +73,10 @@ describe('RestateWorkflowClient', () => {
         let fix: ReturnType<typeof createFixture>
         let result: Mock
         beforeEach(() => {
-            result = vi.fn().mockResolvedValue(terminal)
+            result = vi.fn().mockResolvedValue(storedResult)
             fix = createFixture({ result })
         })
-        it('완료를 기다리면 SDK의 결과 조회를 호출해 그 결과를 반환한다', async () => {
+        it('완료를 기다리면 제출한 작업을 조회하고 완료 시각을 Instant로 복원해 반환한다', async () => {
             await expect(fix.client.waitForCompletion(submission)).resolves.toEqual(terminal)
 
             expect(result).toHaveBeenCalledWith(submission)
@@ -120,10 +128,10 @@ describe('RestateWorkflowClient', () => {
     describe('워크플로 출력이 준비되었으면', () => {
         let fix: ReturnType<typeof createFixture>
         beforeEach(() => {
-            const workflowOutput = vi.fn().mockResolvedValue({ ready: true, result: terminal })
+            const workflowOutput = vi.fn().mockResolvedValue({ ready: true, result: storedResult })
             fix = createFixture({ result: vi.fn(), workflowOutput })
         })
-        it('출력을 조회하면 ready: true와 완료 결과를 반환한다', async () => {
+        it('출력을 조회하면 완료 시각을 Instant로 복원한 결과와 ready: true를 반환한다', async () => {
             await expect(fix.client.output(input.workflowId)).resolves.toEqual({
                 ready: true,
                 result: terminal
@@ -152,6 +160,7 @@ describe('RestateWorkflowClient', () => {
             definition,
             'http://restate.test:8080',
             z.object({
+                completedAt: InstantFromInputSchema,
                 processedCount: z.number(),
                 status: z.literal('succeeded'),
                 workflowId: z.string()

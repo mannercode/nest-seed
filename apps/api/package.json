@@ -7,9 +7,10 @@
         "start": "node --enable-source-maps _output/dist/index.js",
         "lint": "tsc --noEmit",
         "build": "nest build -b rspack --rspackPath rspack.config.cjs",
+        "predev": "pnpm --filter-prod 'api^...' --fail-if-no-match run build",
         "dev": "nest start --watch",
         "test": "run-s test:**",
-        "test:vitest": "vitest run --coverage",
+        "test:vitest": "flock . vitest run --coverage",
         "test:api-docs": "flock \"${WORKSPACE_ROOT:?}/infra\" bash api-docs/test.sh"
     },
     "dependencies": {

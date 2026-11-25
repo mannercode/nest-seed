@@ -142,7 +142,9 @@ init_summary() {
 
 	{
 		printf '# API 문서\n\n'
-		printf '실행 가능한 curl spec에서 생성한 최신 API 호출 목록이다.\n\n'
+		printf '실행 대상으로 선택한 curl 예제\n\n'
+		printf -- '- `%s`\n' "$@"
+		printf '\n'
 		printf -- '- 생성 시각: `%s`\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 		printf -- '- 상세 로그: [%s](%s/)\n\n' "${RUN_ID}" "${LOG_DIR_LINK}"
 		printf '| 그룹 | 설명 | Method | Endpoint | 기대 | 실제 | 결과 | 상세 |\n'
@@ -253,7 +255,7 @@ done
 PASSED_TESTS=0
 FAILED_TESTS=0
 
-init_summary
+init_summary "${specs[@]}"
 LOG_DIR=$(cd -- "${DOC_DIR}/${LOG_DIR_LINK}" && pwd)
 
 for spepath in "${specs[@]}"; do

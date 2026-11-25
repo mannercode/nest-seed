@@ -11,6 +11,7 @@
         "build:libs": "pnpm -F './libs/**' --fail-if-no-match build",
         "pretest": "pnpm run build:libs",
         "test": "pnpm -r --workspace-concurrency=1 run --if-present test",
+        "test:api:file": "bash tools/test-api-file.sh",
         "prelint": "pnpm run build:libs",
         "lint": "run-p lint:**",
         "lint:workspaces": "pnpm -r run --if-present lint",

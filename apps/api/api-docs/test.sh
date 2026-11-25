@@ -24,8 +24,8 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-# 자동 검증은 배포할 예제 사본에서 실행해 개발자가 저장한 보고서를 보존한다.
-tar -C apps/api/api-docs --exclude=./_output -cf - . | tar -C "${docs_dir}" -xf -
+# 외부에 전달하는 예제 묶음을 풀어 그대로 검증한다.
+bash apps/api/pack-api-docs.sh | tar -C "${docs_dir}" -xzf -
 bash "${WORKSPACE_ROOT}/infra/compose-down.sh"
 docker compose build api
 container_id=$(docker compose run --detach --name "${api_host}" \

@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { CancelledError, TerminalError, type WorkflowContext } from '@restatedev/restate-sdk'
 import { instant, plainDate } from '@mannercode/testing'
 import { TemporalJsonSerde, defineWorkflow, isWorkflowCancellation } from '../index.js'
+import { InstantFromInputSchema } from '../../utils/index.js'
 
 describe('TemporalJsonSerde', () => {
     it('Temporal 값을 JSON 문자열로 저장하고 다시 읽을 때는 문자열을 유지한다', () => {
@@ -34,15 +35,16 @@ describe('TemporalJsonSerde', () => {
 
 describe('defineWorkflow', () => {
     it('입력·결과·재시도 정책과 시도 취소 신호를 SDK에 연결한다', async () => {
+        const startedAt = instant('2025-01-02T03:04:00Z')
         const signal = new AbortController().signal
         const retry = { initialRetryInterval: 100, maxRetryAttempts: 2, maxRetryDuration: 1000 }
         const runStep = vi.fn(async (_name, operation) => operation())
         const execute = vi.fn(async () => 'result')
         const defined = defineWorkflow({
             name: 'adapter-test',
-            input: z.string(),
-            run: async (context, input: string) => {
-                expect(input).toBe('input')
+            input: InstantFromInputSchema,
+            run: async (context, input) => {
+                expect(input.equals(startedAt)).toBe(true)
                 expect(context.attemptSignal()).toBe(signal)
                 return context.run('step', execute, retry)
             },
@@ -67,7 +69,7 @@ describe('defineWorkflow', () => {
             run: runStep,
             request: () => ({ attemptCompletedSignal: signal })
         } as unknown as WorkflowContext
-        await expect(defined.workflow.run(context, 'input')).resolves.toBe('result')
+        await expect(defined.workflow.run(context, startedAt.toString())).resolves.toBe('result')
         expect(execute).toHaveBeenCalledOnce()
         expect(runStep).toHaveBeenCalledWith('step', execute, retry)
         expect(defined.options).toMatchObject({

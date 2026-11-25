@@ -305,6 +305,51 @@ test.describe('사용자로 로그인했으면', () => {
         test.beforeEach(async ({ context }) => {
             await context.addCookies([{ ...accessCookie!, value: 'invalid-access-token' }])
         })
+        test.describe('두 브라우저가 같은 갱신 쿠키를 가지고 있으면', () => {
+            let otherPage: Page
+            test.beforeEach(async ({ browser, context }) => {
+                otherPage = await browser.newPage({
+                    baseURL: WEB_BASE_URL,
+                    storageState: await context.storageState()
+                })
+            })
+            test.afterEach(async () => {
+                await otherPage.close()
+            })
+            test('동시에 본인 정보를 요청하면 두 응답 모두 성공하고 같은 새 갱신 쿠키를 받는다', async ({
+                page,
+                context
+            }) => {
+                const responses = await Promise.all([
+                    page.goto('/api/users/me'),
+                    otherPage.goto('/api/users/me')
+                ])
+                expect(responses.map((response) => response?.status())).toEqual([200, 200])
+
+                const first = await getSessionCookie(context, REFRESH_COOKIE)
+                const second = await getSessionCookie(otherPage.context(), REFRESH_COOKIE)
+                expect(first).toBeDefined()
+                expect(first!.value === refreshCookieBefore!.value).toBe(false)
+                expect(second?.value === first!.value).toBe(true)
+            })
+        })
+        test.describe('API에서 해당 세션을 로그아웃했으면', () => {
+            test.beforeEach(async ({ request: api }) => {
+                const logout = await api.post(`${API_BASE_URL}/users/logout`, {
+                    data: { refreshToken: refreshCookieBefore!.value }
+                })
+                expect(logout.status()).toBe(204)
+            })
+            test('본인 정보를 요청하면 401을 반환하고 두 인증 쿠키를 지운다', async ({
+                page,
+                context
+            }) => {
+                const response = await page.goto('/api/users/me')
+                expect(response?.status()).toBe(401)
+                expect(await getSessionCookie(context, ACCESS_COOKIE)).toBeUndefined()
+                expect(await getSessionCookie(context, REFRESH_COOKIE)).toBeUndefined()
+            })
+        })
         test.describe('다른 요청이 갱신 토큰을 먼저 교체했으면', () => {
             test.beforeEach(async ({ request: api }) => {
                 const refresh = await api.post(`${API_BASE_URL}/users/refresh`, {
