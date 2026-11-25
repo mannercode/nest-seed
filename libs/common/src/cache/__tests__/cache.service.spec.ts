@@ -1,6 +1,15 @@
 import { InternalServerErrorException } from '@nestjs/common'
 import { type CacheServiceFixture, createCacheServiceFixture } from './cache.service.fixture.js'
 import { sleep } from '../../utils/index.js'
+import { cacheLockKey } from '../cache-lock-key.js'
+
+const jobLockKey = cacheLockKey('job')
+
+describe('cacheLockKey', () => {
+    it('기존 락과 같은 Redis 키를 반환한다', () => {
+        expect(jobLockKey).toBe('lock:job')
+    })
+})
 
 describe('CacheService', () => {
     let fix: CacheServiceFixture
@@ -248,7 +257,7 @@ describe('CacheService', () => {
                     })
                 )
                 expect(callback).not.toHaveBeenCalled()
-                expect(await fix.cacheService.get('lock:job')).toBeNull()
+                expect(await fix.cacheService.get(jobLockKey)).toBeNull()
             })
         })
 
@@ -276,7 +285,7 @@ describe('CacheService', () => {
 
         describe('다른 호출자가 락을 점유했으면', () => {
             beforeEach(async () => {
-                await fix.cacheService.set('lock:job', 'other-runner', 10_000)
+                await fix.cacheService.set(jobLockKey, 'other-runner', 10_000)
             })
             it('락 획득을 요청해도 실행하지 않고 기존 락을 유지한다', async () => {
                 const result = await fix.cacheService.withLock('job', 5_000, async () => {
@@ -284,7 +293,7 @@ describe('CacheService', () => {
                 })
 
                 expect(result.ran).toBe(false)
-                const value = await fix.cacheService.get('lock:job')
+                const value = await fix.cacheService.get(jobLockKey)
                 expect(value).toBe('other-runner')
             })
         })
@@ -295,15 +304,15 @@ describe('CacheService', () => {
             const result = await fix.cacheService.withLock('job', ttl, async () => {
                 // TTL에 500ms 안전 마진을 더해 콜백이 락보다 오래 살아남는 상황을 만든다.
                 await sleep(ttl + 500)
-                expect(await fix.cacheService.get('lock:job')).toBeNull()
+                expect(await fix.cacheService.get(jobLockKey)).toBeNull()
 
                 // 만료로 비워진 자리를 다른 호출자가 새로 잡는다.
-                await fix.cacheService.set('lock:job', 'other-runner', 10_000)
+                await fix.cacheService.set(jobLockKey, 'other-runner', 10_000)
             })
 
             // 콜백이 끝나면 원래 호출자의 해제가 실행되지만, 토큰이 달라 새 락은 남는다.
             expect(result.ran).toBe(true)
-            const value = await fix.cacheService.get('lock:job')
+            const value = await fix.cacheService.get(jobLockKey)
             expect(value).toBe('other-runner')
         })
 
@@ -379,7 +388,7 @@ describe('CacheService', () => {
         it('같은 프로세스에서 잇따라 락을 얻어도 토큰이 서로 다르다', async () => {
             // 락을 쥔 동안 락 키에 저장된 값이 이번 획득의 토큰이다.
             const captureToken = () =>
-                fix.cacheService.withLock('job', 5_000, () => fix.cacheService.get('lock:job'))
+                fix.cacheService.withLock('job', 5_000, () => fix.cacheService.get(jobLockKey))
 
             const first = await captureToken()
             const second = await captureToken()
@@ -438,13 +447,13 @@ describe('CacheService', () => {
                     ).rejects.toThrow(expect.objectContaining({ status: 503 }))
 
                     expect(runner).not.toHaveBeenCalled()
-                    expect(await fix.cacheService.get('lock:job')).toBeNull()
+                    expect(await fix.cacheService.get(jobLockKey)).toBeNull()
                 })
             })
 
             describe('다음 획득을 기다리는 동안 기한이 지나면', () => {
                 beforeEach(async () => {
-                    await fix.cacheService.set('lock:job', 'other', 10_000)
+                    await fix.cacheService.set(jobLockKey, 'other', 10_000)
                     let firstAttemptFinished = false
                     vi.spyOn(performance, 'now').mockImplementation(() => {
                         const current = now
@@ -454,7 +463,7 @@ describe('CacheService', () => {
                     const set = fix.redis.set.bind(fix.redis)
                     vi.spyOn(fix.redis, 'set').mockImplementationOnce(async (...args) => {
                         const result = await set(...args)
-                        await fix.cacheService.delete('lock:job')
+                        await fix.cacheService.delete(jobLockKey)
                         firstAttemptFinished = true
                         return result
                     })
@@ -472,7 +481,7 @@ describe('CacheService', () => {
 
                     expect(fix.redis.set).toHaveBeenCalledTimes(1)
                     expect(runner).not.toHaveBeenCalled()
-                    expect(await fix.cacheService.get('lock:job')).toBeNull()
+                    expect(await fix.cacheService.get(jobLockKey)).toBeNull()
                 })
             })
 
@@ -488,7 +497,7 @@ describe('CacheService', () => {
                 )
 
                 expect(result).toBe(42)
-                expect(await fix.cacheService.get('lock:job')).toBeNull()
+                expect(await fix.cacheService.get(jobLockKey)).toBeNull()
             })
         })
 
@@ -531,7 +540,7 @@ describe('CacheService', () => {
 
         describe('다른 호출자가 락을 10초간 점유했으면', () => {
             beforeEach(async () => {
-                await fix.cacheService.set('lock:job', 'other', 10_000)
+                await fix.cacheService.set(jobLockKey, 'other', 10_000)
             })
             describe('대기 기한이 50ms이면', () => {
                 let input: Parameters<typeof fix.cacheService.withLockBlocking>[3]
@@ -568,7 +577,7 @@ describe('CacheService', () => {
         describe('다른 호출자의 락이 100ms 뒤에 만료되면', () => {
             beforeEach(async () => {
                 // 다른 보유자가 짧게 보유하다 해제하면 같은 호출이 락을 획득해 정상 동작한다.
-                await fix.cacheService.set('lock:job', 'other', 100)
+                await fix.cacheService.set(jobLockKey, 'other', 100)
             })
             it('만료 후 락을 획득해 대기 기한 안에 결과를 반환한다', async () => {
                 const start = performance.now()
@@ -588,7 +597,7 @@ describe('CacheService', () => {
         describe('다른 호출자의 락이 200ms 뒤에 만료되면', () => {
             beforeEach(async () => {
                 // 락을 짧게 선점해 첫 시도를 실패시켜야 pollMs가 쓰이는 재시도 경로가 실행된다.
-                await fix.cacheService.set('lock:job', 'other', 200)
+                await fix.cacheService.set(jobLockKey, 'other', 200)
             })
             describe('pollMs가 0이면', () => {
                 let input: Parameters<typeof fix.cacheService.withLockBlocking>[3]

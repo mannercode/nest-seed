@@ -209,6 +209,8 @@ export default defineConfig({
                                     '!../index.js',
                                     '!../**/index.js',
                                     // 공개 API가 아닌 구현 단위 테스트에서만 허용하는 직접 import다.
+                                    '!../cache-lock-key.js',
+                                    '!../user-session-keys.js',
                                     '!../../services/infrastructure/assets/assets.repository.js',
                                     '!../../services/infrastructure/job-demo/job-demo.repository.js',
                                     '!../../services/infrastructure/job-demo/worker.js',

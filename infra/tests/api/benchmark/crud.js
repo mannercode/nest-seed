@@ -25,10 +25,14 @@ const CASES = [
 
 const metrics = new Map()
 
+function scenarioName(caseName, operation) {
+    return `${caseName}_${operation}`
+}
+
 function createScenario(
     scenarios,
     thresholds,
-    name,
+    caseName,
     operation,
     vus,
     startTime,
@@ -36,6 +40,7 @@ function createScenario(
 ) {
     if (vus === 0) return
 
+    const name = scenarioName(caseName, operation)
     const metricName = name.replaceAll('-', '_')
     const metric = {
         failed: new Rate(`${metricName}_failed`),
@@ -65,7 +70,7 @@ function benchmarkOptions() {
         createScenario(
             scenarios,
             thresholds,
-            `${benchmarkCase.name}_read`,
+            benchmarkCase.name,
             'read',
             benchmarkCase.readVus,
             startTime,
@@ -74,7 +79,7 @@ function benchmarkOptions() {
         createScenario(
             scenarios,
             thresholds,
-            `${benchmarkCase.name}_write`,
+            benchmarkCase.name,
             'write',
             benchmarkCase.writeVus,
             startTime
@@ -195,12 +200,16 @@ function benchmarkSummary(data) {
     for (const benchmarkCase of CASES) {
         const result = {}
         if (benchmarkCase.readVus > 0) {
-            result.read = metricSummary(data, `${benchmarkCase.name}_read`, benchmarkCase.readVus)
+            result.read = metricSummary(
+                data,
+                scenarioName(benchmarkCase.name, 'read'),
+                benchmarkCase.readVus
+            )
         }
         if (benchmarkCase.writeVus > 0) {
             result.write = metricSummary(
                 data,
-                `${benchmarkCase.name}_write`,
+                scenarioName(benchmarkCase.name, 'write'),
                 benchmarkCase.writeVus
             )
         }

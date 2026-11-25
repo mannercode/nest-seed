@@ -8,6 +8,7 @@ import {
 import { JwtService } from '@nestjs/jwt'
 import { Redis } from 'ioredis'
 import type { AuthConfig, JwtAuthTokens } from './jwt-auth.types.js'
+import { userSessionKeys } from './user-session-keys.js'
 import { defaultTo, ensure, generateShortId, omit, sha256 } from '../utils/index.js'
 
 export const JwtAuthErrors = {
@@ -52,18 +53,14 @@ export class JwtAuthService {
         const sessionId = generateShortId(30)
         const tokens = await this.createTokens(payload, sessionId)
         const ttlMs = this.config.refreshTokenTtlMs
+        const keys = userSessionKeys(this.prefix, userId)
 
         // 세션 데이터와 해당 사용자의 세션 ID 목록을 같은 hash slot에 둬 함께 생성한다.
         const results = await this.redis
             .multi()
-            .set(
-                this.sessionKey(userId, sessionId),
-                sha256(tokens.refreshToken, 'hex'),
-                'PX',
-                ttlMs
-            )
-            .sadd(this.userSessionsKey(userId), sessionId)
-            .pexpire(this.userSessionsKey(userId), ttlMs)
+            .set(keys.session(sessionId), sha256(tokens.refreshToken, 'hex'), 'PX', ttlMs)
+            .sadd(keys.index, sessionId)
+            .pexpire(keys.index, ttlMs)
             .exec()
         this.assertTransactionSucceeded(results)
         this.logger.log('token.issued', { userId, sessionId })
@@ -85,11 +82,12 @@ export class JwtAuthService {
 
         // 새 토큰을 준비한 뒤 현재 해시와 원자 교체한다. 로그아웃이 먼저 세션을 지웠으면
         // 교체에 실패하므로, 폐기 표시나 유예 타이머 없이도 세션이 되살아나지 않는다.
+        const keys = userSessionKeys(this.prefix, userId)
         const result = await this.redis.eval(
             ROTATE_SESSION_SCRIPT,
             2,
-            this.sessionKey(userId, sessionId),
-            this.userSessionsKey(userId),
+            keys.session(sessionId),
+            keys.index,
             sha256(refreshToken, 'hex'),
             sha256(tokens.refreshToken, 'hex'),
             this.config.refreshTokenTtlMs
@@ -109,25 +107,26 @@ export class JwtAuthService {
     async revokeRefreshToken(refreshToken: string): Promise<void> {
         const payload = await this.getAuthTokenPayload(refreshToken)
         const { userId, sessionId } = this.getSession(payload)
+        const keys = userSessionKeys(this.prefix, userId)
         const results = await this.redis
             .multi()
-            .del(this.sessionKey(userId, sessionId))
-            .srem(this.userSessionsKey(userId), sessionId)
+            .del(keys.session(sessionId))
+            .srem(keys.index, sessionId)
             .exec()
         this.assertTransactionSucceeded(results)
         this.logger.log('session.revoked', { userId, sessionId })
     }
 
     async revokeAllSessions(subjectId: string): Promise<void> {
-        const userKey = this.userSessionsKey(subjectId)
-        const sessionIds = await this.redis.smembers(userKey)
+        const keys = userSessionKeys(this.prefix, subjectId)
+        const sessionIds = await this.redis.smembers(keys.index)
         if (sessionIds.length === 0) return
 
         // 조회한 세션만 제거한다. 그 이후 새 로그인으로 추가된 세션의 인덱스는 보존한다.
         const results = await this.redis
             .multi()
-            .del(...sessionIds.map((sessionId) => this.sessionKey(subjectId, sessionId)))
-            .srem(userKey, ...sessionIds)
+            .del(...sessionIds.map(keys.session))
+            .srem(keys.index, ...sessionIds)
             .exec()
         this.assertTransactionSucceeded(results)
         this.logger.log('sessions.revoked', { userId: subjectId, sessionIds })
@@ -199,13 +198,5 @@ export class JwtAuthService {
             throw new UnauthorizedException(JwtAuthErrors.RefreshTokenInvalid())
         }
         return sub
-    }
-
-    private sessionKey(userId: string, sessionId: string) {
-        return `${this.prefix}:{${userId}}:session:${sessionId}`
-    }
-
-    private userSessionsKey(userId: string) {
-        return `${this.prefix}:{${userId}}:sessions`
     }
 }

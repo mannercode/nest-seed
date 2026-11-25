@@ -53,7 +53,7 @@ services:
         image: nest-seed-api
         environment:
             PROJECT_ID: ${PROJECT_ID:?}-replicas
-            RESTATE_DEPLOYMENT_URI: http://replica-nginx:9080
+            RESTATE_DEPLOYMENT_URI: http://replica-nginx:${NGINX_RESTATE_PORT:?}
             # 비밀번호 해싱과 파일 작업이 같은 작업 스레드를 사용하므로 동시 요청을 위해 16개로 늘린다.
             UV_THREADPOOL_SIZE: '16'
         deploy: { replicas: 4 }
@@ -66,8 +66,9 @@ services:
         environment:
             API_PORT: ${API_PORT:?}
             RESTATE_SERVICE_PORT: ${RESTATE_SERVICE_PORT:?}
+            NGINX_RESTATE_PORT: ${NGINX_RESTATE_PORT:?}
             NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
-            NGINX_ENVSUBST_FILTER: '^(API_PORT|RESTATE_SERVICE_PORT)$$'
+            NGINX_ENVSUBST_FILTER: '^(API_PORT|RESTATE_SERVICE_PORT|NGINX_RESTATE_PORT)$$'
         volumes: ['./nginx.conf:/etc/nginx/templates/nginx.conf.template:ro']
         depends_on:
             replica-api: { condition: service_started }

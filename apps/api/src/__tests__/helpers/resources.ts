@@ -7,11 +7,18 @@ const scope = 'nest-seed-api-test'
 export const projectId = (testId: string) => `project-${scope}-${testId}`
 const testProjectPattern = new RegExp(escapeRegExp(projectId('')) + '[A-Za-z0-9_-]+')
 
-export const bucketName = (workerId: string) => `s3bucket-api-w${workerId}`
-export const databaseName = (workerId: string) => `mongo-api-w${workerId}`
+function workerResource(prefix: string) {
+    return {
+        name: (workerId: string) => prefix + workerId,
+        pattern: new RegExp(`^${escapeRegExp(prefix)}\\d+$`)
+    }
+}
+
+export const workerBucket = workerResource('s3bucket-api-w')
+export const workerDatabase = workerResource('mongo-api-w')
 export const cleanup = {
-    bucketPattern: /^s3bucket-api-w\d+$/,
-    databasePattern: /^mongo-api-w\d+$/,
+    bucketPattern: workerBucket.pattern,
+    databasePattern: workerDatabase.pattern,
     redisKeyPattern: `*${projectId('')}*`,
     redisKeyScope: scope
 }

@@ -7,6 +7,7 @@ import type { RedisConnection } from '../redis/index.js'
 import { randomUUID } from 'node:crypto'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { DateUtil, defaultTo } from '../utils/index.js'
+import { cacheLockKey } from './cache-lock-key.js'
 
 @Injectable()
 export class CacheService {
@@ -92,7 +93,7 @@ export class CacheService {
         }
 
         const token = `${process.pid}:${DateUtil.toEpochMilliseconds(DateUtil.now())}:${randomUUID()}`
-        const lockKey = this.getKey(`lock:${key}`)
+        const lockKey = this.getKey(cacheLockKey(key))
         const acquired = await this.redis.set(lockKey, token, 'PX', ttlMs, 'NX')
 
         if (acquired !== 'OK') return { ran: false }

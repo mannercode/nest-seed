@@ -12,3 +12,4 @@ export type VitestLifecycleOptions = {
 }
 
 export function setupVitestLifecycle(options: VitestLifecycleOptions): void
+export function getVitestWorkerId(): string

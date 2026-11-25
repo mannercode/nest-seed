@@ -14,10 +14,9 @@ YELLOW='\033[33m'
 MAGENTA='\033[35m'
 
 RUN_ID="$(date '+%Y%m%d_%H%M%S')"
-OUTPUT_ROOT="$(pwd)/_output"
-LOG_DIR="${OUTPUT_ROOT}/logs/${RUN_ID}"
-DOC_DIR="${OUTPUT_ROOT}/docs"
+DOC_DIR="$(pwd)/_output/docs"
 SUMMARY_MD="${DOC_DIR}/summary.md"
+LOG_DIR_LINK="../logs/${RUN_ID}"
 
 LOG_LINE() {
 	echo "$*" >>"${LOG_FILE}"
@@ -139,13 +138,13 @@ markdown_escape() {
 }
 
 init_summary() {
-	mkdir -p "${DOC_DIR}"
+	mkdir -p "${DOC_DIR}" "${DOC_DIR}/${LOG_DIR_LINK}"
 
 	{
 		printf '# API 문서\n\n'
 		printf '실행 가능한 curl spec에서 생성한 최신 API 호출 목록이다.\n\n'
 		printf -- '- 생성 시각: `%s`\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-		printf -- '- 상세 로그: [%s](../logs/%s/)\n\n' "${RUN_ID}" "${RUN_ID}"
+		printf -- '- 상세 로그: [%s](%s/)\n\n' "${RUN_ID}" "${LOG_DIR_LINK}"
 		printf '| 그룹 | 설명 | Method | Endpoint | 기대 | 실제 | 결과 | 상세 |\n'
 		printf '| --- | --- | --- | --- | ---: | ---: | --- | --- |\n'
 	} >"${SUMMARY_MD}"
@@ -158,11 +157,9 @@ record_summary() {
 	local endpoint=$4
 	local group=${CURRENT_GROUP:?TEST가 spec 밖에서 호출됨}
 	local display_endpoint
-	local log_path
 	local result
 
 	display_endpoint=$(format_endpoint "${endpoint}")
-	log_path="${LOG_FILE#${OUTPUT_ROOT}/}"
 
 	if [[ "${STATUS}" -eq "${expected_status}" ]]; then
 		result='PASS'
@@ -170,7 +167,7 @@ record_summary() {
 		result='FAIL'
 	fi
 
-	printf '| %s | %s | `%s` | `%s` | `%s` | `%s` | `%s` | [로그](../%s) |\n' \
+	printf '| %s | %s | `%s` | `%s` | `%s` | `%s` | `%s` | [로그](%s) |\n' \
 		"$(markdown_escape "${group}")" \
 		"$(markdown_escape "${description}")" \
 		"${method}" \
@@ -178,7 +175,7 @@ record_summary() {
 		"${expected_status}" \
 		"${STATUS}" \
 		"${result}" \
-		"${log_path}" >>"${SUMMARY_MD}"
+		"${LOG_FILE_LINK}" >>"${SUMMARY_MD}"
 
 }
 
@@ -244,9 +241,11 @@ PASSED_TESTS=0
 FAILED_TESTS=0
 
 init_summary
+LOG_DIR=$(cd -- "${DOC_DIR}/${LOG_DIR_LINK}" && pwd)
 
 for spepath in "${specs[@]}"; do
-	LOG_FILE="${LOG_DIR}/${spepath#./}.log"
+	LOG_FILE_LINK="${LOG_DIR_LINK}/${spepath#./}.log"
+	LOG_FILE="${DOC_DIR}/${LOG_FILE_LINK}"
 	CURRENT_GROUP="$(basename "${spepath}" .spec)"
 	mkdir -p "$(dirname "${LOG_FILE}")"
 	: >"${LOG_FILE}"

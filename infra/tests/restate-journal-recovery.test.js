@@ -8,7 +8,7 @@ import test from 'node:test'
 import * as restate from '@restatedev/restate-sdk'
 import { connect } from '@restatedev/restate-sdk-clients'
 
-const ADMIN_URL = requiredEnvironment('RESTATE_ADMIN_URL')
+const ADMIN_URL = requiredEnvironment('RESTATE_ADMIN_URL').replace(/\/+$/, '')
 const DEPLOYMENT_URI = requiredEnvironment('RESTATE_DEPLOYMENT_URI')
 const INGRESS_URL = requiredEnvironment('RESTATE_INGRESS_URL')
 
@@ -21,7 +21,7 @@ test(
         const resumedStepEntered = deferred()
         const cleanupErrors = []
         let completedStepCalls = 0
-        let deploymentId
+        let deploymentUrl
         let endpoint
         let failure
         let interruptedStepCalls = 0
@@ -60,7 +60,7 @@ test(
         try {
             endpoint = await createEndpoint(definition)
             restateContainerId = findRestateContainer()
-            deploymentId = await registerEndpoint(definition.name, endpoint.port)
+            deploymentUrl = await registerEndpoint(definition.name, endpoint.port)
             const ingress = connect({
                 retry: {
                     initialInterval: 250,
@@ -106,8 +106,8 @@ test(
                     await waitForRestate()
                 })
             }
-            if (deploymentId) {
-                await recordCleanupError(cleanupErrors, () => unregisterEndpoint(deploymentId))
+            if (deploymentUrl) {
+                await recordCleanupError(cleanupErrors, () => unregisterEndpoint(deploymentUrl))
             }
             if (endpoint) await recordCleanupError(cleanupErrors, () => endpoint.close())
         }
@@ -160,7 +160,8 @@ async function createEndpoint(definition) {
 async function registerEndpoint(serviceName, port) {
     const uri = new URL(DEPLOYMENT_URI)
     uri.port = String(port)
-    const response = await fetch(`${ADMIN_URL}/deployments`, {
+    const deploymentsUrl = `${ADMIN_URL}/deployments`
+    const response = await fetch(deploymentsUrl, {
         body: JSON.stringify({ force: false, uri: uri.href, use_http_11: false }),
         headers: { 'content-type': 'application/json' },
         method: 'POST',
@@ -172,14 +173,15 @@ async function registerEndpoint(serviceName, port) {
     if (typeof deployment.id !== 'string') {
         throw new Error(`Restate registration for ${serviceName} returned no deployment ID.`)
     }
-    return deployment.id
+    return new URL(`${deploymentsUrl}/${encodeURIComponent(deployment.id)}`)
 }
 
-async function unregisterEndpoint(deploymentId) {
-    const response = await fetch(
-        `${ADMIN_URL}/deployments/${encodeURIComponent(deploymentId)}?force=true`,
-        { method: 'DELETE', signal: AbortSignal.timeout(10_000) }
-    )
+async function unregisterEndpoint(deploymentUrl) {
+    deploymentUrl.searchParams.set('force', 'true')
+    const response = await fetch(deploymentUrl, {
+        method: 'DELETE',
+        signal: AbortSignal.timeout(10_000)
+    })
     if (!response.ok) throw new Error(`Restate cleanup failed: ${await response.text()}`)
 }
 

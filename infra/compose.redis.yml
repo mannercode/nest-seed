@@ -2,18 +2,15 @@ x-redis-base: &redis-base
     extends: { file: ./compose.common.yml, service: common-options }
     image: $REDIS_IMAGE
     healthcheck:
-        test: 'redis-cli ping'
-    # Redis 노드는 클라이언트에게 다음에 접속할 주소를 알려 준다.
-    # 컨테이너끼리는 서비스 이름(redis1/2/3)과 내부 포트 6379로 통신하므로, 각 노드가 그 주소를 알리게 한다.
+        test: 'redis-cli -p "$$REDIS_PORT" ping | grep -qx PONG'
+    # 클라이언트가 클러스터를 탐색할 때 각 노드의 Docker 호스트명과 실제 수신 포트로 접속한다.
     command: |
         sh -euc '
-          redis-server --port 6379 \
+          exec redis-server --port "$$REDIS_PORT" \
           --cluster-enabled yes \
           --cluster-config-file nodes.conf \
-          --cluster-announce-hostname $$ANNOUNCE_HOSTNAME \
+          --cluster-announce-hostname "$$HOSTNAME" \
           --cluster-preferred-endpoint-type hostname \
-          --cluster-announce-port 6379 \
-          --cluster-announce-bus-port 16379 \
           --cluster-require-full-coverage no \
           --protected-mode no
         '
@@ -21,18 +18,21 @@ x-redis-base: &redis-base
 services:
     redis1:
         <<: *redis-base
+        hostname: ${REDIS_HOST1:?}
         environment:
-            ANNOUNCE_HOSTNAME: redis1
+            REDIS_PORT: ${REDIS_PORT1:?}
 
     redis2:
         <<: *redis-base
+        hostname: ${REDIS_HOST2:?}
         environment:
-            ANNOUNCE_HOSTNAME: redis2
+            REDIS_PORT: ${REDIS_PORT2:?}
 
     redis3:
         <<: *redis-base
+        hostname: ${REDIS_HOST3:?}
         environment:
-            ANNOUNCE_HOSTNAME: redis3
+            REDIS_PORT: ${REDIS_PORT3:?}
 
     redis-setup:
         extends: { file: ./compose.common.yml, service: common-options }
@@ -43,10 +43,13 @@ services:
                 redis2: { condition: service_healthy },
                 redis3: { condition: service_healthy }
             }
-        command: |
-            sh -euc '
-            REDIS_NODES="redis1:6379 redis2:6379 redis3:6379"
-
-            echo "yes" |
-                redis-cli --cluster create $$REDIS_NODES --cluster-replicas 0
-            '
+        command:
+            - redis-cli
+            - --cluster
+            - create
+            - ${REDIS_HOST1:?}:${REDIS_PORT1:?}
+            - ${REDIS_HOST2:?}:${REDIS_PORT2:?}
+            - ${REDIS_HOST3:?}:${REDIS_PORT3:?}
+            - --cluster-replicas
+            - '0'
+            - --cluster-yes

@@ -1,5 +1,6 @@
 import { JwtService } from '@nestjs/jwt'
 import { JwtAuthErrors, type JwtAuthTokens } from '../index.js'
+import { userSessionKeys } from '../user-session-keys.js'
 import {
     type JwtAuthServiceFixture,
     createJwtAuthServiceFixture,
@@ -14,7 +15,7 @@ type SessionValidator = NonNullable<
 >
 const sessionKey = (fix: JwtAuthServiceFixture, token: string) => {
     const { sub, sessionId } = decode(token)
-    return `${fix.jwtService.prefix}:{${sub}}:session:${sessionId}`
+    return userSessionKeys(fix.jwtService.prefix, sub).session(sessionId)
 }
 
 function pauseNextTokenIssue(fix: JwtAuthServiceFixture) {
@@ -48,6 +49,14 @@ async function signedRefresh(payload: object, options: object = {}) {
     })
 }
 
+describe('userSessionKeys', () => {
+    it('기존 세션과 인덱스에 접근할 수 있는 Redis 키를 반환한다', () => {
+        const keys = userSessionKeys('auth', 'u1')
+        expect(keys.session('s1')).toBe('auth:{u1}:session:s1')
+        expect(keys.index).toBe('auth:{u1}:sessions')
+    })
+})
+
 describe('JwtAuthService', () => {
     let fix: JwtAuthServiceFixture
     beforeEach(async () => {
@@ -74,7 +83,7 @@ describe('JwtAuthService', () => {
         it('토큰 발급 시 세션 해시와 사용자 인덱스를 만료 시간과 함께 저장한다', async () => {
             const { refreshToken } = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
             const key = sessionKey(fix, refreshToken)
-            const index = `${fix.jwtService.prefix}:{u1}:sessions`
+            const index = userSessionKeys(fix.jwtService.prefix, 'u1').index
             expect(await fix.redis.get(key)).toMatch(/^[0-9a-f]{64}$/)
             expect(await fix.redis.get(key)).not.toContain(refreshToken)
             expect(await fix.redis.smembers(index)).toEqual([decode(refreshToken).sessionId])
@@ -86,7 +95,10 @@ describe('JwtAuthService', () => {
 
         describe('세션 인덱스 키에 집합 대신 문자열이 저장되어 있으면', () => {
             beforeEach(async () => {
-                await fix.redis.set(`${fix.jwtService.prefix}:{u1}:sessions`, 'wrong-type')
+                await fix.redis.set(
+                    userSessionKeys(fix.jwtService.prefix, 'u1').index,
+                    'wrong-type'
+                )
             })
             it('토큰 발급 시 Redis 자료형 오류를 원인으로 500 예외를 던진다', async () => {
                 await expect(
@@ -100,7 +112,7 @@ describe('JwtAuthService', () => {
 
         describe('감시 중인 세션 인덱스가 변경되었으면', () => {
             beforeEach(async () => {
-                const index = `${fix.jwtService.prefix}:{u1}:sessions`
+                const index = userSessionKeys(fix.jwtService.prefix, 'u1').index
                 await fix.redis.watch(index)
                 await fix.redis.sadd(index, 'changed-session')
             })
@@ -275,9 +287,9 @@ describe('JwtAuthService', () => {
 
                 await expect(rotating).rejects.toMatchObject({ status: 401 })
                 expect(await fix.redis.get(sessionKey(fix, original.refreshToken))).toBeNull()
-                expect(await fix.redis.smembers(`${fix.jwtService.prefix}:{u1}:sessions`)).toEqual(
-                    []
-                )
+                expect(
+                    await fix.redis.smembers(userSessionKeys(fix.jwtService.prefix, 'u1').index)
+                ).toEqual([])
             })
 
             it('전체 세션을 폐기하면 진행 중인 갱신은 401 예외를 던지고 세션을 되살리지 않는다', async () => {
@@ -286,9 +298,9 @@ describe('JwtAuthService', () => {
 
                 await expect(rotating).rejects.toMatchObject({ status: 401 })
                 expect(await fix.redis.get(sessionKey(fix, original.refreshToken))).toBeNull()
-                expect(await fix.redis.smembers(`${fix.jwtService.prefix}:{u1}:sessions`)).toEqual(
-                    []
-                )
+                expect(
+                    await fix.redis.smembers(userSessionKeys(fix.jwtService.prefix, 'u1').index)
+                ).toEqual([])
             })
         })
         describe('다음 토큰 서명이 실패하도록 설정하면', () => {
@@ -363,7 +375,10 @@ describe('JwtAuthService', () => {
             let tokens: JwtAuthTokens
             beforeEach(async () => {
                 tokens = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
-                await fix.redis.set(`${fix.jwtService.prefix}:{u1}:sessions`, 'wrong-type')
+                await fix.redis.set(
+                    userSessionKeys(fix.jwtService.prefix, 'u1').index,
+                    'wrong-type'
+                )
             })
             it('로그아웃 시 Redis 자료형 오류를 원인으로 500 예외를 던진다', async () => {
                 await expect(

@@ -9,6 +9,11 @@ const { randomInt } = require('node:crypto')
 
 const WORKER_DB_PATTERN = /^mongo-w\d+$/
 const WORKER_BUCKET_PATTERN = /^s3bucket-w\d+$/
+
+function getVitestWorkerId() {
+    return process.env.VITEST_POOL_ID ?? '1'
+}
+
 function generateTestId() {
     const chars = 'useandom26T198340PX75pxJACKVERYMINDBUSHWOLFGQZbfghjklqvwyzrict'
     return Array.from({ length: 10 }, () => chars[randomInt(chars.length)]).join('')
@@ -102,7 +107,7 @@ function setupVitestLifecycle({
     let bucket
 
     beforeAll(async () => {
-        const workerId = process.env.VITEST_POOL_ID ?? '1'
+        const workerId = getVitestWorkerId()
 
         const m = await connectMongo(workerId)
         mongoClient = m.client
@@ -277,5 +282,6 @@ module.exports = {
     emptyBucket,
     ensureBucket,
     generateTestId,
+    getVitestWorkerId,
     setupVitestLifecycle
 }

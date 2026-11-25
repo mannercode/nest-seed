@@ -1,4 +1,4 @@
-import { DateUtil, objectId, S3ObjectService } from '@mannercode/common'
+import { DateUtil, ensure, objectId, S3ObjectService } from '@mannercode/common'
 import { UserRegistrationService } from '#application'
 import { UserSchema, UsersRepository, UsersService } from '#core'
 import { AssetsService, AssetPresignedUploadSchema } from '#infrastructure'
@@ -99,12 +99,14 @@ describe('UserRegistrationService', () => {
     })
     describe('사진 전송을 마쳤으면', () => {
         let assetId: string
+        let photoKey: string
         beforeEach(async () => {
             const upload = await fix.module
                 .get(UserRegistrationService)
                 .createPhotoUpload({ ...buildCreateAssetDto(), mimeType: 'image/png' as const })
             expect((await uploadAsset(testAssets.image.path, upload)).ok).toBe(true)
             assetId = upload.assetId
+            photoKey = ensure(upload.fields.key)
         })
         it('가입하면 계정과 사진 소유권을 함께 저장한다', async () => {
             const { body } = await fix.httpClient
@@ -227,7 +229,7 @@ describe('UserRegistrationService', () => {
                 expect(
                     await fix.module
                         .get<S3ObjectService>(S3ObjectService.getName())
-                        .isUploadComplete({ key: assetId })
+                        .isUploadComplete({ key: photoKey })
                 ).toBe(false)
             })
         })

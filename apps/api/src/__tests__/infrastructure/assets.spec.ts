@@ -1,12 +1,13 @@
 import type { MockInstance } from 'vitest'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import {
-    CacheService,
     Checksum,
     DateUtil,
     ensure,
+    getRedisConnectionToken,
     objectId,
     pickIds,
+    type RedisConnection,
     S3ObjectService,
     sleep
 } from '@mannercode/common'
@@ -29,7 +30,7 @@ import {
     createAppTestContext
 } from '../helpers/index.js'
 import { AssetsRepository } from '../../services/infrastructure/assets/assets.repository.js'
-import { AppConfigService } from '#config'
+import { AppConfigService, REDIS_CONNECTION_NAME } from '#config'
 
 type UploadedFile = Awaited<ReturnType<typeof uploadFile>>
 
@@ -205,6 +206,7 @@ describe('AssetsService', () => {
         let gate: ReturnType<typeof pauseNextStorageDelete> | undefined
         let cleanup: Promise<void> | undefined
         let storage: S3ObjectService
+        let expireCleanupLock: () => Promise<number>
         beforeEach(async () => {
             gate = undefined
             cleanup = undefined
@@ -213,8 +215,15 @@ describe('AssetsService', () => {
             await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
             storage = fix.module.get<S3ObjectService>(S3ObjectService.getName())
             gate = pauseNextStorageDelete(fix)
+            const redis = fix.module.get<RedisConnection>(
+                getRedisConnectionToken(REDIS_CONNECTION_NAME)
+            )
+            using set = vi.spyOn(redis, 'set')
             cleanup = assetsService.cleanupExpiredUploads()
             await gate.started
+            expect(set).toHaveBeenCalledTimes(1)
+            const [lockKey] = ensure(set.mock.calls[0])
+            expireCleanupLock = () => redis.pexpire(lockKey, 0)
         })
         afterEach(async () => {
             gate?.release()
@@ -231,14 +240,7 @@ describe('AssetsService', () => {
 
         describe('정리 도중 Redis 락을 만료시켰으면', () => {
             beforeEach(async () => {
-                const cache = fix.module.get<CacheService>(CacheService.getName('assets'))
-                await expect(
-                    cache.executeScript(
-                        "return redis.call('PEXPIRE', KEYS[1], 0)",
-                        ['lock:cleanup-expired-uploads'],
-                        []
-                    )
-                ).resolves.toBe(1)
+                await expect(expireCleanupLock()).resolves.toBe(1)
             })
             it('다른 정리와 겹쳐 실행해도 만료 파일만 제거하고 완료된 파일은 보존한다', async () => {
                 await assetsService.cleanupExpiredUploads()

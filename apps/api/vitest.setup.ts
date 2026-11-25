@@ -1,6 +1,6 @@
 import 'reflect-metadata'
 import { S3Client } from '@aws-sdk/client-s3'
-import { setupVitestLifecycle } from '@mannercode/tools/vitest-helpers'
+import { getVitestWorkerId, setupVitestLifecycle } from '@mannercode/tools/vitest-helpers'
 import { MongoClient } from 'mongodb'
 import { createMongoDriverOptions } from '@mannercode/common'
 import {
@@ -9,31 +9,30 @@ import {
 } from './src/__tests__/helpers/shared-mongo-connection.js'
 
 import {
-    bucketName,
-    databaseName,
     projectId,
-    testConfig
+    testConfig,
+    workerBucket,
+    workerDatabase
 } from './src/__tests__/helpers/resources.js'
 
 process.env.LOG_CONSOLE_LEVEL = 'silent'
 process.env.RESTATE_SERVICE_PORT = '0'
 
 // 테스트 파일을 읽기 전에 worker의 초기값을 설정하고, 테스트마다 PROJECT_ID를 바꾼다.
-process.env.TEST_ID = `startup-w${process.env.VITEST_POOL_ID ?? '1'}`
+process.env.TEST_ID = `startup-w${getVitestWorkerId()}`
 process.env.PROJECT_ID = projectId(process.env.TEST_ID)
 const config = testConfig()
 
-const sharedMongoAppName = () =>
-    `nest-seed-test-w${process.env.VITEST_POOL_ID ?? '0'}-p${process.pid}-shared`
-
 setupVitestLifecycle({
     connectMongo: async (workerId) => {
-        const dbName = databaseName(workerId)
+        const dbName = workerDatabase.name(workerId)
         process.env.MONGO_DATABASE = dbName
 
         const client = new MongoClient(
             config.mongo.uri,
-            createMongoDriverOptions({ appName: sharedMongoAppName() })
+            createMongoDriverOptions({
+                appName: `nest-seed-test-w${workerId}-p${process.pid}-shared`
+            })
         )
         await client.connect()
         return { client, dbName }
@@ -41,7 +40,7 @@ setupVitestLifecycle({
     afterMongoConnect: attachSharedTestMongoConnection,
     createS3Client: () => new S3Client(config.s3),
     bucketName: (workerId) => {
-        const bucket = bucketName(workerId)
+        const bucket = workerBucket.name(workerId)
         process.env.S3_BUCKET = bucket
         return bucket
     },
