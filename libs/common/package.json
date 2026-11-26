@@ -11,7 +11,7 @@
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
         "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
-        "test": "vitest run --coverage",
+        "test": "bash \"${WORKSPACE_ROOT:?}/infra/stack.sh\" test -- vitest run --coverage",
         "lint": "run-p lint:**",
         "lint:build": "tsc --noEmit -p tsconfig.build.json",
         "lint:test": "tsc --noEmit -p tsconfig.test.json"

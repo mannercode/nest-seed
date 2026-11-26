@@ -14,4 +14,4 @@
 
 ## 브라우저 E2E
 
-루트에서 `pnpm -C apps/web test`를 실행하면 프로덕션 빌드를 Chromium으로 검증한다. E2E용 API에는 별도 `PROJECT_ID`와 workflow 주소를 준다. 검사 종료 후 Restate가 개발 서버의 작업을 이미 내려간 테스트 컨테이너에 보내는 일을 막기 위해서다. [E2E 환경](tests/compose.e2e.yml) · [브라우저 설정](tests/playwright.config.ts)
+`pnpm -C apps/web test`는 프로덕션 빌드를 Chromium으로 검증한다. 브라우저가 HTTP로 접속해도 Web Crypto를 사용할 수 있도록 Chromium이 `web.localhost`를 웹 컨테이너로 연결한다. [E2E 환경](tests/compose.e2e.yml) · [브라우저 설정](tests/playwright.config.ts)

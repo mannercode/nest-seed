@@ -9,7 +9,6 @@ include:
 
 services:
     # 모든 setup 서비스가 성공한 뒤 종료되는 기준 컨테이너다.
-    # `reset.sh`는 이 컨테이너의 종료를 보고 인프라 준비 완료 시점을 판단한 뒤, 종료된 setup 컨테이너를 정리한다.
     infra-setup:
         extends: { file: ./compose.common.yml, service: common-options }
         image: alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
@@ -20,6 +19,97 @@ services:
             restate: { condition: service_healthy }
             nats: { condition: service_healthy }
         command: ['true']
+
+    api: &api
+        profiles: [apps]
+        depends_on:
+            infra-setup: { condition: service_completed_successfully }
+        build:
+            context: ${WORKSPACE_ROOT:?}
+            dockerfile: apps/api/Dockerfile
+        env_file:
+            - path: ${WORKSPACE_ROOT:?}/infra/.env.infra
+              format: raw
+            - path: ${WORKSPACE_ROOT:?}/infra/.env.api
+              format: raw
+        environment: &api-environment
+            NODE_ENV: production
+            PROJECT_ID: ${PROJECT_ID:?}
+            RESTATE_DEPLOYMENT_URI: http://api:${RESTATE_SERVICE_PORT:?}
+        logging: { driver: json-file, options: { max-size: '10m', max-file: '3' } }
+        healthcheck:
+            test: 'curl -fsS http://localhost:$${API_PORT:?}/health'
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 10s
+
+    web:
+        profiles: [apps]
+        build:
+            context: ${WORKSPACE_ROOT:?}
+            dockerfile: apps/web/Dockerfile
+        environment:
+            API_BASE_URL: http://api:${API_PORT:?}
+            S3_ENDPOINT: ${S3_ENDPOINT:?}
+            S3_BUCKET: ${S3_BUCKET:?}
+            PORT: ${WEB_PORT:?}
+        depends_on:
+            api: { condition: service_healthy }
+        logging: { driver: json-file, options: { max-size: '1m', max-file: '1' } }
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'node',
+                    '-e',
+                    "fetch('http://localhost:'+process.env.PORT).then(response=>process.exit(response.ok?0:1)).catch(()=>process.exit(1))"
+                ]
+            interval: 2s
+            timeout: 5s
+            retries: 60
+            start_period: 5s
+
+    replica-api:
+        <<: *api
+        profiles: [replicas]
+        environment:
+            <<: *api-environment
+            PROJECT_ID: ${PROJECT_ID:?}-replicas
+            RESTATE_DEPLOYMENT_URI: http://replica-nginx:${NGINX_RESTATE_PORT:?}
+            # 비밀번호 해싱과 파일 작업이 같은 작업 스레드를 사용하므로 동시 요청을 위해 16개로 늘린다.
+            UV_THREADPOOL_SIZE: '16'
+        deploy: { replicas: 4 }
+
+    nginx:
+        profiles: [replicas]
+        hostname: replica-nginx
+        image: nginx:1.31.9-alpine@sha256:fb4658584bd9a916ffb6f6e365f97c25cfdb2923801f551ea08356e695f14ff7
+        ports: ['127.0.0.1:3000:80']
+        environment:
+            API_PORT: ${API_PORT:?}
+            RESTATE_SERVICE_PORT: ${RESTATE_SERVICE_PORT:?}
+            NGINX_RESTATE_PORT: ${NGINX_RESTATE_PORT:?}
+            NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
+            NGINX_ENVSUBST_FILTER: '^(API_PORT|RESTATE_SERVICE_PORT|NGINX_RESTATE_PORT)$$'
+        volumes: ['./nginx.conf:/etc/nginx/templates/nginx.conf.template:ro']
+        depends_on:
+            replica-api: { condition: service_started }
+        logging: { driver: json-file, options: { max-size: '10m', max-file: '3' } }
+        healthcheck:
+            # NGINX는 IPv4를 수신하고 Alpine의 localhost는 ::1로 먼저 해석된다.
+            test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1/health >/dev/null']
+            interval: 5s
+            timeout: 3s
+        restart: unless-stopped
+
+    k6:
+        profiles: [benchmark]
+        image: grafana/k6:2.4.0@sha256:d41bb79cd8de5a7ad619b53570e3712633e8bff0937010a5c6c57a4747e7a276
+        working_dir: ${WORKSPACE_ROOT:?}
+        environment:
+            WORKSPACE_ROOT: ${WORKSPACE_ROOT:?}
+        volumes: ['${WORKSPACE_ROOT:?}:${WORKSPACE_ROOT:?}']
 
 # Dev Container가 워크스페이스 이름으로 만든 네트워크에서 앱과 인프라가 서비스 이름으로 통신한다.
 networks:

@@ -4,12 +4,12 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "apps:up": "flock . docker compose -f compose.apps.yml up -d --build --wait",
-        "apps:down": "COMPOSE_FILE=compose.apps.yml flock . bash compose-down.sh",
-        "reset": "bash reset.sh",
-        "test": "node --test --test-concurrency=1 --test-reporter=spec",
-        "race": "flock . bash tests/api/race/runner.sh",
-        "benchmark": "flock . bash tests/api/benchmark/run.sh"
+        "apps:up": "bash stack.sh up",
+        "apps:down": "bash stack.sh reset",
+        "reset": "bash stack.sh reset",
+        "test": "bash stack.sh test restate node --test --test-concurrency=1 --test-reporter=spec",
+        "race": "bash tests/api/race/runner.sh",
+        "benchmark": "bash tests/api/benchmark/run.sh"
     },
     "devDependencies": {
         "@restatedev/restate-sdk": "1.18.4",

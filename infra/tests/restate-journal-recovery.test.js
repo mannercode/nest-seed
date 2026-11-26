@@ -4,7 +4,6 @@ import { randomUUID } from 'node:crypto'
 import { once } from 'node:events'
 import { createServer } from 'node:http2'
 import { hostname } from 'node:os'
-import path from 'node:path'
 import test from 'node:test'
 import * as restate from '@restatedev/restate-sdk'
 import { connect } from '@restatedev/restate-sdk-clients'
@@ -184,21 +183,10 @@ async function unregisterEndpoint(deploymentUrl) {
 }
 
 function findRestateContainer() {
-    const composeFile = path.join(path.dirname(import.meta.dirname), 'compose.yml')
-    const containerId = execFileSync(
-        'docker',
-        [
-            'compose',
-            '--project-directory',
-            path.dirname(composeFile),
-            '-f',
-            composeFile,
-            'ps',
-            '-q',
-            'restate'
-        ],
-        { encoding: 'utf8' }
-    ).trim()
+    const containerId = execFileSync('docker', ['compose', 'ps', '-q', 'restate'], {
+        cwd: new URL('../', import.meta.url),
+        encoding: 'utf8'
+    }).trim()
     if (!containerId) throw new Error('Restate container is not running.')
 
     const service = execFileSync(

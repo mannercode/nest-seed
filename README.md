@@ -6,7 +6,7 @@ NestJS 백엔드 프로젝트를 시작하기 위한 템플릿이다. 사진을 
 
 ## 시작하기
 
-**Dev Container를 시작할 때마다 이 프로젝트의 개발 계정, 세션, 업로드 파일, 메시지, 작업 기록이 삭제된다.** 수동으로 같은 초기화를 하려면 `pnpm -C infra run reset`을 실행한다. [Dev Container 시작 설정](.devcontainer/devcontainer.json) · [개발 인프라 초기화](infra/reset.sh)
+**이 프로젝트의 개발 데이터는 임시 데이터다.** Dev Container를 시작하거나 `pnpm -C infra run reset`을 실행하면 기존 서비스와 볼륨을 지우고 빈 기본 인프라를 띄운다. 계정·세션·업로드 파일·메시지·작업 기록은 컨테이너 테스트나 앱 구성으로 전환할 때도 삭제된다. [Dev Container 시작 설정](.devcontainer/devcontainer.json) · [환경 전환 스크립트](infra/stack.sh)
 
 1. Docker 호스트의 저장소를 VS Code Remote SSH로 열고 `Reopen in Container`를 실행한다. 호스트의 `USER`와 폴더명으로 구성되는 Compose 프로젝트명은 소문자나 숫자로 시작하고 이후에는 `-`·`_`도 허용한다. 같은 사용자로 여러 복사본을 열 때는 폴더명을 다르게 둔다.
 2. 의존성 설치와 초기화가 끝나면 컨테이너 터미널 두 개에서 각각 `pnpm -C apps/api run dev`와 `pnpm -C apps/web run dev`를 실행한다.
@@ -29,7 +29,9 @@ Dev Container의 저장소 루트에서 실행한다.
 | [사진 첨부 가입 curl 예제와 기대 HTTP 상태](apps/api/api-docs/users.spec)              | `pnpm -C apps/api run test:api-docs users.spec`                    |
 | [브라우저에서 가입·로그인하고 내 정보 조회](apps/web/tests/e2e/user-auth-flow.spec.ts) | `pnpm -C apps/web test`                                            |
 
-전체 테스트는 복구를 검증하면서 공유 Restate를 재시작한다. `test:api-docs`, 브라우저 E2E, Race 시나리오, Benchmark는 기존 앱 컨테이너를 내린 뒤 검증 환경을 띄운다. 이때 만든 계정·파일·작업 기록이 개발 인프라에 남을 수 있다. [Restate 복구 테스트](infra/tests/restate-journal-recovery.test.js)
+서비스 컨테이너를 쓰는 테스트와 벤치마크는 이 워크스페이스에서 한 번에 하나씩 실행한다. 시작할 때 프로젝트의 기존 컨테이너와 볼륨을 지우고 검사에 필요한 서비스만 띄운다. 검사가 끝나면 테스트 데이터를 지우고 빈 기본 인프라를 다시 띄운다. 실패하거나 Ctrl+C로 중단해도 같은 정리를 수행한다. Dev Container에서 직접 실행한 개발 API도 같은 서비스 주소를 쓰므로, 테스트 중 그 API로 요청을 보내면 테스트 데이터가 바뀔 수 있다.
+
+복구 테스트에는 재시작할 Restate 하나만 필요하다. common은 단일 Redis처럼 개발 클러스터와 다른 연결 조건도 검증하므로, 개발 인프라를 내린 동안 자체 Testcontainers를 사용한다. [Restate 복구 테스트](infra/tests/restate-journal-recovery.test.js) · [common 테스트 환경](libs/common/vitest.global.cjs)
 
 이미 실행 중인 개발 API로 curl 예제를 확인하고 보고서를 남기려면 `bash apps/api/api-docs/run.sh users.spec`를 실행한다. [대상 API 주소 지정](apps/api/api-docs/run.cfg) · [외부에 전달할 실행 예제 묶음](apps/api/README.md#실행-가능한-api-문서)
 
@@ -37,13 +39,13 @@ Dev Container의 저장소 루트에서 실행한다.
 
 ### 앱 컨테이너와 복제본 검증
 
-개발 인프라에서 `pnpm -C infra run apps:up`은 API와 웹 앱을 띄운다. 명령 끝에 `api`를 붙이면 API만, `nginx`를 붙이면 NGINX와 API 복제본을 띄운다. 수동으로 구성을 바꾸기 전에는 `pnpm -C infra run apps:down`으로 기존 앱을 내린다. NGINX는 호스트 포트를 점유하므로 같은 Docker 호스트에서는 한 프로젝트씩 복제본을 띄운다. [앱 Compose 설정](infra/compose.apps.yml)
+`pnpm -C infra run apps:up`은 새 인프라에 API와 웹 앱을 띄운다. 명령 끝에 `api`를 붙이면 API와 그 의존 서비스를, `nginx`를 붙이면 NGINX와 API 복제본 및 그 의존 서비스를 띄운다. 구성은 명령을 실행할 때마다 교체된다. 수동 검증을 끝내면 `pnpm -C infra run apps:down`으로 빈 기본 인프라를 복구한다. NGINX는 호스트 포트를 점유하므로 같은 Docker 호스트에서는 한 프로젝트씩 복제본을 띄운다. [Compose 설정](infra/compose.yml)
 
 `pnpm -C infra run race`는 실행할 수 있는 시나리오와 명령을 출력한다. `pnpm -C infra run benchmark`는 본인 정보 읽기·수정의 처리량과 지연 시간을 측정한다. 결과를 비교할 때는 머신·이미지·데이터 조건을 맞춘다. [Race 시나리오](infra/tests/api/race/scenarios/) · [벤치마크 요청과 지표](infra/tests/api/benchmark/crud.js)
 
 ### Restate 배포 주소
 
-`RESTATE_DEPLOYMENT_URI`는 Restate가 API의 workflow 리스너에 접속할 주소다. 단일 API는 자신의 주소를, 같은 버전의 복제본들은 하나의 로드 밸런서 주소를 등록한다. 중단된 작업을 재개할 때는 완료된 단계의 저장 결과를 다시 사용하므로 그 기록을 해석할 코드가 필요하다. 진행 중인 작업을 유지하며 배포하려면 새 버전을 별도 주소에 등록하고 기존 작업이 끝날 때까지 이전 주소에서 이전 코드를 실행한다. [배포 주소 설정](infra/compose.apps.yml) · [재시작 후 복구 검증](infra/tests/restate-journal-recovery.test.js)
+`RESTATE_DEPLOYMENT_URI`는 Restate가 API의 workflow 리스너에 접속할 주소다. 단일 API는 자신의 주소를, 같은 버전의 복제본들은 하나의 로드 밸런서 주소를 등록한다. 중단된 작업을 재개할 때는 완료된 단계의 저장 결과를 다시 사용하므로 그 기록을 해석할 코드가 필요하다. 진행 중인 작업을 유지하며 배포하려면 새 버전을 별도 주소에 등록하고 기존 작업이 끝날 때까지 이전 주소에서 이전 코드를 실행한다. [배포 주소 설정](infra/compose.yml) · [재시작 후 복구 검증](infra/tests/restate-journal-recovery.test.js)
 
 ## 구조와 선택
 

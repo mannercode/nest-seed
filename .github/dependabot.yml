@@ -77,7 +77,6 @@ updates:
       directories:
           - '/apps/web/tests'
           - '/infra'
-          - '/infra/tests/api/benchmark'
       schedule:
           interval: weekly
       allow:

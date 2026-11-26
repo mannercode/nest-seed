@@ -6,10 +6,6 @@ cd -- "$(dirname -- "$0")"
 # 사용: pnpm -C infra run race <scenario-name>
 #  예) pnpm -C infra run race sse-fanout-race
 
-export COMPOSE_FILE="${WORKSPACE_ROOT:?}/infra/compose.apps.yml"
-
-compose=(docker compose --profile replicas)
-
 list_scenarios() {
     echo "Scenarios:"
     for f in scenarios/*.js; do
@@ -33,26 +29,20 @@ if [[ "$TEST_NAME" == */* || ! -f "$TEST_SCRIPT" ]]; then
 fi
 
 SERVER_URL="http://nginx"
-cleanup() {
-    echo ""
-    echo "Tearing down..."
-    "${compose[@]}" down -v -t 0 nginx replica-api
-}
-
 dump_diagnostics() {
     local service cid cname
 
     echo ""
     echo "=== container diagnostics ==="
     date --utc --iso-8601=seconds
-    "${compose[@]}" ps -a nginx replica-api || true
+    docker compose --profile replicas ps -a nginx replica-api || true
 
     for service in nginx replica-api; do
-        timeout --kill-after=2s 10s "${compose[@]}" stats --all --no-stream --format json "${service}" \
+        timeout --kill-after=2s 10s docker compose --profile replicas stats --all --no-stream --format json "${service}" \
             || echo "[diagnostics] container resource collection failed: ${service}" >&2
     done
 
-    for cid in $("${compose[@]}" ps -aq nginx replica-api 2>/dev/null); do
+    for cid in $(docker compose --profile replicas ps -aq nginx replica-api 2>/dev/null); do
         cname=$(docker inspect --format '{{.Name}} ({{.State.Status}})' "${cid}" 2>/dev/null || echo "${cid}")
         docker inspect --format 'name={{.Name}} state={{json .State}} restarts={{.RestartCount}}' "${cid}" \
             || echo "[diagnostics] container state collection failed: ${cid}" >&2
@@ -65,7 +55,7 @@ dump_diagnostics() {
     # 상태 조회가 남기는 로그에 실패 직전 기록이 밀리지 않도록 기존 로그를 먼저 수집한다.
     for service in mongo1 mongo2 mongo3; do
         echo "--- MongoDB diagnostics: ${service} ---"
-        timeout --kill-after=2s 10s docker compose -f "${WORKSPACE_ROOT}/infra/compose.yml" \
+        timeout --kill-after=2s 10s docker compose \
             exec -T "${service}" mongosh \
             'mongodb://localhost:27017/?directConnection=true&serverSelectionTimeoutMS=2000&connectTimeoutMS=2000&socketTimeoutMS=5000' \
             --quiet --eval '
@@ -95,20 +85,11 @@ dump_diagnostics() {
     done
 }
 
-bring_up_stack() {
-    echo "Building 4-replica api test stack..."
-
-    if ! "${compose[@]}" up -d --build --wait nginx; then
-        echo "[FAIL] compose up failed before ${TEST_NAME} could start"
-        dump_diagnostics
-        exit 1
-    fi
-
-    echo ""
-    "${compose[@]}" ps nginx replica-api
-}
-
 run_scenario() {
+    if ! start_services nginx; then
+        dump_diagnostics
+        return 1
+    fi
     echo ""
     echo "=== ${TEST_NAME} ==="
     if SERVER_URL="${SERVER_URL}" node --test --test-reporter=spec "${TEST_SCRIPT}"; then
@@ -121,7 +102,5 @@ run_scenario() {
     return 1
 }
 
-bash "${WORKSPACE_ROOT}/infra/compose-down.sh"
-trap cleanup EXIT
-bring_up_stack
-run_scenario
+source "${WORKSPACE_ROOT:?}/infra/stack.sh"
+with_stack test -- run_scenario

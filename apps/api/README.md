@@ -64,7 +64,7 @@ Core·Application도 NestJS DI와 `HttpException`을 사용한다. 예상한 오
 
 ## 테스트
 
-API 통합 테스트는 `createAppTestContext`로 실제 Nest 모듈과 개발 인프라를 연결한다. 공통 훅이 worker별 DB·버킷과 테스트별 `PROJECT_ID`를 준비하므로 키 접두어·subject·workflow 이름은 주입된 설정에서 얻는다. 데이터 준비·조회·장애 주입 함수는 해당 `*.utils.ts`에 둔다. 독립적인 계산·변환은 단위 테스트로 검증할 수 있다. [공통 훅](vitest.setup.ts) · [테스트 작성 규칙](../../AGENTS.md#테스트는-한-행동의-결과를-검증한다) · [복제본 검증](../../README.md#앱-컨테이너와-복제본-검증)
+API 통합 테스트는 `createAppTestContext`로 실제 Nest 모듈과 테스트 실행을 위해 초기화한 인프라를 연결한다. 공통 훅이 worker별 DB·버킷과 테스트별 `PROJECT_ID`를 준비하므로 키 접두어·subject·workflow 이름은 주입된 설정에서 얻는다. 데이터 준비·조회·장애 주입 함수는 해당 `*.utils.ts`에 둔다. 독립적인 계산·변환은 단위 테스트로 검증할 수 있다. [공통 훅](vitest.setup.ts) · [테스트 작성 규칙](../../AGENTS.md#테스트는-한-행동의-결과를-검증한다) · [복제본 검증](../../README.md#앱-컨테이너와-복제본-검증)
 
 실제 서버와 같은 HTTP 설정을 쓰며, 경로 접두어 같은 설정이 더 필요하면 `createAppTestContext({ configureApp })`에서 경로 등록 전에 적용한다. `teardown()`은 제출한 작업의 완료를 확인한 뒤 테스트용 Restate 배포를 해제한다. 완료를 확인할 수 없으면 배포를 보존하고 앱을 닫은 뒤 오류를 전달한다. [테스트 앱 생성·정리](src/__tests__/helpers/create-app-test-context.ts) · [비동기 작업 테스트](src/__tests__/infrastructure/job-demo.spec.ts) · [SSE 구독 준비](../../libs/README.md#5-sse-이벤트를-받는-테스트-작성)
 

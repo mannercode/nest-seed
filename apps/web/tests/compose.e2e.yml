@@ -1,11 +1,4 @@
 services:
-    api:
-        # Restate는 E2E용 workflow를 이 주소로 등록한다.
-        hostname: web-e2e-api
-        environment:
-            PROJECT_ID: ${PROJECT_ID:?}-web-e2e
-            RESTATE_DEPLOYMENT_URI: http://web-e2e-api:${RESTATE_SERVICE_PORT:?}
-
     web:
         environment:
             BFF_COOKIE_SECURE: 'false'
