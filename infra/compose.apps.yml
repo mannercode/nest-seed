@@ -6,9 +6,9 @@ services:
             context: ${WORKSPACE_ROOT:?}
             dockerfile: apps/api/Dockerfile
         env_file:
-            - path: ${WORKSPACE_ROOT:?}/.env.infra
+            - path: ${WORKSPACE_ROOT:?}/infra/.env.infra
               format: raw
-            - path: ${WORKSPACE_ROOT:?}/.env.api
+            - path: ${WORKSPACE_ROOT:?}/infra/.env.api
               format: raw
         environment:
             NODE_ENV: production

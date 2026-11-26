@@ -10,9 +10,9 @@
     },
     "runArgs": [
         "--env-file",
-        ".env.infra",
+        "${localWorkspaceFolder}/infra/.env.infra",
         "--env-file",
-        ".env.api",
+        "${localWorkspaceFolder}/infra/.env.api",
         "--hostname=devcontainer",
         // 같은 Docker 호스트에서 한 사용자가 여러 복사본을 동시에 열 때는 컨테이너와 네트워크 이름이 겹치지 않도록 폴더명을 다르게 둔다.
         "--name=${localEnv:USER}-${localWorkspaceFolderBasename}",

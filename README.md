@@ -16,7 +16,7 @@ NestJS 백엔드 프로젝트를 시작하기 위한 템플릿이다. 사진을 
 
 ### 환경 변수 파일 변경 후 Dev Container 재생성
 
-개발 포트와 접속 설정은 루트의 [.env.infra](.env.infra)와 [.env.api](.env.api)에서 바꾼다. Docker가 값을 그대로 읽으므로 `API_PORT=3000`처럼 따옴표나 다른 변수 참조 없이 적는다. 두 파일 중 하나를 수정한 뒤에는 VS Code에서 `Rebuild Container`를 실행한다. 이때도 개발 데이터가 초기화된다.
+개발 서비스의 주소·포트는 [infra/.env.infra](infra/.env.infra)에서, API의 인증·로그 설정은 [infra/.env.api](infra/.env.api)에서 바꾼다. Dev Container와 Compose의 API 컨테이너가 두 파일을 읽어 프로세스에 전달한다. Docker가 값을 그대로 읽으므로 `API_PORT=3000`처럼 따옴표나 다른 변수 참조 없이 적는다. 두 파일 중 하나를 수정한 뒤에는 VS Code에서 `Rebuild Container`를 실행한다. 이때도 개발 데이터가 초기화된다.
 
 ## 실행과 검증
 
