@@ -579,6 +579,8 @@ describe('createNatsPubSubServiceFixture', () => {
     })
 
     describe('연결 확인과 정리가 모두 실패하면', () => {
+        const cleanupError = new Error('cleanup failed')
+
         beforeEach(() => {
             vi.spyOn(testing, 'createTestContext')
                 .mockImplementationOnce(async (options) => {
@@ -586,7 +588,7 @@ describe('createNatsPubSubServiceFixture', () => {
                     const close = context.close.bind(context)
                     const closeSpy = vi.spyOn(context, 'close').mockImplementation(async () => {
                         await close()
-                        throw new Error('cleanup failed')
+                        throw cleanupError
                     })
                     contexts.push({ close, closeSpy })
 
@@ -605,8 +607,12 @@ describe('createNatsPubSubServiceFixture', () => {
                 })
         })
 
-        it('두 앱의 정리를 시도하고 최초 초기화 오류를 던진다', async () => {
-            await expect(createNatsPubSubServiceFixture()).rejects.toBe(failure)
+        it('두 앱을 닫고 초기화 오류와 종료 오류를 함께 던진다', async () => {
+            await expect(createNatsPubSubServiceFixture()).rejects.toMatchObject({
+                name: 'SuppressedError',
+                error: cleanupError,
+                suppressed: failure
+            })
 
             expect(contexts).toHaveLength(2)
             expect(ensure(contexts[0]).closeSpy).toHaveBeenCalledTimes(1)

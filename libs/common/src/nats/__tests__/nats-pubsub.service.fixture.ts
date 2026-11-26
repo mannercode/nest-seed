@@ -24,53 +24,46 @@ export async function createNatsPubSubServiceFixture(): Promise<NatsPubSubServic
     const contexts: Array<Awaited<ReturnType<typeof createTestContext>>> = []
     const teardown = () => waitForCleanup(contexts.map((context) => context.close()))
 
-    try {
-        const contextA = await createTestContext({
-            imports: [
-                NatsModule.forRootAsync(
-                    { useFactory: () => JSON.parse(process.env.TESTLIB_NATS_OPTIONS as string) },
-                    'replicaA'
-                ),
-                NatsPubSubModule.register({ name: 'replicaA', natsName: 'replicaA' })
-            ]
-        })
+    await using setup = new AsyncDisposableStack()
+    setup.defer(teardown)
+    const contextA = await createTestContext({
+        imports: [
+            NatsModule.forRootAsync(
+                { useFactory: () => JSON.parse(process.env.TESTLIB_NATS_OPTIONS as string) },
+                'replicaA'
+            ),
+            NatsPubSubModule.register({ name: 'replicaA', natsName: 'replicaA' })
+        ]
+    })
 
-        contexts.push(contextA)
+    contexts.push(contextA)
 
-        const contextB = await createTestContext({
-            imports: [
-                NatsModule.forRootAsync(
-                    { useFactory: () => JSON.parse(process.env.TESTLIB_NATS_OPTIONS as string) },
-                    'replicaB'
-                ),
-                NatsPubSubModule.register({ name: 'replicaB', natsName: 'replicaB' })
-            ]
-        })
+    const contextB = await createTestContext({
+        imports: [
+            NatsModule.forRootAsync(
+                { useFactory: () => JSON.parse(process.env.TESTLIB_NATS_OPTIONS as string) },
+                'replicaB'
+            ),
+            NatsPubSubModule.register({ name: 'replicaB', natsName: 'replicaB' })
+        ]
+    })
 
-        contexts.push(contextB)
+    contexts.push(contextB)
 
-        const pubSubA = contextA.module.get<NatsPubSubService>(
-            NatsPubSubService.getName('replicaA')
-        )
-        const pubSubB = contextB.module.get<NatsPubSubService>(
-            NatsPubSubService.getName('replicaB')
-        )
+    const pubSubA = contextA.module.get<NatsPubSubService>(NatsPubSubService.getName('replicaA'))
+    const pubSubB = contextB.module.get<NatsPubSubService>(NatsPubSubService.getName('replicaB'))
 
-        const ncA = contextA.module.get<NatsConnection>(getNatsConnectionToken('replicaA'))
-        const ncB = contextB.module.get<NatsConnection>(getNatsConnectionToken('replicaB'))
+    const ncA = contextA.module.get<NatsConnection>(getNatsConnectionToken('replicaA'))
+    const ncB = contextB.module.get<NatsConnection>(getNatsConnectionToken('replicaB'))
 
-        // 두 연결이 서버와 왕복 가능한 상태인지 확인한다.
-        // 이후 테스트의 timeout 범위에는 컨테이너 콜드 스타트나 TCP 핸드셰이크 비용이 포함되지 않고, 순수 메시지 왕복 시간만 들어간다.
-        await Promise.all([ncA.flush(), ncB.flush()])
+    // 두 연결이 서버와 왕복 가능한 상태인지 확인한다.
+    // 이후 테스트의 timeout 범위에는 컨테이너 콜드 스타트나 TCP 핸드셰이크 비용이 포함되지 않고, 순수 메시지 왕복 시간만 들어간다.
+    await Promise.all([ncA.flush(), ncB.flush()])
 
-        const drainReceivers = async () => {
-            await Promise.all([ncA.drain(), ncB.drain()])
-            await Promise.all([pubSubA.onModuleDestroy(), pubSubB.onModuleDestroy()])
-        }
-        return { pubSubA, pubSubB, connectionB: ncB, drainReceivers, teardown }
-    } catch (error) {
-        // 정리 실패가 원래 초기화 오류를 덮지 않게 한다.
-        await teardown().catch(() => undefined)
-        throw error
+    const drainReceivers = async () => {
+        await Promise.all([ncA.drain(), ncB.drain()])
+        await Promise.all([pubSubA.onModuleDestroy(), pubSubB.onModuleDestroy()])
     }
+    setup.move()
+    return { pubSubA, pubSubB, connectionB: ncB, drainReceivers, teardown }
 }

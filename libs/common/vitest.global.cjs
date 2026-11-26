@@ -37,10 +37,12 @@ module.exports = async function globalSetup() {
     const results = await Promise.allSettled(
         definitions.map(async (container) => setup.use(await container.start()))
     )
-    const [mongo, redis, s3, nats] = results.map((result) => {
-        if (result.status === 'rejected') throw result.reason
-        return result.value
-    })
+    const failures = results
+        .filter((result) => result.status === 'rejected')
+        .map((result) => result.reason)
+    if (failures.length === 1) throw failures[0]
+    if (failures.length > 1) throw new AggregateError(failures, 'Test container startup failed')
+    const [mongo, redis, s3, nats] = results.map((result) => result.value)
 
     const mongoUri = new URL(mongo.getConnectionString())
     mongoUri.searchParams.set('directConnection', 'true')

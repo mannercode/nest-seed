@@ -341,14 +341,16 @@ describe('UsersService', () => {
             })
         })
 
-        it('생년월일과 이메일만 바꾸면 기존 이름을 유지한다', async () => {
+        describe('생년월일과 이메일만 바꾸면', () => {
             const updateDto = { birthDate: plainDate('1900-12-31'), email: 'new@mail.com' }
 
-            await fix.httpClient
-                .patch('/users/me')
-                .headers(userAuth)
-                .body(updateDto)
-                .ok({ schema: UserSchema, expected: { ...user, ...updateDto } })
+            it('기존 이름을 함께 반환한다', async () => {
+                await fix.httpClient
+                    .patch('/users/me')
+                    .headers(userAuth)
+                    .body(updateDto)
+                    .ok({ schema: UserSchema, expected: { ...user, ...updateDto } })
+            })
         })
 
         describe('name이 null이면', () => {
@@ -363,18 +365,21 @@ describe('UsersService', () => {
             })
         })
 
-        it('변경한 이름을 응답과 이후 본인 조회에 반영한다', async () => {
+        describe('이름을 변경하면', () => {
             const updateDto = { name: 'update-name' }
-            await fix.httpClient
-                .patch('/users/me')
-                .headers(userAuth)
-                .body(updateDto)
-                .ok({ schema: UserSchema, expected: { ...user, ...updateDto } })
 
-            await fix.httpClient
-                .get('/users/me')
-                .headers(userAuth)
-                .ok({ schema: UserSchema, expected: { ...user, ...updateDto } })
+            it('수정 응답과 이후 본인 조회에서 새 이름을 반환한다', async () => {
+                await fix.httpClient
+                    .patch('/users/me')
+                    .headers(userAuth)
+                    .body(updateDto)
+                    .ok({ schema: UserSchema, expected: { ...user, ...updateDto } })
+
+                await fix.httpClient
+                    .get('/users/me')
+                    .headers(userAuth)
+                    .ok({ schema: UserSchema, expected: { ...user, ...updateDto } })
+            })
         })
 
         describe('비밀번호를 변경한 뒤', () => {
