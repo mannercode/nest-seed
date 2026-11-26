@@ -40,12 +40,12 @@ describe('AppConfigService.schema', () => {
     describe('HTTP_REQUEST_PAYLOAD_LIMIT', () => {
         const schema = AppConfigService.schema.shape.HTTP_REQUEST_PAYLOAD_LIMIT
 
-        it('바이트 수를 정수로 읽는다', () => {
-            expect(schema.parse('1572864')).toBe(1572864)
+        it.each(['1.5mb', '1572864'])('%s를 그대로 전달한다', (limit) => {
+            expect(schema.parse(limit)).toBe(limit)
         })
 
-        it.each(['0', '1mb', '1e3'])('%s이면 검증에 실패한다', (value) => {
-            expect(schema.safeParse(value).success).toBe(false)
+        it('값이 비어 있으면 검증에 실패한다', () => {
+            expect(schema.safeParse('').success).toBe(false)
         })
     })
 
