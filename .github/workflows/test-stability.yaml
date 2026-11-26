@@ -16,9 +16,11 @@ jobs:
                 include:
                     - name: libs
                       repeat: 38
-                      command: pnpm --recursive --filter './libs/**' --fail-if-no-match run test --coverage.enabled=false
+                      group: bash infra/stack.sh group
+                      command: pnpm --recursive --filter "./libs/**" --fail-if-no-match run test --coverage.enabled=false
                     - name: api
                       repeat: 30
+                      group: bash infra/stack.sh group
                       setup: pnpm run pretest
                       command: |
                           pnpm --dir apps/api run test:vitest --coverage.enabled=false
@@ -36,9 +38,9 @@ jobs:
                   runCmd: |
                       set -e
                       ${{ matrix.setup }}
-                      run=1
-                      while [ "$run" -le ${{ matrix.repeat }} ]; do
-                          echo "[Run ${run}/${{ matrix.repeat }}]"
-                          ${{ matrix.command }}
-                          run=$((run + 1))
-                      done
+                      ${{ matrix.group }} bash -ec '
+                          for ((run = 1; run <= ${{ matrix.repeat }}; run++)); do
+                              echo "[Run ${run}/${{ matrix.repeat }}]"
+                              ${{ matrix.command }}
+                          done
+                      '
