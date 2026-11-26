@@ -38,8 +38,10 @@ describe('GET /views/web/home', () => {
         fix = await createAppTestContext()
     })
     afterEach(() => fix?.teardown())
-    it('인증하지 않고 홈을 조회하면 401을 반환한다', async () => {
-        await fix.httpClient.get('/views/web/home').unauthorized()
+    describe('인증하지 않았으면', () => {
+        it('401을 반환한다', async () => {
+            await fix.httpClient.get('/views/web/home').unauthorized()
+        })
     })
     describe('사진 없이 가입한 사용자가 로그인했으면', () => {
         let session: Awaited<ReturnType<typeof createAndLoginUser>>

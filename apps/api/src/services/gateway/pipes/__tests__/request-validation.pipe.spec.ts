@@ -39,99 +39,91 @@ describe('RequestValidationPipe HTTP 및 오류 변환', () => {
 
     describe('POST /', () => {
         describe('요청 본문이 스키마에 맞으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.post('/').body({ date: nullDate, sampleId: 'id' })
-            })
-            it('요청하면 201을 반환한다', async () => {
-                await request.created()
+            const validBody = { date: nullDate, sampleId: 'id' }
+
+            it('201을 반환한다', async () => {
+                await fix.httpClient.post('/').body(validBody).created()
             })
         })
 
         describe('요청 본문에 정의하지 않은 필드가 있으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient
+            const bodyWithUnknownField = { date: nullDate, sampleId: 'id', unknown: 'x' }
+
+            it('400을 반환한다', async () => {
+                await fix.httpClient
                     .post('/')
-                    .body({ date: nullDate, sampleId: 'id', unknown: 'x' })
-            })
-            it('요청하면 400을 반환한다', async () => {
-                await request.badRequest({
-                    expected: {
-                        code: 'ERR_REQUEST_VALIDATION_FAILED',
-                        details: [
-                            { constraints: { validation: expect.any(String) }, field: 'unknown' }
-                        ],
-                        message: 'Validation failed'
-                    }
-                })
+                    .body(bodyWithUnknownField)
+                    .badRequest({
+                        expected: {
+                            code: 'ERR_REQUEST_VALIDATION_FAILED',
+                            details: [
+                                {
+                                    constraints: { validation: expect.any(String) },
+                                    field: 'unknown'
+                                }
+                            ],
+                            message: 'Validation failed'
+                        }
+                    })
             })
         })
 
         // 응답을 만드는 함수로 예상값까지 만들면 같은 오류를 놓칠 수 있으므로, 기대하는 JSON을 직접 적는다.
         describe('요청 본문에 필수 필드가 없으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.post('/').body({ date: nullDate })
-            })
-            it('요청하면 필드명과 검증 오류를 담은 400을 반환한다', async () => {
-                await request.badRequest({
-                    expected: {
-                        code: 'ERR_REQUEST_VALIDATION_FAILED',
-                        details: [
-                            { constraints: { validation: expect.any(String) }, field: 'sampleId' }
-                        ],
-                        message: 'Validation failed'
-                    }
-                })
+            const bodyWithoutSampleId = { date: nullDate }
+
+            it('400을 반환한다', async () => {
+                await fix.httpClient
+                    .post('/')
+                    .body(bodyWithoutSampleId)
+                    .badRequest({
+                        expected: {
+                            code: 'ERR_REQUEST_VALIDATION_FAILED',
+                            details: [
+                                {
+                                    constraints: { validation: expect.any(String) },
+                                    field: 'sampleId'
+                                }
+                            ],
+                            message: 'Validation failed'
+                        }
+                    })
             })
         })
     })
 
     describe('POST /array', () => {
         describe('요청 배열의 모든 항목이 스키마에 맞으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.post('/array').body([{ date: nullDate, sampleId: 'id' }])
-            })
-            it('요청하면 201을 반환한다', async () => {
-                await request.created()
+            const validItems = [{ date: nullDate, sampleId: 'id' }]
+
+            it('201을 반환한다', async () => {
+                await fix.httpClient.post('/array').body(validItems).created()
             })
         })
 
         describe('요청 배열 항목의 날짜가 잘못되었으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.post('/array').body([{ date: 'wrong', sampleId: 'id' }])
-            })
-            it('요청하면 400을 반환한다', async () => {
-                await request.badRequest()
+            const itemsWithInvalidDate = [{ date: 'wrong', sampleId: 'id' }]
+
+            it('400을 반환한다', async () => {
+                await fix.httpClient.post('/array').body(itemsWithInvalidDate).badRequest()
             })
         })
     })
 
     describe('POST /nested', () => {
         describe('요청 본문의 중첩 배열이 스키마에 맞으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient
-                    .post('/nested')
-                    .body({ samples: [{ date: nullDate, sampleId: 'id' }] })
-            })
-            it('요청하면 201을 반환한다', async () => {
-                await request.created()
+            const validNestedBody = { samples: [{ date: nullDate, sampleId: 'id' }] }
+
+            it('201을 반환한다', async () => {
+                await fix.httpClient.post('/nested').body(validNestedBody).created()
             })
         })
 
         describe('요청 본문의 중첩 배열 항목에 잘못된 날짜가 있으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient
-                    .post('/nested')
-                    .body({ samples: [{ date: 'wrong', sampleId: 'id' }] })
-            })
-            it('요청하면 400을 반환한다', async () => {
-                await request.badRequest()
+            const nestedBodyWithInvalidDate = { samples: [{ date: 'wrong', sampleId: 'id' }] }
+
+            it('400을 반환한다', async () => {
+                await fix.httpClient.post('/nested').body(nestedBodyWithInvalidDate).badRequest()
             })
         })
     })

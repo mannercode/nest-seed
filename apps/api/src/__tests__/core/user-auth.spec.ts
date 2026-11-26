@@ -146,15 +146,18 @@ describe('UserAuthentication', () => {
                 .ok({ schema: UserSchema, expected: mine.user })
         })
         describe('수정 본문에 타인 ID를 넣었으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient
+            it('수정을 거절하고 두 사용자의 정보를 유지한다', async () => {
+                const bodyWithOtherUserId = {
+                    id: other.user.id,
+                    userId: other.user.id,
+                    name: 'denied'
+                }
+
+                await fix.httpClient
                     .patch('/users/me')
                     .headers(headers)
-                    .body({ id: other.user.id, userId: other.user.id, name: 'denied' })
-            })
-            it('수정을 거절하고 두 사용자의 정보를 유지한다', async () => {
-                await request.badRequest()
+                    .body(bodyWithOtherUserId)
+                    .badRequest()
                 await expectCurrentUser(fix, mine)
                 await expectCurrentUser(fix, other)
             })
@@ -182,26 +185,24 @@ describe('UserAuthentication', () => {
             { condition: '15자 미만', password: '🌱'.repeat(14) },
             { condition: '128자 초과', password: 'a'.repeat(129) }
         ])('비밀번호 길이가 $condition 범위이면', ({ password }) => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.post('/users/login').body({ ...credentials, password })
-            })
-            it('로그인을 요청하면 입력 오류로 400을 반환한다', async () => {
-                await request.badRequest({
-                    expected: expectedErrors.validationFailed(expect.any(Array))
-                })
+            const invalidCredentials = { ...credentials, password }
+
+            it('400을 반환한다', async () => {
+                await fix.httpClient
+                    .post('/users/login')
+                    .body(invalidCredentials)
+                    .badRequest({ expected: expectedErrors.validationFailed(expect.any(Array)) })
             })
         })
 
         describe('이메일의 대소문자와 앞뒤 공백만 등록 정보와 다르면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient
+            const credentialsWithPaddedEmail = { ...credentials, email: '  USER@MAIL.COM  ' }
+
+            it('같은 사용자의 토큰을 반환한다', async () => {
+                const { body } = await fix.httpClient
                     .post('/users/login')
-                    .body({ ...credentials, email: '  USER@MAIL.COM  ' })
-            })
-            it('로그인하면 같은 사용자의 토큰을 반환한다', async () => {
-                const { body } = await request.ok()
+                    .body(credentialsWithPaddedEmail)
+                    .ok()
                 await fix.httpClient
                     .get('/users/me')
                     .headers({ Authorization: `Bearer ${body.accessToken}` })
@@ -237,14 +238,16 @@ describe('UserAuthentication', () => {
         })
 
         describe('이메일과 비밀번호가 등록된 사용자 정보와 일치하면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.post('/users/login').body(credentials)
-            })
-            it('로그인하면 인증 토큰을 반환한다', async () => {
-                const { body } = await request.ok({
-                    expected: { accessToken: expect.any(String), refreshToken: expect.any(String) }
-                })
+            it('인증 토큰을 반환한다', async () => {
+                const { body } = await fix.httpClient
+                    .post('/users/login')
+                    .body(credentials)
+                    .ok({
+                        expected: {
+                            accessToken: expect.any(String),
+                            refreshToken: expect.any(String)
+                        }
+                    })
 
                 const { exp, iat } = new JwtService().decode<{ exp: number; iat: number }>(
                     body.accessToken
@@ -255,26 +258,24 @@ describe('UserAuthentication', () => {
         })
 
         describe('비밀번호가 틀리면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient
+            const credentialsWithWrongPassword = { ...credentials, password: 'incorrect password' }
+
+            it('401을 반환한다', async () => {
+                await fix.httpClient
                     .post('/users/login')
-                    .body({ ...credentials, password: 'incorrect password' })
-            })
-            it('로그인을 요청하면 401을 반환한다', async () => {
-                await request.unauthorized({ expected: expectedErrors.unauthorized })
+                    .body(credentialsWithWrongPassword)
+                    .unauthorized({ expected: expectedErrors.unauthorized })
             })
         })
 
         describe('등록되지 않은 이메일이면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient
+            const unregisteredCredentials = { ...credentials, email: 'unknown@mail.com' }
+
+            it('401을 반환한다', async () => {
+                await fix.httpClient
                     .post('/users/login')
-                    .body({ ...credentials, email: 'unknown@mail.com' })
-            })
-            it('로그인을 요청하면 401을 반환한다', async () => {
-                await request.unauthorized({ expected: expectedErrors.unauthorized })
+                    .body(unregisteredCredentials)
+                    .unauthorized({ expected: expectedErrors.unauthorized })
             })
         })
 
@@ -374,7 +375,7 @@ describe('UserAuthentication', () => {
             beforeEach(async () => {
                 authTokens = await loginUser(fix, credentials)
             })
-            it('본인 정보를 조회하면 로그인한 사용자 정보를 반환한다', async () => {
+            it('로그인한 사용자 정보를 반환한다', async () => {
                 await fix.httpClient
                     .get('/users/me')
                     .headers({ Authorization: `Bearer ${authTokens.accessToken}` })
@@ -389,30 +390,30 @@ describe('UserAuthentication', () => {
             })
 
             describe('Authorization 헤더에 리프레시 토큰이 있으면', () => {
-                let request: typeof fix.httpClient
-                beforeEach(() => {
-                    request = fix.httpClient
-                        .get('/users/me')
-                        .headers({ Authorization: `Bearer ${authTokens.refreshToken}` })
-                })
-                it('본인 정보를 조회하면 401을 반환한다', async () => {
+                it('401을 반환한다', async () => {
+                    const refreshTokenHeaders = {
+                        Authorization: `Bearer ${authTokens.refreshToken}`
+                    }
+
                     // 두 토큰은 iss/aud가 같아 secret 분리만이 방벽이다 — 이 검증이 무너지면
                     // 수명이 긴 리프레시 토큰이 로그아웃으로도 회수되지 않는 액세스 토큰으로 동작한다.
 
-                    await request.unauthorized({ expected: expectedErrors.unauthorized })
+                    await fix.httpClient
+                        .get('/users/me')
+                        .headers(refreshTokenHeaders)
+                        .unauthorized({ expected: expectedErrors.unauthorized })
                 })
             })
         })
 
         describe('액세스 토큰이 유효하지 않으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient
+            const invalidTokenHeaders = { Authorization: 'Bearer invalid-token' }
+
+            it('401을 반환한다', async () => {
+                await fix.httpClient
                     .get('/users/me')
-                    .headers({ Authorization: 'Bearer invalid-token' })
-            })
-            it('본인 정보를 조회하면 401을 반환한다', async () => {
-                await request.unauthorized({ expected: expectedErrors.unauthorized })
+                    .headers(invalidTokenHeaders)
+                    .unauthorized({ expected: expectedErrors.unauthorized })
             })
         })
 
@@ -435,7 +436,7 @@ describe('UserAuthentication', () => {
                 })
             })
 
-            it('본인 조회 요청에 401을 반환한다', async () => {
+            it('401을 반환한다', async () => {
                 await fix.httpClient
                     .get('/users/me')
                     .headers({ Authorization: `Bearer ${token}` })
@@ -452,7 +453,7 @@ describe('UserAuthentication', () => {
                 ;({ accessToken } = await loginUser(fix, credentials))
             })
 
-            it('계정 삭제를 요청하면 204를 반환한다', async () => {
+            it('204를 반환한다', async () => {
                 await fix.httpClient
                     .delete('/users/me')
                     .headers({ Authorization: `Bearer ${accessToken}` })
@@ -492,7 +493,7 @@ describe('UserAuthentication', () => {
                 tokens = await loginUser(fix, credentials)
             })
 
-            it('토큰 갱신을 요청하면 새 액세스 토큰과 리프레시 토큰을 반환한다', async () => {
+            it('새 액세스 토큰과 리프레시 토큰을 반환한다', async () => {
                 const { body } = await fix.httpClient
                     .post('/users/refresh')
                     .body({ refreshToken: tokens.refreshToken })
@@ -536,7 +537,7 @@ describe('UserAuthentication', () => {
                     email: user.email
                 }))
             })
-            it('토큰 갱신을 요청하면 401을 반환한다', async () => {
+            it('401을 반환한다', async () => {
                 await fix.httpClient
                     .post('/users/refresh')
                     .body({ refreshToken })
@@ -564,14 +565,13 @@ describe('UserAuthentication', () => {
         })
 
         describe('리프레시 토큰이 유효하지 않으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient
+            const invalidRefreshBody = { refreshToken: 'invalid-token' }
+
+            it('401을 반환한다', async () => {
+                await fix.httpClient
                     .post('/users/refresh')
-                    .body({ refreshToken: 'invalid-token' })
-            })
-            it('토큰 갱신을 요청하면 401을 반환한다', async () => {
-                await request.unauthorized({ expected: expectedErrors.refreshTokenInvalid })
+                    .body(invalidRefreshBody)
+                    .unauthorized({ expected: expectedErrors.refreshTokenInvalid })
             })
         })
     })
@@ -600,7 +600,7 @@ describe('UserAuthentication', () => {
             })
         })
 
-        it('로그아웃하면 리프레시 갱신은 거절하고 기존 액세스 토큰으로 본인 조회는 허용한다', async () => {
+        it('리프레시 토큰 갱신을 거절하고 기존 액세스 토큰으로 본인 조회를 허용한다', async () => {
             await fix.httpClient.post('/users/logout').body({ refreshToken }).noContent()
 
             await fix.httpClient
@@ -615,26 +615,27 @@ describe('UserAuthentication', () => {
         })
 
         describe('리프레시 토큰이 유효하지 않으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.post('/users/logout').body({ refreshToken: 'garbage' })
-            })
-            it('로그아웃을 요청하면 401을 반환한다', async () => {
-                await request.unauthorized({ expected: expectedErrors.refreshTokenInvalid })
+            const invalidRefreshBody = { refreshToken: 'garbage' }
+
+            it('401을 반환한다', async () => {
+                await fix.httpClient
+                    .post('/users/logout')
+                    .body(invalidRefreshBody)
+                    .unauthorized({ expected: expectedErrors.refreshTokenInvalid })
             })
         })
     })
 
     describe('POST /users/me/logout-all', () => {
-        let request: typeof fix.httpClient
+        let headers: { Authorization: string }
+
         beforeEach(async () => {
             const { accessToken } = await loginUser(fix, credentials)
-            request = fix.httpClient
-                .post('/users/me/logout-all')
-                .headers({ Authorization: `Bearer ${accessToken}` })
+            headers = { Authorization: `Bearer ${accessToken}` }
         })
+
         it('유효한 액세스 토큰으로 요청해도 404를 반환한다', async () => {
-            await request.notFound()
+            await fix.httpClient.post('/users/me/logout-all').headers(headers).notFound()
         })
     })
 

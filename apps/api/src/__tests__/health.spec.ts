@@ -29,12 +29,8 @@ describe('Health', () => {
 
     describe('GET /health', () => {
         describe('MongoDB·Redis·NATS·Restate 연결이 정상이면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/health')
-            })
-            it('상태를 조회하면 200과 상태 정보를 반환한다', async () => {
-                const { body } = await request.ok()
+            it('200을 반환한다', async () => {
+                const { body } = await fix.httpClient.get('/health').ok()
 
                 const allUp = {
                     mongodb: { status: 'up' },
@@ -50,7 +46,7 @@ describe('Health', () => {
             beforeEach(async () => {
                 await fix.module.get(MessageConsumer).onModuleDestroy()
             })
-            it('상태를 조회하면 503과 NATS의 소비 중단 사유를 반환한다', async () => {
+            it('503과 NATS 소비 중단 사유를 반환한다', async () => {
                 const { body } = await fix.httpClient.get('/health').send(503)
                 expect(body.error).toEqual({
                     nats: { status: 'down', reason: 'JetStream message consumer is stopped' }
@@ -63,7 +59,7 @@ describe('Health', () => {
                 vi.spyOn(mongo.db, 'command').mockRejectedValueOnce(new Error('mongo down'))
             })
 
-            it('상태 확인을 요청하면 503과 MongoDB의 실패 정보를 반환한다', async () => {
+            it('503과 MongoDB 실패 정보를 반환한다', async () => {
                 const { body } = await fix.httpClient.get('/health').send(503)
                 const info = {
                     redis: { status: 'up' },

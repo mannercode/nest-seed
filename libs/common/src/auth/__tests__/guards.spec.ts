@@ -17,215 +17,184 @@ describe('AuthGuard', () => {
 
     describe('Bearer 전용', () => {
         describe('유효한 Bearer 토큰이 있으면', () => {
-            let request: typeof fix.httpClient
+            let headers: { Authorization: string }
+
             beforeEach(async () => {
                 const token = await fix.jwtService.signAsync({ userId: 'user-1' })
-                request = fix.httpClient
-                    .get('/bearer/protected')
-                    .headers({ Authorization: `Bearer ${token}` })
+                headers = { Authorization: `Bearer ${token}` }
             })
-            it('보호 경로에 요청하면 200을 반환한다', async () => {
-                await request.ok()
+
+            it('200을 반환한다', async () => {
+                await fix.httpClient.get('/bearer/protected').headers(headers).ok()
             })
         })
 
         describe('토큰 서명은 유효하지만 사용자 ID가 숫자이면', () => {
-            let request: typeof fix.httpClient
+            let headers: { Authorization: string }
+
             beforeEach(async () => {
                 const token = await fix.jwtService.signAsync({ userId: 123 })
-                request = fix.httpClient
-                    .get('/bearer/protected')
-                    .headers({ Authorization: `Bearer ${token}` })
+                headers = { Authorization: `Bearer ${token}` }
             })
-            it('보호 경로에 요청하면 401을 반환한다', async () => {
-                await request.unauthorized()
+
+            it('401을 반환한다', async () => {
+                await fix.httpClient.get('/bearer/protected').headers(headers).unauthorized()
             })
         })
 
         describe('Authorization 헤더가 없으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/bearer/protected')
-            })
-            it('보호 경로에 요청하면 401을 반환한다', async () => {
-                await request.unauthorized()
+            it('401을 반환한다', async () => {
+                await fix.httpClient.get('/bearer/protected').unauthorized()
             })
         })
 
         describe('토큰 문자열이 깨져 있으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient
+            const invalidTokenHeaders = { Authorization: 'Bearer invalid-token' }
+
+            it('401을 반환한다', async () => {
+                await fix.httpClient
                     .get('/bearer/protected')
-                    .headers({ Authorization: 'Bearer invalid-token' })
-            })
-            it('보호 경로에 요청하면 401을 반환한다', async () => {
-                await request.unauthorized()
+                    .headers(invalidTokenHeaders)
+                    .unauthorized()
             })
         })
 
         describe('토큰이 만료되었으면', () => {
-            let request: typeof fix.httpClient
+            let headers: { Authorization: string }
+
             beforeEach(async () => {
                 const expired = await fix.jwtService.signAsync(
                     { userId: 'user-1' },
                     { expiresIn: '-1s' }
                 )
-                request = fix.httpClient
-                    .get('/bearer/protected')
-                    .headers({ Authorization: `Bearer ${expired}` })
+                headers = { Authorization: `Bearer ${expired}` }
             })
-            it('보호 경로에 요청하면 401을 반환한다', async () => {
-                await request.unauthorized()
+
+            it('401을 반환한다', async () => {
+                await fix.httpClient.get('/bearer/protected').headers(headers).unauthorized()
             })
         })
 
         describe('Authorization 헤더의 인증 방식이 Basic이면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient
+            const basicAuthHeaders = { Authorization: 'Basic credentials' }
+
+            it('401을 반환한다', async () => {
+                await fix.httpClient
                     .get('/bearer/protected')
-                    .headers({ Authorization: 'Basic credentials' })
-            })
-            it('보호 경로에 요청하면 401을 반환한다', async () => {
-                await request.unauthorized()
+                    .headers(basicAuthHeaders)
+                    .unauthorized()
             })
         })
 
         describe('Authorization 헤더의 bearer가 소문자이면', () => {
-            let request: typeof fix.httpClient
+            let headers: { Authorization: string }
+
             beforeEach(async () => {
                 const token = await fix.jwtService.signAsync({ userId: 'user-1' })
-                request = fix.httpClient
-                    .get('/bearer/protected')
-                    .headers({ Authorization: `bearer ${token}` })
+                headers = { Authorization: `bearer ${token}` }
             })
-            it('보호 경로에 요청하면 200을 반환한다', async () => {
-                await request.ok()
+
+            it('200을 반환한다', async () => {
+                await fix.httpClient.get('/bearer/protected').headers(headers).ok()
             })
         })
 
         describe('Authorization 헤더의 Bearer 뒤에 토큰이 없으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient
-                    .get('/bearer/protected')
-                    .headers({ Authorization: 'Bearer ' })
-            })
-            it('보호 경로에 요청하면 401을 반환한다', async () => {
+            const headersWithoutToken = { Authorization: 'Bearer ' }
+
+            it('401을 반환한다', async () => {
                 // Node의 HTTP 파서가 헤더 끝 공백을 제거하므로 가드에는 "Bearer"만 전달된다.
-                await request.unauthorized()
+                await fix.httpClient
+                    .get('/bearer/protected')
+                    .headers(headersWithoutToken)
+                    .unauthorized()
             })
         })
 
         describe('@Public 경로에 보낼 요청에 인증 정보가 없으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/bearer/public')
-            })
-            it('요청하면 200을 반환한다', async () => {
-                await request.ok()
+            it('200을 반환한다', async () => {
+                await fix.httpClient.get('/bearer/public').ok()
             })
         })
 
         describe('@OptionalAuth 경로에 보낼 요청에 인증 정보가 없으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/bearer/optional-route')
-            })
-            it('요청하면 200을 반환한다', async () => {
-                await request.ok()
+            it('200을 반환한다', async () => {
+                await fix.httpClient.get('/bearer/optional-route').ok()
             })
         })
 
         describe('@OptionalAuth 경로에 보낼 토큰이 만료되었으면', () => {
-            let request: typeof fix.httpClient
+            let headers: { Authorization: string }
+
             beforeEach(async () => {
                 const expired = await fix.jwtService.signAsync(
                     { userId: 'user-1' },
                     { expiresIn: '-1s' }
                 )
-                request = fix.httpClient
-                    .get('/bearer/optional-route')
-                    .headers({ Authorization: `Bearer ${expired}` })
+                headers = { Authorization: `Bearer ${expired}` }
             })
-            it('요청하면 401을 반환한다', async () => {
-                await request.unauthorized()
+
+            it('401을 반환한다', async () => {
+                await fix.httpClient.get('/bearer/optional-route').headers(headers).unauthorized()
             })
         })
     })
 
     describe('Optional', () => {
         describe('Authorization 헤더가 없으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/optional')
-            })
-            it('요청하면 200을 반환한다', async () => {
-                await request.ok()
+            it('200을 반환한다', async () => {
+                await fix.httpClient.get('/optional').ok()
             })
         })
 
         describe('유효한 Bearer 토큰이 있으면', () => {
-            let request: typeof fix.httpClient
+            let headers: { Authorization: string }
+
             beforeEach(async () => {
                 const token = await fix.jwtService.signAsync({ userId: 'user-1' })
-                request = fix.httpClient
-                    .get('/optional')
-                    .headers({ Authorization: `Bearer ${token}` })
+                headers = { Authorization: `Bearer ${token}` }
             })
-            it('요청하면 200을 반환한다', async () => {
-                await request.ok()
+
+            it('200을 반환한다', async () => {
+                await fix.httpClient.get('/optional').headers(headers).ok()
             })
         })
 
         describe('토큰 문자열이 깨져 있으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient
-                    .get('/optional')
-                    .headers({ Authorization: 'Bearer invalid-token' })
-            })
-            it('요청하면 401을 반환한다', async () => {
-                await request.unauthorized()
+            const invalidTokenHeaders = { Authorization: 'Bearer invalid-token' }
+
+            it('401을 반환한다', async () => {
+                await fix.httpClient.get('/optional').headers(invalidTokenHeaders).unauthorized()
             })
         })
 
         describe('토큰이 만료되었으면', () => {
-            let request: typeof fix.httpClient
+            let headers: { Authorization: string }
+
             beforeEach(async () => {
                 const expired = await fix.jwtService.signAsync(
                     { userId: 'user-1' },
                     { expiresIn: '-1s' }
                 )
-                request = fix.httpClient
-                    .get('/optional')
-                    .headers({ Authorization: `Bearer ${expired}` })
+                headers = { Authorization: `Bearer ${expired}` }
             })
-            it('요청하면 401을 반환한다', async () => {
-                await request.unauthorized()
+
+            it('401을 반환한다', async () => {
+                await fix.httpClient.get('/optional').headers(headers).unauthorized()
             })
         })
 
         describe('Authorization 헤더의 인증 방식이 Basic이면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient
-                    .get('/optional')
-                    .headers({ Authorization: 'Basic credentials' })
-            })
-            it('요청하면 401을 반환한다', async () => {
-                await request.unauthorized()
+            const basicAuthHeaders = { Authorization: 'Basic credentials' }
+
+            it('401을 반환한다', async () => {
+                await fix.httpClient.get('/optional').headers(basicAuthHeaders).unauthorized()
             })
         })
 
         describe('@Public 경로에 보낼 요청에 인증 정보가 없으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/optional/public')
-            })
-            it('요청하면 200을 반환한다', async () => {
-                await request.ok()
+            it('200을 반환한다', async () => {
+                await fix.httpClient.get('/optional/public').ok()
             })
         })
     })

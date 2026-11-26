@@ -13,96 +13,93 @@ describe('PaginationDto', () => {
 
     describe('GET /pagination', () => {
         describe('페이지·크기·정렬 조건이 유효하면', () => {
-            let request: typeof fix.httpClient
-            let page: number
-            let size: number
-            beforeEach(() => {
-                page = 2
-                size = 3
-                const query = { size, orderby: 'name:asc', page }
-                request = fix.httpClient.get('/pagination').query(query)
-            })
-            it('페이지 조건을 요청하면 PaginationDto로 변환해 반환한다', async () => {
+            const query = { page: 2, size: 3, orderby: 'name:asc' }
+
+            it('PaginationDto로 변환해 반환한다', async () => {
                 const expectedResponse = {
-                    response: { size, orderby: { direction: 'asc', name: 'name' }, page }
+                    response: {
+                        size: query.size,
+                        orderby: { direction: 'asc', name: 'name' },
+                        page: query.page
+                    }
                 }
 
-                await request.ok({ expected: expectedResponse })
+                await fix.httpClient
+                    .get('/pagination')
+                    .query(query)
+                    .ok({ expected: expectedResponse })
             })
         })
 
         describe('정렬 필드 이름이 문자열 "0"이면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/pagination').query({ orderby: '0:asc' })
-            })
-            it('페이지 조건을 요청하면 필드 이름을 유지한다', async () => {
-                await request.ok({
-                    expected: { response: { orderby: { direction: 'asc', name: '0' } } }
-                })
+            const queryWithNumericField = { orderby: '0:asc' }
+
+            it('정렬 필드 이름을 유지한다', async () => {
+                await fix.httpClient
+                    .get('/pagination')
+                    .query(queryWithNumericField)
+                    .ok({ expected: { response: { orderby: { direction: 'asc', name: '0' } } } })
             })
         })
 
         describe('orderby 형식이 잘못되었으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/pagination').query({ orderby: 'wrong' })
-            })
-            it('페이지 조건을 요청하면 400을 반환한다', async () => {
-                await request.badRequest({ expected: CommonErrors.Pagination.FormatInvalid() })
+            const malformedQuery = { orderby: 'wrong' }
+
+            it('400을 반환한다', async () => {
+                await fix.httpClient
+                    .get('/pagination')
+                    .query(malformedQuery)
+                    .badRequest({ expected: CommonErrors.Pagination.FormatInvalid() })
             })
         })
 
         describe('정렬 방향이 유효하지 않으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/pagination').query({ orderby: 'name:wrong' })
-            })
-            it('페이지 조건을 요청하면 400을 반환한다', async () => {
-                await request.badRequest({ expected: CommonErrors.Pagination.DirectionInvalid() })
+            const invalidDirectionQuery = { orderby: 'name:wrong' }
+
+            it('400을 반환한다', async () => {
+                await fix.httpClient
+                    .get('/pagination')
+                    .query(invalidDirectionQuery)
+                    .badRequest({ expected: CommonErrors.Pagination.DirectionInvalid() })
             })
         })
 
         describe('정렬 방향이 대문자 ASC이면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/pagination').query({ orderby: 'name:ASC' })
-            })
-            it('페이지 조건을 요청하면 400을 반환한다', async () => {
-                await request.badRequest({ expected: CommonErrors.Pagination.DirectionInvalid() })
+            const uppercaseDirectionQuery = { orderby: 'name:ASC' }
+
+            it('400을 반환한다', async () => {
+                await fix.httpClient
+                    .get('/pagination')
+                    .query(uppercaseDirectionQuery)
+                    .badRequest({ expected: CommonErrors.Pagination.DirectionInvalid() })
             })
         })
 
         describe('정렬 필드와 방향 양옆에 공백이 있으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/pagination').query({ orderby: '  name  :  asc  ' })
-            })
-            it('페이지 조건을 요청하면 공백을 제거해 반환한다', async () => {
-                await request.ok({
-                    expected: { response: { orderby: { direction: 'asc', name: 'name' } } }
-                })
+            const paddedSortQuery = { orderby: '  name  :  asc  ' }
+
+            it('공백을 제거해 반환한다', async () => {
+                await fix.httpClient
+                    .get('/pagination')
+                    .query(paddedSortQuery)
+                    .ok({ expected: { response: { orderby: { direction: 'asc', name: 'name' } } } })
             })
         })
 
         describe('page가 0이면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/pagination').query({ page: 0, size: 10 })
-            })
-            it('페이지 조건을 요청하면 400을 반환한다', async () => {
+            const zeroPageQuery = { page: 0, size: 10 }
+
+            it('400을 반환한다', async () => {
                 // 저장소는 size만 가드하므로 비양수 page는 DTO 검증이 유일한 방어선이다.
-                await request.badRequest()
+                await fix.httpClient.get('/pagination').query(zeroPageQuery).badRequest()
             })
         })
 
         describe('정의하지 않은 쿼리 파라미터가 있으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/pagination').query({ unknown: 'value' })
-            })
-            it('페이지 조건을 요청하면 400을 반환한다', async () => {
-                await request.badRequest()
+            const queryWithUnknownField = { unknown: 'value' }
+
+            it('400을 반환한다', async () => {
+                await fix.httpClient.get('/pagination').query(queryWithUnknownField).badRequest()
             })
         })
     })

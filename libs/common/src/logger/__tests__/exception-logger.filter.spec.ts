@@ -15,18 +15,16 @@ describe('HttpExceptionLoggerFilter', () => {
 
     describe('HTTP 컨텍스트', () => {
         describe('내부 오류를 던지는 경로이면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/internal-error')
-            })
-            it('요청하면 500을 반환하고 상세 원인은 로그에 남긴다', async () => {
-                await request.internalServerError({
-                    expected: {
-                        statusCode: 500,
-                        message: 'Internal server error',
-                        error: 'Internal Server Error'
-                    }
-                })
+            it('500을 반환하고 상세 원인은 로그에 남긴다', async () => {
+                await fix.httpClient
+                    .get('/internal-error')
+                    .internalServerError({
+                        expected: {
+                            statusCode: 500,
+                            message: 'Internal server error',
+                            error: 'Internal Server Error'
+                        }
+                    })
 
                 expect(fix.spyError).toHaveBeenCalledWith(
                     'error',
@@ -42,12 +40,10 @@ describe('HttpExceptionLoggerFilter', () => {
         })
 
         describe('404 예외를 던지는 경로이면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/exception')
-            })
-            it('요청하면 Logger.warn으로 로그를 남긴다', async () => {
-                await request.notFound({ expected: { code: 'ERR_CODE', message: 'message' } })
+            it('Logger.warn으로 로그를 남긴다', async () => {
+                await fix.httpClient
+                    .get('/exception')
+                    .notFound({ expected: { code: 'ERR_CODE', message: 'message' } })
 
                 expect(fix.spyWarn).toHaveBeenCalledTimes(1)
                 expect(fix.spyWarn).toHaveBeenCalledWith('fail', {
@@ -62,12 +58,8 @@ describe('HttpExceptionLoggerFilter', () => {
         })
 
         describe('등록되지 않은 경로이면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/missing-route')
-            })
-            it('요청하면 오류 로그에 실제 요청 경로를 기록한다', async () => {
-                await request.notFound()
+            it('오류 로그에 실제 요청 경로를 기록한다', async () => {
+                await fix.httpClient.get('/missing-route').notFound()
 
                 expect(fix.spyWarn).toHaveBeenCalledWith(
                     'fail',
@@ -77,12 +69,8 @@ describe('HttpExceptionLoggerFilter', () => {
         })
 
         describe('401 예외를 던지는 경로이면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/unauthorized')
-            })
-            it('요청하면 Logger.warn으로 로그를 남긴다', async () => {
-                await request.unauthorized()
+            it('Logger.warn으로 로그를 남긴다', async () => {
+                await fix.httpClient.get('/unauthorized').unauthorized()
 
                 expect(fix.spyWarn).toHaveBeenCalledWith(
                     'fail',
@@ -92,12 +80,8 @@ describe('HttpExceptionLoggerFilter', () => {
         })
 
         describe('422 예외를 던지는 경로이면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/unprocessable')
-            })
-            it('요청하면 Logger.warn으로 로그를 남긴다', async () => {
-                await request.unprocessableEntity()
+            it('Logger.warn으로 로그를 남긴다', async () => {
+                await fix.httpClient.get('/unprocessable').unprocessableEntity()
 
                 expect(fix.spyWarn).toHaveBeenCalledWith(
                     'fail',
@@ -107,12 +91,8 @@ describe('HttpExceptionLoggerFilter', () => {
         })
 
         describe('문자열 응답을 담은 HttpException을 던지는 경로이면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/string-response')
-            })
-            it('요청하면 오류 이름과 상태 코드를 로그에 기록한다', async () => {
-                await request.badRequest()
+            it('오류 이름과 상태 코드를 로그에 기록한다', async () => {
+                await fix.httpClient.get('/string-response').badRequest()
 
                 expect(fix.spyWarn).toHaveBeenCalledWith(
                     'fail',
@@ -147,12 +127,8 @@ describe('HttpExceptionLoggerFilter', () => {
         })
 
         describe('일반 Error를 던지는 경로이면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/error')
-            })
-            it('요청하면 Logger.error로 로그를 남긴다', async () => {
-                await request.internalServerError()
+            it('Logger.error로 로그를 남긴다', async () => {
+                await fix.httpClient.get('/error').internalServerError()
 
                 expect(fix.spyError).toHaveBeenCalledTimes(1)
                 expect(fix.spyError).toHaveBeenCalledWith('error', {
@@ -167,12 +143,8 @@ describe('HttpExceptionLoggerFilter', () => {
         })
 
         describe('Error 대신 문자열을 던지는 경로이면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.get('/throw-string')
-            })
-            it('요청해도 예외 필터가 로그를 남기지 않는다', async () => {
-                await request.internalServerError()
+            it('예외 필터가 로그를 남기지 않는다', async () => {
+                await fix.httpClient.get('/throw-string').internalServerError()
 
                 expect(fix.spyError).not.toHaveBeenCalledWith('error', expect.anything())
                 expect(fix.spyWarn).not.toHaveBeenCalledWith('fail', expect.anything())

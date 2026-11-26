@@ -32,12 +32,10 @@ describe('UsersService', () => {
             { condition: 'ASCII 129자', password: 'a'.repeat(129) },
             { condition: '한글 129자', password: '가'.repeat(129) }
         ])('비밀번호에 $condition 값을 입력하면', ({ password }) => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.post('/users').body(buildCreateUserDto({ password }))
-            })
-            it('가입 요청에 400을 반환하고 같은 이메일로 유효한 비밀번호를 보내면 가입할 수 있다', async () => {
-                await request.badRequest()
+            const invalidSignupBody = buildCreateUserDto({ password })
+
+            it('400을 반환하고 같은 이메일로 유효한 비밀번호를 보내면 가입할 수 있다', async () => {
+                await fix.httpClient.post('/users').body(invalidSignupBody).badRequest()
                 await fix.httpClient
                     .post('/users')
                     .body(buildCreateUserDto())
@@ -52,10 +50,8 @@ describe('UsersService', () => {
             { condition: '이모지 128자', password: '🌱'.repeat(128) },
             { condition: '공백 15자', password: ' '.repeat(15) }
         ])('비밀번호에 $condition 값을 입력하면', ({ password }) => {
-            let createDto: ReturnType<typeof buildCreateUserDto>
-            beforeEach(() => {
-                createDto = buildCreateUserDto({ password })
-            })
+            const createDto = buildCreateUserDto({ password })
+
             it('가입한 뒤 원문 비밀번호로 로그인할 수 있다', async () => {
                 await fix.httpClient.post('/users').body(createDto).created({ schema: UserSchema })
                 await fix.httpClient
@@ -66,11 +62,9 @@ describe('UsersService', () => {
         })
 
         describe('이메일에 대문자와 앞뒤 공백이 있으면', () => {
-            let createDto: ReturnType<typeof buildCreateUserDto>
-            beforeEach(() => {
-                createDto = buildCreateUserDto({ email: '  First.Last+Tag@Example.COM  ' })
-            })
-            it('가입하면 공백을 제거한 소문자 이메일을 저장하고 반환한다', async () => {
+            const createDto = buildCreateUserDto({ email: '  First.Last+Tag@Example.COM  ' })
+
+            it('공백을 제거한 소문자 이메일을 저장하고 반환한다', async () => {
                 const { body } = await fix.httpClient
                     .post('/users')
                     .body(createDto)
@@ -98,7 +92,7 @@ describe('UsersService', () => {
                 beforeEach(async () => {
                     existing = await createUser(fix, { email: 'first.last@example.com' })
                 })
-                it('가입하면 점과 +태그가 다른 별도 계정을 생성한다', async () => {
+                it('점과 +태그가 다른 별도 계정을 생성한다', async () => {
                     const { body } = await fix.httpClient
                         .post('/users')
                         .body(buildCreateUserDto({ email }))
@@ -109,7 +103,7 @@ describe('UsersService', () => {
             }
         )
 
-        it('사용자를 생성하면 생성된 정보를 반환한다', async () => {
+        it('생성된 사용자 정보를 반환한다', async () => {
             const createDto = buildCreateUserDto({ name: '2000-01-02' })
 
             await fix.httpClient
@@ -137,23 +131,19 @@ describe('UsersService', () => {
             },
             { condition: '비밀번호가 없으면', body: omit(buildCreateUserDto(), ['password']) }
         ])('$condition', ({ body }) => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.post('/users').body(body)
-            })
-            it('가입을 요청하면 400을 반환한다', async () => {
-                await request.badRequest()
+            it('400을 반환한다', async () => {
+                await fix.httpClient.post('/users').body(body).badRequest()
             })
         })
 
-        describe('사용자가 존재하면', () => {
+        describe('가입할 이메일이 이미 등록되어 있으면', () => {
             const email = 'user@mail.com'
 
             beforeEach(async () => {
                 await createUser(fix, { email })
             })
 
-            it('그 사용자의 이메일로 가입을 요청하면 409를 반환한다', async () => {
+            it('409를 반환한다', async () => {
                 await fix.httpClient
                     .post('/users')
                     .body(buildCreateUserDto({ email: ` ${email.toUpperCase()} ` }))
@@ -183,10 +173,8 @@ describe('UsersService', () => {
         })
 
         describe('대소문자와 앞뒤 공백만 다른 가입 요청이 있으면', () => {
-            let emails: string[]
-            beforeEach(() => {
-                emails = ['race@mail.com', 'RACE@MAIL.COM', ' race@mail.com ', ' Race@Mail.Com ']
-            })
+            const emails = ['race@mail.com', 'RACE@MAIL.COM', ' race@mail.com ', ' Race@Mail.Com ']
+
             it(
                 '동시에 가입을 요청하면 하나만 201을 반환하고 나머지는 409를 반환한다',
                 async () => {
@@ -253,12 +241,14 @@ describe('UsersService', () => {
             { condition: '이모지 14자', password: '🌱'.repeat(14) },
             { condition: '한글 129자', password: '가'.repeat(129) }
         ])('새 비밀번호에 $condition 값을 입력하면', ({ password }) => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.patch('/users/me').headers(userAuth).body({ password })
-            })
-            it('변경을 요청하면 400을 반환하고 이전 비밀번호를 유지한다', async () => {
-                await request.badRequest()
+            const invalidPasswordUpdate = { password }
+
+            it('400을 반환하고 이전 비밀번호를 유지한다', async () => {
+                await fix.httpClient
+                    .patch('/users/me')
+                    .headers(userAuth)
+                    .body(invalidPasswordUpdate)
+                    .badRequest()
                 await fix.httpClient
                     .post('/users/login')
                     .body({ email: user.email, password: 'Example password 1!' })
@@ -267,11 +257,9 @@ describe('UsersService', () => {
         })
 
         describe('새 비밀번호에 앞뒤 공백이 있으면', () => {
-            let password: string
-            beforeEach(() => {
-                password = '  updated password  '
-            })
-            it('변경하면 공백까지 일치하는 비밀번호로만 로그인할 수 있다', async () => {
+            const password = '  updated password  '
+
+            it('공백까지 일치하는 비밀번호로만 로그인할 수 있다', async () => {
                 await fix.httpClient.patch('/users/me').headers(userAuth).body({ password }).ok()
                 await fix.httpClient.post('/users/login').body({ email: user.email, password }).ok()
                 await fix.httpClient
@@ -282,11 +270,9 @@ describe('UsersService', () => {
         })
 
         describe('새 이메일에 대문자와 앞뒤 공백이 있으면', () => {
-            let email: string
-            beforeEach(() => {
-                email = '  Renamed+Tag@Example.COM  '
-            })
-            it('변경하면 소문자로 저장하고 같은 식별값의 이메일로 로그인할 수 있다', async () => {
+            const email = '  Renamed+Tag@Example.COM  '
+
+            it('소문자로 저장하고 같은 식별값의 이메일로 로그인할 수 있다', async () => {
                 await fix.httpClient
                     .patch('/users/me')
                     .headers(userAuth)
@@ -356,12 +342,14 @@ describe('UsersService', () => {
         })
 
         describe('수정할 필수 필드 값이 null이면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.patch('/users/me').headers(userAuth).body({ name: null })
-            })
-            it('사용자 수정을 요청하면 400을 반환한다', async () => {
-                await request.badRequest()
+            const bodyWithNullName = { name: null }
+
+            it('400을 반환한다', async () => {
+                await fix.httpClient
+                    .patch('/users/me')
+                    .headers(userAuth)
+                    .body(bodyWithNullName)
+                    .badRequest()
             })
         })
 
@@ -415,14 +403,14 @@ describe('UsersService', () => {
             })
         })
 
-        describe('다른 사용자가 존재하면', () => {
+        describe('새 이메일을 다른 사용자가 쓰고 있으면', () => {
             const existingEmail = 'taken@mail.com'
 
             beforeEach(async () => {
                 await createUser(fix, { email: existingEmail })
             })
 
-            it('그 사용자의 이메일로 변경을 요청하면 409를 반환한다', async () => {
+            it('409를 반환한다', async () => {
                 await fix.httpClient
                     .patch('/users/me')
                     .headers(userAuth)
