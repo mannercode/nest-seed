@@ -18,7 +18,8 @@
 ## 설계와 구현
 
 - 문제가 생기는 조건과 영향을 확인하고 기존 기능이나 작은 수정으로 원인을 고칠 수 있는지 본다. 구조 변경으로 막을 오류와 늘어나는 의존성·실행 단계·호환성 유지 비용을 비교한다. 지금 구조로 충분하고 비용이 더 크면 유지하는 이유를 설명한다.
-- 주소·경로·ID는 정한 쪽에서 받아 쓴다. API와 테스트는 같은 스트림 이름을 `eventDemoResources()`에서 얻는다. Restate 복구 테스트는 자신이 연 포트를 등록한다. 스크립트·CI·Compose에도 중복이 있는지 본다. [NATS 스트림 이름](apps/api/src/services/infrastructure/event-demo/event-demo.resources.ts) · [복구 테스트](infra/tests/restate-journal-recovery.test.js)
+- 같은 주소·경로·ID가 필요한 코드와 설정에는 값을 전달하거나 생성 함수를 공유한다. API가 NATS 스트림을 만들 때와 테스트가 정리할 스트림을 찾을 때 모두 `eventDemoResources(projectId)`로 이름을 구한다. [스트림 이름 생성](apps/api/src/services/infrastructure/event-demo/event-demo.resources.ts) · [정리 대상 판별](apps/api/src/__tests__/helpers/resources.ts)
+- 환경마다 따로 정하는 값은 해당 환경에서 얻는다. Restate 복구 테스트는 임시 서버에 배정된 포트를 읽어 접속 URL을 만들고 그 URL을 Restate에 등록한다. [복구 테스트](infra/tests/restate-journal-recovery.test.js)
 - 설정은 실행 코드에 연결하고 기본값·환경 변수·버전은 중복 선언하지 않는다. 의존성은 쓰는 패키지에 선언한다. 모듈은 필요한 기능만 공개하고 반환값은 타입·스키마와 맞춘다.
 - `libs/`는 앱이 쓰지 않는 기능도 결함을 고치고 지원하던 입력과 동작을 보존한다. `apps/`·데모·개발 환경은 예제 동작과 테스트 신뢰성을 지키면서 다른 프로젝트가 가져다 고치기 쉽게 만든다.
 
