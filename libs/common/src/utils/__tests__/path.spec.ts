@@ -89,23 +89,19 @@ describe('PathUtil', () => {
 
         describe('isDirectory', () => {
             describe('대상 경로가 디렉터리이면', () => {
-                let directory: string
-                beforeEach(() => {
-                    directory = tempDir
-                })
                 it('true를 반환한다', async () => {
-                    const result = await PathUtil.isDirectory(directory)
+                    const result = await PathUtil.isDirectory(tempDir)
                     expect(result).toBe(true)
                 })
             })
 
             describe('대상 경로가 존재하지 않으면', () => {
-                let nonExistent: string
+                let missingPath: string
                 beforeEach(() => {
-                    nonExistent = PathUtil.join(tempDir, 'no-such-path')
+                    missingPath = PathUtil.join(tempDir, 'no-such-path')
                 })
                 it('ENOENT 예외를 그대로 던진다', async () => {
-                    await expect(PathUtil.isDirectory(nonExistent)).rejects.toMatchObject({
+                    await expect(PathUtil.isDirectory(missingPath)).rejects.toMatchObject({
                         code: 'ENOENT'
                     })
                 })
@@ -114,13 +110,13 @@ describe('PathUtil', () => {
 
         describe('mkdir, delete', () => {
             it('mkdir로 만든 디렉터리를 delete로 지운다', async () => {
-                const dirPath = PathUtil.join(tempDir, 'testdir')
+                const createdDir = PathUtil.join(tempDir, 'testdir')
 
-                await PathUtil.mkdir(dirPath)
-                expect(await PathUtil.exists(dirPath)).toBe(true)
+                await PathUtil.mkdir(createdDir)
+                expect(await PathUtil.exists(createdDir)).toBe(true)
 
-                await PathUtil.delete(dirPath)
-                expect(await PathUtil.exists(dirPath)).toBe(false)
+                await PathUtil.delete(createdDir)
+                expect(await PathUtil.exists(createdDir)).toBe(false)
             })
         })
 
@@ -155,21 +151,21 @@ describe('PathUtil', () => {
             })
 
             describe('파일을 포함한 원본 디렉터리가 존재하면', () => {
-                let srcDirPath: string
+                let srcDir: string
                 beforeEach(async () => {
-                    srcDirPath = PathUtil.join(tempDir, 'testdir')
-                    await PathUtil.mkdir(srcDirPath)
+                    srcDir = PathUtil.join(tempDir, 'testdir')
+                    await PathUtil.mkdir(srcDir)
                     await fs.writeFile(
-                        PathUtil.join(srcDirPath, 'file.txt'),
+                        PathUtil.join(srcDir, 'file.txt'),
                         'hello from the original dir'
                     )
                 })
                 it('내부 파일의 내용도 보존한다', async () => {
-                    const destDirPath = PathUtil.join(tempDir, 'testdir_copy')
-                    await PathUtil.copy(srcDirPath, destDirPath)
+                    const destDir = PathUtil.join(tempDir, 'testdir_copy')
+                    await PathUtil.copy(srcDir, destDir)
 
-                    expect(await PathUtil.exists(destDirPath)).toBe(true)
-                    const copiedFilePath = PathUtil.join(destDirPath, 'file.txt')
+                    expect(await PathUtil.exists(destDir)).toBe(true)
+                    const copiedFilePath = PathUtil.join(destDir, 'file.txt')
                     expect(await PathUtil.exists(copiedFilePath)).toBe(true)
                     expect(await fs.readFile(copiedFilePath, 'utf-8')).toEqual(
                         'hello from the original dir'
@@ -222,34 +218,34 @@ describe('PathUtil', () => {
             })
 
             describe('파일시스템을 가로질러 이동할 때', () => {
-                let src: string
-                let dest: string
+                let srcDir: string
+                let destDir: string
                 beforeEach(async () => {
-                    src = p.join(tempDir, 'source')
-                    dest = p.join(tempDir, 'target')
-                    await fs.mkdir(src)
-                    await fs.writeFile(p.join(src, 'file'), 'new')
-                    await fs.symlink('file', p.join(src, 'link'))
+                    srcDir = p.join(tempDir, 'source')
+                    destDir = p.join(tempDir, 'target')
+                    await fs.mkdir(srcDir)
+                    await fs.writeFile(p.join(srcDir, 'file'), 'new')
+                    await fs.symlink('file', p.join(srcDir, 'link'))
                     vi.spyOn(fs, 'rename').mockRejectedValueOnce(
                         Object.assign(new Error('cross-device link'), { code: 'EXDEV' })
                     )
                 })
                 it('파일과 상대 링크를 보존하고 원본을 지운다', async () => {
-                    await PathUtil.move(src, dest)
+                    await PathUtil.move(srcDir, destDir)
                     expect(await fs.readdir(tempDir)).toEqual(['target'])
-                    expect(await fs.readFile(p.join(dest, 'link'), 'utf8')).toBe('new')
-                    expect(await fs.readlink(p.join(dest, 'link'))).toBe('file')
+                    expect(await fs.readFile(p.join(destDir, 'link'), 'utf8')).toBe('new')
+                    expect(await fs.readlink(p.join(destDir, 'link'))).toBe('file')
                 })
                 describe('대상 디렉터리에 같은 이름의 파일이 있으면', () => {
                     beforeEach(async () => {
-                        await fs.mkdir(dest)
-                        await fs.writeFile(p.join(dest, 'file'), 'old')
+                        await fs.mkdir(destDir)
+                        await fs.writeFile(p.join(destDir, 'file'), 'old')
                     })
                     it('실패하고 원본과 대상을 모두 보존한다', async () => {
-                        await expect(PathUtil.move(src, dest)).rejects.toThrow()
+                        await expect(PathUtil.move(srcDir, destDir)).rejects.toThrow()
                         expect((await fs.readdir(tempDir)).sort()).toEqual(['source', 'target'])
-                        expect(await fs.readFile(p.join(src, 'file'), 'utf8')).toBe('new')
-                        expect(await fs.readFile(p.join(dest, 'file'), 'utf8')).toBe('old')
+                        expect(await fs.readFile(p.join(srcDir, 'file'), 'utf8')).toBe('new')
+                        expect(await fs.readFile(p.join(destDir, 'file'), 'utf8')).toBe('old')
                     })
                 })
             })
@@ -286,16 +282,16 @@ describe('PathUtil', () => {
 
         describe('areEqual', () => {
             describe('내용이 같은 파일 두 개가 존재하면', () => {
-                let original: string
-                let identical: string
+                let originalPath: string
+                let identicalPath: string
                 beforeEach(async () => {
-                    original = PathUtil.join(tempDir, 'original.txt')
-                    identical = PathUtil.join(tempDir, 'identical.txt')
-                    await fs.writeFile(original, 'Hello, World!')
-                    await fs.writeFile(identical, 'Hello, World!')
+                    originalPath = PathUtil.join(tempDir, 'original.txt')
+                    identicalPath = PathUtil.join(tempDir, 'identical.txt')
+                    await fs.writeFile(originalPath, 'Hello, World!')
+                    await fs.writeFile(identicalPath, 'Hello, World!')
                 })
                 it('true를 반환한다', async () => {
-                    expect(await PathUtil.areEqual(original, identical)).toBe(true)
+                    expect(await PathUtil.areEqual(originalPath, identicalPath)).toBe(true)
                 })
             })
 
@@ -303,16 +299,16 @@ describe('PathUtil', () => {
                 { condition: '크기가 같고 내용이 다른 파일이면', contents: 'Hello, world!' },
                 { condition: '크기가 다른 파일이면', contents: 'This is different' }
             ])('$condition', ({ contents }) => {
-                let original: string
-                let different: string
+                let originalPath: string
+                let differentPath: string
                 beforeEach(async () => {
-                    original = PathUtil.join(tempDir, 'original.txt')
-                    different = PathUtil.join(tempDir, 'different.txt')
-                    await fs.writeFile(original, 'Hello, World!')
-                    await fs.writeFile(different, contents)
+                    originalPath = PathUtil.join(tempDir, 'original.txt')
+                    differentPath = PathUtil.join(tempDir, 'different.txt')
+                    await fs.writeFile(originalPath, 'Hello, World!')
+                    await fs.writeFile(differentPath, contents)
                 })
                 it('false를 반환한다', async () => {
-                    expect(await PathUtil.areEqual(original, different)).toBe(false)
+                    expect(await PathUtil.areEqual(originalPath, differentPath)).toBe(false)
                 })
             })
         })
@@ -320,12 +316,12 @@ describe('PathUtil', () => {
 
     describe('createTempDirectory', () => {
         it('OS 임시 디렉터리 안에 새 디렉터리를 만든다', async () => {
-            const directory = await PathUtil.createTempDirectory()
+            const tempDir = await PathUtil.createTempDirectory()
             try {
-                expect(await PathUtil.exists(directory)).toBe(true)
-                expect(directory.startsWith(os.tmpdir())).toBe(true)
+                expect(await PathUtil.exists(tempDir)).toBe(true)
+                expect(tempDir.startsWith(os.tmpdir())).toBe(true)
             } finally {
-                await PathUtil.delete(directory)
+                await PathUtil.delete(tempDir)
             }
         })
     })

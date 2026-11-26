@@ -7,7 +7,8 @@ import {
     ReplayPolicy,
     RetentionPolicy,
     StorageType,
-    type JetStreamClient
+    type JetStreamClient,
+    type JsMsg
 } from '@nats-io/jetstream'
 import { nanos } from '@nats-io/transport-node'
 import type { NatsConnection } from './nats.types.js'
@@ -70,12 +71,26 @@ export class JetStreamChannel {
             this.options.consumerName
         )
         const messages = await consumer.consume({ max_messages: 1 })
+        let activeIterator: AsyncIterator<JsMsg> | undefined
+        let closing: Promise<void> | undefined
+
+        async function closeConsumer() {
+            const closed = messages.close()
+            const iterator = activeIterator ?? messages[Symbol.asyncIterator]()
+            while (!(await iterator.next()).done) {
+                // SDK의 종료 신호까지 읽되 남은 메시지는 ACK하지 않는다.
+            }
+            const error = await closed
+            if (error) throw error
+        }
+
         return {
-            close: async () => {
-                await messages.close()
-            },
+            close: () => (closing ??= closeConsumer()),
             async *[Symbol.asyncIterator]() {
-                for await (const message of messages) {
+                if (closing) return await closing
+                const iterator = messages[Symbol.asyncIterator]()
+                activeIterator ??= iterator
+                for await (const message of { [Symbol.asyncIterator]: () => iterator }) {
                     yield {
                         decode: () => message.json(),
                         acknowledge: () => message.ack(),

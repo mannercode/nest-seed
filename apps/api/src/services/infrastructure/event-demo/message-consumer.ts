@@ -21,8 +21,11 @@ export class MessageConsumer implements OnModuleInit, OnModuleDestroy {
     }
     async onModuleDestroy() {
         this.stopping = true
-        await this.messages?.close()
-        await this.task
+        try {
+            await this.messages?.close()
+        } finally {
+            await this.task
+        }
     }
     private async consume(messages: DurableMessages) {
         try {

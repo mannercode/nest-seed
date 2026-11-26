@@ -7,7 +7,7 @@
 
 연결 설정을 다른 Nest 모듈에서 가져오려면 `forRootAsync`나 `register`의 `imports`에 해당 모듈을, `inject`에 그 모듈이 export한 토큰을 넣는다. [S3 설정 주입 예제](common/src/s3/__tests__/s3-object.service.spec.ts)
 
-`MongoConnection.connect`, `createTestContext`, `createHttpTestContext`에서 초기화가 실패하고 `close()`도 오류를 던지면 `SuppressedError`의 `suppressed`에 초기화 오류가, `error`에 종료 오류가 담긴다. [MongoDB 연결](common/src/mongodb/__tests__/connections.spec.ts) · [Nest 테스트 앱](testing/src/__tests__/create-test-context-cleanup.spec.ts)
+`MongoConnection.connect`, `createTestContext`, `createHttpTestContext`의 초기화나 `withTransaction`의 트랜잭션이 실패하고 자원 정리도 실패하면 `SuppressedError.suppressed`에 원래 오류가, `error`에 정리 오류가 담긴다. [MongoDB 연결](common/src/mongodb/__tests__/connections.spec.ts) · [트랜잭션](common/src/mongodb/__tests__/crud.repository.spec.ts) · [Nest 테스트 앱](testing/src/__tests__/create-test-context-cleanup.spec.ts)
 
 ## 저장소와 트랜잭션
 
@@ -20,7 +20,7 @@ CRUD 메서드에는 문자열 문서 ID를 넘긴다. MongoDB 필터를 직접 
 ## 인증·메시지·캐시
 
 - **세션 갱신**에서 common은 서명을 검증하고 같은 갱신 토큰을 한 번만 교체한다. 계정 탈퇴·비밀번호 변경 여부는 앱이 `refreshAuthTokens(refreshToken, validateSession)`의 콜백에서 검사한다. 콜백이 예외를 던지면 토큰을 교체하기 전에 오류를 전달한다. [계정 검증 함수](../apps/api/src/services/core/users/internal/user-authentication.service.ts)
-- **NATS 구독**은 `await subscribe()`가 끝나면 서버에 등록된 상태이므로 바로 발행할 수 있다. 종료 시에는 실행 중인 핸들러가 끝날 때까지 기다린다. Redis·NATS 연결을 닫다가 실패하면 `AggregateError.errors`에서 원인을 확인할 수 있고 다시 종료하면 실패한 연결만 정리한다. [구독 테스트](common/src/nats/__tests__/nats-pubsub.service.spec.ts) · [연결 종료 테스트](common/src/nats/__tests__/nats.module.spec.ts)
+- **NATS 구독**은 `await subscribe()`가 끝나면 서버에 등록된 상태이므로 바로 발행할 수 있다. 종료 시에는 실행 중인 핸들러가 끝날 때까지 기다린다. `JetStreamChannel.consume()`로 연 구독은 다음 메시지를 읽지 않아도 `close()`로 닫을 수 있고, 구독이 실패했으면 이때 같은 오류를 던진다. Redis·NATS 연결을 닫다가 실패하면 `AggregateError.errors`에서 원인을 확인할 수 있고 다시 종료하면 실패한 연결만 정리한다. [구독 테스트](common/src/nats/__tests__/nats-pubsub.service.spec.ts) · [연결 종료 테스트](common/src/nats/__tests__/nats.module.spec.ts)
 - **분산 락**에서 `withLock`은 키가 이미 잠겼으면 `{ ran: false }`를 반환한다. `withLockBlocking`의 `waitMs`는 락 획득을 기다리는 시간이며 초과하면 503 예외를 던진다. 작업 중에 락이 만료되지 않도록 `ttlMs`를 최대 작업 시간보다 길게 잡는다. [락 경합과 TTL 테스트](common/src/cache/__tests__/cache.service.spec.ts)
 - **TTL 0**에서 `set`은 값을 만료 없이 저장하고, `incrementWithExpiry`는 새 카운터 값 1을 반환한 뒤 즉시 만료시킨다. `withLock`은 콜백 실행 전에 예외를 던진다. [메서드별 만료 동작](common/src/cache/__tests__/cache.service.spec.ts)
 

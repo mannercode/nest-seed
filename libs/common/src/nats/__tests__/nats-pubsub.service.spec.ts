@@ -18,8 +18,7 @@ import {
     NatsPubSubModule,
     NatsPubSubService,
     JetStreamChannel,
-    type DurableMessages,
-    type DurableMessage
+    type DurableMessages
 } from '#common/nats'
 
 /**
@@ -668,7 +667,6 @@ describe('JetStreamChannel', () => {
     let manager: Awaited<ReturnType<typeof jetstreamManager>>
     let streamName: string
     let messages: DurableMessages | undefined
-    let iterator: AsyncIterator<DurableMessage> | undefined
     const consumerName = 'consumer'
 
     beforeEach(async () => {
@@ -676,7 +674,6 @@ describe('JetStreamChannel', () => {
         manager = await jetstreamManager(connection)
         streamName = withTestId('durable').replaceAll(/[^a-zA-Z0-9_-]/g, '_')
         messages = undefined
-        iterator = undefined
         channel = new JetStreamChannel(connection, {
             streamName,
             consumerName,
@@ -690,9 +687,7 @@ describe('JetStreamChannel', () => {
     })
     afterEach(async () => {
         try {
-            const ending = iterator?.next()
             await messages?.close()
-            await ending
             await manager.streams.delete(streamName).catch((error: unknown) => {
                 if (!(
                     error instanceof JetStreamApiError &&
@@ -739,13 +734,49 @@ describe('JetStreamChannel', () => {
         })
     })
 
+    describe('메시지를 읽기 전에 구독을 닫으면', () => {
+        beforeEach(async () => {
+            messages = await channel.consume()
+        })
+        it('다음 읽기에서 반복이 끝난다', async () => {
+            const subscription = ensure(messages)
+            await Promise.all([subscription.close(), subscription.close()])
+            await expect(subscription[Symbol.asyncIterator]().next()).resolves.toEqual({
+                done: true,
+                value: undefined
+            })
+        })
+    })
+
+    describe('JetStream 구독이 오류로 종료되면', () => {
+        const failure = new Error('subscription failed')
+        let stopped: DurableMessages
+        beforeEach(async () => {
+            await channel.publish({ value: 'one' }, 'id')
+            const subscribe = connection.subscribe.bind(connection)
+            vi.spyOn(connection, 'subscribe').mockImplementationOnce((subject, options) => {
+                const callback = ensure(options?.callback)
+                return subscribe(subject, {
+                    ...options,
+                    callback: (_error, message) => callback(failure, message)
+                })
+            })
+            stopped = await channel.consume()
+        })
+        it('메시지 읽기와 종료가 같은 오류를 던진다', async () => {
+            await expect(stopped[Symbol.asyncIterator]().next()).rejects.toBe(failure)
+            await expect(stopped.close()).rejects.toBe(failure)
+            await expect(stopped[Symbol.asyncIterator]().next()).rejects.toBe(failure)
+        })
+    })
+
     describe('소비 시작 전에 발행한 메시지가 보관되어 있으면', () => {
         beforeEach(async () => {
             await channel.publish({ value: 'one' }, 'id')
         })
         it('소비를 시작해 메시지를 처리하고 ACK하면 서버의 확인 대기에서 제거한다', async () => {
             messages = await channel.consume()
-            iterator = messages[Symbol.asyncIterator]()
+            const iterator = messages[Symbol.asyncIterator]()
             const result = await iterator.next()
             if (result.done) throw new Error('Expected a retained message')
             expect(result.value.decode()).toEqual({ value: 'one' })
@@ -767,6 +798,26 @@ describe('JetStreamChannel', () => {
             await messages.close()
             expect(await ending).toEqual({ done: true, value: undefined })
         })
+
+        it('읽고 ACK하지 않은 메시지는 종료 후에도 확인 대기로 남는다', async () => {
+            messages = await channel.consume()
+            const iterator = messages[Symbol.asyncIterator]()
+            expect((await iterator.next()).done).toBe(false)
+
+            await messages.close()
+
+            expect((await manager.consumers.info(streamName, consumerName)).num_ack_pending).toBe(1)
+            expect(await iterator.next()).toEqual({ done: true, value: undefined })
+        })
+
+        it('두 번째 반복자의 동시 읽기를 거절한다', async () => {
+            messages = await channel.consume()
+            const iterator = messages[Symbol.asyncIterator]()
+            expect((await iterator.next()).done).toBe(false)
+            await expect(messages[Symbol.asyncIterator]().next()).rejects.toThrow(
+                'iterator is already yielding'
+            )
+        })
     })
 
     describe('소비자가 시작되었고 메시지가 발행되었으면', () => {
@@ -775,7 +826,7 @@ describe('JetStreamChannel', () => {
             await channel.publish({ value: 'retry' }, 'retry')
         })
         it('메시지 재시도를 요청하면 재전달하고 폐기하면 확인 대기에서 제거한다', async () => {
-            iterator = ensure(messages)[Symbol.asyncIterator]()
+            const iterator = ensure(messages)[Symbol.asyncIterator]()
             const first = await iterator.next()
             if (first.done) throw new Error('Expected the first delivery')
             const retryStarted = performance.now()

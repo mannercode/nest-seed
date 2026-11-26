@@ -1,7 +1,6 @@
 import {
     CacheService,
     DateUtil,
-    ensure,
     getByPath,
     InjectCache,
     InjectS3Object,
@@ -94,14 +93,17 @@ export class AssetsService {
         const results = await Promise.allSettled(
             assetIds.map((assetId) => this.s3Service.deleteObject(assetId))
         )
-        const failed = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-        if (failed.length > 0) {
+        const errors: unknown[] = results
+            .filter((r) => r.status === 'rejected')
+            .map((r) => r.reason)
+        if (errors.length > 0) {
             this.logger.warn('partial S3 delete failure; DB rows retained for retry', {
-                failedCount: failed.length,
-                reasons: failed.map((r) => getByPath(r, 'reason.message', String(r.reason))),
+                failedCount: errors.length,
+                reasons: errors.map((error) => getByPath(error, 'message', String(error))),
                 totalCount: assetIds.length
             })
-            throw ensure(failed[0]).reason
+            if (errors.length === 1) throw errors[0]
+            throw new AggregateError(errors, 'Failed to delete S3 objects')
         }
 
         await this.repository.deleteMany({ ids: assetIds })

@@ -1135,7 +1135,8 @@ describe('CrudRepository', () => {
             )
         })
 
-        describe('콜백이 여러 저장소에 쓴 뒤 예외를 던지면', () => {
+        describe('콜백이 여러 저장소에 쓴 뒤 실패했을 때', () => {
+            const callbackError = new Error('boom')
             let started: MockInstance<MongoClient['startSession']>
             let created: { soft: Sample; hard: Sample; transaction: TransactionContext } | undefined
             let callback: Parameters<typeof fix.soft.withTransaction>[0]
@@ -1148,13 +1149,13 @@ describe('CrudRepository', () => {
                         hard: await fix.hard.create('also-rolled-back', { transaction }),
                         transaction
                     }
-                    throw new Error('boom')
+                    throw callbackError
                 }
             })
             it('모든 쓰기를 롤백하고 세션을 종료한다', async () => {
                 const result = fix.soft.withTransaction(callback)
 
-                await expect(result).rejects.toThrow('boom')
+                await expect(result).rejects.toBe(callbackError)
                 if (!created) throw new Error('transaction should create draft documents')
                 await expect(fix.soft.find({ id: created.soft.id })).resolves.toBeNull()
                 await expect(fix.hard.find({ id: created.hard.id })).resolves.toBeNull()
@@ -1167,6 +1168,27 @@ describe('CrudRepository', () => {
                         cause: 'Transaction context is no longer active.'
                     })
                 )
+            })
+
+            describe('세션 종료도 실패하면', () => {
+                const closeError = new Error('session cleanup failed')
+                beforeEach(() => {
+                    const session = fix.client.startSession()
+                    session.once('ended', () => {
+                        throw closeError
+                    })
+                    started.mockReturnValueOnce(session)
+                })
+                it('두 오류를 함께 던지고 모든 쓰기를 롤백한다', async () => {
+                    await expect(fix.soft.withTransaction(callback)).rejects.toMatchObject({
+                        name: 'SuppressedError',
+                        error: closeError,
+                        suppressed: callbackError
+                    })
+                    if (!created) throw new Error('transaction should create draft documents')
+                    await expect(fix.soft.find({ id: created.soft.id })).resolves.toBeNull()
+                    await expect(fix.hard.find({ id: created.hard.id })).resolves.toBeNull()
+                })
             })
         })
 

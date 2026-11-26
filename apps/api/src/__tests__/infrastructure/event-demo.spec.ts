@@ -210,6 +210,27 @@ describe('메시지 소비자의 입력과 종료', () => {
             expect(errors).not.toHaveBeenCalled()
         })
     })
+    describe('소비 작업이 끝나기 전에 구독 종료가 실패하면', () => {
+        const failure = new Error('subscription failed')
+        let read: ReturnType<typeof Promise.withResolvers<IteratorResult<DurableMessage>>>
+        let closing: ReturnType<typeof Promise.withResolvers<void>>
+        beforeEach(() => {
+            read = Promise.withResolvers()
+            closing = Promise.withResolvers()
+            next.mockReturnValueOnce(read.promise)
+            vi.mocked(messages.close).mockReturnValueOnce(closing.promise)
+        })
+        it('소비 작업이 끝난 뒤 종료 오류를 던진다', async () => {
+            await consumer.onModuleInit()
+            const stopped = consumer
+                .onModuleDestroy()
+                .catch((error: unknown) => ({ error, running: consumer.isRunning }))
+            closing.reject(failure)
+            await expect(closing.promise).rejects.toBe(failure)
+            read.resolve({ done: true, value: undefined })
+            await expect(stopped).resolves.toEqual({ error: failure, running: false })
+        })
+    })
     describe('소비를 시작하지 못하면', () => {
         beforeEach(() => {
             consume.mockRejectedValue(new Error('cannot consume'))

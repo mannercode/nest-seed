@@ -653,6 +653,26 @@ describe('AssetsService', () => {
                     })
                 })
             })
+
+            describe('두 파일의 S3 삭제가 모두 실패하면', () => {
+                const firstError = new Error('first deletion failed')
+                const secondError = new Error('second deletion failed')
+                let assetIds: string[]
+                beforeEach(() => {
+                    assetIds = pickIds(assets).slice(0, 2)
+                    const storage = fix.module.get<S3ObjectService>(S3ObjectService.getName())
+                    vi.spyOn(storage, 'deleteObject')
+                        .mockRejectedValueOnce(firstError)
+                        .mockRejectedValueOnce(secondError)
+                })
+                it('두 오류를 함께 던지고 재시도할 에셋을 남긴다', async () => {
+                    await expect(assetsService.deleteMany(assetIds)).rejects.toMatchObject({
+                        name: 'AggregateError',
+                        errors: [firstError, secondError]
+                    })
+                    await expect(assetsService.getMany(assetIds)).resolves.toHaveLength(2)
+                })
+            })
         })
 
         describe('삭제할 에셋 ID 목록이 비어 있으면', () => {

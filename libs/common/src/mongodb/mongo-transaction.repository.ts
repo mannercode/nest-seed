@@ -19,31 +19,27 @@ export abstract class MongoTransactionRepository {
         callback: (transaction: TransactionContext) => Promise<T>,
         options: TransactionOptions = {}
     ): Promise<T> {
-        const session = this.client.startSession()
-        try {
-            return await session.withTransaction(
-                async () => {
-                    // 드라이버가 콜백을 재시도하면 이전 시도의 식별자는 재사용하지 않는다.
-                    const transaction = Symbol('transaction')
-                    sessions.set(transaction, session)
-                    try {
-                        return await callback(transaction)
-                    } finally {
-                        sessions.delete(transaction)
-                    }
-                },
-                options.snapshot
-                    ? {
-                          maxCommitTimeMS: options.snapshot.commitTimeoutMs,
-                          timeoutMS: options.snapshot.timeoutMs,
-                          readConcern: { level: 'snapshot' },
-                          writeConcern: { w: 'majority' }
-                      }
-                    : {}
-            )
-        } finally {
-            await session.endSession()
-        }
+        await using session = this.client.startSession()
+        return await session.withTransaction(
+            async () => {
+                // 드라이버가 콜백을 재시도하면 이전 시도의 식별자는 재사용하지 않는다.
+                const transaction = Symbol('transaction')
+                sessions.set(transaction, session)
+                try {
+                    return await callback(transaction)
+                } finally {
+                    sessions.delete(transaction)
+                }
+            },
+            options.snapshot
+                ? {
+                      maxCommitTimeMS: options.snapshot.commitTimeoutMs,
+                      timeoutMS: options.snapshot.timeoutMs,
+                      readConcern: { level: 'snapshot' },
+                      writeConcern: { w: 'majority' }
+                  }
+                : {}
+        )
     }
 
     protected getSession(transaction: TransactionContext | undefined): ClientSession | undefined {
