@@ -126,15 +126,20 @@ describe('CacheService', () => {
             )
         })
 
-        describe('TTL을 지정하지 않았으면', () => {
-            let input: Parameters<typeof fix.cacheService.set>
-            beforeEach(() => {
-                input = ['key', 'value']
-            })
-            it('저장한 값을 조회할 수 있다', async () => {
-                await fix.cacheService.set(...input)
-                const cachedValue = await fix.cacheService.get('key')
-                expect(cachedValue).toEqual('value')
+        describe.each([
+            { condition: 'TTL을 생략하면', ttlArgs: [] },
+            { condition: 'TTL이 0이면', ttlArgs: [0] }
+        ] as const)('$condition', ({ ttlArgs }) => {
+            it('만료 기한 없이 값을 저장한다', async () => {
+                await fix.cacheService.set('key', 'value', ...ttlArgs)
+
+                expect(await fix.cacheService.get('key')).toBe('value')
+                const ttl = await fix.cacheService.executeScript(
+                    "return redis.call('PTTL', KEYS[1])",
+                    ['key'],
+                    []
+                )
+                expect(ttl).toBe(-1)
             })
         })
 
@@ -156,24 +161,6 @@ describe('CacheService', () => {
 
                 const afterExpiration = await fix.cacheService.get('key')
                 expect(afterExpiration).toBeNull()
-            })
-        })
-
-        describe('TTL이 0이면', () => {
-            let input: Parameters<typeof fix.cacheService.set>[2]
-            beforeEach(() => {
-                input = 0
-            })
-            it('저장한 값이 만료되지 않는다', async () => {
-                await fix.cacheService.set('key', 'value', input)
-
-                const beforeExpiration = await fix.cacheService.get('key')
-                expect(beforeExpiration).toEqual('value')
-
-                await sleep(1500)
-
-                const afterExpiration = await fix.cacheService.get('key')
-                expect(afterExpiration).toEqual('value')
             })
         })
 
