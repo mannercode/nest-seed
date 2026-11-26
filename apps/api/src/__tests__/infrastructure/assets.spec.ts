@@ -12,6 +12,7 @@ import { nullObjectId } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
 import { type AssetDto, type AssetPresignedUploadDto, AssetsService } from '#infrastructure'
 import {
+    advancePastUploadDeadline,
     buildCreateAssetDto,
     buildFinalizeAssetDto,
     createAsset,
@@ -27,7 +28,6 @@ import {
     type AppTestContext,
     createAppTestContext
 } from '#test-helpers'
-import { AppConfigService } from '#config'
 
 type UploadedFile = Awaited<ReturnType<typeof uploadFile>>
 
@@ -110,7 +110,7 @@ describe('AssetsService', () => {
         beforeEach(async () => {
             uploaded = await uploadFile(fix, file)
             owned = await uploadAndFinalizeAsset(fix, file)
-            await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
+            advancePastUploadDeadline(fix)
             const storage = fix.module.get<S3ObjectService>(S3ObjectService.getName())
             vi.spyOn(storage, 'deleteObject').mockRejectedValueOnce(
                 new Error('cleanup interrupted')
@@ -136,7 +136,7 @@ describe('AssetsService', () => {
         beforeEach(async () => {
             uploaded = await uploadFile(fix, file)
             owned = await uploadAndFinalizeAsset(fix, file)
-            await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
+            advancePastUploadDeadline(fix)
             const failure = failNextMongoUpdateAfterStorageDelete(fix)
             await expect(assetsService.cleanupExpiredUploads()).rejects.toBe(failure)
             const storage = fix.module.get<S3ObjectService>(S3ObjectService.getName())
@@ -162,7 +162,7 @@ describe('AssetsService', () => {
         let uploaded: UploadedFile
         let ownerGate: ReturnType<typeof pauseNextMongoFindOneAndUpdate> | undefined
         let storageGate: ReturnType<typeof pauseNextStorageDelete> | undefined
-        let completion: Promise<PromiseSettledResult<AssetDto>> | undefined
+        let completion: Promise<PromiseSettledResult<void>> | undefined
         let cleanup: Promise<void> | undefined
         beforeEach(async () => {
             ownerGate = undefined
@@ -175,7 +175,7 @@ describe('AssetsService', () => {
                 assetsService.finalizeUpload(uploaded.assetId, buildFinalizeAssetDto())
             ]).then((results) => ensure(results[0]))
             await ownerGate.started
-            await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
+            advancePastUploadDeadline(fix)
             storageGate = pauseNextStorageDelete(fix)
             cleanup = assetsService.cleanupExpiredUploads()
             await storageGate.started
@@ -215,7 +215,7 @@ describe('AssetsService', () => {
             cleanup = undefined
             uploaded = await uploadFile(fix, file)
             owned = await uploadAndFinalizeAsset(fix, file)
-            await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
+            advancePastUploadDeadline(fix)
             storage = fix.module.get<S3ObjectService>(S3ObjectService.getName())
             gate = pauseNextStorageDelete(fix)
         })
@@ -260,34 +260,71 @@ describe('AssetsService', () => {
         })
     })
 
-    describe('파일을 삭제한 뒤 아직 유효한 업로드 URL로 같은 파일을 다시 올렸으면', () => {
+    describe('파일 삭제 후 같은 키에 업로드가 완료되면', () => {
+        const uploadExpiresInSec = 60
+        let upload: AssetPresignedUploadDto
         let key: string
+        let signedExpiresAt: Temporal.Instant
         let storage: S3ObjectService
+
         beforeEach(async () => {
             storage = fix.module.get<S3ObjectService>(S3ObjectService.getName())
-            const upload = await createAsset(fix, file)
+            await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec })
+            const createdAt = DateUtil.add({ seconds: -5 })
+            vi.spyOn(DateUtil, 'now').mockReturnValue(createdAt)
+            upload = await createAsset(fix, file)
             key = ensure(upload.fields.key)
+            const policy = JSON.parse(
+                Buffer.from(ensure(upload.fields.Policy), 'base64').toString()
+            )
+            signedExpiresAt = Temporal.Instant.from(policy.expiration)
             expect((await uploadAsset(file.path, upload)).ok).toBe(true)
-            await assetsService.finalizeUpload(upload.assetId, buildFinalizeAssetDto())
-            const deletedAt = DateUtil.now()
-            const now = vi.spyOn(DateUtil, 'now').mockReturnValue(deletedAt)
-            await assetsService.deleteMany([upload.assetId])
-            await expect(storage.isUploadComplete({ key })).resolves.toBe(false)
-            expect((await uploadAsset(file.path, upload)).ok).toBe(true)
-            const cleanupAt = DateUtil.add({
-                base: deletedAt,
-                seconds: fix.module.get(AppConfigService).asset.uploadExpiresInSec
-            })
-            now.mockReturnValue(DateUtil.add({ base: cleanupAt, milliseconds: -1 }))
-            await assetsService.cleanupExpiredUploads()
-            await expect(storage.isUploadComplete({ key })).resolves.toBe(true)
-            now.mockReturnValue(cleanupAt)
+            await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
         })
-        it('삭제 유예기간이 끝나면 다시 올라온 파일을 지우고 다음 정리는 S3 삭제 장애 중에도 완료한다', async () => {
-            await assetsService.cleanupExpiredUploads()
-            await expect(storage.isUploadComplete({ key })).resolves.toBe(false)
-            vi.spyOn(storage, 'deleteObject').mockRejectedValue(new Error('S3 delete unavailable'))
-            await expect(assetsService.cleanupExpiredUploads()).resolves.toBeUndefined()
+
+        describe('삭제 유예기간이 서명보다 먼저 끝나면', () => {
+            beforeEach(async () => {
+                await assetsService.finalizeUpload(upload.assetId, buildFinalizeAssetDto())
+                await assetsService.deleteMany([upload.assetId])
+                await expect(storage.isUploadComplete({ key })).resolves.toBe(false)
+                vi.mocked(DateUtil.now).mockReturnValue(upload.expiresAt)
+                await assetsService.cleanupExpiredUploads()
+                expect((await uploadAsset(file.path, upload)).ok).toBe(true)
+                vi.mocked(DateUtil.now).mockReturnValue(
+                    signedExpiresAt.subtract({ milliseconds: 1 })
+                )
+                await assetsService.cleanupExpiredUploads()
+                await expect(storage.isUploadComplete({ key })).resolves.toBe(true)
+                vi.mocked(DateUtil.now).mockReturnValue(signedExpiresAt)
+            })
+            it('서명이 만료되면 다시 올라온 파일을 지우고 정리를 마친다', async () => {
+                await assetsService.cleanupExpiredUploads()
+                await expect(storage.isUploadComplete({ key })).resolves.toBe(false)
+                vi.spyOn(storage, 'deleteObject').mockRejectedValue(
+                    new Error('S3 delete unavailable')
+                )
+                await expect(assetsService.cleanupExpiredUploads()).resolves.toBeUndefined()
+            })
+        })
+
+        describe('서명이 만료된 뒤 첫 정리가 파일을 지우면', () => {
+            beforeEach(async () => {
+                const deletedAt = signedExpiresAt.add({ seconds: 1 })
+                vi.mocked(DateUtil.now).mockReturnValue(deletedAt)
+                await assetsService.cleanupExpiredUploads()
+                await expect(storage.isUploadComplete({ key })).resolves.toBe(false)
+                expect((await uploadAsset(file.path, upload)).ok).toBe(true)
+
+                const cleanupAt = deletedAt.add({ seconds: uploadExpiresInSec })
+                vi.mocked(DateUtil.now).mockReturnValue(cleanupAt.subtract({ milliseconds: 1 }))
+                await assetsService.cleanupExpiredUploads()
+                await expect(storage.isUploadComplete({ key })).resolves.toBe(true)
+                vi.mocked(DateUtil.now).mockReturnValue(cleanupAt)
+            })
+            it('발급 당시의 유효기간이 지난 뒤 늦게 올라온 파일을 지운다', async () => {
+                await assetsService.cleanupExpiredUploads()
+                await expect(storage.isUploadComplete({ key })).resolves.toBe(false)
+            })
         })
     })
 
@@ -394,20 +431,12 @@ describe('AssetsService', () => {
                 assetId = (await uploadFile(fix, file)).assetId
             })
 
-            it('다운로드 정보를 반환하고 파일 체크섬을 유지한다', async () => {
+            it('소유권을 기록하고 파일 체크섬을 유지한다', async () => {
                 const finalizeDto = buildFinalizeAssetDto()
 
-                const asset = await assetsService.finalizeUpload(assetId, finalizeDto)
-
-                expect(asset).toEqual(
-                    expect.objectContaining({
-                        ...finalizeDto,
-                        download: {
-                            expiresAt: expect.any(Temporal.Instant),
-                            url: expect.any(String)
-                        }
-                    })
-                )
+                await assetsService.finalizeUpload(assetId, finalizeDto)
+                const asset = ensure((await assetsService.getMany([assetId]))[0])
+                expect(asset.owner).toEqual(finalizeDto.owner)
                 const buffer = await downloadAsset(asset)
 
                 const checksum = Checksum.fromBuffer(buffer)
@@ -415,13 +444,15 @@ describe('AssetsService', () => {
             })
         })
 
-        describe('업로드가 만료되었을 때', () => {
+        describe('발급한 업로드가 만료된 뒤 새 업로드의 유효기간을 늘리면', () => {
             let assetId: string
 
             beforeEach(async () => {
+                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 60 })
                 const createdAsset = await assetsService.create(buildCreateAssetDto(file))
                 assetId = createdAsset.assetId
-                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
+                advancePastUploadDeadline(fix)
+                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 3600 })
             })
 
             it('404 예외를 던지고 남은 기록은 만료 정리로 삭제한다', async () => {
@@ -446,12 +477,11 @@ describe('AssetsService', () => {
                 assetId = (await uploadFile(fix, file)).assetId
                 finalizeDto = buildFinalizeAssetDto()
                 await assetsService.finalizeUpload(assetId, finalizeDto)
-                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
+                advancePastUploadDeadline(fix)
             })
             it('같은 소유자로 완료 처리를 재요청해도 소유권을 유지하고 만료 정리에서 파일을 보존한다', async () => {
-                await expect(
-                    assetsService.finalizeUpload(assetId, finalizeDto)
-                ).resolves.toMatchObject({ id: assetId, owner: finalizeDto.owner })
+                await assetsService.finalizeUpload(assetId, finalizeDto)
+                expect(await assetsService.findOwner(assetId)).toEqual(finalizeDto.owner)
                 await assetsService.cleanupExpiredUploads()
                 await expect(assetsService.isUploadComplete(assetId)).resolves.toBe(true)
             })
@@ -640,7 +670,7 @@ describe('AssetsService', () => {
 
         describe('미완료 에셋의 업로드 기한이 지났으면', () => {
             beforeEach(async () => {
-                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
+                advancePastUploadDeadline(fix)
             })
             it('에셋을 삭제한다', async () => {
                 await assetsService.cleanupExpiredUploads()
@@ -655,7 +685,7 @@ describe('AssetsService', () => {
             let finalizedAsset: AssetDto
             beforeEach(async () => {
                 finalizedAsset = await uploadAndFinalizeAsset(fix, file)
-                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
+                advancePastUploadDeadline(fix)
             })
             it('에셋을 유지한다', async () => {
                 await assetsService.cleanupExpiredUploads()
@@ -669,7 +699,7 @@ describe('AssetsService', () => {
             let s3Service: S3ObjectService
             beforeEach(async () => {
                 uploaded = await uploadFile(fix, file)
-                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
+                advancePastUploadDeadline(fix)
                 await expect(
                     assetsService.finalizeUpload(uploaded.assetId, buildFinalizeAssetDto())
                 ).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })

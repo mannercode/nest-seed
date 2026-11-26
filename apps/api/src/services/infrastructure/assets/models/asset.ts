@@ -3,6 +3,8 @@ import { type Checksum, CrudDocument } from '@mannercode/common'
 export class Asset extends CrudDocument {
     checksum: Checksum
 
+    claimExpiresAt: Temporal.Instant
+
     deletionRequestedAt: Temporal.Instant | null
 
     mimeType: string
@@ -16,4 +18,6 @@ export class Asset extends CrudDocument {
     size: number
 
     storageCleanedAt: Temporal.Instant | null
+
+    uploadExpiresAt: Temporal.Instant
 }

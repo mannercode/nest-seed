@@ -42,22 +42,21 @@ export class AssetsService {
     async cleanupExpiredUploads() {
         // 모든 복제본이 실행하므로 한 복제본만 작업하도록 분산 락을 쓴다.
         await this.cache.withLock(CLEANUP_LOCK_KEY, CLEANUP_LOCK_TTL_MS, async () => {
-            const expiresBefore = this.getExpirationThreshold()
-            await this.repository.requestExpiredDeletion(expiresBefore)
-            const expiredAssets = await this.repository.findPendingDeletion(expiresBefore)
+            const now = DateUtil.now()
+            await this.repository.requestExpiredDeletion(now)
+            const expiredAssets = await this.repository.findPendingDeletion(now)
 
             if (0 < expiredAssets.length) {
                 const assetIds = pickIds(expiredAssets)
                 await this.deleteStoredAssets(assetIds)
-                // 삭제 후에도 이미 발급한 업로드 요청은 유효하다. 삭제 시점부터 업로드
-                // 유효기간이 지난 기록만 재정리를 마친 것으로 표시한다.
-                await this.repository.markStorageCleaned(assetIds, expiresBefore)
+                // 서명 만료 전에 시작된 POST가 뒤늦게 끝날 수 있어 첫 삭제 후에도 발급 당시 유효기간만큼 기다린다.
+                await this.repository.markStorageCleaned(assetIds, now)
             }
         })
     }
 
     async create(createDto: CreateAssetDto): Promise<AssetPresignedUploadDto> {
-        const asset = await this.repository.create(createDto)
+        const asset = this.repository.newAsset(createDto)
 
         const { checksum, mimeType, size } = createDto
         const expiresInSec = this.config.asset.uploadExpiresInSec
@@ -72,12 +71,11 @@ export class AssetsService {
             minContentLength: size
         })
 
+        const claimExpiresAt = DateUtil.add({ base: asset.createdAt, seconds: expiresInSec })
+        await this.repository.create(asset, claimExpiresAt, presigned.expiresAt)
         return {
             assetId: asset.id,
-            expiresAt: DateUtil.earliest([
-                presigned.expiresAt,
-                this.getUploadExpiresAt(asset.createdAt)
-            ]),
+            expiresAt: DateUtil.earliest([presigned.expiresAt, claimExpiresAt]),
             fields: presigned.fields,
             method: 'POST' as const,
             url: presigned.url
@@ -113,13 +111,13 @@ export class AssetsService {
         assetId: string,
         { owner }: FinalizeAssetDto,
         transaction?: TransactionContext
-    ) {
+    ): Promise<void> {
         // 만료 판정과 소유 부여를 조건부 원자 갱신 하나로 처리한다.
         // 시각을 먼저 검사하고 나중에 소유를 쓰면, 그 틈에 정리 cron이 같은 자산의 S3 객체를 지울 수 있다.
         const updatedAsset = await this.repository.assignOwner(
             assetId,
             owner,
-            this.getExpirationThreshold(),
+            DateUtil.now(),
             transaction
         )
 
@@ -132,12 +130,8 @@ export class AssetsService {
                 throw new ConflictException(AssetErrors.AlreadyOwned(assetId))
             }
             // 만료된 무소유 자산은 정리 cron이 처리한다. 완료 실패를 삭제 명령으로 해석하지 않는다.
-            const expiresAt = this.getUploadExpiresAt(asset.createdAt)
-            throw new NotFoundException(AssetErrors.UploadExpired(assetId, expiresAt))
+            throw new NotFoundException(AssetErrors.UploadExpired(assetId, asset.claimExpiresAt))
         }
-
-        const dto = this.toDto(updatedAsset)
-        return this.withDownloadInfo(dto)
     }
 
     async findMany(assetIds: string[]) {
@@ -177,17 +171,6 @@ export class AssetsService {
             contentType: mimeType,
             key: id
         })
-    }
-
-    private getExpirationThreshold() {
-        return DateUtil.add({
-            base: DateUtil.now(),
-            seconds: -this.config.asset.uploadExpiresInSec
-        })
-    }
-
-    private getUploadExpiresAt(createdAt: Temporal.Instant) {
-        return DateUtil.add({ base: createdAt, seconds: this.config.asset.uploadExpiresInSec })
     }
 
     private toDto(asset: Asset): AssetDto {

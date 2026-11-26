@@ -105,10 +105,9 @@
 
     > ```ts
     > // beforeEach
-    > vi.spyOn(
-    >     fix.module.get<S3ObjectService>(S3ObjectService.getName()),
-    >     'presignDownload'
-    > ).mockRejectedValueOnce(new Error('signing failed'))
+    > vi.spyOn(ClientSession.prototype, 'commitTransaction').mockRejectedValueOnce(
+    >     new Error('commit failed')
+    > )
     >
     > // it
     > await fix.httpClient
@@ -122,7 +121,7 @@
     >     .created({ schema: UserSchema })
     > ```
     >
-    > [사진 소유권을 쓴 뒤 URL 발급이 실패하는 테스트](apps/api/src/__tests__/application/user-registration.spec.ts)
+    > [가입 트랜잭션의 커밋이 실패하는 테스트](apps/api/src/__tests__/application/user-registration.spec.ts)
 
 - spy는 공개 서비스나 외부 연동 지점에서 장애·경합을 재현할 때만 쓴다. 내부 메서드의 호출 여부·횟수·인자를 결과로 단언하지 않는다.
 - **외부 연동**은 상대 라이브러리나 서비스의 공개 API로 확인한다. DB·스토리지를 직접 읽는 검증은 저장 형식이나 원자적 갱신을 맡은 모듈에 둔다.

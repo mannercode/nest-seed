@@ -1,9 +1,10 @@
 import type { AppTestContext } from '#test-helpers'
 import type { TestContext } from '@mannercode/testing'
-import { ensure, pick, S3ObjectService } from '@mannercode/common'
+import { DateUtil, ensure, pick, S3ObjectService } from '@mannercode/common'
 import { readFile } from 'fs/promises'
 import { Collection } from 'mongodb'
 import { basename } from 'path'
+import { AppConfigService } from '#config'
 import {
     type AssetDto,
     type AssetPresignedUploadDto,
@@ -35,6 +36,12 @@ export function buildFinalizeAssetDto(
     return { owner: { entityId: 'entity-id', service: 'service', ...ownerOverrides } }
 }
 
+export function advancePastUploadDeadline(ctx: TestContext) {
+    const { uploadExpiresInSec } = ctx.module.get(AppConfigService).asset
+    const now = DateUtil.add({ seconds: uploadExpiresInSec })
+    vi.spyOn(DateUtil, 'now').mockReturnValue(now)
+}
+
 export async function createAsset(ctx: TestContext, file: TestAsset = testAssets.image) {
     const assetsService = ctx.module.get(AssetsService)
 
@@ -62,7 +69,8 @@ export async function uploadAndFinalizeAsset(ctx: TestContext, file: TestAsset) 
 
     const assetsService = ctx.module.get(AssetsService)
 
-    return assetsService.finalizeUpload(assetId, buildFinalizeAssetDto())
+    await assetsService.finalizeUpload(assetId, buildFinalizeAssetDto())
+    return ensure((await assetsService.getMany([assetId]))[0])
 }
 
 export async function uploadAsset(source: string | File, uploadDto: AssetPresignedUploadDto) {

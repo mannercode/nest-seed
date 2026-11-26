@@ -3,11 +3,14 @@ import {
     MongoConnection,
     MongoDocumentRepository,
     pickIds,
-    type TransactionContext
+    type TransactionContext,
+    type VersionedDocument
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
 import { CreateAssetDto } from './dtos/index.js'
 import { Asset } from './models/index.js'
+
+type PendingAsset = Omit<VersionedDocument<Asset>, 'claimExpiresAt' | 'uploadExpiresAt'>
 
 @Injectable()
 export class AssetsRepository extends MongoDocumentRepository<Asset> {
@@ -18,7 +21,7 @@ export class AssetsRepository extends MongoDocumentRepository<Asset> {
     async assignOwner(
         assetId: string,
         owner: { entityId: string; service: string },
-        createdAfter: Temporal.Instant,
+        now: Temporal.Instant,
         transaction?: TransactionContext
     ) {
         // 최초 소유권은 만료 전 무소유 자산에만 부여한다. 같은 소유자의 완료 재시도는
@@ -29,7 +32,7 @@ export class AssetsRepository extends MongoDocumentRepository<Asset> {
                 deletionRequestedAt: null,
                 $or: [
                     { ownerEntityId: owner.entityId, ownerService: owner.service },
-                    { ownerEntityId: null, ownerService: null, createdAt: { $gt: createdAfter } }
+                    { ownerEntityId: null, ownerService: null, claimExpiresAt: { $gt: now } }
                 ]
             }),
             this.timestamped({
@@ -40,7 +43,7 @@ export class AssetsRepository extends MongoDocumentRepository<Asset> {
         return doc
     }
 
-    async create(createDto: CreateAssetDto) {
+    newAsset(createDto: CreateAssetDto): PendingAsset {
         const asset = this.newDocument()
         asset.originalName = createDto.originalName
         asset.mimeType = createDto.mimeType
@@ -51,13 +54,21 @@ export class AssetsRepository extends MongoDocumentRepository<Asset> {
         asset.deletionRequestedAt = null
         asset.storageCleanedAt = null
 
-        return this.insertOne(asset)
+        return asset
     }
 
-    async requestExpiredDeletion(expiresBefore: Temporal.Instant): Promise<void> {
+    async create(
+        asset: PendingAsset,
+        claimExpiresAt: Temporal.Instant,
+        uploadExpiresAt: Temporal.Instant
+    ) {
+        return this.insertOne({ ...asset, claimExpiresAt, uploadExpiresAt })
+    }
+
+    async requestExpiredDeletion(now: Temporal.Instant): Promise<void> {
         await this.updateDocuments(
             this.activeFilter({
-                createdAt: { $lte: expiresBefore },
+                claimExpiresAt: { $lte: now },
                 deletionRequestedAt: null,
                 ownerEntityId: null,
                 ownerService: null
@@ -78,23 +89,29 @@ export class AssetsRepository extends MongoDocumentRepository<Asset> {
         return storedIds
     }
 
-    async findPendingDeletion(expiresBefore: Temporal.Instant): Promise<Asset[]> {
+    async findPendingDeletion(now: Temporal.Instant): Promise<Asset[]> {
         return this.findDocuments({
             $or: [
                 { deletedAt: null, deletionRequestedAt: { $ne: null } },
-                this.storageCleanupFilter(expiresBefore)
+                this.storageCleanupFilter(now)
             ]
         })
     }
 
-    async markStorageCleaned(assetIds: string[], expiresBefore: Temporal.Instant): Promise<void> {
+    async markStorageCleaned(assetIds: string[], now: Temporal.Instant): Promise<void> {
         await this.updateDocuments(
-            { ...this.idsFilter(assetIds), ...this.storageCleanupFilter(expiresBefore) },
+            { ...this.idsFilter(assetIds), ...this.storageCleanupFilter(now) },
             this.timestamped({ $set: { storageCleanedAt: DateUtil.now() } })
         )
     }
 
-    private storageCleanupFilter(expiresBefore: Temporal.Instant) {
-        return { deletedAt: { $ne: null, $lte: expiresBefore }, storageCleanedAt: null }
+    private storageCleanupFilter(now: Temporal.Instant) {
+        const issuedLifetime = { $subtract: ['$claimExpiresAt', '$createdAt'] }
+        return {
+            deletedAt: { $ne: null },
+            storageCleanedAt: null,
+            uploadExpiresAt: { $lte: now },
+            $expr: { $gte: [{ $subtract: [now, '$deletedAt'] }, issuedLifetime] }
+        }
     }
 }

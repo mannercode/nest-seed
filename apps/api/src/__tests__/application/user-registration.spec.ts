@@ -1,10 +1,12 @@
 import { DateUtil, ensure, MongoConnection, S3ObjectService } from '@mannercode/common'
+import { ClientSession } from 'mongodb'
 import { UserRegistrationService } from '#application'
 import { type CreateUserDto, UserSchema } from '#core'
 import { AssetsService } from '#infrastructure'
 import { WebHomeViewSchema } from '#view'
 import {
     buildCreateUserDto,
+    advancePastUploadDeadline,
     buildCreateAssetDto,
     requestRegistrationPhotoUpload,
     createAppTestContext,
@@ -143,6 +145,20 @@ describe('UserRegistrationService', () => {
             assetId = upload.assetId
             photoKey = ensure(upload.fields.key)
         })
+        describe('발급 후 새 업로드의 유효기간을 줄이면', () => {
+            beforeEach(async () => {
+                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 1 })
+                vi.spyOn(DateUtil, 'now').mockReturnValue(DateUtil.add({ seconds: 2 }))
+                await fix.module.get(AssetsService).cleanupExpiredUploads()
+            })
+            it('기존 사진으로 가입할 수 있다', async () => {
+                const { body } = await fix.httpClient
+                    .post('/users')
+                    .body({ ...applicant, photoAssetId: assetId })
+                    .created({ schema: UserSchema })
+                expect(body.photoAssetId).toBe(assetId)
+            })
+        })
         it('가입하면 계정과 사진 소유권을 함께 저장한다', async () => {
             const { body } = await fix.httpClient
                 .post('/users')
@@ -214,12 +230,37 @@ describe('UserRegistrationService', () => {
             const other = ensure(applicants[results.findIndex((result) => result.status === 409)])
             await fix.httpClient.post('/users').body(other).created({ schema: UserSchema })
         })
-        describe('사진 소유권 등록 후 다운로드 URL 발급에 실패하면', () => {
+        describe('다운로드 URL 발급이 실패하면', () => {
             beforeEach(() => {
                 vi.spyOn(
                     fix.module.get<S3ObjectService>(S3ObjectService.getName()),
                     'presignDownload'
                 ).mockRejectedValueOnce(new Error('signing failed'))
+            })
+            it('사진을 첨부해 가입할 수 있고 홈 조회는 500을 반환한다', async () => {
+                const { body: user } = await fix.httpClient
+                    .post('/users')
+                    .body({ ...applicant, photoAssetId: assetId })
+                    .created({ schema: UserSchema })
+                expect(await fix.module.get(AssetsService).findOwner(assetId)).toEqual({
+                    service: 'users',
+                    entityId: user.id
+                })
+                const { accessToken } = await loginUser(fix, {
+                    email: applicant.email,
+                    password: applicant.password
+                })
+                await fix.httpClient
+                    .get('/views/web/home')
+                    .headers({ Authorization: 'Bearer ' + accessToken })
+                    .internalServerError()
+            })
+        })
+        describe('가입 트랜잭션을 커밋할 수 없으면', () => {
+            beforeEach(() => {
+                vi.spyOn(ClientSession.prototype, 'commitTransaction').mockRejectedValueOnce(
+                    new Error('commit failed')
+                )
             })
             it('500을 반환하고 계정과 사진 소유권을 함께 롤백한다', async () => {
                 await fix.httpClient
@@ -254,7 +295,7 @@ describe('UserRegistrationService', () => {
         })
         describe('기한이 지난 사진으로 가입하면', () => {
             beforeEach(async () => {
-                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
+                advancePastUploadDeadline(fix)
             })
             it('404를 반환하고 계정을 만들지 않는다', async () => {
                 await fix.httpClient
@@ -326,7 +367,7 @@ describe('UserRegistrationService', () => {
         beforeEach(async () => {
             const upload = await requestRegistrationPhotoUpload(fix)
             assetId = upload.assetId
-            await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
+            advancePastUploadDeadline(fix)
         })
         it('소유자 없는 사진을 삭제한다', async () => {
             await fix.module.get(UserRegistrationService).cleanupExpiredPhotos()
