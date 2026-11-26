@@ -1,7 +1,8 @@
-import { ensure, MongoConnection, S3ObjectService } from '@mannercode/common'
+import { DateUtil, ensure, MongoConnection, S3ObjectService } from '@mannercode/common'
 import { UserRegistrationService } from '#application'
 import { type CreateUserDto, UserSchema } from '#core'
 import { AssetsService } from '#infrastructure'
+import { WebHomeViewSchema } from '#view'
 import {
     buildCreateUserDto,
     buildCreateAssetDto,
@@ -37,6 +38,31 @@ describe('UserRegistrationService', () => {
         await expect(fix.module.get(AssetsService).findOwner(body.assetId)).resolves.toBeNull()
         expect(await assetCount()).toBe(assetsBefore + 1)
         expect(await users().countDocuments()).toBe(usersBefore)
+    })
+    describe.each([
+        {
+            earlier: 'S3 정책',
+            signedAt: '2026-01-01T12:00:00.900Z',
+            expiresAt: '2026-01-01T12:01:00Z'
+        },
+        {
+            earlier: '사진 소유권 확정',
+            signedAt: '2026-01-01T12:00:01.100Z',
+            expiresAt: '2026-01-01T12:01:00.750Z'
+        }
+    ])('$earlier 기한이 먼저 끝나면', ({ signedAt, expiresAt }) => {
+        beforeEach(async () => {
+            vi.spyOn(DateUtil, 'now').mockReturnValue(
+                Temporal.Instant.from('2026-01-01T12:00:00.750Z')
+            )
+            await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 60 })
+        })
+        it('사진 업로드 요청에 그 기한을 반환한다', async () => {
+            using signingClock = vi.spyOn(Date, 'now')
+            signingClock.mockReturnValue(Date.parse(signedAt))
+            const upload = await requestRegistrationPhotoUpload(fix)
+            expect(upload.expiresAt.epochMilliseconds).toBe(Date.parse(expiresAt))
+        })
     })
     it.each([
         { file: '이미지가 아닌 파일의', metadata: { mimeType: 'text/plain' } },
@@ -132,6 +158,31 @@ describe('UserRegistrationService', () => {
                 password: applicant.password
             })
             expect(user).toEqual(body)
+        })
+        describe('대문자 사진 ID로 가입한 회원이 탈퇴하면', () => {
+            let headers: { Authorization: string }
+            let photoUrl: string
+            beforeEach(async () => {
+                await fix.httpClient
+                    .post('/users')
+                    .body({ ...applicant, photoAssetId: assetId.toUpperCase() })
+                    .created({ schema: UserSchema })
+                const { accessToken } = await loginUser(fix, {
+                    email: applicant.email,
+                    password: applicant.password
+                })
+                headers = { Authorization: 'Bearer ' + accessToken }
+                const { body } = await fix.httpClient
+                    .get('/views/web/home')
+                    .headers(headers)
+                    .ok({ schema: WebHomeViewSchema })
+                photoUrl = ensure(body.photoUrl)
+                expect((await fetch(photoUrl)).status).toBe(200)
+            })
+            it('업로드한 사진을 삭제한다', async () => {
+                await fix.httpClient.delete('/users/me').headers(headers).noContent()
+                expect((await fetch(photoUrl)).status).toBe(404)
+            })
         })
         it('같은 사진으로 동시에 가입하면 한 계정만 사진을 소유한다', async () => {
             const applicants = ['first@mail.com', 'second@mail.com'].map((email) =>

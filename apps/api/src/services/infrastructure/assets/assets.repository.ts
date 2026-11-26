@@ -2,6 +2,7 @@ import {
     CrudRepository,
     DateUtil,
     MongoConnection,
+    pickIds,
     type TransactionContext
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
@@ -71,30 +72,35 @@ export class AssetsRepository extends CrudRepository<Asset> {
         )
     }
 
-    async requestDeletion(assetIds: string[]): Promise<void> {
+    async requestDeletion(assetIds: string[]): Promise<string[]> {
+        const assets = await this.findDocuments(this.idsFilter(assetIds), {
+            projection: { _id: 1 }
+        })
+        const storedIds = pickIds(assets)
         await this.updateDocuments(
-            this.activeFilter({ ...this.idsFilter(assetIds), deletionRequestedAt: null }),
+            this.activeFilter({ ...this.idsFilter(storedIds), deletionRequestedAt: null }),
             this.timestamped({ $set: { deletionRequestedAt: DateUtil.now() } })
         )
+        return storedIds
     }
 
     async findPendingDeletion(expiresBefore: Temporal.Instant): Promise<Asset[]> {
         return this.findDocuments({
             $or: [
                 { deletedAt: null, deletionRequestedAt: { $ne: null } },
-                { deletedAt: { $ne: null, $lte: expiresBefore }, storageCleanedAt: null }
+                this.storageCleanupFilter(expiresBefore)
             ]
         })
     }
 
     async markStorageCleaned(assetIds: string[], expiresBefore: Temporal.Instant): Promise<void> {
         await this.updateDocuments(
-            {
-                ...this.idsFilter(assetIds),
-                deletedAt: { $ne: null, $lte: expiresBefore },
-                storageCleanedAt: null
-            },
+            { ...this.idsFilter(assetIds), ...this.storageCleanupFilter(expiresBefore) },
             this.timestamped({ $set: { storageCleanedAt: DateUtil.now() } })
         )
+    }
+
+    private storageCleanupFilter(expiresBefore: Temporal.Instant) {
+        return { deletedAt: { $ne: null, $lte: expiresBefore }, storageCleanedAt: null }
     }
 }

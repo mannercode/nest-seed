@@ -1,7 +1,7 @@
 import { createTestContext, toAny } from '@mannercode/testing'
 import { HttpStatus, Module } from '@nestjs/common'
 import { S3ObjectModule, S3ObjectService } from '#common/s3'
-import { Checksum, DateUtil, HttpUtil } from '#common/utils'
+import { Checksum, DateUtil, ensure, HttpUtil } from '#common/utils'
 import {
     testBuffer,
     uploadObject,
@@ -72,13 +72,21 @@ describe('S3ObjectService', () => {
     afterEach(() => fix.teardown())
 
     describe('presignUploadPost', () => {
-        it('업로드 URL과 POST 필드를 반환한다', async () => {
+        it('업로드 URL과 POST 필드, 서명된 정책의 만료 시각을 반환한다', async () => {
             const presigned = await fix.s3Service.presignUploadPost({
                 expiresInSec: 60,
                 key: 'key.txt'
             })
 
-            expect(presigned).toEqual({ fields: expect.any(Object), url: expect.any(String) })
+            const policy = JSON.parse(
+                Buffer.from(ensure(presigned.fields.Policy), 'base64').toString()
+            )
+            expect(presigned).toEqual({
+                expiresAt: expect.any(Temporal.Instant),
+                fields: expect.any(Object),
+                url: expect.any(String)
+            })
+            expect(presigned.expiresAt.equals(policy.expiration)).toBe(true)
         })
 
         describe('Content-Disposition을 지정한 업로드 정책', () => {

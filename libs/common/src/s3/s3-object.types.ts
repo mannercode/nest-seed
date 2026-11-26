@@ -58,7 +58,7 @@ export type S3PresignPostUploadOptions = S3PresignUrlOptions & {
     minContentLength?: number
 }
 
-export type S3PresignPostUploadResult = PresignedPost
+export type S3PresignPostUploadResult = PresignedPost & { expiresAt: Temporal.Instant }
 
 export type S3PresignUrlOptions = { expiresInSec: number; key: string }
 

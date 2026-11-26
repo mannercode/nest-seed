@@ -10,7 +10,7 @@ import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { Injectable, OnModuleDestroy } from '@nestjs/common'
 import { randomUUID } from 'crypto'
-import { DateUtil, HttpUtil, defaultTo, getByPath } from '#common/utils'
+import { DateUtil, HttpUtil, defaultTo, ensure, getByPath } from '#common/utils'
 import {
     S3DeleteObjectResult,
     S3ListObjectsOptions,
@@ -193,13 +193,15 @@ export class S3ObjectService implements OnModuleDestroy {
             ])
         }
 
-        return createPresignedPost(this.s3, {
+        const post = await createPresignedPost(this.s3, {
             Bucket: this.bucket,
             Conditions: conditions,
             Expires: expiresInSec,
             Fields: fields,
             Key: key
         })
+        const policy = JSON.parse(Buffer.from(ensure(post.fields.Policy), 'base64').toString())
+        return { ...post, expiresAt: Temporal.Instant.from(policy.expiration) }
     }
 
     async putObject(object: S3ObjectData): Promise<{ key: string }> {

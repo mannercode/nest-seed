@@ -48,7 +48,7 @@ export class AssetsService {
 
             if (0 < expiredAssets.length) {
                 const assetIds = pickIds(expiredAssets)
-                await this.deleteMany(assetIds)
+                await this.deleteStoredAssets(assetIds)
                 // 삭제 후에도 이미 발급한 업로드 요청은 유효하다. 삭제 시점부터 업로드
                 // 유효기간이 지난 기록만 재정리를 마친 것으로 표시한다.
                 await this.repository.markStorageCleaned(assetIds, expiresBefore)
@@ -72,11 +72,12 @@ export class AssetsService {
             minContentLength: size
         })
 
-        const expiresAt = this.getUploadExpiresAt(asset.createdAt)
-
         return {
             assetId: asset.id,
-            expiresAt,
+            expiresAt: DateUtil.earliest([
+                presigned.expiresAt,
+                this.getUploadExpiresAt(asset.createdAt)
+            ]),
             fields: presigned.fields,
             method: 'POST' as const,
             url: presigned.url
@@ -86,8 +87,11 @@ export class AssetsService {
     async deleteMany(assetIds: string[]): Promise<void> {
         if (assetIds.length === 0) return
 
-        await this.repository.requestDeletion(assetIds)
+        const storedIds = await this.repository.requestDeletion(assetIds)
+        await this.deleteStoredAssets(storedIds)
+    }
 
+    private async deleteStoredAssets(assetIds: string[]): Promise<void> {
         // S3 삭제는 모두 시도하되 하나라도 실패하면 재시도 기준인 DB 행을 남긴다.
         const results = await Promise.allSettled(
             assetIds.map((assetId) => this.s3Service.deleteObject(assetId))

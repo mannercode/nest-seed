@@ -34,6 +34,8 @@ Gateway 컨트롤러는 `AppModule`에 등록한다. 예를 들어 사용자 컨
 
 HTTP 입력은 Zod 스키마로 검증하고 DTO 타입은 스키마에서 추론한다. 수정 요청에서 생략한 필드는 보존하고 `null`은 스키마가 허용할 때만 받는다. [사용자 수정 DTO](src/services/core/users/dtos/update-user.dto.ts)
 
+사진 업로드 응답의 `expiresAt`은 S3 업로드 기한과 가입 시 사진 소유권을 확정할 기한 중 이른 시각이다. [사진 업로드 발급](src/services/infrastructure/assets/assets.service.ts)
+
 클라이언트가 구분할 4xx 응답에는 `code`를 포함하고, 5xx의 내부 원인은 서버 로그에 남긴다. [HTTP 오류 응답과 로그](../../libs/common/src/logger/__tests__/exception-logger.filter.spec.ts)
 
 ### 이벤트와 비동기 작업
