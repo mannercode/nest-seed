@@ -1,7 +1,7 @@
 import { ArgumentsHost, Catch, HttpException, Logger } from '@nestjs/common'
 import { BaseExceptionFilter } from '@nestjs/core'
 import { Request } from 'express'
-import { defaultTo } from '../utils/index.js'
+import { defaultTo } from '#common/utils'
 import { elapsedSinceRequestStart } from './request-timing.js'
 import { HttpErrorLog } from './types.js'
 

@@ -6,7 +6,7 @@
 import { execFile, execSync } from 'node:child_process'
 import { test } from 'node:test'
 import { promisify } from 'node:util'
-import { readPositiveInt, request, secureRandomHex, secureRandomIndex } from '../race-common.js'
+import { readPositiveInt, request, secureRandomHex, secureRandomIndex } from '#race-common'
 
 const KILL_AT_MS = readPositiveInt('CHAOS_KILL_AT_MS', 30_000)
 const RESTART_AFTER_MS = readPositiveInt('CHAOS_RESTART_AFTER_MS', 30_000)

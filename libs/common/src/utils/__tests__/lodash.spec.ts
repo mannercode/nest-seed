@@ -14,7 +14,7 @@ import {
     sortBy,
     sumBy,
     uniq
-} from '../index.js'
+} from '#common/utils'
 
 const temporal = (
     globalThis as typeof globalThis & {

@@ -1,5 +1,5 @@
 import { verify } from 'argon2'
-import { PasswordHasher } from '../index.js'
+import { PasswordHasher } from '#common/auth'
 import { createGuardsFixture, type GuardsFixture } from './guards.fixture.js'
 
 vi.mock('argon2', { spy: true })

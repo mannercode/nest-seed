@@ -1,10 +1,11 @@
 {
-    "extends": "../../tsconfig.json",
+    "extends": "@mannercode/tools/tsconfig",
     "compilerOptions": {
         "declaration": true,
         "declarationMap": true,
         "noEmit": true,
-        "types": ["node", "vitest/globals"]
+        "types": ["node", "vitest/globals"],
+        "customConditions": ["nest-seed-source"]
     },
     "include": ["src/**/*"]
 }

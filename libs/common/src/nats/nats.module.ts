@@ -1,6 +1,6 @@
 import { connect } from '@nats-io/transport-node'
 import { DynamicModule, Injectable, Module, Provider } from '@nestjs/common'
-import { ConnectionRegistry } from '../connection-registry.js'
+import { ConnectionRegistry } from '#common/connection-registry'
 import { getNatsConnectionToken } from './nats.tokens.js'
 import { NatsConnection, NatsModuleAsyncOptions, NatsModuleOptions } from './nats.types.js'
 

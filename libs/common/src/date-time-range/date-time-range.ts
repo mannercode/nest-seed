@@ -1,5 +1,5 @@
 import { InternalServerErrorException } from '@nestjs/common'
-import { DateUtil } from '../utils/index.js'
+import { DateUtil } from '#common/utils'
 
 type DateTimeRangeOptions = {
     days?: number

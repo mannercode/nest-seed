@@ -1,7 +1,7 @@
 import { DynamicModule, Inject, Module } from '@nestjs/common'
 import { Redis } from 'ioredis'
-import { getRedisConnectionToken } from '../redis/index.js'
-import { defaultTo } from '../utils/index.js'
+import { getRedisConnectionToken } from '#common/redis'
+import { defaultTo } from '#common/utils'
 import { CacheService } from './cache.service.js'
 import { CacheModuleOptions } from './cache.types.js'
 

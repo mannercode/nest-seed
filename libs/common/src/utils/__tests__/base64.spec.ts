@@ -1,4 +1,4 @@
-import { Base64 } from '../index.js'
+import { Base64 } from '#common/utils'
 
 describe('Base64', () => {
     it('16진수 문자열을 base64로 변환한다', () => {

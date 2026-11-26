@@ -8,7 +8,7 @@ import {
     createRedisModuleOptionsOnlyFixture,
     createRedisModuleAsyncFixture
 } from './redis.module.fixture.js'
-import { RedisConnectionRegistry } from '../index.js'
+import { RedisConnectionRegistry } from '#common/redis'
 
 describe('RedisConnectionRegistry', () => {
     describe('종료할 두 연결 중 하나가 첫 종료에 실패하면', () => {

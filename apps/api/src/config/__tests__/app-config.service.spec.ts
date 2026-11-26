@@ -1,5 +1,5 @@
 import { ConfigService } from '@nestjs/config'
-import { AppConfigService } from '../index.js'
+import { AppConfigService } from '#config'
 
 describe('AppConfigService.schema', () => {
     const portSchema = AppConfigService.schema.pick({ API_PORT: true })

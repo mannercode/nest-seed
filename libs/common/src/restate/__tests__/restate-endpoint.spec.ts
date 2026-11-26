@@ -1,11 +1,43 @@
-import type { AppLoggerService } from '../../index.js'
+import { AppLoggerService } from '#common/logger'
 import type { MockInstance } from 'vitest'
-import { type LoggerTransport, workflow } from '@restatedev/restate-sdk'
+import {
+    createEndpointHandler,
+    type LogSource,
+    type LoggerTransport,
+    type RestateLogLevel,
+    workflow
+} from '@restatedev/restate-sdk'
 import { once } from 'node:events'
-import { connect } from 'node:http2'
-import { RestateEndpoint } from '../index.js'
+import { type ClientHttp2Session, connect } from 'node:http2'
+import { PassThrough } from 'node:stream'
+import winston from 'winston'
+import { RestateEndpoint } from '#common/restate'
+
+vi.mock(import('@restatedev/restate-sdk'), async (importOriginal) => {
+    const sdk = await importOriginal()
+    return { ...sdk, createEndpointHandler: vi.fn(sdk.createEndpointHandler) }
+})
 
 describe('RestateEndpoint', () => {
+    let logger: AppLoggerService
+    let output: PassThrough
+    let records: unknown[]
+    beforeEach(() => {
+        records = []
+        output = new PassThrough({ objectMode: true })
+        output.on('data', (entry) => records.push(entry))
+        logger = new AppLoggerService(
+            winston.createLogger({
+                level: 'debug',
+                transports: [new winston.transports.Stream({ stream: output })]
+            })
+        )
+    })
+    afterEach(() => {
+        logger.onModuleDestroy()
+        output.destroy()
+    })
+
     describe('Restate에 등록할 workflow 주소를 지정하면', () => {
         const uri = 'http://nginx:9080'
         const adminUrl = 'http://restate:9070/'
@@ -54,10 +86,8 @@ describe('RestateEndpoint', () => {
 
     describe('endpoint 포트가 0이고 서버를 시작하지 않았으면', () => {
         let endpoint: RestateEndpoint
-        let logger: AppLoggerService
         beforeEach(() => {
-            logger = createLogger()
-            endpoint = createEndpoint(0, logger)
+            endpoint = createEndpoint()
         })
         it('서버를 시작하면 사용 가능한 포트를 쓰고 종료하면 연결도 닫는다', async () => {
             await endpoint.onApplicationBootstrap()
@@ -80,11 +110,12 @@ describe('RestateEndpoint', () => {
             try {
                 await endpoint.onApplicationBootstrap()
                 expect(endpoint.port).toBeGreaterThan(0)
-                expect(logger.warn).toHaveBeenCalledWith(
-                    expect.stringContaining(
-                        'Accepting requests without validating request signatures'
-                    ),
+                expect(records).toContainEqual(
                     expect.objectContaining({
+                        level: 'warn',
+                        message: expect.stringContaining(
+                            'Accepting requests without validating request signatures'
+                        ),
                         contextType: 'restate',
                         restate: expect.objectContaining({ source: 'SYSTEM' })
                     })
@@ -95,88 +126,81 @@ describe('RestateEndpoint', () => {
         })
     })
 
-    describe('연결을 강제로 닫기 전까지 서버 종료가 끝나지 않도록 설정하면', () => {
+    describe('HTTP/2 요청이 응답을 기다리는 동안', () => {
         let endpoint: RestateEndpoint
-        let session: { close: ReturnType<typeof vi.fn>; destroy: ReturnType<typeof vi.fn> }
-        beforeEach(() => {
-            vi.useFakeTimers()
+        let client: ClientHttp2Session
+        beforeEach(async () => {
+            const received = Promise.withResolvers<void>()
+            vi.mocked(createEndpointHandler).mockReturnValueOnce(() => received.resolve())
             endpoint = createEndpoint()
-            let finishServerClose!: () => void
-            session = { close: vi.fn(), destroy: vi.fn(() => finishServerClose()) }
-            const server = {
-                close: vi.fn((done: () => void) => {
-                    finishServerClose = done
-                })
-            }
-            const internals = endpoint as unknown as {
-                server: typeof server
-                sessions: Set<typeof session>
-            }
-            internals.server = server
-            internals.sessions.add(session)
+            await endpoint.onApplicationBootstrap()
+            client = connect(`http://127.0.0.1:${endpoint.port}`)
+            client.request({ ':path': '/' }).end()
+            await received.promise
         })
-        it('종료를 요청하고 5초가 지나면 남은 연결을 강제로 닫는다', async () => {
-            try {
-                const shutdown = endpoint.onApplicationShutdown()
-                expect(session.close).toHaveBeenCalledTimes(1)
-                await vi.advanceTimersByTimeAsync(5_000)
-                await shutdown
-                expect(session.destroy).toHaveBeenCalledTimes(1)
-            } finally {
-                vi.useRealTimers()
-            }
+        afterEach(async () => {
+            vi.useRealTimers()
+            client?.destroy()
+            await endpoint?.onApplicationShutdown()
+        })
+        it('종료를 요청하면 연결을 최대 5초 기다린 뒤 강제로 닫는다', async () => {
+            vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+            const closed = once(client, 'close')
+            const draining = once(client, 'goaway')
+            const shutdown = endpoint.onApplicationShutdown()
+            await draining
+            await vi.advanceTimersByTimeAsync(4_999)
+            expect(client.destroyed).toBe(false)
+            await vi.advanceTimersByTimeAsync(1)
+            await Promise.all([shutdown, closed])
+            expect(client.destroyed).toBe(true)
+            expect(endpoint.port).toBe(0)
         })
     })
 
     describe('애플리케이션 로거를 연결했으면', () => {
-        let logger: AppLoggerService
         let transport: LoggerTransport
-        beforeEach(() => {
-            logger = createLogger()
-            const endpoint = createEndpoint(9080, logger)
-            transport = (endpoint as unknown as { restateLogger: LoggerTransport }).restateLogger
+        let endpoint: RestateEndpoint
+        beforeEach(async () => {
+            endpoint = createEndpoint()
+            await endpoint.onApplicationBootstrap()
+            transport = vi.mocked(createEndpointHandler).mock.lastCall![0].logger!
         })
+        afterEach(() => endpoint.onApplicationShutdown())
         describe.each([
             ['trace', 'verbose'],
             ['debug', 'debug'],
-            ['info', 'log'],
+            ['info', 'info'],
             ['warn', 'warn'],
             ['error', 'error']
-        ] as const)('로그 레벨이 %s이면', (level, loggerMethod) => {
+        ] as const)('로그 레벨이 %s이면', (level, outputLevel) => {
             let metadata: Parameters<LoggerTransport>[0]
             beforeEach(() => {
                 metadata = {
-                    level,
+                    level: level as RestateLogLevel,
                     replaying: false,
-                    source: 'USER'
-                } as unknown as Parameters<LoggerTransport>[0]
+                    source: 'USER' as LogSource
+                }
             })
-            it(`로그를 전달하면 로거의 ${loggerMethod} 메서드를 호출한다`, () => {
+            it(`로그를 전달하면 ${outputLevel} 수준으로 메시지와 상세 내용을 기록한다`, () => {
                 const message = `${level} message`
                 transport(metadata, message, `${level} detail`)
-                expect(logger[loggerMethod]).toHaveBeenCalledWith(
-                    message,
-                    expect.objectContaining({ parameters: [`${level} detail`] })
+                expect(records).toContainEqual(
+                    expect.objectContaining({
+                        level: outputLevel,
+                        message,
+                        parameters: [`${level} detail`]
+                    })
                 )
             })
         })
     })
 
-    function createEndpoint(servicePort = 0, logger = createLogger()) {
+    function createEndpoint(servicePort = 0) {
         const definition = workflow({
             handlers: { run: async () => undefined },
             name: `EndpointTest-${Math.random().toString(36).slice(2)}`
         })
         return new RestateEndpoint([definition], servicePort, logger)
-    }
-
-    function createLogger() {
-        return {
-            debug: vi.fn(),
-            error: vi.fn(),
-            log: vi.fn(),
-            verbose: vi.fn(),
-            warn: vi.fn()
-        } as unknown as AppLoggerService
     }
 })

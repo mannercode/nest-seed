@@ -5,7 +5,7 @@ import {
     MongoClient,
     type UpdateFilter
 } from 'mongodb'
-import type { TransactionContext } from '../../index.js'
+import type { TransactionContext } from '#common'
 import {
     CrudDocument,
     CrudRepository,
@@ -13,7 +13,7 @@ import {
     objectId,
     type CrudRepositoryOptions,
     type VersionedDocument
-} from '../index.js'
+} from '#common/mongodb'
 
 export class Sample extends CrudDocument {
     name: string

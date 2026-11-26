@@ -1,6 +1,6 @@
 import { createTestContext } from '@mannercode/testing'
-import { getNatsConnectionToken, NatsModule, type NatsConnection } from '../../nats/index.js'
-import { NatsHealthIndicator } from '../index.js'
+import { getNatsConnectionToken, NatsModule, type NatsConnection } from '#common/nats'
+import { NatsHealthIndicator } from '#common/health'
 
 export type NatsHealthIndicatorFixture = {
     connection: NatsConnection

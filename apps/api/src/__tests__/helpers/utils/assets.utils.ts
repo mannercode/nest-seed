@@ -1,19 +1,32 @@
+import type { AppTestContext } from '#test-helpers'
 import type { TestContext } from '@mannercode/testing'
 import { ensure, pick, S3ObjectService } from '@mannercode/common'
 import { readFile } from 'fs/promises'
+import { Collection } from 'mongodb'
 import { basename } from 'path'
 import {
     type AssetDto,
     type AssetPresignedUploadDto,
+    AssetPresignedUploadSchema,
     type CreateAssetDto,
     type FinalizeAssetDto,
     AssetsService
 } from '#infrastructure'
 import { testAssets, type TestAsset } from '../assets/index.js'
-import { AssetsRepository } from '../../../services/infrastructure/assets/assets.repository.js'
 
 export function buildCreateAssetDto(file: TestAsset = testAssets.image): CreateAssetDto {
     return pick(file, ['originalName', 'mimeType', 'size', 'checksum'])
+}
+
+export async function requestRegistrationPhotoUpload(
+    ctx: AppTestContext,
+    metadata: CreateAssetDto = buildCreateAssetDto()
+) {
+    const { body } = await ctx.httpClient
+        .post('/users/photo-upload')
+        .body(metadata)
+        .created({ schema: AssetPresignedUploadSchema })
+    return body
 }
 
 export function buildFinalizeAssetDto(
@@ -52,18 +65,21 @@ export async function uploadAndFinalizeAsset(ctx: TestContext, file: TestAsset) 
     return assetsService.finalizeUpload(assetId, buildFinalizeAssetDto())
 }
 
-export async function uploadAsset(filePath: string, uploadDto: AssetPresignedUploadDto) {
+export async function uploadAsset(source: string | File, uploadDto: AssetPresignedUploadDto) {
     const { fields, method, url } = uploadDto
-    const buffer = await readFile(filePath)
     const form = new FormData()
 
     Object.entries(fields).forEach(([fieldKey, value]) => {
         form.append(fieldKey, value)
     })
 
-    const contentType = fields['Content-Type'] ?? 'application/octet-stream'
-    const file = new Blob([buffer], { type: contentType })
-    form.append('file', file, basename(filePath))
+    const file =
+        typeof source === 'string'
+            ? new File([await readFile(source)], basename(source), {
+                  type: fields['Content-Type'] ?? 'application/octet-stream'
+              })
+            : source
+    form.append('file', file)
 
     const response = await fetch(url, { body: form, method })
     return response
@@ -79,17 +95,31 @@ export async function uploadFile(ctx: TestContext, file: TestAsset) {
     return { assetId: uploadRequest.assetId, key: ensure(uploadRequest.fields.key) }
 }
 
-export function pauseNextAssetOwnerAssignment(ctx: TestContext) {
-    const repository = ctx.module.get(AssetsRepository)
-    const assignOwner = repository.assignOwner.bind(repository)
+export function pauseNextMongoFindOneAndUpdate() {
+    const findOneAndUpdate = Collection.prototype.findOneAndUpdate
     const started = Promise.withResolvers<void>()
     const held = Promise.withResolvers<void>()
-    vi.spyOn(repository, 'assignOwner').mockImplementationOnce(async (...args) => {
+    vi.spyOn(Collection.prototype, 'findOneAndUpdate').mockImplementationOnce(async function (
+        this: Collection,
+        ...args
+    ) {
         started.resolve()
         await held.promise
-        return assignOwner(...args)
+        return findOneAndUpdate.call(this, ...args)
     })
     return { started: started.promise, release: held.resolve }
+}
+
+export function failNextMongoUpdateAfterStorageDelete(ctx: TestContext) {
+    const storage = ctx.module.get<S3ObjectService>(S3ObjectService.getName())
+    const deleteObject = storage.deleteObject.bind(storage)
+    const failure = new Error('asset DB update failed')
+    vi.spyOn(storage, 'deleteObject').mockImplementationOnce(async (key) => {
+        const result = await deleteObject(key)
+        vi.spyOn(Collection.prototype, 'updateMany').mockRejectedValueOnce(failure)
+        return result
+    })
+    return failure
 }
 
 export function pauseNextStorageDelete(ctx: TestContext) {

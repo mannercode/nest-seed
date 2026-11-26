@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
-import { createVitestBase } from '../../vitest.config.base.mjs'
+import { createVitestBase } from '@mannercode/tools/vitest-config'
 
 const appDirectory = path.dirname(fileURLToPath(import.meta.url))
 const base = createVitestBase({ tsconfigPath: path.join(appDirectory, 'tsconfig.json') })

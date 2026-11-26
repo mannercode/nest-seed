@@ -1,6 +1,6 @@
 import { InternalServerErrorException } from '@nestjs/common'
 import { z } from 'zod'
-import { JsonUtil, InstantFromInputSchema, PlainDateFromInputSchema } from '../index.js'
+import { JsonUtil, InstantFromInputSchema, PlainDateFromInputSchema } from '#common/utils'
 
 describe('JsonUtil', () => {
     describe('stringify', () => {

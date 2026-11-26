@@ -1,5 +1,5 @@
 import { InternalServerErrorException } from '@nestjs/common'
-import { DateUtil } from '../index.js'
+import { DateUtil } from '#common/utils'
 
 describe('DateUtil', () => {
     describe('fromYMD', () => {

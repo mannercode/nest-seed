@@ -8,6 +8,24 @@
     ],
     "main": "_output/dist/index.js",
     "types": "_output/dist/index.d.ts",
+    "imports": {
+        "#common": {
+            "nest-seed-source": "./src/index.ts",
+            "default": "./_output/dist/index.js"
+        },
+        "#common/*": {
+            "nest-seed-source": "./src/*/index.ts",
+            "default": "./_output/dist/*/index.js"
+        },
+        "#common/connection-registry": {
+            "nest-seed-source": "./src/connection-registry.ts",
+            "default": "./_output/dist/connection-registry.js"
+        },
+        "#common/transaction": {
+            "nest-seed-source": "./src/transaction.ts",
+            "default": "./_output/dist/transaction.js"
+        }
+    },
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
         "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",

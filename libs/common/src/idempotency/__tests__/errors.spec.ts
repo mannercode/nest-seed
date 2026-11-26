@@ -1,4 +1,4 @@
-import { IdempotencyErrors } from '../index.js'
+import { IdempotencyErrors } from '#common/idempotency'
 
 describe('IdempotencyErrors', () => {
     it('클라이언트가 구분하는 멱등성 오류 코드를 유지한다', () => {

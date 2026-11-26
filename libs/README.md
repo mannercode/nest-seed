@@ -58,4 +58,6 @@ Restate의 `defineWorkflow`는 입력 스키마를, `RestateWorkflowClient`는 �
 
 객체·유니온은 `type`, 클래스가 구현할 계약이나 선언 병합은 `interface`를 쓴다. 파일 경로 변수는 `Path`, 디렉터리 경로 변수는 `Dir`로 끝낸다.
 
-백엔드의 상대 import는 Node ESM이 빌드 후 읽을 `.js`까지 적고, 디렉터리는 `index.js`를 지정한다. 패키지명과 `#core` 같은 별칭은 그대로 쓴다. 타입 전용 참조는 `import type`으로, Nest가 생성자에서 DI 토큰으로 사용할 클래스는 값으로 가져온다. ESM 패키지에서 CommonJS로 실행할 도구는 `.cjs`를 쓴다. [컴파일 설정](../tsconfig.json) · [생성자 타입 메타데이터 테스트](testing/src/vitest/__tests__/decorator-metadata.spec.ts)
+같은 디렉터리의 파일은 `./파일.js`로 가져온다. 패키지 내부에서 다른 모듈을 참조할 때 common은 `#common/모듈명`으로 그 모듈의 `index`를 읽는다. 예를 들어 캐시 서비스는 `#common/redis`에서 연결 타입을 가져온다. 단일 파일로 구성한 모듈도 `#common/transaction`처럼 이름으로 참조한다. 각 라이브러리 테스트에서 패키지 진입점이 필요하면 `#common` 또는 `#testing`을 사용하고, 다른 패키지에서 가져올 때는 `@mannercode/common` 또는 `@mannercode/testing`을 쓴다. [common의 내부 경로](common/package.json) · [testing의 내부 경로](testing/package.json)
+
+라이브러리의 타입 검사와 소스 테스트는 `nest-seed-source` 조건으로 `src`의 TypeScript를 읽고, 빌드한 패키지를 실행하는 Node는 기본 경로인 `_output/dist`의 JavaScript를 읽는다. 타입 전용 참조는 `import type`으로, Nest가 생성자에서 DI 토큰으로 사용할 클래스는 값으로 가져온다. ESM 패키지에서 CommonJS로 실행할 도구는 `.cjs`를 쓴다. [라이브러리 컴파일 설정](common/tsconfig.json) · [생성자 타입 메타데이터 테스트](testing/src/vitest/__tests__/decorator-metadata.spec.ts)

@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        // Nest CLI의 path transformer가 `#alias`를 소스 `.ts` 경로로 바꾸므로 ESM 산출물에서 `.js`로 다시 쓴다.
+        "rewriteRelativeImportExtensions": true,
+        "target": "ES2024",
+        "lib": ["ES2024", "ESNext.Temporal"],
+        "types": ["node"],
+        "strict": true,
+        // 응답 DTO와 MongoDB document 모델은 생성자 없이 필드 모양만 선언하므로 초기화 검사를 끈다.
+        "strictPropertyInitialization": false,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noUncheckedIndexedAccess": true,
+        // Rspack의 transpileOnly처럼 파일별로 변환해도 안전한 import/type 경계를 타입 검사에서 보장한다.
+        "isolatedModules": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "sourceMap": true,
+        "skipLibCheck": true
+    }
+}

@@ -1,8 +1,13 @@
 import { z } from 'zod'
-import { CancelledError, TerminalError, type WorkflowContext } from '@restatedev/restate-sdk'
+import * as restate from '@restatedev/restate-sdk'
 import { instant, plainDate } from '@mannercode/testing'
-import { TemporalJsonSerde, defineWorkflow, isWorkflowCancellation } from '../index.js'
-import { InstantFromInputSchema } from '../../utils/index.js'
+import { TemporalJsonSerde, defineWorkflow, isWorkflowCancellation } from '#common/restate'
+import { InstantFromInputSchema } from '#common/utils'
+
+vi.mock('@restatedev/restate-sdk', async (importOriginal) => {
+    const sdk = await importOriginal<typeof restate>()
+    return { ...sdk, workflow: vi.fn(sdk.workflow) }
+})
 
 describe('TemporalJsonSerde', () => {
     it('Temporal 값을 JSON 문자열로 저장하고 다시 읽을 때는 문자열을 유지한다', () => {
@@ -38,7 +43,7 @@ describe('defineWorkflow', () => {
         const startedAt = instant('2025-01-02T03:04:00Z')
         const signal = new AbortController().signal
         const retry = { initialRetryInterval: 100, maxRetryAttempts: 2, maxRetryDuration: 1000 }
-        const runStep = vi.fn(async (_name, operation) => operation())
+        const runStep = vi.fn()
         const execute = vi.fn(async () => 'result')
         const defined = defineWorkflow({
             name: 'adapter-test',
@@ -57,32 +62,33 @@ describe('defineWorkflow', () => {
                         ? { message: error.message, errorCode: 409 }
                         : undefined
             }
-        }) as unknown as {
-            name: string
-            workflow: { run: (context: WorkflowContext, input: string) => Promise<string> }
-            options: {
-                asTerminalError: (error: unknown) => TerminalError | undefined
-                serde: typeof TemporalJsonSerde
-            }
-        }
+        })
+        const register = vi.mocked(restate.workflow)
+        expect(register).toHaveBeenCalledOnce()
+        expect(defined).toBe(register.mock.results[0]!.value)
+        const [{ name, handlers, options }] = register.mock.calls[0]!
+        expect(name).toBe('adapter-test')
         const context = {
-            run: runStep,
+            run: (...[name, operation, policy]: Parameters<restate.WorkflowContext['run']>) => {
+                runStep(name, operation, policy)
+                return operation()
+            },
             request: () => ({ attemptCompletedSignal: signal })
-        } as unknown as WorkflowContext
-        await expect(defined.workflow.run(context, startedAt.toString())).resolves.toBe('result')
+        } as restate.WorkflowContext
+        await expect(handlers.run(context, startedAt.toString())).resolves.toBe('result')
         expect(execute).toHaveBeenCalledOnce()
         expect(runStep).toHaveBeenCalledWith('step', execute, retry)
-        expect(defined.options).toMatchObject({
+        expect(options).toMatchObject({
             abortTimeout: 100,
             inactivityTimeout: 1000,
             workflowRetention: 5000,
             serde: TemporalJsonSerde
         })
-        expect(defined.options.asTerminalError(new Error('temporary'))).toBeUndefined()
-        expect(defined.options.asTerminalError(new Error('terminal'))).toMatchObject({
-            message: 'terminal',
-            code: 409
-        })
+        const classifyError = options!.asTerminalError!
+        expect(classifyError(new Error('temporary'))).toBeUndefined()
+        const terminal = classifyError(new Error('terminal'))
+        expect(terminal).toBeInstanceOf(restate.TerminalError)
+        expect(terminal).toMatchObject({ message: 'terminal', code: 409 })
     })
 
     describe('워크플로 정의에 오류 분류 함수가 없으면', () => {
@@ -96,10 +102,12 @@ describe('defineWorkflow', () => {
             }
         })
         it('워크플로를 정의하면 asTerminalError를 설정하지 않는다', () => {
-            const retrying = defineWorkflow(definition) as unknown as {
-                options: { asTerminalError?: unknown }
-            }
-            expect(retrying.options.asTerminalError).toBeUndefined()
+            defineWorkflow(definition)
+            const register = vi.mocked(restate.workflow)
+            expect(register).toHaveBeenCalledOnce()
+            const [{ options }] = register.mock.calls[0]!
+            expect(options).toBeDefined()
+            expect(options!.asTerminalError).toBeUndefined()
         })
     })
 })
@@ -108,7 +116,7 @@ describe('isWorkflowCancellation', () => {
     describe.each([
         {
             condition: '워크플로 취소 오류가 발생했으면',
-            error: new CancelledError(),
+            error: new restate.CancelledError(),
             expected: true
         },
         { condition: '일반 오류가 발생했으면', error: new Error('temporary'), expected: false }

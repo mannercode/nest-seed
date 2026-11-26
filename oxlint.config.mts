@@ -15,7 +15,7 @@ const apiDependencyOptions = {
     ignore: [
         '^\\.',
         `^(?:node:)?(?:${nodeBuiltinModules.join('|')})(?:/.*)?$`,
-        `^#(?:${[...layers, 'config'].join('|')})(?:/.*)?$`,
+        `^#(?:${[...layers, 'config'].join('|')})$`,
         '^@mannercode/'
     ]
 }
@@ -59,6 +59,24 @@ const internalImportRestrictions = [
         message: '예제 모듈의 내부 구현입니다. 외부 운영 코드는 #infrastructure를 사용하세요.'
     }
 ]
+
+function testImportRestrictions(allowedHelperIndexes: string[] = []) {
+    return {
+        patterns: [
+            {
+                group: [
+                    '**/../**',
+                    '!../index.js',
+                    ...allowedHelperIndexes,
+                    '#api/services/**',
+                    '#common/*.js',
+                    '#common/*/**'
+                ],
+                message: '다른 모듈의 서비스와 타입은 그 모듈의 공개 진입점에서 가져오세요.'
+            }
+        ]
+    }
+}
 
 export default defineConfig({
     // ESLint에서는 검사했지만 현재 Oxlint 구성으로 대체하지 못한 안전장치다.
@@ -110,7 +128,15 @@ export default defineConfig({
             rules: {
                 'allowed-dependencies/dependencies': [
                     'error',
-                    { ...apiDependencyOptions, development: true }
+                    {
+                        ...apiDependencyOptions,
+                        development: true,
+                        ignore: [
+                            ...apiDependencyOptions.ignore,
+                            '^#test-helpers$',
+                            '^#api/(app\\.module|bootstrap|main|development)$'
+                        ]
+                    }
                 ],
                 'vitest/no-focused-tests': 'error',
                 'vitest/no-disabled-tests': 'error',
@@ -194,35 +220,16 @@ export default defineConfig({
         },
         {
             files: [
-                'apps/api/src/**/__tests__/**/*.{spec,test,fixture}.ts',
-                'libs/*/src/**/__tests__/**/*.{spec,test,fixture}.ts'
+                'apps/api/src/**/__tests__/**/*.ts',
+                'apps/api/vitest.setup.ts',
+                'libs/*/src/**/__tests__/**/*.ts'
             ],
+            rules: { 'no-restricted-imports': ['error', testImportRestrictions()] }
+        },
+        {
+            files: ['apps/api/src/__tests__/helpers/**/*.ts'],
             rules: {
-                'no-restricted-imports': [
-                    'error',
-                    {
-                        patterns: [
-                            {
-                                group: [
-                                    '../*.js',
-                                    '../**/*.js',
-                                    '!../index.js',
-                                    '!../**/index.js',
-                                    // 서버의 기동과 실패 정리를 실제 진입점에서 검증한다.
-                                    '!../main.js',
-                                    '!../development.js',
-                                    // 공개 API가 아닌 구현 단위 테스트에서만 허용하는 직접 import다.
-                                    '!../user-session-keys.js',
-                                    '!../../services/infrastructure/assets/assets.repository.js',
-                                    '!../../services/infrastructure/job-demo/job-demo.repository.js',
-                                    '!../../services/infrastructure/job-demo/worker.js'
-                                ],
-                                message:
-                                    '공개 항목은 해당 모듈의 index.js에서 가져오세요. 비공개 구현 테스트는 oxlint.config.mts의 명시적 허용 목록에 추가하세요.'
-                            }
-                        ]
-                    }
-                ]
+                'no-restricted-imports': ['error', testImportRestrictions(['!../assets/index.js'])]
             }
         },
         {

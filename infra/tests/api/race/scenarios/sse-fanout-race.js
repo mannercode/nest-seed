@@ -8,7 +8,7 @@ import {
     request,
     waitForAll,
     waitUntil
-} from '../race-common.js'
+} from '#race-common'
 
 const SSE_CLIENT_COUNT = readPositiveInt('SSE_CLIENT_COUNT', 100, 2)
 const MESSAGES_PER_INNER = readPositiveInt('MESSAGES_PER_INNER', 10)

@@ -1,6 +1,7 @@
 import { omit } from '@mannercode/common'
 import { HttpTestClient, nullObjectId, plainDate } from '@mannercode/testing'
-import { type UserDto, UsersRepository, UsersService, UserSchema } from '#core'
+import { Collection } from 'mongodb'
+import { type UserDto, UsersService, UserSchema } from '#core'
 import {
     buildCreateUserDto,
     createAndLoginUser,
@@ -9,7 +10,7 @@ import {
     loginUser,
     type AppTestContext,
     createAppTestContext
-} from '../helpers/index.js'
+} from '#test-helpers'
 import { ConflictException } from '@nestjs/common'
 
 describe('UsersService', () => {
@@ -35,13 +36,12 @@ describe('UsersService', () => {
             beforeEach(() => {
                 request = fix.httpClient.post('/users').body(buildCreateUserDto({ password }))
             })
-            it('가입을 요청하면 400을 반환하고 사용자를 저장하지 않는다', async () => {
+            it('가입 요청에 400을 반환하고 같은 이메일로 유효한 비밀번호를 보내면 가입할 수 있다', async () => {
                 await request.badRequest()
-                expect(
-                    await fix.module
-                        .get(UsersRepository)
-                        .findForAuthentication({ email: 'name@mail.com' })
-                ).toBeNull()
+                await fix.httpClient
+                    .post('/users')
+                    .body(buildCreateUserDto())
+                    .created({ schema: UserSchema })
             })
         })
 
@@ -83,11 +83,11 @@ describe('UsersService', () => {
                             photoAssetId: null
                         }
                     })
-                expect(
-                    await fix.module
-                        .get(UsersRepository)
-                        .findForAuthentication({ email: 'first.last+tag@example.com' })
-                ).toMatchObject({ id: body.id })
+                const { user } = await loginUser(fix, {
+                    email: 'first.last+tag@example.com',
+                    password: createDto.password
+                })
+                expect(user).toMatchObject({ id: body.id, email: 'first.last+tag@example.com' })
             })
         })
 
@@ -165,8 +165,13 @@ describe('UsersService', () => {
             const email = 'rejoin@mail.com'
 
             beforeEach(async () => {
-                const user = await createUser(fix, { email })
-                await fix.module.get(UsersService).deleteMany([user.id])
+                const { password } = buildCreateUserDto({ email })
+                await createUser(fix, { email })
+                const { accessToken } = await loginUser(fix, { email, password })
+                await fix.httpClient
+                    .delete('/users/me')
+                    .headers({ Authorization: 'Bearer ' + accessToken })
+                    .noContent()
             })
 
             it('같은 이메일로 다시 가입할 수 있다', async () => {
@@ -209,11 +214,11 @@ describe('UsersService', () => {
                     // 500이 새어 나오면 변환 누락이므로
                     // 201/409 외 상태가 하나도 없음을 함께 단언한다.
                     expect(otherStatuses).toEqual([])
-                    expect(
-                        await fix.module
-                            .get(UsersRepository)
-                            .findForAuthentication({ email: 'race@mail.com' })
-                    ).toMatchObject({ email: 'race@mail.com' })
+                    const { user } = await loginUser(fix, {
+                        email: 'race@mail.com',
+                        password: buildCreateUserDto().password
+                    })
+                    expect(user.email).toBe('race@mail.com')
                 },
                 30 * 1000
             )
@@ -435,7 +440,10 @@ describe('UsersService', () => {
             beforeEach(async () => {
                 const session = await createAndLoginUser(fix)
                 refreshToken = session.refreshToken
-                await fix.module.get(UsersService).deleteMany([session.user.id])
+                await fix.httpClient
+                    .delete('/users/me')
+                    .headers({ Authorization: 'Bearer ' + session.accessToken })
+                    .noContent()
             })
 
             it('기존 리프레시 토큰으로 갱신을 요청하면 401을 반환한다', async () => {
@@ -506,9 +514,8 @@ describe('UsersService', () => {
 
             beforeEach(() => {
                 service = fix.module.get(UsersService)
-                const repository = fix.module.get(UsersRepository)
                 failure = new Error('storage unavailable')
-                vi.spyOn(repository.collection, 'insertOne').mockRejectedValueOnce(failure)
+                vi.spyOn(Collection.prototype, 'insertOne').mockRejectedValueOnce(failure)
             })
 
             it('사용자 생성을 요청하면 저장 오류를 그대로 던진다', async () => {

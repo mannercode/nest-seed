@@ -1,14 +1,18 @@
 import { JetStreamChannel, type DurableMessages, type DurableMessage } from '@mannercode/common'
 import { Logger } from '@nestjs/common'
+import { Test, type TestingModule } from '@nestjs/testing'
 import { HttpTestClient } from '@mannercode/testing'
 import { EventDemoService, eventDemoResources, MessageConsumer } from '#infrastructure'
 import {
     createAppTestContext,
+    buildCreateUserDto,
+    createUser,
+    loginUser,
     createAndLoginUser,
     ownsEventStream,
     projectId,
     type AppTestContext
-} from '../helpers/index.js'
+} from '#test-helpers'
 
 describe('JetStream 테스트 자원 정리', () => {
     const event = eventDemoResources(projectId('worker-1'))
@@ -45,17 +49,40 @@ describe('JetStream 테스트 자원 정리', () => {
     })
 })
 
-describe('EventDemoService', () => {
+function openEventStream(serverUrl: string, token: string) {
+    const ready = Promise.withResolvers<void>()
+    const received = Promise.withResolvers<string>()
+    const failed = Promise.withResolvers<never>()
+    const messages: string[] = []
+    const stream = new HttpTestClient(serverUrl)
+        .get('/event-demo/event-stream')
+        .headers({ Authorization: 'Bearer ' + token })
+        .sse(
+            (data) => {
+                messages.push(data)
+                received.resolve(data)
+            },
+            failed.reject,
+            ready.resolve
+        )
+    return {
+        stream,
+        messages,
+        ready: Promise.race([ready.promise, failed.promise]),
+        firstMessage: () => Promise.race([received.promise, failed.promise])
+    }
+}
+
+describe('이벤트 HTTP API', () => {
     let fix: AppTestContext
     let session: Awaited<ReturnType<typeof createAndLoginUser>>
-    let stream: HttpTestClient | undefined
+    const streams: HttpTestClient[] = []
     beforeEach(async () => {
         fix = await createAppTestContext()
         session = await createAndLoginUser(fix)
     })
     afterEach(async () => {
-        stream?.abort()
-        stream = undefined
+        for (const stream of streams.splice(0)) stream.abort()
         await fix?.teardown()
     })
     it('인증 없이 메시지를 발행하면 401을 반환한다', async () => {
@@ -88,141 +115,136 @@ describe('EventDemoService', () => {
         { condition: '전달이 가능하면', failFirst: false },
         { condition: '첫 전달이 실패하면', failFirst: true }
     ])('$condition', ({ failFirst }) => {
-        let waitForDelivery: () => Promise<void>
-        let messages: string[]
+        let mine: ReturnType<typeof openEventStream>
         beforeEach(async () => {
-            const ready = Promise.withResolvers<void>()
-            const received = Promise.withResolvers<void>()
-            const failed = Promise.withResolvers<never>()
-            messages = []
-            stream = new HttpTestClient(fix.httpClient.serverUrl)
-                .get('/event-demo/event-stream')
-                .headers({ Authorization: 'Bearer ' + session.accessToken })
-                .sse(
-                    (data) => {
-                        messages.push(data)
-                        received.resolve()
-                    },
-                    failed.reject,
-                    ready.resolve
-                )
-            await Promise.race([ready.promise, failed.promise])
-            const events = fix.module.get(EventDemoService)
-            await events.deliver({ id: 'other', message: 'not mine', userId: 'other-user' })
+            const applicant = buildCreateUserDto({ email: 'other@mail.com' })
+            await createUser(fix, applicant)
+            const otherSession = await loginUser(fix, {
+                email: applicant.email,
+                password: applicant.password
+            })
+            mine = openEventStream(fix.httpClient.serverUrl, session.accessToken)
+            const other = openEventStream(fix.httpClient.serverUrl, otherSession.accessToken)
+            streams.push(mine.stream, other.stream)
+            await Promise.all([mine.ready, other.ready])
+            const { body } = await fix.httpClient
+                .post('/event-demo/messages')
+                .headers({ Authorization: 'Bearer ' + otherSession.accessToken })
+                .body({ message: 'other event' })
+                .accepted()
+            expect(JSON.parse(await other.firstMessage())).toEqual({
+                id: body.id,
+                message: 'other event'
+            })
             if (failFirst)
-                vi.spyOn(events, 'deliver').mockRejectedValueOnce(
+                vi.spyOn(fix.module.get(EventDemoService), 'deliver').mockRejectedValueOnce(
                     new Error('NATS temporarily unavailable')
                 )
-            waitForDelivery = () => Promise.race([received.promise, failed.promise])
         })
-        it('메시지를 발행하면 202와 이벤트 ID를 반환하고 본인의 SSE에서 같은 ID와 메시지를 받는다', async () => {
-            const [, { body }] = await Promise.all([
-                waitForDelivery(),
-                fix.httpClient
-                    .post('/event-demo/messages')
-                    .headers({ Authorization: 'Bearer ' + session.accessToken })
-                    .body({ message: 'hello event' })
-                    .accepted()
-            ])
+        it('메시지를 발행하면 202와 이벤트 ID를 반환하고 본인의 SSE에서 같은 ID와 메시지만 받는다', async () => {
+            const { body } = await fix.httpClient
+                .post('/event-demo/messages')
+                .headers({ Authorization: 'Bearer ' + session.accessToken })
+                .body({ message: 'hello event' })
+                .accepted()
+            await mine.firstMessage()
             expect(body).toEqual({ id: expect.stringMatching(/\S/) })
-            for (const data of messages) {
+            for (const data of mine.messages) {
                 expect(JSON.parse(data)).toEqual({ id: body.id, message: 'hello event' })
             }
         })
     })
-    describe('메시지 소비자의 입력과 종료', () => {
-        let consumer: MessageConsumer
-        let next: ReturnType<typeof vi.fn<() => Promise<IteratorResult<DurableMessage>>>>
-        let messages: DurableMessages
-        const spyErrors = () => vi.spyOn(Logger.prototype, 'error')
-        let errors: ReturnType<typeof spyErrors>
+})
+
+describe('메시지 소비자의 입력과 종료', () => {
+    let module: TestingModule
+    const consume = vi.fn<EventDemoService['consume']>()
+    let consumer: MessageConsumer
+    let next: ReturnType<typeof vi.fn<() => Promise<IteratorResult<DurableMessage>>>>
+    let messages: DurableMessages
+    const spyErrors = () => vi.spyOn(Logger.prototype, 'error')
+    let errors: ReturnType<typeof spyErrors>
+    beforeEach(async () => {
+        next = vi.fn()
+        messages = { [Symbol.asyncIterator]: () => ({ next }), close: vi.fn(async () => undefined) }
+        consume.mockResolvedValue(messages)
+        errors = spyErrors().mockImplementation(() => undefined)
+        module = await Test.createTestingModule({
+            providers: [MessageConsumer, { provide: EventDemoService, useValue: { consume } }]
+        }).compile()
+        consumer = module.get(MessageConsumer)
+    })
+    afterEach(() => module.close())
+    describe('소비가 예기치 않게 끝나면', () => {
         beforeEach(() => {
-            const service = fix.module.get(EventDemoService)
-            next = vi.fn()
-            messages = {
-                [Symbol.asyncIterator]: () => ({ next }),
-                close: vi.fn(async () => undefined)
+            next.mockResolvedValue({ done: true, value: undefined })
+        })
+        it('소비 중단 상태와 원인을 남긴다', async () => {
+            await consumer.onModuleInit()
+            expect(errors).toHaveBeenCalledWith('Message consumer stopped unexpectedly')
+            expect(consumer.isRunning).toBe(false)
+        })
+    })
+    describe('소비 도중 연결 오류가 발생하면', () => {
+        const error = new Error('connection lost')
+        beforeEach(() => {
+            next.mockRejectedValue(error)
+        })
+        it('소비 중단 상태와 실패 원인을 남긴다', async () => {
+            await consumer.onModuleInit()
+            expect(errors).toHaveBeenCalledWith('Message consumer failed', error)
+            expect(consumer.isRunning).toBe(false)
+        })
+    })
+    describe('종료 중에 대기하던 읽기가 거절되면', () => {
+        beforeEach(() => {
+            const pending = Promise.withResolvers<IteratorResult<DurableMessage>>()
+            next.mockReturnValue(pending.promise)
+            messages.close = async () => {
+                pending.reject(new Error('closed'))
             }
-            vi.spyOn(service, 'consume').mockResolvedValue(messages)
-            errors = spyErrors().mockImplementation(() => undefined)
-            consumer = new MessageConsumer(service)
         })
-        afterEach(() => consumer.onModuleDestroy())
-        describe('소비가 예기치 않게 끝나면', () => {
-            beforeEach(() => {
-                next.mockResolvedValue({ done: true, value: undefined })
-            })
-            it('소비 중단 상태와 원인을 남긴다', async () => {
-                await consumer.onModuleInit()
-                expect(errors).toHaveBeenCalledWith('Message consumer stopped unexpectedly')
-                expect(consumer.isRunning).toBe(false)
-            })
+        it('소비 작업을 끝내고 종료 오류로 기록하지 않는다', async () => {
+            await consumer.onModuleInit()
+            await consumer.onModuleDestroy()
+            expect(errors).not.toHaveBeenCalled()
         })
-        describe('소비 도중 연결 오류가 발생하면', () => {
-            const error = new Error('connection lost')
-            beforeEach(() => {
-                next.mockRejectedValue(error)
-            })
-            it('소비 중단 상태와 실패 원인을 남긴다', async () => {
-                await consumer.onModuleInit()
-                expect(errors).toHaveBeenCalledWith('Message consumer failed', error)
-                expect(consumer.isRunning).toBe(false)
-            })
+    })
+    describe('소비 시작 자체가 실패하면', () => {
+        beforeEach(() => {
+            consume.mockRejectedValue(new Error('cannot consume'))
         })
-        describe('종료 중에 대기하던 읽기가 거절되면', () => {
-            beforeEach(() => {
-                const pending = Promise.withResolvers<IteratorResult<DurableMessage>>()
-                next.mockReturnValue(pending.promise)
-                messages.close = async () => {
-                    pending.reject(new Error('closed'))
-                }
-            })
-            it('소비 작업을 끝내고 종료 오류로 기록하지 않는다', async () => {
-                await consumer.onModuleInit()
-                await consumer.onModuleDestroy()
-                expect(errors).not.toHaveBeenCalled()
-            })
+        it('초기화 오류를 전달하고 부분 초기화 상태도 정리할 수 있다', async () => {
+            await expect(consumer.onModuleInit()).rejects.toThrow('cannot consume')
+            await expect(consumer.onModuleDestroy()).resolves.toBeUndefined()
         })
-        describe('소비 시작 자체가 실패하면', () => {
-            beforeEach(() => {
-                vi.spyOn(fix.module.get(EventDemoService), 'consume').mockRejectedValue(
-                    new Error('cannot consume')
-                )
-            })
-            it('초기화 오류를 전달하고 부분 초기화 상태도 정리할 수 있다', async () => {
-                await expect(consumer.onModuleInit()).rejects.toThrow('cannot consume')
-                await expect(consumer.onModuleDestroy()).resolves.toBeUndefined()
-            })
+    })
+    describe('스키마가 잘못된 메시지를 받으면', () => {
+        let invalid: DurableMessage
+        let discarded: ReturnType<typeof Promise.withResolvers<void>>
+        beforeEach(() => {
+            discarded = Promise.withResolvers<void>()
+            const end = Promise.withResolvers<IteratorResult<DurableMessage>>()
+            invalid = {
+                decode: () => ({ message: 1 }),
+                acknowledge: vi.fn(),
+                retryAfter: vi.fn(),
+                discard: vi.fn(() => discarded.resolve()),
+                deliveryCount: 1,
+                sequence: 1
+            }
+            next.mockResolvedValueOnce({ done: false, value: invalid }).mockReturnValue(end.promise)
+            messages.close = async () => {
+                end.resolve({ done: true, value: undefined })
+            }
         })
-        describe('스키마가 잘못된 메시지를 받으면', () => {
-            let invalid: DurableMessage
-            let discarded: ReturnType<typeof Promise.withResolvers<void>>
-            beforeEach(() => {
-                discarded = Promise.withResolvers<void>()
-                const end = Promise.withResolvers<IteratorResult<DurableMessage>>()
-                invalid = {
-                    decode: () => ({ message: 1 }),
-                    acknowledge: vi.fn(),
-                    retryAfter: vi.fn(),
-                    discard: vi.fn(() => discarded.resolve()),
-                    deliveryCount: 1,
-                    sequence: 1
-                }
-                next.mockResolvedValueOnce({ done: false, value: invalid }).mockReturnValue(
-                    end.promise
-                )
-                messages.close = async () => {
-                    end.resolve({ done: true, value: undefined })
-                }
-            })
-            it('메시지를 폐기하며 처리 완료나 재시도로 표시하지 않는다', async () => {
-                await consumer.onModuleInit()
-                await discarded.promise
-                expect(invalid.discard).toHaveBeenCalledWith('Invalid demo message')
-                expect(invalid.acknowledge).not.toHaveBeenCalled()
-                expect(invalid.retryAfter).not.toHaveBeenCalled()
-                expect(errors).toHaveBeenCalledWith('Invalid demo message', expect.any(Error))
-            })
+        it('메시지를 폐기하며 처리 완료나 재시도로 표시하지 않는다', async () => {
+            await consumer.onModuleInit()
+            await discarded.promise
+            expect(invalid.discard).toHaveBeenCalledWith('Invalid demo message')
+            expect(invalid.acknowledge).not.toHaveBeenCalled()
+            expect(invalid.retryAfter).not.toHaveBeenCalled()
+            expect(errors).toHaveBeenCalledWith('Invalid demo message', expect.any(Error))
         })
     })
 })

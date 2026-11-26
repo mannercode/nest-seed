@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common'
-import { createTestContext, createHttpTestContext } from '../index.js'
+import { createTestContext, createHttpTestContext } from '#testing'
 
 describe('createTestContext, createHttpTestContext', () => {
     describe('제공자의 초기화가 실패하도록 설정하면', () => {

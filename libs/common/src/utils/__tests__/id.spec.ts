@@ -1,4 +1,4 @@
-import { generateShortId, generateUuid, sha256, pickIds } from '../index.js'
+import { generateShortId, generateUuid, sha256, pickIds } from '#common/utils'
 
 describe('generateShortId', () => {
     it('기본 15자 길이의 알파벳/숫자 ID를 생성한다', () => {

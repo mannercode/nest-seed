@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { MongoConnection } from '../mongodb/mongo-connection.js'
+import type { MongoConnection } from '#common/mongodb'
 
 @Injectable()
 export class MongoHealthIndicator {

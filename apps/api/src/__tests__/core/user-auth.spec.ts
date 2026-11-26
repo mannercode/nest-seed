@@ -1,7 +1,8 @@
 import { HttpStatus } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
-import { AppConfigService } from '#config'
-import { type UserDto, UsersService, UsersRepository, UserSchema } from '#core'
+import { Collection } from 'mongodb'
+import { AppConfigService, REDIS_CONNECTION_NAME } from '#config'
+import { type UserDto, UsersService, UserSchema } from '#core'
 import {
     buildCreateUserDto,
     createUser,
@@ -9,36 +10,70 @@ import {
     loginUser,
     type AppTestContext,
     createAppTestContext
-} from '../helpers/index.js'
-import { LoginRateLimiterService } from '#gateway'
-import { ensure, JwtAuthService, TimeUtil } from '@mannercode/common'
+} from '#test-helpers'
+import {
+    ensure,
+    getRedisConnectionToken,
+    JwtAuthService,
+    type JwtAuthTokens,
+    PasswordHasher,
+    type RedisConnection,
+    TimeUtil
+} from '@mannercode/common'
 
-const IP_FAILURE_LIMIT = 3
+// AppConfigModule을 import할 때 Nest가 환경 변수를 검증해 저장하므로 두 앱의 한도를 먼저 설정한다.
+const IP_FAILURE_LIMIT = vi.hoisted(() => {
+    const limit = 3
+    vi.stubEnv('AUTH_LOGIN_IP_FAILURE_LIMIT', String(limit))
+    vi.stubEnv('AUTH_LOGIN_FAILURE_WINDOW', '5m')
+    return limit
+})
 const LOGIN_RATE_LIMITED_ERROR = {
     code: 'ERR_AUTH_LOGIN_RATE_LIMITED',
     message: 'Too many login attempts'
 }
 
-type JwtAuthInternals = {
-    createTokens(
-        payload: object,
-        sessionId: string
-    ): Promise<{ accessToken: string; refreshToken: string }>
+type ResumeRequest<T> = () => Promise<T>
+
+async function pauseNextTokenIssue<T>(request: () => Promise<T>): Promise<ResumeRequest<T>> {
+    const started = Promise.withResolvers<void>()
+    const held = Promise.withResolvers<void>()
+    const sign = JwtService.prototype.signAsync
+    vi.spyOn(JwtService.prototype, 'signAsync').mockImplementationOnce(async function (
+        this: JwtService,
+        payload,
+        options
+    ) {
+        started.resolve()
+        await held.promise
+        return sign.call(this, payload, options)
+    })
+    try {
+        const response = request()
+        await Promise.race([
+            started.promise,
+            response.then(() => {
+                throw new Error('HTTP request completed before JWT signing started')
+            })
+        ])
+        return () => {
+            held.resolve()
+            return response
+        }
+    } catch (error) {
+        held.resolve()
+        throw error
+    }
 }
 
-function pauseNextTokenIssue(jwtAuthService: object) {
-    const internals = jwtAuthService as JwtAuthInternals
-    const createTokens = internals.createTokens.bind(internals)
-    let announceStarted!: () => void
-    let release!: () => void
-    const started = new Promise<void>((resolve) => (announceStarted = resolve))
-    const held = new Promise<void>((resolve) => (release = resolve))
-    vi.spyOn(internals, 'createTokens').mockImplementationOnce(async (payload, sessionId) => {
-        announceStarted()
-        await held
-        return createTokens(payload, sessionId)
-    })
-    return { release, started }
+async function expectCurrentUser(
+    fix: AppTestContext,
+    session: { accessToken: string; user: UserDto }
+) {
+    await fix.httpClient
+        .get('/users/me')
+        .headers({ Authorization: `Bearer ${session.accessToken}` })
+        .ok({ schema: UserSchema, expected: session.user })
 }
 
 describe('UserAuthentication', () => {
@@ -48,11 +83,6 @@ describe('UserAuthentication', () => {
 
     beforeEach(async () => {
         teardown = undefined
-        vi.spyOn(AppConfigService.prototype, 'loginRateLimit', 'get').mockReturnValue({
-            ipFailureLimit: IP_FAILURE_LIMIT,
-            failureWindow: '5m'
-        })
-
         fix = await createAppTestContext()
         teardown = fix.teardown
 
@@ -82,18 +112,14 @@ describe('UserAuthentication', () => {
                 .headers(headers)
                 .body({ name: 'denied' })
                 .unauthorized({ expected: expectedErrors.unauthorized })
-            await expect(fix.module.get(UsersService).getMany([session.user.id])).resolves.toEqual([
-                session.user
-            ])
+            await expectCurrentUser(fix, session)
         })
         it('탈퇴 요청에 401을 반환하고 사용자와 로그인 세션을 유지한다', async () => {
             await fix.httpClient
                 .delete('/users/me')
                 .headers(headers)
                 .unauthorized({ expected: expectedErrors.unauthorized })
-            await expect(fix.module.get(UsersService).getMany([session.user.id])).resolves.toEqual([
-                session.user
-            ])
+            await expectCurrentUser(fix, session)
             await fix.httpClient
                 .post('/users/refresh')
                 .body({ refreshToken: session.refreshToken })
@@ -129,9 +155,8 @@ describe('UserAuthentication', () => {
             })
             it('수정을 거절하고 두 사용자의 정보를 유지한다', async () => {
                 await request.badRequest()
-                await expect(
-                    fix.module.get(UsersService).getMany([mine.user.id, other.user.id])
-                ).resolves.toEqual(expect.arrayContaining([mine.user, other.user]))
+                await expectCurrentUser(fix, mine)
+                await expectCurrentUser(fix, other)
             })
         })
         it('탈퇴 요청에 타인 ID를 보내도 본인만 삭제하고 타인의 계정과 세션은 유지한다', async () => {
@@ -140,12 +165,11 @@ describe('UserAuthentication', () => {
                 .headers(headers)
                 .query({ userId: other.user.id })
                 .noContent()
-            await expect(
-                fix.module.get(UsersService).getMany([mine.user.id])
-            ).rejects.toMatchObject({ status: 404 })
-            await expect(fix.module.get(UsersService).getMany([other.user.id])).resolves.toEqual([
-                other.user
-            ])
+            await fix.httpClient
+                .get('/users/me')
+                .headers(headers)
+                .notFound({ expected: expectedErrors.multipleDocumentsNotFound([mine.user.id]) })
+            await expectCurrentUser(fix, other)
             await fix.httpClient
                 .post('/users/refresh')
                 .body({ refreshToken: other.refreshToken })
@@ -325,9 +349,13 @@ describe('UserAuthentication', () => {
                         app.setGlobalPrefix('replica')
                     }
                 })
-                const limiter = fix.module.get(LoginRateLimiterService)
-                for (let index = 0; index < IP_FAILURE_LIMIT; index++)
-                    await limiter.recordFailure('203.0.113.2')
+                for (let index = 0; index < IP_FAILURE_LIMIT; index++) {
+                    await fix.httpClient
+                        .post('/users/login')
+                        .headers({ 'X-Forwarded-For': '203.0.113.2' })
+                        .body({ ...credentials, password: 'incorrect password' })
+                        .unauthorized({ expected: expectedErrors.unauthorized })
+                }
             })
             afterEach(() => replica?.teardown())
             it('다른 앱에서도 같은 IP의 로그인 요청에 429를 반환한다', async () => {
@@ -484,7 +512,11 @@ describe('UserAuthentication', () => {
             let session: Awaited<ReturnType<typeof loginUser>>
             beforeEach(async () => {
                 session = await loginUser(fix, credentials)
-                await fix.module.get(UsersService).update(session.user.id, { name: 'Updated' })
+                await fix.httpClient
+                    .patch('/users/me')
+                    .headers({ Authorization: `Bearer ${session.accessToken}` })
+                    .body({ name: 'Updated' })
+                    .ok({ schema: UserSchema, expected: { ...session.user, name: 'Updated' } })
             })
             it('기존 세션으로 토큰을 갱신할 수 있다', async () => {
                 await fix.httpClient
@@ -518,7 +550,7 @@ describe('UserAuthentication', () => {
             beforeEach(async () => {
                 session = await loginUser(fix, credentials)
                 failure = new Error('Account database unavailable')
-                vi.spyOn(fix.module.get(UsersRepository), 'find').mockRejectedValueOnce(failure)
+                vi.spyOn(Collection.prototype, 'findOne').mockRejectedValueOnce(failure)
             })
             it('갱신은 실패하고 저장소가 복구되면 같은 토큰으로 다시 갱신할 수 있다', async () => {
                 await expect(
@@ -606,19 +638,53 @@ describe('UserAuthentication', () => {
         })
     })
 
-    describe('LoginRateLimiterService.recordFailure', () => {
-        it('같은 IP의 로그인 실패를 한도보다 한 번 더 동시에 기록하면 한 호출에서만 429 예외를 던진다', async () => {
-            const rateLimiter = fix.module.get(LoginRateLimiterService)
-            const results = await Promise.allSettled(
-                Array.from({ length: IP_FAILURE_LIMIT + 1 }, () =>
-                    rateLimiter.recordFailure('203.0.113.1')
-                )
-            )
-            const rejected = results.filter((result) => result.status === 'rejected')
-            expect(rejected).toHaveLength(1)
-            expect(rejected[0]).toMatchObject({
-                reason: { response: LOGIN_RATE_LIMITED_ERROR, status: HttpStatus.TOO_MANY_REQUESTS }
+    describe('같은 IP의 로그인 요청이 모두 한도 확인을 마치고 비밀번호 검증을 기다리면', () => {
+        const attemptCount = IP_FAILURE_LIMIT + 1
+        let checking: PromiseWithResolvers<void>
+        let resume: PromiseWithResolvers<void>
+        beforeEach(() => {
+            checking = Promise.withResolvers<void>()
+            resume = Promise.withResolvers<void>()
+            const verify = PasswordHasher.verify.bind(PasswordHasher)
+            let arrivals = 0
+            vi.spyOn(PasswordHasher, 'verify').mockImplementation(async (...args) => {
+                if (++arrivals === attemptCount) checking.resolve()
+                await resume.promise
+                return verify(...args)
             })
+        })
+        it('비밀번호가 모두 틀리면 한도만큼 401을 반환하고 한도를 넘긴 한 요청에는 429를 반환한다', async () => {
+            const requests = Array.from({ length: attemptCount }, () =>
+                fix.httpClient
+                    .post('/users/login')
+                    .headers({ 'X-Forwarded-For': '203.0.113.1' })
+                    .body({ ...credentials, password: 'incorrect password' })
+                    .sendRaw()
+            )
+            try {
+                await Promise.race([
+                    checking.promise,
+                    Promise.race(requests).then(({ status }) => {
+                        throw new Error(
+                            `Login returned HTTP ${status} before all requests reached password verification`
+                        )
+                    })
+                ])
+            } finally {
+                resume.resolve()
+                await Promise.allSettled(requests)
+            }
+            const responses = await Promise.all(requests)
+            const outcomes = responses.map(({ status, body }) => ({ status, body }))
+            expect(outcomes.filter(({ status }) => status === HttpStatus.UNAUTHORIZED)).toEqual(
+                Array.from({ length: IP_FAILURE_LIMIT }, () => ({
+                    status: HttpStatus.UNAUTHORIZED,
+                    body: expectedErrors.unauthorized
+                }))
+            )
+            expect(outcomes.filter(({ status }) => status !== HttpStatus.UNAUTHORIZED)).toEqual([
+                { status: HttpStatus.TOO_MANY_REQUESTS, body: LOGIN_RATE_LIMITED_ERROR }
+            ])
         })
     })
 
@@ -649,40 +715,35 @@ describe('UserAuthentication', () => {
 
     describe('비밀번호 검증을 통과한 로그인이 토큰 발급을 기다리면', () => {
         let session: Awaited<ReturnType<typeof loginUser>>
-        let usersService: UsersService
-        let gate: ReturnType<typeof pauseNextTokenIssue> | undefined
-        let loginResult: ReturnType<UsersService['login']> | undefined
-        let loginCompletion: Promise<unknown> | undefined
+        let resumeLogin: ResumeRequest<{ body: JwtAuthTokens }> | undefined
 
         beforeEach(async () => {
-            gate = undefined
-            loginResult = undefined
-            loginCompletion = undefined
+            resumeLogin = undefined
             session = await loginUser(fix, credentials)
-            usersService = fix.module.get(UsersService)
-            gate = pauseNextTokenIssue(fix.module.get(JwtAuthService.getName()))
-            loginResult = usersService.login(credentials)
-            loginCompletion = Promise.allSettled([loginResult])
-            await gate.started
+            resumeLogin = await pauseNextTokenIssue(() =>
+                fix.httpClient.post('/users/login').body(credentials).ok<JwtAuthTokens>()
+            )
         })
         afterEach(async () => {
-            gate?.release()
-            await loginCompletion
+            await resumeLogin?.()
         })
 
         it('비밀번호를 변경하면 변경 전에 인증된 로그인 세션으로 갱신할 수 없다', async () => {
-            await usersService.update(session.user.id, { password: 'updated password' })
-            ensure(gate).release()
+            await fix.httpClient
+                .patch('/users/me')
+                .headers({ Authorization: `Bearer ${session.accessToken}` })
+                .body({ password: 'updated password' })
+                .ok({ schema: UserSchema, expected: session.user })
+            const { body } = await ensure(resumeLogin)()
 
             await fix.httpClient
                 .post('/users/refresh')
                 .body({ refreshToken: session.refreshToken })
                 .unauthorized({ expected: expectedErrors.refreshTokenInvalid })
 
-            const login = ensure(await loginResult)
             await fix.httpClient
                 .post('/users/refresh')
-                .body({ refreshToken: login.tokens.refreshToken })
+                .body({ refreshToken: body.refreshToken })
                 .unauthorized({ expected: expectedErrors.refreshTokenInvalid })
 
             const current = await loginUser(fix, { ...credentials, password: 'updated password' })
@@ -693,18 +754,20 @@ describe('UserAuthentication', () => {
         })
 
         it('계정을 삭제하면 삭제 전에 인증된 로그인 세션으로 갱신할 수 없다', async () => {
-            await usersService.deleteMany([session.user.id])
-            ensure(gate).release()
+            await fix.httpClient
+                .delete('/users/me')
+                .headers({ Authorization: `Bearer ${session.accessToken}` })
+                .noContent()
+            const { body } = await ensure(resumeLogin)()
 
             await fix.httpClient
                 .post('/users/refresh')
                 .body({ refreshToken: session.refreshToken })
                 .unauthorized({ expected: expectedErrors.refreshTokenInvalid })
 
-            const login = ensure(await loginResult)
             await fix.httpClient
                 .post('/users/refresh')
-                .body({ refreshToken: login.tokens.refreshToken })
+                .body({ refreshToken: body.refreshToken })
                 .unauthorized({ expected: expectedErrors.refreshTokenInvalid })
         })
     })
@@ -718,10 +781,10 @@ describe('UserAuthentication', () => {
             session = await loginUser(fix, credentials)
             usersService = fix.module.get(UsersService)
             failure = new Error('Redis session revocation failed')
-            vi.spyOn(
-                fix.module.get<JwtAuthService>(JwtAuthService.getName()),
-                'revokeAllSessions'
-            ).mockRejectedValueOnce(failure)
+            const redis = fix.module.get<RedisConnection>(
+                getRedisConnectionToken(REDIS_CONNECTION_NAME)
+            )
+            vi.spyOn(redis, 'smembers').mockRejectedValueOnce(failure)
         })
 
         it('비밀번호 변경이 실패해도 DB에 반영된 새 비밀번호로 로그인할 수 있고 이전 세션은 갱신할 수 없다', async () => {
@@ -759,63 +822,36 @@ describe('UserAuthentication', () => {
 
     describe('리프레시 토큰 발급이 진행 중이면', () => {
         let session: Awaited<ReturnType<typeof loginUser>>
-        let usersService: UsersService
-        let gate: ReturnType<typeof pauseNextTokenIssue> | undefined
-        let refreshResult: Promise<PromiseSettledResult<unknown>[]> | undefined
+        let resumeRefresh: ResumeRequest<unknown> | undefined
         beforeEach(async () => {
-            gate = undefined
-            refreshResult = undefined
+            resumeRefresh = undefined
             session = await loginUser(fix, credentials)
-            usersService = fix.module.get(UsersService)
-            gate = pauseNextTokenIssue(fix.module.get(JwtAuthService.getName()))
-            refreshResult = Promise.allSettled([
-                usersService.refreshAuthTokens(session.refreshToken)
-            ])
-            await gate.started
+            resumeRefresh = await pauseNextTokenIssue(() =>
+                fix.httpClient
+                    .post('/users/refresh')
+                    .body({ refreshToken: session.refreshToken })
+                    .unauthorized({ expected: expectedErrors.refreshTokenInvalid })
+            )
         })
         afterEach(async () => {
-            gate?.release()
-            await refreshResult
+            await resumeRefresh?.()
         })
-        it('비밀번호를 변경하면 진행 중인 발급을 401 예외로 거절하고 기존 액세스 토큰은 유지한다', async () => {
-            try {
-                await usersService.update(session.user.id, { password: 'updated password' })
-            } finally {
-                gate?.release()
-            }
-            expect(await refreshResult).toMatchObject([
-                {
-                    status: 'rejected',
-                    reason: {
-                        status: HttpStatus.UNAUTHORIZED,
-                        response: expectedErrors.refreshTokenInvalid
-                    }
-                }
-            ])
+        it('비밀번호를 변경하면 진행 중인 갱신 요청에 401을 반환하고 기존 액세스 토큰으로 본인 정보를 조회할 수 있다', async () => {
             await fix.httpClient
-                .get('/users/me')
+                .patch('/users/me')
                 .headers({ Authorization: `Bearer ${session.accessToken}` })
+                .body({ password: 'updated password' })
                 .ok({ schema: UserSchema, expected: session.user })
+            await ensure(resumeRefresh)()
+            await expectCurrentUser(fix, session)
         })
-        it('해당 세션에서 로그아웃하면 진행 중인 발급을 401 예외로 거절하고 기존 액세스 토큰은 유지한다', async () => {
-            try {
-                await usersService.revokeRefreshToken(session.refreshToken)
-            } finally {
-                gate?.release()
-            }
-            expect(await refreshResult).toMatchObject([
-                {
-                    status: 'rejected',
-                    reason: {
-                        status: HttpStatus.UNAUTHORIZED,
-                        response: expectedErrors.refreshTokenInvalid
-                    }
-                }
-            ])
+        it('해당 세션에서 로그아웃하면 진행 중인 갱신 요청에 401을 반환하고 기존 액세스 토큰으로 본인 정보를 조회할 수 있다', async () => {
             await fix.httpClient
-                .get('/users/me')
-                .headers({ Authorization: `Bearer ${session.accessToken}` })
-                .ok({ schema: UserSchema, expected: session.user })
+                .post('/users/logout')
+                .body({ refreshToken: session.refreshToken })
+                .noContent()
+            await ensure(resumeRefresh)()
+            await expectCurrentUser(fix, session)
         })
     })
 })

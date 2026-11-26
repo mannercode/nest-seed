@@ -6,7 +6,7 @@ import {
     request,
     responseDiagnostic,
     waitForAll
-} from '../race-common.js'
+} from '#race-common'
 
 const USER_GROUPS = readPositiveInt('RACE_USER_GROUPS', 5)
 const CLIENTS_PER_USER = readPositiveInt('RACE_CLIENT_COUNT', 20, 2)

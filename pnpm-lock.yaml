@@ -543,6 +543,9 @@ importers:
         specifier: 10.4.2
         version: 10.4.2(supports-color@8.1.1)
     devDependencies:
+      '@mannercode/tools':
+        specifier: workspace:*
+        version: link:../../tools
       '@types/superagent':
         specifier: 8.1.11
         version: 8.1.11
@@ -558,6 +561,9 @@ importers:
       '@aws-sdk/client-s3':
         specifier: 3.1175.0
         version: 3.1175.0
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
 
 packages:
 

@@ -6,7 +6,7 @@ import {
     NatsConnectionRegistry,
     NatsModule,
     type NatsConnection
-} from '../index.js'
+} from '#common/nats'
 
 @Injectable()
 class SiblingConsumer {

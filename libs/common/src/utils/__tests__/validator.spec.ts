@@ -1,6 +1,6 @@
 import type { MockInstance } from 'vitest'
 import { Logger } from '@nestjs/common'
-import { Assume, ensure, Require } from '../index.js'
+import { Assume, ensure, Require } from '#common/utils'
 
 describe('Require', () => {
     describe('defined', () => {

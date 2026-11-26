@@ -36,7 +36,7 @@ Infrastructure에는 업로드 완료 판정·소유권 부여처럼 외부 시�
 
 다른 모듈에는 `index.ts`로 필요한 항목만 공개한다. worker의 구현도 앱 조립에 필요한 workflow 정의만 이 진입점으로 내보낸다. 같은 모듈 안에서는 상대 경로를 사용한다. 자신을 다시 내보내는 진입점을 거치면 모듈 내부에서도 순환 참조가 생길 수 있다.
 
-루트의 `pnpm run lint:code`는 계층 역참조와 다른 모듈의 비공개 파일 import를 검사한다. 설계 리뷰에서는 View가 하위 서비스의 쓰기 메서드를 호출하는지, 가입 실패 시 함께 되돌려야 할 변경이 같은 트랜잭션 안에 있는지를 살핀다. 허용된 방향으로 import한 코드에서도 두 문제가 생길 수 있다. [의존 방향과 테스트 예외를 검사하는 설정](../../oxlint.config.mts)
+루트의 `pnpm run lint:code`는 계층 역참조와 다른 모듈의 비공개 파일 import를 검사한다. 설계 리뷰에서는 View가 하위 서비스의 쓰기 메서드를 호출하는지, 가입 실패 시 함께 되돌려야 할 변경이 같은 트랜잭션 안에 있는지를 살핀다. 허용된 방향으로 import한 코드에서도 두 문제가 생길 수 있다. [의존 방향과 테스트 import를 검사하는 설정](../../oxlint.config.mts)
 
 ## 데이터와 서비스 계약
 
@@ -65,6 +65,8 @@ Core·Application도 NestJS DI와 `HttpException`을 사용한다. 예상한 오
 ## 테스트
 
 API 통합 테스트는 `createAppTestContext`로 실제 Nest 모듈과 테스트 실행을 위해 초기화한 인프라를 연결한다. 공통 훅이 worker별 DB·버킷과 테스트별 `PROJECT_ID`를 준비하므로 키 접두어·subject·workflow 이름은 주입된 설정에서 얻는다. 데이터 준비·조회·장애 주입 함수는 해당 `*.utils.ts`에 둔다. 독립적인 계산·변환은 단위 테스트로 검증할 수 있다. [공통 훅](vitest.setup.ts) · [테스트 작성 규칙](../../AGENTS.md#테스트는-한-행동의-결과를-검증한다) · [복제본 검증](../../README.md#앱-컨테이너와-복제본-검증)
+
+테스트와 도우미는 `#core`나 `#infrastructure` 같은 계층 진입점에서 공개 서비스를 가져온다. 공통 도우미는 `#test-helpers`에서 가져온다. 테스트 앱을 조립할 때는 `#api/app.module`과 `#api/bootstrap`을 사용하고, 배포·개발 서버의 기동 동작은 각각 `#api/main`과 `#api/development`로 실행한다. [별칭 설정](tsconfig.json)
 
 실제 서버와 같은 HTTP 설정을 쓰며, 경로 접두어 같은 설정이 더 필요하면 `createAppTestContext({ configureApp })`에서 경로 등록 전에 적용한다. `teardown()`은 제출한 작업의 완료를 확인한 뒤 테스트용 Restate 배포를 해제한다. 완료를 확인할 수 없으면 배포를 보존하고 앱을 닫은 뒤 오류를 전달한다. [테스트 앱 생성·정리](src/__tests__/helpers/create-app-test-context.ts) · [비동기 작업 테스트](src/__tests__/infrastructure/job-demo.spec.ts) · [SSE 구독 준비](../../libs/README.md#5-sse-이벤트를-받는-테스트-작성)
 

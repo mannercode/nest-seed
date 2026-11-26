@@ -1,4 +1,4 @@
-import { TimeUtil } from '../index.js'
+import { TimeUtil } from '#common/utils'
 
 describe('TimeUtil', () => {
     describe('toMs', () => {

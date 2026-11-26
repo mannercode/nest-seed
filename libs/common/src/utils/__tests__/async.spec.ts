@@ -1,4 +1,4 @@
-import { sleep } from '../index.js'
+import { sleep } from '#common/utils'
 
 describe('sleep', () => {
     beforeEach(() => {

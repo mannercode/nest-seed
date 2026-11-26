@@ -1,4 +1,4 @@
-import { DateTimeRange } from '../index.js'
+import { DateTimeRange } from '#common/date-time-range'
 
 describe('DateTimeRange', () => {
     const instant = (value: string) => Temporal.Instant.from(value)

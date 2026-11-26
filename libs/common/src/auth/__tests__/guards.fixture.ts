@@ -2,7 +2,7 @@ import { createHttpTestContext, HttpTestClient } from '@mannercode/testing'
 import { Controller, Get, Injectable, UseGuards } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { JwtModule, JwtService } from '@nestjs/jwt'
-import { AuthGuard, JwtVerifier, JwtVerifierModule, OptionalAuth, Public } from '../index.js'
+import { AuthGuard, JwtVerifier, JwtVerifierModule, OptionalAuth, Public } from '#common/auth'
 
 const TEST_SECRET = 'test-secret'
 

@@ -1,5 +1,5 @@
-import { MongoHealthIndicator } from '../index.js'
-import { MongoConnection } from '../../mongodb/index.js'
+import { MongoHealthIndicator } from '#common/health'
+import { MongoConnection } from '#common/mongodb'
 import type { MongoClient, Db } from 'mongodb'
 import {
     type RedisHealthIndicatorFixture,

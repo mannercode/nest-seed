@@ -1,4 +1,4 @@
-import { assignIfDefined, mapDocToDto } from '../../utils/index.js'
+import { assignIfDefined, mapDocToDto } from '#common/utils'
 import { z } from 'zod'
 import { BadRequestException, Logger } from '@nestjs/common'
 import { Decimal128, ObjectId } from 'mongodb'
@@ -15,7 +15,7 @@ import {
     plainDateFromMongo,
     QueryBuilder,
     withoutPublicId
-} from '../index.js'
+} from '#common/mongodb'
 
 describe('newObjectIdString, objectId, objectIds', () => {
     it('새로운 문자열 ObjectId를 만든다', () => {

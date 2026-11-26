@@ -1,4 +1,4 @@
-import { Env } from '../index.js'
+import { Env } from '#common/utils'
 
 describe('Env', () => {
     afterEach(() => vi.unstubAllEnvs())

@@ -19,7 +19,6 @@ COPY tools/ tools/
 RUN --mount=type=cache,id=nest-seed-pnpm,target=$pnpm_config_store_dir,sharing=locked \
     HUSKY=0 pnpm install --frozen-lockfile --filter './apps/api...' --filter './libs/common'
 
-COPY tsconfig.json ./
 COPY libs/common/ libs/common/
 RUN pnpm --filter './libs/common' --fail-if-no-match run build
 

@@ -1,17 +1,17 @@
 import { type Collection, type Db, type IndexDescription, MongoClient } from 'mongodb'
 import { BadRequestException, Logger, NotFoundException } from '@nestjs/common'
-import type { TransactionContext } from '../../index.js'
+import type { TransactionContext } from '#common'
 import type { MockInstance } from 'vitest'
-import { OrderDirection } from '../../pagination/index.js'
+import { OrderDirection } from '#common/pagination'
 import { z } from 'zod'
-import { InstantFromInputSchema, JsonUtil, paginationResultSchema } from '../../index.js'
+import { InstantFromInputSchema, JsonUtil, paginationResultSchema } from '#common'
 import {
     CrudRepository,
     MongoConnection,
     MongoErrors,
     newObjectIdString,
     objectId
-} from '../index.js'
+} from '#common/mongodb'
 import {
     createMongoRepositoryFixture,
     SamplesRepository,

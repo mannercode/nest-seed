@@ -1,6 +1,6 @@
 {
     "name": "${containerWorkspaceFolderBasename}",
-    "build": { "dockerfile": "Dockerfile", "context": ".." },
+    "build": { "dockerfile": "Dockerfile", "context": "${localWorkspaceFolder}" },
     "features": {
         "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
             "moby": false,

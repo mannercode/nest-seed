@@ -1,6 +1,6 @@
 import { toAny } from '@mannercode/testing'
 import { HttpStatus } from '@nestjs/common'
-import { Checksum, DateUtil, HttpUtil } from '../../utils/index.js'
+import { Checksum, DateUtil, HttpUtil } from '#common/utils'
 import {
     testBuffer,
     uploadObject,

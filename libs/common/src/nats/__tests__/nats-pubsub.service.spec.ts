@@ -5,7 +5,7 @@ import type { MockInstance } from 'vitest'
 import { withTestId } from '@mannercode/testing'
 import { waitForCleanup } from '@mannercode/tools/vitest-helpers'
 import * as testing from '@mannercode/testing'
-import { ensure } from '../../utils/index.js'
+import { ensure } from '#common/utils'
 import {
     type NatsPubSubServiceFixture,
     createNatsPubSubServiceFixture
@@ -20,7 +20,7 @@ import {
     JetStreamChannel,
     type DurableMessages,
     type DurableMessage
-} from '../index.js'
+} from '#common/nats'
 
 /**
  * 픽스처가 연결을 flush해 두므로 측정 구간에는 순수 메시지 왕복만 들어온다.

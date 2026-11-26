@@ -3,6 +3,9 @@
     "version": "0.0.1",
     "private": true,
     "type": "module",
+    "imports": {
+        "#race-common": "./tests/api/race/race-common.js"
+    },
     "scripts": {
         "apps:up": "bash stack.sh up",
         "apps:down": "bash stack.sh reset",

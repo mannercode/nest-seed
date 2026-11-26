@@ -1,5 +1,5 @@
 import fs from 'fs/promises'
-import { Checksum, ChecksumSchema, PathUtil } from '../index.js'
+import { Checksum, ChecksumSchema, PathUtil } from '#common/utils'
 
 describe('Checksum', () => {
     describe('schema', () => {

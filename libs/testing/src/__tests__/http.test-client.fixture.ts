@@ -13,7 +13,7 @@ import {
     Sse
 } from '@nestjs/common'
 import { Observable, Subject } from 'rxjs'
-import { createHttpTestContext, HttpTestClient } from '../index.js'
+import { createHttpTestContext, HttpTestClient } from '#testing'
 
 type RawEvents = { content: string; contentType: string; continuation?: string }
 

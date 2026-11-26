@@ -5,6 +5,12 @@
     "type": "module",
     "main": "_output/dist/index.js",
     "types": "_output/dist/index.d.ts",
+    "imports": {
+        "#testing": {
+            "nest-seed-source": "./src/index.ts",
+            "default": "./_output/dist/index.js"
+        }
+    },
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
         "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
@@ -21,6 +27,7 @@
         "@nestjs/testing": "^12.0.0"
     },
     "devDependencies": {
+        "@mannercode/tools": "workspace:*",
         "@types/superagent": "8.1.11",
         "npm-run-all": "4.1.5",
         "vitest": "5.1.1"

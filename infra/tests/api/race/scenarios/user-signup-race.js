@@ -6,7 +6,7 @@ import {
     responseDiagnostic,
     secureRandomHex,
     waitForAll
-} from '../race-common.js'
+} from '#race-common'
 
 const EMAIL_GROUPS = readPositiveInt('RACE_EMAIL_GROUPS', 10)
 const CLIENTS_PER_GROUP = readPositiveInt('RACE_CLIENT_COUNT', 50, 2)

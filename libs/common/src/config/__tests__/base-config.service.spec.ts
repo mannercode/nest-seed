@@ -4,7 +4,7 @@ import {
     type BaseConfigServiceFixture,
     createBaseConfigServiceFixture
 } from './base-config.service.fixture.js'
-import { BaseConfigService } from '../index.js'
+import { BaseConfigService } from '#common/config'
 
 describe('BaseConfigService', () => {
     let fix: BaseConfigServiceFixture

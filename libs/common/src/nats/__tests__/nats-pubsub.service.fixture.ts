@@ -6,7 +6,7 @@ import {
     NatsPubSubModule,
     NatsPubSubService,
     type NatsConnection
-} from '../index.js'
+} from '#common/nats'
 
 export type NatsPubSubServiceFixture = {
     pubSubA: NatsPubSubService

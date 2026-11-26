@@ -1,17 +1,22 @@
 {
-    "extends": "../../tsconfig.json",
+    "extends": "@mannercode/tools/tsconfig",
     "compilerOptions": {
         "incremental": true,
         "rootDir": ".",
         "outDir": "./_output/build",
         "types": ["node", "vitest/globals"],
         "paths": {
+            "#api/app.module": ["./src/app.module.ts"],
+            "#api/bootstrap": ["./src/bootstrap.ts"],
+            "#api/development": ["./src/development.ts"],
+            "#api/main": ["./src/main.ts"],
             "#application": ["./src/services/application/index.ts"],
             "#config": ["./src/config/index.ts"],
             "#core": ["./src/services/core/index.ts"],
             "#gateway": ["./src/services/gateway/index.ts"],
             "#infrastructure": ["./src/services/infrastructure/index.ts"],
-            "#view": ["./src/services/view/index.ts"]
+            "#view": ["./src/services/view/index.ts"],
+            "#test-helpers": ["./src/__tests__/helpers/index.ts"]
         }
     },
     "include": ["src/**/*", "vitest.setup.ts"]

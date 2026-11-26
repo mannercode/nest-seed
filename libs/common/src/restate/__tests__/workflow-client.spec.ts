@@ -4,8 +4,8 @@ import type * as RestateClients from '@restatedev/restate-sdk-clients'
 import type { Mock } from 'vitest'
 import { instant } from '@mannercode/testing'
 import { workflow } from '@restatedev/restate-sdk'
-import { RestateWorkflowClient, TemporalJsonSerde } from '../index.js'
-import { InstantFromInputSchema } from '../../utils/index.js'
+import { RestateWorkflowClient, TemporalJsonSerde } from '#common/restate'
+import { InstantFromInputSchema } from '#common/utils'
 
 type TestResult = {
     completedAt: Temporal.Instant

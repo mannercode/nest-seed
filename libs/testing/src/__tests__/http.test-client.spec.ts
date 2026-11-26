@@ -3,7 +3,7 @@ import {
     createHttpTestClientFixture,
     receiveRawEvents
 } from './http.test-client.fixture.js'
-import { HttpTestClient } from '../index.js'
+import { HttpTestClient } from '#testing'
 
 describe('HttpTestClient', () => {
     let fix: HttpTestClientFixture

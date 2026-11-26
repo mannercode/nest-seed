@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
-import type { RedisConnection } from '../redis/index.js'
-import { getByPath } from '../utils/index.js'
+import type { RedisConnection } from '#common/redis'
+import { getByPath } from '#common/utils'
 
 @Injectable()
 export class RedisHealthIndicator {

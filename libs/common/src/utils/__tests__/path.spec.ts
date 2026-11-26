@@ -1,7 +1,7 @@
 import fs from 'fs/promises'
 import os from 'os'
 import p from 'path'
-import { PathUtil } from '../index.js'
+import { PathUtil } from '#common/utils'
 
 describe('PathUtil', () => {
     describe('getAbsolute', () => {

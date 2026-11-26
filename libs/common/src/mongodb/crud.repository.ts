@@ -6,10 +6,10 @@ import {
     type IndexDescription,
     type MongoClient
 } from 'mongodb'
-import type { PaginationDto, PaginationResult } from '../pagination/index.js'
-import type { TransactionContext } from '../transaction.js'
+import type { PaginationDto, PaginationResult } from '#common/pagination'
+import type { TransactionContext } from '#common/transaction'
 import type { CrudDocument, VersionedDocument } from './mongo.document.js'
-import { Assume, DateUtil, defaultTo, differenceWith, Require, uniq } from '../utils/index.js'
+import { Assume, DateUtil, defaultTo, differenceWith, Require, uniq } from '#common/utils'
 import { MongoErrors } from './errors.js'
 import { MongoTransactionRepository } from './mongo-transaction.repository.js'
 import type { MongoConnection } from './mongo-connection.js'

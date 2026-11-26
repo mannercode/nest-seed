@@ -1,11 +1,12 @@
 {
-    "extends": "../../tsconfig.json",
+    "extends": "@mannercode/tools/tsconfig",
     "compilerOptions": {
         "declaration": true,
         "declarationMap": true,
         "noEmit": true,
         "types": ["node", "vitest/globals"],
-        "paths": { "@mannercode/testing": ["../testing/src/index.ts"] }
+        "paths": { "@mannercode/testing": ["./node_modules/@mannercode/testing/src/index.ts"] },
+        "customConditions": ["nest-seed-source"]
     },
     "include": ["src/**/*"]
 }

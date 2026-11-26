@@ -36,6 +36,11 @@ export function createTypeScriptTransform(tsconfigPath) {
     return {
         name: 'nest-typescript-transform',
         enforce: 'pre',
+        // 각 Vitest 실행 환경의 기본 조건에 tsconfig가 지정한 소스 조건을 더한다.
+        configEnvironment() {
+            const conditions = parsed.options.customConditions
+            if (conditions) return { resolve: { conditions } }
+        },
         transform(source, id) {
             const fileName = id.split('?')[0]
             if (

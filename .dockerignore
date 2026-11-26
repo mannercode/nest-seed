@@ -5,7 +5,6 @@
 !/package.json
 !/pnpm-lock.yaml
 !/pnpm-workspace.yaml
-!/tsconfig.json
 
 !/libs/common/package.json
 !/libs/common/tsconfig.json
@@ -28,7 +27,8 @@
 !/apps/web/tsconfig.json
 !/apps/web/src/
 
-# workspace link를 해석하는 데 필요하다.
+# 앱 이미지가 workspace 패키지와 공용 TypeScript 설정을 읽는다.
 !/tools/package.json
+!/tools/tsconfig.base.json
 
 **/__tests__

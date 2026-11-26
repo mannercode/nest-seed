@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt'
 import { Redis } from 'ioredis'
 import type { AuthConfig, JwtAuthTokens } from './jwt-auth.types.js'
 import { userSessionKeys } from './user-session-keys.js'
-import { defaultTo, ensure, generateShortId, omit, sha256 } from '../utils/index.js'
+import { defaultTo, ensure, generateShortId, omit, sha256 } from '#common/utils'
 
 export const JwtAuthErrors = {
     RefreshTokenReplaced: () => ({

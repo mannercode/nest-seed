@@ -10,7 +10,7 @@ import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { Injectable, OnModuleDestroy } from '@nestjs/common'
 import { randomUUID } from 'crypto'
-import { DateUtil, HttpUtil, defaultTo, getByPath } from '../utils/index.js'
+import { DateUtil, HttpUtil, defaultTo, getByPath } from '#common/utils'
 import {
     S3DeleteObjectResult,
     S3ListObjectsOptions,

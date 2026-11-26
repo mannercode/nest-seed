@@ -1,8 +1,8 @@
 import { DynamicModule, Inject, Module } from '@nestjs/common'
 import { JwtModule, JwtService } from '@nestjs/jwt'
 import { Redis } from 'ioredis'
-import { getRedisConnectionToken } from '../redis/index.js'
-import { defaultTo } from '../utils/index.js'
+import { getRedisConnectionToken } from '#common/redis'
+import { defaultTo } from '#common/utils'
 import { JwtAuthService } from './jwt-auth.service.js'
 import { JwtAuthModuleOptions } from './jwt-auth.types.js'
 

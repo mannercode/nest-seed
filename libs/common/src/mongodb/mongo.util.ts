@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common'
 import { ObjectId, type Document, type Filter } from 'mongodb'
-import { Assume, DateUtil, escapeRegExp, uniq } from '../utils/index.js'
+import { Assume, DateUtil, escapeRegExp, uniq } from '#common/utils'
 import { MongoErrors } from './errors.js'
 
 export const newObjectId = () => new ObjectId()

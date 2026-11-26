@@ -1,5 +1,5 @@
 import type { Document, ObjectId, Sort, UpdateFilter, UpdateResult } from 'mongodb'
-import type { TransactionContext } from '../transaction.js'
+import type { TransactionContext } from '#common/transaction'
 
 export type MongoDocument = Document
 export type MongoObjectId = ObjectId

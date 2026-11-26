@@ -1,4 +1,4 @@
-import { RestateHealthIndicator } from '../index.js'
+import { RestateHealthIndicator } from '#common/health'
 import type { MockInstance } from 'vitest'
 
 describe('RestateHealthIndicator', () => {

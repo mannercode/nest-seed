@@ -1,7 +1,10 @@
 import { MessageConsumer } from '#infrastructure'
 import { MongoConnection, RestateEndpoint } from '@mannercode/common'
 import { NestFactory } from '@nestjs/core'
+import { once } from 'node:events'
+import { createConnection } from 'node:net'
 import { hostname } from 'node:os'
+import { z } from 'zod'
 import { AppConfigService } from '#config'
 import { testConfig } from './helpers/resources.js'
 import {
@@ -9,7 +12,7 @@ import {
     createAppTestContext,
     testDeploymentUri,
     unregisterRestateDeployment
-} from './helpers/index.js'
+} from '#test-helpers'
 
 describe('Health', () => {
     let fix: AppTestContext
@@ -94,12 +97,20 @@ describe('API 시작', () => {
         let created: ReturnType<typeof observeCreate>
         beforeEach(() => {
             created = observeCreate()
+            vi.spyOn(AppConfigService.prototype, 'restateDeployment', 'get').mockReturnValue({
+                ...testConfig().restateDeployment,
+                uri: testDeploymentUri(0)
+            })
             const register = RestateEndpoint.prototype.register
             vi.spyOn(RestateEndpoint.prototype, 'register').mockImplementationOnce(async function (
                 this: RestateEndpoint,
-                admin
+                admin,
+                uri
             ) {
-                deployment = await register.call(this, admin, testDeploymentUri(this.port))
+                // 테스트가 요청한 0번 포트를 이 리스너에 실제 배정된 포트로 바꾼다.
+                const target = new URL(uri)
+                if (target.port === '0') target.port = String(this.port)
+                deployment = await register.call(this, admin, target.href)
                 return deployment
             })
         })
@@ -110,12 +121,14 @@ describe('API 시작', () => {
                 await app?.close()
             }
         })
-        it('배포 진입점을 실행하면 복제본 ID와 함께 상태 확인 요청에 200을 반환한다', async () => {
-            await import('../main.js')
+        it('배포 진입점을 실행하면 Restate에 배포가 등록되고 상태 확인 요청에 복제본 ID와 200을 반환한다', async () => {
+            await import('#api/main')
             app = await created.mock.results[0]!.value
-            expect(RestateEndpoint.prototype.register).toHaveBeenCalledWith(
-                process.env.RESTATE_ADMIN_URL,
-                process.env.RESTATE_DEPLOYMENT_URI
+            const registered = await fetch(deployment!)
+            expect(registered.status).toBe(200)
+            const { uri } = z.object({ uri: z.url() }).parse(await registered.json())
+            expect(new URL(uri).href).toBe(
+                new URL(testDeploymentUri(app!.get(RestateEndpoint).port)).href
             )
             const response = await fetch(new URL('/health', await app!.getUrl()))
             expect(response.status).toBe(200)
@@ -125,17 +138,28 @@ describe('API 시작', () => {
     })
     describe('Restate가 배포 등록을 거부하면', () => {
         const failure = new Error('Registration rejected')
-        const observeShutdown = () => vi.spyOn(RestateEndpoint.prototype, 'onApplicationShutdown')
-        let shutdown: ReturnType<typeof observeShutdown>
+        let listenerPort: number
         beforeEach(() => {
             vi.stubEnv('NODE_ENV', 'test')
-            vi.spyOn(RestateEndpoint.prototype, 'register').mockRejectedValueOnce(failure)
-            shutdown = observeShutdown()
+            vi.spyOn(RestateEndpoint.prototype, 'register').mockImplementationOnce(async function (
+                this: RestateEndpoint
+            ) {
+                listenerPort = this.port
+                throw failure
+            })
         })
         it('개발 진입점을 실행하면 열린 리스너를 닫고 시작 오류를 전달한다', async () => {
-            await expect(import('../development.js')).rejects.toThrow('Registration rejected')
+            await expect(import('#api/development')).rejects.toThrow('Registration rejected')
             expect(process.env.NODE_ENV).toBe('development')
-            expect(shutdown).toHaveBeenCalledOnce()
+            expect(listenerPort).toBeGreaterThan(0)
+            const connection = createConnection(listenerPort, '127.0.0.1')
+            try {
+                await expect(once(connection, 'connect')).rejects.toMatchObject({
+                    code: 'ECONNREFUSED'
+                })
+            } finally {
+                connection.destroy()
+            }
         })
     })
 })

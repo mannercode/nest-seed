@@ -2,7 +2,7 @@ import type { MockInstance } from 'vitest'
 import { HttpTestClient, createHttpTestContext } from '@mannercode/testing'
 import { Controller, Get, Post, Provider, Logger } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
-import { HttpSuccessLoggerInterceptor } from '../index.js'
+import { HttpSuccessLoggerInterceptor } from '#common/logger'
 
 export type SuccessLoggerInterceptorFixture = {
     httpClient: HttpTestClient

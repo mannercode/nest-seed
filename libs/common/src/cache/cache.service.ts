@@ -3,10 +3,10 @@ import {
     InternalServerErrorException,
     ServiceUnavailableException
 } from '@nestjs/common'
-import type { RedisConnection } from '../redis/index.js'
+import type { RedisConnection } from '#common/redis'
 import { randomUUID } from 'node:crypto'
 import { setTimeout as sleep } from 'node:timers/promises'
-import { DateUtil, defaultTo } from '../utils/index.js'
+import { DateUtil, defaultTo } from '#common/utils'
 
 @Injectable()
 export class CacheService {

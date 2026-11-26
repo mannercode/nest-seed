@@ -1,4 +1,4 @@
-import { ByteUtil } from '../index.js'
+import { ByteUtil } from '#common/utils'
 
 describe('ByteUtil', () => {
     describe('fromString', () => {

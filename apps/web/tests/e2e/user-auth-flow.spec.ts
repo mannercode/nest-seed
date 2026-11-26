@@ -10,8 +10,8 @@ import {
     WEB_BASE_URL,
     WORKSPACE_ROOT
 } from '../playwright.config'
-import { photoUrl } from '../../src/lib/photos'
-import { GET } from '../../src/app/api/[...path]/route'
+import { photoUrl } from '@/lib/photos'
+import { GET } from '@/app/api/[...path]/route'
 
 const PASSWORD = 'DevPassword1234!'
 const ACCESS_COOKIE = 'nest-seed-user-access'

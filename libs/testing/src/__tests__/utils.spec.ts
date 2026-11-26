@@ -1,4 +1,4 @@
-import { instant, oid, plainDate, step, withTestId } from '../index.js'
+import { instant, oid, plainDate, step, withTestId } from '#testing'
 
 describe('instant, plainDate', () => {
     describe('instant', () => {

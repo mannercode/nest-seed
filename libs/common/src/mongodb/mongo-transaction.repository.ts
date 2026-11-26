@@ -1,6 +1,6 @@
 import type { ClientSession, MongoClient } from 'mongodb'
-import type { TransactionContext } from '../transaction.js'
-import { ensure } from '../utils/index.js'
+import type { TransactionContext } from '#common/transaction'
+import { ensure } from '#common/utils'
 import type { MongoConnection } from './mongo-connection.js'
 
 type TransactionOptions = { snapshot?: { commitTimeoutMs: number; timeoutMs: number } }

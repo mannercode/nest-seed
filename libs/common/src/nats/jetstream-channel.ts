@@ -11,7 +11,7 @@ import {
 } from '@nats-io/jetstream'
 import { nanos } from '@nats-io/transport-node'
 import type { NatsConnection } from './nats.types.js'
-import { JsonUtil } from '../utils/index.js'
+import { JsonUtil } from '#common/utils'
 
 export type DurableMessage = {
     decode: () => unknown

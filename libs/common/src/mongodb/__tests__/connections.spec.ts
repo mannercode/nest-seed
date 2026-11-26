@@ -2,7 +2,7 @@ import { MongoClient, type Db } from 'mongodb'
 import type { MockInstance } from 'vitest'
 import { Test } from '@nestjs/testing'
 import { Global, Module } from '@nestjs/common'
-import { MongoConnection, MongoModule } from '../index.js'
+import { MongoConnection, MongoModule } from '#common/mongodb'
 
 describe('MongoConnection', () => {
     describe('client를 소유하는 연결이면', () => {

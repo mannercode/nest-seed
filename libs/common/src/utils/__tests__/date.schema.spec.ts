@@ -1,4 +1,4 @@
-import { InstantFromInputSchema, PlainDateFromInputSchema } from '../index.js'
+import { InstantFromInputSchema, PlainDateFromInputSchema } from '#common/utils'
 
 describe('InstantFromInputSchema, PlainDateFromInputSchema', () => {
     describe.each(['buddhist', 'japanese', 'hebrew'])(

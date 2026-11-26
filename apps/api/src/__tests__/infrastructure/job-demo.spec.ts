@@ -1,25 +1,23 @@
+import { RestateWorkflowClient } from '@mannercode/common'
+import { Collection } from 'mongodb'
 import { TextJobSchema } from '#infrastructure'
-import { JobDemoRepository } from '../../services/infrastructure/job-demo/job-demo.repository.js'
-import { TextJobWorkflowClient } from '../../services/infrastructure/job-demo/worker.js'
 import {
     createAppTestContext,
     createAndLoginUser,
     createUser,
     loginUser,
     trackRestateCompletions,
+    unregisterRestateDeployment,
     type AppTestContext
-} from '../helpers/index.js'
+} from '#test-helpers'
 
 describe('임시 Restate 배포에서 작업의 결과 조회가 실패했으면', () => {
     const failure = new Error('Result endpoint unavailable')
     let waitForWorkflows: () => Promise<void>
     beforeEach(async () => {
-        const client = {
-            submit: async (_input: string, id: string) => id,
-            waitForCompletion: vi.fn().mockRejectedValue(failure)
-        }
-        waitForWorkflows = trackRestateCompletions(client)
-        await client.submit('value', 'job')
+        const jobs = { submit: vi.fn().mockResolvedValue({ jobId: 'job' }) }
+        waitForWorkflows = trackRestateCompletions(jobs, vi.fn().mockRejectedValue(failure))
+        await jobs.submit('user', { text: 'value' })
     })
     it('배포를 정리하기 전 완료를 확인하면 조회 오류를 전달한다', async () => {
         await expect(waitForWorkflows()).rejects.toMatchObject({ errors: [failure] })
@@ -47,38 +45,43 @@ describe('JobDemoService', () => {
         })
     })
     describe('Restate가 작업 접수를 거절하면', () => {
+        const failure = new Error('submission rejected')
         beforeEach(() => {
-            vi.spyOn(fix.module.get(TextJobWorkflowClient), 'submit').mockRejectedValueOnce(
-                new Error('submission rejected')
-            )
+            vi.spyOn(RestateWorkflowClient.prototype, 'submit').mockRejectedValueOnce(failure)
         })
-        it('작업을 제출하면 500을 반환한다', async () => {
+        afterEach(() => unregisterRestateDeployment(fix.deploymentUrl))
+        it('작업을 제출하면 500을 반환하고 앱 정리 시 접수 오류를 전달한다', async () => {
             await fix.httpClient
                 .post('/job-demo/jobs')
                 .headers({ Authorization: 'Bearer ' + token })
                 .body({ text: 'hello' })
                 .internalServerError()
+            await expect(fix.teardown()).rejects.toMatchObject({ errors: [failure] })
         })
     })
     describe.each([
         { condition: '결과 저장이 가능하면', failure: false },
         { condition: '첫 결과 저장이 실패하면', failure: true }
     ])('$condition', ({ failure }) => {
+        let writeFailure: Promise<void>
         beforeEach(() => {
-            if (failure)
-                vi.spyOn(fix.module.get(JobDemoRepository), 'complete').mockRejectedValueOnce(
-                    new Error('storage unavailable')
-                )
+            if (failure) {
+                const rejected = Promise.withResolvers<void>()
+                writeFailure = rejected.promise
+                vi.spyOn(Collection.prototype, 'updateOne').mockImplementationOnce(async () => {
+                    rejected.resolve()
+                    throw new Error('storage unavailable')
+                })
+            }
         })
         it('작업을 접수하면 대문자 변환 결과를 저장하고 조회할 수 있다', async () => {
-            const client = fix.module.get(TextJobWorkflowClient)
-            const submit = vi.spyOn(client, 'submit')
             const { body } = await fix.httpClient
                 .post('/job-demo/jobs')
                 .headers({ Authorization: 'Bearer ' + token })
                 .body({ text: 'Hello 🌱' })
                 .accepted()
-            const result = await client.waitForCompletion(await submit.mock.results[0]!.value)
+            if (failure) await writeFailure
+            const result = await fix.waitForJob(body.jobId)
             expect(result).toEqual({ text: 'HELLO 🌱', characterCount: 7 })
             await fix.httpClient
                 .get('/job-demo/jobs/' + body.jobId)
@@ -96,12 +99,14 @@ describe('JobDemoService', () => {
         beforeEach(() => {
             entered = started()
             resume = started()
-            const repository = fix.module.get(JobDemoRepository)
-            const complete = repository.complete.bind(repository)
-            vi.spyOn(repository, 'complete').mockImplementationOnce(async (...args) => {
+            const updateOne = Collection.prototype.updateOne
+            vi.spyOn(Collection.prototype, 'updateOne').mockImplementationOnce(async function (
+                this: Collection,
+                ...args
+            ) {
                 entered.resolve()
                 await resume.promise
-                await complete(...args)
+                return updateOne.apply(this, args)
             })
         })
         afterEach(() => resume.resolve())

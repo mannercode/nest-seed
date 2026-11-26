@@ -1,5 +1,5 @@
 import type { ArgumentsHost } from '@nestjs/common'
-import { HttpExceptionLoggerFilter } from '../index.js'
+import { HttpExceptionLoggerFilter } from '#common/logger'
 import {
     type ExceptionLoggerFilterFixture,
     createExceptionLoggerFilterFixture

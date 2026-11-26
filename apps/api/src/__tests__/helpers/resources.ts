@@ -1,7 +1,7 @@
 import { escapeRegExp } from '@mannercode/common'
 import { ConfigService } from '@nestjs/config'
 import { AppConfigService } from '#config'
-import { eventDemoResources } from '../../services/infrastructure/event-demo/event-demo.resources.js'
+import { eventDemoResources } from '#infrastructure'
 
 const scope = 'nest-seed-api-test'
 export const projectId = (testId: string) => `project-${scope}-${testId}`

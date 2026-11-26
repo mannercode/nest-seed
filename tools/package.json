@@ -7,9 +7,12 @@
         "tunnel": "./tunnel.sh"
     },
     "exports": {
+        "./tsconfig": "./tsconfig.base.json",
+        "./vitest-config": "./vitest-config.mjs",
         "./vitest-helpers": "./vitest-helpers/index.js"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "3.1175.0"
+        "@aws-sdk/client-s3": "3.1175.0",
+        "typescript": "6.0.3"
     }
 }

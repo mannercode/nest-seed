@@ -1,4 +1,4 @@
-import { AppLoggerService } from '../logger/index.js'
+import { AppLoggerService } from '#common/logger'
 import { OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common'
 import {
     createEndpointHandler,

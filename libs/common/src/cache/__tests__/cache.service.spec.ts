@@ -1,6 +1,6 @@
 import { InternalServerErrorException } from '@nestjs/common'
 import { type CacheServiceFixture, createCacheServiceFixture } from './cache.service.fixture.js'
-import { sleep } from '../../utils/index.js'
+import { sleep } from '#common/utils'
 
 const jobLockKey = 'lock:job'
 

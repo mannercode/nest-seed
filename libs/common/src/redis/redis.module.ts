@@ -1,7 +1,7 @@
 import { DynamicModule, Injectable, Module, Provider } from '@nestjs/common'
 import { Cluster, Redis } from 'ioredis'
-import { ConnectionRegistry } from '../connection-registry.js'
-import { defaultTo } from '../utils/index.js'
+import { ConnectionRegistry } from '#common/connection-registry'
+import { defaultTo } from '#common/utils'
 import { getRedisConnectionToken } from './redis.tokens.js'
 import { RedisConnection, RedisModuleAsyncOptions, RedisModuleOptions } from './redis.types.js'
 

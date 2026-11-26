@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common'
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js'
 import { lastValueFrom, of } from 'rxjs'
-import { HttpSuccessLoggerInterceptor } from '../index.js'
+import { HttpSuccessLoggerInterceptor } from '#common/logger'
 import {
     type SuccessLoggerInterceptorFixture,
     createSuccessLoggerInterceptorFixture

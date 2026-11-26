@@ -1,5 +1,5 @@
 import type { Request } from 'express'
-import { elapsedSinceRequestStart, markRequestStart } from '../index.js'
+import { elapsedSinceRequestStart, markRequestStart } from '#common/logger'
 
 describe('request-timing', () => {
     let now: number

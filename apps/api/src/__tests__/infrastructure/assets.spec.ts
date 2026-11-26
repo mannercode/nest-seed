@@ -1,25 +1,24 @@
-import type { MockInstance } from 'vitest'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import {
     CacheService,
     Checksum,
     DateUtil,
     ensure,
-    objectId,
     pickIds,
     S3ObjectService,
     sleep
 } from '@mannercode/common'
 import { nullObjectId } from '@mannercode/testing'
-import { HttpStatus, Logger } from '@nestjs/common'
+import { HttpStatus } from '@nestjs/common'
 import { type AssetDto, type AssetPresignedUploadDto, AssetsService } from '#infrastructure'
 import {
     buildCreateAssetDto,
     buildFinalizeAssetDto,
     createAsset,
     downloadAsset,
+    failNextMongoUpdateAfterStorageDelete,
     overrideConfigGetter,
-    pauseNextAssetOwnerAssignment,
+    pauseNextMongoFindOneAndUpdate,
     pauseNextStorageDelete,
     testAssets,
     uploadAndFinalizeAsset,
@@ -27,8 +26,7 @@ import {
     uploadFile,
     type AppTestContext,
     createAppTestContext
-} from '../helpers/index.js'
-import { AssetsRepository } from '../../services/infrastructure/assets/assets.repository.js'
+} from '#test-helpers'
 import { AppConfigService } from '#config'
 
 type UploadedFile = Awaited<ReturnType<typeof uploadFile>>
@@ -50,7 +48,7 @@ describe('AssetsService', () => {
     })
     afterEach(() => teardown?.())
 
-    describe('여러 파일의 S3 삭제 중 첫 번째 파일만 실패했으면', () => {
+    describe('두 파일 중 하나만 S3에서 삭제하지 못했으면', () => {
         let files: UploadedFile[]
         let ids: string[]
         let storage: S3ObjectService
@@ -61,10 +59,15 @@ describe('AssetsService', () => {
                 ids.map((id) => assetsService.finalizeUpload(id, buildFinalizeAssetDto()))
             )
             storage = fix.module.get<S3ObjectService>(S3ObjectService.getName())
-            vi.spyOn(storage, 'deleteObject').mockRejectedValueOnce(
-                new Error('one S3 delete failed')
-            )
-            await expect(assetsService.deleteMany(ids)).rejects.toThrow('one S3 delete failed')
+            const failedKey = ensure(files[0]).key
+            const failure = new Error('one S3 delete failed')
+            const deleteObject = storage.deleteObject.bind(storage)
+            using deletion = vi.spyOn(storage, 'deleteObject')
+            deletion.mockImplementation(async (key) => {
+                if (key === failedKey) throw failure
+                return deleteObject(key)
+            })
+            await expect(assetsService.deleteMany(ids)).rejects.toBe(failure)
             await expect(assetsService.getMany(ids)).resolves.toHaveLength(2)
             await expect(storage.isUploadComplete({ key: ensure(files[0]).key })).resolves.toBe(
                 true
@@ -87,12 +90,10 @@ describe('AssetsService', () => {
         beforeEach(async () => {
             uploaded = await uploadFile(fix, file)
             await assetsService.finalizeUpload(uploaded.assetId, buildFinalizeAssetDto())
-            vi.spyOn(fix.module.get(AssetsRepository), 'deleteMany').mockRejectedValueOnce(
-                new Error('asset DB failed')
-            )
-            await expect(assetsService.deleteMany([uploaded.assetId])).rejects.toThrow(
-                'asset DB failed'
-            )
+            const failure = failNextMongoUpdateAfterStorageDelete(fix)
+            await expect(assetsService.deleteMany([uploaded.assetId])).rejects.toBe(failure)
+            const storage = fix.module.get<S3ObjectService>(S3ObjectService.getName())
+            await expect(storage.isUploadComplete({ key: uploaded.key })).resolves.toBe(false)
             await expect(assetsService.getMany([uploaded.assetId])).resolves.toHaveLength(1)
         })
         it('삭제를 재요청하면 이미 없는 파일도 처리하고 남은 DB 기록을 제거한다', async () => {
@@ -136,12 +137,11 @@ describe('AssetsService', () => {
             uploaded = await uploadFile(fix, file)
             owned = await uploadAndFinalizeAsset(fix, file)
             await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
-            vi.spyOn(fix.module.get(AssetsRepository), 'deleteMany').mockRejectedValueOnce(
-                new Error('cleanup stopped before DB delete')
-            )
-            await expect(assetsService.cleanupExpiredUploads()).rejects.toThrow(
-                'cleanup stopped before DB delete'
-            )
+            const failure = failNextMongoUpdateAfterStorageDelete(fix)
+            await expect(assetsService.cleanupExpiredUploads()).rejects.toBe(failure)
+            const storage = fix.module.get<S3ObjectService>(S3ObjectService.getName())
+            await expect(storage.isUploadComplete({ key: uploaded.key })).resolves.toBe(false)
+            await expect(assetsService.getMany([uploaded.assetId])).resolves.toHaveLength(1)
 
             await fix.teardown()
             teardown = undefined
@@ -160,7 +160,7 @@ describe('AssetsService', () => {
 
     describe('만료 전에 시작한 소유권 부여가 DB 쓰기를 기다리는 동안 만료 정리가 시작됐으면', () => {
         let uploaded: UploadedFile
-        let ownerGate: ReturnType<typeof pauseNextAssetOwnerAssignment> | undefined
+        let ownerGate: ReturnType<typeof pauseNextMongoFindOneAndUpdate> | undefined
         let storageGate: ReturnType<typeof pauseNextStorageDelete> | undefined
         let completion: Promise<PromiseSettledResult<AssetDto>> | undefined
         let cleanup: Promise<void> | undefined
@@ -170,7 +170,7 @@ describe('AssetsService', () => {
             completion = undefined
             cleanup = undefined
             uploaded = await uploadFile(fix, file)
-            ownerGate = pauseNextAssetOwnerAssignment(fix)
+            ownerGate = pauseNextMongoFindOneAndUpdate()
             completion = Promise.allSettled([
                 assetsService.finalizeUpload(uploaded.assetId, buildFinalizeAssetDto())
             ]).then((results) => ensure(results[0]))
@@ -225,11 +225,13 @@ describe('AssetsService', () => {
         })
         describe('첫 번째 정리가 락을 보유한 채 파일 삭제를 기다리면', () => {
             beforeEach(startCleanupUntilDelete)
-            it('다른 정리를 실행해도 파일 삭제를 중복 실행하지 않는다', async () => {
+            it('다른 정리가 반환해도 파일과 기록은 첫 번째 정리가 재개될 때까지 남는다', async () => {
                 await assetsService.cleanupExpiredUploads()
-                expect(storage.deleteObject).toHaveBeenCalledTimes(1)
+                await expect(storage.isUploadComplete({ key: uploaded.key })).resolves.toBe(true)
+                await expect(assetsService.findOwner(uploaded.assetId)).resolves.toBeNull()
                 ensure(gate).release()
                 await cleanup
+                await expect(storage.isUploadComplete({ key: uploaded.key })).resolves.toBe(false)
                 await expect(assetsService.findOwner(uploaded.assetId)).resolves.toBeUndefined()
                 await expect(assetsService.isUploadComplete(owned.id)).resolves.toBe(true)
             })
@@ -245,9 +247,10 @@ describe('AssetsService', () => {
                 await startCleanupUntilDelete()
                 await sleep(ttlMs)
             })
-            it('다른 정리와 겹쳐 실행해도 만료 파일만 제거하고 완료된 파일은 보존한다', async () => {
+            it('두 번째 정리가 먼저 만료 파일과 기록을 제거하고 두 정리 모두 완료 파일을 보존한다', async () => {
                 await assetsService.cleanupExpiredUploads()
-                expect(storage.deleteObject).toHaveBeenCalledTimes(2)
+                await expect(storage.isUploadComplete({ key: uploaded.key })).resolves.toBe(false)
+                await expect(assetsService.findOwner(uploaded.assetId)).resolves.toBeUndefined()
                 ensure(gate).release()
                 await cleanup
                 await expect(storage.isUploadComplete({ key: uploaded.key })).resolves.toBe(false)
@@ -257,30 +260,34 @@ describe('AssetsService', () => {
         })
     })
 
-    describe('파일 삭제 뒤 업로드 유효기간이 지났으면', () => {
-        let uploaded: UploadedFile
+    describe('파일을 삭제한 뒤 아직 유효한 업로드 URL로 같은 파일을 다시 올렸으면', () => {
+        let key: string
         let storage: S3ObjectService
         beforeEach(async () => {
-            uploaded = await uploadFile(fix, file)
-            await assetsService.finalizeUpload(uploaded.assetId, buildFinalizeAssetDto())
-            await assetsService.deleteMany([uploaded.assetId])
-            const record = ensure(
-                await fix.module
-                    .get(AssetsRepository)
-                    .findDocument({ _id: objectId(uploaded.assetId) })
-            )
-            const now = DateUtil.add({
-                base: ensure(record.deletedAt),
+            storage = fix.module.get<S3ObjectService>(S3ObjectService.getName())
+            const upload = await createAsset(fix, file)
+            key = ensure(upload.fields.key)
+            expect((await uploadAsset(file.path, upload)).ok).toBe(true)
+            await assetsService.finalizeUpload(upload.assetId, buildFinalizeAssetDto())
+            const deletedAt = DateUtil.now()
+            const now = vi.spyOn(DateUtil, 'now').mockReturnValue(deletedAt)
+            await assetsService.deleteMany([upload.assetId])
+            await expect(storage.isUploadComplete({ key })).resolves.toBe(false)
+            expect((await uploadAsset(file.path, upload)).ok).toBe(true)
+            const cleanupAt = DateUtil.add({
+                base: deletedAt,
                 seconds: fix.module.get(AppConfigService).asset.uploadExpiresInSec
             })
-            vi.spyOn(DateUtil, 'now').mockReturnValue(now)
-            storage = fix.module.get<S3ObjectService>(S3ObjectService.getName())
-            vi.spyOn(storage, 'deleteObject')
+            now.mockReturnValue(DateUtil.add({ base: cleanupAt, milliseconds: -1 }))
+            await assetsService.cleanupExpiredUploads()
+            await expect(storage.isUploadComplete({ key })).resolves.toBe(true)
+            now.mockReturnValue(cleanupAt)
         })
-        it('정리를 반복해도 기한 후 파일 재삭제는 한 번만 실행한다', async () => {
+        it('삭제 유예기간이 끝나면 다시 올라온 파일을 지우고 다음 정리는 S3 삭제 장애 중에도 완료한다', async () => {
             await assetsService.cleanupExpiredUploads()
-            await assetsService.cleanupExpiredUploads()
-            expect(storage.deleteObject).toHaveBeenCalledExactlyOnceWith(uploaded.key)
+            await expect(storage.isUploadComplete({ key })).resolves.toBe(false)
+            vi.spyOn(storage, 'deleteObject').mockRejectedValue(new Error('S3 delete unavailable'))
+            await expect(assetsService.cleanupExpiredUploads()).resolves.toBeUndefined()
         })
     })
 
@@ -597,22 +604,17 @@ describe('AssetsService', () => {
 
         describe('에셋의 S3 객체를 삭제하는 중 오류가 발생하면', () => {
             let asset: AssetDto
-            let warnSpy: MockInstance<Logger['warn']>
             beforeEach(async () => {
                 asset = await uploadAndFinalizeAsset(fix, file)
                 const s3Service = fix.module.get<S3ObjectService>(S3ObjectService.getName())
                 vi.spyOn(s3Service, 'deleteObject').mockRejectedValueOnce(new Error('s3 down'))
-
-                warnSpy = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
             })
-            it('에셋 삭제를 요청하면 경고를 기록하고 S3 오류를 던지며 DB 기록을 유지한다', async () => {
+            it('에셋 삭제를 요청하면 S3 오류를 던지고 기존 파일을 계속 조회해 내려받을 수 있다', async () => {
                 await expect(assetsService.deleteMany([asset.id])).rejects.toThrow('s3 down')
-
-                expect(warnSpy).toHaveBeenCalledWith(
-                    'partial S3 delete failure; DB rows retained for retry',
-                    expect.objectContaining({ failedCount: 1 })
+                const [remaining] = await assetsService.getMany([asset.id])
+                expect(Checksum.fromBuffer(await downloadAsset(ensure(remaining)))).toEqual(
+                    file.checksum
                 )
-                await expect(assetsService.getMany([asset.id])).resolves.toHaveLength(1)
             })
         })
     })

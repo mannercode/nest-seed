@@ -1,13 +1,16 @@
 import { createTestContext, withTestId } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
+import { JwtService } from '@nestjs/jwt'
 import { Redis } from 'ioredis'
-import { getRedisConnectionToken, RedisModule } from '../../redis/index.js'
-import { InjectJwtAuth, JwtAuthModule, JwtAuthService } from '../index.js'
+import { getRedisConnectionToken, RedisModule } from '#common/redis'
+import { InjectJwtAuth, JwtAuthModule, JwtAuthService } from '#common/auth'
 
 export const TEST_AUTH_AUDIENCE = 'test-audience'
 export const TEST_AUTH_ISSUER = 'test-issuer'
 
 export type JwtAuthServiceFixture = {
+    configuredPrefix: string
+    signer: JwtService
     jwtService: JwtAuthService
     redis: Redis
     teardown: () => Promise<void>
@@ -19,11 +22,12 @@ class TestInjectJwtAuthService {
 }
 
 export async function createJwtAuthServiceFixture() {
+    const configuredPrefix = withTestId('jwt-auth')
     const { close, module } = await createTestContext({
         imports: [
             RedisModule.forRoot({ type: 'single', url: process.env.TESTLIB_REDIS_URL }),
             JwtAuthModule.register({
-                prefix: async () => withTestId('jwt-auth'),
+                prefix: async () => configuredPrefix,
                 useFactory() {
                     return {
                         auth: {
@@ -48,15 +52,16 @@ export async function createJwtAuthServiceFixture() {
         await close()
     }
 
-    return { jwtService, redis, teardown }
+    return { configuredPrefix, signer: module.get(JwtService), jwtService, redis, teardown }
 }
 
 export async function createJwtAuthServiceFixtureWithShortTtl() {
+    const configuredPrefix = withTestId('jwt-auth-short')
     const { close, module } = await createTestContext({
         imports: [
             RedisModule.forRoot({ type: 'single', url: process.env.TESTLIB_REDIS_URL }),
             JwtAuthModule.register({
-                prefix: withTestId('jwt-auth-short'),
+                prefix: configuredPrefix,
                 useFactory() {
                     return {
                         auth: {
@@ -81,5 +86,5 @@ export async function createJwtAuthServiceFixtureWithShortTtl() {
         await close()
     }
 
-    return { jwtService, redis, teardown }
+    return { configuredPrefix, signer: module.get(JwtService), jwtService, redis, teardown }
 }
