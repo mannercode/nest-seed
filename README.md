@@ -15,7 +15,7 @@ Docker 호스트의 저장소를 VS Code Remote SSH로 열고 `Reopen in Contain
 
 ### 환경 설정
 
-개발 서비스의 주소·포트는 `infra/.env.infra`에서, API 인증·로그 설정은 `infra/.env.api`에서 바꾼다. 값은 따옴표나 변수 참조 없이 적고, 수정 후 VS Code에서 `Rebuild Container`를 실행한다. [인프라 환경 변수](infra/.env.infra) · [API 환경 변수](infra/.env.api)
+앱이 인프라에 접속할 주소·포트는 `infra/.env.infra`에서, API 인증·로그 설정은 `infra/.env.api`에서 바꾼다. 값은 따옴표나 변수 참조 없이 적고, 수정 후 VS Code에서 `Rebuild Container`를 실행한다. [인프라 환경 변수](infra/.env.infra) · [API 환경 변수](infra/.env.api)
 
 ## 실행과 검증
 

@@ -4,9 +4,9 @@ const path = require('node:path')
 
 module.exports = (options) => {
     if (!options.output?.module) throw new Error('API Rspack build requires Nest ESM defaults')
-    const dirname = path.dirname(options.entry)
+    const entryDir = path.dirname(options.entry)
     const appDir = __dirname
-    const tsconfig = path.resolve(appDir, 'tsconfig.build.json')
+    const tsconfigPath = path.resolve(appDir, 'tsconfig.build.json')
     const typescriptRule = options.module.rules.find((rule) =>
         rule.use?.some((loader) => loader.loader === 'builtin:swc-loader')
     )
@@ -15,7 +15,7 @@ module.exports = (options) => {
     return {
         ...options,
         context: appDir,
-        entry: { index: path.resolve(dirname, 'main.ts') },
+        entry: { index: path.resolve(entryDir, 'main.ts') },
         module: {
             ...options.module,
             rules: options.module.rules.map((rule) =>
@@ -26,7 +26,7 @@ module.exports = (options) => {
                               {
                                   loader: require.resolve('ts-loader'),
                                   options: {
-                                      configFile: tsconfig,
+                                      configFile: tsconfigPath,
                                       // transpileOnly의 TypeScript isolated transform은 NodeNext의 package type을
                                       // 읽지 못한다. 번들러 경로만 ESM emit을 명시하고
                                       // 전체 NodeNext 타입 검사는 Nest의 checker에 남겨 둔다.
@@ -44,7 +44,7 @@ module.exports = (options) => {
         },
         // Rspack native tsconfig resolver 하나만 사용한다. Nest 기본값이 함께 넣는
         // Webpack resolver plugin은 같은 paths를 중복 해석하므로 이 경로에서는 필요 없다.
-        resolve: { ...options.resolve, tsConfig: tsconfig, plugins: [] },
+        resolve: { ...options.resolve, tsConfig: tsconfigPath, plugins: [] },
         output: {
             ...options.output,
             path: path.resolve(appDir, '_output/dist'),

@@ -1,4 +1,5 @@
 import type { S3Client } from '@aws-sdk/client-s3'
+import type { Cluster, Redis } from 'ioredis'
 import type { MongoClient } from 'mongodb'
 
 export type WorkerMongoConnection = { client: MongoClient; dbName: string }
@@ -12,5 +13,14 @@ export type VitestLifecycleOptions = {
 }
 
 export function setupVitestLifecycle(options: VitestLifecycleOptions): void
+export function createGlobalTeardown(options: {
+    connectMongo: () => Promise<MongoClient>
+    connectRedis: () => Redis | Cluster
+    createS3Client: () => S3Client
+    databasePattern: RegExp
+    bucketPattern: RegExp
+    redisKeyPattern: string
+    redisKeyScope: string
+}): () => Promise<void>
 export function getVitestWorkerId(): string
 export function waitForCleanup(operations: Iterable<Promise<unknown>>): Promise<void>

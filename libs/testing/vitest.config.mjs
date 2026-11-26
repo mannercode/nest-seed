@@ -5,10 +5,7 @@ import { defineConfig } from 'vitest/config'
 
 import { createVitestBase } from '@mannercode/tools/vitest-config'
 
-const libraryDirectory = path.dirname(fileURLToPath(import.meta.url))
-const base = createVitestBase({ tsconfigPath: path.join(libraryDirectory, 'tsconfig.json') })
+const libDir = path.dirname(fileURLToPath(import.meta.url))
+const base = createVitestBase({ tsconfigPath: path.join(libDir, 'tsconfig.json') })
 
-export default defineConfig({
-    ...base,
-    cacheDir: path.join(libraryDirectory, '_output/vite-cache')
-})
+export default defineConfig({ ...base, cacheDir: path.join(libDir, '_output/vite-cache') })

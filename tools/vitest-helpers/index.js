@@ -247,16 +247,4 @@ async function deleteMatchingRedisKeys(redis, keyPattern) {
     } while (cursor !== '0')
 }
 
-module.exports = {
-    cleanCollections,
-    cleanupRedisMatching,
-    createGlobalTeardown,
-    dropMatchingBuckets,
-    dropMatchingDatabases,
-    emptyBucket,
-    ensureBucket,
-    generateTestId,
-    getVitestWorkerId,
-    setupVitestLifecycle,
-    waitForCleanup
-}
+module.exports = { createGlobalTeardown, getVitestWorkerId, setupVitestLifecycle, waitForCleanup }

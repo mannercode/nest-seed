@@ -81,8 +81,8 @@ export class PathUtil {
         }
     }
 
-    static async subdirs(src: string): Promise<string[]> {
-        const items = await fs.readdir(src, { withFileTypes: true })
+    static async subdirs(parentDir: string): Promise<string[]> {
+        const items = await fs.readdir(parentDir, { withFileTypes: true })
         return items
             .filter((item) => item.isDirectory())
             .map((item) => item.name)

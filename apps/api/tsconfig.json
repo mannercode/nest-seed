@@ -19,5 +19,5 @@
             "#test-helpers": ["./src/__tests__/helpers/index.ts"]
         }
     },
-    "include": ["src/**/*", "vitest.setup.ts"]
+    "include": ["src/**/*", "vitest.setup.ts", "vitest.global.ts"]
 }

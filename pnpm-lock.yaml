@@ -506,6 +506,9 @@ importers:
       '@nats-io/jetstream':
         specifier: 3.5.0
         version: 3.5.0
+      '@nestjs/testing':
+        specifier: 12.6.0
+        version: 12.6.0(@nestjs/common@12.6.0(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(@nestjs/core@12.6.0)(@nestjs/platform-express@12.6.0)
       '@restatedev/restate-sdk':
         specifier: 1.18.4
         version: 1.18.4
@@ -530,6 +533,9 @@ importers:
       npm-run-all:
         specifier: 4.1.5
         version: 4.1.5
+      reflect-metadata:
+        specifier: 0.2.2
+        version: 0.2.2
       testcontainers:
         specifier: 12.2.2
         version: 12.2.2(bare-buffer@3.7.3)(supports-color@8.1.1)
@@ -561,9 +567,18 @@ importers:
       '@mannercode/tools':
         specifier: workspace:*
         version: link:../../tools
+      '@types/express':
+        specifier: 5.0.6
+        version: 5.0.6
       npm-run-all:
         specifier: 4.1.5
         version: 4.1.5
+      reflect-metadata:
+        specifier: 0.2.2
+        version: 0.2.2
+      rxjs:
+        specifier: 7.8.2
+        version: 7.8.2
       vitest:
         specifier: 5.1.1
         version: 5.1.1(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.3)(yaml@2.9.1))
@@ -573,6 +588,12 @@ importers:
       '@aws-sdk/client-s3':
         specifier: 3.1175.0
         version: 3.1175.0
+      ioredis:
+        specifier: 6.1.0
+        version: 6.1.0(supports-color@8.1.1)
+      mongodb:
+        specifier: 7.9.1
+        version: 7.9.1
       typescript:
         specifier: 6.0.3
         version: 6.0.3

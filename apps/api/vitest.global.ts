@@ -18,7 +18,7 @@ export default function setup() {
     return () => waitForCleanup([teardown(), cleanupEventStreams(config.nats)])
 }
 
-async function cleanupEventStreams(options) {
+async function cleanupEventStreams(options: Parameters<typeof connect>[0]) {
     const connection = await connect(options)
     await using cleanup = new AsyncDisposableStack()
     cleanup.defer(() => connection.drain())
