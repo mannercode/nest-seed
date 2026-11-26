@@ -1,4 +1,3 @@
-import 'reflect-metadata'
 import { S3Client } from '@aws-sdk/client-s3'
 import { setupVitestLifecycle } from '@mannercode/tools/vitest-helpers'
 import { MongoClient } from 'mongodb'
@@ -28,11 +27,6 @@ setupVitestLifecycle({
         const client = new MongoClient(requiredEnvironment('TESTLIB_MONGO_URI'))
         await client.connect()
         return { client, dbName }
-    },
-    afterMongoConnect: async (client) => {
-        // TTL 인덱스를 다루는 테스트가 빨리 완료되도록 TTL 감시 주기를 1초로 줄인다.
-        // 기본값은 60초라 테스트 안에서 만료를 기다리기 어렵다.
-        await client.db('admin').command({ setParameter: 1, ttlMonitorSleepSecs: 1 })
     },
     createS3Client: () => new S3Client(JSON.parse(requiredEnvironment('TESTLIB_S3_OPTIONS'))),
     bucketName: (workerId) => {
