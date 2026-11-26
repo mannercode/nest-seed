@@ -1,4 +1,10 @@
-import { type Collection, type Db, type IndexDescription, MongoClient } from 'mongodb'
+import {
+    Collection,
+    type Db,
+    type IndexDescription,
+    MongoClient,
+    MongoNotConnectedError
+} from 'mongodb'
 import { BadRequestException, Logger, NotFoundException } from '@nestjs/common'
 import type { TransactionContext } from '#common'
 import type { MockInstance } from 'vitest'
@@ -21,34 +27,30 @@ import {
 
 describe('createMongoRepositoryFixture', () => {
     let failure: Error
-    let closeClient: (() => Promise<void>) | undefined
+    let db: Db | undefined
     let originalConnect: MongoClient['connect']
-    let originalClose: MongoClient['close']
     let connectSpy: MockInstance<MongoClient['connect']>
-    let closeSpy: MockInstance<MongoClient['close']>
 
     beforeEach(() => {
         failure = new Error('fixture initialization failed')
         originalConnect = MongoClient.prototype.connect
-        originalClose = MongoClient.prototype.close
-        closeClient = undefined
+        db = undefined
         connectSpy = vi.spyOn(MongoClient.prototype, 'connect').mockImplementation(async function (
             this: MongoClient
         ) {
-            closeClient = originalClose.bind(this)
+            db = this.db()
             return originalConnect.call(this)
         })
-        closeSpy = vi.spyOn(MongoClient.prototype, 'close')
     })
 
     afterEach(async () => {
-        await closeClient?.()
+        await db?.client.close()
     })
 
     describe('연결 직후 초기화가 실패하면', () => {
         beforeEach(() => {
             connectSpy.mockImplementationOnce(async function (this: MongoClient) {
-                closeClient = originalClose.bind(this)
+                db = this.db()
                 await originalConnect.call(this)
                 throw failure
             })
@@ -56,33 +58,33 @@ describe('createMongoRepositoryFixture', () => {
 
         it('연결을 닫고 최초 초기화 오류를 던진다', async () => {
             await expect(createMongoRepositoryFixture()).rejects.toBe(failure)
-            expect(closeSpy).toHaveBeenCalledTimes(1)
+            await expect(db!.command({ ping: 1 })).rejects.toThrow(MongoNotConnectedError)
         })
     })
 
     describe('인덱스 초기화가 실패하면', () => {
         beforeEach(() => {
-            vi.spyOn(SamplesRepository.prototype, 'onModuleInit').mockRejectedValueOnce(failure)
+            vi.spyOn(Collection.prototype, 'createIndexes').mockRejectedValueOnce(failure)
         })
 
         it('연결을 닫고 최초 초기화 오류를 던진다', async () => {
             await expect(createMongoRepositoryFixture()).rejects.toBe(failure)
-            expect(closeSpy).toHaveBeenCalledTimes(1)
+            await expect(db!.command({ ping: 1 })).rejects.toThrow(MongoNotConnectedError)
         })
     })
 
     describe('인덱스 초기화와 연결 정리가 모두 실패하면', () => {
+        const cleanupError = new Error('cleanup failed')
         beforeEach(() => {
-            vi.spyOn(SamplesRepository.prototype, 'onModuleInit').mockRejectedValueOnce(failure)
-            closeSpy.mockImplementationOnce(async function (this: MongoClient) {
-                await originalClose.call(this)
-                throw new Error('cleanup failed')
-            })
+            vi.spyOn(Collection.prototype, 'createIndexes').mockRejectedValueOnce(failure)
+            vi.spyOn(MongoClient.prototype, 'close').mockRejectedValueOnce(cleanupError)
         })
-
-        it('연결을 닫고 최초 초기화 오류를 던진다', async () => {
-            await expect(createMongoRepositoryFixture()).rejects.toBe(failure)
-            expect(closeSpy).toHaveBeenCalledTimes(1)
+        it('두 오류를 함께 던진다', async () => {
+            await expect(createMongoRepositoryFixture()).rejects.toMatchObject({
+                name: 'SuppressedError',
+                error: cleanupError,
+                suppressed: failure
+            })
         })
     })
 })
@@ -487,7 +489,6 @@ describe('CrudRepository', () => {
     describe('insertOne, insertMany, toDomainDocument', () => {
         it('기본 필드를 채우고 public id는 저장하지 않는다', async () => {
             const controller = new AbortController()
-            const insertOne = vi.spyOn(fix.soft.collection, 'insertOne')
             const created = await fix.soft.create('sample', { signal: controller.signal })
             const stored = await fix.soft.collection.findOne({ _id: objectId(created.id) })
 
@@ -507,15 +508,10 @@ describe('CrudRepository', () => {
                 updatedAt: expect.any(Date)
             })
             expect(stored).not.toHaveProperty('id')
-            expect(insertOne).toHaveBeenCalledWith(
-                expect.any(Object),
-                expect.objectContaining({ signal: controller.signal })
-            )
         })
 
         it('여러 문서를 한 번에 생성한다', async () => {
             const controller = new AbortController()
-            const insertMany = vi.spyOn(fix.soft.collection, 'insertMany')
             const docs = await fix.soft.createMany(['a', 'b', 'c'], { signal: controller.signal })
 
             expect(docs).toHaveLength(3)
@@ -526,10 +522,19 @@ describe('CrudRepository', () => {
             await expect(
                 fix.soft.findMany({ ids: docs.map(({ id }) => id) })
             ).resolves.toHaveLength(3)
-            expect(insertMany).toHaveBeenCalledWith(
-                expect.any(Array),
-                expect.objectContaining({ signal: controller.signal })
-            )
+        })
+
+        describe('삽입 전에 요청이 취소됐으면', () => {
+            const reason = new Error('cancelled')
+            const signal = AbortSignal.abort(reason)
+            it('한 문서를 저장하지 않고 취소 사유를 던진다', async () => {
+                await expect(fix.soft.create('one', { signal })).rejects.toBe(reason)
+                expect(await fix.soft.countDocuments({})).toBe(0)
+            })
+            it('여러 문서를 저장하지 않고 취소 사유를 던진다', async () => {
+                await expect(fix.soft.createMany(['a', 'b'], { signal })).rejects.toBe(reason)
+                expect(await fix.soft.countDocuments({})).toBe(0)
+            })
         })
 
         describe('삽입할 문서 배열이 비어 있으면', () => {
@@ -1007,36 +1012,35 @@ describe('CrudRepository', () => {
             })
         })
 
-        describe('삭제한 문서와 삭제하지 않은 문서가 함께 있는 상태에서', () => {
-            let active: Sample
-            let estimated: MockInstance
-            let count: MockInstance
+        describe('이름이 다른 문서 두 개와 삭제한 동명 문서가 있으면', () => {
+            let target: Sample
+            let other: Sample
             beforeEach(async () => {
-                const samples = await fix.soft.createMany(['target', 'target'])
-                const [first, deleted] = samples
-                if (!first || !deleted) throw new Error('samples must exist')
-                active = first
+                target = await fix.soft.create('target')
+                other = await fix.soft.create('other')
+                const deleted = await fix.soft.create('target')
                 await fix.soft.delete({ id: deleted.id })
-                estimated = vi.spyOn(fix.soft.collection, 'estimatedDocumentCount')
-                count = vi.spyOn(fix.soft.collection, 'countDocuments')
             })
-            describe.each([
-                { condition: '검색 필터를 지정하지 않았으면', filter: undefined },
-                { condition: '이름 검색 필터가 있으면', filter: { name: 'target' } }
-            ])('$condition', ({ filter }) => {
-                let query: Parameters<typeof fix.soft.findWithPagination>[0]
-                beforeEach(() => {
-                    query = { filter, pagination: {} }
+            describe('이름 필터 없이 한 건씩 조회하면', () => {
+                it('첫 문서와 삭제되지 않은 전체 개수를 반환한다', async () => {
+                    const result = await fix.soft.findWithPagination({
+                        pagination: {
+                            size: 1,
+                            orderby: { name: 'name', direction: OrderDirection.Asc }
+                        }
+                    })
+                    expect(result.items.map(({ id }) => id)).toEqual([other.id])
+                    expect(result.total).toBe(2)
                 })
-                it('삭제한 문서를 목록과 전체 개수에서 제외한다', async () => {
-                    const result = await fix.soft.findWithPagination(query)
+            })
+            describe('이름으로 조회하면', () => {
+                it('삭제되지 않은 동명 문서와 그 개수를 반환한다', async () => {
+                    const result = await fix.soft.findWithPagination({
+                        filter: { name: 'target' },
+                        pagination: {}
+                    })
+                    expect(result.items.map(({ id }) => id)).toEqual([target.id])
                     expect(result.total).toBe(1)
-                    expect(result.items).toEqual([expect.objectContaining({ id: active.id })])
-                    expect(count).toHaveBeenCalledWith(
-                        { $and: [filter ?? {}, { deletedAt: null }] },
-                        { session: undefined }
-                    )
-                    expect(estimated).not.toHaveBeenCalled()
                 })
             })
         })

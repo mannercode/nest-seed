@@ -241,27 +241,23 @@ describe('CacheService', () => {
             })
         })
 
-        it('락을 점유한 동안에는 다른 호출이 콜백을 실행하지 않는다', async () => {
-            let running = 0
-            let maxConcurrent = 0
-            let executedCount = 0
+        describe('첫 호출이 락을 보유한 동안 다른 호출들이 경합하면', () => {
+            it('첫 콜백만 실행하고 해제 후에는 다시 락을 얻을 수 있다', async () => {
+                const contender = vi.fn(() => 'unexpected')
+                const first = await fix.cacheService.withLock('job', 5_000, async () =>
+                    Promise.all(
+                        Array.from({ length: 20 }, () =>
+                            fix.cacheService.withLock('job', 5_000, contender)
+                        )
+                    )
+                )
 
-            const runners = Array.from({ length: 20 }, () =>
-                fix.cacheService.withLock('job', 5_000, async () => {
-                    running += 1
-                    maxConcurrent = Math.max(maxConcurrent, running)
-                    executedCount += 1
-                    await sleep(20)
-                    running -= 1
-                })
-            )
-
-            const results = await Promise.all(runners)
-
-            expect(maxConcurrent).toBe(1)
-            expect(executedCount).toBe(results.filter((r) => r.ran).length)
-            expect(executedCount).toBeGreaterThanOrEqual(1)
-        }, 30_000)
+                expect(first).toEqual({ ran: true, result: Array(20).fill({ ran: false }) })
+                expect(contender).not.toHaveBeenCalled()
+                const next = await fix.cacheService.withLock('job', 5_000, () => 'next')
+                expect(next).toEqual({ ran: true, result: 'next' })
+            })
+        })
 
         describe('다른 호출자가 기존 키 형식으로 락을 보유하면', () => {
             beforeEach(async () => {
@@ -337,7 +333,7 @@ describe('CacheService', () => {
                     throw new Error('boom')
                 }
             })
-            it('예외를 전달하고 락을 해제한다', async () => {
+            it('락을 해제하고 예외를 던진다', async () => {
                 await expect(fix.cacheService.withLock('job', 5_000, callback)).rejects.toThrow(
                     'boom'
                 )
@@ -354,7 +350,7 @@ describe('CacheService', () => {
                     throw new Error('rejected')
                 }
             })
-            it('예외를 전달하고 락을 해제한다', async () => {
+            it('락을 해제하고 예외를 던진다', async () => {
                 await expect(fix.cacheService.withLock('job', 5_000, callback)).rejects.toThrow(
                     'rejected'
                 )
@@ -492,31 +488,39 @@ describe('CacheService', () => {
             })
         })
 
-        it('동시 호출은 직렬화되어 모두 실행된다', async () => {
-            let running = 0
-            let maxConcurrent = 0
-            const runnerCount = 10
+        describe('첫 호출이 락을 보유한 동안 다른 호출들이 경합하면', () => {
+            it('해제를 기다린 호출이 하나씩 실행되어 각자의 결과를 반환한다', async () => {
+                const waiting: Promise<number>[] = []
+                let running = 1
+                let maxConcurrent = running
+                const first = await fix.cacheService.withLockBlocking('job', 5_000, async () => {
+                    for (let i = 0; i < 10; i++) {
+                        waiting.push(
+                            fix.cacheService.withLockBlocking(
+                                'job',
+                                5_000,
+                                async () => {
+                                    running++
+                                    maxConcurrent = Math.max(maxConcurrent, running)
+                                    await fix.redis.ping()
+                                    running--
+                                    return i
+                                },
+                                { pollMs: 1 }
+                            )
+                        )
+                    }
+                    // 같은 연결에서 앞서 보낸 락 획득 요청들이 Redis에 도착할 때까지 기다린다.
+                    await fix.redis.ping()
+                    running--
+                    return 'first'
+                })
 
-            const runners = Array.from({ length: runnerCount }, (_, i) =>
-                fix.cacheService.withLockBlocking(
-                    'job',
-                    5_000,
-                    async () => {
-                        running += 1
-                        maxConcurrent = Math.max(maxConcurrent, running)
-                        await sleep(20)
-                        running -= 1
-                        return i
-                    },
-                    { pollMs: 10 }
-                )
-            )
-
-            const results = await Promise.all(runners)
-            expect(results).toHaveLength(runnerCount)
-            expect(new Set(results).size).toBe(runnerCount)
-            expect(maxConcurrent).toBe(1)
-        }, 30_000)
+                expect(await Promise.all(waiting)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+                expect(first).toBe('first')
+                expect(maxConcurrent).toBe(1)
+            })
+        })
 
         describe('다른 호출자가 락을 보유한 상태에서', () => {
             beforeEach(async () => {

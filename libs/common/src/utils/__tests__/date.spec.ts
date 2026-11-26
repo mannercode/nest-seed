@@ -58,25 +58,23 @@ describe('DateUtil', () => {
         )
     })
 
-    describe('earliest, latest', () => {
-        const earliest = Temporal.Instant.from('2022-01-01T12:00:00Z')
-        const latest = Temporal.Instant.from('2022-01-03T15:30:00Z')
-        const middle = Temporal.Instant.from('2022-01-02T09:20:00Z')
-        const instants = [middle, earliest, latest]
-
-        it('가장 이른 시각과 늦은 시각을 반환한다', () => {
-            expect(DateUtil.earliest(instants).equals(earliest)).toBe(true)
-            expect(DateUtil.latest(instants).equals(latest)).toBe(true)
-        })
-
-        describe('시각 목록이 비어 있으면', () => {
-            let instants: Temporal.Instant[]
-            beforeEach(() => {
-                instants = []
+    describe.each([
+        { method: 'earliest', result: '가장 이른', expected: '2022-01-01T12:00:00Z' },
+        { method: 'latest', result: '가장 늦은', expected: '2022-01-03T15:30:00Z' }
+    ] as const)('$method', ({ method, result, expected }) => {
+        describe('시각 목록이 정렬되지 않았으면', () => {
+            const instants = [
+                Temporal.Instant.from('2022-01-02T09:20:00Z'),
+                Temporal.Instant.from('2022-01-01T12:00:00Z'),
+                Temporal.Instant.from('2022-01-03T15:30:00Z')
+            ]
+            it(result + ' 시각을 반환한다', () => {
+                expect(DateUtil[method](instants).equals(expected)).toBe(true)
             })
+        })
+        describe('시각 목록이 비어 있으면', () => {
             it('예외를 던진다', () => {
-                expect(() => DateUtil.earliest(instants)).toThrow(InternalServerErrorException)
-                expect(() => DateUtil.latest(instants)).toThrow(InternalServerErrorException)
+                expect(() => DateUtil[method]([])).toThrow(InternalServerErrorException)
             })
         })
     })

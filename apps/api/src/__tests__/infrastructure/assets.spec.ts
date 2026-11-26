@@ -2,6 +2,7 @@ import { SchedulerRegistry } from '@nestjs/schedule'
 import {
     CacheService,
     Checksum,
+    MongoConnection,
     DateUtil,
     ensure,
     pickIds,
@@ -19,6 +20,7 @@ import {
     downloadAsset,
     failNextMongoUpdateAfterStorageDelete,
     overrideConfigGetter,
+    requestRegistrationPhotoUpload,
     pauseNextMongoFindOneAndUpdate,
     pauseNextStorageDelete,
     testAssets,
@@ -290,14 +292,14 @@ describe('AssetsService', () => {
                 vi.mocked(DateUtil.now).mockReturnValue(upload.expiresAt)
                 await assetsService.cleanupExpiredUploads()
                 expect((await uploadAsset(file.path, upload)).ok).toBe(true)
+            })
+            it('서명이 만료될 때까지 파일을 보존한 뒤 삭제하고 정리를 마친다', async () => {
                 vi.mocked(DateUtil.now).mockReturnValue(
                     signedExpiresAt.subtract({ milliseconds: 1 })
                 )
                 await assetsService.cleanupExpiredUploads()
                 await expect(storage.isUploadComplete({ key })).resolves.toBe(true)
                 vi.mocked(DateUtil.now).mockReturnValue(signedExpiresAt)
-            })
-            it('서명이 만료되면 다시 올라온 파일을 지우고 정리를 마친다', async () => {
                 await assetsService.cleanupExpiredUploads()
                 await expect(storage.isUploadComplete({ key })).resolves.toBe(false)
                 vi.spyOn(storage, 'deleteObject').mockRejectedValue(
@@ -308,6 +310,7 @@ describe('AssetsService', () => {
         })
 
         describe('서명이 만료된 뒤 첫 정리가 파일을 지우면', () => {
+            let cleanupAt: Temporal.Instant
             beforeEach(async () => {
                 const deletedAt = signedExpiresAt.add({ seconds: 1 })
                 vi.mocked(DateUtil.now).mockReturnValue(deletedAt)
@@ -315,15 +318,45 @@ describe('AssetsService', () => {
                 await expect(storage.isUploadComplete({ key })).resolves.toBe(false)
                 expect((await uploadAsset(file.path, upload)).ok).toBe(true)
 
-                const cleanupAt = deletedAt.add({ seconds: uploadExpiresInSec })
+                cleanupAt = deletedAt.add({ seconds: uploadExpiresInSec })
+            })
+            it('늦게 올라온 파일을 발급 당시 유효기간만큼 보존한 뒤 삭제한다', async () => {
                 vi.mocked(DateUtil.now).mockReturnValue(cleanupAt.subtract({ milliseconds: 1 }))
                 await assetsService.cleanupExpiredUploads()
                 await expect(storage.isUploadComplete({ key })).resolves.toBe(true)
                 vi.mocked(DateUtil.now).mockReturnValue(cleanupAt)
-            })
-            it('발급 당시의 유효기간이 지난 뒤 늦게 올라온 파일을 지운다', async () => {
                 await assetsService.cleanupExpiredUploads()
                 await expect(storage.isUploadComplete({ key })).resolves.toBe(false)
+            })
+        })
+    })
+
+    describe('POST /users/photo-upload', () => {
+        const assets = () => fix.module.get(MongoConnection).db.collection('assets')
+        describe('허용된 이미지를 요청하면', () => {
+            it('소유자가 없는 자산 하나를 저장하고 업로드 요청을 반환한다', async () => {
+                const before = await assets().countDocuments()
+                const upload = await requestRegistrationPhotoUpload(fix)
+                expect(upload).toMatchObject({
+                    method: 'POST',
+                    assetId: expect.any(String),
+                    url: expect.any(String)
+                })
+                await expect(assetsService.findOwner(upload.assetId)).resolves.toBeNull()
+                expect(await assets().countDocuments()).toBe(before + 1)
+            })
+        })
+        describe.each([
+            { condition: '이미지가 아니면', metadata: { mimeType: 'text/plain' } },
+            { condition: '5 MiB보다 크면', metadata: { size: 5 * 1024 * 1024 + 1 } }
+        ])('$condition', ({ metadata }) => {
+            it('400을 반환하고 자산을 저장하지 않는다', async () => {
+                const before = await assets().countDocuments()
+                await fix.httpClient
+                    .post('/users/photo-upload')
+                    .body({ ...buildCreateAssetDto(), ...metadata })
+                    .badRequest()
+                expect(await assets().countDocuments()).toBe(before)
             })
         })
     })

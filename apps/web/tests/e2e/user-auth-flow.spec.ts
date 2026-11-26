@@ -40,15 +40,6 @@ async function getSessionCookie(context: BrowserContext, name: string) {
     return cookies.find((cookie) => cookie.name === name)
 }
 
-async function createProtectedRequest(context: BrowserContext) {
-    const cookies = await context.cookies(WEB_BASE_URL)
-    const cookie = cookies.map(({ name, value }) => name + '=' + value).join('; ')
-    return () =>
-        GET(new NextRequest(new URL('/api/users/me', WEB_BASE_URL), { headers: { cookie } }), {
-            params: Promise.resolve({ path: ['users', 'me'] })
-        })
-}
-
 const storage = new URL(S3_ENDPOINT)
 const otherBucket = S3_BUCKET + '-other'
 for (const [condition, target] of [
@@ -331,10 +322,8 @@ test.describe('로그인 후', () => {
         test.beforeEach(async ({ context }) => {
             await context.addCookies([{ ...accessCookie!, value: 'invalid-access-token' }])
         })
-        test.describe('보호 API의 401 응답 후 갱신 서비스에 연결할 수 없으면', () => {
-            let sendRequest: Awaited<ReturnType<typeof createProtectedRequest>>
-            test.beforeEach(async ({ context }) => {
-                sendRequest = await createProtectedRequest(context)
+        test.describe('보호 API가 401을 반환하고 웹 핸들러가 갱신 서비스에 연결할 수 없으면', () => {
+            test.beforeEach(() => {
                 const fetchApi = globalThis.fetch
                 mock.method(globalThis, 'fetch', (url: URL, init: RequestInit) => {
                     if (url.href === new URL('/users/refresh', API_BASE_URL).href)
@@ -343,7 +332,18 @@ test.describe('로그인 후', () => {
                 })
             })
             test.afterEach(() => mock.restoreAll())
-            test('502를 반환하고 서비스 복구 후 같은 쿠키로 다시 요청할 수 있다', async () => {
+            test('502를 반환하고 서비스 복구 후 같은 쿠키로 다시 요청할 수 있다', async ({
+                context
+            }) => {
+                const cookies = await context.cookies(WEB_BASE_URL)
+                const cookie = cookies.map(({ name, value }) => name + '=' + value).join('; ')
+                const sendRequest = () =>
+                    GET(
+                        new NextRequest(new URL('/api/users/me', WEB_BASE_URL), {
+                            headers: { cookie }
+                        }),
+                        { params: Promise.resolve({ path: ['users', 'me'] }) }
+                    )
                 const failed = await sendRequest()
                 expect(failed.status).toBe(502)
                 expect(await failed.json()).toEqual({
@@ -361,52 +361,7 @@ test.describe('로그인 후', () => {
                 )
             })
         })
-        test('갱신 직후 이전 쿠키로 다시 요청하면 이미 발급한 토큰을 재사용한다', async ({
-            context
-        }) => {
-            const sendRequest = await createProtectedRequest(context)
-            const fetchApi = globalThis.fetch
-            let refreshCalls = 0
-            const refreshUrl = new URL('/users/refresh', API_BASE_URL).href
-            const observedFetch = mock.method(
-                globalThis,
-                'fetch',
-                (url: URL, init: RequestInit) => {
-                    if (url.href === refreshUrl) refreshCalls++
-                    return fetchApi(url, init)
-                }
-            )
-
-            // 첫 응답을 끝까지 읽은 뒤에도 갱신 결과의 보관 기한이 지나지 않게 한다.
-            mock.timers.enable({ apis: ['setTimeout'] })
-            try {
-                const first = await sendRequest()
-                expect(first.status).toBe(200)
-                expect(await first.json()).toMatchObject({ email })
-                const firstAccess = first.cookies.get(ACCESS_COOKIE)?.value
-                const firstRefresh = first.cookies.get(REFRESH_COOKIE)?.value
-                expect(firstAccess).toEqual(expect.stringMatching(/\S/))
-                expect(firstRefresh).toEqual(expect.stringMatching(/\S/))
-                expect(firstAccess === 'invalid-access-token').toBe(false)
-                expect(firstRefresh === refreshCookieBefore!.value).toBe(false)
-                expect(refreshCalls).toBe(1)
-
-                const late = await sendRequest()
-                expect(late.status).toBe(200)
-                expect(await late.json()).toMatchObject({ email })
-                expect(late.cookies.get(ACCESS_COOKIE)?.value === firstAccess).toBe(true)
-                expect(late.cookies.get(REFRESH_COOKIE)?.value === firstRefresh).toBe(true)
-                expect(refreshCalls).toBe(1)
-            } finally {
-                try {
-                    mock.timers.runAll()
-                } finally {
-                    mock.timers.reset()
-                    observedFetch.mock.restore()
-                }
-            }
-        })
-        test.describe('같은 갱신 쿠키를 가진 두 브라우저가 동시에 본인 정보를 요청하면', () => {
+        test.describe('같은 갱신 쿠키를 가진 두 브라우저가', () => {
             let otherPage: Page
             test.beforeEach(async ({ browser, context }) => {
                 otherPage = await browser.newPage({
@@ -417,7 +372,32 @@ test.describe('로그인 후', () => {
             test.afterEach(async () => {
                 await otherPage.close()
             })
-            test('두 요청 모두 성공하고 같은 새 갱신 쿠키를 받는다', async ({ page, context }) => {
+            test('첫 응답 직후 이전 쿠키로 요청하면 같은 새 토큰을 받는다', async ({
+                page,
+                context
+            }) => {
+                const first = await page.goto('/api/users/me', { waitUntil: 'commit' })
+                const late = await otherPage.goto('/api/users/me', { waitUntil: 'commit' })
+
+                for (const response of [first, late]) {
+                    expect(response?.status()).toBe(200)
+                    expect(await response!.json()).toMatchObject({ email })
+                }
+                for (const [name, previous] of [
+                    [ACCESS_COOKIE, 'invalid-access-token'],
+                    [REFRESH_COOKIE, refreshCookieBefore!.value]
+                ] as const) {
+                    const issued = await getSessionCookie(context, name)
+                    const reused = await getSessionCookie(otherPage.context(), name)
+                    expect(issued?.value).toEqual(expect.stringMatching(/\S/))
+                    expect(issued?.value === previous).toBe(false)
+                    expect(reused?.value === issued?.value).toBe(true)
+                }
+            })
+            test('동시에 요청하면 둘 다 성공하고 같은 새 갱신 쿠키를 받는다', async ({
+                page,
+                context
+            }) => {
                 const responses = await Promise.all([
                     page.goto('/api/users/me'),
                     otherPage.goto('/api/users/me')

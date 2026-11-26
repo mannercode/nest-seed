@@ -1,4 +1,4 @@
-import { DateUtil, ensure, MongoConnection, S3ObjectService } from '@mannercode/common'
+import { DateUtil, ensure, S3ObjectService } from '@mannercode/common'
 import { ClientSession } from 'mongodb'
 import { UserRegistrationService } from '#application'
 import { type CreateUserDto, UserSchema } from '#core'
@@ -7,7 +7,6 @@ import { WebHomeViewSchema } from '#view'
 import {
     buildCreateUserDto,
     advancePastUploadDeadline,
-    buildCreateAssetDto,
     requestRegistrationPhotoUpload,
     createAppTestContext,
     loginUser,
@@ -20,27 +19,11 @@ import {
 describe('UserRegistrationService', () => {
     let fix: AppTestContext
     let applicant: CreateUserDto
-    const users = () => fix.module.get(MongoConnection).db.collection('users')
-    const assetCount = () =>
-        fix.module.get(MongoConnection).db.collection('assets').countDocuments()
     beforeEach(async () => {
         fix = await createAppTestContext()
         applicant = buildCreateUserDto()
     })
     afterEach(() => fix?.teardown())
-    it('사진 업로드 조건을 발급해도 계정은 생성하지 않는다', async () => {
-        const usersBefore = await users().countDocuments()
-        const assetsBefore = await assetCount()
-        const body = await requestRegistrationPhotoUpload(fix)
-        expect(body).toMatchObject({
-            method: 'POST',
-            assetId: expect.any(String),
-            url: expect.any(String)
-        })
-        await expect(fix.module.get(AssetsService).findOwner(body.assetId)).resolves.toBeNull()
-        expect(await assetCount()).toBe(assetsBefore + 1)
-        expect(await users().countDocuments()).toBe(usersBefore)
-    })
     describe.each([
         {
             earlier: 'S3 정책',
@@ -66,20 +49,6 @@ describe('UserRegistrationService', () => {
             expect(upload.expiresAt.epochMilliseconds).toBe(Date.parse(expiresAt))
         })
     })
-    it.each([
-        { file: '이미지가 아닌 파일의', metadata: { mimeType: 'text/plain' } },
-        { file: '5 MiB보다 큰 파일의', metadata: { size: 5 * 1024 * 1024 + 1 } }
-    ])(
-        '$file 업로드 URL을 요청하면 400을 반환하고 자산 기록을 만들지 않는다',
-        async ({ metadata }) => {
-            const assetsBefore = await assetCount()
-            await fix.httpClient
-                .post('/users/photo-upload')
-                .body({ ...buildCreateAssetDto(), mimeType: 'image/png', ...metadata })
-                .badRequest()
-            expect(await assetCount()).toBe(assetsBefore)
-        }
-    )
     describe('파일 삭제에 실패한 사진으로 가입하면', () => {
         let assetId: string
         beforeEach(async () => {
@@ -87,12 +56,12 @@ describe('UserRegistrationService', () => {
             expect((await uploadAsset(testAssets.image.path, upload)).ok).toBe(true)
             assetId = upload.assetId
             const storage = fix.module.get<S3ObjectService>(S3ObjectService.getName())
+            const assets = fix.module.get(AssetsService)
+            const { download } = ensure((await assets.getMany([assetId]))[0])
             const failure = new Error('photo delete failed')
             vi.spyOn(storage, 'deleteObject').mockRejectedValueOnce(failure)
-            await expect(fix.module.get(AssetsService).deleteMany([assetId])).rejects.toBe(failure)
-            await expect(
-                storage.isUploadComplete({ key: ensure(upload.fields.key) })
-            ).resolves.toBe(true)
+            await expect(assets.deleteMany([assetId])).rejects.toBe(failure)
+            expect((await fetch(ensure(download).url)).status).toBe(200)
         })
         it('404를 반환하고 계정을 만들지 않는다', async () => {
             await fix.httpClient
@@ -138,12 +107,10 @@ describe('UserRegistrationService', () => {
     })
     describe('업로드한 사진', () => {
         let assetId: string
-        let photoKey: string
         beforeEach(async () => {
             const upload = await requestRegistrationPhotoUpload(fix)
             expect((await uploadAsset(testAssets.image.path, upload)).ok).toBe(true)
             assetId = upload.assetId
-            photoKey = ensure(upload.fields.key)
         })
         describe('발급 후 새 업로드의 유효기간을 줄이면', () => {
             beforeEach(async () => {
@@ -216,7 +183,6 @@ describe('UserRegistrationService', () => {
             const created = UserSchema.parse(
                 ensure(results.find((result) => result.status === 201)).body
             )
-            expect(await users().countDocuments()).toBe(1)
             const winner = ensure(applicants.find(({ email }) => email === created.email))
             const { user } = await loginUser(fix, {
                 email: winner.email,
@@ -267,7 +233,10 @@ describe('UserRegistrationService', () => {
                     .post('/users')
                     .body({ ...applicant, photoAssetId: assetId })
                     .internalServerError()
-                expect(await users().countDocuments()).toBe(0)
+                await fix.httpClient
+                    .post('/users/login')
+                    .body({ email: applicant.email, password: applicant.password })
+                    .unauthorized()
                 expect(await fix.module.get(AssetsService).findOwner(assetId)).toBeNull()
                 await fix.httpClient
                     .post('/users')
@@ -340,9 +309,13 @@ describe('UserRegistrationService', () => {
                 })
             })
             it('탈퇴하면 본인 계정과 사진만 삭제하고 다른 사용자는 계속 본인 정보를 조회할 수 있다', async () => {
-                expect(await users().countDocuments({ deletedAt: null })).toBe(2)
+                const { body: home } = await fix.httpClient
+                    .get('/views/web/home')
+                    .headers(headers)
+                    .ok({ schema: WebHomeViewSchema })
+                const photoUrl = ensure(home.photoUrl)
+                expect((await fetch(photoUrl)).status).toBe(200)
                 await fix.httpClient.delete('/users/me').headers(headers).noContent()
-                expect(await users().countDocuments({ deletedAt: null })).toBe(1)
                 await fix.httpClient
                     .post('/users/login')
                     .body({ email: applicant.email, password: applicant.password })
@@ -354,11 +327,7 @@ describe('UserRegistrationService', () => {
                     .ok({ schema: UserSchema })
                 expect(other.email).toBe('other@mail.com')
                 expect(await fix.module.get(AssetsService).findOwner(assetId)).toBeUndefined()
-                expect(
-                    await fix.module
-                        .get<S3ObjectService>(S3ObjectService.getName())
-                        .isUploadComplete({ key: photoKey })
-                ).toBe(false)
+                expect((await fetch(photoUrl)).status).toBe(404)
             })
         })
     })

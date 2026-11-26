@@ -1,4 +1,4 @@
-import { omit } from '@mannercode/common'
+import { MongoConnection, omit } from '@mannercode/common'
 import { HttpTestClient, nullObjectId, plainDate } from '@mannercode/testing'
 import { Collection } from 'mongodb'
 import { type UserDto, UsersService, UserSchema } from '#core'
@@ -8,6 +8,7 @@ import {
     createUser,
     expectedErrors,
     loginUser,
+    requestRegistrationPhotoUpload,
     type AppTestContext,
     createAppTestContext
 } from '#test-helpers'
@@ -24,6 +25,15 @@ describe('UsersService', () => {
         teardown = fix.teardown
     })
     afterEach(() => teardown?.())
+
+    describe('가입 사진 업로드를 요청하면', () => {
+        it('계정을 만들지 않는다', async () => {
+            const users = fix.module.get(MongoConnection).db.collection('users')
+            const before = await users.countDocuments()
+            await requestRegistrationPhotoUpload(fix)
+            expect(await users.countDocuments()).toBe(before)
+        })
+    })
 
     describe('POST /users', () => {
         describe.each([

@@ -2,6 +2,7 @@ import { RestateWorkflowClient, TemporalJsonSerde } from '@mannercode/common'
 import type { INestApplication } from '@nestjs/common'
 import { connect } from '@restatedev/restate-sdk-clients'
 import { Collection } from 'mongodb'
+import { z } from 'zod'
 import { AppConfigService } from '#config'
 import {
     JobDemoService,
@@ -60,8 +61,10 @@ describe('JobDemoService', () => {
         token = (await createAndLoginUser(fix)).accessToken
     })
     afterEach(() => fix?.teardown())
-    it('인증 없이 작업을 요청하면 401을 반환한다', async () => {
-        await fix.httpClient.post('/job-demo/jobs').body({ text: 'hello' }).unauthorized()
+    describe('인증 없이 작업을 요청하면', () => {
+        it('401을 반환한다', async () => {
+            await fix.httpClient.post('/job-demo/jobs').body({ text: 'hello' }).unauthorized()
+        })
     })
     describe('빈 문자열로 작업을 제출하면', () => {
         it('400을 반환한다', async () => {
@@ -87,37 +90,44 @@ describe('JobDemoService', () => {
             await expect(fix.teardown()).rejects.toMatchObject({ errors: [failure] })
         })
     })
-    describe.each([
-        { condition: '결과 저장이 가능하면', failure: false },
-        { condition: '첫 결과 저장이 실패하면', failure: true }
-    ])('$condition', ({ failure }) => {
+    async function submitTextJob() {
+        const { body } = await fix.httpClient
+            .post('/job-demo/jobs')
+            .headers({ Authorization: 'Bearer ' + token })
+            .body({ text: 'Hello 🌱' })
+            .accepted({ schema: z.object({ jobId: z.string() }) })
+        return body.jobId
+    }
+
+    async function expectCompletedJob(jobId: string) {
+        const result = await jobs.waitForJob(jobId)
+        expect(result).toEqual({ text: 'HELLO 🌱', characterCount: 7 })
+        await fix.httpClient
+            .get('/job-demo/jobs/' + jobId)
+            .headers({ Authorization: 'Bearer ' + token })
+            .ok({ schema: TextJobSchema, expected: { jobId, status: 'completed', result } })
+    }
+
+    describe('텍스트 작업을 제출하면', () => {
+        it('대문자로 변환한 결과를 조회할 수 있다', async () => {
+            const jobId = await submitTextJob()
+            await expectCompletedJob(jobId)
+        })
+    })
+    describe('첫 결과 저장이 실패하면', () => {
         let writeFailure: Promise<void>
         beforeEach(() => {
-            if (failure) {
-                const rejected = Promise.withResolvers<void>()
-                writeFailure = rejected.promise
-                vi.spyOn(Collection.prototype, 'updateOne').mockImplementationOnce(async () => {
-                    rejected.resolve()
-                    throw new Error('storage unavailable')
-                })
-            }
+            const failed = Promise.withResolvers<void>()
+            writeFailure = failed.promise
+            vi.spyOn(Collection.prototype, 'updateOne').mockImplementationOnce(async () => {
+                failed.resolve()
+                throw new Error('storage unavailable')
+            })
         })
-        it('작업을 접수하면 대문자 변환 결과를 저장하고 조회할 수 있다', async () => {
-            const { body } = await fix.httpClient
-                .post('/job-demo/jobs')
-                .headers({ Authorization: 'Bearer ' + token })
-                .body({ text: 'Hello 🌱' })
-                .accepted()
-            if (failure) await writeFailure
-            const result = await jobs.waitForJob(body.jobId)
-            expect(result).toEqual({ text: 'HELLO 🌱', characterCount: 7 })
-            await fix.httpClient
-                .get('/job-demo/jobs/' + body.jobId)
-                .headers({ Authorization: 'Bearer ' + token })
-                .ok({
-                    schema: TextJobSchema,
-                    expected: { jobId: body.jobId, status: 'completed', result }
-                })
+        it('재시도 후 같은 작업의 결과를 조회할 수 있다', async () => {
+            const jobId = await submitTextJob()
+            await writeFailure
+            await expectCompletedJob(jobId)
         })
     })
     describe('작업 결과를 저장하기 전에', () => {
