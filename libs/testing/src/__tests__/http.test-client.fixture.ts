@@ -118,6 +118,11 @@ class HttpTestClientController {
         return { ok: true }
     }
 
+    @Get('redirect')
+    redirect(@Res() res: Response) {
+        res.redirect(302, '/always-200')
+    }
+
     @Post('body-merging')
     verifyBodyMerging(@Body() body: Record<string, unknown>) {
         if (body.first !== true || body.second !== true) {

@@ -1,11 +1,12 @@
 import { RestateWorkflowClient, TemporalJsonSerde } from '@mannercode/common'
 import type { INestApplication } from '@nestjs/common'
-import { connect } from '@restatedev/restate-sdk-clients'
+import { connect, HttpCallError } from '@restatedev/restate-sdk-clients'
 import { Collection } from 'mongodb'
 import { z } from 'zod'
 import { AppConfigService } from '#config'
 import {
     JobDemoService,
+    TextJobInputSchema,
     TextJobResultSchema,
     TextJobSchema,
     TextJobWorkflow
@@ -35,7 +36,7 @@ describe('작업을 제출할 수 없는 테스트 앱에서', () => {
 })
 
 describe('임시 Restate 배포 정리', () => {
-    const failure = new Error('Result endpoint unavailable')
+    const failure = new HttpCallError(404, 'workflow not found', 'result unavailable')
     let waitForWorkflows: () => Promise<void>
     beforeEach(async () => {
         const jobs = { submit: vi.fn().mockResolvedValue({ jobId: 'job' }) }
@@ -75,19 +76,43 @@ describe('JobDemoService', () => {
                 .badRequest()
         })
     })
-    describe('Restate가 작업 제출을 거절하면', () => {
-        const failure = new Error('submission rejected')
+    describe('Restate에 등록되지 않은 워크플로로 작업을 제출하면', () => {
+        beforeEach(() => {
+            const { definition } = fix.app.get(TextJobWorkflow)
+            const missing = { name: 'Unregistered-' + definition.name }
+            const ingress = connect({ url: fix.app.get(AppConfigService).restate.ingressUrl })
+            vi.spyOn(RestateWorkflowClient.prototype, 'submit').mockImplementationOnce(
+                (input, jobId) =>
+                    ingress
+                        .workflowClient<typeof definition>(missing, jobId)
+                        .workflowSubmit(TextJobInputSchema.parse(input))
+            )
+        })
+        it('500을 반환하고 앱 종료 시 임시 배포를 삭제한다', async () => {
+            await fix.httpClient
+                .post('/job-demo/jobs')
+                .headers({ Authorization: 'Bearer ' + token })
+                .body({ text: 'hello' })
+                .internalServerError()
+            await fix.teardown()
+            expect((await fetch(fix.deploymentUrl)).status).toBe(404)
+        })
+    })
+    describe('작업의 접수 응답을 받지 못하면', () => {
+        const failure = new Error('submission response lost')
         beforeEach(() => {
             vi.spyOn(RestateWorkflowClient.prototype, 'submit').mockRejectedValueOnce(failure)
         })
+        // 이 테스트는 전송 전에 실패를 주입했으므로 남겨 둔 배포를 지울 수 있다.
         afterEach(() => unregisterRestateDeployment(fix.deploymentUrl))
-        it('500을 반환하고 앱 종료 시 접수 오류를 전달한다', async () => {
+        it('500을 반환하고 앱 종료 시 배포를 보존하며 접수 오류를 전달한다', async () => {
             await fix.httpClient
                 .post('/job-demo/jobs')
                 .headers({ Authorization: 'Bearer ' + token })
                 .body({ text: 'hello' })
                 .internalServerError()
             await expect(fix.teardown()).rejects.toMatchObject({ errors: [failure] })
+            expect((await fetch(fix.deploymentUrl)).status).toBe(200)
         })
     })
     async function submitTextJob() {
@@ -214,7 +239,13 @@ function trackRestateCompletions(
     jobs.submit = (...args) => {
         const submission = submit(...args)
         const completion = submission
-            .then(({ jobId }) => waitForJob(jobId))
+            .then(
+                ({ jobId }) => waitForJob(jobId),
+                (error: unknown) => {
+                    // 제출 시 404는 Restate에 대상이 없어 기다릴 작업도 없다는 응답이다.
+                    if (!(error instanceof HttpCallError && error.status === 404)) throw error
+                }
+            )
             .catch((error: unknown) => failures.push(error))
             .finally(() => completions.delete(completion))
         completions.add(completion)

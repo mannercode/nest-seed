@@ -55,8 +55,8 @@ export class PathUtil {
         }
     }
 
-    static async mkdir(path: string): Promise<void> {
-        await fs.mkdir(path, { recursive: true })
+    static async mkdir(targetDir: string): Promise<void> {
+        await fs.mkdir(targetDir, { recursive: true })
     }
 
     static async move(src: string, dest: string): Promise<void> {

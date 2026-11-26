@@ -41,6 +41,6 @@ Restate workflow의 입력과 최종 결과에는 등록된 스키마가 적용�
 
 ## 테스트 도구
 
-Nest 서비스는 `createTestContext`, HTTP를 호출하는 테스트는 `createHttpTestContext`로 시작한다. 생성에 성공하면 호출자가 `close()`로 앱을 닫는다. `request.ok({ schema, expected })`는 복원한 DTO를, `request.ok({ expected })`는 원래 JSON을 비교한다. [초기화와 종료](testing/src/__tests__/create-test-context-cleanup.spec.ts) · [HTTP 응답 검증](testing/src/__tests__/http.test-client.spec.ts)
+Nest 서비스는 `createTestContext`, HTTP를 호출하는 테스트는 `createHttpTestContext`로 시작한다. 생성에 성공하면 호출자가 `close()`로 앱을 닫는다. HTTP 상태 검증과 `sendRaw()`는 리디렉션 전의 첫 응답을 사용한다. `request.ok({ schema, expected })`는 복원한 DTO를, `request.ok({ expected })`는 원래 JSON을 비교한다. [초기화와 종료](testing/src/__tests__/create-test-context-cleanup.spec.ts) · [HTTP 응답 검증](testing/src/__tests__/http.test-client.spec.ts)
 
 SSE 테스트는 `request.sse(messageHandler, errorHandler, readyHandler)`의 준비 신호를 기다린 뒤 별도 클라이언트로 발행한다. 끝나면 `finally`에서 `request.abort()`로 구독을 닫는다. [구독과 발행 예제](testing/src/__tests__/http.test-client.spec.ts)

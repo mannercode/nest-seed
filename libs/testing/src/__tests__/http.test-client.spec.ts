@@ -82,6 +82,22 @@ describe('HttpTestClient', () => {
     })
 
     describe('상태 코드 단언', () => {
+        describe('리디렉션 대상이 200을 반환하면', () => {
+            it('sendRaw는 302와 이동할 주소를 반환한다', async () => {
+                const response = await fix.httpClient.get('/redirect').sendRaw()
+                expect(response.status).toBe(302)
+                expect(response.headers.location).toBe('/always-200')
+            })
+
+            it('ok 검증은 실패한다', async () => {
+                await expect(fix.httpClient.get('/redirect').ok()).rejects.toMatchObject({
+                    name: 'AssertionError',
+                    actual: 302,
+                    expected: 200
+                })
+            })
+        })
+
         describe('서버가 200을 반환하면', () => {
             const okPath = '/always-200'
 

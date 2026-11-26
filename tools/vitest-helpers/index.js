@@ -84,10 +84,12 @@ async function dropMatchingBuckets(s3Client, pattern) {
     const { Buckets } = await s3Client.send(new ListBucketsCommand({}))
     const targets = (Buckets ?? []).filter((b) => pattern.test(b.Name))
 
-    for (const bucket of targets) {
-        await emptyBucket(s3Client, bucket.Name)
-        await s3Client.send(new DeleteBucketCommand({ Bucket: bucket.Name }))
-    }
+    await waitForCleanup(
+        targets.map(async (bucket) => {
+            await emptyBucket(s3Client, bucket.Name)
+            await s3Client.send(new DeleteBucketCommand({ Bucket: bucket.Name }))
+        })
+    )
 }
 
 /** @typedef {import('mongodb').MongoClient} MongoClient */

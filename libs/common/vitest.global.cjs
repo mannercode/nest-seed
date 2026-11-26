@@ -3,11 +3,12 @@ const { MongoDBContainer } = require('@testcontainers/mongodb')
 const { NatsContainer } = require('@testcontainers/nats')
 
 module.exports = async function globalSetup() {
+    const s3Port = 7070
     const storage = {
         ROOT_ACCESS_KEY_ID: 'admin',
         ROOT_SECRET_ACCESS_KEY: 'password',
         VGW_REGION: 'us-east-1',
-        VGW_PORT: ':7070',
+        VGW_PORT: `:${s3Port}`,
         VGW_HEALTH: '/_/health',
         VGW_BACKEND: 'posix',
         VGW_BACKEND_ARGS: '/data'
@@ -23,10 +24,10 @@ module.exports = async function globalSetup() {
             .withResourcesQuota({ memory: 0.125 }),
 
         new GenericContainer(process.env.S3_IMAGE)
-            .withExposedPorts(7070)
+            .withExposedPorts(s3Port)
             .withEnvironment(storage)
             .withTmpFs({ '/data': 'rw' })
-            .withWaitStrategy(Wait.forHttp('/_/health', 7070))
+            .withWaitStrategy(Wait.forHttp(storage.VGW_HEALTH, s3Port))
             .withResourcesQuota({ memory: 0.5 }),
 
         new NatsContainer(process.env.NATS_IMAGE)
@@ -49,7 +50,7 @@ module.exports = async function globalSetup() {
     process.env.TESTLIB_MONGO_URI = mongoUri.href
     process.env.TESTLIB_REDIS_URL = `redis://${redis.getHost()}:${redis.getMappedPort(6379)}`
     process.env.TESTLIB_S3_OPTIONS = JSON.stringify({
-        endpoint: `http://${s3.getHost()}:${s3.getMappedPort(7070)}`,
+        endpoint: `http://${s3.getHost()}:${s3.getMappedPort(s3Port)}`,
         region: storage.VGW_REGION,
         credentials: {
             accessKeyId: storage.ROOT_ACCESS_KEY_ID,
