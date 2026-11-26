@@ -4,7 +4,7 @@ TEST "인증 없이 이벤트를 발행하면 401을 반환한다" \
 
 create_and_login_user
 
-TEST "메시지를 JetStream에 저장하면 이벤트 ID와 202를 반환한다" \
+TEST "메시지를 발행하면 202를 반환한다" \
     202 POST /event-demo/messages \
     -H 'Content-Type: application/json' -d '{ "message": "hello event" }'
 

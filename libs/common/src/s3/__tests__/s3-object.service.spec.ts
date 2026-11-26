@@ -559,7 +559,7 @@ describe('S3ObjectService', () => {
             })
         })
 
-        describe('객체가 존재하고 다음 HEAD 요청이 실패하도록 설정하면', () => {
+        describe('HEAD 요청이 한 번 실패하면', () => {
             let created: Awaited<ReturnType<S3ObjectServiceFixture['s3Service']['putObject']>>
             beforeEach(async () => {
                 created = await fix.s3Service.putObject({
@@ -572,7 +572,7 @@ describe('S3ObjectService', () => {
                     new Error('transient')
                 )
             })
-            it('첫 완료 조회는 오류를 던지고 다음 조회는 true를 반환한다', async () => {
+            it('오류를 던지고 다음 조회에서는 업로드 완료를 확인할 수 있다', async () => {
                 await expect(fix.s3Service.isUploadComplete({ key: 'k' })).rejects.toThrow(
                     'transient'
                 )

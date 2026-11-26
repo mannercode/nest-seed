@@ -254,7 +254,7 @@ describe('PathUtil', () => {
                 })
             })
 
-            describe('rename이 EACCES 오류로 실패하도록 설정하면', () => {
+            describe('파일을 옮길 권한이 없으면', () => {
                 beforeEach(() => {
                     const error = new Error('permission denied') as NodeJS.ErrnoException
                     error.code = 'EACCES'

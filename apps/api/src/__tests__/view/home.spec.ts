@@ -51,7 +51,7 @@ describe('GET /views/web/home', () => {
             otherUserId = (await createUser(fix, { email: 'other@mail.com', name: '다른 사용자' }))
                 .id
         })
-        it('다른 사용자 ID를 지정해도 본인 정보와 빈 사진 URL을 반환한다', async () => {
+        it('다른 사용자 ID를 지정해도 본인 정보를 반환하고 photoUrl은 null이다', async () => {
             await fix.httpClient
                 .get('/views/web/home')
                 .headers({ Authorization: 'Bearer ' + session.accessToken })

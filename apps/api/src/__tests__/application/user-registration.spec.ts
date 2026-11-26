@@ -75,7 +75,7 @@ describe('UserRegistrationService', () => {
         })
     })
     describe('사진을 첨부하지 않고 가입하면', () => {
-        it('사진 ID가 비어 있고 로그인할 수 있다', async () => {
+        it('사진 ID는 null이고 로그인할 수 있다', async () => {
             const input = buildCreateUserDto()
             const { body } = await fix.httpClient
                 .post('/users')

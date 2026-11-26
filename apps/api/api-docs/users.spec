@@ -29,7 +29,7 @@ TEST "사진을 첨부해 회원가입한다" \
 
 DUPLICATE_EMAIL_BODY=$(jq 'del(.photoAssetId)' <<<"${SIGNUP_BODY}")
 
-TEST "이미 가입한 이메일로 가입하면 409를 반환한다" \
+TEST "등록된 이메일로 가입하면 409를 반환한다" \
 	409 POST /users \
 	-H 'Content-Type: application/json' -d "${DUPLICATE_EMAIL_BODY}"
 
@@ -53,7 +53,7 @@ TEST "리프레시 토큰으로 새 액세스 토큰과 리프레시 토큰을 �
 USER_ACCESS_TOKEN=$(RESPONSE_BODY accessToken)
 USER_REFRESH_TOKEN=$(RESPONSE_BODY refreshToken)
 
-TEST "내 사용자 정보를 조회한다" \
+TEST "내 정보를 조회한다" \
 	200 GET /users/me \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
 
@@ -61,7 +61,7 @@ TEST "홈에서 내 정보와 가입할 때 첨부한 사진의 URL을 조회한
 	200 GET /views/web/home \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
 
-TEST "사용자가 본인 정보를 수정한다" \
+TEST "내 정보를 수정한다" \
 	200 PATCH /users/me \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}" \
 	-H "Content-Type: application/json" \
@@ -79,7 +79,7 @@ TEST "로그아웃한 세션의 리프레시 토큰으로 갱신하면 401을 �
 
 login_user
 
-TEST "사용자가 본인 계정을 삭제한다" \
+TEST "회원 탈퇴를 요청한다" \
 	204 DELETE /users/me \
 	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
 

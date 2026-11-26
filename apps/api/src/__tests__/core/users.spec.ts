@@ -341,7 +341,7 @@ describe('UsersService', () => {
                 .ok({ schema: UserSchema, expected: { ...user, ...updateDto } })
         })
 
-        describe('수정할 필수 필드 값이 null이면', () => {
+        describe('name이 null이면', () => {
             const bodyWithNullName = { name: null }
 
             it('400을 반환한다', async () => {

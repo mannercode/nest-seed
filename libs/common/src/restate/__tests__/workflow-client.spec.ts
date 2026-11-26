@@ -44,12 +44,12 @@ describe('RestateWorkflowClient', () => {
         status: 'Accepted'
     }
 
-    describe('서버가 작업 제출을 접수하면', () => {
+    describe('서버가 작업을 접수하면', () => {
         let fix: ReturnType<typeof createFixture>
         beforeEach(() => {
             fix = createFixture({ result: vi.fn() })
         })
-        it('지정한 키와 60초 제한으로 제출하고 완료 결과를 기다리지 않는다', async () => {
+        it('작업 완료를 기다리지 않고 접수 결과를 반환한다', async () => {
             await expect(fix.client.submit(input, input.workflowId)).resolves.toBe(submission)
             expect(fix.workflowClient).toHaveBeenCalledWith(fix.definition, input.workflowId)
             expect(fix.workflowSubmit).toHaveBeenCalledTimes(1)
@@ -111,27 +111,27 @@ describe('RestateWorkflowClient', () => {
         })
     })
 
-    describe('워크플로 출력이 준비되지 않았으면', () => {
+    describe('완료되지 않은 작업의 결과를 조회하면', () => {
         let fix: ReturnType<typeof createFixture>
         let workflowOutput: Mock
         beforeEach(() => {
             workflowOutput = vi.fn().mockResolvedValue({ ready: false })
             fix = createFixture({ result: vi.fn(), workflowOutput })
         })
-        it('출력을 조회하면 지정한 키와 60초 제한을 사용하고 ready: false를 반환한다', async () => {
+        it('ready가 false인 응답을 반환한다', async () => {
             await expect(fix.client.output(input.workflowId)).resolves.toEqual({ ready: false })
             expect(fix.workflowClient).toHaveBeenCalledWith(fix.definition, input.workflowId)
             expect(workflowOutput.mock.calls[0]?.[0].opts).toEqual({ timeout: 60_000 })
         })
     })
 
-    describe('워크플로 출력이 준비되었으면', () => {
+    describe('완료된 작업의 결과를 조회하면', () => {
         let fix: ReturnType<typeof createFixture>
         beforeEach(() => {
             const workflowOutput = vi.fn().mockResolvedValue({ ready: true, result: storedResult })
             fix = createFixture({ result: vi.fn(), workflowOutput })
         })
-        it('출력을 조회하면 완료 시각을 Instant로 복원한 결과와 ready: true를 반환한다', async () => {
+        it('완료 시각을 Instant로 복원하고 ready는 true로 반환한다', async () => {
             await expect(fix.client.output(input.workflowId)).resolves.toEqual({
                 ready: true,
                 result: terminal

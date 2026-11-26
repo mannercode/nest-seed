@@ -426,7 +426,7 @@ describe('CrudRepository', () => {
             })
         })
 
-        describe('첫 인덱스 생성이 실패하도록 설정하면', () => {
+        describe('첫 인덱스 생성에 실패한 뒤', () => {
             let createIndexes: ReturnType<typeof harness>['createIndexes']
             let repository: RepositoryHarness
             beforeEach(() => {
@@ -564,7 +564,7 @@ describe('CrudRepository', () => {
             })
         })
 
-        describe('insertMany가 저장 개수를 한 개로 반환하도록 설정하면', () => {
+        describe('DB가 일부 문서만 저장했다고 응답하면', () => {
             beforeEach(() => {
                 vi.spyOn(fix.soft.collection, 'insertMany').mockResolvedValueOnce({
                     acknowledged: true,
@@ -572,7 +572,7 @@ describe('CrudRepository', () => {
                     insertedIds: { 0: objectId(fix.soft.draft('a').id) }
                 })
             })
-            it('문서 두 개를 저장하면 개수 불일치 예외를 던진다', async () => {
+            it('개수 불일치 예외를 던진다', async () => {
                 await expect(
                     fix.soft.insertDrafts([fix.soft.draft('a'), fix.soft.draft('b')])
                 ).rejects.toThrow(

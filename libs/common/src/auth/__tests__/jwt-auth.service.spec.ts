@@ -396,7 +396,7 @@ describe('JwtAuthService', () => {
             })
         })
 
-        describe('세션 인덱스 조회 직후 인덱스 자료형이 바뀌도록 설정하면', () => {
+        describe('세션 인덱스를 읽은 직후 자료형이 바뀌면', () => {
             beforeEach(async () => {
                 await fix.jwtService.generateAuthTokens({ sub: 'u1' })
                 const read = fix.redis.smembers.bind(fix.redis)
@@ -455,7 +455,7 @@ describe('JwtAuthService', () => {
             })
         })
 
-        describe('로그아웃 대상 조회 직후 새 세션이 생성되도록 설정하면', () => {
+        describe('로그아웃 대상을 조회한 직후 새 세션이 생기면', () => {
             let old: JwtAuthTokens
             let added: JwtAuthTokens
             beforeEach(async () => {

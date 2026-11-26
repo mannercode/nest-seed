@@ -69,7 +69,7 @@ describe('RequestValidationPipe', () => {
         })
 
         // 응답을 만드는 함수로 예상값까지 만들면 같은 오류를 놓칠 수 있으므로, 기대하는 JSON을 직접 적는다.
-        describe('요청 본문에 필수 필드가 없으면', () => {
+        describe('필수 필드 하나가 빠지면', () => {
             const bodyWithoutSampleId = { date: nullDate }
 
             it('400을 반환한다', async () => {
