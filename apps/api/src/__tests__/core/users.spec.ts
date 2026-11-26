@@ -224,15 +224,14 @@ describe('UsersService', () => {
             )
         })
 
-        describe('요청 본문에 필수 필드가 없으면', () => {
-            let request: typeof fix.httpClient
-            beforeEach(() => {
-                request = fix.httpClient.post('/users').body({})
-            })
-            it('가입을 요청하면 400을 반환한다', async () => {
-                await request.badRequest({
-                    expected: expectedErrors.validationFailed(expect.any(Array))
-                })
+        describe('요청 본문이 빈 객체이면', () => {
+            const emptyBody = {}
+
+            it('400을 반환한다', async () => {
+                await fix.httpClient
+                    .post('/users')
+                    .body(emptyBody)
+                    .badRequest({ expected: expectedErrors.validationFailed(expect.any(Array)) })
             })
         })
     })
