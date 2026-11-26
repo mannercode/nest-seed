@@ -1,1 +1,1 @@
-{ "extends": "./tools/tsconfig.base.json" }
+{ "extends": "@mannercode/tools/tsconfig" }
