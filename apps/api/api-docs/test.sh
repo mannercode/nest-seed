@@ -31,13 +31,16 @@ run_examples() {
         exit 1
     fi
 
-    # 압축을 푼 복사본에 404 경로를 200으로 기대하는 예제를 추가한다.
-    printf '\n%s\n' 'TEST "없는 경로를 조회한다" 200 GET /missing-route' >>"${docs_dir}/health.spec"
+    # 첫 예제의 상태가 달라도 다음 파일의 상태 조회까지 실행하는지 확인한다.
+    find "${docs_dir}" -name '*.spec' ! -path "${docs_dir}/health.spec" -delete
+    printf '%s\n' 'TEST "없는 경로를 조회한다" 200 GET /missing-route' >"${docs_dir}/00-mismatch.spec"
     status=0
     bash "${docs_dir}/run.sh" >"${docs_dir}/mismatch.log" 2>&1 || status=$?
-    if (( status != 3 )) || ! grep -Fq '| `GET` | `/missing-route` | `200` | `404` | `FAIL` |' "${report_dir}/summary.md"; then
+    local failed_row='| `GET` | `/missing-route` | `200` | `404` | `FAIL` |'
+    local passed_row='| `GET` | `/health` | `200` | `200` | `PASS` |'
+    if (( status != 3 )) || [[ $(<"${report_dir}/summary.md") != *"${failed_row}"*"${passed_row}"* ]]; then
         cat "${docs_dir}/mismatch.log" >&2
-        echo '예제 실행기가 기대 상태 200과 실제 상태 404의 불일치를 보고하지 않았습니다.' >&2
+        echo '예제 실행기는 상태 불일치와 후속 상태 조회 성공을 순서대로 보고하고 종료 코드 3을 반환해야 합니다.' >&2
         exit 1
     fi
 }
