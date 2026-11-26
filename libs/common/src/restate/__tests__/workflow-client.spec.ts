@@ -44,7 +44,7 @@ describe('RestateWorkflowClient', () => {
         status: 'Accepted'
     }
 
-    describe('작업 제출이 접수되도록 설정하면', () => {
+    describe('서버가 작업 제출을 접수하면', () => {
         let fix: ReturnType<typeof createFixture>
         beforeEach(() => {
             fix = createFixture({ result: vi.fn() })
@@ -83,7 +83,7 @@ describe('RestateWorkflowClient', () => {
         })
     })
 
-    describe('완료 결과 조회가 실패하도록 설정하면', () => {
+    describe('완료 결과 조회가 실패하면', () => {
         let fix: ReturnType<typeof createFixture>
         beforeEach(() => {
             fix = createFixture({ result: vi.fn().mockRejectedValue(new Error('workflow failed')) })
@@ -95,7 +95,7 @@ describe('RestateWorkflowClient', () => {
         })
     })
 
-    describe('작업 제출이 실패하도록 설정하면', () => {
+    describe('작업 제출이 실패하면', () => {
         let fix: ReturnType<typeof createFixture>
         beforeEach(() => {
             fix = createFixture({
@@ -103,7 +103,7 @@ describe('RestateWorkflowClient', () => {
                 workflowSubmit: vi.fn().mockRejectedValue(new Error('ingress unavailable'))
             })
         })
-        it('제출 시 오류를 던지고 완료 결과는 조회하지 않는다', async () => {
+        it('오류를 던지고 완료 결과는 조회하지 않는다', async () => {
             await expect(fix.client.submit(input, input.workflowId)).rejects.toThrow(
                 'ingress unavailable'
             )

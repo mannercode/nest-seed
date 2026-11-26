@@ -10,14 +10,14 @@ describe('LatLong', () => {
     afterEach(() => fix.teardown())
 
     describe('distanceInMeters', () => {
-        describe('서울과 부산의 좌표가 있으면', () => {
+        describe('서울과 부산 사이의 거리는', () => {
             let seoul: Parameters<typeof LatLong.distanceInMeters>[0]
             let busan: Parameters<typeof LatLong.distanceInMeters>[0]
             beforeEach(() => {
                 seoul = { latitude: 37.5665, longitude: 126.978 }
                 busan = { latitude: 35.1796, longitude: 129.0756 }
             })
-            it('거리를 계산하면 약 325km를 반환한다', () => {
+            it('약 325km이다', () => {
                 const actualDistance = LatLong.distanceInMeters(seoul, busan)
 
                 const expectedDistance = 325000
@@ -35,7 +35,7 @@ describe('LatLong', () => {
                 northPole = { latitude: 90, longitude: 0 }
                 southPole = { latitude: -90, longitude: 0 }
             })
-            it('거리를 계산하면 지구 둘레의 절반을 반환한다', () => {
+            it('지구 둘레의 절반을 반환한다', () => {
                 const distance = LatLong.distanceInMeters(northPole, southPole)
 
                 // 극점 사이 거리는 지구 반지름 × π(약 20015km)로, 지구 둘레의 절반이다.
@@ -50,7 +50,7 @@ describe('LatLong', () => {
                 seoul = { latitude: 37.5665, longitude: 126.978 }
                 antipode = { latitude: -37.5665, longitude: 126.978 - 180 }
             })
-            it('거리를 계산하면 지구 둘레의 절반을 반환한다', () => {
+            it('지구 둘레의 절반을 반환한다', () => {
                 const distance = LatLong.distanceInMeters(seoul, antipode)
                 const halfCircumference = Math.PI * 6_371_000
 
@@ -60,14 +60,14 @@ describe('LatLong', () => {
             })
         })
 
-        describe('정반대 좌표의 거리 계산에 반올림 오차가 생기는 입력이면', () => {
+        describe('정반대 좌표에서 반올림 오차가 생겨도', () => {
             let from: Parameters<typeof LatLong.distanceInMeters>[0]
             let to: Parameters<typeof LatLong.distanceInMeters>[0]
             beforeEach(() => {
                 from = { latitude: 0.08, longitude: 0 }
                 to = { latitude: -0.08, longitude: 180 }
             })
-            it('거리를 계산하면 유한한 값과 대칭성을 유지한다', () => {
+            it('거리는 유한하고 두 점의 순서를 바꿔도 같다', () => {
                 const distance = LatLong.distanceInMeters(from, to)
 
                 expect(Number.isFinite(distance)).toBe(true)
@@ -77,14 +77,14 @@ describe('LatLong', () => {
             })
         })
 
-        describe('두 좌표의 위도 차이가 0.0000001도이면', () => {
+        describe('서로 다른 두 지점이 1m보다 가까우면', () => {
             let a: Parameters<typeof LatLong.distanceInMeters>[0]
             let b: Parameters<typeof LatLong.distanceInMeters>[0]
             beforeEach(() => {
                 a = { latitude: 37.5, longitude: 127.0 }
                 b = { latitude: 37.5 + 1e-7, longitude: 127.0 }
             })
-            it('거리를 계산하면 0m보다 크고 1m보다 작은 값을 반환한다', () => {
+            it('거리를 0으로 반올림하지 않는다', () => {
                 const distance = LatLong.distanceInMeters(a, b)
 
                 expect(distance).toBeGreaterThan(0)
@@ -168,10 +168,10 @@ describe('LatLong', () => {
             })
         })
 
-        describe('좌표 값이 "37."처럼 점으로 끝나면', () => {
+        describe('소수점으로 끝나는 좌표를 입력하면', () => {
             const queryWithTrailingDot = { location: '37.,127' }
 
-            it('숫자 37로 변환한다', async () => {
+            it('정수 좌표로 해석한다', async () => {
                 // 정규식의 \d+(?:\.\d*)? 분기가 "37."을 받아주므로 정상 파싱된다.
                 await fix.httpClient
                     .get('/latLong')

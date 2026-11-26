@@ -7,7 +7,7 @@ describe('HttpUtil', () => {
             beforeEach(() => {
                 filename = 'hello_world-1.0.txt'
             })
-            it('헤더를 만들면 파일명을 RFC 8187 형식으로 반환한다', () => {
+            it('파일명을 RFC 8187 형식으로 반환한다', () => {
                 const contentDisposition = HttpUtil.buildContentDisposition(filename)
 
                 expect(contentDisposition).toEqual(
@@ -21,7 +21,7 @@ describe('HttpUtil', () => {
             beforeEach(() => {
                 filename = `report (final)'v1*.txt`
             })
-            it('헤더를 만들면 filename*에 퍼센트 인코딩을 적용한다', () => {
+            it('filename*에 퍼센트 인코딩을 적용한다', () => {
                 const contentDisposition = HttpUtil.buildContentDisposition(filename)
 
                 expect(contentDisposition).toEqual(
@@ -35,7 +35,7 @@ describe('HttpUtil', () => {
             beforeEach(() => {
                 filename = '한글 파일명(최종).pdf'
             })
-            it('헤더를 만들면 대체 파일명의 비ASCII 문자를 밑줄로 바꾼다', () => {
+            it('대체 파일명의 비ASCII 문자를 밑줄로 바꾼다', () => {
                 const contentDisposition = HttpUtil.buildContentDisposition(filename)
 
                 expect(contentDisposition).toEqual(
@@ -49,7 +49,7 @@ describe('HttpUtil', () => {
             beforeEach(() => {
                 filename = 'bad:/\\?%*:|"<>name.txt'
             })
-            it('헤더를 만들면 대체 파일명의 금지 문자를 하이픈으로 바꾼다', () => {
+            it('대체 파일명의 금지 문자를 하이픈으로 바꾼다', () => {
                 const contentDisposition = HttpUtil.buildContentDisposition(filename)
 
                 expect(contentDisposition).toEqual(
@@ -63,7 +63,7 @@ describe('HttpUtil', () => {
             beforeEach(() => {
                 filename = 'my file name.txt'
             })
-            it('헤더를 만들면 filename*의 공백을 %20으로 인코딩한다', () => {
+            it('filename*의 공백을 %20으로 인코딩한다', () => {
                 const contentDisposition = HttpUtil.buildContentDisposition(filename)
 
                 expect(contentDisposition).toEqual(
@@ -77,7 +77,7 @@ describe('HttpUtil', () => {
             beforeEach(() => {
                 filename = ''
             })
-            it('헤더를 만들면 대체 파일명으로 "file"을 쓴다', () => {
+            it('대체 파일명으로 "file"을 쓴다', () => {
                 const contentDisposition = HttpUtil.buildContentDisposition(filename)
 
                 expect(contentDisposition).toEqual(`attachment; filename="file"; filename*=UTF-8''`)

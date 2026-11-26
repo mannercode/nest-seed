@@ -41,7 +41,7 @@ describe('InstantFromInputSchema, PlainDateFromInputSchema', () => {
         beforeEach(() => {
             value = input
         })
-        it('입력을 검증하면 실패한다', () => {
+        it('검증에 실패한다', () => {
             expect(InstantFromInputSchema.safeParse(value).success).toBe(false)
         })
     })
@@ -54,7 +54,7 @@ describe('InstantFromInputSchema, PlainDateFromInputSchema', () => {
         beforeEach(() => {
             value = input
         })
-        it('입력을 검증하면 실패한다', () => {
+        it('검증에 실패한다', () => {
             expect(PlainDateFromInputSchema.safeParse(value).success).toBe(false)
         })
     })

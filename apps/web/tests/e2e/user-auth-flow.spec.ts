@@ -57,7 +57,7 @@ for (const [condition, target] of [
     ['호스트명에 있는 다른 버킷', `${storage.protocol}//${otherBucket}.${storage.host}/photo.png`]
 ] as const) {
     test.describe(`사진 주소의 대상이 ${condition}이면`, () => {
-        test('사진 프록시가 요청을 400으로 거절한다', async ({ page }) => {
+        test('사진 프록시가 400을 반환한다', async ({ page }) => {
             const response = await page.goto(photoUrl(target))
             expect(response?.status()).toBe(400)
         })
@@ -102,7 +102,7 @@ for (const { name, pathname } of [
         { condition: '이모지 14자', password: '🌱'.repeat(14) },
         { condition: '이모지 129자', password: '🌱'.repeat(129) }
     ]) {
-        test.describe(`${name} 화면의 비밀번호가 ${condition}이면`, () => {
+        test.describe(`${name} 화면에 입력한 비밀번호가 ${condition}이면`, () => {
             test.beforeEach(async ({ page }) => {
                 await page.goto(`${WEB_BASE_URL}${pathname}`)
                 await page.getByLabel('비밀번호').fill(password)
@@ -125,7 +125,7 @@ for (const { name, pathname } of [
     }
 }
 
-test.describe('로그인하지 않았으면', () => {
+test.describe('로그인 전', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto(`${WEB_BASE_URL}/login`)
     })
@@ -141,7 +141,7 @@ test.describe('로그인하지 않았으면', () => {
                 await page.getByLabel('이메일').fill('login@example.com')
                 await page.getByLabel('비밀번호').fill(PASSWORD)
             })
-            test('로그인을 시도하면 같은 화면에 HTTP 상태를 표시한다', async ({ page }) => {
+            test('로그인 화면에 해당 HTTP 상태를 표시한다', async ({ page }) => {
                 await page.getByRole('button', { name: '로그인' }).click()
                 await expect(page.getByRole('main').getByRole('alert')).toContainText(
                     String(status)
@@ -168,7 +168,7 @@ test.describe('로그인하지 않았으면', () => {
     })
 })
 
-test.describe('사용자로 로그인했으면', () => {
+test.describe('로그인 후', () => {
     let email: string
     let accessCookie: Awaited<ReturnType<typeof getSessionCookie>>
     let refreshCookieBefore: Awaited<ReturnType<typeof getSessionCookie>>
@@ -247,7 +247,7 @@ test.describe('사용자로 로그인했으면', () => {
         expect(refreshCookie).toMatchObject({ httpOnly: true, value: expect.any(String) })
         expect(refreshCookie?.value === refreshCookieBefore?.value).toBe(false)
     })
-    test('유효한 토큰으로 대소문자가 다른 갱신 경로를 요청하면 세션을 바꾸지 않고 404를 반환한다', async ({
+    test('대소문자를 바꾼 갱신 경로도 404를 반환하고 기존 세션을 유지한다', async ({
         page,
         request: api
     }) => {
@@ -327,11 +327,11 @@ test.describe('사용자로 로그인했으면', () => {
             await api.dispose()
         }
     })
-    test.describe('액세스 쿠키의 토큰이 잘못되었으면', () => {
+    test.describe('액세스 쿠키의 토큰이 유효하지 않은 상태에서', () => {
         test.beforeEach(async ({ context }) => {
             await context.addCookies([{ ...accessCookie!, value: 'invalid-access-token' }])
         })
-        test.describe('보호 API의 401을 받은 뒤 갱신 서비스에 연결할 수 없으면', () => {
+        test.describe('보호 API의 401 응답 후 갱신 서비스에 연결할 수 없으면', () => {
             let sendRequest: Awaited<ReturnType<typeof createProtectedRequest>>
             test.beforeEach(async ({ context }) => {
                 sendRequest = await createProtectedRequest(context)
@@ -343,7 +343,7 @@ test.describe('사용자로 로그인했으면', () => {
                 })
             })
             test.afterEach(() => mock.restoreAll())
-            test('프록시는 502를 반환하고 같은 쿠키로 서비스 복구 후 다시 요청할 수 있다', async () => {
+            test('502를 반환하고 서비스 복구 후 같은 쿠키로 다시 요청할 수 있다', async () => {
                 const failed = await sendRequest()
                 expect(failed.status).toBe(502)
                 expect(await failed.json()).toEqual({
@@ -361,7 +361,7 @@ test.describe('사용자로 로그인했으면', () => {
                 )
             })
         })
-        test('토큰 회전이 끝난 뒤 같은 이전 쿠키로 다시 요청하면 한 번 갱신한 두 토큰을 재사용한다', async ({
+        test('갱신 직후 이전 쿠키로 다시 요청하면 이미 발급한 토큰을 재사용한다', async ({
             context
         }) => {
             const sendRequest = await createProtectedRequest(context)
@@ -406,7 +406,7 @@ test.describe('사용자로 로그인했으면', () => {
                 }
             }
         })
-        test.describe('두 브라우저가 같은 갱신 쿠키를 가지고 있으면', () => {
+        test.describe('같은 갱신 쿠키를 가진 두 브라우저가 동시에 본인 정보를 요청하면', () => {
             let otherPage: Page
             test.beforeEach(async ({ browser, context }) => {
                 otherPage = await browser.newPage({
@@ -417,10 +417,7 @@ test.describe('사용자로 로그인했으면', () => {
             test.afterEach(async () => {
                 await otherPage.close()
             })
-            test('동시에 본인 정보를 요청하면 두 응답 모두 성공하고 같은 새 갱신 쿠키를 받는다', async ({
-                page,
-                context
-            }) => {
+            test('두 요청 모두 성공하고 같은 새 갱신 쿠키를 받는다', async ({ page, context }) => {
                 const responses = await Promise.all([
                     page.goto('/api/users/me'),
                     otherPage.goto('/api/users/me')
@@ -490,7 +487,7 @@ test.describe('사용자로 로그인했으면', () => {
     })
 })
 
-test.describe('가입 양식에 사진을 첨부했으면', () => {
+test.describe('가입 양식에 사진을 첨부한 뒤', () => {
     let email: string
     test.beforeEach(async ({ page }) => {
         email = `photo-${randomUUID()}@example.com`

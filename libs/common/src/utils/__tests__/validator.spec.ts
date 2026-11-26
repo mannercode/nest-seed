@@ -9,7 +9,7 @@ describe('Require', () => {
             beforeEach(() => {
                 first = null
             })
-            it('필수 값을 확인하면 예외를 던진다', () => {
+            it('예외를 던진다', () => {
                 expect(() => Require.defined(first)).toThrow(
                     expect.objectContaining({ status: 500, cause: 'Value must exist.' })
                 )
@@ -21,7 +21,7 @@ describe('Require', () => {
             beforeEach(() => {
                 first = undefined
             })
-            it('필수 값을 확인하면 예외를 던진다', () => {
+            it('예외를 던진다', () => {
                 expect(() => Require.defined(first)).toThrow(
                     expect.objectContaining({ status: 500, cause: 'Value must exist.' })
                 )
@@ -33,7 +33,7 @@ describe('Require', () => {
             beforeEach(() => {
                 value = 'value'
             })
-            it('필수 값을 확인하면 예외 없이 통과한다', () => {
+            it('예외 없이 통과한다', () => {
                 expect(() => Require.defined(value)).not.toThrow()
             })
         })
@@ -48,7 +48,7 @@ describe('Require', () => {
 
                 second = [1, 2]
             })
-            it('배열 길이를 비교하면 예외를 던진다', () => {
+            it('예외를 던진다', () => {
                 expect(() => Require.equalLength(first, second, 'mismatch')).toThrow(
                     expect.objectContaining({ status: 500, cause: 'mismatch first: 1, second: 2' })
                 )
@@ -63,7 +63,7 @@ describe('Require', () => {
 
                 second = [1]
             })
-            it('배열 길이를 비교하면 예외를 던진다', () => {
+            it('예외를 던진다', () => {
                 expect(() => Require.equalLength(first, second, 'mismatch')).toThrow(
                     expect.objectContaining({
                         status: 500,
@@ -81,7 +81,7 @@ describe('Require', () => {
 
                 second = undefined
             })
-            it('배열 길이를 비교하면 예외를 던진다', () => {
+            it('예외를 던진다', () => {
                 expect(() => Require.equalLength(first, second, 'mismatch')).toThrow(
                     expect.objectContaining({
                         status: 500,
@@ -99,7 +99,7 @@ describe('Require', () => {
 
                 second = [2]
             })
-            it('배열 길이를 비교하면 통과한다', () => {
+            it('통과한다', () => {
                 expect(() => Require.equalLength(first, second, 'mismatch')).not.toThrow()
             })
         })
@@ -114,7 +114,7 @@ describe('Require', () => {
 
                 second = 2
             })
-            it('값을 비교하면 예외를 던진다', () => {
+            it('예외를 던진다', () => {
                 expect(() => Require.equals(first, second, 'not equal')).toThrow(
                     expect.objectContaining({
                         status: 500,
@@ -132,7 +132,7 @@ describe('Require', () => {
 
                 second = 1
             })
-            it('값을 비교하면 통과한다', () => {
+            it('통과한다', () => {
                 expect(() => Require.equals(first, second, 'not equal')).not.toThrow()
             })
         })
@@ -145,7 +145,7 @@ describe('Require', () => {
 
                 second = 2n
             })
-            it('값을 비교하면 두 값과 원인 메시지를 담은 500 예외를 던진다', () => {
+            it('두 값과 원인 메시지를 담은 500 예외를 던진다', () => {
                 expect(() => Require.equals(first, second, 'bigint mismatch')).toThrow(
                     expect.objectContaining({ status: 500, cause: '1n !== 2n, bigint mismatch' })
                 )
@@ -161,7 +161,7 @@ describe('Require', () => {
                 second = { value: 2 }
                 second.self = second
             })
-            it('값을 비교하면 순환 참조 표시와 원인 메시지를 담은 500 예외를 던진다', () => {
+            it('순환 참조 표시와 원인 메시지를 담은 500 예외를 던진다', () => {
                 expect(() => Require.equals(first, second, 'cycle mismatch')).toThrow(
                     expect.objectContaining({
                         status: 500,
@@ -189,7 +189,7 @@ describe('Assume', () => {
 
                 second = [1, 2]
             })
-            it('배열 길이를 비교하면 Logger.warn을 호출한다', () => {
+            it('경고를 남긴다', () => {
                 Assume.equalLength(first, second, 'mismatch')
 
                 expect(warnSpy).toHaveBeenCalledWith('mismatch first: 1, second: 2')
@@ -204,7 +204,7 @@ describe('Assume', () => {
 
                 second = [1]
             })
-            it('배열 길이를 비교하면 Logger.warn을 호출한다', () => {
+            it('경고를 남긴다', () => {
                 Assume.equalLength(first, second, 'mismatch')
 
                 expect(warnSpy).toHaveBeenCalledWith('mismatch first: undefined, second: 1')
@@ -219,7 +219,7 @@ describe('Assume', () => {
 
                 second = undefined
             })
-            it('배열 길이를 비교하면 Logger.warn을 호출한다', () => {
+            it('경고를 남긴다', () => {
                 Assume.equalLength(first, second, 'mismatch')
 
                 expect(warnSpy).toHaveBeenCalledWith('mismatch first: 1, second: undefined')
@@ -234,7 +234,7 @@ describe('Assume', () => {
 
                 second = [2]
             })
-            it('배열 길이를 비교하면 Logger.warn을 호출하지 않는다', () => {
+            it('경고를 남기지 않는다', () => {
                 Assume.equalLength(first, second, 'mismatch')
 
                 expect(warnSpy).not.toHaveBeenCalled()
@@ -249,7 +249,7 @@ describe('ensure', () => {
         beforeEach(() => {
             first = null
         })
-        it('필수 값을 확인하면 예외를 던진다', () => {
+        it('예외를 던진다', () => {
             expect(() => ensure(first)).toThrow(
                 expect.objectContaining({ status: 500, cause: 'Value must exist.' })
             )
@@ -261,7 +261,7 @@ describe('ensure', () => {
         beforeEach(() => {
             value = 'hello'
         })
-        it('필수 값을 확인하면 원래 값을 반환한다', () => {
+        it('원래 값을 반환한다', () => {
             expect(ensure(value)).toBe('hello')
         })
     })
@@ -271,7 +271,7 @@ describe('ensure', () => {
         beforeEach(() => {
             input = value
         })
-        it('필수 값을 확인하면 원래 값을 반환한다', () => {
+        it('원래 값을 반환한다', () => {
             expect(ensure(input)).toBe(value)
         })
     })
@@ -280,7 +280,7 @@ describe('ensure', () => {
         beforeEach(() => {
             first = undefined
         })
-        it('필수 값을 확인하면 예외를 던진다', () => {
+        it('예외를 던진다', () => {
             expect(() => ensure(first)).toThrow(
                 expect.objectContaining({ status: 500, cause: 'Value must exist.' })
             )

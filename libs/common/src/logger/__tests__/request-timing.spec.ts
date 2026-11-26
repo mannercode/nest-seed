@@ -7,7 +7,7 @@ describe('request-timing', () => {
         now = 0
         vi.spyOn(performance, 'now').mockImplementation(() => now)
     })
-    describe('두 요청이 50ms 간격으로 시작되었으면', () => {
+    describe('두 요청이 서로 다른 시각에 시작하면', () => {
         let reqA: Request
         let reqB: Request
         beforeEach(() => {
@@ -18,7 +18,7 @@ describe('request-timing', () => {
             now = 50
             markRequestStart(reqB)
         })
-        it('경과 시간을 조회하면 두 요청의 차이가 50ms이다', () => {
+        it('두 경과 시간의 차이가 시작 시각 간격과 같다', () => {
             const elapsedB = elapsedSinceRequestStart(reqB)
             const elapsedA = elapsedSinceRequestStart(reqA)
 
@@ -26,7 +26,7 @@ describe('request-timing', () => {
         })
     })
 
-    describe('요청의 시작 시각을 기록하고 30ms가 지났으면', () => {
+    describe('요청을 시작한 뒤 시간이 지나면', () => {
         let req: Request
         let elapsedBefore: number
         beforeEach(() => {

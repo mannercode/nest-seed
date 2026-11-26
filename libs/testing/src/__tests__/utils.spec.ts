@@ -23,7 +23,7 @@ describe('instant, plainDate', () => {
             beforeEach(() => {
                 value = input
             })
-            it('Instant로 변환하면 해당 시각을 반환한다', () => {
+            it('해당 시각을 반환한다', () => {
                 expect(instant(value).toString()).toBe(expected)
             })
         })
@@ -37,7 +37,7 @@ describe('instant, plainDate', () => {
             beforeEach(() => {
                 value = input
             })
-            it('PlainDate로 변환하면 해당 날짜를 반환한다', () => {
+            it('해당 날짜를 반환한다', () => {
                 expect(plainDate(value).toString()).toBe('2025-01-02')
             })
         })
@@ -46,7 +46,7 @@ describe('instant, plainDate', () => {
             beforeEach(() => {
                 input = '2025-01-02T23:59Z'
             })
-            it('PlainDate로 변환하면 예외를 던진다', () => {
+            it('예외를 던진다', () => {
                 expect(() => plainDate(input)).toThrow('Expected an ISO calendar date')
             })
         })
@@ -62,21 +62,21 @@ describe('step', () => {
         expect(executed).toBe(true)
     })
 
-    describe('비동기 콜백이 예외를 던지도록 설정하면', () => {
+    describe('비동기 콜백이 예외를 던지면', () => {
         let callback: () => Promise<never>
         beforeEach(() => {
             callback = async () => {
                 throw new Error('inner failure')
             }
         })
-        it('단계를 실행하면 단계 이름을 포함한 에러를 던진다', async () => {
+        it('단계 이름을 담은 예외를 던진다', async () => {
             const promise = step('bad step', callback)
 
             await expect(promise).rejects.toThrow(/step "bad step" failed.*inner failure/)
         })
     })
 
-    describe('동기 콜백이 예외를 던지도록 설정하면', () => {
+    describe('동기 콜백이 예외를 던지면', () => {
         let original: Error
         let callback: () => never
         beforeEach(() => {
@@ -85,7 +85,7 @@ describe('step', () => {
                 throw original
             }
         })
-        it('단계를 실행하면 cause 속성에 원본 에러를 담는다', async () => {
+        it('cause에 원래 예외를 담는다', async () => {
             let caught: unknown
             try {
                 await step('s', callback)
@@ -122,7 +122,7 @@ describe('oid', () => {
         beforeEach(() => {
             input = 1
         })
-        it('ID로 변환하면 앞을 0으로 채운 24자리 16진수 문자열을 반환한다', () => {
+        it('앞을 0으로 채운 24자리 16진수 문자열을 반환한다', () => {
             expect(oid(input)).toBe('000000000000000000000001')
         })
     })
@@ -132,7 +132,7 @@ describe('oid', () => {
         beforeEach(() => {
             input = 0xff
         })
-        it('ID로 변환하면 앞을 0으로 채운 24자리 16진수 문자열을 반환한다', () => {
+        it('앞을 0으로 채운 24자리 16진수 문자열을 반환한다', () => {
             expect(oid(input)).toBe('0000000000000000000000ff')
         })
     })

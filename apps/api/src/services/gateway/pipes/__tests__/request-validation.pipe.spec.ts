@@ -5,7 +5,7 @@ import {
     type RequestValidationPipeFixture
 } from './request-validation.pipe.fixture.js'
 
-describe('RequestValidationPipe HTTP 및 오류 변환', () => {
+describe('RequestValidationPipe', () => {
     let fix: RequestValidationPipeFixture
 
     beforeEach(async () => {
@@ -13,7 +13,7 @@ describe('RequestValidationPipe HTTP 및 오류 변환', () => {
     })
     afterEach(() => fix.teardown())
 
-    describe('스키마가 필드 경로 없는 검증 오류를 반환하도록 설정하면', () => {
+    describe('스키마 검증 오류에 필드 경로가 없으면', () => {
         let schema: NonNullable<Parameters<RequestValidationPipe['transform']>[1]['schema']>
         beforeEach(() => {
             schema = {
@@ -24,7 +24,7 @@ describe('RequestValidationPipe HTTP 및 오류 변환', () => {
                 }
             }
         })
-        it('본문을 변환하면 field가 빈 문자열인 예외를 던진다', async () => {
+        it('field가 빈 문자열인 예외를 던진다', async () => {
             await expect(
                 new RequestValidationPipe().transform({}, { schema, type: 'body' })
             ).rejects.toMatchObject({

@@ -38,7 +38,7 @@ describe('RestateEndpoint', () => {
         output.destroy()
     })
 
-    describe('Restate에 등록할 workflow 주소를 지정하면', () => {
+    describe('workflow 주소 등록', () => {
         const uri = 'http://nginx:9080'
         const adminUrl = 'http://restate:9070/'
         let request: MockInstance<typeof fetch>
@@ -67,7 +67,7 @@ describe('RestateEndpoint', () => {
             beforeEach(() => {
                 request.mockResolvedValue(new Response('discovery failed', { status: 400 }))
             })
-            it('등록을 시도하면 상태 코드와 실패 이유를 담은 예외를 던진다', async () => {
+            it('상태 코드와 실패 이유를 담은 예외를 던진다', async () => {
                 await expect(createEndpoint().register(adminUrl, uri)).rejects.toThrow(
                     'Restate registration failed for http://nginx:9080 (HTTP 400): discovery failed'
                 )
@@ -78,7 +78,7 @@ describe('RestateEndpoint', () => {
             beforeEach(() => {
                 request.mockResolvedValue(Response.json({}))
             })
-            it('등록 결과를 읽으면 누락된 필드를 담은 예외를 던진다', async () => {
+            it('누락된 필드를 담은 예외를 던진다', async () => {
                 await expect(createEndpoint().register(adminUrl, uri)).rejects.toThrow('id')
             })
         })
@@ -158,7 +158,7 @@ describe('RestateEndpoint', () => {
         })
     })
 
-    describe('애플리케이션 로거를 연결했으면', () => {
+    describe('애플리케이션 로거를 연결한 상태에서', () => {
         let transport: LoggerTransport
         let endpoint: RestateEndpoint
         beforeEach(async () => {

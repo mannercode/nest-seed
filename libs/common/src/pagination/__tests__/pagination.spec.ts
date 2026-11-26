@@ -34,7 +34,7 @@ describe('PaginationDto', () => {
         describe('정렬 필드 이름이 문자열 "0"이면', () => {
             const queryWithNumericField = { orderby: '0:asc' }
 
-            it('정렬 필드 이름을 유지한다', async () => {
+            it('문자열 그대로 반환한다', async () => {
                 await fix.httpClient
                     .get('/pagination')
                     .query(queryWithNumericField)

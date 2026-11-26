@@ -25,7 +25,7 @@ describe('UserRegistrationService', () => {
         applicant = buildCreateUserDto()
     })
     afterEach(() => fix?.teardown())
-    it('사진 업로드 요청은 업로드 조건을 반환하며 계정을 생성하지 않는다', async () => {
+    it('사진 업로드 조건을 발급해도 계정은 생성하지 않는다', async () => {
         const usersBefore = await users().countDocuments()
         const assetsBefore = await assetCount()
         const body = await requestRegistrationPhotoUpload(fix)
@@ -52,7 +52,7 @@ describe('UserRegistrationService', () => {
             expect(await assetCount()).toBe(assetsBefore)
         }
     )
-    describe('사진 파일의 삭제에 실패해 삭제 요청이 남아 있으면', () => {
+    describe('파일 삭제에 실패한 사진으로 가입하면', () => {
         let assetId: string
         beforeEach(async () => {
             const upload = await requestRegistrationPhotoUpload(fix)
@@ -66,7 +66,7 @@ describe('UserRegistrationService', () => {
                 storage.isUploadComplete({ key: ensure(upload.fields.key) })
             ).resolves.toBe(true)
         })
-        it('그 사진으로 가입을 요청하면 404를 반환하고 계정을 만들지 않는다', async () => {
+        it('404를 반환하고 계정을 만들지 않는다', async () => {
             await fix.httpClient
                 .post('/users')
                 .body({ ...applicant, photoAssetId: assetId })
@@ -74,8 +74,8 @@ describe('UserRegistrationService', () => {
             await fix.httpClient.post('/users').body(applicant).created({ schema: UserSchema })
         })
     })
-    describe('사진을 첨부하지 않았으면', () => {
-        it('가입 후 사진 없이 로그인할 수 있다', async () => {
+    describe('사진을 첨부하지 않고 가입하면', () => {
+        it('사진 ID가 비어 있고 로그인할 수 있다', async () => {
             const input = buildCreateUserDto()
             const { body } = await fix.httpClient
                 .post('/users')
@@ -88,12 +88,12 @@ describe('UserRegistrationService', () => {
                 .ok()
         })
     })
-    describe('사진 업로드 요청만 만들었으면', () => {
+    describe('전송하지 않은 사진으로 가입하면', () => {
         let assetId: string
         beforeEach(async () => {
             assetId = (await requestRegistrationPhotoUpload(fix)).assetId
         })
-        it('가입하면 422를 반환하고 계정을 생성하지 않는다', async () => {
+        it('422를 반환하고 계정을 만들지 않는다', async () => {
             await fix.httpClient
                 .post('/users')
                 .body({ ...applicant, photoAssetId: assetId })
@@ -108,7 +108,7 @@ describe('UserRegistrationService', () => {
             await fix.httpClient.post('/users').body(applicant).created({ schema: UserSchema })
         })
     })
-    describe('사진 전송을 마쳤으면', () => {
+    describe('업로드한 사진', () => {
         let assetId: string
         let photoKey: string
         beforeEach(async () => {
@@ -163,14 +163,14 @@ describe('UserRegistrationService', () => {
             const other = ensure(applicants[results.findIndex((result) => result.status === 409)])
             await fix.httpClient.post('/users').body(other).created({ schema: UserSchema })
         })
-        describe('사진 소유권을 쓴 뒤 다운로드 URL 발급이 실패하면', () => {
+        describe('사진 소유권 등록 후 다운로드 URL 발급에 실패하면', () => {
             beforeEach(() => {
                 vi.spyOn(
                     fix.module.get<S3ObjectService>(S3ObjectService.getName()),
                     'presignDownload'
                 ).mockRejectedValueOnce(new Error('signing failed'))
             })
-            it('가입 요청에 500을 반환하고 계정 생성과 소유권 변경을 모두 되돌린다', async () => {
+            it('500을 반환하고 계정과 사진 소유권을 함께 롤백한다', async () => {
                 await fix.httpClient
                     .post('/users')
                     .body({ ...applicant, photoAssetId: assetId })
@@ -183,7 +183,7 @@ describe('UserRegistrationService', () => {
                     .created({ schema: UserSchema })
             })
         })
-        describe('이미 다른 계정이 사진을 사용하고 있으면', () => {
+        describe('다른 계정이 사용 중인 사진으로 가입하면', () => {
             beforeEach(async () => {
                 await fix.httpClient
                     .post('/users')
@@ -193,7 +193,7 @@ describe('UserRegistrationService', () => {
                     })
                     .created({ schema: UserSchema })
             })
-            it('그 사진으로 가입을 요청하면 409를 반환하고 두 번째 계정을 만들지 않는다', async () => {
+            it('409를 반환하고 새 계정을 만들지 않는다', async () => {
                 await fix.httpClient
                     .post('/users')
                     .body({ ...applicant, photoAssetId: assetId })
@@ -201,11 +201,11 @@ describe('UserRegistrationService', () => {
                 await fix.httpClient.post('/users').body(applicant).created({ schema: UserSchema })
             })
         })
-        describe('업로드 유효기간이 지났으면', () => {
+        describe('기한이 지난 사진으로 가입하면', () => {
             beforeEach(async () => {
                 await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
             })
-            it('그 사진으로 가입을 요청하면 404를 반환하고 계정을 만들지 않는다', async () => {
+            it('404를 반환하고 계정을 만들지 않는다', async () => {
                 await fix.httpClient
                     .post('/users')
                     .body({ ...applicant, photoAssetId: assetId })
@@ -213,7 +213,7 @@ describe('UserRegistrationService', () => {
                 await fix.httpClient.post('/users').body(applicant).created({ schema: UserSchema })
             })
         })
-        describe('사진을 첨부해 가입하고 로그인했으면', () => {
+        describe('사진을 첨부해 가입하고 로그인한 뒤', () => {
             let headers: { Authorization: string }
             let otherHeaders: { Authorization: string }
             beforeEach(async () => {
@@ -235,7 +235,7 @@ describe('UserRegistrationService', () => {
                 })
                 headers = { Authorization: 'Bearer ' + session.accessToken }
             })
-            describe('가입할 때 첨부한 사진이 삭제되었으면', () => {
+            describe('가입 사진이 삭제되면', () => {
                 beforeEach(async () => {
                     await fix.module.get(AssetsService).deleteMany([assetId])
                 })
@@ -270,14 +270,14 @@ describe('UserRegistrationService', () => {
             })
         })
     })
-    describe('소유자가 없는 임시 사진의 업로드 기한이 지났으면', () => {
+    describe('만료된 임시 사진을 정리하면', () => {
         let assetId: string
         beforeEach(async () => {
             const upload = await requestRegistrationPhotoUpload(fix)
             assetId = upload.assetId
             await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
         })
-        it('정리 작업을 실행하면 만료된 임시 사진을 제거한다', async () => {
+        it('소유자 없는 사진을 삭제한다', async () => {
             await fix.module.get(UserRegistrationService).cleanupExpiredPhotos()
             expect(await fix.module.get(AssetsService).findOwner(assetId)).toBeUndefined()
         })

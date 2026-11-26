@@ -32,7 +32,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 service = createServiceWithConfig({ S: value })
             })
-            it('문자열로 조회하면 500 예외를 던진다', () => {
+            it('500 예외를 던진다', () => {
                 expect(() => service.getString('S')).toThrow(
                     expect.objectContaining({ status: 500, cause: "Key 'S' is not a string" })
                 )
@@ -44,7 +44,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 key = 'TEST_STRING_KEY'
             })
-            it('문자열로 조회하면 해당 값을 반환한다', () => {
+            it('해당 값을 반환한다', () => {
                 const result = fix.appConfigService.getString(key)
                 expect(result).toBe('value')
             })
@@ -55,7 +55,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 service = createServiceWithConfig({})
             })
-            it('문자열로 조회하면 키가 없다는 500 예외를 던진다', () => {
+            it('누락된 키를 알리는 500 예외를 던진다', () => {
                 expect(() => service.getString('SOME_KEY')).toThrow(
                     expect.objectContaining({ status: 500, cause: "Key 'SOME_KEY' is not defined" })
                 )
@@ -67,7 +67,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 service = createServiceWithConfig({ SOME_KEY: '' })
             })
-            it('문자열로 조회하면 값이 없다는 500 예외를 던진다', () => {
+            it('빈 값을 알리는 500 예외를 던진다', () => {
                 expect(() => service.getString('SOME_KEY')).toThrow(
                     expect.objectContaining({ status: 500, cause: "Key 'SOME_KEY' is not defined" })
                 )
@@ -88,7 +88,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 service = createServiceWithConfig({ N: value })
             })
-            it('숫자로 조회하면 500 예외를 던진다', () => {
+            it('500 예외를 던진다', () => {
                 expect(() => service.getNumber('N')).toThrow(
                     expect.objectContaining({
                         status: 500,
@@ -103,7 +103,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 service = createServiceWithConfig({ N: 1.5 })
             })
-            it('조회하면 값을 그대로 반환한다', () => {
+            it('값을 그대로 반환한다', () => {
                 expect(service.getNumber('N')).toBe(1.5)
             })
         })
@@ -113,7 +113,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 service = createServiceWithConfig({ BAD: Infinity })
             })
-            it('숫자로 조회하면 예외를 던진다', () => {
+            it('예외를 던진다', () => {
                 expect(() => service.getNumber('BAD')).toThrow(InternalServerErrorException)
             })
         })
@@ -123,7 +123,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 key = 'TEST_NUMBER_KEY'
             })
-            it('숫자로 조회하면 숫자로 변환해 반환한다', () => {
+            it('숫자로 변환해 반환한다', () => {
                 const result = fix.appConfigService.getNumber(key)
                 expect(result).toBe(123)
             })
@@ -134,7 +134,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 key = 'TEST_NUMBER_ZERO_KEY'
             })
-            it('숫자로 조회하면 0을 반환한다', () => {
+            it('0을 반환한다', () => {
                 const result = fix.appConfigService.getNumber(key)
                 expect(result).toBe(0)
             })
@@ -145,7 +145,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 key = 'not-exists-key'
             })
-            it('숫자로 조회하면 예외를 던진다', () => {
+            it('예외를 던진다', () => {
                 expect(() => fix.appConfigService.getNumber(key)).toThrow(
                     expect.objectContaining({
                         status: 500,
@@ -160,7 +160,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 service = createServiceWithConfig({ N: '42' })
             })
-            it('조회하면 숫자로 변환해 반환한다', () => {
+            it('숫자로 변환해 반환한다', () => {
                 expect(service.getNumber('N')).toBe(42)
             })
         })
@@ -170,7 +170,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 service = createServiceWithConfig({ N: 'abc' })
             })
-            it('숫자로 조회하면 유한한 수가 아니라는 500 예외를 던진다', () => {
+            it('유한한 수가 아니라는 500 예외를 던진다', () => {
                 expect(() => service.getNumber('N')).toThrow(
                     expect.objectContaining({
                         status: 500,
@@ -185,7 +185,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 service = createServiceWithConfig({ N: '' })
             })
-            it('숫자로 조회하면 500 예외를 던진다', () => {
+            it('500 예외를 던진다', () => {
                 expect(() => service.getNumber('N')).toThrow(
                     expect.objectContaining({
                         status: 500,
@@ -210,7 +210,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 service = createServiceWithConfig({ B: value })
             })
-            it('불리언으로 조회하면 예외를 던진다', () => {
+            it('예외를 던진다', () => {
                 expect(() => service.getBoolean('B')).toThrow(InternalServerErrorException)
             })
         })
@@ -220,7 +220,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 service = createServiceWithConfig({ B: value })
             })
-            it('조회하면 불리언 값을 그대로 반환한다', () => {
+            it('원래 값을 반환한다', () => {
                 expect(service.getBoolean('B')).toBe(value)
             })
         })
@@ -230,7 +230,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 key = 'TEST_BOOLEAN_KEY'
             })
-            it('불리언으로 조회하면 true를 반환한다', () => {
+            it('true를 반환한다', () => {
                 const result = fix.appConfigService.getBoolean(key)
                 expect(result).toBe(true)
             })
@@ -241,7 +241,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 key = 'TEST_BOOLEAN_FALSE_KEY'
             })
-            it('불리언으로 조회하면 false를 반환한다', () => {
+            it('false를 반환한다', () => {
                 const result = fix.appConfigService.getBoolean(key)
                 expect(result).toBe(false)
             })
@@ -252,7 +252,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 key = 'not-exists-key'
             })
-            it('불리언으로 조회하면 예외를 던진다', () => {
+            it('예외를 던진다', () => {
                 expect(() => fix.appConfigService.getBoolean(key)).toThrow(
                     expect.objectContaining({
                         status: 500,
@@ -270,7 +270,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 service = createServiceWithConfig({ B: value })
             })
-            it('조회하면 불리언으로 변환해 반환한다', () => {
+            it('불리언으로 변환해 반환한다', () => {
                 expect(service.getBoolean('B')).toBe(expected)
             })
         })
@@ -283,7 +283,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 service = createServiceWithConfig({ B: value })
             })
-            it('조회하면 대소문자와 앞뒤 공백을 무시하고 불리언으로 변환한다', () => {
+            it('대소문자와 앞뒤 공백을 무시하고 불리언으로 변환한다', () => {
                 expect(service.getBoolean('B')).toBe(expected)
             })
         })
@@ -293,7 +293,7 @@ describe('BaseConfigService', () => {
             beforeEach(() => {
                 service = createServiceWithConfig({ B: 'maybe' })
             })
-            it('불리언으로 조회하면 500 예외를 던진다', () => {
+            it('500 예외를 던진다', () => {
                 expect(() => service.getBoolean('B')).toThrow(
                     expect.objectContaining({
                         status: 500,

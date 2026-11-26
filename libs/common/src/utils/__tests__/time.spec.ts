@@ -7,7 +7,7 @@ describe('TimeUtil', () => {
             beforeEach(() => {
                 input = '500ms'
             })
-            it('밀리초로 변환하면 원래 값을 반환한다', () => {
+            it('원래 값을 반환한다', () => {
                 expect(TimeUtil.toMs(input)).toEqual(500)
             })
         })
@@ -22,7 +22,7 @@ describe('TimeUtil', () => {
             beforeEach(() => {
                 value = input
             })
-            it('밀리초로 변환하면 단위에 해당하는 값을 반환한다', () => {
+            it('단위에 해당하는 값을 반환한다', () => {
                 expect(TimeUtil.toMs(value)).toEqual(expected)
             })
         })
@@ -32,7 +32,7 @@ describe('TimeUtil', () => {
             beforeEach(() => {
                 value = input
             })
-            it('밀리초로 변환하면 각 단위를 합산한다', () => {
+            it('각 단위를 합산한다', () => {
                 expect(TimeUtil.toMs(value)).toEqual((24 + 2) * 60 * 60 * 1000)
             })
         })
@@ -42,7 +42,7 @@ describe('TimeUtil', () => {
             beforeEach(() => {
                 input = '0.5s'
             })
-            it('밀리초로 변환하면 소수 값을 반영한다', () => {
+            it('소수 값을 반영한다', () => {
                 expect(TimeUtil.toMs(input)).toEqual(0.5 * 1000)
             })
         })
@@ -52,7 +52,7 @@ describe('TimeUtil', () => {
             beforeEach(() => {
                 input = '-30s'
             })
-            it('밀리초로 변환하면 음수를 반환한다', () => {
+            it('음수를 반환한다', () => {
                 expect(TimeUtil.toMs(input)).toEqual(-30 * 1000)
             })
         })
@@ -62,7 +62,7 @@ describe('TimeUtil', () => {
             beforeEach(() => {
                 input = '2z'
             })
-            it('밀리초로 변환하면 예외를 던진다', () => {
+            it('예외를 던진다', () => {
                 expect(() => TimeUtil.toMs(input)).toThrow(InternalServerErrorException)
             })
         })
@@ -76,7 +76,7 @@ describe('TimeUtil', () => {
             beforeEach(() => {
                 value = input
             })
-            it('밀리초로 변환하면 지수 값을 반영한다', () => {
+            it('지수 값을 반영한다', () => {
                 expect(TimeUtil.toMs(value)).toBe(expected)
             })
         })
@@ -88,7 +88,7 @@ describe('TimeUtil', () => {
                 beforeEach(() => {
                     input = value
                 })
-                it('밀리초로 변환하면 예외를 던진다', () => {
+                it('예외를 던진다', () => {
                     expect(() => TimeUtil.toMs(input)).toThrow(InternalServerErrorException)
                 })
             }
@@ -107,7 +107,7 @@ describe('TimeUtil', () => {
             beforeEach(() => {
                 value = input
             })
-            it('문자열로 변환하면 나머지 없이 표현할 수 있는 가장 큰 단위를 쓴다', () => {
+            it('나머지 없이 표현할 수 있는 가장 큰 단위를 쓴다', () => {
                 expect(TimeUtil.fromMs(value)).toEqual(expected)
             })
         })
@@ -117,7 +117,7 @@ describe('TimeUtil', () => {
             beforeEach(() => {
                 input = (24 + 2) * 60 * 60 * 1000
             })
-            it('문자열로 변환하면 "1d2h"를 반환한다', () => {
+            it('"1d2h"를 반환한다', () => {
                 expect(TimeUtil.fromMs(input)).toEqual('1d2h')
             })
         })
@@ -127,7 +127,7 @@ describe('TimeUtil', () => {
             beforeEach(() => {
                 input = 0
             })
-            it('문자열로 변환하면 "0ms"를 반환한다', () => {
+            it('"0ms"를 반환한다', () => {
                 expect(TimeUtil.fromMs(input)).toEqual('0ms')
             })
         })
@@ -137,7 +137,7 @@ describe('TimeUtil', () => {
             beforeEach(() => {
                 input = -30 * 1000
             })
-            it('문자열로 변환하면 "-30s"를 반환한다', () => {
+            it('"-30s"를 반환한다', () => {
                 expect(TimeUtil.fromMs(input)).toEqual('-30s')
             })
         })
@@ -147,7 +147,7 @@ describe('TimeUtil', () => {
             beforeEach(() => {
                 input = -5_400_000
             })
-            it('문자열로 변환하면 각 단위에 음수 부호를 표시한다', () => {
+            it('각 단위에 음수 부호를 표시한다', () => {
                 expect(TimeUtil.fromMs(input)).toBe('-1h-30m')
             })
 

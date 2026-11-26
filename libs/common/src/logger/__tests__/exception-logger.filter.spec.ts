@@ -40,7 +40,7 @@ describe('HttpExceptionLoggerFilter', () => {
         })
 
         describe('404 예외를 던지는 경로이면', () => {
-            it('Logger.warn으로 로그를 남긴다', async () => {
+            it('warn 수준으로 기록한다', async () => {
                 await fix.httpClient
                     .get('/exception')
                     .notFound({ expected: { code: 'ERR_CODE', message: 'message' } })
@@ -69,7 +69,7 @@ describe('HttpExceptionLoggerFilter', () => {
         })
 
         describe('401 예외를 던지는 경로이면', () => {
-            it('Logger.warn으로 로그를 남긴다', async () => {
+            it('warn 수준으로 기록한다', async () => {
                 await fix.httpClient.get('/unauthorized').unauthorized()
 
                 expect(fix.spyWarn).toHaveBeenCalledWith(
@@ -80,7 +80,7 @@ describe('HttpExceptionLoggerFilter', () => {
         })
 
         describe('422 예외를 던지는 경로이면', () => {
-            it('Logger.warn으로 로그를 남긴다', async () => {
+            it('warn 수준으로 기록한다', async () => {
                 await fix.httpClient.get('/unprocessable').unprocessableEntity()
 
                 expect(fix.spyWarn).toHaveBeenCalledWith(
@@ -101,7 +101,7 @@ describe('HttpExceptionLoggerFilter', () => {
             })
         })
 
-        it('요청 본문과 query를 오류 로그에 포함하지 않는다', async () => {
+        it('요청 본문과 쿼리를 오류 로그에서 제외한다', async () => {
             await fix.httpClient
                 .post('/exception?token=query-secret')
                 .body({ password: 'request-secret' })
@@ -114,7 +114,7 @@ describe('HttpExceptionLoggerFilter', () => {
             expect(JSON.stringify(log)).not.toContain('query-secret')
         })
 
-        it('duration을 인터셉터가 기록한 요청 시작 시각부터 계산한다', async () => {
+        it('요청 시작 시각을 기준으로 경과 시간을 기록한다', async () => {
             await fix.httpClient.get('/slow-exception').notFound()
 
             expect(fix.spyWarn).toHaveBeenCalledTimes(1)
@@ -127,7 +127,7 @@ describe('HttpExceptionLoggerFilter', () => {
         })
 
         describe('일반 Error를 던지는 경로이면', () => {
-            it('Logger.error로 로그를 남긴다', async () => {
+            it('error 수준으로 기록한다', async () => {
                 await fix.httpClient.get('/error').internalServerError()
 
                 expect(fix.spyError).toHaveBeenCalledTimes(1)
@@ -143,7 +143,7 @@ describe('HttpExceptionLoggerFilter', () => {
         })
 
         describe('Error 대신 문자열을 던지는 경로이면', () => {
-            it('예외 필터가 로그를 남기지 않는다', async () => {
+            it('로그를 남기지 않는다', async () => {
                 await fix.httpClient.get('/throw-string').internalServerError()
 
                 expect(fix.spyError).not.toHaveBeenCalledWith('error', expect.anything())
@@ -168,7 +168,7 @@ describe('HttpExceptionLoggerFilter', () => {
             } as any
         })
 
-        it('예외를 처리하면 지원하지 않는 컨텍스트 유형을 Logger.error로 남긴다', () => {
+        it('지원하지 않는 컨텍스트 유형을 error 수준으로 기록한다', () => {
             try {
                 filter.catch(new Error('boom'), fakeHost)
             } catch {
@@ -182,7 +182,7 @@ describe('HttpExceptionLoggerFilter', () => {
         })
     })
 
-    describe('HttpSuccessLoggerInterceptor가 등록되지 않았을 때', () => {
+    describe('요청 시작 시각을 기록하는 인터셉터가 없으면', () => {
         let solo: ExceptionLoggerFilterFixture
 
         beforeEach(async () => {
@@ -190,7 +190,7 @@ describe('HttpExceptionLoggerFilter', () => {
         })
         afterEach(() => solo.teardown())
 
-        it('markRequestStart가 호출되지 않은 요청도 duration을 산출해 로그를 남긴다', async () => {
+        it('오류 로그에 경과 시간을 남긴다', async () => {
             await solo.httpClient.get('/exception').notFound()
 
             expect(solo.spyWarn).toHaveBeenCalledWith(

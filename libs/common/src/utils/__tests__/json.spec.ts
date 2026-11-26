@@ -11,7 +11,7 @@ describe('JsonUtil', () => {
                 beforeEach(() => {
                     date = Temporal.PlainDate.from('2025-01-01').withCalendar(calendar)
                 })
-                it('JSON으로 직렬화하면 ISO 날짜를 쓰고 같은 DTO 스키마로 복원할 수 있다', () => {
+                it('ISO 날짜를 쓰고 같은 DTO 스키마로 복원할 수 있다', () => {
                     const schema = z.object({ date: PlainDateFromInputSchema })
 
                     const serialized = JsonUtil.stringify({ date })
@@ -30,7 +30,7 @@ describe('JsonUtil', () => {
             beforeEach(() => {
                 at = Temporal.Instant.from('2023-06-18T12:12:34Z')
             })
-            it('JSON으로 직렬화하면 밀리초 세 자리의 UTC 문자열로 표현한다', () => {
+            it('밀리초 세 자리의 UTC 문자열로 표현한다', () => {
                 expect(JsonUtil.stringify({ at })).toBe('{"at":"2023-06-18T12:12:34.000Z"}')
             })
         })
@@ -40,7 +40,7 @@ describe('JsonUtil', () => {
             beforeEach(() => {
                 date = Temporal.PlainDate.from('2023-06-18')
             })
-            it('JSON으로 직렬화하면 YYYY-MM-DD 문자열로 표현한다', () => {
+            it('YYYY-MM-DD 문자열로 표현한다', () => {
                 expect(JsonUtil.stringify({ date })).toBe('{"date":"2023-06-18"}')
             })
         })
@@ -69,7 +69,7 @@ describe('JsonUtil', () => {
             beforeEach(() => {
                 value = undefined
             })
-            it('JSON으로 직렬화하면 예외를 던진다', () => {
+            it('예외를 던진다', () => {
                 expect(() => JsonUtil.stringify(value)).toThrow(InternalServerErrorException)
             })
         })

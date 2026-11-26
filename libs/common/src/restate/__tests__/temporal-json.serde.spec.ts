@@ -101,7 +101,7 @@ describe('defineWorkflow', () => {
                 options: { abortTimeout: 100, inactivityTimeout: 1000, workflowRetention: 5000 }
             }
         })
-        it('워크플로를 정의하면 asTerminalError를 설정하지 않는다', () => {
+        it('asTerminalError를 설정하지 않는다', () => {
             defineWorkflow(definition)
             const register = vi.mocked(restate.workflow)
             expect(register).toHaveBeenCalledOnce()
@@ -125,7 +125,7 @@ describe('isWorkflowCancellation', () => {
         beforeEach(() => {
             failure = error
         })
-        it(`취소 오류인지 판별하면 ${expected}를 반환한다`, () => {
+        it(`${expected}를 반환한다`, () => {
             expect(isWorkflowCancellation(failure)).toBe(expected)
         })
     })

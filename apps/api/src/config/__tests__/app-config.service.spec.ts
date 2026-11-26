@@ -9,7 +9,7 @@ describe('AppConfigService.schema', () => {
         beforeEach(() => {
             input = { API_PORT: '3000' }
         })
-        it('설정을 읽으면 숫자로 변환한다', () => {
+        it('숫자로 변환한다', () => {
             expect(portSchema.parse(input)).toEqual({ API_PORT: 3000 })
         })
     })
@@ -19,7 +19,7 @@ describe('AppConfigService.schema', () => {
         beforeEach(() => {
             input = { API_PORT: 3000 }
         })
-        it('설정을 읽으면 원래 숫자를 반환한다', () => {
+        it('값을 그대로 반환한다', () => {
             expect(portSchema.parse(input)).toEqual({ API_PORT: 3000 })
         })
     })
@@ -32,7 +32,7 @@ describe('AppConfigService.schema', () => {
         beforeEach(() => {
             input = { API_PORT: value }
         })
-        it('설정을 검증하면 실패한다', () => {
+        it('검증에 실패한다', () => {
             expect(portSchema.safeParse(input).success).toBe(false)
         })
     })
@@ -42,7 +42,7 @@ describe('AppConfigService.schema', () => {
         beforeEach(() => {
             input = {}
         })
-        it('설정을 검증하면 실패하고 기본값으로 채우지 않는다', () => {
+        it('검증에 실패한다', () => {
             const schema = AppConfigService.schema.pick({ ASSET_UPLOAD_EXPIRES_SEC: true })
 
             expect(schema.safeParse(input).success).toBe(false)
@@ -60,7 +60,7 @@ describe('AppConfigService.schema', () => {
             beforeEach(() => {
                 input = { S3_FORCE_PATH_STYLE: value }
             })
-            it('설정을 읽으면 false로 변환한다', () => {
+            it('false로 변환한다', () => {
                 expect(schema.parse(input)).toEqual({ S3_FORCE_PATH_STYLE: false })
             })
         })
@@ -70,7 +70,7 @@ describe('AppConfigService.schema', () => {
             beforeEach(() => {
                 input = { S3_FORCE_PATH_STYLE: 'yes' }
             })
-            it('설정을 검증하면 실패한다', () => {
+            it('검증에 실패한다', () => {
                 expect(schema.safeParse(input).success).toBe(false)
             })
         })
@@ -81,7 +81,7 @@ describe('AppConfigService.schema', () => {
         { condition: '없으면', uri: undefined },
         { condition: 'HTTP 주소가 아니면', uri: 'ftp://worker:9080' }
     ])('RESTATE_DEPLOYMENT_URI가 $condition', ({ uri }) => {
-        it('부팅 설정을 검증하면 오류에 RESTATE_DEPLOYMENT_URI가 포함된다', () => {
+        it('오류 메시지에 변수 이름을 포함한다', () => {
             expect(() => deploymentSchema.parse({ RESTATE_DEPLOYMENT_URI: uri })).toThrow(
                 'RESTATE_DEPLOYMENT_URI'
             )

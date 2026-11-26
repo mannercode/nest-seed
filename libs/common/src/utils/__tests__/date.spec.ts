@@ -19,7 +19,7 @@ describe('DateUtil', () => {
             beforeEach(() => {
                 value = input
             })
-            it('날짜로 변환하면 예외를 던진다', () => {
+            it('예외를 던진다', () => {
                 expect(() => DateUtil.fromYMD(value)).toThrow()
             })
         })
@@ -51,7 +51,7 @@ describe('DateUtil', () => {
                 beforeEach(() => {
                     date = Temporal.PlainDate.from(value)
                 })
-                it('YYYYMMDD로 변환하면 예외를 던진다', () => {
+                it('예외를 던진다', () => {
                     expect(() => DateUtil.toYMD(date)).toThrow(InternalServerErrorException)
                 })
             }
@@ -74,7 +74,7 @@ describe('DateUtil', () => {
             beforeEach(() => {
                 instants = []
             })
-            it('가장 이른 시각이나 늦은 시각을 찾으면 예외를 던진다', () => {
+            it('예외를 던진다', () => {
                 expect(() => DateUtil.earliest(instants)).toThrow(InternalServerErrorException)
                 expect(() => DateUtil.latest(instants)).toThrow(InternalServerErrorException)
             })
@@ -110,7 +110,7 @@ describe('DateUtil', () => {
             beforeEach(() => {
                 options = {}
             })
-            it('시각을 계산하면 현재 시각을 반환한다', () => {
+            it('현재 시각을 반환한다', () => {
                 const before = Temporal.Now.instant().epochMilliseconds
                 const instant = DateUtil.add(options)
                 const after = Temporal.Now.instant().epochMilliseconds
@@ -128,7 +128,7 @@ describe('DateUtil', () => {
                     milliseconds: 1
                 }
             })
-            it('시각을 더하면 밀리초 단위를 보존한다', () => {
+            it('밀리초 단위를 보존한다', () => {
                 const instant = DateUtil.add(options)
 
                 expect(DateUtil.toISOString(instant)).toBe('2020-01-01T00:00:00.124Z')
@@ -216,7 +216,7 @@ describe('DateUtil', () => {
                 beforeEach(() => {
                     value = input
                 })
-                it('Instant로 변환하면 밀리초 정밀도로 반환한다', () => {
+                it('밀리초 정밀도로 반환한다', () => {
                     expect(DateUtil.instantFromInput(value).toString()).toBe(expected)
                 })
             })
@@ -228,7 +228,7 @@ describe('DateUtil', () => {
                 beforeEach(() => {
                     value = input
                 })
-                it('Instant로 변환하면 예외를 던진다', () => {
+                it('예외를 던진다', () => {
                     expect(() => DateUtil.instantFromInput(value)).toThrow()
                 })
             })
@@ -239,7 +239,7 @@ describe('DateUtil', () => {
                 beforeEach(() => {
                     date = Temporal.PlainDate.from('2023-06-18')
                 })
-                it('날짜를 정규화하면 같은 객체를 반환한다', () => {
+                it('같은 객체를 반환한다', () => {
                     expect(DateUtil.plainDateFromInput(date)).toBe(date)
                 })
             })
@@ -264,7 +264,7 @@ describe('DateUtil', () => {
                 beforeEach(() => {
                     value = input
                 })
-                it('PlainDate로 변환하면 해당 날짜를 반환한다', () => {
+                it('해당 날짜를 반환한다', () => {
                     expect(DateUtil.plainDateFromInput(value).toString()).toBe(expected)
                 })
             })
@@ -275,7 +275,7 @@ describe('DateUtil', () => {
                     beforeEach(() => {
                         value = input
                     })
-                    it('PlainDate로 변환하면 예외를 던진다', () => {
+                    it('예외를 던진다', () => {
                         expect(() => DateUtil.plainDateFromInput(value)).toThrow()
                     })
                 }
@@ -319,7 +319,7 @@ describe('DateUtil', () => {
             beforeEach(() => {
                 input = '19990102'
             })
-            it('날짜시각으로 변환하면 예외를 던진다', () => {
+            it('예외를 던진다', () => {
                 expect(() => DateUtil.fromYMDHM(input)).toThrow()
             })
         })

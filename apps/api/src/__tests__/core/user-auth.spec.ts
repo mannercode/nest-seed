@@ -127,7 +127,7 @@ describe('UserAuthentication', () => {
         })
     })
 
-    describe('서로 다른 두 사용자가 로그인했으면', () => {
+    describe('두 사용자가 각각 로그인한 상태에서', () => {
         let mine: Awaited<ReturnType<typeof loginUser>>
         let other: Awaited<ReturnType<typeof loginUser>>
         let headers: { Authorization: string }
@@ -146,7 +146,7 @@ describe('UserAuthentication', () => {
                 .ok({ schema: UserSchema, expected: mine.user })
         })
         describe('수정 본문에 타인 ID를 넣었으면', () => {
-            it('수정을 거절하고 두 사용자의 정보를 유지한다', async () => {
+            it('400을 반환하고 두 계정의 정보를 유지한다', async () => {
                 const bodyWithOtherUserId = {
                     id: other.user.id,
                     userId: other.user.id,
@@ -162,7 +162,7 @@ describe('UserAuthentication', () => {
                 await expectCurrentUser(fix, other)
             })
         })
-        it('탈퇴 요청에 타인 ID를 보내도 본인만 삭제하고 타인의 계정과 세션은 유지한다', async () => {
+        it('탈퇴 요청에 타인 ID를 보내도 본인 계정만 삭제하고 타인의 세션을 유지한다', async () => {
             await fix.httpClient
                 .delete('/users/me')
                 .headers(headers)
@@ -184,7 +184,7 @@ describe('UserAuthentication', () => {
         describe.each([
             { condition: '15자 미만', password: '🌱'.repeat(14) },
             { condition: '128자 초과', password: 'a'.repeat(129) }
-        ])('비밀번호 길이가 $condition 범위이면', ({ password }) => {
+        ])('$condition 비밀번호를 입력하면', ({ password }) => {
             const invalidCredentials = { ...credentials, password }
 
             it('400을 반환한다', async () => {
@@ -195,10 +195,10 @@ describe('UserAuthentication', () => {
             })
         })
 
-        describe('이메일의 대소문자와 앞뒤 공백만 등록 정보와 다르면', () => {
+        describe('등록된 이메일과 대소문자·앞뒤 공백만 다르면', () => {
             const credentialsWithPaddedEmail = { ...credentials, email: '  USER@MAIL.COM  ' }
 
-            it('같은 사용자의 토큰을 반환한다', async () => {
+            it('해당 사용자의 토큰을 반환한다', async () => {
                 const { body } = await fix.httpClient
                     .post('/users/login')
                     .body(credentialsWithPaddedEmail)
@@ -237,7 +237,7 @@ describe('UserAuthentication', () => {
             })
         })
 
-        describe('이메일과 비밀번호가 등록된 사용자 정보와 일치하면', () => {
+        describe('이메일과 비밀번호가 등록 정보와 일치하면', () => {
             it('인증 토큰을 반환한다', async () => {
                 const { body } = await fix.httpClient
                     .post('/users/login')
@@ -295,7 +295,7 @@ describe('UserAuthentication', () => {
                     .body(credentials)
                     .send(HttpStatus.TOO_MANY_REQUESTS, { expected: LOGIN_RATE_LIMITED_ERROR })
             })
-            it('다른 IP에서 같은 계정으로 로그인하면 200을 반환한다', async () => {
+            it('다른 IP에서는 같은 계정으로 로그인할 수 있다', async () => {
                 await fix.httpClient
                     .post('/users/login')
                     .headers({ 'X-Forwarded-For': '198.51.100.2' })
@@ -304,7 +304,7 @@ describe('UserAuthentication', () => {
             })
         })
 
-        describe('로그인 실패 한도에 한 번 모자란 IP에서 로그인에 성공했으면', () => {
+        describe('로그인 실패 한도에 한 번 모자란 IP에서 로그인에 성공한 뒤', () => {
             let ip: string
             beforeEach(async () => {
                 ip = '198.51.100.100'
@@ -326,7 +326,7 @@ describe('UserAuthentication', () => {
                     .body(credentials)
                     .ok()
             })
-            it('같은 IP에서 잘못된 정보로 로그인을 두 번 요청하면 차례로 401과 429를 반환한다', async () => {
+            it('같은 IP에서 틀린 비밀번호로 두 번 더 시도하면 차례로 401과 429를 반환한다', async () => {
                 await fix.httpClient
                     .post('/users/login')
                     .headers({ 'X-Forwarded-For': ip })
@@ -341,7 +341,7 @@ describe('UserAuthentication', () => {
             })
         })
 
-        describe('경로 접두어가 다른 두 앱이 Redis를 공유하고 한 앱에서 해당 IP의 로그인 실패 횟수가 한도에 도달했으면', () => {
+        describe('경로 접두어가 다른 두 앱이 Redis를 공유할 때', () => {
             let replica: AppTestContext | undefined
             beforeEach(async () => {
                 replica = undefined
@@ -359,7 +359,7 @@ describe('UserAuthentication', () => {
                 }
             })
             afterEach(() => replica?.teardown())
-            it('다른 앱에서도 같은 IP의 로그인 요청에 429를 반환한다', async () => {
+            it('한 앱에서 실패 한도에 도달한 IP는 다른 앱에서도 429를 받는다', async () => {
                 await ensure(replica)
                     .httpClient.post('/replica/users/login')
                     .headers({ 'X-Forwarded-For': '203.0.113.2' })
@@ -370,12 +370,12 @@ describe('UserAuthentication', () => {
     })
 
     describe('GET /users/me', () => {
-        describe('사용자로 로그인했으면', () => {
+        describe('로그인한 상태에서', () => {
             let authTokens: Awaited<ReturnType<typeof loginUser>>
             beforeEach(async () => {
                 authTokens = await loginUser(fix, credentials)
             })
-            it('로그인한 사용자 정보를 반환한다', async () => {
+            it('본인 정보를 반환한다', async () => {
                 await fix.httpClient
                     .get('/users/me')
                     .headers({ Authorization: `Bearer ${authTokens.accessToken}` })
@@ -486,7 +486,7 @@ describe('UserAuthentication', () => {
     })
 
     describe('POST /users/refresh', () => {
-        describe('유효한 리프레시 토큰을 가지고 있을 때', () => {
+        describe('리프레시 토큰이 유효하면', () => {
             let tokens: Awaited<ReturnType<typeof loginUser>>
 
             beforeEach(async () => {
@@ -545,7 +545,7 @@ describe('UserAuthentication', () => {
             })
         })
 
-        describe('현재 계정 조회가 한 번 실패하면', () => {
+        describe('계정 조회가 한 번 실패하면', () => {
             let session: Awaited<ReturnType<typeof loginUser>>
             let failure: Error
             beforeEach(async () => {
@@ -553,7 +553,7 @@ describe('UserAuthentication', () => {
                 failure = new Error('Account database unavailable')
                 vi.spyOn(Collection.prototype, 'findOne').mockRejectedValueOnce(failure)
             })
-            it('갱신은 실패하고 저장소가 복구되면 같은 토큰으로 다시 갱신할 수 있다', async () => {
+            it('갱신에 실패해도 복구 후 같은 토큰으로 다시 시도할 수 있다', async () => {
                 await expect(
                     fix.module.get(UsersService).refreshAuthTokens(session.refreshToken)
                 ).rejects.toBe(failure)
@@ -634,12 +634,12 @@ describe('UserAuthentication', () => {
             headers = { Authorization: `Bearer ${accessToken}` }
         })
 
-        it('유효한 액세스 토큰으로 요청해도 404를 반환한다', async () => {
+        it('유효한 액세스 토큰으로도 404를 반환한다', async () => {
             await fix.httpClient.post('/users/me/logout-all').headers(headers).notFound()
         })
     })
 
-    describe('같은 IP의 로그인 요청이 모두 한도 확인을 마치고 비밀번호 검증을 기다리면', () => {
+    describe('같은 IP에서 틀린 비밀번호로 동시에 로그인하면', () => {
         const attemptCount = IP_FAILURE_LIMIT + 1
         let checking: PromiseWithResolvers<void>
         let resume: PromiseWithResolvers<void>
@@ -654,7 +654,7 @@ describe('UserAuthentication', () => {
                 return verify(...args)
             })
         })
-        it('비밀번호가 모두 틀리면 한도만큼 401을 반환하고 한도를 넘긴 한 요청에는 429를 반환한다', async () => {
+        it('한도까지는 401을, 초과한 요청에는 429를 반환한다', async () => {
             const requests = Array.from({ length: attemptCount }, () =>
                 fix.httpClient
                     .post('/users/login')
@@ -689,7 +689,7 @@ describe('UserAuthentication', () => {
         })
     })
 
-    describe('로그인한 사용자가 탈퇴했으면', () => {
+    describe('탈퇴 후 기존 액세스 토큰으로', () => {
         let accessToken: string
         let user: UserDto
         beforeEach(async () => {
@@ -699,13 +699,13 @@ describe('UserAuthentication', () => {
                 .headers({ Authorization: `Bearer ${accessToken}` })
                 .noContent()
         })
-        it('기존 액세스 토큰으로 본인 조회를 요청하면 404를 반환한다', async () => {
+        it('본인 정보를 조회하면 404를 반환한다', async () => {
             await fix.httpClient
                 .get('/users/me')
                 .headers({ Authorization: `Bearer ${accessToken}` })
                 .notFound({ expected: expectedErrors.multipleDocumentsNotFound([user.id]) })
         })
-        it('기존 액세스 토큰으로 본인 수정을 요청하면 404를 반환한다', async () => {
+        it('본인 정보를 수정하면 404를 반환한다', async () => {
             await fix.httpClient
                 .patch('/users/me')
                 .headers({ Authorization: `Bearer ${accessToken}` })
@@ -714,7 +714,7 @@ describe('UserAuthentication', () => {
         })
     })
 
-    describe('비밀번호 검증을 통과한 로그인이 토큰 발급을 기다리면', () => {
+    describe('비밀번호 검증 후 로그인 토큰을 발급하기 전에', () => {
         let session: Awaited<ReturnType<typeof loginUser>>
         let resumeLogin: ResumeRequest<{ body: JwtAuthTokens }> | undefined
 
@@ -729,7 +729,7 @@ describe('UserAuthentication', () => {
             await resumeLogin?.()
         })
 
-        it('비밀번호를 변경하면 변경 전에 인증된 로그인 세션으로 갱신할 수 없다', async () => {
+        it('비밀번호를 변경하면 해당 로그인 세션을 갱신할 수 없다', async () => {
             await fix.httpClient
                 .patch('/users/me')
                 .headers({ Authorization: `Bearer ${session.accessToken}` })
@@ -754,7 +754,7 @@ describe('UserAuthentication', () => {
                 .ok()
         })
 
-        it('계정을 삭제하면 삭제 전에 인증된 로그인 세션으로 갱신할 수 없다', async () => {
+        it('계정을 삭제하면 해당 로그인 세션을 갱신할 수 없다', async () => {
             await fix.httpClient
                 .delete('/users/me')
                 .headers({ Authorization: `Bearer ${session.accessToken}` })
@@ -773,7 +773,7 @@ describe('UserAuthentication', () => {
         })
     })
 
-    describe('계정 변경 후 리프레시 세션 회수에 실패하도록 설정하면', () => {
+    describe('계정 변경 후 기존 세션 회수에 실패하면', () => {
         let session: Awaited<ReturnType<typeof loginUser>>
         let usersService: UsersService
         let failure: Error
@@ -788,7 +788,7 @@ describe('UserAuthentication', () => {
             vi.spyOn(redis, 'smembers').mockRejectedValueOnce(failure)
         })
 
-        it('비밀번호 변경이 실패해도 DB에 반영된 새 비밀번호로 로그인할 수 있고 이전 세션은 갱신할 수 없다', async () => {
+        it('비밀번호 변경 오류가 나도 새 비밀번호로 로그인할 수 있고 이전 세션은 갱신할 수 없다', async () => {
             const password = 'updated password'
             await expect(usersService.update(session.user.id, { password })).rejects.toBe(failure)
             const { body: current } = await fix.httpClient
@@ -807,7 +807,7 @@ describe('UserAuthentication', () => {
                 .ok()
         })
 
-        it('계정 삭제가 실패해도 DB에서 삭제된 계정으로 로그인하거나 이전 세션을 갱신할 수 없다', async () => {
+        it('탈퇴 오류가 나도 해당 계정으로 로그인하거나 이전 세션을 갱신할 수 없다', async () => {
             await expect(usersService.deleteMany([session.user.id])).rejects.toBe(failure)
             await fix.httpClient
                 .post('/users/login')
@@ -821,7 +821,7 @@ describe('UserAuthentication', () => {
         })
     })
 
-    describe('리프레시 토큰 발급이 진행 중이면', () => {
+    describe('토큰 갱신 도중', () => {
         let session: Awaited<ReturnType<typeof loginUser>>
         let resumeRefresh: ResumeRequest<unknown> | undefined
         beforeEach(async () => {
@@ -837,7 +837,7 @@ describe('UserAuthentication', () => {
         afterEach(async () => {
             await resumeRefresh?.()
         })
-        it('비밀번호를 변경하면 진행 중인 갱신 요청에 401을 반환하고 기존 액세스 토큰으로 본인 정보를 조회할 수 있다', async () => {
+        it('비밀번호를 변경하면 갱신은 401을 반환하고 기존 액세스 토큰으로 본인 정보를 조회할 수 있다', async () => {
             await fix.httpClient
                 .patch('/users/me')
                 .headers({ Authorization: `Bearer ${session.accessToken}` })
@@ -846,7 +846,7 @@ describe('UserAuthentication', () => {
             await ensure(resumeRefresh)()
             await expectCurrentUser(fix, session)
         })
-        it('해당 세션에서 로그아웃하면 진행 중인 갱신 요청에 401을 반환하고 기존 액세스 토큰으로 본인 정보를 조회할 수 있다', async () => {
+        it('로그아웃하면 갱신은 401을 반환하고 기존 액세스 토큰으로 본인 정보를 조회할 수 있다', async () => {
             await fix.httpClient
                 .post('/users/logout')
                 .body({ refreshToken: session.refreshToken })

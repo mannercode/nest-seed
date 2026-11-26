@@ -43,7 +43,7 @@ describe('GET /views/web/home', () => {
             await fix.httpClient.get('/views/web/home').unauthorized()
         })
     })
-    describe('사진 없이 가입한 사용자가 로그인했으면', () => {
+    describe('사진 없이 가입한 사용자가 로그인한 상태에서', () => {
         let session: Awaited<ReturnType<typeof createAndLoginUser>>
         let otherUserId: string
         beforeEach(async () => {
@@ -51,7 +51,7 @@ describe('GET /views/web/home', () => {
             otherUserId = (await createUser(fix, { email: 'other@mail.com', name: '다른 사용자' }))
                 .id
         })
-        it('다른 사용자 ID로 홈을 조회해도 본인 정보와 빈 사진 URL을 반환한다', async () => {
+        it('다른 사용자 ID를 지정해도 본인 정보와 빈 사진 URL을 반환한다', async () => {
             await fix.httpClient
                 .get('/views/web/home')
                 .headers({ Authorization: 'Bearer ' + session.accessToken })
@@ -74,7 +74,7 @@ describe('GET /views/web/home', () => {
             )
             second = await registerWithPhoto(fix, 'second@mail.com', pixel)
         })
-        it('각 사용자에게 본인 정보와 본인의 사진을 내려받을 수 있는 URL을 반환한다', async () => {
+        it('각자 본인 정보와 자기 사진의 다운로드 URL을 받는다', async () => {
             for (const [session, other] of [
                 [first, second],
                 [second, first]

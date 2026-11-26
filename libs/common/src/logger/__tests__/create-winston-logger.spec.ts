@@ -27,7 +27,7 @@ describe('createWinstonLogger', () => {
         beforeEach(() => {
             level = 'erorr'
         })
-        it('로거 생성 시 설정 오류를 던진다', () => {
+        it('설정 오류를 던진다', () => {
             expect(() => createTestLogger(level)).toThrow()
         })
     })
@@ -37,7 +37,7 @@ describe('createWinstonLogger', () => {
         beforeEach(() => {
             level = 'silent'
         })
-        it('로거를 만들면 transport를 등록하지 않는다', () => {
+        it('transport를 등록하지 않는다', () => {
             const silentLogger = createTestLogger(level)
 
             try {

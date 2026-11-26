@@ -86,7 +86,7 @@ describe('API 시작', () => {
             port: 0
         })
     })
-    describe('Restate가 배포를 등록할 수 있으면', () => {
+    describe('배포 진입점으로 API를 시작하면', () => {
         let deployment: URL | undefined
         let app: Awaited<ReturnType<typeof NestFactory.create>> | undefined
         const observeCreate = () => vi.spyOn(NestFactory, 'create')
@@ -117,7 +117,7 @@ describe('API 시작', () => {
                 await app?.close()
             }
         })
-        it('배포 진입점을 실행하면 Restate에 배포가 등록되고 상태 확인 요청에 복제본 ID와 200을 반환한다', async () => {
+        it('Restate에 배포를 등록하고 상태 확인 요청에 200과 복제본 ID를 반환한다', async () => {
             await import('#api/main')
             app = await created.mock.results[0]!.value
             const registered = await fetch(deployment!)
@@ -132,7 +132,7 @@ describe('API 시작', () => {
             expect(await response.json()).toMatchObject({ status: 'ok' })
         })
     })
-    describe('Restate가 배포 등록을 거부하면', () => {
+    describe('개발 진입점에서 Restate가 배포 등록을 거부하면', () => {
         const failure = new Error('Registration rejected')
         let listenerPort: number
         beforeEach(() => {
@@ -144,7 +144,7 @@ describe('API 시작', () => {
                 throw failure
             })
         })
-        it('개발 진입점을 실행하면 열린 리스너를 닫고 시작 오류를 전달한다', async () => {
+        it('열린 리스너를 닫고 시작 오류를 전달한다', async () => {
             await expect(import('#api/development')).rejects.toThrow('Registration rejected')
             expect(process.env.NODE_ENV).toBe('development')
             expect(listenerPort).toBeGreaterThan(0)

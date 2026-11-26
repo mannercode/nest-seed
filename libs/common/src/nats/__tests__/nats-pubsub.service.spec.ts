@@ -132,7 +132,7 @@ describe('NatsPubSubService', () => {
         })
     })
 
-    describe('첫 구독의 flush가 실패하도록 설정하면', () => {
+    describe('첫 구독의 flush가 실패하면', () => {
         let failure: Error
         beforeEach(() => {
             const connection = fix.connectionB
@@ -201,7 +201,7 @@ describe('NatsPubSubService', () => {
         })
     })
 
-    describe('완료를 기다리는 핸들러가 등록되어 있으면', () => {
+    describe('첫 핸들러의 처리가 끝나기 전에', () => {
         let entered: ReturnType<typeof Promise.withResolvers<void>>
         let release: ReturnType<typeof Promise.withResolvers<void>>
         let finished: ReturnType<typeof vi.fn<() => void>>
@@ -245,7 +245,7 @@ describe('NatsPubSubService', () => {
             expect(handler).toHaveBeenCalledTimes(1)
         })
 
-        describe('그 뒤에 실행할 핸들러도 등록되어 있으면', () => {
+        describe('실행을 기다리는 다음 핸들러도 있으면', () => {
             let next: ReturnType<typeof vi.fn<() => void>>
             beforeEach(async () => {
                 next = vi.fn()
@@ -537,7 +537,7 @@ describe('createNatsPubSubServiceFixture', () => {
                 .mockRejectedValueOnce(failure)
         })
 
-        it('픽스처 생성 시 이미 만든 앱 하나를 한 번 닫고 최초 초기화 오류를 던진다', async () => {
+        it('먼저 만든 앱을 닫고 최초 초기화 오류를 던진다', async () => {
             await expect(createNatsPubSubServiceFixture()).rejects.toBe(failure)
 
             expect(contexts).toHaveLength(1)
@@ -569,7 +569,7 @@ describe('createNatsPubSubServiceFixture', () => {
                 })
         })
 
-        it('픽스처 생성 시 이미 만든 앱 두 개를 각각 한 번 닫고 최초 초기화 오류를 던진다', async () => {
+        it('두 앱을 모두 닫고 최초 초기화 오류를 던진다', async () => {
             await expect(createNatsPubSubServiceFixture()).rejects.toBe(failure)
 
             expect(contexts).toHaveLength(2)
@@ -605,7 +605,7 @@ describe('createNatsPubSubServiceFixture', () => {
                 })
         })
 
-        it('픽스처 생성 시 이미 만든 앱 두 개를 각각 한 번 닫고 정리 오류 대신 최초 초기화 오류를 던진다', async () => {
+        it('두 앱의 정리를 시도하고 최초 초기화 오류를 던진다', async () => {
             await expect(createNatsPubSubServiceFixture()).rejects.toBe(failure)
 
             expect(contexts).toHaveLength(2)

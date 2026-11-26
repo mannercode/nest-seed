@@ -31,12 +31,12 @@ describe('HttpSuccessLoggerInterceptor', () => {
 
     afterEach(() => fix.teardown())
 
-    describe('제외 경로를 설정하지 않았으면', () => {
+    describe('로그 제외 경로가 없는 상태에서', () => {
         beforeEach(async () => {
             fix = await createSuccessLoggerInterceptorFixture([])
         })
 
-        it('성공하는 경로로 요청하면 Logger.verbose로 로그를 남긴다', async () => {
+        it('성공한 요청은 verbose 수준으로 기록한다', async () => {
             await fix.httpClient
                 .post('/success?token=query-secret')
                 .body({ password: 'request-secret' })
@@ -51,7 +51,7 @@ describe('HttpSuccessLoggerInterceptor', () => {
             })
         })
 
-        it('성공한 요청의 로그에는 요청·응답 본문을 포함하지 않는다', async () => {
+        it('성공 로그에 요청·응답 본문을 포함하지 않는다', async () => {
             await fix.httpClient
                 .post('/success')
                 .body({ password: 'request-secret' })
@@ -63,8 +63,8 @@ describe('HttpSuccessLoggerInterceptor', () => {
             expect(JSON.stringify(log)).not.toContain('request-secret')
         })
 
-        describe('오류를 반환하는 경로이면', () => {
-            it('success 로그를 남기지 않는다', async () => {
+        describe('요청이 실패하면', () => {
+            it('성공 로그를 남기지 않는다', async () => {
                 await fix.httpClient.get('/failure').internalServerError()
 
                 expect(fix.spyVerbose).not.toHaveBeenCalled()
@@ -73,20 +73,20 @@ describe('HttpSuccessLoggerInterceptor', () => {
     })
 
     describe('LOGGING_EXCLUDE_HTTP_PATHS', () => {
-        describe('제외 목록에 /exclude-path가 있으면', () => {
+        describe('제외 경로를 지정한 뒤', () => {
             beforeEach(async () => {
                 fix = await createSuccessLoggerInterceptorFixture([
                     { provide: 'LOGGING_EXCLUDE_HTTP_PATHS', useValue: ['/exclude-path'] }
                 ])
             })
 
-            it('제외 경로로 요청하면 로그를 남기지 않는다', async () => {
+            it('해당 경로의 요청은 기록하지 않는다', async () => {
                 await fix.httpClient.get('/exclude-path').ok({ expected: { result: 'success' } })
 
                 expect(fix.spyVerbose).toHaveBeenCalledTimes(0)
             })
 
-            it('제외 경로의 하위 경로로 요청하면 로그를 남긴다', async () => {
+            it('하위 경로의 요청은 기록한다', async () => {
                 await fix.httpClient
                     .get('/exclude-path/sub')
                     .ok({ expected: { result: 'success' } })
@@ -102,7 +102,7 @@ describe('HttpSuccessLoggerInterceptor', () => {
                 ])
             })
 
-            it('/exclude-path로 요청하면 로그를 남긴다', async () => {
+            it('요청을 기록한다', async () => {
                 await fix.httpClient.get('/exclude-path').ok({ expected: { result: 'success' } })
 
                 expect(fix.spyVerbose).toHaveBeenCalledTimes(1)

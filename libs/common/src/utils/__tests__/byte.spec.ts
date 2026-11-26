@@ -17,7 +17,7 @@ describe('ByteUtil', () => {
             beforeEach(() => {
                 input = '1KB 512B'
             })
-            it('바이트로 변환하면 각 단위의 값을 합산한다', () => {
+            it('각 단위의 값을 합산한다', () => {
                 expect(ByteUtil.fromString(input)).toBe(1536)
             })
         })
@@ -27,7 +27,7 @@ describe('ByteUtil', () => {
             beforeEach(() => {
                 input = '1.5KB'
             })
-            it('바이트로 변환하면 소수 값을 반영한다', () => {
+            it('소수 값을 반영한다', () => {
                 expect(ByteUtil.fromString(input)).toBe(1536)
             })
         })
@@ -37,7 +37,7 @@ describe('ByteUtil', () => {
             beforeEach(() => {
                 input = '-1KB'
             })
-            it('바이트로 변환하면 음수를 반환한다', () => {
+            it('음수를 반환한다', () => {
                 expect(ByteUtil.fromString(input)).toBe(-1024)
             })
         })
@@ -47,7 +47,7 @@ describe('ByteUtil', () => {
             beforeEach(() => {
                 input = '1GB 256MB 128KB'
             })
-            it('바이트로 변환하면 각 단위의 값을 합산한다', () => {
+            it('각 단위의 값을 합산한다', () => {
                 expect(ByteUtil.fromString(input)).toBe(1024 ** 3 + 256 * 1024 ** 2 + 128 * 1024)
             })
         })
@@ -61,18 +61,18 @@ describe('ByteUtil', () => {
             beforeEach(() => {
                 value = input
             })
-            it('바이트로 변환하면 해당 단위의 값을 반환한다', () => {
+            it('해당 단위의 값을 반환한다', () => {
                 expect(ByteUtil.fromString(value)).toBe(expected)
             })
         })
 
-        describe('유효하지 않은 형식', () => {
+        describe('잘못된 입력', () => {
             describe('입력이 알 수 없는 단어이면', () => {
                 let input: string
                 beforeEach(() => {
                     input = 'invalid'
                 })
-                it('바이트로 변환하면 예외를 던진다', () => {
+                it('예외를 던진다', () => {
                     expect(() => ByteUtil.fromString(input)).toThrow()
                 })
             })
@@ -82,7 +82,7 @@ describe('ByteUtil', () => {
                 beforeEach(() => {
                     input = '123'
                 })
-                it('바이트로 변환하면 예외를 던진다', () => {
+                it('예외를 던진다', () => {
                     expect(() => ByteUtil.fromString(input)).toThrow()
                 })
             })
@@ -92,7 +92,7 @@ describe('ByteUtil', () => {
                 beforeEach(() => {
                     input = '123XB'
                 })
-                it('바이트로 변환하면 예외를 던진다', () => {
+                it('예외를 던진다', () => {
                     expect(() => ByteUtil.fromString(input)).toThrow()
                 })
             })
@@ -102,7 +102,7 @@ describe('ByteUtil', () => {
                 beforeEach(() => {
                     input = '1KB -'
                 })
-                it('바이트로 변환하면 예외를 던진다', () => {
+                it('예외를 던진다', () => {
                     expect(() => ByteUtil.fromString(input)).toThrow()
                 })
             })
@@ -112,7 +112,7 @@ describe('ByteUtil', () => {
                 beforeEach(() => {
                     input = ''
                 })
-                it('바이트로 변환하면 예외를 던진다', () => {
+                it('예외를 던진다', () => {
                     expect(() => ByteUtil.fromString(input)).toThrow()
                 })
             })
@@ -125,7 +125,7 @@ describe('ByteUtil', () => {
             beforeEach(() => {
                 input = 0
             })
-            it('문자열로 변환하면 "0B"를 반환한다', () => {
+            it('"0B"를 반환한다', () => {
                 expect(ByteUtil.toString(input)).toBe('0B')
             })
         })
@@ -135,7 +135,7 @@ describe('ByteUtil', () => {
             beforeEach(() => {
                 input = 1024
             })
-            it('문자열로 변환하면 "1KB"를 반환한다', () => {
+            it('"1KB"를 반환한다', () => {
                 expect(ByteUtil.toString(input)).toBe('1KB')
             })
         })
@@ -145,7 +145,7 @@ describe('ByteUtil', () => {
             beforeEach(() => {
                 input = 1024 * 1024
             })
-            it('문자열로 변환하면 "1MB"를 반환한다', () => {
+            it('"1MB"를 반환한다', () => {
                 expect(ByteUtil.toString(input)).toBe('1MB')
             })
         })
@@ -155,7 +155,7 @@ describe('ByteUtil', () => {
             beforeEach(() => {
                 input = 1536
             })
-            it('문자열로 변환하면 "1KB 512B"를 반환한다', () => {
+            it('"1KB 512B"를 반환한다', () => {
                 expect(ByteUtil.toString(input)).toBe('1KB 512B')
             })
 
@@ -169,7 +169,7 @@ describe('ByteUtil', () => {
             beforeEach(() => {
                 input = 1024 * 1024 * 1.5
             })
-            it('문자열로 변환하면 "1MB 512KB"를 반환한다', () => {
+            it('"1MB 512KB"를 반환한다', () => {
                 expect(ByteUtil.toString(input)).toBe('1MB 512KB')
             })
 
@@ -183,7 +183,7 @@ describe('ByteUtil', () => {
             beforeEach(() => {
                 input = -1024
             })
-            it('문자열로 변환하면 "-1KB"를 반환한다', () => {
+            it('"-1KB"를 반환한다', () => {
                 expect(ByteUtil.toString(input)).toBe('-1KB')
             })
         })
@@ -193,7 +193,7 @@ describe('ByteUtil', () => {
             beforeEach(() => {
                 input = 1024 ** 3 + 256 * 1024 ** 2 + 128 * 1024
             })
-            it('문자열로 변환하면 GB·MB·KB로 나누어 표시한다', () => {
+            it('GB·MB·KB로 나누어 표시한다', () => {
                 expect(ByteUtil.toString(input)).toBe('1GB 256MB 128KB')
             })
 
@@ -229,7 +229,7 @@ describe('ByteUtil', () => {
             beforeEach(() => {
                 bytes = value
             })
-            it('문자열로 변환하면 소수 부분을 표시하고 다시 읽을 수 있다', () => {
+            it('소수 부분을 표시하고 다시 읽을 수 있다', () => {
                 expect(ByteUtil.toString(bytes)).toBe(formatted)
                 expect(ByteUtil.fromString(formatted)).toBe(value)
             })

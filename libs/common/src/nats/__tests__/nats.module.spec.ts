@@ -24,7 +24,7 @@ describe('getNatsConnectionToken', () => {
         beforeEach(() => {
             name = undefined
         })
-        it('주입 토큰을 만들면 기본 이름을 사용한다', () => {
+        it('기본 이름을 사용한다', () => {
             expect(getNatsConnectionToken(name)).toBe(
                 `NatsConnection:${DEFAULT_NATS_CONNECTION_NAME}`
             )
@@ -36,7 +36,7 @@ describe('getNatsConnectionToken', () => {
         beforeEach(() => {
             name = 'foo'
         })
-        it('주입 토큰을 만들면 지정한 이름을 사용한다', () => {
+        it('지정한 이름을 사용한다', () => {
             expect(getNatsConnectionToken(name)).toBe('NatsConnection:foo')
         })
     })

@@ -94,7 +94,7 @@ describe('MongoConnection.connect', () => {
             close = vi.spyOn(MongoClient.prototype, 'close')
             if (cleanupFails) close.mockRejectedValueOnce(new Error('cleanup failed'))
         })
-        it('연결을 요청하면 client 정리를 시도하고 최초 연결 오류를 던진다', async () => {
+        it('client 정리를 시도하고 최초 연결 오류를 던진다', async () => {
             await expect(
                 MongoConnection.connect({ uri: 'mongodb://localhost:27017', dbName: 'unused' })
             ).rejects.toBe(failure)

@@ -10,7 +10,7 @@ describe('PathUtil', () => {
             beforeEach(() => {
                 relativePath = `.${PathUtil.sep()}file.txt`
             })
-            it('경로를 변환하면 현재 디렉터리를 기준으로 한 파일의 절대 경로를 반환한다', () => {
+            it('현재 디렉터리를 기준으로 한 파일의 절대 경로를 반환한다', () => {
                 const absolutePath = PathUtil.getAbsolute(relativePath)
 
                 expect(absolutePath).toBe(p.join(process.cwd(), 'file.txt'))
@@ -22,7 +22,7 @@ describe('PathUtil', () => {
             beforeEach(() => {
                 absolutePath = p.join(os.tmpdir(), 'file.txt')
             })
-            it('절대 경로로 변환하면 원래 경로를 반환한다', () => {
+            it('원래 경로를 반환한다', () => {
                 const result = PathUtil.getAbsolute(absolutePath)
 
                 expect(result).toEqual(absolutePath)
@@ -59,7 +59,7 @@ describe('PathUtil', () => {
                 beforeEach(() => {
                     vi.spyOn(fs, 'stat').mockRejectedValueOnce(denied)
                 })
-                it('존재 여부를 조회하면 권한 오류를 던진다', async () => {
+                it('권한 오류를 던진다', async () => {
                     await expect(PathUtil.exists(tempDir)).rejects.toBe(denied)
                 })
             })
@@ -69,7 +69,7 @@ describe('PathUtil', () => {
                     filePath = PathUtil.join(tempDir, 'file.txt')
                     await fs.writeFile(filePath, 'hello world')
                 })
-                it('존재 여부 조회 시 true를 반환한다', async () => {
+                it('true를 반환한다', async () => {
                     const exists = await PathUtil.exists(filePath)
                     expect(exists).toBe(true)
                 })
@@ -80,7 +80,7 @@ describe('PathUtil', () => {
                 beforeEach(() => {
                     nonExistentPath = PathUtil.join(tempDir, 'nonexistent.txt')
                 })
-                it('존재 여부를 조회하면 false를 반환한다', async () => {
+                it('false를 반환한다', async () => {
                     const exists = await PathUtil.exists(nonExistentPath)
                     expect(exists).toBe(false)
                 })
@@ -93,7 +93,7 @@ describe('PathUtil', () => {
                 beforeEach(() => {
                     directory = tempDir
                 })
-                it('디렉터리 여부를 조회하면 true를 반환한다', async () => {
+                it('true를 반환한다', async () => {
                     const result = await PathUtil.isDirectory(directory)
                     expect(result).toBe(true)
                 })
@@ -104,7 +104,7 @@ describe('PathUtil', () => {
                 beforeEach(() => {
                     nonExistent = PathUtil.join(tempDir, 'no-such-path')
                 })
-                it('디렉터리 여부를 조회하면 ENOENT 예외를 그대로 던진다', async () => {
+                it('ENOENT 예외를 그대로 던진다', async () => {
                     await expect(PathUtil.isDirectory(nonExistent)).rejects.toMatchObject({
                         code: 'ENOENT'
                     })
@@ -131,7 +131,7 @@ describe('PathUtil', () => {
                     await PathUtil.mkdir(PathUtil.join(tempDir, 'subdir2'))
                     await fs.writeFile(PathUtil.join(tempDir, 'file.txt'), 'hello world')
                 })
-                it('하위 경로 조회 시 디렉터리 이름만 정렬해 반환한다', async () => {
+                it('디렉터리 이름만 정렬해 반환한다', async () => {
                     const subDirs = await PathUtil.subdirs(tempDir)
                     expect(subDirs).toEqual(['subdir1', 'subdir2'])
                 })
@@ -145,7 +145,7 @@ describe('PathUtil', () => {
                     srcFilePath = PathUtil.join(tempDir, 'file.txt')
                     await fs.writeFile(srcFilePath, 'hello world')
                 })
-                it('복사하면 대상 파일에 같은 내용이 저장된다', async () => {
+                it('대상 파일에 같은 내용이 저장된다', async () => {
                     const destFilePath = PathUtil.join(tempDir, 'file_copy.txt')
                     await PathUtil.copy(srcFilePath, destFilePath)
 
@@ -164,7 +164,7 @@ describe('PathUtil', () => {
                         'hello from the original dir'
                     )
                 })
-                it('디렉터리를 복사하면 내부 파일의 내용도 보존한다', async () => {
+                it('내부 파일의 내용도 보존한다', async () => {
                     const destDirPath = PathUtil.join(tempDir, 'testdir_copy')
                     await PathUtil.copy(srcDirPath, destDirPath)
 
@@ -179,11 +179,11 @@ describe('PathUtil', () => {
         })
 
         describe('isWritable', () => {
-            describe('파일시스템 쓰기 권한 검사가 성공하도록 설정하면', () => {
+            describe('쓰기 권한이 있으면', () => {
                 beforeEach(() => {
                     vi.spyOn(fs, 'access').mockResolvedValueOnce(undefined)
                 })
-                it('쓰기 가능 여부 조회 시 true를 반환한다', async () => {
+                it('true를 반환한다', async () => {
                     const result = await PathUtil.isWritable('/test/path')
 
                     expect(result).toBe(true)
@@ -191,11 +191,11 @@ describe('PathUtil', () => {
                 })
             })
 
-            describe('파일시스템 쓰기 권한 검사가 실패하도록 설정하면', () => {
+            describe('쓰기 권한이 없으면', () => {
                 beforeEach(() => {
                     vi.spyOn(fs, 'access').mockRejectedValueOnce(new Error('Not writable'))
                 })
-                it('쓰기 가능 여부 조회 시 false를 반환한다', async () => {
+                it('false를 반환한다', async () => {
                     const result = await PathUtil.isWritable('/test/path')
 
                     expect(result).toBe(false)
@@ -211,7 +211,7 @@ describe('PathUtil', () => {
                     srcFilePath = PathUtil.join(tempDir, 'file.txt')
                     await fs.writeFile(srcFilePath, 'hello world')
                 })
-                it('이동하면 원본은 사라지고 대상에 같은 내용의 파일이 존재한다', async () => {
+                it('원본은 사라지고 대상에 같은 내용의 파일이 존재한다', async () => {
                     const destFilePath = PathUtil.join(tempDir, 'move.txt')
                     await PathUtil.move(srcFilePath, destFilePath)
 
@@ -221,7 +221,7 @@ describe('PathUtil', () => {
                 })
             })
 
-            describe('두 경로가 서로 다른 파일시스템에 있으면', () => {
+            describe('파일시스템을 가로질러 이동할 때', () => {
                 let src: string
                 let dest: string
                 beforeEach(async () => {
@@ -234,18 +234,18 @@ describe('PathUtil', () => {
                         Object.assign(new Error('cross-device link'), { code: 'EXDEV' })
                     )
                 })
-                it('이동하면 파일과 상대 링크를 보존하고 원본을 지운다', async () => {
+                it('파일과 상대 링크를 보존하고 원본을 지운다', async () => {
                     await PathUtil.move(src, dest)
                     expect(await fs.readdir(tempDir)).toEqual(['target'])
                     expect(await fs.readFile(p.join(dest, 'link'), 'utf8')).toBe('new')
                     expect(await fs.readlink(p.join(dest, 'link'))).toBe('file')
                 })
-                describe('대상 디렉터리에 동명 파일이 있으면', () => {
+                describe('대상 디렉터리에 같은 이름의 파일이 있으면', () => {
                     beforeEach(async () => {
                         await fs.mkdir(dest)
                         await fs.writeFile(p.join(dest, 'file'), 'old')
                     })
-                    it('이동하면 실패하고 원본과 대상을 모두 보존한다', async () => {
+                    it('실패하고 원본과 대상을 모두 보존한다', async () => {
                         await expect(PathUtil.move(src, dest)).rejects.toThrow()
                         expect((await fs.readdir(tempDir)).sort()).toEqual(['source', 'target'])
                         expect(await fs.readFile(p.join(src, 'file'), 'utf8')).toBe('new')
@@ -261,7 +261,7 @@ describe('PathUtil', () => {
 
                     vi.spyOn(fs, 'rename').mockRejectedValueOnce(error)
                 })
-                it('이동 시 권한 오류를 그대로 던진다', async () => {
+                it('권한 오류를 그대로 던진다', async () => {
                     await expect(PathUtil.move('/tmp/src.txt', '/tmp/dest.txt')).rejects.toThrow(
                         'permission denied'
                     )
@@ -276,7 +276,7 @@ describe('PathUtil', () => {
                     filePath = PathUtil.join(tempDir, 'original.txt')
                     await fs.writeFile(filePath, 'Hello, World!')
                 })
-                it('크기 조회 시 바이트 수를 반환한다', async () => {
+                it('바이트 수를 반환한다', async () => {
                     const size = await PathUtil.getSize(filePath)
 
                     expect(size).toBe('Hello, World!'.length)
@@ -294,7 +294,7 @@ describe('PathUtil', () => {
                     await fs.writeFile(original, 'Hello, World!')
                     await fs.writeFile(identical, 'Hello, World!')
                 })
-                it('비교하면 true를 반환한다', async () => {
+                it('true를 반환한다', async () => {
                     expect(await PathUtil.areEqual(original, identical)).toBe(true)
                 })
             })
@@ -311,7 +311,7 @@ describe('PathUtil', () => {
                     await fs.writeFile(original, 'Hello, World!')
                     await fs.writeFile(different, contents)
                 })
-                it('비교하면 false를 반환한다', async () => {
+                it('false를 반환한다', async () => {
                     expect(await PathUtil.areEqual(original, different)).toBe(false)
                 })
             })

@@ -54,7 +54,7 @@ describe('createMongoRepositoryFixture', () => {
             })
         })
 
-        it('픽스처 생성 시 연결을 닫고 최초 초기화 오류를 던진다', async () => {
+        it('연결을 닫고 최초 초기화 오류를 던진다', async () => {
             await expect(createMongoRepositoryFixture()).rejects.toBe(failure)
             expect(closeSpy).toHaveBeenCalledTimes(1)
         })
@@ -65,7 +65,7 @@ describe('createMongoRepositoryFixture', () => {
             vi.spyOn(SamplesRepository.prototype, 'onModuleInit').mockRejectedValueOnce(failure)
         })
 
-        it('픽스처 생성 시 연결을 닫고 최초 초기화 오류를 던진다', async () => {
+        it('연결을 닫고 최초 초기화 오류를 던진다', async () => {
             await expect(createMongoRepositoryFixture()).rejects.toBe(failure)
             expect(closeSpy).toHaveBeenCalledTimes(1)
         })
@@ -80,7 +80,7 @@ describe('createMongoRepositoryFixture', () => {
             })
         })
 
-        it('픽스처 생성 시 연결을 닫고 최초 초기화 오류를 던진다', async () => {
+        it('연결을 닫고 최초 초기화 오류를 던진다', async () => {
             await expect(createMongoRepositoryFixture()).rejects.toBe(failure)
             expect(closeSpy).toHaveBeenCalledTimes(1)
         })
@@ -150,7 +150,7 @@ describe('CrudRepository', () => {
             })
         })
 
-        describe('새 문서를 삽입할 ID와 수정 내용이 준비되었으면', () => {
+        describe('새 ID로 문서를 추가할 때', () => {
             let id: string
             let update: {
                 $setOnInsert: ReturnType<typeof fix.soft.idFilter>
@@ -183,11 +183,11 @@ describe('CrudRepository', () => {
             )
         })
 
-        describe('이름이 a·b·c인 문서가 존재하면', () => {
+        describe('여러 문서에 조회 옵션을 적용하면', () => {
             beforeEach(async () => {
                 await fix.soft.createMany(['a', 'b', 'c'])
             })
-            it('조회 옵션으로 정렬 순서·개수·반환 필드를 지정할 수 있다', async () => {
+            it('정렬 순서와 개수, 반환 필드를 지정할 수 있다', async () => {
                 expect(await fix.soft.findDocument({ name: 'a' })).toMatchObject({ name: 'a' })
                 expect(
                     await fix.soft.findDocument({ name: 'a' }, { projection: { _id: 0, name: 1 } })
@@ -202,7 +202,7 @@ describe('CrudRepository', () => {
             })
         })
 
-        describe('이름이 a·b인 문서가 존재하면', () => {
+        describe('여러 문서를 수정할 때', () => {
             beforeEach(async () => {
                 await fix.soft.createMany(['a', 'b'])
             })
@@ -270,7 +270,7 @@ describe('CrudRepository', () => {
             })
         })
 
-        describe('이름이 a인 문서 두 개와 b인 문서 한 개가 존재하면', () => {
+        describe('같은 이름의 문서와 다른 이름의 문서가 있으면', () => {
             beforeEach(async () => {
                 await fix.soft.createMany(['a', 'a', 'b'])
             })
@@ -312,7 +312,7 @@ describe('CrudRepository', () => {
                 nameIndex = { key: { name: 1 }, name: 'name_lookup' }
                 ;({ createIndexes, repository } = harness({ indexes: [nameIndex] }))
             })
-            it('초기화하면 삭제 시각 인덱스와 추가 인덱스를 생성한다', async () => {
+            it('삭제 시각 인덱스와 추가 인덱스를 생성한다', async () => {
                 await repository.onModuleInit()
 
                 expect(createIndexes).toHaveBeenCalledWith([{ key: { deletedAt: 1 } }, nameIndex])
@@ -434,7 +434,7 @@ describe('CrudRepository', () => {
 
                 createIndexes.mockRejectedValueOnce(new Error('index unavailable'))
             })
-            it('초기화 실패 후 다시 호출하면 인덱스 생성을 재시도한다', async () => {
+            it('다시 초기화하면 인덱스 생성을 재시도한다', async () => {
                 await expect(repository.onModuleInit()).rejects.toThrow('index unavailable')
                 await expect(repository.onModuleInit()).resolves.toBeUndefined()
 
@@ -448,7 +448,7 @@ describe('CrudRepository', () => {
             beforeEach(() => {
                 ;({ createIndexes, repository } = harness({ hardDelete: true }))
             })
-            it('초기화해도 인덱스 생성을 호출하지 않는다', async () => {
+            it('인덱스를 생성하지 않는다', async () => {
                 await repository.onModuleInit()
 
                 expect(createIndexes).not.toHaveBeenCalled()
@@ -466,14 +466,14 @@ describe('CrudRepository', () => {
                     indexes: [sagaIndex]
                 }))
             })
-            it('초기화하면 선언한 인덱스를 생성한다', async () => {
+            it('선언한 인덱스를 생성한다', async () => {
                 await repository.onModuleInit()
 
                 expect(createIndexes).toHaveBeenCalledWith([sagaIndex])
             })
         })
 
-        it('초기화할 때 기본 인덱스와 설정한 인덱스를 생성한다', async () => {
+        it('기본 인덱스와 설정한 인덱스를 생성한다', async () => {
             const indexes = await fix.soft.collection.listIndexes().toArray()
             const names = indexes.map(({ name }) => name)
 
@@ -613,7 +613,7 @@ describe('CrudRepository', () => {
     })
 
     describe('find, get, findMany, getMany, allExist', () => {
-        describe('ID에 알파벳이 포함된 문서가 존재하면', () => {
+        describe('영문자가 포함된 ID를 저장한 뒤', () => {
             const id = 'abcdef123456abcdef123456'
             const upperId = id.toUpperCase()
             const missingId = 'fedcba123456fedcba123456'
@@ -630,7 +630,7 @@ describe('CrudRepository', () => {
                 beforeEach(() => {
                     query = { ids: [upperId] }
                 })
-                it('getMany로 조회하면 같은 문서를 한 번 반환한다', async () => {
+                it('getMany는 같은 문서를 한 번 반환한다', async () => {
                     await expect(fix.soft.getMany(query)).resolves.toEqual([created])
                 })
             })
@@ -640,7 +640,7 @@ describe('CrudRepository', () => {
                 beforeEach(() => {
                     query = { ids: [upperId, missingId.toUpperCase()] }
                 })
-                it('getMany로 조회하면 실제 누락된 ID만 보고한다', async () => {
+                it('getMany는 누락된 ID만 보고한다', async () => {
                     await expect(fix.soft.getMany(query)).rejects.toMatchObject({
                         response: MongoErrors.MultipleDocumentsNotFound([missingId])
                     })
@@ -652,10 +652,10 @@ describe('CrudRepository', () => {
                 beforeEach(() => {
                     ids = [id, upperId]
                 })
-                it('getMany로 조회하면 같은 문서를 한 번 반환한다', async () => {
+                it('getMany는 같은 문서를 한 번 반환한다', async () => {
                     await expect(fix.soft.getMany({ ids })).resolves.toEqual([created])
                 })
-                it('존재 여부를 확인하면 같은 문서로 판단해 true를 반환한다', async () => {
+                it('allExist는 true를 반환한다', async () => {
                     await expect(fix.soft.allExist(ids)).resolves.toBe(true)
                 })
             })
@@ -665,18 +665,18 @@ describe('CrudRepository', () => {
                 beforeEach(() => {
                     ids = [id, upperId, missingId.toUpperCase()]
                 })
-                it('존재 여부를 확인하면 false를 반환한다', async () => {
+                it('allExist는 false를 반환한다', async () => {
                     await expect(fix.soft.allExist(ids)).resolves.toBe(false)
                 })
             })
         })
 
-        describe('문서 하나가 존재하면', () => {
+        describe('문서 하나를 저장한 뒤', () => {
             let created: Sample
             beforeEach(async () => {
                 created = await fix.soft.create('sample')
             })
-            it('find로 기존 문서를 조회하면 문서를 반환한다', async () => {
+            it('find는 저장한 문서를 반환한다', async () => {
                 await expect(fix.soft.find({ id: created.id })).resolves.toMatchObject({
                     id: created.id,
                     name: 'sample'
@@ -687,10 +687,10 @@ describe('CrudRepository', () => {
                 beforeEach(() => {
                     missingId = objectId('000000000000000000000000').toHexString()
                 })
-                it('find로 조회하면 null을 반환한다', async () => {
+                it('find는 null을 반환한다', async () => {
                     await expect(fix.soft.find({ id: missingId })).resolves.toBeNull()
                 })
-                it('get으로 조회하면 찾을 수 없다는 예외를 던진다', async () => {
+                it('get은 문서 없음 예외를 던진다', async () => {
                     const result = fix.soft.get({ id: missingId })
                     await expect(result).rejects.toBeInstanceOf(NotFoundException)
                     await expect(result).rejects.toMatchObject({
@@ -698,7 +698,7 @@ describe('CrudRepository', () => {
                     })
                 })
 
-                it('allExist로 존재 여부를 확인하면 false를 반환한다', async () => {
+                it('allExist는 false를 반환한다', async () => {
                     await expect(fix.soft.allExist([missingId])).resolves.toBe(false)
                 })
             })
@@ -708,7 +708,7 @@ describe('CrudRepository', () => {
                 beforeEach(() => {
                     query = { ids: [created.id, created.id] }
                 })
-                it('getMany로 조회하면 경고를 남기고 문서는 한 번만 반환한다', async () => {
+                it('getMany는 경고를 남기고 문서를 한 번만 반환한다', async () => {
                     const warn = vi.spyOn(Logger, 'warn').mockImplementation(() => undefined)
 
                     const docs = await fix.soft.getMany(query)
@@ -719,7 +719,7 @@ describe('CrudRepository', () => {
                     )
                 })
 
-                it('allExist로 존재 여부를 확인하면 true를 반환한다', async () => {
+                it('allExist는 true를 반환한다', async () => {
                     await expect(fix.soft.allExist(query.ids)).resolves.toBe(true)
                 })
             })
@@ -729,13 +729,13 @@ describe('CrudRepository', () => {
                 beforeEach(() => {
                     ids = []
                 })
-                it('allExist로 존재 여부를 확인하면 true를 반환한다', async () => {
+                it('allExist는 true를 반환한다', async () => {
                     await expect(fix.soft.allExist(ids)).resolves.toBe(true)
                 })
             })
         })
 
-        describe('문서 두 개가 존재하면', () => {
+        describe('문서 두 개를 저장한 뒤', () => {
             let samples: Sample[]
             beforeEach(async () => {
                 samples = await fix.soft.createMany(['a', 'b'])
@@ -751,18 +751,18 @@ describe('CrudRepository', () => {
                     missingId = '000000000000000000000000'
                     ids = [first.id, missingId]
                 })
-                it('findMany로 조회하면 기존 문서만 반환한다', async () => {
+                it('findMany는 기존 문서만 반환한다', async () => {
                     await expect(fix.soft.findMany({ ids })).resolves.toEqual([
                         expect.objectContaining({ id: first.id })
                     ])
                 })
-                it('getMany로 조회하면 누락된 ID를 담은 예외를 던진다', async () => {
+                it('getMany는 누락된 ID를 담은 예외를 던진다', async () => {
                     await expect(fix.soft.getMany({ ids })).rejects.toMatchObject({
                         response: MongoErrors.MultipleDocumentsNotFound([missingId])
                     })
                 })
             })
-            it('getMany로 두 문서의 ID를 조회하면 두 문서를 모두 반환한다', async () => {
+            it('getMany는 두 ID에 해당하는 문서를 모두 반환한다', async () => {
                 const [first, second] = samples
                 if (!first || !second) throw new Error('samples must exist')
                 await expect(
@@ -894,11 +894,11 @@ describe('CrudRepository', () => {
             })
         })
 
-        describe('이름이 d·a·c·b·e인 문서가 존재하면', () => {
+        describe('이름이 서로 다른 문서를 저장한 뒤', () => {
             beforeEach(async () => {
                 await fix.soft.createMany(['d', 'a', 'c', 'b', 'e'])
             })
-            describe('정렬이 이름 오름차순이고 page와 size가 2이면', () => {
+            describe('이름 오름차순으로 두 번째 페이지를 요청하면', () => {
                 let query: Parameters<typeof fix.soft.findWithPagination>[0]
                 beforeEach(() => {
                     query = {
@@ -909,7 +909,7 @@ describe('CrudRepository', () => {
                         }
                     }
                 })
-                it('페이지를 조회하면 조건에 맞는 문서와 전체 개수를 반환한다', async () => {
+                it('그 페이지의 문서와 전체 개수를 반환한다', async () => {
                     const result = await fix.soft.findWithPagination(query)
 
                     expect(result).toMatchObject({ page: 2, size: 2, total: 5 })
@@ -930,11 +930,11 @@ describe('CrudRepository', () => {
             })
         })
 
-        describe('이름이 a·c·b·d인 문서가 존재하면', () => {
+        describe('문서를 이름순과 다른 순서로 저장한 뒤', () => {
             beforeEach(async () => {
                 await fix.soft.createMany(['a', 'c', 'b', 'd'])
             })
-            describe('정렬이 이름 내림차순이고 page와 size가 null이면', () => {
+            describe('이름 내림차순으로 정렬하고 page와 size에 null을 지정하면', () => {
                 let query: Parameters<typeof fix.soft.findWithPagination>[0]
                 beforeEach(() => {
                     query = {
@@ -945,7 +945,7 @@ describe('CrudRepository', () => {
                         }
                     }
                 })
-                it('페이지를 조회하면 기본 페이지 크기를 적용한다', async () => {
+                it('기본 페이지 크기를 적용한다', async () => {
                     const result = await fix.soft.findWithPagination(query)
 
                     expect(result).toMatchObject({ page: 1, size: 3, total: 4 })
@@ -959,7 +959,7 @@ describe('CrudRepository', () => {
             beforeEach(() => {
                 query = { pagination: { size: 0 } }
             })
-            it('페이지를 조회하면 BadRequestException을 던진다', async () => {
+            it('BadRequestException을 던진다', async () => {
                 await expect(fix.soft.findWithPagination(query)).rejects.toBeInstanceOf(
                     BadRequestException
                 )
@@ -970,14 +970,14 @@ describe('CrudRepository', () => {
             beforeEach(() => {
                 query = { pagination: { size: 6 } }
             })
-            it('페이지를 조회하면 상한 초과 예외를 던진다', async () => {
+            it('상한 초과 예외를 던진다', async () => {
                 await expect(fix.soft.findWithPagination(query)).rejects.toMatchObject({
                     response: MongoErrors.MaxSizeExceeded(5, 6)
                 })
             })
         })
 
-        describe('삭제하지 않은 문서와 soft delete한 문서가 각각 한 개 있으면', () => {
+        describe('삭제한 문서와 삭제하지 않은 문서가 함께 있는 상태에서', () => {
             let active: Sample
             let estimated: MockInstance
             let count: MockInstance
@@ -998,7 +998,7 @@ describe('CrudRepository', () => {
                 beforeEach(() => {
                     query = { filter, pagination: {} }
                 })
-                it('페이지를 조회하면 삭제한 문서를 목록과 전체 개수에서 제외한다', async () => {
+                it('삭제한 문서를 목록과 전체 개수에서 제외한다', async () => {
                     const result = await fix.soft.findWithPagination(query)
                     expect(result.total).toBe(1)
                     expect(result.items).toEqual([expect.objectContaining({ id: active.id })])
@@ -1101,7 +1101,7 @@ describe('CrudRepository', () => {
             )
         })
 
-        describe('콜백이 여러 Repository에 저장한 뒤 예외를 던지도록 설정하면', () => {
+        describe('콜백이 여러 저장소에 쓴 뒤 예외를 던지면', () => {
             let started: MockInstance<MongoClient['startSession']>
             let created: { soft: Sample; hard: Sample; transaction: TransactionContext } | undefined
             let callback: Parameters<typeof fix.soft.withTransaction>[0]
@@ -1117,7 +1117,7 @@ describe('CrudRepository', () => {
                     throw new Error('boom')
                 }
             })
-            it('트랜잭션을 실행하면 모든 쓰기를 롤백하고 세션을 종료한다', async () => {
+            it('모든 쓰기를 롤백하고 세션을 종료한다', async () => {
                 const result = fix.soft.withTransaction(callback)
 
                 await expect(result).rejects.toThrow('boom')
@@ -1168,7 +1168,7 @@ describe('CrudRepository', () => {
             await expect(fix.hard.find({ id: rolledBackId })).resolves.toBeNull()
         })
 
-        describe('콜백이 일시적이지 않은 오류를 던지도록 설정하면', () => {
+        describe('콜백이 일시적이지 않은 오류를 던지면', () => {
             let attempts: number
             let callback: Parameters<typeof fix.soft.withTransaction>[0]
             beforeEach(() => {
@@ -1178,7 +1178,7 @@ describe('CrudRepository', () => {
                     throw new Error('permanent')
                 }
             })
-            it('트랜잭션을 실행하면 콜백을 재시도하지 않는다', async () => {
+            it('콜백을 재시도하지 않는다', async () => {
                 await expect(fix.soft.withTransaction(callback)).rejects.toThrow('permanent')
                 expect(attempts).toBe(1)
             })

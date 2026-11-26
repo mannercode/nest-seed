@@ -16,7 +16,7 @@ describe('AuthGuard', () => {
     })
 
     describe('Bearer 전용', () => {
-        describe('유효한 Bearer 토큰이 있으면', () => {
+        describe('유효한 토큰이 있으면', () => {
             let headers: { Authorization: string }
 
             beforeEach(async () => {
@@ -86,7 +86,7 @@ describe('AuthGuard', () => {
             })
         })
 
-        describe('Authorization 헤더의 bearer가 소문자이면', () => {
+        describe('인증 방식을 소문자 bearer로 쓰면', () => {
             let headers: { Authorization: string }
 
             beforeEach(async () => {
@@ -111,19 +111,19 @@ describe('AuthGuard', () => {
             })
         })
 
-        describe('@Public 경로에 보낼 요청에 인증 정보가 없으면', () => {
+        describe('인증 정보 없이 @Public 경로를 요청하면', () => {
             it('200을 반환한다', async () => {
                 await fix.httpClient.get('/bearer/public').ok()
             })
         })
 
-        describe('@OptionalAuth 경로에 보낼 요청에 인증 정보가 없으면', () => {
+        describe('인증 정보 없이 @OptionalAuth 경로를 요청하면', () => {
             it('200을 반환한다', async () => {
                 await fix.httpClient.get('/bearer/optional-route').ok()
             })
         })
 
-        describe('@OptionalAuth 경로에 보낼 토큰이 만료되었으면', () => {
+        describe('만료된 토큰으로 @OptionalAuth 경로를 요청하면', () => {
             let headers: { Authorization: string }
 
             beforeEach(async () => {
@@ -192,7 +192,7 @@ describe('AuthGuard', () => {
             })
         })
 
-        describe('@Public 경로에 보낼 요청에 인증 정보가 없으면', () => {
+        describe('인증 정보 없이 @Public 경로를 요청하면', () => {
             it('200을 반환한다', async () => {
                 await fix.httpClient.get('/optional/public').ok()
             })
@@ -223,7 +223,7 @@ describe('PasswordHasher', () => {
         beforeEach(async () => {
             digest = await PasswordHasher.hash(`${prefix}original`)
         })
-        it('원래 비밀번호는 일치하고 뒤가 다른 비밀번호는 일치하지 않는다', async () => {
+        it('원래 비밀번호만 검증을 통과한다', async () => {
             expect(await PasswordHasher.verify(`${prefix}original`, digest)).toBe(true)
             expect(await PasswordHasher.verify(`${prefix}different`, digest)).toBe(false)
         })

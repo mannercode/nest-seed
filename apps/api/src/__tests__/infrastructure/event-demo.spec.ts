@@ -14,7 +14,7 @@ import {
     type AppTestContext
 } from '#test-helpers'
 
-describe('JetStream 테스트 자원 정리', () => {
+describe('ownsEventStream', () => {
     const event = eventDemoResources(projectId('worker-1'))
     const appEvent = eventDemoResources('app')
     describe.each([
@@ -43,7 +43,7 @@ describe('JetStream 테스트 자원 정리', () => {
             owned: false
         }
     ])('$condition', ({ name, subjects, owned }) => {
-        it(`스트림을 검사하면 정리 대상 여부로 ${owned}를 반환한다`, () => {
+        it(`${owned}를 반환한다`, () => {
             expect(ownsEventStream({ name, subjects })).toBe(owned)
         })
     })
@@ -73,7 +73,7 @@ function openEventStream(serverUrl: string, token: string) {
     }
 }
 
-describe('이벤트 HTTP API', () => {
+describe('POST /event-demo/messages', () => {
     let fix: AppTestContext
     let session: Awaited<ReturnType<typeof createAndLoginUser>>
     const streams: HttpTestClient[] = []
@@ -85,11 +85,11 @@ describe('이벤트 HTTP API', () => {
         for (const stream of streams.splice(0)) stream.abort()
         await fix?.teardown()
     })
-    it('인증 없이 메시지를 발행하면 401을 반환한다', async () => {
+    it('인증 정보가 없으면 401을 반환한다', async () => {
         await fix.httpClient.post('/event-demo/messages').body({ message: 'hello' }).unauthorized()
     })
     describe('메시지가 비어 있으면', () => {
-        it('발행을 요청하면 400을 반환한다', async () => {
+        it('400을 반환한다', async () => {
             await fix.httpClient
                 .post('/event-demo/messages')
                 .headers({ Authorization: 'Bearer ' + session.accessToken })
@@ -103,7 +103,7 @@ describe('이벤트 HTTP API', () => {
                 new Error('publish rejected')
             )
         })
-        it('메시지를 발행하면 500을 반환한다', async () => {
+        it('500을 반환한다', async () => {
             await fix.httpClient
                 .post('/event-demo/messages')
                 .headers({ Authorization: 'Bearer ' + session.accessToken })
@@ -141,7 +141,7 @@ describe('이벤트 HTTP API', () => {
                     new Error('NATS temporarily unavailable')
                 )
         })
-        it('메시지를 발행하면 202와 이벤트 ID를 반환하고 본인의 SSE에서 같은 ID와 메시지만 받는다', async () => {
+        it('202와 이벤트 ID를 반환하고 SSE 구독자는 자기 메시지만 같은 ID로 받는다', async () => {
             const { body } = await fix.httpClient
                 .post('/event-demo/messages')
                 .headers({ Authorization: 'Bearer ' + session.accessToken })
@@ -185,12 +185,12 @@ describe('메시지 소비자의 입력과 종료', () => {
             expect(consumer.isRunning).toBe(false)
         })
     })
-    describe('소비 도중 연결 오류가 발생하면', () => {
+    describe('소비 중 연결 오류가 발생하면', () => {
         const error = new Error('connection lost')
         beforeEach(() => {
             next.mockRejectedValue(error)
         })
-        it('소비 중단 상태와 실패 원인을 남긴다', async () => {
+        it('소비 중단 상태와 원인을 남긴다', async () => {
             await consumer.onModuleInit()
             expect(errors).toHaveBeenCalledWith('Message consumer failed', error)
             expect(consumer.isRunning).toBe(false)
@@ -210,11 +210,11 @@ describe('메시지 소비자의 입력과 종료', () => {
             expect(errors).not.toHaveBeenCalled()
         })
     })
-    describe('소비 시작 자체가 실패하면', () => {
+    describe('소비를 시작하지 못하면', () => {
         beforeEach(() => {
             consume.mockRejectedValue(new Error('cannot consume'))
         })
-        it('초기화 오류를 전달하고 부분 초기화 상태도 정리할 수 있다', async () => {
+        it('초기화 오류를 전달하고 시작한 자원을 정리할 수 있다', async () => {
             await expect(consumer.onModuleInit()).rejects.toThrow('cannot consume')
             await expect(consumer.onModuleDestroy()).resolves.toBeUndefined()
         })

@@ -11,7 +11,7 @@ import {
     type AppTestContext
 } from '#test-helpers'
 
-describe('임시 Restate 배포에서 작업의 결과 조회가 실패했으면', () => {
+describe('임시 Restate 배포 정리', () => {
     const failure = new Error('Result endpoint unavailable')
     let waitForWorkflows: () => Promise<void>
     beforeEach(async () => {
@@ -19,7 +19,7 @@ describe('임시 Restate 배포에서 작업의 결과 조회가 실패했으면
         waitForWorkflows = trackRestateCompletions(jobs, vi.fn().mockRejectedValue(failure))
         await jobs.submit('user', { text: 'value' })
     })
-    it('배포를 정리하기 전 완료를 확인하면 조회 오류를 전달한다', async () => {
+    it('작업 완료를 확인할 수 없으면 조회 오류를 전달한다', async () => {
         await expect(waitForWorkflows()).rejects.toMatchObject({ errors: [failure] })
     })
 })
@@ -35,8 +35,8 @@ describe('JobDemoService', () => {
     it('인증 없이 작업을 요청하면 401을 반환한다', async () => {
         await fix.httpClient.post('/job-demo/jobs').body({ text: 'hello' }).unauthorized()
     })
-    describe('입력이 빈 문자열이면', () => {
-        it('작업을 제출하면 400을 반환한다', async () => {
+    describe('빈 문자열로 작업을 제출하면', () => {
+        it('400을 반환한다', async () => {
             await fix.httpClient
                 .post('/job-demo/jobs')
                 .headers({ Authorization: 'Bearer ' + token })
@@ -44,13 +44,13 @@ describe('JobDemoService', () => {
                 .badRequest()
         })
     })
-    describe('Restate가 작업 접수를 거절하면', () => {
+    describe('Restate가 작업 제출을 거절하면', () => {
         const failure = new Error('submission rejected')
         beforeEach(() => {
             vi.spyOn(RestateWorkflowClient.prototype, 'submit').mockRejectedValueOnce(failure)
         })
         afterEach(() => unregisterRestateDeployment(fix.deploymentUrl))
-        it('작업을 제출하면 500을 반환하고 앱 정리 시 접수 오류를 전달한다', async () => {
+        it('500을 반환하고 앱 종료 시 접수 오류를 전달한다', async () => {
             await fix.httpClient
                 .post('/job-demo/jobs')
                 .headers({ Authorization: 'Bearer ' + token })
@@ -92,7 +92,7 @@ describe('JobDemoService', () => {
                 })
         })
     })
-    describe('결과 저장을 기다리는 작업이 있으면', () => {
+    describe('작업 결과를 저장하기 전에', () => {
         const started = () => Promise.withResolvers<void>()
         let entered: ReturnType<typeof started>
         let resume: ReturnType<typeof started>
@@ -110,7 +110,7 @@ describe('JobDemoService', () => {
             })
         })
         afterEach(() => resume.resolve())
-        it('작업을 조회하면 pending을 반환한다', async () => {
+        it('조회하면 pending을 반환한다', async () => {
             try {
                 const { body } = await fix.httpClient
                     .post('/job-demo/jobs')
@@ -145,7 +145,7 @@ describe('JobDemoService', () => {
                 await loginUser(fix, { email: user.email, password: 'Example password 1!' })
             ).accessToken
         })
-        it('작업 조회에 404를 반환한다', async () => {
+        it('조회하면 404를 반환한다', async () => {
             await fix.httpClient
                 .get('/job-demo/jobs/' + jobId)
                 .headers({ Authorization: 'Bearer ' + otherToken })

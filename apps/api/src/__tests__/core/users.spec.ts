@@ -31,10 +31,10 @@ describe('UsersService', () => {
             { condition: '이모지 14자', password: '🌱'.repeat(14) },
             { condition: 'ASCII 129자', password: 'a'.repeat(129) },
             { condition: '한글 129자', password: '가'.repeat(129) }
-        ])('비밀번호에 $condition 값을 입력하면', ({ password }) => {
+        ])('$condition 비밀번호를 입력하면', ({ password }) => {
             const invalidSignupBody = buildCreateUserDto({ password })
 
-            it('400을 반환하고 같은 이메일로 유효한 비밀번호를 보내면 가입할 수 있다', async () => {
+            it('400을 반환하고 비밀번호를 고치면 같은 이메일로 가입할 수 있다', async () => {
                 await fix.httpClient.post('/users').body(invalidSignupBody).badRequest()
                 await fix.httpClient
                     .post('/users')
@@ -49,10 +49,10 @@ describe('UsersService', () => {
             { condition: '한글 128자', password: '가'.repeat(128) },
             { condition: '이모지 128자', password: '🌱'.repeat(128) },
             { condition: '공백 15자', password: ' '.repeat(15) }
-        ])('비밀번호에 $condition 값을 입력하면', ({ password }) => {
+        ])('$condition 비밀번호를 입력하면', ({ password }) => {
             const createDto = buildCreateUserDto({ password })
 
-            it('가입한 뒤 원문 비밀번호로 로그인할 수 있다', async () => {
+            it('입력한 비밀번호로 로그인할 수 있다', async () => {
                 await fix.httpClient.post('/users').body(createDto).created({ schema: UserSchema })
                 await fix.httpClient
                     .post('/users/login')
@@ -85,23 +85,23 @@ describe('UsersService', () => {
             })
         })
 
-        describe.each(['firstlast@example.com', 'first.last+tag@example.com'])(
-            'first.last@example.com 계정이 있고 새 이메일이 %s이면',
-            (email) => {
-                let existing: UserDto
-                beforeEach(async () => {
-                    existing = await createUser(fix, { email: 'first.last@example.com' })
-                })
-                it('점과 +태그가 다른 별도 계정을 생성한다', async () => {
-                    const { body } = await fix.httpClient
-                        .post('/users')
-                        .body(buildCreateUserDto({ email }))
-                        .created({ schema: UserSchema })
-                    expect(body.email).toBe(email)
-                    expect(body.id).not.toBe(existing.id)
-                })
-            }
-        )
+        describe.each([
+            { difference: '점만 다른', email: 'firstlast@example.com' },
+            { difference: '+태그만 다른', email: 'first.last+tag@example.com' }
+        ])('기존 이메일과 $difference 주소로 가입하면', ({ email }) => {
+            let existing: UserDto
+            beforeEach(async () => {
+                existing = await createUser(fix, { email: 'first.last@example.com' })
+            })
+            it('별도 계정을 생성한다', async () => {
+                const { body } = await fix.httpClient
+                    .post('/users')
+                    .body(buildCreateUserDto({ email }))
+                    .created({ schema: UserSchema })
+                expect(body.email).toBe(email)
+                expect(body.id).not.toBe(existing.id)
+            })
+        })
 
         it('생성된 사용자 정보를 반환한다', async () => {
             const createDto = buildCreateUserDto({ name: '2000-01-02' })
@@ -172,11 +172,11 @@ describe('UsersService', () => {
             })
         })
 
-        describe('대소문자와 앞뒤 공백만 다른 가입 요청이 있으면', () => {
+        describe('대소문자와 앞뒤 공백만 다른 이메일로 동시에 가입하면', () => {
             const emails = ['race@mail.com', 'RACE@MAIL.COM', ' race@mail.com ', ' Race@Mail.Com ']
 
             it(
-                '동시에 가입을 요청하면 하나만 201을 반환하고 나머지는 409를 반환한다',
+                '한 요청에만 201을, 나머지에는 409를 반환한다',
                 async () => {
                     const count = emails.length
                     const serverUrl = fix.httpClient.serverUrl
@@ -240,7 +240,7 @@ describe('UsersService', () => {
         describe.each([
             { condition: '이모지 14자', password: '🌱'.repeat(14) },
             { condition: '한글 129자', password: '가'.repeat(129) }
-        ])('새 비밀번호에 $condition 값을 입력하면', ({ password }) => {
+        ])('$condition 비밀번호로 바꾸면', ({ password }) => {
             const invalidPasswordUpdate = { password }
 
             it('400을 반환하고 이전 비밀번호를 유지한다', async () => {
@@ -272,7 +272,7 @@ describe('UsersService', () => {
         describe('새 이메일에 대문자와 앞뒤 공백이 있으면', () => {
             const email = '  Renamed+Tag@Example.COM  '
 
-            it('소문자로 저장하고 같은 식별값의 이메일로 로그인할 수 있다', async () => {
+            it('앞뒤 공백을 뺀 소문자로 저장하고 입력한 이메일로 로그인할 수 있다', async () => {
                 await fix.httpClient
                     .patch('/users/me')
                     .headers(userAuth)
@@ -288,7 +288,7 @@ describe('UsersService', () => {
             })
         })
 
-        describe('두 사용자가 같은 식별값의 이메일로 변경하려고 하면', () => {
+        describe('두 사용자가 대소문자와 앞뒤 공백만 다른 이메일로 동시에 변경하면', () => {
             let attempts: { original: UserDto; headers: { Authorization: string }; email: string }[]
             const newEmail = 'change@mail.com'
             beforeEach(async () => {
@@ -306,7 +306,7 @@ describe('UsersService', () => {
                     }
                 ]
             })
-            it('동시에 변경하면 한 계정만 새 이메일을 쓰고 409를 받은 계정은 기존 이메일을 유지한다', async () => {
+            it('한 계정만 변경에 성공하고 409를 받은 계정은 기존 이메일을 유지한다', async () => {
                 const results = await Promise.all(
                     attempts.map(async (attempt) => {
                         const response = await new HttpTestClient(fix.httpClient.serverUrl)
@@ -331,7 +331,7 @@ describe('UsersService', () => {
             })
         })
 
-        it('생년월일과 이메일을 변경하면 변경된 값과 기존 이름을 반환한다', async () => {
+        it('생년월일과 이메일만 바꾸면 기존 이름을 유지한다', async () => {
             const updateDto = { birthDate: plainDate('1900-12-31'), email: 'new@mail.com' }
 
             await fix.httpClient
@@ -353,7 +353,7 @@ describe('UsersService', () => {
             })
         })
 
-        it('이름을 변경하면 응답과 이후 본인 조회에 변경된 이름을 반환한다', async () => {
+        it('변경한 이름을 응답과 이후 본인 조회에 반영한다', async () => {
             const updateDto = { name: 'update-name' }
             await fix.httpClient
                 .patch('/users/me')
@@ -367,7 +367,7 @@ describe('UsersService', () => {
                 .ok({ schema: UserSchema, expected: { ...user, ...updateDto } })
         })
 
-        describe('사용자의 비밀번호가 변경되었으면', () => {
+        describe('비밀번호를 변경한 뒤', () => {
             const newPassword = '변경한 비밀번호🌱'.repeat(10)
             let refreshToken: string
 
@@ -395,7 +395,7 @@ describe('UsersService', () => {
                     })
             })
 
-            it('기존 리프레시 토큰으로 갱신을 요청하면 401을 반환한다', async () => {
+            it('기존 리프레시 토큰으로 갱신하면 401을 반환한다', async () => {
                 await fix.httpClient
                     .post('/users/refresh')
                     .body({ refreshToken })
@@ -421,7 +421,7 @@ describe('UsersService', () => {
     })
 
     describe('POST /users/refresh', () => {
-        describe('로그인한 사용자가 탈퇴했으면', () => {
+        describe('탈퇴 전에 발급한 리프레시 토큰이면', () => {
             let refreshToken: string
 
             beforeEach(async () => {
@@ -433,7 +433,7 @@ describe('UsersService', () => {
                     .noContent()
             })
 
-            it('기존 리프레시 토큰으로 갱신을 요청하면 401을 반환한다', async () => {
+            it('401을 반환한다', async () => {
                 await fix.httpClient
                     .post('/users/refresh')
                     .body({ refreshToken })
@@ -447,13 +447,13 @@ describe('UsersService', () => {
         beforeEach(async () => {
             user = await createUser(fix)
         })
-        it('ID로 조회하면 비밀번호를 제외한 사용자 정보를 반환한다', async () => {
+        it('비밀번호를 제외한 사용자 정보를 반환한다', async () => {
             const users = await fix.module.get(UsersService).getMany([user.id])
             expect(users).toEqual([user])
             expect(users[0]).not.toHaveProperty('password')
         })
-        describe('존재하지 않는 ID를 함께 요청하면', () => {
-            it('조회하면 찾지 못한 ID가 포함된 예외를 던진다', async () => {
+        describe('요청한 ID 중 일부가 존재하지 않으면', () => {
+            it('누락된 ID를 담은 예외를 던진다', async () => {
                 await expect(
                     fix.module.get(UsersService).getMany([user.id, nullObjectId])
                 ).rejects.toMatchObject({
@@ -465,7 +465,7 @@ describe('UsersService', () => {
 
     describe('update', () => {
         describe('ID에 해당하는 사용자가 없으면', () => {
-            it('수정하면 사용자 없음 예외를 던진다', async () => {
+            it('사용자 없음 예외를 던진다', async () => {
                 await expect(
                     fix.module.get(UsersService).update(nullObjectId, {})
                 ).rejects.toMatchObject({ response: expectedErrors.documentNotFound(nullObjectId) })
@@ -479,14 +479,14 @@ describe('UsersService', () => {
             beforeEach(async () => {
                 user = await createUser(fix)
             })
-            it('삭제하면 이후 조회에서 사용자 없음 예외를 던진다', async () => {
+            it('이후 조회에서 사용자 없음 예외를 던진다', async () => {
                 const service = fix.module.get(UsersService)
                 await service.deleteMany([user.id])
                 await expect(service.getMany([user.id])).rejects.toMatchObject({ status: 404 })
             })
         })
         describe('ID에 해당하는 사용자가 없으면', () => {
-            it('삭제 요청은 오류 없이 완료한다', async () => {
+            it('오류 없이 끝난다', async () => {
                 await expect(
                     fix.module.get(UsersService).deleteMany([nullObjectId])
                 ).resolves.toBeUndefined()
@@ -505,7 +505,7 @@ describe('UsersService', () => {
                 vi.spyOn(Collection.prototype, 'insertOne').mockRejectedValueOnce(failure)
             })
 
-            it('사용자 생성을 요청하면 저장 오류를 그대로 던진다', async () => {
+            it('저장 오류를 그대로 던진다', async () => {
                 const promise = service.create(buildCreateUserDto())
                 await expect(promise).rejects.toBe(failure)
                 await expect(promise).rejects.not.toBeInstanceOf(ConflictException)

@@ -32,7 +32,7 @@ describe('defaultTo', () => {
         beforeEach(() => {
             input = null
         })
-        it('기본값을 적용하면 지정한 기본값을 반환한다', () => {
+        it('기본값을 반환한다', () => {
             expect(defaultTo(input, '기본값')).toBe('기본값')
         })
     })
@@ -42,7 +42,7 @@ describe('defaultTo', () => {
         beforeEach(() => {
             input = undefined
         })
-        it('기본값을 적용하면 지정한 기본값을 반환한다', () => {
+        it('기본값을 반환한다', () => {
             expect(defaultTo(input, '기본값')).toBe('기본값')
         })
     })
@@ -52,7 +52,7 @@ describe('defaultTo', () => {
         beforeEach(() => {
             input = NaN
         })
-        it('기본값을 적용하면 지정한 기본값을 반환한다', () => {
+        it('기본값을 반환한다', () => {
             expect(defaultTo(input, 1)).toBe(1)
         })
     })
@@ -62,7 +62,7 @@ describe('defaultTo', () => {
         beforeEach(() => {
             input = 0
         })
-        it('기본값을 적용해도 0을 유지한다', () => {
+        it('0을 유지한다', () => {
             expect(defaultTo(input, 1)).toBe(0)
         })
     })
@@ -72,7 +72,7 @@ describe('defaultTo', () => {
         beforeEach(() => {
             input = ''
         })
-        it('기본값을 적용해도 빈 문자열을 유지한다', () => {
+        it('빈 문자열을 유지한다', () => {
             expect(defaultTo(input, '기본값')).toBe('')
         })
     })
@@ -82,7 +82,7 @@ describe('defaultTo', () => {
         beforeEach(() => {
             input = '값'
         })
-        it('기본값을 적용해도 원래 값을 유지한다', () => {
+        it('원래 값을 유지한다', () => {
             expect(defaultTo(input, '기본값')).toBe('값')
         })
     })
@@ -96,7 +96,7 @@ describe('getByPath', () => {
         beforeEach(() => {
             path = 'a.b.c'
         })
-        it('경로로 조회하면 해당 값을 반환한다', () => {
+        it('해당 값을 반환한다', () => {
             expect(getByPath(obj, path)).toBe(3)
         })
     })
@@ -106,7 +106,7 @@ describe('getByPath', () => {
         beforeEach(() => {
             path = 'arr[0].id'
         })
-        it('경로로 조회하면 해당 값을 반환한다', () => {
+        it('해당 값을 반환한다', () => {
             expect(getByPath(obj, path)).toBe(1)
         })
     })
@@ -116,7 +116,7 @@ describe('getByPath', () => {
         beforeEach(() => {
             input = 'a.b.d'
         })
-        it('경로로 조회하면 기본값을 반환한다', () => {
+        it('기본값을 반환한다', () => {
             expect(getByPath(obj, input, 'fallback')).toBe('fallback')
         })
     })
@@ -126,7 +126,7 @@ describe('getByPath', () => {
         beforeEach(() => {
             input = null
         })
-        it('경로로 조회하면 기본값을 반환한다', () => {
+        it('기본값을 반환한다', () => {
             expect(getByPath(input, 'a.b', 'default')).toBe('default')
         })
     })
@@ -139,7 +139,7 @@ describe('getByPath', () => {
         beforeEach(() => {
             object = input
         })
-        it('경로로 값을 조회하면 기본값을 반환한다', () => {
+        it('기본값을 반환한다', () => {
             expect(getByPath(object, 'a.b.c', 'fallback')).toBe('fallback')
         })
     })
@@ -151,7 +151,7 @@ describe('omit', () => {
         beforeEach(() => {
             object = input as any
         })
-        it('키를 제외하면 undefined를 반환한다', () => {
+        it('undefined를 반환한다', () => {
             expect(omit(object, ['a'])).toBeUndefined()
         })
     })
@@ -177,7 +177,7 @@ describe('pick', () => {
         beforeEach(() => {
             input = { a: 1 } as any
         })
-        it('키를 선택하면 존재하는 키만 반환한다', () => {
+        it('존재하는 키만 반환한다', () => {
             expect(pick(input, ['a', 'b'])).toEqual({ a: 1 })
         })
     })
@@ -192,7 +192,7 @@ describe('pick', () => {
                 [symbol]: 2
             }
         })
-        it('키를 선택하면 prototype을 바꾸지 않고 해당 키와 값을 보존한다', () => {
+        it('prototype을 바꾸지 않고 해당 키와 값을 보존한다', () => {
             const result = pick(source, ['__proto__', 'constructor', symbol])
 
             expect(Object.keys(result)).toEqual(['__proto__', 'constructor'])
@@ -233,7 +233,7 @@ describe('sortBy', () => {
                 { id: 'second', v: 1 }
             ]
         })
-        it('정렬하면 항목의 원래 순서를 유지한다', () => {
+        it('항목의 원래 순서를 유지한다', () => {
             expect(sortBy(input, 'v')).toEqual([
                 { id: 'first', v: 1 },
                 { id: 'second', v: 1 }
@@ -246,7 +246,7 @@ describe('sortBy', () => {
         beforeEach(() => {
             input = [] as { name: string }[]
         })
-        it('정렬하면 빈 배열을 반환한다', () => {
+        it('빈 배열을 반환한다', () => {
             expect(sortBy(input, 'name')).toEqual([])
         })
     })
@@ -270,7 +270,7 @@ describe('orderBy', () => {
         beforeEach(() => {
             input = [{ v: 3 }, { v: 1 }, { v: 2 }]
         })
-        it('정렬하면 오름차순으로 반환한다', () => {
+        it('오름차순으로 반환한다', () => {
             const result = orderBy(input, ['v'])
             expect(result).toEqual([{ v: 1 }, { v: 2 }, { v: 3 }])
         })
@@ -290,7 +290,7 @@ describe('orderBy', () => {
         beforeEach(() => {
             input = []
         })
-        it('정렬하면 모든 키를 오름차순으로 정렬한다', () => {
+        it('모든 키를 오름차순으로 정렬한다', () => {
             const result = orderBy(items, ['age', 'name'], input)
             expect(result).toEqual([
                 { age: 20, name: 'a' },
@@ -314,7 +314,7 @@ describe('isEqual', () => {
                 }
             }
         })
-        it('값을 비교하면 getter 실행 없이 true를 반환한다', () => {
+        it('getter를 실행하지 않고 true를 반환한다', () => {
             expect(isEqual(value, value)).toBe(true)
             expect(getter).not.toHaveBeenCalled()
         })
@@ -328,7 +328,7 @@ describe('isEqual', () => {
 
             second = 1
         })
-        it('값을 비교하면 true를 반환한다', () => {
+        it('true를 반환한다', () => {
             expect(isEqual(first, second)).toBe(true)
         })
     })
@@ -341,7 +341,7 @@ describe('isEqual', () => {
 
             second = null
         })
-        it('값을 비교하면 true를 반환한다', () => {
+        it('true를 반환한다', () => {
             expect(isEqual(first, second)).toBe(true)
         })
     })
@@ -354,7 +354,7 @@ describe('isEqual', () => {
 
             second = [1, 2]
         })
-        it('값을 비교하면 true를 반환한다', () => {
+        it('true를 반환한다', () => {
             expect(isEqual(first, second)).toBe(true)
         })
     })
@@ -367,7 +367,7 @@ describe('isEqual', () => {
 
             second = { a: 1 }
         })
-        it('값을 비교하면 true를 반환한다', () => {
+        it('true를 반환한다', () => {
             expect(isEqual(first, second)).toBe(true)
         })
     })
@@ -380,7 +380,7 @@ describe('isEqual', () => {
 
             second = { a: [1] }
         })
-        it('값을 비교하면 true를 반환한다', () => {
+        it('true를 반환한다', () => {
             expect(isEqual(first, second)).toBe(true)
         })
     })
@@ -393,7 +393,7 @@ describe('isEqual', () => {
 
             second = 2
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(first, second)).toBe(false)
         })
     })
@@ -406,7 +406,7 @@ describe('isEqual', () => {
 
             second = 'b'
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(first, second)).toBe(false)
         })
     })
@@ -419,7 +419,7 @@ describe('isEqual', () => {
 
             second = undefined
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(first, second)).toBe(false)
         })
     })
@@ -432,7 +432,7 @@ describe('isEqual', () => {
 
             second = '1'
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(first, second)).toBe(false)
         })
     })
@@ -445,7 +445,7 @@ describe('isEqual', () => {
 
             second = null
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(first, second)).toBe(false)
         })
     })
@@ -458,7 +458,7 @@ describe('isEqual', () => {
 
             second = [1, 3]
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(first, second)).toBe(false)
         })
     })
@@ -471,7 +471,7 @@ describe('isEqual', () => {
 
             second = [1, 2]
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(first, second)).toBe(false)
         })
     })
@@ -484,7 +484,7 @@ describe('isEqual', () => {
 
             second = { a: 2 }
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(first, second)).toBe(false)
         })
     })
@@ -497,7 +497,7 @@ describe('isEqual', () => {
 
             second = { a: 1, b: 2 }
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(first, second)).toBe(false)
         })
     })
@@ -510,7 +510,7 @@ describe('isEqual', () => {
 
             second = {}
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(first, second)).toBe(false)
         })
     })
@@ -523,7 +523,7 @@ describe('isEqual', () => {
 
             second = []
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(first, second)).toBe(false)
         })
     })
@@ -537,7 +537,7 @@ describe('isEqual', () => {
             b = { x: 1 }
             b.self = b
         })
-        it('값을 비교하면 true를 반환한다', () => {
+        it('true를 반환한다', () => {
             expect(isEqual(a, b)).toBe(true)
         })
     })
@@ -550,7 +550,7 @@ describe('isEqual', () => {
 
             second = new Date(1)
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(first, second)).toBe(false)
         })
     })
@@ -563,7 +563,7 @@ describe('isEqual', () => {
 
             second = new Map([['b', 2]])
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(first, second)).toBe(false)
         })
     })
@@ -576,7 +576,7 @@ describe('isEqual', () => {
 
             second = temporal.Instant.from('2026-08-31T00:00:00Z')
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(first, second)).toBe(false)
         })
     })
@@ -589,7 +589,7 @@ describe('isEqual', () => {
 
             second = temporal.PlainDate.from('2026-08-31')
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(first, second)).toBe(false)
         })
     })
@@ -602,7 +602,7 @@ describe('isEqual', () => {
 
             second = temporal.PlainDate.from('2026-08-30')
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(first, second)).toBe(false)
         })
     })
@@ -626,7 +626,7 @@ describe('isEqual', () => {
         beforeEach(() => {
             duration = temporal.Duration.from(other)
         })
-        it(`기간을 비교하면 ${expected}를 반환한다`, () => {
+        it(`${expected}를 반환한다`, () => {
             expect(isEqual(temporal.Duration.from('P1D'), duration)).toBe(expected)
         })
     })
@@ -641,7 +641,7 @@ describe('isEqual', () => {
             firstInput = { at: [first] }
             secondInput = { at: [same] }
         })
-        it('값을 비교하면 true를 반환한다', () => {
+        it('true를 반환한다', () => {
             expect(isEqual(firstInput, secondInput)).toBe(true)
         })
     })
@@ -655,7 +655,7 @@ describe('isEqual', () => {
             firstInput = { at: [first] }
             secondInput = { at: [later] }
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(firstInput, secondInput)).toBe(false)
         })
     })
@@ -668,7 +668,7 @@ describe('isEqual', () => {
             firstInput = [first]
             secondInput = [first.toString()]
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(firstInput, secondInput)).toBe(false)
         })
     })
@@ -682,7 +682,7 @@ describe('isEqual', () => {
             firstInput = new Set([first, later])
             secondInput = new Set([later, first])
         })
-        it('값을 비교하면 true를 반환한다', () => {
+        it('true를 반환한다', () => {
             expect(isEqual(firstInput, secondInput)).toBe(true)
         })
     })
@@ -695,7 +695,7 @@ describe('isEqual', () => {
             firstInput = new Set([first])
             secondInput = new Set([later])
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(firstInput, secondInput)).toBe(false)
         })
     })
@@ -708,7 +708,7 @@ describe('isEqual', () => {
             firstInput = new Map([[first, { at: later }]])
             secondInput = new Map([[later, { at: first }]])
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(firstInput, secondInput)).toBe(false)
         })
     })
@@ -726,7 +726,7 @@ describe('isEqual', () => {
                 ]
             ])
         })
-        it('값을 비교하면 true를 반환한다', () => {
+        it('true를 반환한다', () => {
             expect(isEqual(firstInput, secondInput)).toBe(true)
         })
     })
@@ -740,7 +740,7 @@ describe('isEqual', () => {
             firstInput = new Set([instant(0), instant(0), instant(1)])
             secondInput = new Set([instant(0), instant(1), instant(1)])
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(firstInput, secondInput)).toBe(false)
         })
     })
@@ -759,7 +759,7 @@ describe('isEqual', () => {
                 [instant(0), instant(1)]
             ])
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(firstInput, secondInput)).toBe(false)
         })
     })
@@ -778,7 +778,7 @@ describe('isEqual', () => {
                 [instant(0), 'first']
             ])
         })
-        it('값을 비교하면 true를 반환한다', () => {
+        it('true를 반환한다', () => {
             expect(isEqual(firstInput, secondInput)).toBe(true)
         })
     })
@@ -795,7 +795,7 @@ describe('isEqual', () => {
             firstInput = first
             secondInput = second
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(firstInput, secondInput)).toBe(false)
         })
     })
@@ -812,7 +812,7 @@ describe('isEqual', () => {
             firstInput = first
             secondInput = second
         })
-        it('값을 비교하면 true를 반환한다', () => {
+        it('true를 반환한다', () => {
             expect(isEqual(firstInput, secondInput)).toBe(true)
         })
     })
@@ -825,7 +825,7 @@ describe('isEqual', () => {
 
             second = [new temporal.PlainMonthDay(2, 29, 'iso8601', 1972)]
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(first, second)).toBe(false)
         })
     })
@@ -837,7 +837,7 @@ describe('isEqual', () => {
 
             second = {}
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(first, second)).toBe(false)
         })
     })
@@ -849,7 +849,7 @@ describe('isEqual', () => {
 
             second = new Date(0)
         })
-        it('값을 비교하면 true를 반환한다', () => {
+        it('true를 반환한다', () => {
             expect(isEqual(first, second)).toBe(true)
         })
     })
@@ -861,7 +861,7 @@ describe('isEqual', () => {
             alias = temporal.ZonedDateTime.from('2026-01-01T10:00-05:00[US/Eastern]')
             primary = temporal.ZonedDateTime.from('2026-01-01T10:00-05:00[America/New_York]')
         })
-        it('값을 비교하면 native equals와 같은 결과를 반환한다', () => {
+        it('native equals와 같은 결과를 반환한다', () => {
             expect(alias.equals(primary)).toBe(true)
             expect(isEqual(alias, primary)).toBe(true)
             expect(isEqual({ at: alias }, { at: primary })).toBe(true)
@@ -877,7 +877,7 @@ describe('isEqual', () => {
 
             second = NaN
         })
-        it('값을 비교하면 true를 반환한다', () => {
+        it('true를 반환한다', () => {
             expect(isEqual(first, second)).toBe(true)
         })
     })
@@ -889,7 +889,7 @@ describe('isEqual', () => {
 
             second = -0
         })
-        it('값을 비교하면 false를 반환한다', () => {
+        it('false를 반환한다', () => {
             expect(isEqual(first, second)).toBe(false)
         })
     })
@@ -918,7 +918,7 @@ describe('maxBy', () => {
         beforeEach(() => {
             input = []
         })
-        it('최대값 항목을 찾으면 undefined를 반환한다', () => {
+        it('undefined를 반환한다', () => {
             expect(maxBy(input, (i: any) => i.v)).toBeUndefined()
         })
     })
@@ -934,7 +934,7 @@ describe('minBy', () => {
         beforeEach(() => {
             input = []
         })
-        it('최소값 항목을 찾으면 undefined를 반환한다', () => {
+        it('undefined를 반환한다', () => {
             expect(minBy(input, (i: any) => i.v)).toBeUndefined()
         })
     })
@@ -946,7 +946,7 @@ describe('countBy', () => {
         beforeEach(() => {
             input = ['constructor', 'constructor', '__proto__', 'toString']
         })
-        it('개수를 세면 prototype을 바꾸지 않고 각 문자열을 키로 사용한다', () => {
+        it('prototype을 바꾸지 않고 각 문자열을 키로 사용한다', () => {
             const counts = countBy(input)
             expect(counts).toEqual({ constructor: 2, ['__proto__']: 1, toString: 1 })
             expect(Object.getPrototypeOf(counts)).toBe(Object.prototype)
@@ -962,7 +962,7 @@ describe('countBy', () => {
         beforeEach(() => {
             input = [['a', 'b', 'a']]
         })
-        it('그룹별 개수를 세면 각 값을 키로 사용한다', () => {
+        it('각 값을 키로 사용한다', () => {
             expect(countBy(...input)).toEqual({ a: 2, b: 1 })
         })
     })
@@ -972,7 +972,7 @@ describe('countBy', () => {
         beforeEach(() => {
             input = []
         })
-        it('그룹별 개수를 세면 빈 객체를 반환한다', () => {
+        it('빈 객체를 반환한다', () => {
             expect(countBy(input)).toEqual({})
         })
     })
@@ -988,7 +988,7 @@ describe('sumBy', () => {
         beforeEach(() => {
             input = []
         })
-        it('값을 합산하면 0을 반환한다', () => {
+        it('0을 반환한다', () => {
             expect(sumBy(input, (i: { v: number }) => i.v)).toBe(0)
         })
     })

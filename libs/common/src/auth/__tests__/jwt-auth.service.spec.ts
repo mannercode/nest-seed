@@ -65,7 +65,7 @@ describe('JwtAuthService', () => {
             })
         })
 
-        it('토큰 발급 시 세션 해시와 사용자 인덱스를 만료 시간과 함께 저장한다', async () => {
+        it('세션 해시와 사용자 인덱스를 만료 시간과 함께 저장한다', async () => {
             const { refreshToken } = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
             const key = sessionKey(fix, refreshToken)
             expect(await fix.redis.get(key)).toBe(
@@ -85,7 +85,7 @@ describe('JwtAuthService', () => {
             beforeEach(async () => {
                 await fix.redis.set(userSessionIndex, 'wrong-type')
             })
-            it('토큰 발급 시 Redis 자료형 오류를 원인으로 500 예외를 던진다', async () => {
+            it('Redis 자료형 오류를 원인으로 500 예외를 던진다', async () => {
                 await expect(
                     fix.jwtService.generateAuthTokens({ sub: 'u1' })
                 ).rejects.toMatchObject({
@@ -100,7 +100,7 @@ describe('JwtAuthService', () => {
                 await fix.redis.watch(userSessionIndex)
                 await fix.redis.sadd(userSessionIndex, 'changed-session')
             })
-            it('토큰 발급 시 트랜잭션 중단을 원인으로 500 예외를 던진다', async () => {
+            it('트랜잭션 중단을 원인으로 500 예외를 던진다', async () => {
                 await expect(
                     fix.jwtService.generateAuthTokens({ sub: 'u1' })
                 ).rejects.toMatchObject({ status: 500, cause: 'Redis transaction was aborted' })
@@ -113,7 +113,7 @@ describe('JwtAuthService', () => {
                 short = await createJwtAuthServiceFixtureWithShortTtl()
             })
             afterEach(() => short.teardown())
-            it('토큰 발급 시 만료 시각이 발급 시각과 같다', async () => {
+            it('만료 시각이 발급 시각과 같다', async () => {
                 const { accessToken } = await short.jwtService.generateAuthTokens({ sub: 'u1' })
                 expect(decode(accessToken).exp).toBe(decode(accessToken).iat)
             })
@@ -128,7 +128,7 @@ describe('JwtAuthService', () => {
             beforeEach(() => {
                 claims = payload
             })
-            it('토큰을 발급하면 401 예외를 던지고 세션을 만들지 않는다', async () => {
+            it('401 예외를 던지고 세션을 만들지 않는다', async () => {
                 await expect(fix.jwtService.generateAuthTokens(claims)).rejects.toMatchObject({
                     status: 401
                 })
@@ -299,7 +299,7 @@ describe('JwtAuthService', () => {
                 await completion
             })
 
-            it('해당 세션을 폐기하면 진행 중인 갱신은 401 예외를 던지고 세션을 되살리지 않는다', async () => {
+            it('해당 세션을 폐기하면 갱신은 401 예외를 던지고 세션은 폐기된 채로 남는다', async () => {
                 await fix.jwtService.revokeRefreshToken(original.refreshToken)
                 pause.release()
 
@@ -308,7 +308,7 @@ describe('JwtAuthService', () => {
                 expect(await fix.redis.smembers(userSessionIndex)).toEqual([])
             })
 
-            it('전체 세션을 폐기하면 진행 중인 갱신은 401 예외를 던지고 세션을 되살리지 않는다', async () => {
+            it('모든 세션을 폐기하면 갱신은 401 예외를 던지고 세션은 폐기된 채로 남는다', async () => {
                 await fix.jwtService.revokeAllSessions('u1')
                 pause.release()
 
@@ -317,11 +317,11 @@ describe('JwtAuthService', () => {
                 expect(await fix.redis.smembers(userSessionIndex)).toEqual([])
             })
         })
-        describe('다음 토큰 서명이 실패하도록 설정하면', () => {
+        describe('새 토큰 서명에 실패하면', () => {
             beforeEach(() => {
                 vi.spyOn(fix.signer, 'signAsync').mockRejectedValueOnce(new Error('signing failed'))
             })
-            it('갱신은 오류를 던지고 이전 토큰으로 다시 갱신할 수 있다', async () => {
+            it('서명 오류를 던지고 이전 토큰으로 다시 갱신할 수 있다', async () => {
                 await expect(
                     fix.jwtService.refreshAuthTokens(original.refreshToken)
                 ).rejects.toThrow('signing failed')
@@ -331,11 +331,11 @@ describe('JwtAuthService', () => {
             })
         })
 
-        describe('Redis가 토큰 교체 결과로 null을 반환하도록 설정하면', () => {
+        describe('Redis가 토큰 교체 결과로 null을 반환하면', () => {
             beforeEach(() => {
                 vi.spyOn(fix.redis, 'eval').mockResolvedValueOnce(null)
             })
-            it('갱신은 500 예외를 던지고 기존 토큰으로 다시 갱신할 수 있다', async () => {
+            it('500 예외를 던지고 기존 토큰으로 다시 갱신할 수 있다', async () => {
                 await expect(
                     fix.jwtService.refreshAuthTokens(original.refreshToken)
                 ).rejects.toThrow(
@@ -359,7 +359,7 @@ describe('JwtAuthService', () => {
             beforeEach(async () => {
                 token = await signedRefresh({ sub: 'u1', sessionId })
             })
-            it('토큰을 갱신하면 401 예외를 던진다', async () => {
+            it('401 예외를 던진다', async () => {
                 await expect(fix.jwtService.refreshAuthTokens(token)).rejects.toMatchObject({
                     status: 401
                 })
@@ -371,7 +371,7 @@ describe('JwtAuthService', () => {
             beforeEach(async () => {
                 token = await signedRefresh({ sessionId: 's1' })
             })
-            it('토큰을 갱신하면 401 예외를 던진다', async () => {
+            it('401 예외를 던진다', async () => {
                 await expect(fix.jwtService.refreshAuthTokens(token)).rejects.toMatchObject({
                     status: 401
                 })
@@ -406,7 +406,7 @@ describe('JwtAuthService', () => {
                     return ids
                 })
             })
-            it('전체 로그아웃 시 Redis 자료형 오류를 원인으로 500 예외를 던진다', async () => {
+            it('전체 로그아웃은 Redis 자료형 오류를 원인으로 500 예외를 던진다', async () => {
                 await expect(fix.jwtService.revokeAllSessions('u1')).rejects.toMatchObject({
                     status: 500,
                     cause: expect.stringContaining('WRONGTYPE')

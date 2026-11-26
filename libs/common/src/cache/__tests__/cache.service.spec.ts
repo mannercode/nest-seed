@@ -13,7 +13,7 @@ describe('CacheService', () => {
     afterEach(() => fix.teardown())
 
     describe('incrementWithExpiry', () => {
-        describe('기존 카운터가 저장되어 있으면', () => {
+        describe('기존 카운터가 있는 상태에서', () => {
             beforeEach(async () => {
                 await fix.cacheService.set('existing-counter', '7')
             })
@@ -24,7 +24,7 @@ describe('CacheService', () => {
                     beforeEach(() => {
                         expiry = ttl
                     })
-                    it('카운터를 증가시키면 예외를 던지고 새 카운터를 만들거나 기존 값을 바꾸지 않는다', async () => {
+                    it('예외를 던지고 새 카운터를 만들거나 기존 값을 바꾸지 않는다', async () => {
                         await expect(
                             fix.cacheService.incrementWithExpiry('invalid-counter', expiry)
                         ).rejects.toThrow(
@@ -49,7 +49,7 @@ describe('CacheService', () => {
             beforeEach(() => {
                 expiry = ttl
             })
-            it('카운터를 증가시키면 증가한 값을 반환하고 즉시 만료시킨다', async () => {
+            it('증가한 값을 반환하고 즉시 만료시킨다', async () => {
                 expect(
                     await fix.cacheService.incrementWithExpiry('immediate-counter', expiry)
                 ).toBe(1)
@@ -76,16 +76,16 @@ describe('CacheService', () => {
             expect(ttl).toBeLessThanOrEqual(10_000)
         })
 
-        describe('만료 시간이 10초인 카운터가 존재하면', () => {
+        describe('만료 기한이 있는 카운터를', () => {
             beforeEach(async () => {
                 await fix.cacheService.incrementWithExpiry('counter', 10_000)
             })
-            describe('증가 요청의 TTL이 60초이면', () => {
+            describe('더 긴 TTL로 증가시켜도', () => {
                 let expiry: number
                 beforeEach(() => {
                     expiry = 60_000
                 })
-                it('카운터를 증가시켜도 기존 만료 시간을 연장하지 않는다', async () => {
+                it('기존 만료 기한을 유지한다', async () => {
                     expect(await fix.cacheService.incrementWithExpiry('counter', expiry)).toBe(2)
                     const ttl = await fix.cacheService.executeScript(
                         "return redis.call('PTTL', KEYS[1])",
@@ -100,7 +100,7 @@ describe('CacheService', () => {
     })
 
     describe('set', () => {
-        describe('기존 값이 저장되어 있으면', () => {
+        describe('기존 값이 있는 상태에서', () => {
             beforeEach(async () => {
                 await fix.cacheService.set('key', 'original')
             })
@@ -111,7 +111,7 @@ describe('CacheService', () => {
                     beforeEach(() => {
                         expiry = ttl
                     })
-                    it('값을 저장하면 예외를 던지고 기존 값을 유지한다', async () => {
+                    it('예외를 던지고 기존 값을 유지한다', async () => {
                         await expect(
                             fix.cacheService.set('key', 'replacement', expiry)
                         ).rejects.toThrow(
@@ -131,21 +131,21 @@ describe('CacheService', () => {
             beforeEach(() => {
                 input = ['key', 'value']
             })
-            it('값을 저장하면 다시 조회할 수 있다', async () => {
+            it('저장한 값을 조회할 수 있다', async () => {
                 await fix.cacheService.set(...input)
                 const cachedValue = await fix.cacheService.get('key')
                 expect(cachedValue).toEqual('value')
             })
         })
 
-        describe('TTL이 1초이면', () => {
+        describe('양수인 TTL을 지정하면', () => {
             let ttl: number
             let input: Parameters<typeof fix.cacheService.set>[2]
             beforeEach(() => {
                 ttl = 1000
                 input = ttl
             })
-            it('값을 저장하고 TTL이 지나면 조회할 수 없다', async () => {
+            it('만료 전까지만 값을 조회할 수 있다', async () => {
                 await fix.cacheService.set('key', 'value', input)
 
                 const beforeExpiration = await fix.cacheService.get('key')
@@ -164,7 +164,7 @@ describe('CacheService', () => {
             beforeEach(() => {
                 input = 0
             })
-            it('값을 저장하면 1.5초 뒤에도 조회할 수 있다', async () => {
+            it('저장한 값이 만료되지 않는다', async () => {
                 await fix.cacheService.set('key', 'value', input)
 
                 const beforeExpiration = await fix.cacheService.get('key')
@@ -182,7 +182,7 @@ describe('CacheService', () => {
             beforeEach(() => {
                 input = -100
             })
-            it('값을 저장하면 예외를 던진다', async () => {
+            it('예외를 던진다', async () => {
                 await expect(fix.cacheService.set('key', 'value', input)).rejects.toThrow(
                     expect.objectContaining({
                         status: 500,
@@ -201,7 +201,7 @@ describe('CacheService', () => {
                 const beforeDelete = await fix.cacheService.get('key')
                 expect(beforeDelete).toEqual('value')
             })
-            it('삭제하면 해당 키를 조회할 수 없다', async () => {
+            it('이후 조회에서 해당 키를 찾을 수 없다', async () => {
                 await fix.cacheService.delete('key')
 
                 const afterDelete = await fix.cacheService.get('key')
@@ -211,7 +211,7 @@ describe('CacheService', () => {
     })
 
     describe('executeScript', () => {
-        it('스크립트를 실행하고 결과를 반환한다', async () => {
+        it('스크립트 실행 결과를 반환한다', async () => {
             const script = `return redis.call('SET', KEYS[1], ARGV[2])`
             const keys = ['key']
             const args = ['value']
@@ -228,7 +228,7 @@ describe('CacheService', () => {
             beforeEach(() => {
                 input = 'this is not lua'
             })
-            it('스크립트를 실행하면 예외를 그대로 던진다', async () => {
+            it('예외를 그대로 던진다', async () => {
                 await expect(fix.cacheService.executeScript(input, [], [])).rejects.toThrow()
             })
         })
@@ -242,7 +242,7 @@ describe('CacheService', () => {
                 callback = vi.fn(() => 'unused')
                 expiry = ttl
             })
-            it('락 획득을 요청하면 락을 만들거나 콜백을 실행하기 전에 예외를 던진다', async () => {
+            it('락을 만들거나 콜백을 실행하기 전에 예외를 던진다', async () => {
                 await expect(fix.cacheService.withLock('job', expiry, callback)).rejects.toThrow(
                     expect.objectContaining({
                         status: 500,
@@ -276,11 +276,11 @@ describe('CacheService', () => {
             expect(executedCount).toBeGreaterThanOrEqual(1)
         }, 30_000)
 
-        describe('다른 호출자가 기존 Redis 키 lock:job으로 락을 점유했으면', () => {
+        describe('다른 호출자가 기존 키 형식으로 락을 보유하면', () => {
             beforeEach(async () => {
                 await fix.cacheService.set(jobLockKey, 'other-runner', 10_000)
             })
-            it('락 획득을 요청해도 실행하지 않고 기존 락을 유지한다', async () => {
+            it('콜백을 실행하지 않고 기존 락을 유지한다', async () => {
                 const result = await fix.cacheService.withLock('job', 5_000, async () => {
                     throw new Error('should not run while another owner holds lock')
                 })
@@ -314,7 +314,7 @@ describe('CacheService', () => {
             beforeEach(() => {
                 input = 0
             })
-            it('락 획득을 요청하면 예외를 던진다', async () => {
+            it('예외를 던진다', async () => {
                 await expect(
                     fix.cacheService.withLock('job', input, async () => null)
                 ).rejects.toThrow(
@@ -331,7 +331,7 @@ describe('CacheService', () => {
             beforeEach(() => {
                 input = -100
             })
-            it('락 획득을 요청하면 예외를 던진다', async () => {
+            it('예외를 던진다', async () => {
                 await expect(
                     fix.cacheService.withLock('job', input, async () => null)
                 ).rejects.toThrow(
@@ -343,14 +343,14 @@ describe('CacheService', () => {
             })
         })
 
-        describe('콜백이 예외를 던지도록 설정하면', () => {
+        describe('콜백이 예외를 던지면', () => {
             let callback: Parameters<typeof fix.cacheService.withLock>[2]
             beforeEach(() => {
                 callback = () => {
                     throw new Error('boom')
                 }
             })
-            it('락을 획득해 실행하면 예외를 전달하고 락을 해제한다', async () => {
+            it('예외를 전달하고 락을 해제한다', async () => {
                 await expect(fix.cacheService.withLock('job', 5_000, callback)).rejects.toThrow(
                     'boom'
                 )
@@ -360,14 +360,14 @@ describe('CacheService', () => {
             })
         })
 
-        describe('콜백이 거부된 Promise를 반환하도록 설정하면', () => {
+        describe('콜백이 거부된 Promise를 반환하면', () => {
             let callback: Parameters<typeof fix.cacheService.withLock>[2]
             beforeEach(() => {
                 callback = async () => {
                     throw new Error('rejected')
                 }
             })
-            it('락을 획득해 실행하면 예외를 전달하고 락을 해제한다', async () => {
+            it('예외를 전달하고 락을 해제한다', async () => {
                 await expect(fix.cacheService.withLock('job', 5_000, callback)).rejects.toThrow(
                     'rejected'
                 )
@@ -406,7 +406,7 @@ describe('CacheService', () => {
                 beforeEach(() => {
                     input = { waitMs: 0 }
                 })
-                it('락 획득을 요청하면 시도와 콜백 실행 없이 503 예외를 던진다', async () => {
+                it('락 획득 시도와 콜백 실행 없이 503 예외를 던진다', async () => {
                     const set = vi.spyOn(fix.redis, 'set')
                     const runner = vi.fn(() => 'unused')
 
@@ -499,7 +499,7 @@ describe('CacheService', () => {
             beforeEach(() => {
                 input = 'job'
             })
-            it('락 획득을 요청하면 콜백을 실행하고 결과를 반환한다', async () => {
+            it('콜백을 실행하고 결과를 반환한다', async () => {
                 const result = await fix.cacheService.withLockBlocking(input, 5_000, async () => 42)
                 expect(result).toBe(42)
             })
@@ -531,16 +531,16 @@ describe('CacheService', () => {
             expect(maxConcurrent).toBe(1)
         }, 30_000)
 
-        describe('다른 호출자가 락을 10초간 점유했으면', () => {
+        describe('다른 호출자가 락을 보유한 상태에서', () => {
             beforeEach(async () => {
                 await fix.cacheService.set(jobLockKey, 'other', 10_000)
             })
-            describe('대기 기한이 50ms이면', () => {
+            describe('락이 풀리기 전에 대기 기한이 지나면', () => {
                 let input: Parameters<typeof fix.cacheService.withLockBlocking>[3]
                 beforeEach(() => {
                     input = { pollMs: 10, waitMs: 50 }
                 })
-                it('락 획득을 요청하면 기한이 지난 뒤 503 예외를 던진다', async () => {
+                it('503 예외를 던진다', async () => {
                     await expect(
                         fix.cacheService.withLockBlocking('job', 5_000, async () => 'unused', input)
                     ).rejects.toThrow(
@@ -567,12 +567,12 @@ describe('CacheService', () => {
             })
         })
 
-        describe('다른 호출자의 락이 100ms 뒤에 만료되면', () => {
+        describe('다른 호출자의 락이 대기 중에 만료되면', () => {
             beforeEach(async () => {
                 // 다른 보유자가 짧게 보유하다 해제하면 같은 호출이 락을 획득해 정상 동작한다.
                 await fix.cacheService.set(jobLockKey, 'other', 100)
             })
-            it('기존 락이 만료되면 콜백을 실행하고 그 결과를 반환한다', async () => {
+            it('콜백을 실행하고 결과를 반환한다', async () => {
                 const result = await fix.cacheService.withLockBlocking(
                     'job',
                     5_000,
@@ -584,7 +584,7 @@ describe('CacheService', () => {
             })
         })
 
-        describe('다른 호출자의 락이 200ms 뒤에 만료되면', () => {
+        describe('다른 호출자의 락이 만료되기를 기다리는 동안', () => {
             beforeEach(async () => {
                 // 락을 짧게 선점해 첫 시도를 실패시켜야 pollMs가 쓰이는 재시도 경로가 실행된다.
                 await fix.cacheService.set(jobLockKey, 'other', 200)
@@ -594,7 +594,7 @@ describe('CacheService', () => {
                 beforeEach(() => {
                     input = { pollMs: 0 }
                 })
-                it('락 획득을 요청하면 기존 락 만료 후 콜백을 실행한다', async () => {
+                it('락이 만료된 뒤 콜백을 실행한다', async () => {
                     const result = await fix.cacheService.withLockBlocking(
                         'job',
                         5_000,
@@ -614,7 +614,7 @@ describe('CacheService', () => {
                 runner = vi.fn(async () => 1)
                 controller.abort(new Error('activity cancelled'))
             })
-            it('락 획득을 요청하면 콜백 실행 없이 취소 오류를 던진다', async () => {
+            it('콜백 실행 없이 취소 오류를 던진다', async () => {
                 await expect(
                     fix.cacheService.withLockBlocking('job', 5_000, runner, {
                         signal: controller.signal

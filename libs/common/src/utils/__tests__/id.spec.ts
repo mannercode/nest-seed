@@ -20,7 +20,7 @@ describe('generateShortId', () => {
         beforeEach(() => {
             length = 0
         })
-        it('ID를 생성하면 빈 문자열을 반환한다', () => {
+        it('빈 문자열을 반환한다', () => {
             expect(generateShortId(length)).toBe('')
         })
     })
@@ -43,7 +43,7 @@ describe('pickIds', () => {
         beforeEach(() => {
             items = []
         })
-        it('ID를 추출하면 빈 배열을 반환한다', () => {
+        it('빈 배열을 반환한다', () => {
             const result = pickIds(items)
             expect(result).toEqual([])
         })
@@ -69,7 +69,7 @@ describe('sha256', () => {
         beforeEach(() => {
             outputEncoding = encoding
         })
-        it('SHA-256 해시를 계산하면 지정한 인코딩으로 반환한다', () => {
+        it('지정한 인코딩으로 반환한다', () => {
             expect(sha256('abc', outputEncoding)).toBe(expected)
         })
     })

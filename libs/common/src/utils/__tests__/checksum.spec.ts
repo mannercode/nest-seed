@@ -8,7 +8,7 @@ describe('Checksum', () => {
             beforeEach(() => {
                 input = { algorithm: 'sha256', base64: 'encoded-checksum' }
             })
-            it('스키마로 검증하면 입력을 반환한다', () => {
+            it('입력값을 그대로 반환한다', () => {
                 expect(ChecksumSchema.parse(input)).toEqual({
                     algorithm: 'sha256',
                     base64: 'encoded-checksum'
@@ -34,7 +34,7 @@ describe('Checksum', () => {
             beforeEach(() => {
                 value = input
             })
-            it('입력을 검증하면 예외를 던진다', () => {
+            it('예외를 던진다', () => {
                 expect(() => ChecksumSchema.parse(value)).toThrow()
             })
         })
@@ -73,7 +73,7 @@ describe('Checksum', () => {
             beforeEach(() => {
                 input = [filePath]
             })
-            it('체크섬을 계산하면 SHA-256 해시를 반환한다', async () => {
+            it('SHA-256 해시를 반환한다', async () => {
                 const checksum = await Checksum.fromFile(...input)
 
                 expect(checksum).toEqual({
@@ -96,7 +96,7 @@ describe('Checksum', () => {
             beforeEach(() => {
                 algorithm = 'sha1'
             })
-            it('체크섬을 계산하면 SHA-1 해시를 반환한다', async () => {
+            it('SHA-1 해시를 반환한다', async () => {
                 const checksum = Checksum.fromBuffer(buffer, algorithm)
 
                 expect(checksum).toEqual({
@@ -111,7 +111,7 @@ describe('Checksum', () => {
             beforeEach(() => {
                 input = [buffer]
             })
-            it('체크섬을 계산하면 SHA-256 해시를 반환한다', async () => {
+            it('SHA-256 해시를 반환한다', async () => {
                 const checksum = Checksum.fromBuffer(...input)
 
                 expect(checksum).toEqual({
@@ -126,7 +126,7 @@ describe('Checksum', () => {
             beforeEach(() => {
                 input = Buffer.alloc(0)
             })
-            it('체크섬을 계산하면 빈 내용의 SHA-256 해시를 반환한다', () => {
+            it('빈 내용의 SHA-256 해시를 반환한다', () => {
                 const checksum = Checksum.fromBuffer(input)
 
                 expect(checksum).toEqual({

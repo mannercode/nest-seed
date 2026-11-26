@@ -461,7 +461,7 @@ describe('isDuplicateKeyError', () => {
         beforeEach(() => {
             error = input
         })
-        it(`중복 키 오류인지 판별하면 ${expected}를 반환한다`, () => {
+        it(`${expected}를 반환한다`, () => {
             expect(isDuplicateKeyError(error)).toBe(expected)
         })
     })
