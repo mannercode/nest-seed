@@ -139,15 +139,13 @@ export class AssetsService {
     async findMany(assetIds: string[]) {
         const assets = await this.repository.findMany({ ids: assetIds })
 
-        const dtos = this.toDtos(assets)
-        return Promise.all(dtos.map((dto) => this.withDownloadInfo(dto)))
+        return this.toDtos(assets)
     }
 
     async getMany(assetIds: string[]) {
         const assets = await this.repository.getMany({ ids: assetIds })
 
-        const dtos = this.toDtos(assets)
-        return Promise.all(dtos.map((dto) => this.withDownloadInfo(dto)))
+        return this.toDtos(assets)
     }
 
     async findOwner(
@@ -175,23 +173,21 @@ export class AssetsService {
         })
     }
 
-    private toDto(asset: Asset): AssetDto {
-        return mapDocToDto({ ...asset, download: null, owner: this.toOwner(asset) }, AssetSchema)
-    }
-
-    private toDtos(assets: Asset[]) {
-        return assets.map((asset) => this.toDto(asset))
+    private toDtos(assets: Asset[]): Promise<AssetDto[]> {
+        return Promise.all(
+            assets.map(async (asset) => {
+                const download = await this.s3Service.presignDownload({
+                    expiresInSec: this.config.asset.downloadExpiresInSec,
+                    key: asset.id
+                })
+                return mapDocToDto({ ...asset, download, owner: this.toOwner(asset) }, AssetSchema)
+            })
+        )
     }
 
     private toOwner(asset: Asset): { entityId: string; service: string } | null {
         if (!asset.ownerEntityId || !asset.ownerService) return null
 
         return { entityId: asset.ownerEntityId, service: asset.ownerService }
-    }
-
-    private async withDownloadInfo(assetDto: AssetDto): Promise<AssetDto> {
-        const expiresInSec = this.config.asset.downloadExpiresInSec
-        const download = await this.s3Service.presignDownload({ expiresInSec, key: assetDto.id })
-        return { ...assetDto, download }
     }
 }

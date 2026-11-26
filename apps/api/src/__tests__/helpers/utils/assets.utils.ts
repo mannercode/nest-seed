@@ -50,8 +50,6 @@ export async function createAsset(ctx: TestContext, file: TestAsset = testAssets
 }
 
 export async function downloadAsset({ download }: AssetDto) {
-    if (null === download) throw new Error('download must have value')
-
     const downloadResponse = await fetch(download.url)
 
     if (!downloadResponse.ok) {

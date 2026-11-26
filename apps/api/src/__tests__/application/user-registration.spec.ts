@@ -61,7 +61,7 @@ describe('UserRegistrationService', () => {
             const failure = new Error('photo delete failed')
             vi.spyOn(storage, 'deleteObject').mockRejectedValueOnce(failure)
             await expect(assets.deleteMany([assetId])).rejects.toBe(failure)
-            expect((await fetch(ensure(download).url)).status).toBe(200)
+            expect((await fetch(download.url)).status).toBe(200)
         })
         it('404를 반환하고 계정을 만들지 않는다', async () => {
             await fix.httpClient

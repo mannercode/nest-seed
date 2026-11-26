@@ -5,7 +5,7 @@ import { z } from 'zod'
 
 export const AssetSchema = z.strictObject({
     checksum: ChecksumSchema,
-    download: AssetDownloadSchema.nullable(),
+    download: AssetDownloadSchema,
     id: z.string(),
     mimeType: z.string(),
     originalName: z.string(),

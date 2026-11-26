@@ -580,17 +580,14 @@ describe('AssetsService', () => {
             it('다운로드 정보를 반환하고 파일 체크섬을 유지한다', async () => {
                 const fetchedAssets = await assetsService.getMany(pickIds(assets))
 
-                expect(fetchedAssets).toEqual(
-                    expect.arrayContaining(
-                        assets.map((asset) => ({
-                            ...asset,
-                            download: {
-                                expiresAt: expect.any(Temporal.Instant),
-                                url: expect.any(String)
-                            }
-                        }))
-                    )
-                )
+                const expected = assets.map(({ id }) => ({
+                    ...buildCreateAssetDto(file),
+                    id,
+                    owner: buildFinalizeAssetDto().owner,
+                    download: { expiresAt: expect.any(Temporal.Instant), url: expect.any(String) }
+                }))
+                expect(fetchedAssets).toHaveLength(expected.length)
+                expect(fetchedAssets).toEqual(expect.arrayContaining(expected))
                 const buffer = await downloadAsset(ensure(fetchedAssets[0]))
 
                 const checksum = Checksum.fromBuffer(buffer)
@@ -630,10 +627,7 @@ describe('AssetsService', () => {
                     await expect(assetsService.getMany([asset.id])).rejects.toMatchObject({
                         status: HttpStatus.NOT_FOUND
                     })
-                    const { download } = asset
-                    if (null === download) throw new Error('download must have value')
-
-                    const response = await fetch(download.url)
+                    const response = await fetch(asset.download.url)
                     expect(response.status).toBe(404)
                 }
             })
