@@ -36,7 +36,7 @@ const initializationByClient = new WeakMap<MongoClient, Map<string, Promise<void
 export type CrudRepositoryOptions<Projection extends Document | undefined = Document | undefined> =
     { hardDelete?: boolean; indexes?: IndexDescription[]; projection?: Projection }
 
-export abstract class CrudRepository<
+export abstract class MongoDocumentRepository<
     Doc extends CrudDocument,
     Projection extends Document | undefined = undefined
 >
@@ -51,8 +51,6 @@ export abstract class CrudRepository<
     constructor(
         connection: MongoConnection,
         collectionName: string,
-        protected readonly defaultSize: number,
-        protected readonly maxSize: number,
         options: CrudRepositoryOptions<Projection> = {}
     ) {
         super(connection)
@@ -252,53 +250,6 @@ export abstract class CrudRepository<
             .toArray()
     }
 
-    async findWithPagination(args: {
-        filter?: Document
-        pagination: PaginationDto
-        transaction?: TransactionArg
-    }) {
-        const { filter = {}, pagination, transaction } = args
-        const size = defaultTo(pagination.size, this.defaultSize)
-        const page = defaultTo(pagination.page, 1)
-
-        if (size <= 0) throw new BadRequestException(MongoErrors.SizeInvalid(size))
-        if (this.maxSize < size) {
-            throw new BadRequestException(MongoErrors.MaxSizeExceeded(this.maxSize, size))
-        }
-
-        const activeFilter = encodeMongoDocument(this.activeFilter(filter))
-        const session = this.getSession(transaction)
-        const cursor = this.collection
-            .find(activeFilter, { projection: this.projection, session })
-            .limit(size)
-            .skip((page - 1) * size)
-
-        if (pagination.orderby) {
-            const { direction, name } = pagination.orderby
-            cursor.sort({ [name]: direction })
-        }
-
-        // MongoDB는 같은 트랜잭션 안에서 병렬 연산을 지원하지 않는다.
-        const [rawItems, total] = session
-            ? [
-                  await cursor.toArray(),
-                  await this.collection.countDocuments(activeFilter, { session })
-              ]
-            : await Promise.all([
-                  cursor.toArray(),
-                  this.collection.countDocuments(activeFilter, { session })
-              ])
-
-        return {
-            items: rawItems.map((doc) =>
-                this.toDomainDocument(mongoToPublic<ProjectedDocument<Doc, Projection>>(doc))
-            ),
-            page,
-            size,
-            total
-        } as PaginationResult<ProjectedDocument<Doc, Projection>>
-    }
-
     async get({ id, transaction }: { id: string; transaction?: TransactionArg }) {
         const doc = await this.find({ id, transaction })
         if (!doc) throw new NotFoundException(MongoErrors.DocumentNotFound(id))
@@ -406,5 +357,67 @@ export abstract class CrudRepository<
         doc: ProjectedDocument<Doc, Projection>
     ): ProjectedDocument<Doc, Projection> {
         return doc
+    }
+}
+
+export abstract class CrudRepository<
+    Doc extends CrudDocument,
+    Projection extends Document | undefined = undefined
+> extends MongoDocumentRepository<Doc, Projection> {
+    constructor(
+        connection: MongoConnection,
+        collectionName: string,
+        protected readonly defaultSize: number,
+        protected readonly maxSize: number,
+        options?: CrudRepositoryOptions<Projection>
+    ) {
+        super(connection, collectionName, options)
+    }
+
+    async findWithPagination(args: {
+        filter?: Document
+        pagination: PaginationDto
+        transaction?: TransactionArg
+    }) {
+        const { filter = {}, pagination, transaction } = args
+        const size = defaultTo(pagination.size, this.defaultSize)
+        const page = defaultTo(pagination.page, 1)
+
+        if (size <= 0) throw new BadRequestException(MongoErrors.SizeInvalid(size))
+        if (this.maxSize < size) {
+            throw new BadRequestException(MongoErrors.MaxSizeExceeded(this.maxSize, size))
+        }
+
+        const activeFilter = encodeMongoDocument(this.activeFilter(filter))
+        const session = this.getSession(transaction)
+        const cursor = this.collection
+            .find(activeFilter, { projection: this.projection, session })
+            .limit(size)
+            .skip((page - 1) * size)
+
+        if (pagination.orderby) {
+            const { direction, name } = pagination.orderby
+            cursor.sort({ [name]: direction })
+        }
+
+        // MongoDB는 같은 트랜잭션 안에서 병렬 연산을 지원하지 않는다.
+        const [rawItems, total] = session
+            ? [
+                  await cursor.toArray(),
+                  await this.collection.countDocuments(activeFilter, { session })
+              ]
+            : await Promise.all([
+                  cursor.toArray(),
+                  this.collection.countDocuments(activeFilter, { session })
+              ])
+
+        return {
+            items: rawItems.map((doc) =>
+                this.toDomainDocument(mongoToPublic<ProjectedDocument<Doc, Projection>>(doc))
+            ),
+            page,
+            size,
+            total
+        } as PaginationResult<ProjectedDocument<Doc, Projection>>
     }
 }

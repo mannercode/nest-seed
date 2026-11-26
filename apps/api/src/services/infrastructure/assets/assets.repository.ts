@@ -1,24 +1,18 @@
 import {
-    CrudRepository,
     DateUtil,
     MongoConnection,
+    MongoDocumentRepository,
     pickIds,
     type TransactionContext
 } from '@mannercode/common'
 import { Injectable } from '@nestjs/common'
-import { AppConfigService } from '#config'
 import { CreateAssetDto } from './dtos/index.js'
 import { Asset } from './models/index.js'
 
 @Injectable()
-export class AssetsRepository extends CrudRepository<Asset> {
-    constructor(connection: MongoConnection, config: AppConfigService) {
-        super(
-            connection,
-            'assets',
-            config.http.paginationDefaultSize,
-            config.http.paginationMaxSize
-        )
+export class AssetsRepository extends MongoDocumentRepository<Asset> {
+    constructor(connection: MongoConnection) {
+        super(connection, 'assets')
     }
 
     async assignOwner(

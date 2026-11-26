@@ -6,8 +6,8 @@ import { OrderDirection } from '#common/pagination'
 import { z } from 'zod'
 import { InstantFromInputSchema, JsonUtil, paginationResultSchema } from '#common'
 import {
-    CrudRepository,
     MongoConnection,
+    MongoDocumentRepository,
     MongoErrors,
     newObjectIdString,
     objectId
@@ -1270,7 +1270,7 @@ describe('CrudRepository', () => {
     })
 })
 
-class RepositoryHarness extends CrudRepository<Sample> {
+class RepositoryHarness extends MongoDocumentRepository<Sample> {
     constructor(
         collection: Collection,
         client: MongoClient,
@@ -1279,8 +1279,6 @@ class RepositoryHarness extends CrudRepository<Sample> {
         super(
             new MongoConnection(client, { collection: () => collection } as unknown as Db, false),
             'sample',
-            10,
-            100,
             options
         )
     }

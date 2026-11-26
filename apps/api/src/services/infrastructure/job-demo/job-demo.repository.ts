@@ -1,20 +1,19 @@
-import { CrudDocument, CrudRepository, MongoConnection, MongoErrors } from '@mannercode/common'
+import {
+    CrudDocument,
+    MongoConnection,
+    MongoDocumentRepository,
+    MongoErrors
+} from '@mannercode/common'
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { AppConfigService } from '#config'
 import type { TextJobResult } from './dtos.js'
 class TextJob extends CrudDocument {
     userId: string
     result: TextJobResult | null
 }
 @Injectable()
-export class JobDemoRepository extends CrudRepository<TextJob> {
-    constructor(connection: MongoConnection, config: AppConfigService) {
-        super(
-            connection,
-            'textjobs',
-            config.http.paginationDefaultSize,
-            config.http.paginationMaxSize
-        )
+export class JobDemoRepository extends MongoDocumentRepository<TextJob> {
+    constructor(connection: MongoConnection) {
+        super(connection, 'textjobs')
     }
     async create(userId: string) {
         const job = this.newDocument()

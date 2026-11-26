@@ -1,6 +1,6 @@
 import {
     assignIfDefined,
-    CrudRepository,
+    MongoDocumentRepository,
     isDuplicateKeyError,
     MongoErrors,
     plainDateFromMongo,
@@ -9,7 +9,6 @@ import {
 } from '@mannercode/common'
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { z } from 'zod'
-import { AppConfigService } from '#config'
 import { CreateUserDto, UpdateUserDto } from './dtos/index.js'
 import { UserErrors } from './errors.js'
 import { User } from './models/index.js'
@@ -24,18 +23,12 @@ const UserPatchSchema = UserWriteSchema.partial()
 const userProjection = { password: 0 } as const
 
 @Injectable()
-export class UsersRepository extends CrudRepository<User, typeof userProjection> {
-    constructor(connection: MongoConnection, config: AppConfigService) {
-        super(
-            connection,
-            'users',
-            config.http.paginationDefaultSize,
-            config.http.paginationMaxSize,
-            {
-                indexes: [{ key: { email: 1, deletedAt: 1 }, unique: true }],
-                projection: userProjection
-            }
-        )
+export class UsersRepository extends MongoDocumentRepository<User, typeof userProjection> {
+    constructor(connection: MongoConnection) {
+        super(connection, 'users', {
+            indexes: [{ key: { email: 1, deletedAt: 1 }, unique: true }],
+            projection: userProjection
+        })
     }
 
     async create(
