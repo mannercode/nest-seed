@@ -6,6 +6,12 @@ packages:
 
 saveExact: true
 
+# GHSA-g3hv-75wg-m249 수정 버전을 상위 도구가 직접 지원하면 해당 override를 제거한다.
+# glob 10은 minimatch 9의 패턴 표현에 의존한다. archiver-utils에는 minimatch 11을 지원하는 glob을 사용한다.
+overrides:
+    'fork-ts-checker-webpack-plugin@9>minimatch@9': 11.0.9
+    'archiver-utils@5>glob@10': 14.0.6
+
 # TypeScript는 루트·API에서 6.x, 웹 앱·브라우저 테스트에서 7.x를 쓰므로 사용처별로 수동 갱신한다.
 # 백엔드의 7.1 이상 전환 시 ts-loader가 Nest 생성자 타입(design:paramtypes)을 기록하고
 # fork-ts-checker가 API 빌드에서 타입 오류를 검출해야 한다. https://github.com/TypeStrong/fork-ts-checker-webpack-plugin/pull/899
