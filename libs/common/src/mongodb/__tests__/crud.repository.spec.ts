@@ -112,12 +112,12 @@ describe('CrudRepository', () => {
                 expect(filter).toEqual({ _id: objectId(created.id) })
                 expect(await fix.soft.findDocument({ _id: created.id })).toBeNull()
 
-                expect(
-                    await fix.soft.findDocuments(
-                        { $or: [fix.soft.idsFilter([created.id])] },
-                        { projection: { _id: 1 } }
-                    )
-                ).toEqual([{ id: created.id }])
+                const onlyIds = await fix.soft.findDocuments(
+                    { $or: [fix.soft.idsFilter([created.id])] },
+                    { projection: { _id: true } }
+                )
+                expectTypeOf(onlyIds).toEqualTypeOf<{ id: string }[]>()
+                expect(onlyIds).toEqual([{ id: created.id }])
                 const updated = await fix.soft.findAndUpdateDocument(
                     filter,
                     { $set: { name: 'updated' } },
@@ -189,9 +189,12 @@ describe('CrudRepository', () => {
             })
             it('정렬 순서와 개수, 반환 필드를 지정할 수 있다', async () => {
                 expect(await fix.soft.findDocument({ name: 'a' })).toMatchObject({ name: 'a' })
-                expect(
-                    await fix.soft.findDocument({ name: 'a' }, { projection: { _id: 0, name: 1 } })
-                ).toEqual({ name: 'a' })
+                const found = await fix.soft.findDocument(
+                    { name: 'a' },
+                    { projection: { _id: 0, name: 1 } }
+                )
+                expectTypeOf(found).toEqualTypeOf<{ name: string } | null>()
+                expect(found).toEqual({ name: 'a' })
                 expect(await fix.soft.findDocuments({})).toHaveLength(3)
                 expect(
                     await fix.soft.findDocuments(
@@ -680,6 +683,33 @@ describe('CrudRepository', () => {
                 await expect(fix.soft.find({ id: created.id })).resolves.toMatchObject({
                     id: created.id,
                     name: 'sample'
+                })
+            })
+            describe.each([
+                { condition: '이름만 조회하면', projection: { _id: 0, name: 1 } },
+                { condition: 'ID만 제외하면', projection: { _id: false } }
+            ] as const)('$condition', ({ projection }) => {
+                const missingId = '000000000000000000000000'
+                let repository: SamplesRepository<typeof projection>
+                beforeEach(() => {
+                    repository = new SamplesRepository(
+                        fix.client,
+                        fix.soft.collection.collectionName,
+                        { projection }
+                    )
+                })
+                it('getMany는 요청한 문서를 ID 없이 반환한다', async () => {
+                    const item = await repository.get({ id: created.id })
+                    expectTypeOf(item).not.toExtend<{ id: string }>()
+                    expect(item).not.toHaveProperty('id')
+                    expect(await repository.getMany({ ids: [created.id] })).toEqual([item])
+                })
+                it('getMany는 누락된 ID만 보고한다', async () => {
+                    await expect(
+                        repository.getMany({ ids: [created.id, missingId] })
+                    ).rejects.toMatchObject({
+                        response: MongoErrors.MultipleDocumentsNotFound([missingId])
+                    })
                 })
             })
             describe('조회할 ID에 해당하는 문서가 없으면', () => {

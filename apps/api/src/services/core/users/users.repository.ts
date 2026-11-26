@@ -21,9 +21,10 @@ const UserWriteSchema = z.strictObject({
     password: z.string().min(1)
 })
 const UserPatchSchema = UserWriteSchema.partial()
+const userProjection = { password: 0 } as const
 
 @Injectable()
-export class UsersRepository extends CrudRepository<User> {
+export class UsersRepository extends CrudRepository<User, typeof userProjection> {
     constructor(connection: MongoConnection, config: AppConfigService) {
         super(
             connection,
@@ -32,7 +33,7 @@ export class UsersRepository extends CrudRepository<User> {
             config.http.paginationMaxSize,
             {
                 indexes: [{ key: { email: 1, deletedAt: 1 }, unique: true }],
-                projection: { password: 0 }
+                projection: userProjection
             }
         )
     }
@@ -96,9 +97,8 @@ export class UsersRepository extends CrudRepository<User> {
         }
     }
 
-    protected override toDomainDocument(doc: User): User {
-        const user = super.toDomainDocument(doc)
-        user.birthDate = plainDateFromMongo(user.birthDate)
-        return user
+    protected override toDomainDocument<T extends Omit<User, 'password'>>(doc: T): T {
+        doc.birthDate = plainDateFromMongo(doc.birthDate)
+        return doc
     }
 }

@@ -39,6 +39,7 @@ export class NatsModule {
         return {
             exports: [provider],
             global: true,
+            imports: options.imports,
             module: NatsModule,
             providers: [NatsConnectionRegistry, provider]
         }

@@ -1,5 +1,6 @@
 import { createTestContext } from '@mannercode/testing'
 import { Inject, Injectable, Module } from '@nestjs/common'
+import { registerAs } from '@nestjs/config'
 import {
     DEFAULT_NATS_CONNECTION_NAME,
     getNatsConnectionToken,
@@ -90,14 +91,10 @@ describe('NatsModule', () => {
         }
     })
 
-    it('forRootAsync는 useFactory의 반환값으로 연결을 만든다', async () => {
+    it('forRootAsync는 설정 모듈에서 받은 주소로 연결한다', async () => {
+        const config = registerAs('nats', () => JSON.parse(process.env.TESTLIB_NATS_OPTIONS!))
         const ctx = await createTestContext({
-            imports: [
-                NatsModule.forRootAsync(
-                    { useFactory: () => JSON.parse(process.env.TESTLIB_NATS_OPTIONS as string) },
-                    'forRootAsync'
-                )
-            ]
+            imports: [NatsModule.forRootAsync(config.asProvider(), 'forRootAsync')]
         })
         try {
             const nc = ctx.module.get<NatsConnection>(getNatsConnectionToken('forRootAsync'))

@@ -5,9 +5,11 @@
 
 다른 프로젝트에서 가져갈 때는 패키지에 선언된 peer dependency를 설치하고 앱과 테스트의 Nest 버전을 맞춘다. Nest core를 두 번 로드하면 같은 클래스도 서로 다른 DI 토큰이 될 수 있다. [common 의존성](common/package.json) · [testing 의존성](testing/package.json)
 
+연결 설정을 다른 Nest 모듈에서 가져오려면 `forRootAsync`나 `register`의 `imports`에 해당 모듈을, `inject`에 그 모듈이 export한 토큰을 넣는다. [S3 설정 주입 예제](common/src/s3/__tests__/s3-object.service.spec.ts)
+
 ## 저장소와 트랜잭션
 
-CRUD 메서드에는 문자열 문서 ID를 넘긴다. MongoDB 필터를 직접 쓸 때는 `idFilter(id)`·`idsFilter(ids)`로 문서 ID를 표시한다. 집계 그룹의 `_id`에는 일반 문자열도 들어갈 수 있기 때문이다. CRUD 결과는 `id`를 반환하고, projection으로 `_id`를 빼면 `id`도 생략한다. 집계 결과는 필드 이름을 보존하고 ObjectId 값만 문자열로 바꾼다. [저장소 조회 예제](common/src/mongodb/__tests__/crud.repository.spec.ts)
+CRUD 메서드에는 문자열 문서 ID를 넘긴다. MongoDB 필터를 직접 쓸 때는 `idFilter(id)`·`idsFilter(ids)`로 문서 ID를 표시한다. 집계 그룹의 `_id`에는 일반 문자열도 들어갈 수 있기 때문이다. CRUD 결과는 `id`를 반환하고, projection으로 `_id`를 빼면 `id`도 생략한다. 집계 결과는 필드 이름을 보존하고 ObjectId 값만 문자열로 바꾼다. 저장소에 기본 projection을 두면 `CrudRepository<User, typeof userProjection>`처럼 타입을 함께 지정한다. [저장소 조회 예제](common/src/mongodb/__tests__/crud.repository.spec.ts)
 
 한 트랜잭션에 참여하는 Repository에는 콜백의 `TransactionContext`를 전달하고 같은 세션의 작업을 순서대로 실행한다. context는 콜백 안에서만 유효하다. 드라이버가 콜백을 다시 실행할 수 있으므로 S3 쓰기나 메시지 발행은 밖에 둔다. 쓰기 확인이 `wtimeout`으로 끝나도 쓰기 자체는 이미 반영됐을 수 있다. [가입 트랜잭션](../apps/api/src/services/application/user-registration/user-registration.service.ts) · [연결 옵션](common/src/mongodb/__tests__/connections.spec.ts)
 

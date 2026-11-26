@@ -1,5 +1,6 @@
-import { toAny } from '@mannercode/testing'
-import { HttpStatus } from '@nestjs/common'
+import { createTestContext, toAny } from '@mannercode/testing'
+import { HttpStatus, Module } from '@nestjs/common'
+import { S3ObjectModule, S3ObjectService } from '#common/s3'
 import { Checksum, DateUtil, HttpUtil } from '#common/utils'
 import {
     testBuffer,
@@ -27,6 +28,40 @@ function buildPresignedPostForm(
 
     return form
 }
+
+describe('S3ObjectModule.register', () => {
+    describe('설정 모듈이 버킷을 제공하면', () => {
+        const bucket = Symbol('bucket')
+        @Module({ providers: [{ provide: bucket, useValue: 'project-assets' }], exports: [bucket] })
+        class StorageConfigModule {}
+
+        it('설정한 버킷의 업로드 정책을 발급한다', async () => {
+            const ctx = await createTestContext({
+                imports: [
+                    S3ObjectModule.register({
+                        imports: [StorageConfigModule],
+                        inject: [bucket],
+                        useFactory: (bucketName: string) => ({
+                            bucket: bucketName,
+                            region: 'us-east-1',
+                            credentials: { accessKeyId: 'test', secretAccessKey: 'test' }
+                        })
+                    })
+                ]
+            })
+            try {
+                const service = ctx.module.get<S3ObjectService>(S3ObjectService.getName())
+                const { fields } = await service.presignUploadPost({
+                    key: 'photo',
+                    expiresInSec: 60
+                })
+                expect(fields.bucket).toBe('project-assets')
+            } finally {
+                await ctx.close()
+            }
+        })
+    })
+})
 
 describe('S3ObjectService', () => {
     let fix: S3ObjectServiceFixture

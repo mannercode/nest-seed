@@ -1,5 +1,6 @@
 import { createTestContext, withTestId } from '@mannercode/testing'
 import { Injectable } from '@nestjs/common'
+import { ConfigModule, registerAs } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { Redis } from 'ioredis'
 import { getRedisConnectionToken, RedisModule } from '#common/redis'
@@ -23,11 +24,14 @@ class TestInjectJwtAuthService {
 
 export async function createJwtAuthServiceFixture() {
     const configuredPrefix = withTestId('jwt-auth')
+    const session = registerAs('session', () => ({ prefix: configuredPrefix }))
     const { close, module } = await createTestContext({
         imports: [
             RedisModule.forRoot({ type: 'single', url: process.env.TESTLIB_REDIS_URL }),
             JwtAuthModule.register({
-                prefix: async () => configuredPrefix,
+                imports: [ConfigModule.forFeature(session)],
+                inject: [session.KEY],
+                prefix: async (value: ReturnType<typeof session>) => value.prefix,
                 useFactory() {
                     return {
                         auth: {

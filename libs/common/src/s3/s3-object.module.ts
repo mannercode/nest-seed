@@ -24,6 +24,11 @@ export class S3ObjectModule {
             }
         }
 
-        return { exports: [provider], module: S3ObjectModule, providers: [provider] }
+        return {
+            exports: [provider],
+            imports: options.imports,
+            module: S3ObjectModule,
+            providers: [provider]
+        }
     }
 }

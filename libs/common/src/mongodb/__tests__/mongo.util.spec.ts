@@ -546,6 +546,21 @@ describe('assignIfDefined, mapDocToDto', () => {
         })
     })
 
+    describe('문자열을 숫자 필드에 복사하면', () => {
+        it('숫자를 반환하는 변환 함수가 필요하다', () => {
+            const target = { count: 0 }
+            const source = { count: '2' }
+            const assignCount = assignIfDefined<typeof target, typeof source, 'count'>
+            type Args = Parameters<typeof assignCount>
+            type Fields = [typeof target, typeof source, 'count']
+
+            expectTypeOf<Fields>().not.toExtend<Args>()
+            expectTypeOf<[...Fields, (value: string) => string]>().not.toExtend<Args>()
+            assignCount(target, source, 'count', Number)
+            expect(target.count).toBe(2)
+        })
+    })
+
     it('스키마에 선언한 필드만 DTO로 매핑한다', () => {
         const dto = mapDocToDto(
             { extra: true, id: 'id', name: 'name', optional: undefined },

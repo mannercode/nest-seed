@@ -41,6 +41,7 @@ export class RedisModule {
         return {
             exports: [provider],
             global: true,
+            imports: options.imports,
             module: RedisModule,
             providers: [RedisConnectionRegistry, provider]
         }

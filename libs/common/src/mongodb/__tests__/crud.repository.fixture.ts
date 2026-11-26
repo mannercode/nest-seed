@@ -22,8 +22,14 @@ export class Sample extends CrudDocument {
 
 type SampleDraft = VersionedDocument<Sample>
 
-export class SamplesRepository extends CrudRepository<Sample> {
-    constructor(client: MongoClient, collectionName: string, options: CrudRepositoryOptions = {}) {
+export class SamplesRepository<
+    const Projection extends Document | undefined = undefined
+> extends CrudRepository<Sample, Projection> {
+    constructor(
+        client: MongoClient,
+        collectionName: string,
+        options: CrudRepositoryOptions<Projection> = {}
+    ) {
         super(
             new MongoConnection(
                 client,
@@ -94,7 +100,7 @@ export class SamplesRepository extends CrudRepository<Sample> {
 export type MongoRepositoryFixture = {
     client: MongoClient
     hard: SamplesRepository
-    projected: SamplesRepository
+    projected: SamplesRepository<{ secret: 0 }>
     soft: SamplesRepository
     teardown: () => Promise<void>
 }

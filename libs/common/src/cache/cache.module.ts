@@ -23,6 +23,11 @@ export class CacheModule {
             }
         }
 
-        return { exports: [provider], module: CacheModule, providers: [provider] }
+        return {
+            exports: [provider],
+            imports: options.imports,
+            module: CacheModule,
+            providers: [provider]
+        }
     }
 }

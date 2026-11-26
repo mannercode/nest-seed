@@ -1,5 +1,6 @@
 import type { S3ClientConfig } from '@aws-sdk/client-s3'
 import type { PresignedPost } from '@aws-sdk/s3-presigned-post'
+import type { ModuleMetadata } from '@nestjs/common'
 import type { ChecksumAlgorithm } from '#common/utils'
 
 export type S3DeleteObjectResult = { key: string; status: number }
@@ -24,6 +25,7 @@ export type S3ListObjectsResult = {
 export type S3ObjectData = { contentType: string; data: Buffer; filename: string }
 
 export type S3ObjectModuleOptions = {
+    imports?: ModuleMetadata['imports']
     inject?: any[]
     name?: string
     useFactory: (...args: any[]) => Promise<S3ServiceConfig> | S3ServiceConfig

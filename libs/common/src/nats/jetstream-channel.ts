@@ -48,7 +48,10 @@ export class JetStreamChannel {
     }
 
     initialize(): Promise<void> {
-        this.initialization ??= this.createResources()
+        this.initialization ??= this.createResources().catch((error: unknown) => {
+            this.initialization = undefined
+            throw error
+        })
         return this.initialization
     }
 

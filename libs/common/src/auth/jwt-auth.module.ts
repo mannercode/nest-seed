@@ -33,7 +33,7 @@ export class JwtAuthModule {
 
         return {
             exports: [jwtAuthProvider],
-            imports: [JwtModule.register({})],
+            imports: [JwtModule.register({}), ...(options.imports ?? [])],
             module: JwtAuthModule,
             providers: [jwtAuthProvider]
         }

@@ -1,7 +1,7 @@
 import { MongoClient, type Db } from 'mongodb'
 import type { MockInstance } from 'vitest'
 import { Test } from '@nestjs/testing'
-import { Global, Module } from '@nestjs/common'
+import { Module } from '@nestjs/common'
 import { MongoConnection, MongoModule } from '#common/mongodb'
 
 describe('MongoConnection', () => {
@@ -49,13 +49,12 @@ describe('MongoModule', () => {
         })
         it('모듈을 초기화하면 설정대로 연결하고 종료하면 client를 닫는다', async () => {
             const config = Symbol('config')
-            @Global()
             @Module({ providers: [{ provide: config, useValue: options }], exports: [config] })
             class Configuration {}
             const module = await Test.createTestingModule({
                 imports: [
-                    Configuration,
                     MongoModule.forRootAsync({
+                        imports: [Configuration],
                         inject: [config],
                         useFactory: async (value) => value
                     })

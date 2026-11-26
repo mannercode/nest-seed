@@ -1,6 +1,6 @@
 import { setImmediate as nextTurn } from 'node:timers/promises'
 import { connect, type NatsConnection } from '@nats-io/transport-node'
-import { jetstreamManager } from '@nats-io/jetstream'
+import { JetStreamApiCodes, JetStreamApiError, jetstreamManager } from '@nats-io/jetstream'
 import type { MockInstance } from 'vitest'
 import { withTestId } from '@mannercode/testing'
 import { waitForCleanup } from '@mannercode/tools/vitest-helpers'
@@ -683,11 +683,21 @@ describe('JetStreamChannel', () => {
         })
     })
     afterEach(async () => {
-        const ending = iterator?.next()
-        await messages?.close()
-        await ending
-        await manager.streams.delete(streamName)
-        await connection.close()
+        try {
+            const ending = iterator?.next()
+            await messages?.close()
+            await ending
+            await manager.streams.delete(streamName).catch((error: unknown) => {
+                if (!(
+                    error instanceof JetStreamApiError &&
+                    error.code === JetStreamApiCodes.StreamNotFound
+                )) {
+                    throw error
+                }
+            })
+        } finally {
+            await connection.close()
+        }
     })
 
     it('동시에 초기화한 뒤 같은 ID로 두 번 발행해도 메시지 한 건만 저장한다', async () => {
@@ -703,6 +713,23 @@ describe('JetStreamChannel', () => {
             duplicate_window: 10_000_000_000,
             max_age: 60_000_000_000,
             max_bytes: 1024 * 1024
+        })
+    })
+
+    describe('다른 스트림이 같은 subject를 사용하면', () => {
+        let otherStream: string
+        beforeEach(async () => {
+            otherStream = streamName + '_other'
+            await manager.streams.add({ name: otherStream, subjects: [streamName + '.event'] })
+        })
+        it('초기화에 실패한 뒤 충돌을 해소하면 같은 채널로 발행할 수 있다', async () => {
+            try {
+                await expect(channel.initialize()).rejects.toThrow(/overlap/i)
+            } finally {
+                await manager.streams.delete(otherStream)
+            }
+            await channel.publish({ value: 'recovered' }, 'id')
+            expect((await manager.streams.info(streamName)).state.messages).toBe(1)
         })
     })
 

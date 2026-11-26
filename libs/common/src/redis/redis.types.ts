@@ -1,3 +1,4 @@
+import type { ModuleMetadata } from '@nestjs/common'
 import type { Cluster, ClusterNode, ClusterOptions, Redis, RedisOptions } from 'ioredis'
 
 export type RedisClusterOptions = {
@@ -9,6 +10,7 @@ export type RedisClusterOptions = {
 export type RedisConnection = Cluster | Redis
 
 export type RedisModuleAsyncOptions = {
+    imports?: ModuleMetadata['imports']
     inject?: any[]
     useFactory: (...args: any[]) => Promise<RedisModuleOptions> | RedisModuleOptions
 }

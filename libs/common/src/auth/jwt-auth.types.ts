@@ -1,3 +1,5 @@
+import type { ModuleMetadata } from '@nestjs/common'
+
 export type AuthConfig = {
     accessSecret: string
     accessTokenTtlMs: number
@@ -10,6 +12,7 @@ export type AuthConfig = {
 export type JwtAuthFactoryOptions = { auth: AuthConfig }
 
 export type JwtAuthModuleOptions = {
+    imports?: ModuleMetadata['imports']
     inject?: any[]
     name?: string
     prefix: string | ((...args: any[]) => Promise<string> | string)

@@ -9,11 +9,16 @@ import {
 import type { PaginationDto, PaginationResult } from '#common/pagination'
 import type { TransactionContext } from '#common/transaction'
 import type { CrudDocument, VersionedDocument } from './mongo.document.js'
-import { Assume, DateUtil, defaultTo, differenceWith, Require, uniq } from '#common/utils'
+import { Assume, DateUtil, defaultTo, Require, uniq } from '#common/utils'
 import { MongoErrors } from './errors.js'
 import { MongoTransactionRepository } from './mongo-transaction.repository.js'
 import type { MongoConnection } from './mongo-connection.js'
-import type { MongoReadOptions, MongoWriteOptions, MongoWriteResult } from './mongo.types.js'
+import type {
+    MongoReadOptions,
+    MongoWriteOptions,
+    MongoWriteResult,
+    ProjectedDocument
+} from './mongo.types.js'
 import {
     decodeMongoValues,
     mongoArrayToPublic,
@@ -28,27 +33,27 @@ import {
 type TransactionArg = TransactionContext | undefined
 const initializationByClient = new WeakMap<MongoClient, Map<string, Promise<void>>>()
 
-export type CrudRepositoryOptions = {
-    hardDelete?: boolean
-    indexes?: IndexDescription[]
-    projection?: Document
-}
+export type CrudRepositoryOptions<Projection extends Document | undefined = Document | undefined> =
+    { hardDelete?: boolean; indexes?: IndexDescription[]; projection?: Projection }
 
-export abstract class CrudRepository<Doc extends CrudDocument>
+export abstract class CrudRepository<
+    Doc extends CrudDocument,
+    Projection extends Document | undefined = undefined
+>
     extends MongoTransactionRepository
     implements OnModuleInit
 {
     readonly collection: Collection
     protected readonly hardDelete: boolean
     private readonly indexes: IndexDescription[]
-    protected readonly projection: Document | undefined
+    protected readonly projection: Projection | undefined
 
     constructor(
         connection: MongoConnection,
         collectionName: string,
         protected readonly defaultSize: number,
         protected readonly maxSize: number,
-        options: CrudRepositoryOptions = {}
+        options: CrudRepositoryOptions<Projection> = {}
     ) {
         super(connection)
         this.collection = connection.db.collection(collectionName)
@@ -60,16 +65,22 @@ export abstract class CrudRepository<Doc extends CrudDocument>
         ]
     }
 
-    async findDocument(filter: Document, options: MongoReadOptions = {}) {
+    async findDocument<const P extends Document | undefined = undefined>(
+        filter: Document,
+        options: MongoReadOptions<P> = {}
+    ) {
         const { transaction, ...readOptions } = options
         const doc = await this.collection.findOne(encodeMongoDocument(filter), {
             ...readOptions,
             session: this.getSession(transaction)
         })
-        return mongoToPublic<VersionedDocument<Doc>>(doc)
+        return mongoToPublic<ProjectedDocument<VersionedDocument<Doc>, NoInfer<P>>>(doc)
     }
 
-    async findDocuments(filter: Document, options: MongoReadOptions = {}) {
+    async findDocuments<const P extends Document | undefined = undefined>(
+        filter: Document,
+        options: MongoReadOptions<P> = {}
+    ) {
         const { transaction, ...readOptions } = options
         const docs = await this.collection
             .find(encodeMongoDocument(filter), {
@@ -77,13 +88,13 @@ export abstract class CrudRepository<Doc extends CrudDocument>
                 session: this.getSession(transaction)
             })
             .toArray()
-        return mongoArrayToPublic<VersionedDocument<Doc>>(docs)
+        return mongoArrayToPublic<ProjectedDocument<VersionedDocument<Doc>, NoInfer<P>>>(docs)
     }
 
-    async findAndUpdateDocument(
+    async findAndUpdateDocument<const P extends Document | undefined = undefined>(
         filter: Document,
         update: Document,
-        options: MongoWriteOptions = {}
+        options: MongoWriteOptions<P> = {}
     ) {
         const { transaction, ...writeOptions } = options
         const doc = await this.collection.findOneAndUpdate(
@@ -91,7 +102,7 @@ export abstract class CrudRepository<Doc extends CrudDocument>
             encodeMongoDocument(update),
             { ...writeOptions, session: this.getSession(transaction) }
         )
-        return mongoToPublic<VersionedDocument<Doc>>(doc)
+        return mongoToPublic<ProjectedDocument<VersionedDocument<Doc>, NoInfer<P>>>(doc)
     }
 
     async updateDocument(filter: Document, update: Document, options: MongoWriteOptions = {}) {
@@ -206,7 +217,9 @@ export abstract class CrudRepository<Doc extends CrudDocument>
             projection: this.projection,
             session: this.getSession(transaction)
         })
-        return doc ? this.toDomainDocument(mongoToPublic<Doc>(doc)) : null
+        return doc
+            ? this.toDomainDocument(mongoToPublic<ProjectedDocument<Doc, Projection>>(doc))
+            : null
     }
 
     async findMany({
@@ -217,15 +230,26 @@ export abstract class CrudRepository<Doc extends CrudDocument>
         ids: string[]
         transaction?: TransactionArg
         signal?: AbortSignal | undefined
-    }): Promise<Doc[]> {
-        const docs = await this.collection
+    }) {
+        const docs = await this.findStoredDocuments(ids, transaction, signal, this.projection)
+        return docs.map((doc) =>
+            this.toDomainDocument(mongoToPublic<ProjectedDocument<Doc, Projection>>(doc))
+        )
+    }
+
+    private findStoredDocuments(
+        ids: string[],
+        transaction: TransactionArg,
+        signal: AbortSignal | undefined,
+        projection: Document | undefined
+    ) {
+        return this.collection
             .find(this.activeFilter({ _id: { $in: objectIds(ids) } }), {
-                projection: this.projection,
+                projection,
                 session: this.getSession(transaction),
                 signal
             })
             .toArray()
-        return docs.map((doc) => this.toDomainDocument(mongoToPublic<Doc>(doc)))
     }
 
     async findWithPagination(args: {
@@ -266,11 +290,13 @@ export abstract class CrudRepository<Doc extends CrudDocument>
               ])
 
         return {
-            items: rawItems.map((doc) => this.toDomainDocument(mongoToPublic<Doc>(doc))),
+            items: rawItems.map((doc) =>
+                this.toDomainDocument(mongoToPublic<ProjectedDocument<Doc, Projection>>(doc))
+            ),
             page,
             size,
             total
-        } as PaginationResult<Doc>
+        } as PaginationResult<ProjectedDocument<Doc, Projection>>
     }
 
     async get({ id, transaction }: { id: string; transaction?: TransactionArg }) {
@@ -290,10 +316,23 @@ export abstract class CrudRepository<Doc extends CrudDocument>
     }) {
         const uniqueIds = uniq(ids.map((id) => objectId(id).toHexString()))
         Assume.equalLength(uniqueIds, ids, `Duplicate IDs detected and removed:${ids}`)
-        const docs = await this.findMany({ ids: uniqueIds, transaction, signal })
-        const notFoundIds = differenceWith(uniqueIds, docs, (id, doc) => id === doc.id)
-        if (notFoundIds.length > 0) {
-            throw new NotFoundException(MongoErrors.MultipleDocumentsNotFound(notFoundIds))
+        let docs: ProjectedDocument<Doc, Projection>[]
+        let foundIds: Set<string>
+        if (this.projection && (this.projection._id === 0 || this.projection._id === false)) {
+            // 한 번 읽은 결과에서 원래 ID로 누락을 판별하고, 도메인 변환에는 요청한 필드만 전달한다.
+            const { _id, ...projection } = this.projection
+            const rows = await this.findStoredDocuments(uniqueIds, transaction, signal, projection)
+            foundIds = new Set(rows.map((row) => row._id.toHexString()))
+            docs = rows.map(({ _id, ...fields }) =>
+                this.toDomainDocument(mongoToPublic<ProjectedDocument<Doc, Projection>>(fields))
+            )
+        } else {
+            docs = await this.findMany({ ids: uniqueIds, transaction, signal })
+            foundIds = new Set(docs.map((doc: Document) => doc.id))
+        }
+        const missingIds = uniqueIds.filter((id) => !foundIds.has(id))
+        if (missingIds.length > 0) {
+            throw new NotFoundException(MongoErrors.MultipleDocumentsNotFound(missingIds))
         }
         return docs
     }
@@ -363,7 +402,9 @@ export abstract class CrudRepository<Doc extends CrudDocument>
         })
     }
 
-    protected toDomainDocument(doc: Doc): Doc {
+    protected toDomainDocument(
+        doc: ProjectedDocument<Doc, Projection>
+    ): ProjectedDocument<Doc, Projection> {
         return doc
     }
 }

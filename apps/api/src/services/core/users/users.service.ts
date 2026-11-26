@@ -57,7 +57,7 @@ export class UsersService {
     async getMany(userIds: string[]) {
         const users = await this.repository.getMany({ ids: userIds })
 
-        return this.toDtos(users)
+        return users.map((user) => this.toDto(user))
     }
 
     async refreshAuthTokens(refreshToken: string) {
@@ -82,11 +82,7 @@ export class UsersService {
         return this.toDto(user)
     }
 
-    private toDto(user: User) {
+    private toDto(user: Omit<User, 'password'>) {
         return mapDocToDto(user, UserSchema)
-    }
-
-    private toDtos(users: User[]) {
-        return users.map((user) => this.toDto(user))
     }
 }
