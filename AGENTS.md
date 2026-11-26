@@ -15,23 +15,23 @@
 - 테스트·타입 검사·lint·커버리지 기준을 낮추거나 검사를 생략하지 않는다. 통과시키려고 단언을 약하게 하거나 계약을 바꾸거나 결과를 하드코딩하지 않는다. 운영 코드에 테스트 전용 분기를 넣지 않는다.
 - 경합이나 시작·종료 오류를 임의의 sleep·재시도·timeout 연장으로 숨기지 않는다.
 
-    - **예시** SSE 테스트는 구독 준비 신호를 받은 뒤 메시지를 보낸다. [이벤트 테스트](apps/api/src/__tests__/infrastructure/event-demo.spec.ts)
+    > SSE 테스트는 구독 준비 신호를 받은 뒤 메시지를 보낸다. [이벤트 테스트](apps/api/src/__tests__/infrastructure/event-demo.spec.ts)
 
 ## 설계와 구현
 
 - 문제가 생기는 조건과 영향을 확인하고 기존 기능이나 작은 수정으로 원인을 고칠 수 있는지 본다. 구조 변경으로 막을 오류와 늘어나는 의존성·실행 단계·호환성 유지 비용을 비교한다. 지금 구조로 충분하고 비용이 더 크면 유지하는 이유를 설명한다.
 - 주소·경로·ID는 정한 쪽에서 받아 쓴다. 여러 곳에서 같은 값을 계산해야 하면 생성 함수를 공유한다.
 
-    - **예시** API가 NATS 스트림을 만들 때와 테스트가 정리할 스트림을 찾을 때 모두 `eventDemoResources(projectId)`로 이름을 구한다. [스트림 이름 생성](apps/api/src/services/infrastructure/event-demo/event-demo.resources.ts) · [정리 대상 판별](apps/api/src/__tests__/helpers/resources.ts)
+    > API가 NATS 스트림을 만들 때와 테스트가 정리할 스트림을 찾을 때 모두 `eventDemoResources(projectId)`로 이름을 구한다. [스트림 이름 생성](apps/api/src/services/infrastructure/event-demo/event-demo.resources.ts) · [정리 대상 판별](apps/api/src/__tests__/helpers/resources.ts)
 
 - 환경마다 따로 정하는 값은 해당 환경에서 얻는다.
 
-    - **예시** Restate 복구 테스트는 임시 서버에 배정된 포트로 접속 URL을 만들어 Restate에 등록한다. [복구 테스트](infra/tests/restate-journal-recovery.test.js)
+    > Restate 복구 테스트는 임시 서버에 배정된 포트로 접속 URL을 만들어 Restate에 등록한다. [복구 테스트](infra/tests/restate-journal-recovery.test.js)
 
 - 설정은 실행 코드에 연결하고 기본값·환경 변수·버전은 중복 선언하지 않는다. 의존성은 쓰는 패키지에 선언한다. 모듈은 필요한 기능만 공개하고 반환값은 타입·스키마와 맞춘다.
 - `libs/`는 앱이 쓰지 않는 기능도 결함을 고치고 지원하던 입력과 동작을 보존한다. `apps/`·데모·개발 환경은 예제 동작과 테스트 신뢰성을 지키면서 다른 프로젝트가 가져다 고치기 쉽게 만든다.
 
-| 필요한 파일이나 기능                                            | 경로 선택 기준                                   | 예시                                               |
+| 필요한 파일이나 기능                                            | 경로 선택 기준                                   | 실제 경로나 import                                 |
 | --------------------------------------------------------------- | ------------------------------------------------ | -------------------------------------------------- |
 | 하위 스크립트·테스트 설정에서 찾는 루트나 다른 workspace의 파일 | Dev Container의 `${WORKSPACE_ROOT}`를 우선 쓴다. | `${WORKSPACE_ROOT:?}/infra/compose.yml`            |
 | 다른 패키지                                                     | 패키지 이름                                      | `import { ensure } from '@mannercode/common'`      |
@@ -42,25 +42,25 @@
 
 통합 테스트는 실제 호출자가 쓰는 가장 바깥의 공개 인터페이스에서 검증한다. HTTP 기능은 요청·응답과 후속 조회로, 라이브러리는 공개 함수나 메서드로 확인한다.
 
-**예시** 회원 두 명 중 한 명만 탈퇴했는지 HTTP로 확인한다. [탈퇴 테스트의 HTTP 요청](apps/api/src/__tests__/application/user-registration.spec.ts)
-
-1. 한 회원이 `DELETE /users/me`로 탈퇴한다 → 204.
-2. 탈퇴한 회원이 같은 이메일과 비밀번호로 `POST /users/login`을 요청한다 → 401.
-3. 다른 회원이 자기 토큰으로 `GET /users/me`를 요청한다 → 200과 그 회원의 이메일.
+> 회원 두 명 중 한 명만 탈퇴했는지 HTTP로 확인한다. [탈퇴 테스트의 HTTP 요청](apps/api/src/__tests__/application/user-registration.spec.ts)
+>
+> 1. 한 회원이 `DELETE /users/me`로 탈퇴한다 → 204.
+> 2. 탈퇴한 회원이 같은 이메일과 비밀번호로 `POST /users/login`을 요청한다 → 401.
+> 3. 다른 회원이 자기 토큰으로 `GET /users/me`를 요청한다 → 200과 그 회원의 이메일.
 
 - **조회가 없으면** 그 값이 필요한 호출자를 찾는다. 다른 모듈이면 공개 서비스 메서드를, HTTP 클라이언트면 HTTP API를 추가해 검증한다. 테스트와 준비 도우미를 위해 비공개 Repository를 export하거나 깊은 import·별칭·타입 단언으로 접근하지 않는다.
 - 롤백 테스트에서는 실제로 값을 저장한 뒤 장애를 일으키고, 실패 후 남은 상태를 확인한다.
 
-    - **예시** 계정과 사진 소유권을 저장한 뒤 다운로드 URL 발급을 실패시키면 가입 요청은 500을 반환하고 사진에는 소유자가 없다. 같은 이메일과 사진으로 다시 가입하면 201이다. [롤백 테스트](apps/api/src/__tests__/application/user-registration.spec.ts)
+    > 계정과 사진 소유권을 저장한 뒤 다운로드 URL 발급을 실패시키면 가입 요청은 500을 반환하고 사진에는 소유자가 없다. 같은 이메일과 사진으로 다시 가입하면 201이다. [롤백 테스트](apps/api/src/__tests__/application/user-registration.spec.ts)
 
 - spy는 공개 서비스나 외부 연동 지점에서 장애·경합을 재현할 때만 쓴다. 내부 메서드의 호출 여부·횟수·인자를 결과로 단언하지 않는다.
 - **외부 연동**은 상대 라이브러리나 서비스의 공개 API로 확인한다. DB·스토리지를 직접 읽는 검증은 저장 형식이나 원자적 갱신을 맡은 모듈에 둔다.
 
-    - **예시** 인증 모듈은 토큰 발급 후 Redis의 `GET`으로 리프레시 토큰의 SHA-256 해시가 저장됐는지, `PTTL`로 남은 시간이 0보다 큰지 확인한다. [세션 저장 테스트](libs/common/src/auth/__tests__/jwt-auth.service.spec.ts)
+    > 인증 모듈은 토큰 발급 후 Redis의 `GET`으로 리프레시 토큰의 SHA-256 해시가 저장됐는지, `PTTL`로 남은 시간이 0보다 큰지 확인한다. [세션 저장 테스트](libs/common/src/auth/__tests__/jwt-auth.service.spec.ts)
 
 - `sendRaw()`를 쓰면 각 응답의 HTTP 상태 코드를 직접 검사한다.
 
-    - **예시** 같은 이메일로 동시에 가입하면 하나만 201이고 나머지는 모두 409여야 한다. [동시 가입 테스트](apps/api/src/__tests__/core/users.spec.ts)
+    > 같은 이메일로 동시에 가입하면 하나만 201이고 나머지는 모두 409여야 한다. [동시 가입 테스트](apps/api/src/__tests__/core/users.spec.ts)
 
 ### 테스트 이름과 준비
 
@@ -77,10 +77,10 @@
 ## 문서 작성과 배치
 
 - 소개·시작 방법·폴더·개발 환경은 루트 README에, 영역별 설계와 계약은 해당 README에, 저장소 작업 규칙은 AGENTS.md에 둔다. 같은 설명은 한 곳에 쓰고 링크한다.
-- 규칙은 짧게 쓴다. 판단에 도움이 되는 실제 예는 별도 항목이나 표의 예시 칸에 둔다.
+- 규칙은 짧게 쓴다. 이 문서에서 사례는 규칙 아래에 `>`로 표시하거나 표에서 별도 열에 둔다.
 - 설계를 설명할 때는 기능을 둔 위치와 이유를 함께 쓴다.
 
-    - **예시** 사진 첨부 가입을 Application에 둔 이유는 계정 생성과 사진 소유권 등록이 함께 성공해야 하기 때문이다. [사진 첨부 가입 설계](apps/api/README.md#어디에-책임을-둘까)
+    > 사진 첨부 가입을 Application에 둔 이유는 계정 생성과 사진 소유권 등록이 함께 성공해야 하기 때문이다. [사진 첨부 가입 설계](apps/api/README.md#어디에-책임을-둘까)
 
 - 사용 순서와 성공·실패는 실행 예제로 보여 준다. API 예제 테스트는 독자에게 준 예제로 요청 순서와 HTTP 상태를 확인한다. 응답 본문·상태 변경·실패 처리는 실제 모듈과 인프라를 연결한 통합 테스트에서 검증한다. README에는 명령과 기대 결과를 쓴다. [가입 예제](apps/api/api-docs/users.spec) · [API 테스트 안내](apps/api/README.md#테스트)
 - 반복하는 빌드·준비·정리는 명령에, 자동 검사할 규칙은 테스트나 설정에 둔다. 기본값·옵션·내부 호출 순서는 원본으로 연결한다. 데이터 삭제처럼 실행 전 알아야 할 영향, 호환성 제약, 호출자에게 보장하는 동작은 명시한다.
