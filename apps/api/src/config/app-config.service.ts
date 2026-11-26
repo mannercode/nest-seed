@@ -36,7 +36,11 @@ export class AppConfigService extends BaseConfigService {
         // 페이지 상한. 기본값(HTTP_PAGINATION_DEFAULT_SIZE)과 분리해, 기본값을 조정해도 상한이 따라 움직이지 않게 한다.
         HTTP_PAGINATION_MAX_SIZE: numberFromEnvironment,
 
-        HTTP_REQUEST_PAYLOAD_LIMIT: requiredString,
+        HTTP_REQUEST_PAYLOAD_LIMIT: z
+            .string()
+            .regex(/^\d+$/)
+            .transform(Number)
+            .pipe(z.int().positive()),
         LOG_CONSOLE_LEVEL: ConsoleLogLevelSchema,
         MONGO_URI: requiredString,
         MONGO_DATABASE: requiredString,
@@ -93,7 +97,7 @@ export class AppConfigService extends BaseConfigService {
             paginationDefaultSize: this.getNumber('HTTP_PAGINATION_DEFAULT_SIZE'),
             paginationMaxSize: this.getNumber('HTTP_PAGINATION_MAX_SIZE'),
             port: this.getNumber('API_PORT'),
-            requestPayloadLimit: this.getString('HTTP_REQUEST_PAYLOAD_LIMIT')
+            requestPayloadLimit: this.getNumber('HTTP_REQUEST_PAYLOAD_LIMIT')
         }
     }
 

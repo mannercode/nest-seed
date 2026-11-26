@@ -37,6 +37,18 @@ describe('AppConfigService.schema', () => {
         })
     })
 
+    describe('HTTP_REQUEST_PAYLOAD_LIMIT', () => {
+        const schema = AppConfigService.schema.shape.HTTP_REQUEST_PAYLOAD_LIMIT
+
+        it('바이트 수를 정수로 읽는다', () => {
+            expect(schema.parse('1572864')).toBe(1572864)
+        })
+
+        it.each(['0', '1mb', '1e3'])('%s이면 검증에 실패한다', (value) => {
+            expect(schema.safeParse(value).success).toBe(false)
+        })
+    })
+
     describe('필수 환경 변수 ASSET_UPLOAD_EXPIRES_SEC가 없으면', () => {
         let input: Record<string, unknown>
         beforeEach(() => {
