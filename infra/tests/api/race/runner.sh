@@ -102,6 +102,8 @@ run_scenario() {
     return 1
 }
 
-pnpm --filter @mannercode/testing run build
+if [[ $TEST_NAME == sse-fanout-race ]]; then
+    pnpm --filter @mannercode/testing run build
+fi
 source "${WORKSPACE_ROOT:?}/infra/stack.sh"
 with_stack test -- run_scenario

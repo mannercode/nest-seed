@@ -1,15 +1,37 @@
-import { RestateWorkflowClient } from '@mannercode/common'
+import { RestateWorkflowClient, TemporalJsonSerde } from '@mannercode/common'
+import type { INestApplication } from '@nestjs/common'
+import { connect } from '@restatedev/restate-sdk-clients'
 import { Collection } from 'mongodb'
-import { TextJobSchema } from '#infrastructure'
+import { AppConfigService } from '#config'
+import {
+    JobDemoService,
+    TextJobResultSchema,
+    TextJobSchema,
+    TextJobWorkflow
+} from '#infrastructure'
 import {
     createAppTestContext,
     createAndLoginUser,
     createUser,
     loginUser,
-    trackRestateCompletions,
     unregisterRestateDeployment,
     type AppTestContext
 } from '#test-helpers'
+
+describe('작업을 제출할 수 없는 테스트 앱에서', () => {
+    let fix: AppTestContext
+    beforeEach(async () => {
+        fix = await createAppTestContext({
+            overrideProviders: [{ original: JobDemoService, replacement: {} }]
+        })
+    })
+    afterEach(() => fix?.teardown())
+
+    it('GET /health는 200을 반환한다', async () => {
+        const { body } = await fix.httpClient.get('/health').ok()
+        expect(body.status).toBe('ok')
+    })
+})
 
 describe('임시 Restate 배포 정리', () => {
     const failure = new Error('Result endpoint unavailable')
@@ -27,8 +49,14 @@ describe('임시 Restate 배포 정리', () => {
 describe('JobDemoService', () => {
     let fix: AppTestContext
     let token: string
+    let jobs: ReturnType<typeof trackJobResults>
     beforeEach(async () => {
-        fix = await createAppTestContext()
+        fix = await createAppTestContext({
+            configureApp: async (app) => {
+                jobs = trackJobResults(app)
+            },
+            beforeDeploymentRemoval: () => jobs.waitForWorkflows()
+        })
         token = (await createAndLoginUser(fix)).accessToken
     })
     afterEach(() => fix?.teardown())
@@ -81,7 +109,7 @@ describe('JobDemoService', () => {
                 .body({ text: 'Hello 🌱' })
                 .accepted()
             if (failure) await writeFailure
-            const result = await fix.waitForJob(body.jobId)
+            const result = await jobs.waitForJob(body.jobId)
             expect(result).toEqual({ text: 'HELLO 🌱', characterCount: 7 })
             await fix.httpClient
                 .get('/job-demo/jobs/' + body.jobId)
@@ -153,3 +181,38 @@ describe('JobDemoService', () => {
         })
     })
 })
+
+function trackJobResults(app: INestApplication) {
+    const { restate } = app.get(AppConfigService)
+    const ingress = connect({ url: restate.ingressUrl, retry: true, serde: TemporalJsonSerde })
+    const { definition } = app.get(TextJobWorkflow)
+    const waitForJob = async (jobId: string) =>
+        TextJobResultSchema.parse(
+            await ingress.workflowClient<typeof definition>(definition, jobId).workflowAttach()
+        )
+    const waitForWorkflows = trackRestateCompletions(app.get(JobDemoService), waitForJob)
+    return { waitForJob, waitForWorkflows }
+}
+
+function trackRestateCompletions(
+    jobs: Pick<JobDemoService, 'submit'>,
+    waitForJob: (jobId: string) => Promise<unknown>
+) {
+    const completions = new Set<Promise<unknown>>()
+    const failures: unknown[] = []
+    const submit = jobs.submit.bind(jobs)
+    jobs.submit = (...args) => {
+        const submission = submit(...args)
+        const completion = submission
+            .then(({ jobId }) => waitForJob(jobId))
+            .catch((error: unknown) => failures.push(error))
+            .finally(() => completions.delete(completion))
+        completions.add(completion)
+        return submission
+    }
+    return async () => {
+        while (completions.size > 0) await Promise.all(completions)
+        if (failures.length)
+            throw new AggregateError(failures, 'Could not confirm Restate workflow completion')
+    }
+}

@@ -1,7 +1,6 @@
 import { randomBytes, randomInt } from 'node:crypto'
 import http from 'node:http'
 import { setTimeout as delay } from 'node:timers/promises'
-import { SseDecoder } from '@mannercode/testing'
 
 // race 시나리오는 runner.sh가 띄운 4-replica API 테스트 스택을 전제한다.
 // 기본값으로 단일 dev 서버에 조용히 붙으면 경쟁이 재현되지 않아 결과가 왜곡되므로 필수로 받는다.
@@ -24,7 +23,6 @@ function readPositiveInt(name, defaultValue, minimum = 1) {
 }
 
 const HTTP_REQUEST_TIMEOUT_MS = readPositiveInt('HTTP_REQUEST_TIMEOUT_MS', 120_000)
-const SSE_HANDSHAKE_TIMEOUT_MS = readPositiveInt('SSE_HANDSHAKE_TIMEOUT_MS', 30_000)
 
 async function waitForAll(promises) {
     const results = await Promise.allSettled(promises)
@@ -169,141 +167,6 @@ function request(method, path, opts = {}) {
     })
 }
 
-/**
- * `/event-demo/event-stream` SSE 연결 하나를 열고, 도착하는 이벤트를 파싱해 `events`에 쌓는다.
- *
- * @param {object} [opts]
- * @param {string} [opts.serverUrl] 구독할 서버의 주소.
- * @param {string} opts.accessToken 사용자 액세스 토큰.
- * @param {string} [opts.label] 상태 코드·handshake 에러 진단에 붙일 식별자.
- * @param {(err:Error)=>void} opts.onFailure 준비 이후의 연결 종료와 파싱 오류를 시나리오에 전달한다.
- * @returns {{events:any[], connected:Promise<any>, close:()=>Promise<void>, getReplicaId:()=>string|undefined}}
- */
-function openEventStream(opts = {}) {
-    const { label, onFailure, accessToken, serverUrl = SERVER_URL } = opts
-    const url = new URL('/event-demo/event-stream', serverUrl)
-    const events = []
-    const requestPath = url.pathname + url.search
-    const diagnostic = `SSE GET ${requestPath}${label ? ` [${label}]` : ''}`
-    let replicaId
-    let closed = false
-    let req
-    let res
-    let handshakeSettled = false
-    let handshakeDeadline
-    let rejectConnected
-
-    const destroy = () => {
-        if (handshakeDeadline) clearTimeout(handshakeDeadline)
-        if (res && !res.destroyed) res.destroy()
-        if (req && !req.destroyed) req.destroy()
-    }
-    const failHandshake = (error) => {
-        if (handshakeSettled) return
-        handshakeSettled = true
-        destroy()
-        rejectConnected(error)
-    }
-    const failStream = (error) => {
-        if (closed) return
-        if (!handshakeSettled) return failHandshake(error)
-        onFailure(new Error(`${diagnostic}: ${error.message}`, { cause: error }))
-    }
-
-    const connected = new Promise((resolve, reject) => {
-        rejectConnected = reject
-        handshakeDeadline = setTimeout(
-            () =>
-                failHandshake(
-                    new Error(
-                        `${diagnostic} handshake timed out after ${SSE_HANDSHAKE_TIMEOUT_MS}ms`
-                    )
-                ),
-            SSE_HANDSHAKE_TIMEOUT_MS
-        )
-
-        try {
-            req = http.request(
-                {
-                    agent: false,
-                    hostname: url.hostname,
-                    port: url.port,
-                    path: requestPath,
-                    method: 'GET',
-                    headers: { accept: 'text/event-stream', authorization: `Bearer ${accessToken}` }
-                },
-                (incoming) => {
-                    if (handshakeSettled) {
-                        incoming.destroy()
-                        return
-                    }
-                    res = incoming
-                    const contentType = res.headers['content-type']
-                        ?.split(';')[0]
-                        .trim()
-                        .toLowerCase()
-                    if (res.statusCode !== 200 || contentType !== 'text/event-stream') {
-                        failHandshake(
-                            new Error(
-                                `${diagnostic}: HTTP ${res.statusCode}, Content-Type ${contentType}`
-                            )
-                        )
-                        return
-                    }
-                    replicaId = res.headers['x-replica-id']
-                    res.setEncoding('utf8')
-                    const decoder = new SseDecoder(({ data }) => {
-                        if (data !== undefined) events.push(JSON.parse(data))
-                    })
-                    res.on('data', (chunk) => {
-                        if (closed) return
-                        try {
-                            decoder.write(chunk)
-                        } catch (error) {
-                            failStream(error)
-                        }
-                    })
-                    res.once('error', failStream)
-                    res.once('end', () =>
-                        failStream(new Error('stream ended before client closed it'))
-                    )
-                    handshakeSettled = true
-                    clearTimeout(handshakeDeadline)
-                    resolve({ res, req })
-                }
-            )
-            req.once('error', failStream)
-            req.end()
-        } catch (error) {
-            failHandshake(error)
-        }
-    })
-
-    const close = async () => {
-        closed = true
-        if (!handshakeSettled) {
-            failHandshake(new Error(`${diagnostic} closed before handshake completed`))
-        }
-        try {
-            await connected
-        } catch {
-            // 연결 실패는 connected가 호출자에게 전달한다.
-        }
-        if (!req || req.closed) return
-        const disconnected = new Promise((resolve) => req.once('close', resolve))
-        // SSE 응답은 끝나지 않으므로 구독을 TCP reset으로 취소한다.
-        // 매 회차 새 구독을 여는 클라이언트가 TIME_WAIT로 임시 포트를 소진하지 않게 한다.
-        if (res && !res.complete && !res.destroyed && res.socket && !res.socket.destroyed) {
-            res.socket.resetAndDestroy()
-        } else {
-            req.destroy()
-        }
-        await disconnected
-    }
-
-    return { events, connected, close, getReplicaId: () => replicaId }
-}
-
 /** predicate가 참이 될 때까지 폴링한다. 기한 안에 참이 되면 true, 넘기면 false. */
 async function waitUntil(predicate, { timeoutMs, intervalMs = 50, signal } = {}) {
     const start = performance.now()
@@ -362,6 +225,5 @@ export {
     request,
     secureRandomHex,
     secureRandomIndex,
-    openEventStream,
     waitUntil
 }
