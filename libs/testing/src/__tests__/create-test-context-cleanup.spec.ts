@@ -1,14 +1,38 @@
 import type { INestApplication } from '@nestjs/common'
+import { ExpressAdapter } from '@nestjs/platform-express'
 import { createTestContext, createHttpTestContext } from '#testing'
 
 describe('createTestContext, createHttpTestContext', () => {
-    describe('제공자의 초기화가 실패하면', () => {
+    describe('HTTP 어댑터가 서버를 생성하지 못하면', () => {
+        const failure = new Error('adapter init failed')
+        beforeEach(() => {
+            vi.spyOn(ExpressAdapter.prototype, 'initHttpServer').mockImplementationOnce(() => {
+                throw failure
+            })
+        })
+        it('이미 준비한 제공자를 정리하고 생성 오류를 던진다', async () => {
+            const work = new AbortController()
+            const provider = { provide: 'work', useValue: { onModuleDestroy: () => work.abort() } }
+            await expect(createTestContext({ providers: [provider] })).rejects.toBe(failure)
+            expect(work.signal.aborted).toBe(true)
+        })
+    })
+
+    describe.each([
+        { condition: '제공자의 초기화가 실패하면', destroy: () => {} },
+        {
+            condition: '초기화 실패 후 Nest가 제공자 종료 오류를 처리하면',
+            destroy: () => {
+                throw new Error('provider cleanup failed')
+            }
+        }
+    ])('$condition', ({ destroy }) => {
         let setupError: Error
         let onModuleDestroy: ReturnType<typeof vi.fn<() => void>>
         let provider: new () => object
         beforeEach(() => {
             setupError = new Error('app init failed')
-            onModuleDestroy = vi.fn()
+            onModuleDestroy = vi.fn(destroy)
 
             class InitFailureProvider {
                 onModuleInit() {
@@ -61,27 +85,49 @@ describe('createTestContext, createHttpTestContext', () => {
         })
     })
 
-    describe('제공자의 초기화와 정리가 모두 실패하면', () => {
-        let setupError: Error
+    describe('제공자 초기화와 HTTP 어댑터 종료가 모두 실패하면', () => {
+        const setupError = new Error('app init failed')
+        const cleanupError = new Error('app cleanup failed')
         let provider: new () => object
         beforeEach(() => {
-            setupError = new Error('app init failed')
-
             class SetupAndCleanupFailureProvider {
                 onModuleInit() {
                     throw setupError
                 }
-
-                onModuleDestroy() {
-                    throw new Error('app cleanup failed')
-                }
             }
             provider = SetupAndCleanupFailureProvider
         })
-        it('최초 초기화 오류를 던진다', async () => {
-            const result = createTestContext({ providers: [provider] })
+        it('두 오류를 함께 던진다', async () => {
+            const result = createTestContext({
+                providers: [provider],
+                configureApp: async (app) => {
+                    vi.spyOn(app.getHttpAdapter(), 'close').mockRejectedValueOnce(cleanupError)
+                }
+            })
 
-            await expect(result).rejects.toBe(setupError)
+            await expect(result).rejects.toMatchObject({
+                name: 'SuppressedError',
+                error: cleanupError,
+                suppressed: setupError
+            })
+        })
+    })
+
+    describe('HTTP 리스너 시작과 어댑터 종료가 모두 실패하면', () => {
+        const listenError = new Error('listen failed')
+        const cleanupError = new Error('cleanup failed')
+        it('두 오류를 함께 던진다', async () => {
+            const result = createHttpTestContext({
+                configureApp: async (app) => {
+                    vi.spyOn(app, 'listen').mockRejectedValueOnce(listenError)
+                    vi.spyOn(app.getHttpAdapter(), 'close').mockRejectedValueOnce(cleanupError)
+                }
+            })
+            await expect(result).rejects.toMatchObject({
+                name: 'SuppressedError',
+                error: cleanupError,
+                suppressed: listenError
+            })
         })
     })
 })

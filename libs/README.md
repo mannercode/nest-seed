@@ -7,6 +7,8 @@
 
 연결 설정을 다른 Nest 모듈에서 가져오려면 `forRootAsync`나 `register`의 `imports`에 해당 모듈을, `inject`에 그 모듈이 export한 토큰을 넣는다. [S3 설정 주입 예제](common/src/s3/__tests__/s3-object.service.spec.ts)
 
+`MongoConnection.connect`, `createTestContext`, `createHttpTestContext`에서 초기화가 실패하고 `close()`도 오류를 던지면 `SuppressedError`의 `suppressed`에 초기화 오류가, `error`에 종료 오류가 담긴다. [MongoDB 연결](common/src/mongodb/__tests__/connections.spec.ts) · [Nest 테스트 앱](testing/src/__tests__/create-test-context-cleanup.spec.ts)
+
 ## 저장소와 트랜잭션
 
 `MongoDocumentRepository`는 연결과 컬렉션 이름으로 생성한다. `findWithPagination()`을 쓰는 저장소는 `CrudRepository`를 상속하고 생성자에 페이지 기본 크기와 상한을 지정한다. [작업 저장소](../apps/api/src/services/infrastructure/job-demo/job-demo.repository.ts) · [페이지 조회 저장소](common/src/mongodb/__tests__/crud.repository.fixture.ts)

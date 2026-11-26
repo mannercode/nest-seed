@@ -44,30 +44,14 @@ export async function createTestContext({
     })
 
     const module = await builder.compile()
-
+    await using setup = new AsyncDisposableStack()
+    let close = () => module.close()
+    setup.defer(() => close())
     const app = module.createNestApplication()
-
+    close = () => app.close()
     app.useLogger(isDebuggingEnabled() ? console : false)
-
-    try {
-        if (configureApp) {
-            await configureApp(app)
-        }
-
-        await app.init()
-    } catch (setupError) {
-        try {
-            await app.close()
-        } catch {
-            // 설정 오류가 정리 오류에 가려지지 않게 원래 오류를 유지한다.
-        }
-
-        throw setupError
-    }
-
-    const close = async () => {
-        await app.close()
-    }
-
+    await configureApp?.(app)
+    await app.init()
+    setup.move()
     return { app, close, module }
 }

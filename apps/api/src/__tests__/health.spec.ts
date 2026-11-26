@@ -1,15 +1,17 @@
 import { MessageConsumer } from '#infrastructure'
 import { MongoConnection, RestateEndpoint } from '@mannercode/common'
 import { NestFactory } from '@nestjs/core'
+import { MongoNotConnectedError } from 'mongodb'
 import { once } from 'node:events'
 import { createConnection } from 'node:net'
 import { hostname } from 'node:os'
 import { z } from 'zod'
 import { AppConfigService } from '#config'
-import { testConfig } from './helpers/resources.js'
+import { bootstrap } from '#api/bootstrap'
 import {
     type AppTestContext,
     createAppTestContext,
+    testConfig,
     testDeploymentUri,
     unregisterRestateDeployment
 } from '#test-helpers'
@@ -130,6 +132,27 @@ describe('API 시작', () => {
             expect(response.status).toBe(200)
             expect(response.headers.get('x-replica-id')).toBe(hostname())
             expect(await response.json()).toMatchObject({ status: 'ok' })
+        })
+    })
+    describe('HTTP 본문 크기 설정이 유효하지 않으면', () => {
+        beforeEach(() => {
+            vi.spyOn(AppConfigService.prototype, 'http', 'get').mockReturnValue({
+                port: 0,
+                requestPayloadLimit: 'invalid'
+            })
+        })
+        it('이미 열린 MongoDB 연결을 닫고 설정 오류를 던진다', async () => {
+            const created = vi.spyOn(NestFactory, 'create')
+            const starting = bootstrap()
+            const app = await created.mock.results[0]!.value
+            try {
+                await expect(starting).rejects.toThrow(/limit/)
+                await expect(app.get(MongoConnection).ping()).rejects.toThrow(
+                    MongoNotConnectedError
+                )
+            } finally {
+                await app.close()
+            }
         })
     })
     describe('개발 진입점에서 Restate가 배포 등록을 거부하면', () => {

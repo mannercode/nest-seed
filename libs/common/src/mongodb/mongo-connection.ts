@@ -30,13 +30,12 @@ export class MongoConnection implements OnModuleDestroy {
 
     static async connect(options: MongoConnectionOptions): Promise<MongoConnection> {
         const client = new MongoClient(options.uri, createMongoDriverOptions(options))
-        try {
-            await client.connect()
-        } catch (error) {
-            await client.close().catch(() => undefined)
-            throw error
-        }
-        return new MongoConnection(client, client.db(options.dbName))
+        const db = client.db(options.dbName)
+        await using setup = new AsyncDisposableStack()
+        setup.defer(() => client.close())
+        await client.connect()
+        setup.move()
+        return new MongoConnection(client, db)
     }
 
     async ping(): Promise<void> {
