@@ -20,16 +20,15 @@ NestJS 백엔드 프로젝트를 시작하기 위한 템플릿이다. 예제로 
 
 Dev Container의 저장소 루트에서 실행한다.
 
-| 확인할 내용                                                                            | 명령                                                               |
-| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| [CI와 같은 전체 검사](.github/workflows/lint-test.yaml)                                | `pnpm run lint && pnpm test`                                       |
-| [사용자 API 통합 테스트 한 파일](apps/api/src/__tests__/core/users.spec.ts)            | `pnpm run test:api:file apps/api/src/__tests__/core/users.spec.ts` |
-| [사진 첨부 가입 curl 예제와 기대 HTTP 상태](apps/api/api-docs/users.spec)              | `pnpm -C apps/api run test:api-docs users.spec`                    |
-| [브라우저에서 가입·로그인하고 내 정보 조회](apps/web/tests/e2e/user-auth-flow.spec.ts) | `pnpm -C apps/web test`                                            |
+| 확인할 내용                                                                            | 명령                                 |
+| -------------------------------------------------------------------------------------- | ------------------------------------ |
+| [CI와 같은 전체 검사](.github/workflows/lint-test.yaml)                                | `pnpm run lint && pnpm test`         |
+| [API 문서의 전체 curl 예제](apps/api/README.md#실행-가능한-api-문서)                   | `pnpm -C apps/api run test:api-docs` |
+| [브라우저에서 가입·로그인하고 내 정보 조회](apps/web/tests/e2e/user-auth-flow.spec.ts) | `pnpm -C apps/web test`              |
 
 컨테이너를 쓰는 테스트와 벤치마크는 워크스페이스에서 한 번에 하나씩 실행한다. 개발 API도 같은 인프라에 연결되므로, 검사 중에 보낸 개발 요청은 테스트 데이터에 영향을 줄 수 있다. [환경 전환 스크립트](infra/stack.sh)
 
-이미 실행 중인 개발 API로 curl 예제를 확인하고 보고서를 남기려면 `bash apps/api/api-docs/run.sh users.spec`를 실행한다. [대상 API 주소 지정](apps/api/api-docs/run.cfg) · [외부에 전달할 실행 예제 묶음](apps/api/README.md#실행-가능한-api-문서)
+이미 실행 중인 개발 API로 curl 예제를 확인하고 보고서를 남기려면 `bash apps/api/api-docs/run.sh`를 실행한다. [대상 API 주소 지정](apps/api/api-docs/run.cfg) · [외부에 전달할 실행 예제 묶음](apps/api/README.md#실행-가능한-api-문서)
 
 ### 앱 컨테이너와 복제본 검증
 

@@ -77,10 +77,10 @@ API 통합 테스트는 `#test-helpers`의 `createAppTestContext()`로 실제 Ne
 
 외부에 전달할 예제 묶음은 저장소 루트에서 `bash apps/api/pack-api-docs.sh > /tmp/api-docs.tar.gz`로 만든다. 로컬에서 받은 응답과 실행 로그는 압축에서 제외한다. [패키징 스크립트](pack-api-docs.sh)
 
-받은 사람은 Bash·curl·jq가 설치된 Linux 환경에서 압축을 푼다. 그 폴더에서 아래 주소를 대상 API 주소로 바꿔 실행한다. `users.spec`를 생략하면 전체 예제를 실행한다. 사진 예제는 발급받은 S3 주소로 직접 업로드하므로 실행 환경에서 그 주소에도 접속할 수 있어야 한다. [주소 지정 예시](api-docs/run.cfg) · [회원가입 요청과 기대 응답](api-docs/users.spec)
+받은 사람은 Bash·curl·jq가 설치된 Linux 환경에서 압축을 푼다. 그 폴더에서 아래 주소를 대상 API 주소로 바꿔 전체 예제를 실행한다. 사진 예제는 발급받은 S3 주소로 직접 업로드하므로 실행 환경에서 그 주소에도 접속할 수 있어야 한다. [주소 지정 예시](api-docs/run.cfg) · [회원가입 요청과 기대 응답](api-docs/users.spec)
 
 ```bash
-SERVER_URL=https://api.example.com bash run.sh users.spec
+SERVER_URL=https://api.example.com bash run.sh
 ```
 
 최근 실행의 요청별 기대·실제 HTTP 상태는 `_output/docs/summary.md`에서 확인한다. 상태가 다르거나 연결이 끊기면 실행기가 실패 코드로 종료한다.

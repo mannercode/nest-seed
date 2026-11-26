@@ -2,6 +2,10 @@
 # shellcheck source-path=SCRIPTDIR
 set -Eeuo pipefail
 trap 'echo "[ERR] ${BASH_SOURCE[0]}:${LINENO} (종료 코드: $?)" >&2' ERR
+if (( $# )); then
+	echo 'bash run.sh는 인자 없이 실행하세요.' >&2
+	exit 2
+fi
 cd "$(dirname "$0")"
 . ./run.cfg
 
@@ -148,7 +152,7 @@ init_summary() {
 
 	{
 		printf '# API 문서\n\n'
-		printf '실행 대상으로 선택한 curl 예제\n\n'
+		printf '검증 대상 curl 예제\n\n'
 		printf -- '- `%s`\n' "$@"
 		printf '\n'
 		printf -- '- 생성 시각: `%s`\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
@@ -252,20 +256,15 @@ SETUP() {
 
 echo ""
 
-specs=()
-if [[ "$#" -eq 0 ]]; then
-	shopt -s globstar nullglob dotglob
-	specs=(**/*.spec)
-else
-	specs=("$@")
-fi
+shopt -s globstar nullglob dotglob
+specs=(**/*.spec)
 
 if (( ${#specs[@]} == 0 )); then
     echo '실행할 .spec 파일이 없습니다.' >&2
     exit 1
 fi
 for spec in "${specs[@]}"; do
-    if [[ "$spec" != *.spec || ! -f "$spec" ]]; then
+    if [[ ! -f "$spec" ]]; then
         echo "실행할 수 없는 예제 파일: $spec" >&2
         exit 1
     fi
