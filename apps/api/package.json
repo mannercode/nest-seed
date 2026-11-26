@@ -9,7 +9,7 @@
         "build": "nest build -b rspack --rspackPath rspack.config.cjs",
         "predev": "pnpm --filter-prod 'api^...' --fail-if-no-match run build",
         "dev": "nest start --watch",
-        "test": "run-s test:**",
+        "test": "bash \"${WORKSPACE_ROOT:?}/infra/stack.sh\" group run-s test:**",
         "test:vitest": "bash \"${WORKSPACE_ROOT:?}/infra/stack.sh\" test infra-setup vitest run --coverage",
         "test:api-docs": "bash api-docs/test.sh"
     },

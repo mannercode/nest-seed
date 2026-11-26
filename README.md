@@ -29,7 +29,7 @@ Dev Container의 저장소 루트에서 실행한다.
 | [사진 첨부 가입 curl 예제와 기대 HTTP 상태](apps/api/api-docs/users.spec)              | `pnpm -C apps/api run test:api-docs users.spec`                    |
 | [브라우저에서 가입·로그인하고 내 정보 조회](apps/web/tests/e2e/user-auth-flow.spec.ts) | `pnpm -C apps/web test`                                            |
 
-서비스 컨테이너를 쓰는 테스트와 벤치마크는 이 워크스페이스에서 한 번에 하나씩 실행한다. 시작할 때 프로젝트의 기존 컨테이너와 볼륨을 지우고 검사에 필요한 서비스만 띄운다. 검사가 끝나면 테스트 데이터를 지우고 빈 기본 인프라를 다시 띄운다. 실패하거나 Ctrl+C로 중단해도 같은 정리를 수행한다. Dev Container에서 직접 실행한 개발 API도 같은 서비스 주소를 쓰므로, 테스트 중 그 API로 요청을 보내면 테스트 데이터가 바뀔 수 있다.
+서비스 컨테이너를 쓰는 테스트와 벤치마크는 이 워크스페이스에서 한 번에 하나씩 실행한다. 각 테스트 묶음은 빈 환경에서 필요한 서비스만 띄우고 끝나면 컨테이너와 볼륨을 지운다. 빈 기본 개발 인프라는 실행한 명령이 끝날 때 한 번 복구한다. `pnpm test`로 여러 묶음을 실행할 때도 같고, 실패하거나 Ctrl+C로 중단해도 복구한다. Dev Container에서 직접 실행한 개발 API도 같은 서비스 주소를 쓰므로, 테스트 중 그 API로 요청을 보내면 테스트 데이터가 바뀔 수 있다.
 
 복구 테스트에는 재시작할 Restate 하나만 필요하다. common은 단일 Redis처럼 개발 클러스터와 다른 연결 조건도 검증하므로, 개발 인프라를 내린 동안 자체 Testcontainers를 사용한다. [Restate 복구 테스트](infra/tests/restate-journal-recovery.test.js) · [common 테스트 환경](libs/common/vitest.global.cjs)
 

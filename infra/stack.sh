@@ -30,25 +30,43 @@ with_stack() {
             shift
             : "${1:?test command required}"
             ;;
+        group)
+            : "${1:?test group command required}"
+            if [[ ${NEST_SEED_TEST_WORKSPACE-} == "$WORKSPACE_ROOT" ]]; then exec "$@"; fi
+            # 순차 실행기는 자식 테스트에 잠금을 소유한 워크스페이스를 전달한다.
+            set -- env "NEST_SEED_TEST_WORKSPACE=$WORKSPACE_ROOT" "$@"
+            mode='test'
+            ;;
         *) echo "Unknown stack command: $mode" >&2; return 2 ;;
     esac
 
+    if [[ $mode == test && ${NEST_SEED_TEST_WORKSPACE-} == "$WORKSPACE_ROOT" ]]; then
+        validate_stack "${services[@]}"
+        # 본문이 실패해도 컨테이너를 정리한 뒤 그 종료 코드를 실행기에 돌려준다.
+        set +e
+        (
+            set -e
+            start_stack "${services[@]}"
+            "$@"
+        )
+        local status=$?
+        set -e
+        if ((status)); then stack_diagnostics; fi
+        clear_stack
+        exit "$status"
+    fi
+
     exec 9<"${WORKSPACE_ROOT}/infra"
     flock 9
-    # down은 설정을 읽지 못해도 프로젝트 라벨로 대상을 찾을 수 있다. 먼저 설정과 요청한 서비스를 확인한다.
-    docker compose --profile '*' config --quiet -- "${services[@]}"
+    validate_stack "${services[@]}"
 
     trap 'finish_stack "$?" restore' EXIT
     trap 'exit 130' INT
     trap 'exit 143' TERM
     trap 'exit 129' HUP
     clear_stack
-    if [[ ${services[*]} == infra-setup ]]; then
-        if [[ $mode != test ]]; then trap 'finish_stack "$?"' EXIT; fi
-        start_infra
-    elif ((${#services[@]})); then
-        start_services "${services[@]}"
-    fi
+    if [[ $mode != test && ${services[*]} == infra-setup ]]; then trap 'finish_stack "$?"' EXIT; fi
+    start_stack "${services[@]}"
     if [[ $mode == test ]]; then
         # 작업 그룹 전체가 종료된 뒤에만 Compose 환경을 교체한다.
         set -m
@@ -60,6 +78,19 @@ with_stack() {
         trap - EXIT
     fi
     exit 0
+}
+
+validate_stack() {
+    # down은 설정을 읽지 못해도 프로젝트 라벨로 대상을 찾을 수 있다. 먼저 설정과 요청한 서비스를 확인한다.
+    docker compose --profile '*' config --quiet -- "$@"
+}
+
+start_stack() {
+    if [[ $* == infra-setup ]]; then
+        start_infra
+    elif (($#)); then
+        start_services "$@"
+    fi
 }
 
 clear_stack() {
