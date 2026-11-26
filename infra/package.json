@@ -15,6 +15,7 @@
         "benchmark": "bash tests/api/benchmark/run.sh"
     },
     "devDependencies": {
+        "@mannercode/testing": "workspace:*",
         "@restatedev/restate-sdk": "1.18.4",
         "@restatedev/restate-sdk-clients": "1.18.4"
     }

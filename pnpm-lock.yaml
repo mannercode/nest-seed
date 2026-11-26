@@ -442,6 +442,9 @@ importers:
 
   infra:
     devDependencies:
+      '@mannercode/testing':
+        specifier: workspace:*
+        version: link:../libs/testing
       '@restatedev/restate-sdk':
         specifier: 1.18.4
         version: 1.18.4

@@ -1,6 +1,7 @@
 import { randomBytes, randomInt } from 'node:crypto'
 import http from 'node:http'
 import { setTimeout as delay } from 'node:timers/promises'
+import { SseDecoder } from '@mannercode/testing'
 
 // race 시나리오는 runner.sh가 띄운 4-replica API 테스트 스택을 전제한다.
 // 기본값으로 단일 dev 서버에 조용히 붙으면 경쟁이 재현되지 않아 결과가 왜곡되므로 필수로 받는다.
@@ -171,18 +172,16 @@ function request(method, path, opts = {}) {
 /**
  * `/event-demo/event-stream` SSE 연결 하나를 열고, 도착하는 이벤트를 파싱해 `events`에 쌓는다.
  *
- * SSE 프레임은 `\n\n`으로 구분되고, 각 프레임에서 `data:` 줄만 JSON으로 파싱한다.
- * keepalive 주석처럼 `data:`가 없는 프레임은 건너뛴다.
- *
  * @param {object} [opts]
+ * @param {string} [opts.serverUrl] 구독할 서버의 주소.
  * @param {string} opts.accessToken 사용자 액세스 토큰.
  * @param {string} [opts.label] 상태 코드·handshake 에러 진단에 붙일 식별자.
  * @param {(err:Error)=>void} opts.onFailure 준비 이후의 연결 종료와 파싱 오류를 시나리오에 전달한다.
  * @returns {{events:any[], connected:Promise<any>, close:()=>Promise<void>, getReplicaId:()=>string|undefined}}
  */
 function openEventStream(opts = {}) {
-    const { label, onFailure, accessToken } = opts
-    const url = new URL('/event-demo/event-stream', SERVER_URL)
+    const { label, onFailure, accessToken, serverUrl = SERVER_URL } = opts
+    const url = new URL('/event-demo/event-stream', serverUrl)
     const events = []
     const requestPath = url.pathname + url.search
     const diagnostic = `SSE GET ${requestPath}${label ? ` [${label}]` : ''}`
@@ -253,25 +252,15 @@ function openEventStream(opts = {}) {
                     }
                     replicaId = res.headers['x-replica-id']
                     res.setEncoding('utf8')
-                    let buffer = ''
+                    const decoder = new SseDecoder(({ data }) => {
+                        if (data !== undefined) events.push(JSON.parse(data))
+                    })
                     res.on('data', (chunk) => {
                         if (closed) return
-                        buffer += chunk
-                        let idx
-                        while ((idx = buffer.indexOf('\n\n')) !== -1) {
-                            const frame = buffer.slice(0, idx)
-                            buffer = buffer.slice(idx + 2)
-                            const dataLine = frame
-                                .split('\n')
-                                .find((line) => line.startsWith('data:'))
-                            if (!dataLine) continue
-                            const payload = dataLine.slice('data:'.length).trim()
-                            try {
-                                events.push(JSON.parse(payload))
-                            } catch (e) {
-                                failStream(e)
-                                return
-                            }
+                        try {
+                            decoder.write(chunk)
+                        } catch (error) {
+                            failStream(error)
                         }
                     })
                     res.once('error', failStream)

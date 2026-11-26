@@ -1,3 +1,6 @@
+import assert from 'node:assert/strict'
+import { once } from 'node:events'
+import { createServer } from 'node:http'
 import { test } from 'node:test'
 import {
     competingReplicas,
@@ -14,6 +17,28 @@ const SSE_CLIENT_COUNT = readPositiveInt('SSE_CLIENT_COUNT', 100, 2)
 const MESSAGES_PER_INNER = readPositiveInt('MESSAGES_PER_INNER', 10)
 const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 150)
 const DEADLINE_MS = readPositiveInt('SSE_DEADLINE_MS', 300_000)
+
+test('JSON이 여러 data 줄에 나뉘면 한 메시지로 수신한다', async () => {
+    await using server = createServer((_req, res) => {
+        res.writeHead(200, { 'content-type': 'text/event-stream' })
+        res.end(': heartbeat\r\n\r\ndata: {\r\ndata: "id": "one"}\r\n\r\n')
+    })
+    server.listen(0, '127.0.0.1')
+    await once(server, 'listening')
+    const disconnected = Promise.withResolvers()
+    const client = openEventStream({
+        serverUrl: `http://127.0.0.1:${server.address().port}`,
+        accessToken: 'fixture',
+        onFailure: disconnected.resolve
+    })
+    try {
+        await client.connected
+        assert.match((await disconnected.promise).message, /stream ended before client closed it/)
+        assert.deepEqual(client.events, [{ id: 'one' }])
+    } finally {
+        await client.close()
+    }
+})
 
 async function publish(user, message, signal) {
     const response = await request('POST', '/event-demo/messages', {

@@ -1,5 +1,6 @@
 import { HttpStatus } from '@nestjs/common'
 import superagent, { type Response } from 'superagent'
+import { SseDecoder } from './sse-decoder.js'
 
 export type { Response }
 
@@ -7,8 +8,6 @@ type ResponseSchema<T> = { parse: (value: unknown) => T }
 export type TypedResponse<T> = Omit<Response, 'body'> & { body: T }
 
 type ResponseOptions<T> = { schema?: ResponseSchema<T>; expected?: unknown }
-
-type EventMessage = { data: string; event: string; id: number }
 
 export class HttpTestClient {
     private currentRequest: superagent.Request
@@ -132,23 +131,20 @@ export class HttpTestClient {
         errorHandler: (reason: any) => void,
         readyHandler?: () => void
     ): this {
-        const dispatch = (rawEvent: string) => {
-            const message = this.parseEventMessage(rawEvent)
-
+        const decoder = new SseDecoder((message) => {
             if (message.event === 'error') {
                 errorHandler(message)
             } else if (message.data !== undefined) {
                 messageHandler(message.data)
             }
-        }
+        })
 
         this.currentRequest
             .set('Accept', 'text/event-stream')
             .buffer(true)
             .ok(() => true)
             .parse((response, done) => {
-                let buffer = ''
-                let previousChunkEndedWithCR = false
+                let errorBody = ''
                 const isEventStream =
                     response.statusCode === 200 &&
                     response.headers['content-type']?.split(';', 1)[0]?.trim().toLowerCase() ===
@@ -156,32 +152,15 @@ export class HttpTestClient {
 
                 response.setEncoding('utf8')
                 response.on('data', (chunk: string) => {
-                    if (!isEventStream) {
-                        buffer += chunk
-                        return
-                    }
-
-                    // CR은 즉시 줄바꿈으로 처리하고, 다음 청크의 LF가 이어지면 한 번만 센다.
-                    if (previousChunkEndedWithCR && chunk.startsWith('\n')) {
-                        chunk = chunk.slice(1)
-                    }
-                    previousChunkEndedWithCR = chunk.endsWith('\r')
-                    buffer += chunk.replace(/\r\n?/g, '\n')
-
-                    let separatorIndex = buffer.indexOf('\n\n')
-                    while (separatorIndex !== -1) {
-                        const rawEvent = buffer.slice(0, separatorIndex)
-                        buffer = buffer.slice(separatorIndex + 2)
-                        if (0 < rawEvent.length) dispatch(rawEvent)
-                        separatorIndex = buffer.indexOf('\n\n')
-                    }
+                    if (isEventStream) decoder.write(chunk)
+                    else errorBody += chunk
                 })
                 response.on('end', () => {
                     if (isEventStream) {
-                        if (0 < buffer.length) dispatch(buffer)
+                        decoder.end()
                     } else {
                         errorHandler(
-                            buffer.trim() ||
+                            errorBody.trim() ||
                                 new Error(`Unexpected SSE response (HTTP ${response.statusCode})`)
                         )
                     }
@@ -200,34 +179,5 @@ export class HttpTestClient {
     unsupportedMediaType = this.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
     private status(status: number) {
         return <T = Response['body']>(options?: ResponseOptions<T>) => this.send(status, options)
-    }
-
-    private parseEventMessage(input: string): Partial<EventMessage> {
-        const lines = input.split('\n')
-        const parsedMessage: Partial<EventMessage> = {}
-
-        lines.forEach((line) => {
-            const colonIndex = line.indexOf(':')
-            const key = colonIndex === -1 ? line : line.slice(0, colonIndex)
-            let value = colonIndex === -1 ? '' : line.slice(colonIndex + 1)
-            if (value.startsWith(' ')) value = value.slice(1)
-
-            switch (key) {
-                case 'data':
-                    parsedMessage.data =
-                        parsedMessage.data === undefined ? value : `${parsedMessage.data}\n${value}`
-                    break
-                case 'event':
-                    parsedMessage.event = value
-                    break
-                case 'id':
-                    parsedMessage.id = parseInt(value, 10)
-                    break
-                default:
-                    break
-            }
-        })
-
-        return parsedMessage
     }
 }
