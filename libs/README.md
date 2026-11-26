@@ -12,7 +12,7 @@ Nest 모듈과 주입된 서비스를 검증할 때는 `createTestContext`, HTTP
 
 ## 2. SDK 연결과 호출은 common에서 구현한다
 
-같은 SDK를 쓰는 앱들도 저장할 데이터와 장애 처리 방식은 다를 수 있다. common은 연결 수명과 SDK 호출을 맡고, 접속 설정·도메인 쿼리·인덱스·이벤트 내용·workflow 단계는 앱이 정한다. 앱에서 NestJS·Zod·RxJS·Express 미들웨어를 직접 쓸 수 있다. 독립 실행 스크립트는 common 빌드 없이 실행하기 위해, 테스트는 상태 확인이나 장애 재현을 위해 SDK를 직접 사용할 수 있다. [API의 SDK import 검사](../oxlint.config.mts)
+common은 연결 수명과 SDK 호출을 맡고, 접속 설정·도메인 쿼리·인덱스·이벤트 내용·workflow 단계는 앱이 정한다. 앱에서 NestJS·Zod·RxJS·Express 미들웨어를 직접 쓸 수 있다. 독립 실행 스크립트는 common 빌드 없이 실행하기 위해, 테스트는 상태 확인이나 장애 재현을 위해 SDK를 직접 사용할 수 있다. [API의 SDK import 검사](../oxlint.config.mts)
 
 common을 가져가는 프로젝트는 선언된 peer dependency를 설치한다. 특히 테스트 환경과 앱의 Nest HTTP adapter 버전을 맞춘다. Nest core가 두 번 로드되면 같은 클래스도 DI 토큰이 달라질 수 있다. [패키지 의존성](common/package.json)
 
@@ -36,15 +36,7 @@ common을 가져가는 프로젝트는 선언된 peer dependency를 설치한다
 
 ## 3. 저장소 ID와 트랜잭션
 
-Repository의 CRUD 메서드에는 문자열 문서 ID를 넘긴다. 직접 MongoDB 필터를 작성할 때는 `idFilter`·`idsFilter`로 문서 ID를 표시한다. 일반 문자열은 집계 그룹의 `_id`로도 쓸 수 있어 문자열 그대로 유지한다. CRUD 결과의 `id`는 문자열이며 projection에서 `_id`를 제외하면 생략된다. 집계 결과는 필드 이름을 유지하고 ObjectId 값만 문자열로 바꾼다. [조회·projection·집계·인덱스 테스트](common/src/mongodb/__tests__/crud.repository.spec.ts)
-
-```ts
-const created = await fix.soft.create('sample')
-const filter = fix.soft.idFilter(created.id)
-const found = await fix.soft.findDocument(filter)
-expect(found).toMatchObject({ id: created.id, name: 'sample' })
-expect(found).not.toHaveProperty('_id')
-```
+Repository의 CRUD 메서드에는 문자열 문서 ID를 넘긴다. 직접 MongoDB 필터를 작성할 때는 `idFilter(id)`·`idsFilter(ids)`로 문서 ID를 표시한다. 일반 문자열은 집계 그룹의 `_id`로도 쓰이므로 문자열로 유지한다. CRUD 결과의 `id`는 문자열이며 projection에서 `_id`를 제외하면 생략된다. 집계 결과는 필드 이름을 유지하고 ObjectId 값만 문자열로 바꾼다. [조회·projection·집계 예제](common/src/mongodb/__tests__/crud.repository.spec.ts)
 
 같은 트랜잭션에 참여할 Repository들에 콜백의 `TransactionContext`를 전달하고, 한 세션의 DB 작업은 순서대로 실행한다. context는 해당 콜백 실행 동안만 유효하다. 드라이버가 콜백을 재시도할 수 있으므로 S3 쓰기와 메시지 발행처럼 되돌릴 수 없는 작업은 밖에 둔다. 페이지 목록과 개수를 한 시점 기준으로 읽어야 할 때는 snapshot 트랜잭션을 사용한다. [트랜잭션 구현](common/src/mongodb/mongo-transaction.repository.ts) · [페이지 조회 테스트](common/src/mongodb/__tests__/crud.repository.spec.ts)
 
@@ -63,49 +55,18 @@ expect(output.date.equals(date)).toBe(true)
 expect(output.title).toBe('2023-06-18')
 ```
 
-Restate의 `defineWorkflow`는 입력 스키마를, `RestateWorkflowClient`는 최종 결과 스키마를 적용한다. 저장된 step 결과에서 `Temporal` 같은 타입이 필요하면 workflow 작성자가 `ctx.run`이 반환한 값을 스키마로 복원한다. 진행 중인 작업의 step 순서·이름·저장 형식을 바꿀 때는 이전 기록을 읽을 버전도 계속 제공한다. [직렬화와 workflow 입력 테스트](common/src/restate/__tests__/temporal-json.serde.spec.ts) · [완료 결과 복원 테스트](common/src/restate/__tests__/workflow-client.spec.ts) · [버전별 배포 주소](../README.md#restate-배포-주소)
+Restate의 `defineWorkflow`는 입력 스키마를, `RestateWorkflowClient`는 최종 결과 스키마를 적용한다. 저장된 step 결과에서 `Temporal` 같은 타입이 필요하면 workflow 작성자가 `ctx.run`이 반환한 값을 스키마로 복원한다. [직렬화와 workflow 입력 테스트](common/src/restate/__tests__/temporal-json.serde.spec.ts) · [완료 결과 복원 테스트](common/src/restate/__tests__/workflow-client.spec.ts) · [진행 중인 작업의 버전 호환](../README.md#restate-배포-주소)
 
 `HttpTestClient`에서 `await request.ok({ schema, expected })`를 호출하면 스키마로 변환한 본문을 `expected`와 비교한다. 반환된 응답의 `body` 타입도 스키마에서 추론한다. `await request.ok({ expected })`는 원래 JSON과 비교한다. [HTTP 응답 검증 예제](testing/src/__tests__/http.test-client.spec.ts)
 
 ## 5. SSE 이벤트를 받는 테스트 작성
 
-`HttpTestClient.sse`는 응답이 HTTP 200이고 `Content-Type`이 `text/event-stream`이면 세 번째 인자인 준비 콜백을 부른다. 먼저 발행하면 구독이 열리기 전에 이벤트가 지나갈 수 있다. 아래 테스트 서버는 `POST /emit-event`를 받으면 열린 스트림에 첫 이벤트를 보낸다. [준비 콜백과 정리 예제](testing/src/__tests__/http.test-client.spec.ts)
-
-```ts
-const ready = Promise.withResolvers<void>()
-const received = Promise.withResolvers<string>()
-const reject = (reason: unknown) => {
-    ready.reject(reason)
-    received.reject(reason)
-}
-const request = fix.httpClient.get('/events-after-ready')
-request.sse(received.resolve, reject, ready.resolve)
-
-try {
-    const [data] = await Promise.all([
-        received.promise,
-        ready.promise.then(() =>
-            new HttpTestClient(fix.httpClient.serverUrl).post('/emit-event').created()
-        )
-    ])
-    expect(JSON.parse(data)).toEqual({ status: 'succeeded' })
-} finally {
-    fix.httpClient.abort()
-}
-```
+`request.sse(messageHandler, errorHandler, readyHandler)`는 HTTP 200과 `Content-Type: text/event-stream`을 확인하면 `readyHandler`를 부른다. 첫 이벤트를 놓치지 않도록 이 신호를 기다린 뒤 별도 클라이언트로 발행한다. 테스트가 끝나면 `finally`에서 `request.abort()`로 구독을 닫는다. [구독·발행 예제](testing/src/__tests__/http.test-client.spec.ts)
 
 ## 6. 공통 유틸의 입력·반환 규칙
 
-| 입력이나 조건                                          | 호출                                           | 결과                                                                                                                                             |
-| ------------------------------------------------------ | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 서로 다른 파일 시스템의 두 디렉터리에 동명 파일이 있음 | `await PathUtil.move(src, dest)`               | 예외를 던지고 원본과 대상 파일을 모두 보존한다. [파일 이동](common/src/utils/__tests__/path.spec.ts)                                             |
-| 경로 접근이 거부됨                                     | `await PathUtil.exists(tempDir)`               | `EACCES` 오류를 전달한다. [경로 조회](common/src/utils/__tests__/path.spec.ts)                                                                   |
-| 부호와 지수가 섞인 시간                                | `TimeUtil.toMs('-1s-1e-7ms')`                  | `-1000.0000001`밀리초. [시간 단위](common/src/utils/__tests__/time.spec.ts)                                                                      |
-| 여러 단위로 표현한 크기                                | `ByteUtil.fromString('1KB 512B')`              | `1536`바이트. [바이트 단위](common/src/utils/__tests__/byte.spec.ts)                                                                             |
-| `date`가 `Temporal.PlainDate.from('2025-01-01')`       | `isEqual(date, date.withCalendar('japanese'))` | 같은 ISO 날짜라도 달력이 달라 `false`. [Temporal 값 비교](common/src/utils/lodash.ts) · [비교 테스트](common/src/utils/__tests__/lodash.spec.ts) |
-| 환경 변수가 `TEST_NUMBER=123`                          | `Env.getNumber('TEST_NUMBER')`                 | 숫자 `123`. [환경 변수 입력](common/src/utils/__tests__/env.spec.ts)                                                                             |
-| 설정값이 `{ N: '42' }`                                 | `service.getNumber('N')`                       | 숫자 `42`. [설정 getter](common/src/config/__tests__/base-config.service.spec.ts)                                                                |
-| `source.name`이 `undefined` 또는 `null`                | `assignIfDefined(target, source, 'name')`      | `undefined`면 기존 값을 유지하고 `null`이면 `target.name`에 `null`을 쓴다. [필드 매핑](common/src/mongodb/__tests__/mongo.util.spec.ts)          |
+- `await PathUtil.move(src, dest)`로 파일 시스템을 넘어 디렉터리를 옮길 때 대상에 동명 파일이 있으면 예외를 던지고 양쪽 파일을 보존한다. `PathUtil.exists`는 접근이 거부되면 오류를 호출자에게 전달한다. [파일 이동과 경로 조회](common/src/utils/__tests__/path.spec.ts)
+- `assignIfDefined(target, source, 'name')`은 `source.name`이 `undefined`면 기존 값을 유지하고, `null`이면 `target.name`에 `null`을 쓴다. [필드 매핑](common/src/mongodb/__tests__/mongo.util.spec.ts)
 
 ## 7. TypeScript 작성 규칙
 
