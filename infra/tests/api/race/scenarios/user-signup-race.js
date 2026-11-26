@@ -1,92 +1,45 @@
-// 복제본 스택에 같은 이메일의 가입을 동시에 보내 정확히 한 건만 201이 되는지 검증한다.
-
 import { test } from 'node:test'
-import { readPositiveInt, request, secureRandomHex, SERVER_URL } from '../race-common.js'
+import {
+    competingReplicas,
+    readPositiveInt,
+    request,
+    responseDiagnostic,
+    secureRandomHex,
+    waitForAll
+} from '../race-common.js'
 
 const EMAIL_GROUPS = readPositiveInt('RACE_EMAIL_GROUPS', 10)
-const CLIENTS_PER_GROUP = readPositiveInt('RACE_CLIENT_COUNT', 50)
+const CLIENTS_PER_GROUP = readPositiveInt('RACE_CLIENT_COUNT', 50, 2)
 const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 30)
 
-async function runInner(iteration) {
-    const emails = Array.from(
-        { length: EMAIL_GROUPS },
-        (_, g) => `race.${iteration}.${g}.${secureRandomHex()}@example.com`
+async function verifySignup(email) {
+    const body = { name: 'race', birthDate: '1990-01-01', email, password: 'race password 123' }
+    const results = await waitForAll(
+        Array.from({ length: CLIENTS_PER_GROUP }, () => request('POST', '/users', { body }))
     )
-
-    const requests = emails.flatMap((email) =>
-        Array.from({ length: CLIENTS_PER_GROUP }, () =>
-            request('POST', '/users', {
-                body: {
-                    name: 'race',
-                    birthDate: '1990-01-01',
-                    email,
-                    password: 'race password 123'
-                }
-            }).then((r) => ({ ...r, email }))
-        )
+    const created = results.filter((response) => response.status === 201)
+    const conflicts = results.filter(
+        (response) =>
+            response.status === 409 && response.body?.code === 'ERR_USER_EMAIL_ALREADY_EXISTS'
     )
-
-    const results = await Promise.all(requests)
-
-    const byEmail = new Map()
-    const replicaSet = new Set()
-    for (const r of results) {
-        const g = byEmail.get(r.email) ?? { created: 0, conflict: 0, other: [] }
-        if (r.status === 201) g.created++
-        else if (r.status === 409) g.conflict++
-        else g.other.push(r)
-        byEmail.set(r.email, g)
-        if (r.replicaId) replicaSet.add(r.replicaId)
-    }
-
-    for (const [email, g] of byEmail) {
-        if (g.created !== 1) {
-            console.error(
-                `[race] iter=${iteration} email=${email}: expected 1 × 201, got ${g.created} (409=${g.conflict}, other=${g.other.length})`
-            )
-            // 이 이메일의 응답 전체를 남겨 다음 실패 때 성공 후보가 5xx였는지, 소켓이 끊겼는지, 예상하지 못한 상태였는지 구분한다.
-            const sameEmail = results.filter((r) => r.email === email)
-            for (const [idx, r] of sameEmail.entries()) {
-                console.error(
-                    `  [${idx}] status=${r.status} replica=${r.replicaId} body=${JSON.stringify(r.body).slice(0, 120)}`
-                )
-            }
-            throw new Error(`iter ${iteration}: email ${email} had ${g.created} × 201`)
-        }
-        if (g.other.length > 0) {
-            for (const r of g.other.slice(0, 5)) {
-                console.error(
-                    `[race] iter=${iteration} email=${email} unexpected ${r.status} replica=${r.replicaId}`
-                )
-            }
-            throw new Error(`iter ${iteration}: email ${email} had ${g.other.length} unexpected`)
-        }
-    }
-
-    // 이번 회차의 전체 응답에 여러 복제본이 참여했는지만 확인한다.
-    // 같은 대상을 두고 경쟁한 각 요청 묶음이 여러 복제본에 분산됐는지까지 확인하지는 않는다.
-    if (replicaSet.size < 2) {
+    if (created.length !== 1 || conflicts.length !== CLIENTS_PER_GROUP - 1) {
+        const outcomes = results.map(responseDiagnostic)
         throw new Error(
-            `iter ${iteration}: only 1 replica served (got ${[...replicaSet]}) — cross-replica unverified`
+            `email ${email}: expected one 201 and all other emails rejected as duplicates, got ${JSON.stringify(outcomes)}`
         )
     }
-
-    return { groups: EMAIL_GROUPS, total: results.length, replicas: replicaSet.size }
+    return competingReplicas(results, email)
 }
 
-test('같은 이메일의 동시 가입은 정확히 하나만 성공한다', async () => {
-    console.log(
-        `[race] server=${SERVER_URL} groups=${EMAIL_GROUPS} clients/group=${CLIENTS_PER_GROUP} inner=${INNER_ITERATIONS}`
-    )
-
-    for (let i = 1; i <= INNER_ITERATIONS; i++) {
-        const result = await runInner(i)
+test('같은 이메일로 여러 복제본에서 동시에 가입하면 한 요청만 201을 반환하고 나머지는 중복 이메일로 409를 반환한다', async () => {
+    for (let iteration = 1; iteration <= INNER_ITERATIONS; iteration++) {
+        const replicas = await waitForAll(
+            Array.from({ length: EMAIL_GROUPS }, () =>
+                verifySignup(`race.${secureRandomHex()}@example.com`)
+            )
+        )
         console.log(
-            `[race] iter ${i}/${INNER_ITERATIONS} OK — ${result.groups} groups × ${CLIENTS_PER_GROUP} clients (${result.total} reqs, ${result.replicas} replicas)`
+            `[signup] ${iteration}/${INNER_ITERATIONS}: ${EMAIL_GROUPS} emails, ${CLIENTS_PER_GROUP} clients per email, min ${Math.min(...replicas)} replicas per email`
         )
     }
-
-    console.log(
-        `[race] PASS: ${INNER_ITERATIONS} iters × ${EMAIL_GROUPS} groups × ${CLIENTS_PER_GROUP} clients`
-    )
 })

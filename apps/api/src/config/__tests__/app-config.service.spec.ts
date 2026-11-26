@@ -81,7 +81,7 @@ describe('AppConfigService.schema', () => {
         { condition: '없으면', uri: undefined },
         { condition: 'HTTP 주소가 아니면', uri: 'ftp://worker:9080' }
     ])('RESTATE_DEPLOYMENT_URI가 $condition', ({ uri }) => {
-        it('부팅 설정을 검증하면 누락되거나 잘못된 변수 이름을 알린다', () => {
+        it('부팅 설정을 검증하면 오류에 RESTATE_DEPLOYMENT_URI가 포함된다', () => {
             expect(() => deploymentSchema.parse({ RESTATE_DEPLOYMENT_URI: uri })).toThrow(
                 'RESTATE_DEPLOYMENT_URI'
             )

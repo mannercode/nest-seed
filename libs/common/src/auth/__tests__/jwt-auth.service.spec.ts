@@ -517,31 +517,35 @@ describe('JwtAuthService', () => {
             )
         })
 
-        describe.each(['none', 'HS384', 'HS512'])('토큰 서명 알고리즘이 %s이면', (algorithm) => {
-            let token: string
-            beforeEach(async () => {
-                token = await signedRefresh({ sub: 'u1', sessionId: 's1' }, { algorithm })
-            })
-            it('토큰을 갱신하면 401 예외를 던진다', async () => {
-                await expect(fix.jwtService.refreshAuthTokens(token)).rejects.toMatchObject({
-                    status: 401
-                })
-            })
-        })
-
         describe.each([
-            { label: 'issuer가 다른', options: { issuer: 'other' } },
-            { label: 'audience가 다른', options: { audience: 'other' } },
-            { label: '서명 키가 다른', options: { secret: 'wrong' } }
-        ])('$label 리프레시 토큰이 있으면', ({ options }) => {
-            let token: string
+            { condition: '서명 알고리즘이 none이면', options: { algorithm: 'none' } },
+            { condition: '서명 알고리즘이 HS384이면', options: { algorithm: 'HS384' } },
+            { condition: '서명 알고리즘이 HS512이면', options: { algorithm: 'HS512' } },
+            { condition: 'issuer가 다르면', options: { issuer: 'other' } },
+            { condition: 'audience가 다르면', options: { audience: 'other' } },
+            { condition: '서명 키가 다르면', options: { secret: 'wrong' } }
+        ])('활성 세션 ID가 있지만 $condition', ({ options }) => {
+            let invalidToken: string
+            let original: JwtAuthTokens
             beforeEach(async () => {
-                token = await signedRefresh({ sub: 'u1', sessionId: 's1' }, options)
+                original = await fix.jwtService.generateAuthTokens({ sub: 'u1' })
+                const { sub, sessionId } = decode(original.refreshToken)
+                invalidToken = await signedRefresh({ sub, sessionId }, options)
             })
-            it('토큰을 갱신하면 401 예외를 던진다', async () => {
-                await expect(fix.jwtService.refreshAuthTokens(token)).rejects.toMatchObject({
-                    status: 401
+            it('갱신하면 추가 검증 전에 401 예외를 던지고 원래 토큰은 계속 갱신할 수 있다', async () => {
+                const validateSession = vi.fn<SessionValidator>()
+                await expect(
+                    fix.jwtService.refreshAuthTokens(invalidToken, validateSession)
+                ).rejects.toMatchObject({
+                    status: 401,
+                    response: JwtAuthErrors.RefreshTokenInvalid()
                 })
+                expect(validateSession).not.toHaveBeenCalled()
+
+                await expect(
+                    fix.jwtService.refreshAuthTokens(original.refreshToken, validateSession)
+                ).resolves.toMatchObject({ refreshToken: expect.any(String) })
+                expect(validateSession).toHaveBeenCalledTimes(1)
             })
         })
     })

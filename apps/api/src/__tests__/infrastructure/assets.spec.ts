@@ -328,9 +328,10 @@ describe('AssetsService', () => {
                 })
                 form.append('file', new Blob([tampered], { type: createDto.mimeType }), 'tampered')
             })
-            it('업로드를 요청하면 거절한다', async () => {
+            it('업로드하면 400과 체크섬 불일치 사유를 반환한다', async () => {
                 const uploadRes = await fetch(uploadRequest.url, { body: form, method: 'POST' })
-                expect(uploadRes.ok).toBe(false)
+                expect(uploadRes.status).toBe(400)
+                expect(await uploadRes.text()).toContain('<Code>BadDigest</Code>')
             })
         })
 
@@ -346,9 +347,10 @@ describe('AssetsService', () => {
                 await sleep(1500)
             })
 
-            it('업로드를 거부한다', async () => {
+            it('만료된 URL로 업로드하면 클라이언트 오류를 반환한다', async () => {
                 const uploadRes = await uploadAsset(file.path, uploadRequest)
-                expect(uploadRes.ok).toBe(false)
+                expect(uploadRes.status).toBeGreaterThanOrEqual(400)
+                expect(uploadRes.status).toBeLessThan(500)
             })
         })
     })
@@ -410,13 +412,9 @@ describe('AssetsService', () => {
             let assetId: string
 
             beforeEach(async () => {
-                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 1 })
-
-                const createDto = buildCreateAssetDto(file)
-                const createdAsset = await assetsService.create(createDto)
+                const createdAsset = await assetsService.create(buildCreateAssetDto(file))
                 assetId = createdAsset.assetId
-
-                await sleep(1500)
+                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
             })
 
             it('완료 처리에 404 예외를 던지고 남겨 둔 기록은 만료 정리로 삭제한다', async () => {

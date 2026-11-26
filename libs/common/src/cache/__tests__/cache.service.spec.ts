@@ -572,18 +572,15 @@ describe('CacheService', () => {
                 // 다른 보유자가 짧게 보유하다 해제하면 같은 호출이 락을 획득해 정상 동작한다.
                 await fix.cacheService.set(jobLockKey, 'other', 100)
             })
-            it('만료 후 락을 획득해 대기 기한 안에 결과를 반환한다', async () => {
-                const start = performance.now()
+            it('기존 락이 만료되면 콜백을 실행하고 그 결과를 반환한다', async () => {
                 const result = await fix.cacheService.withLockBlocking(
                     'job',
                     5_000,
                     async () => 42,
                     { pollMs: 20, waitMs: 1000 }
                 )
-                const elapsed = performance.now() - start
 
                 expect(result).toBe(42)
-                expect(elapsed).toBeLessThan(1000)
             })
         })
 

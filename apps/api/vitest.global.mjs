@@ -1,5 +1,5 @@
 import { S3Client } from '@aws-sdk/client-s3'
-import { createGlobalTeardown } from '@mannercode/tools/vitest-helpers'
+import { createGlobalTeardown, waitForCleanup } from '@mannercode/tools/vitest-helpers'
 import { jetstreamManager } from '@nats-io/jetstream'
 import { connect } from '@nats-io/transport-node'
 import { Cluster } from 'ioredis'
@@ -15,21 +15,17 @@ export default function setup() {
         connectRedis: () => new Cluster(config.redis.nodes)
     })
 
-    return async () => {
-        await Promise.all([teardown(), cleanupEventStreams(config.nats)])
-    }
+    return () => waitForCleanup([teardown(), cleanupEventStreams(config.nats)])
 }
 
 async function cleanupEventStreams(options) {
     const connection = await connect(options)
-    try {
-        const manager = await jetstreamManager(connection)
-        const targets = []
-        for await (const { config } of manager.streams.list()) {
-            if (ownsEventStream(config)) targets.push(config.name)
-        }
-        await Promise.all(targets.map((name) => manager.streams.delete(name)))
-    } finally {
-        await connection.drain()
+    await using cleanup = new AsyncDisposableStack()
+    cleanup.defer(() => connection.drain())
+    const manager = await jetstreamManager(connection)
+    const targets = []
+    for await (const { config } of manager.streams.list()) {
+        if (ownsEventStream(config)) targets.push(config.name)
     }
+    await waitForCleanup(targets.map((name) => manager.streams.delete(name)))
 }

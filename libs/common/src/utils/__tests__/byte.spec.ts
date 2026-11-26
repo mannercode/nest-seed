@@ -2,54 +2,14 @@ import { ByteUtil } from '../index.js'
 
 describe('ByteUtil', () => {
     describe('fromString', () => {
-        describe('입력이 "1024B"이면', () => {
-            let input: string
-            beforeEach(() => {
-                input = '1024B'
-            })
-            it('바이트로 변환하면 1024를 반환한다', () => {
-                expect(ByteUtil.fromString(input)).toBe(1024)
-            })
-        })
-
-        describe('입력이 "1KB"이면', () => {
-            let input: string
-            beforeEach(() => {
-                input = '1KB'
-            })
-            it('바이트로 변환하면 1024를 반환한다', () => {
-                expect(ByteUtil.fromString(input)).toBe(1024)
-            })
-        })
-
-        describe('입력이 "1MB"이면', () => {
-            let input: string
-            beforeEach(() => {
-                input = '1MB'
-            })
-            it('바이트로 변환하면 1024의 제곱을 반환한다', () => {
-                expect(ByteUtil.fromString(input)).toBe(1024 * 1024)
-            })
-        })
-
-        describe('입력이 "1GB"이면', () => {
-            let input: string
-            beforeEach(() => {
-                input = '1GB'
-            })
-            it('바이트로 변환하면 1024의 세제곱을 반환한다', () => {
-                expect(ByteUtil.fromString(input)).toBe(1024 ** 3)
-            })
-        })
-
-        describe('입력이 "1TB"이면', () => {
-            let input: string
-            beforeEach(() => {
-                input = '1TB'
-            })
-            it('바이트로 변환하면 1024의 네제곱을 반환한다', () => {
-                expect(ByteUtil.fromString(input)).toBe(1024 ** 4)
-            })
+        it.each([
+            ['1024B', 1024],
+            ['1KB', 1024],
+            ['1MB', 1024 ** 2],
+            ['1GB', 1024 ** 3],
+            ['1TB', 1024 ** 4]
+        ] as const)('입력이 "%s"이면 %i바이트를 반환한다', (input, expected) => {
+            expect(ByteUtil.fromString(input)).toBe(expected)
         })
 
         describe('여러 단위가 공백으로 구분되어 있으면', () => {

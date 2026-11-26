@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { type NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server.js'
 import { hasSameOrigin, resolveForwardedClientIp, type AuthTokens } from '@/lib/bff-proxy'
 
 const ACCESS_COOKIE = 'nest-seed-user-access'

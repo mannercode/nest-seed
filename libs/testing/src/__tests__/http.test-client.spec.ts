@@ -48,6 +48,17 @@ describe('HttpTestClient', () => {
                 expect(body.at).toBeInstanceOf(Temporal.Instant)
                 expect(body.at.toString()).toBe('2023-06-18T12:12:34.567Z')
             })
+
+            it('변환 전 날짜 문자열을 기대하면 변환된 Instant와 달라 실패한다', async () => {
+                const expected = { at: '2023-06-18T12:12:34.567Z' }
+                await expect(
+                    fix.httpClient.get('/timestamp').ok({ schema, expected })
+                ).rejects.toMatchObject({
+                    name: 'AssertionError',
+                    actual: { at: Temporal.Instant.from(expected.at) },
+                    expected
+                })
+            })
         })
 
         describe('응답에 날짜 문자열이 있고 변환 스키마를 지정하지 않았으면', () => {
@@ -100,6 +111,18 @@ describe('HttpTestClient', () => {
 
             it('internalServerError로 응답을 확인하면 실패한다', async () => {
                 await expect(request.internalServerError()).rejects.toThrow()
+            })
+        })
+    })
+
+    describe('HTTP 상태는 일치하지만 기대한 본문이 실제 응답과 다르면', () => {
+        it('JSON 응답을 검증하면 본문 불일치로 실패한다', async () => {
+            await expect(
+                fix.httpClient.get('/always-200').ok({ expected: { ok: false } })
+            ).rejects.toMatchObject({
+                name: 'AssertionError',
+                actual: { ok: true },
+                expected: { ok: false }
             })
         })
     })
@@ -403,12 +426,12 @@ describe('HttpTestClient', () => {
             })
         })
 
-        describe('여러 이벤트를 한 청크에 담아 응답하는 경로이면', () => {
+        describe('서버가 상태 이벤트 세 개를 연달아 보내면', () => {
             let request: typeof fix.httpClient
             beforeEach(() => {
                 request = fix.httpClient.get('/events')
             })
-            it('구독하면 모든 이벤트를 전달한다', async () => {
+            it('구독하면 waiting, processing, succeeded 순서로 전달한다', async () => {
                 const events = await new Promise<string[]>((resolve, reject) => {
                     const received: string[] = []
 
@@ -441,9 +464,17 @@ describe('HttpTestClient', () => {
         })
 
         describe.each([
-            { path: '/not-found-text', expected: 'Not Found' },
-            { path: '/always-200', expected: '{"ok":true}' }
-        ])('$path가 JSON을 응답하면', ({ path, expected }) => {
+            {
+                condition: '서버가 404와 JSON 본문을 반환하면',
+                path: '/not-found-text',
+                expected: 'Not Found'
+            },
+            {
+                condition: '서버가 200과 JSON 본문을 반환하면',
+                path: '/always-200',
+                expected: '{"ok":true}'
+            }
+        ])('$condition', ({ path, expected }) => {
             let request: typeof fix.httpClient
             beforeEach(() => {
                 request = fix.httpClient.get(path)

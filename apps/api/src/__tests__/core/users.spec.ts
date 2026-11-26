@@ -5,7 +5,7 @@ import {
     buildCreateUserDto,
     createAndLoginUser,
     createUser,
-    Errors,
+    expectedErrors,
     loginUser,
     type AppTestContext,
     createAppTestContext
@@ -157,7 +157,7 @@ describe('UsersService', () => {
                 await fix.httpClient
                     .post('/users')
                     .body(buildCreateUserDto({ email: ` ${email.toUpperCase()} ` }))
-                    .conflict({ expected: Errors.Users.EmailAlreadyExists(email) })
+                    .conflict({ expected: expectedErrors.emailAlreadyExists(email) })
             })
         })
 
@@ -226,7 +226,7 @@ describe('UsersService', () => {
             })
             it('가입을 요청하면 400을 반환한다', async () => {
                 await request.badRequest({
-                    expected: Errors.RequestValidation.Failed(expect.any(Array))
+                    expected: expectedErrors.validationFailed(expect.any(Array))
                 })
             })
         })
@@ -273,7 +273,7 @@ describe('UsersService', () => {
                 await fix.httpClient
                     .post('/users/login')
                     .body({ email: user.email, password: password.trim() })
-                    .unauthorized({ expected: Errors.Auth.Unauthorized() })
+                    .unauthorized({ expected: expectedErrors.unauthorized })
             })
         })
 
@@ -299,36 +299,49 @@ describe('UsersService', () => {
         })
 
         describe('두 사용자가 같은 식별값의 이메일로 변경하려고 하면', () => {
-            let requests: HttpTestClient[]
+            let attempts: { original: UserDto; headers: { Authorization: string }; email: string }[]
+            const newEmail = 'change@mail.com'
             beforeEach(async () => {
                 const other = await createUser(fix, { email: 'other@mail.com' })
                 const session = await loginUser(fix, {
                     email: other.email,
                     password: 'Example password 1!'
                 })
-                requests = [
-                    new HttpTestClient(fix.httpClient.serverUrl)
-                        .patch('/users/me')
-                        .headers(userAuth)
-                        .body({ email: ' Change@Mail.Com ' }),
-                    new HttpTestClient(fix.httpClient.serverUrl)
-                        .patch('/users/me')
-                        .headers({ Authorization: `Bearer ${session.accessToken}` })
-                        .body({ email: 'change@mail.com' })
+                attempts = [
+                    { original: user, headers: userAuth, email: ' Change@Mail.Com ' },
+                    {
+                        original: other,
+                        headers: { Authorization: 'Bearer ' + session.accessToken },
+                        email: newEmail
+                    }
                 ]
             })
-            it('동시에 변경을 요청하면 하나만 성공하고 나머지는 409를 반환한다', async () => {
-                const responses = await Promise.all(requests.map((request) => request.sendRaw()))
-                expect(responses.map((response) => response.status).sort()).toEqual([200, 409])
-                expect(
-                    await fix.module
-                        .get(UsersRepository)
-                        .findForAuthentication({ email: 'change@mail.com' })
-                ).toMatchObject({ email: 'change@mail.com' })
+            it('동시에 변경하면 한 계정만 새 이메일을 쓰고 409를 받은 계정은 기존 이메일을 유지한다', async () => {
+                const results = await Promise.all(
+                    attempts.map(async (attempt) => {
+                        const response = await new HttpTestClient(fix.httpClient.serverUrl)
+                            .patch('/users/me')
+                            .headers(attempt.headers)
+                            .body({ email: attempt.email })
+                            .sendRaw()
+                        return { ...attempt, response }
+                    })
+                )
+                expect(results.map(({ response }) => response.status).sort()).toEqual([200, 409])
+                for (const { original, headers, response } of results) {
+                    const expected =
+                        response.status === 200 ? { ...original, email: newEmail } : original
+                    if (response.status === 409)
+                        expect(response.body).toEqual(expectedErrors.emailAlreadyExists(newEmail))
+                    await fix.httpClient
+                        .get('/users/me')
+                        .headers(headers)
+                        .ok({ schema: UserSchema, expected })
+                }
             })
         })
 
-        it('사용자를 수정하면 수정된 정보를 반환한다', async () => {
+        it('생년월일과 이메일을 변경하면 변경된 값과 기존 이름을 반환한다', async () => {
             const updateDto = { birthDate: plainDate('1900-12-31'), email: 'new@mail.com' }
 
             await fix.httpClient
@@ -348,13 +361,13 @@ describe('UsersService', () => {
             })
         })
 
-        it('사용자 정보를 수정하면 DB에 저장한다', async () => {
+        it('이름을 변경하면 응답과 이후 본인 조회에 변경된 이름을 반환한다', async () => {
             const updateDto = { name: 'update-name' }
             await fix.httpClient
                 .patch('/users/me')
                 .headers(userAuth)
                 .body(updateDto)
-                .ok({ schema: UserSchema })
+                .ok({ schema: UserSchema, expected: { ...user, ...updateDto } })
 
             await fix.httpClient
                 .get('/users/me')
@@ -394,7 +407,7 @@ describe('UsersService', () => {
                 await fix.httpClient
                     .post('/users/refresh')
                     .body({ refreshToken })
-                    .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+                    .unauthorized({ expected: expectedErrors.refreshTokenInvalid })
             })
         })
 
@@ -410,7 +423,7 @@ describe('UsersService', () => {
                     .patch('/users/me')
                     .headers(userAuth)
                     .body({ email: existingEmail })
-                    .conflict({ expected: Errors.Users.EmailAlreadyExists(existingEmail) })
+                    .conflict({ expected: expectedErrors.emailAlreadyExists(existingEmail) })
             })
         })
     })
@@ -429,7 +442,7 @@ describe('UsersService', () => {
                 await fix.httpClient
                     .post('/users/refresh')
                     .body({ refreshToken })
-                    .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+                    .unauthorized({ expected: expectedErrors.refreshTokenInvalid })
             })
         })
     })
@@ -449,7 +462,7 @@ describe('UsersService', () => {
                 await expect(
                     fix.module.get(UsersService).getMany([user.id, nullObjectId])
                 ).rejects.toMatchObject({
-                    response: Errors.Mongo.MultipleDocumentsNotFound([nullObjectId])
+                    response: expectedErrors.multipleDocumentsNotFound([nullObjectId])
                 })
             })
         })
@@ -460,7 +473,7 @@ describe('UsersService', () => {
             it('수정하면 사용자 없음 예외를 던진다', async () => {
                 await expect(
                     fix.module.get(UsersService).update(nullObjectId, {})
-                ).rejects.toMatchObject({ response: Errors.Mongo.DocumentNotFound(nullObjectId) })
+                ).rejects.toMatchObject({ response: expectedErrors.documentNotFound(nullObjectId) })
             })
         })
     })

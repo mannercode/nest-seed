@@ -1,5 +1,6 @@
 import { randomBytes, randomInt } from 'node:crypto'
 import http from 'node:http'
+import { setTimeout as delay } from 'node:timers/promises'
 
 // race 시나리오는 runner.sh가 띄운 4-replica API 테스트 스택을 전제한다.
 // 기본값으로 단일 dev 서버에 조용히 붙으면 경쟁이 재현되지 않아 결과가 왜곡되므로 필수로 받는다.
@@ -9,18 +10,47 @@ if (!SERVER_URL) {
 }
 
 // 빈 값은 기본값을 쓰되 잘못된 입력은 즉시 거절한다.
-function readPositiveInt(name, defaultValue) {
+function readPositiveInt(name, defaultValue, minimum = 1) {
     const raw = process.env[name]
     if (raw === undefined || raw === '') return defaultValue
     const n = parseInt(raw, 10)
-    if (!Number.isFinite(n) || n <= 0 || String(n) !== raw.trim()) {
-        throw new Error(`${name}는 양의 정수여야 한다. 받은 값: ${JSON.stringify(raw)}`)
+    if (!Number.isSafeInteger(n) || n < minimum || String(n) !== raw.trim()) {
+        throw new Error(
+            `${name}는 ${minimum} 이상의 정수여야 한다. 받은 값: ${JSON.stringify(raw)}`
+        )
     }
     return n
 }
 
 const HTTP_REQUEST_TIMEOUT_MS = readPositiveInt('HTTP_REQUEST_TIMEOUT_MS', 120_000)
 const SSE_HANDSHAKE_TIMEOUT_MS = readPositiveInt('SSE_HANDSHAKE_TIMEOUT_MS', 30_000)
+
+async function waitForAll(promises) {
+    const results = await Promise.allSettled(promises)
+    const errors = results
+        .filter((result) => result.status === 'rejected')
+        .map((result) => result.reason)
+    if (errors.length === 1) throw errors[0]
+    if (errors.length > 1) throw new AggregateError(errors, errors[0].message)
+    return results.map((result) => result.value)
+}
+
+function competingReplicas(responses, label) {
+    const replicas = new Set(responses.map((response) => response.replicaId))
+    if ([...replicas].some((id) => typeof id !== 'string' || !id.trim()) || replicas.size < 2) {
+        throw new Error(
+            `${label}: competing requests must identify at least two replicas (got ${[...replicas]})`
+        )
+    }
+    return replicas.size
+}
+
+function responseDiagnostic({ replicaId, status, body }) {
+    const diagnostic = { replicaId, status }
+    // 성공한 로그인·갱신 응답에는 토큰이 있어 실패 응답의 본문만 기록한다.
+    if (status >= 400 && body != null) diagnostic.error = JSON.stringify(body).slice(0, 200)
+    return diagnostic
+}
 
 function secureRandomHex(byteLength = 16) {
     return randomBytes(byteLength).toString('hex')
@@ -41,11 +71,12 @@ function secureRandomIndex(length) {
  * @param {object} [opts]
  * @param {*}      [opts.body] 객체면 JSON으로 직렬화돼 application/json으로 보낸다. undefined면 body 없이 보낸다.
  * @param {object} [opts.headers] 추가/덮어쓸 헤더.
+ * @param {AbortSignal} [opts.signal] 시나리오가 실패하면 진행 중인 요청도 취소한다.
  * @returns {Promise<{status:number, replicaId:string|undefined, body:any}>}
  *   body는 JSON parse 성공 시 객체, 실패 시 raw 문자열, 빈 응답이면 null이다.
  */
 function request(method, path, opts = {}) {
-    const { body, headers } = opts
+    const { body, headers, signal } = opts
     const url = new URL(path, SERVER_URL)
     const payload = body === undefined ? undefined : JSON.stringify(body)
     const agent = new http.Agent({ keepAlive: false })
@@ -93,6 +124,7 @@ function request(method, path, opts = {}) {
                     port: url.port,
                     path: requestPath,
                     method,
+                    signal,
                     headers: {
                         'content-type': 'application/json',
                         ...(payload === undefined
@@ -145,13 +177,11 @@ function request(method, path, opts = {}) {
  * @param {object} [opts]
  * @param {string} opts.accessToken 사용자 액세스 토큰.
  * @param {string} [opts.label] 상태 코드·handshake 에러 진단에 붙일 식별자.
- * @param {(payload:string, err:Error)=>void} [opts.onParseError]
- *   `data:` 페이로드가 JSON이 아닐 때 호출된다. 없으면 무시한다.
- *   엄격 모드가 필요한 시나리오는 여기서 throw해 깨진 페이로드를 즉시 드러낸다.
+ * @param {(err:Error)=>void} opts.onFailure 준비 이후의 연결 종료와 파싱 오류를 시나리오에 전달한다.
  * @returns {{events:any[], connected:Promise<any>, close:()=>Promise<void>, getReplicaId:()=>string|undefined}}
  */
 function openEventStream(opts = {}) {
-    const { label, onParseError, accessToken } = opts
+    const { label, onFailure, accessToken } = opts
     const url = new URL('/event-demo/event-stream', SERVER_URL)
     const events = []
     const requestPath = url.pathname + url.search
@@ -174,6 +204,11 @@ function openEventStream(opts = {}) {
         handshakeSettled = true
         destroy()
         rejectConnected(error)
+    }
+    const failStream = (error) => {
+        if (closed) return
+        if (!handshakeSettled) return failHandshake(error)
+        onFailure(new Error(`${diagnostic}: ${error.message}`, { cause: error }))
     }
 
     const connected = new Promise((resolve, reject) => {
@@ -204,8 +239,16 @@ function openEventStream(opts = {}) {
                         return
                     }
                     res = incoming
-                    if (res.statusCode !== 200) {
-                        failHandshake(new Error(`${diagnostic} status ${res.statusCode}`))
+                    const contentType = res.headers['content-type']
+                        ?.split(';')[0]
+                        .trim()
+                        .toLowerCase()
+                    if (res.statusCode !== 200 || contentType !== 'text/event-stream') {
+                        failHandshake(
+                            new Error(
+                                `${diagnostic}: HTTP ${res.statusCode}, Content-Type ${contentType}`
+                            )
+                        )
                         return
                     }
                     replicaId = res.headers['x-replica-id']
@@ -226,17 +269,21 @@ function openEventStream(opts = {}) {
                             try {
                                 events.push(JSON.parse(payload))
                             } catch (e) {
-                                if (onParseError) onParseError(payload, e)
+                                failStream(e)
+                                return
                             }
                         }
                     })
-                    res.once('error', failHandshake)
+                    res.once('error', failStream)
+                    res.once('end', () =>
+                        failStream(new Error('stream ended before client closed it'))
+                    )
                     handshakeSettled = true
                     clearTimeout(handshakeDeadline)
                     resolve({ res, req })
                 }
             )
-            req.once('error', failHandshake)
+            req.once('error', failStream)
             req.end()
         } catch (error) {
             failHandshake(error)
@@ -257,7 +304,11 @@ function openEventStream(opts = {}) {
         const disconnected = new Promise((resolve) => req.once('close', resolve))
         // SSE 응답은 끝나지 않으므로 구독을 TCP reset으로 취소한다.
         // 매 회차 새 구독을 여는 클라이언트가 TIME_WAIT로 임시 포트를 소진하지 않게 한다.
-        if (res?.socket && !res.socket.destroyed) res.socket.resetAndDestroy()
+        if (res && !res.complete && !res.destroyed && res.socket && !res.socket.destroyed) {
+            res.socket.resetAndDestroy()
+        } else {
+            req.destroy()
+        }
         await disconnected
     }
 
@@ -265,13 +316,14 @@ function openEventStream(opts = {}) {
 }
 
 /** predicate가 참이 될 때까지 폴링한다. 기한 안에 참이 되면 true, 넘기면 false. */
-async function waitUntil(predicate, { timeoutMs, intervalMs = 50 } = {}) {
+async function waitUntil(predicate, { timeoutMs, intervalMs = 50, signal } = {}) {
     const start = performance.now()
-    while (!predicate()) {
+    while (true) {
+        signal?.throwIfAborted()
+        if (predicate()) return true
         if (performance.now() - start > timeoutMs) return false
-        await new Promise((r) => setTimeout(r, intervalMs))
+        await delay(intervalMs, undefined, { signal })
     }
-    return true
 }
 
 async function createAndLoginUser({ prefix, index }) {
@@ -280,11 +332,12 @@ async function createAndLoginUser({ prefix, index }) {
     const created = await request('POST', '/users', {
         body: { name: `${prefix}-${index}`, birthDate: '1990-01-01', email, password }
     })
-    if (created.status !== 201) throw new Error(`user create ${index}: ${created.status}`)
+    if (created.status !== 201)
+        throw new Error(`user create ${index}: ${JSON.stringify(responseDiagnostic(created))}`)
 
     const loggedIn = await request('POST', '/users/login', { body: { email, password } })
-    if (loggedIn.status !== 200 && loggedIn.status !== 201) {
-        throw new Error(`user login ${index}: ${loggedIn.status}`)
+    if (loggedIn.status !== 200) {
+        throw new Error(`user login ${index}: ${JSON.stringify(responseDiagnostic(loggedIn))}`)
     }
 
     return {
@@ -296,7 +349,7 @@ async function createAndLoginUser({ prefix, index }) {
 
 // 인증 갱신은 경합을 시작하기 전에 끝낸다. 경합 중 401을 재시도로 숨기지 않는다.
 async function refreshUserAccessTokens(users) {
-    await Promise.all(
+    await waitForAll(
         users.map(async (user) => {
             const response = await request('POST', '/users/refresh', {
                 body: { refreshToken: user.refreshToken }
@@ -311,6 +364,9 @@ async function refreshUserAccessTokens(users) {
 
 export {
     SERVER_URL,
+    competingReplicas,
+    responseDiagnostic,
+    waitForAll,
     createAndLoginUser,
     readPositiveInt,
     refreshUserAccessTokens,

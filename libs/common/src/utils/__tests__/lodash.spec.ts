@@ -291,8 +291,12 @@ describe('orderBy', () => {
             input = []
         })
         it('정렬하면 모든 키를 오름차순으로 정렬한다', () => {
-            const result = orderBy([{ v: 3 }, { v: 1 }, { v: 2 }], ['v'], input)
-            expect(result).toEqual([{ v: 1 }, { v: 2 }, { v: 3 }])
+            const result = orderBy(items, ['age', 'name'], input)
+            expect(result).toEqual([
+                { age: 20, name: 'a' },
+                { age: 30, name: 'a' },
+                { age: 30, name: 'b' }
+            ])
         })
     })
 })

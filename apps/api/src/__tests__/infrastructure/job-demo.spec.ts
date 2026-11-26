@@ -38,12 +38,26 @@ describe('JobDemoService', () => {
         await fix.httpClient.post('/job-demo/jobs').body({ text: 'hello' }).unauthorized()
     })
     describe('입력이 빈 문자열이면', () => {
-        it('작업 접수를 거절한다', async () => {
+        it('작업을 제출하면 400을 반환한다', async () => {
             await fix.httpClient
                 .post('/job-demo/jobs')
                 .headers({ Authorization: 'Bearer ' + token })
                 .body({ text: '' })
                 .badRequest()
+        })
+    })
+    describe('Restate가 작업 접수를 거절하면', () => {
+        beforeEach(() => {
+            vi.spyOn(fix.module.get(TextJobWorkflowClient), 'submit').mockRejectedValueOnce(
+                new Error('submission rejected')
+            )
+        })
+        it('작업을 제출하면 500을 반환한다', async () => {
+            await fix.httpClient
+                .post('/job-demo/jobs')
+                .headers({ Authorization: 'Bearer ' + token })
+                .body({ text: 'hello' })
+                .internalServerError()
         })
     })
     describe.each([

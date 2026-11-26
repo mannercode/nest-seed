@@ -49,6 +49,9 @@ function createScenario(
         failed: new Rate(`${metricName}_failed`),
         latency: new Trend(`${metricName}_latency`, true),
         requests: new Counter(`${metricName}_requests`),
+        started: new Counter(`${metricName}_started`),
+        outsideWindow: new Counter(`${metricName}_completed_outside_window`),
+        renewals: new Counter(`${metricName}_in_window_renewals`),
         compareEncoding: acceptEncoding !== undefined,
         acceptEncoding: acceptEncoding ?? 'gzip'
     }
@@ -67,7 +70,7 @@ function createScenario(
 
 function benchmarkOptions() {
     const scenarios = {}
-    const thresholds = {}
+    const thresholds = { checks: ['rate==1'] }
     let startTime = 0
 
     for (const benchmarkCase of CASES) {
@@ -101,9 +104,55 @@ function benchmarkOptions() {
 
 export const options = benchmarkOptions()
 
-let tokens
-let accessExpiresAt = 0
+const sessions = new Map()
 const jsonHeaders = { 'content-type': 'application/json' }
+const authParams = {
+    headers: jsonHeaders,
+    responseType: 'text',
+    tags: { name: 'user authentication' }
+}
+
+function requireStatus(response, expected, path) {
+    if (response.status !== expected)
+        exec.test.abort(`Authentication ${path}: HTTP ${response.status}`)
+}
+
+export function setup() {
+    // k6는 겹치지 않는 시나리오에 VU를 재배치한다. 각 전역 VU ID마다 압축 비교용과 수정 가능한 계정을 준비한다.
+    const maxVus = Math.max(...CASES.map(({ readVus, writeVus }) => readVus + writeVus))
+    const runId = randomHex()
+    const accounts = Array.from({ length: maxVus * 2 }, (_, index) => ({
+        email: `benchmark-${runId}-${String(index).padStart(String(maxVus * 2).length, '0')}@example.com`,
+        password: 'Benchmark password 123!'
+    }))
+    const created = http.batch(
+        accounts.map((account, index) => [
+            'POST',
+            SERVER_URL + '/users',
+            JSON.stringify({
+                ...account,
+                name: index < maxVus ? compressionProfileName : 'Benchmark user',
+                birthDate: '1990-01-01'
+            }),
+            authParams
+        ])
+    )
+    for (const response of created) requireStatus(response, 201, '/users')
+    const loggedIn = http.batch(
+        accounts.map((account) => [
+            'POST',
+            SERVER_URL + '/users/login',
+            JSON.stringify(account),
+            authParams
+        ])
+    )
+    const tokens = loggedIn.map((response) => {
+        requireStatus(response, 200, '/users/login')
+        const { accessToken, refreshToken } = response.json()
+        return { accessToken, refreshToken, expiresAt: tokenExpiresAt(accessToken) }
+    })
+    return { compression: tokens.slice(0, maxVus), profile: tokens.slice(maxVus) }
+}
 
 function tokenExpiresAt(token) {
     const { exp } = JSON.parse(encoding.b64decode(token.split('.')[1], 'rawurl', 's'))
@@ -111,48 +160,52 @@ function tokenExpiresAt(token) {
     return exp * 1000
 }
 
-function authenticate(path, body, expectedStatus) {
-    const response = http.post(SERVER_URL + path, JSON.stringify(body), {
-        headers: jsonHeaders,
-        responseType: 'text',
-        tags: { name: 'user authentication' }
-    })
-    if (response.status !== expectedStatus)
-        exec.test.abort('Authentication ' + path + ': HTTP ' + response.status)
-    return response.json()
+function authenticatedHeaders(metric, prepared) {
+    const pool = metric.compareEncoding ? 'compression' : 'profile'
+    if (!sessions.has(pool)) sessions.set(pool, prepared[pool][exec.vu.idInTest - 1])
+    let session = sessions.get(pool)
+    const measurementStart = exec.scenario.startTime + WARMUP_MS
+    const measurementEnd = measurementStart + DURATION_MS
+    const renewAt = session.expiresAt - 60_000
+    const firstRequest = session.scenario !== exec.scenario.name
+    if (firstRequest) metric.renewals.add(0)
+    const started = Date.now()
+    if (started >= renewAt || (firstRequest && renewAt <= measurementEnd)) {
+        const response = http.post(
+            SERVER_URL + '/users/refresh',
+            JSON.stringify({ refreshToken: session.refreshToken }),
+            authParams
+        )
+        requireStatus(response, 200, '/users/refresh')
+        const { accessToken, refreshToken } = response.json()
+        session = { accessToken, refreshToken, expiresAt: tokenExpiresAt(accessToken) }
+        sessions.set(pool, session)
+        if (started < measurementEnd && Date.now() >= measurementStart) metric.renewals.add(1)
+    }
+    session.scenario = exec.scenario.name
+    return {
+        ...jsonHeaders,
+        authorization: 'Bearer ' + session.accessToken,
+        'Accept-Encoding': metric.acceptEncoding
+    }
 }
 
-function authenticatedHeaders(metric) {
-    if (!tokens) {
-        const email = 'benchmark-' + __VU + '-' + randomHex() + '@example.com'
-        const password = 'Benchmark password 123!'
-        const name = metric.compareEncoding ? compressionProfileName : 'Benchmark user'
-        authenticate('/users', { name, birthDate: '1990-01-01', email, password }, 201)
-        tokens = authenticate('/users/login', { email, password }, 200)
-        accessExpiresAt = tokenExpiresAt(tokens.accessToken)
-    }
-    // 각 VU가 자기 세션만 갱신한다. 인증 시간은 사용자 정보 측정에 포함하지 않는다.
-    if (Date.now() >= accessExpiresAt - 60_000) {
-        tokens = authenticate('/users/refresh', { refreshToken: tokens.refreshToken }, 200)
-        accessExpiresAt = tokenExpiresAt(tokens.accessToken)
-    }
-    return { ...jsonHeaders, authorization: 'Bearer ' + tokens.accessToken }
-}
-
-export function read() {
+export function read(prepared) {
     const metric = currentMetric()
-    const response = http.get(SERVER_URL + '/users/me', {
-        headers: { ...authenticatedHeaders(metric), 'Accept-Encoding': metric.acceptEncoding }
-    })
+    const headers = authenticatedHeaders(metric, prepared)
+    metric.started.add(1)
+    const response = http.get(SERVER_URL + '/users/me', { headers })
     record(response, 200, metric)
 }
 
-export function write() {
+export function write(prepared) {
     const metric = currentMetric()
+    const headers = authenticatedHeaders(metric, prepared)
+    metric.started.add(1)
     const response = http.patch(
         SERVER_URL + '/users/me',
         JSON.stringify({ name: 'benchmark-' + __VU + '-' + __ITER }),
-        { headers: { ...authenticatedHeaders(metric), 'Accept-Encoding': metric.acceptEncoding } }
+        { headers }
     )
     record(response, 200, metric)
 }
@@ -164,39 +217,48 @@ function currentMetric() {
 }
 
 function record(response, expectedStatus, metric) {
+    const elapsed = Date.now() - exec.scenario.startTime
     const failed = response.status !== expectedStatus
     const checks = { [`status is ${expectedStatus}`]: () => !failed }
     if (metric.compareEncoding) {
         checks[`response encoding is ${metric.acceptEncoding}`] = (res) =>
             (res.headers['Content-Encoding'] ?? 'identity') === metric.acceptEncoding
     }
-    metric.failed.add(!check(response, checks))
-
-    if (exec.scenario.progress >= WARMUP_MS / (WARMUP_MS + DURATION_MS)) {
+    const valid = check(response, checks)
+    if (elapsed >= WARMUP_MS && elapsed < WARMUP_MS + DURATION_MS) {
+        metric.failed.add(!valid)
         metric.latency.add(response.timings.duration)
         metric.requests.add(1)
+    } else {
+        metric.outsideWindow.add(1)
     }
 }
 
 function metricSummary(data, name, vus) {
     const metric = metrics.get(name)
-    const failed = data.metrics[metric.failed.name].values
-    const latency = data.metrics[metric.latency.name].values
-    const requests = data.metrics[metric.requests.name].values.count
+    const failed = data.metrics[metric.failed.name]?.values
+    const latency = data.metrics[metric.latency.name]?.values
+    const requests = data.metrics[metric.requests.name]?.values.count ?? 0
+    const started = data.metrics[metric.started.name]?.values.count ?? 0
+    const outsideWindow = data.metrics[metric.outsideWindow.name]?.values.count ?? 0
 
     return {
         vus,
         acceptEncoding: metric.acceptEncoding,
         requests,
+        unfinishedRequests: started - outsideWindow - requests,
         requestsPerSecond: round2(requests / (DURATION_MS / 1000)),
-        failedRate: failed.rate,
-        latencyMs: {
-            median: round2(latency.med),
-            p90: round2(latency['p(90)']),
-            p95: round2(latency['p(95)']),
-            p99: round2(latency['p(99)']),
-            max: round2(latency.max)
-        }
+        authRenewalsOverlappingWindow: data.metrics[metric.renewals.name]?.values.count ?? 0,
+        failedRate: requests ? failed.rate : null,
+        latencyMs: requests
+            ? {
+                  median: round2(latency.med),
+                  p90: round2(latency['p(90)']),
+                  p95: round2(latency['p(95)']),
+                  p99: round2(latency['p(99)']),
+                  max: round2(latency.max)
+              }
+            : null
     }
 }
 
@@ -223,6 +285,11 @@ function benchmarkSummary(data) {
 
     return {
         generatedAt: new Date().toISOString(),
+        commit: __ENV.BENCHMARK_COMMIT,
+        dirty: __ENV.BENCHMARK_DIRTY === 'true',
+        dockerEngine: __ENV.BENCHMARK_ENGINE,
+        images: __ENV.BENCHMARK_IMAGES.split('\n'),
+        k6Image: __ENV.BENCHMARK_K6_IMAGE,
         serverUrl: SERVER_URL,
         durationMs: DURATION_MS,
         warmupMs: WARMUP_MS,

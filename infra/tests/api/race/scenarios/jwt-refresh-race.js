@@ -1,132 +1,61 @@
-/**
- * 복제본 스택에 같은 refresh token의 회전 요청을 동시에 보낸다.
- * 정확히 하나만 성공하고 나머지 요청은 토큰이 이미 교체됐다는 이유로 거절되어야 한다.
- * 성공한 요청이 받은 새 refresh token으로 다시 갱신해 현재 로그인 세션을 계속 사용할 수 있는지 확인한다.
- */
-
 import { test } from 'node:test'
-import { readPositiveInt, request, secureRandomHex, SERVER_URL } from '../race-common.js'
+import {
+    competingReplicas,
+    createAndLoginUser,
+    readPositiveInt,
+    request,
+    responseDiagnostic,
+    waitForAll
+} from '../race-common.js'
 
 const USER_GROUPS = readPositiveInt('RACE_USER_GROUPS', 5)
-const CLIENTS_PER_USER = readPositiveInt('RACE_CLIENT_COUNT', 20)
+const CLIENTS_PER_USER = readPositiveInt('RACE_CLIENT_COUNT', 20, 2)
 const INNER_ITERATIONS = readPositiveInt('INNER_ITERATIONS', 30)
 const REPLACED_ERROR_CODE = 'ERR_JWT_AUTH_REFRESH_TOKEN_REPLACED'
 
-async function createAndLogin(suffix) {
-    const email = `race.${suffix}.${secureRandomHex()}@example.com`
-    const password = 'race password 123'
-
-    const created = await request('POST', '/users', {
-        body: { name: 'race', birthDate: '1990-01-01', email, password }
-    })
-    if (created.status !== 201) {
-        throw new Error(
-            `setup: create user expected 201, got ${created.status} body=${JSON.stringify(created.body).slice(0, 200)}`
-        )
-    }
-
-    const loggedIn = await request('POST', '/users/login', { body: { email, password } })
-    if (loggedIn.status !== 200) {
-        throw new Error(
-            `setup: login expected 200, got ${loggedIn.status} body=${JSON.stringify(loggedIn.body).slice(0, 200)}`
-        )
-    }
-
-    return loggedIn.body.refreshToken
+async function refresh(refreshToken) {
+    return request('POST', '/users/refresh', { body: { refreshToken } })
 }
 
-async function runInner(iteration) {
-    const tokens = await Promise.all(
-        Array.from({ length: USER_GROUPS }, (_, g) => createAndLogin(`${iteration}-${g}`))
+async function verifySession(user) {
+    const results = await waitForAll(
+        Array.from({ length: CLIENTS_PER_USER }, () => refresh(user.refreshToken))
     )
-
-    const requests = tokens.flatMap((token, g) =>
-        Array.from({ length: CLIENTS_PER_USER }, () =>
-            request('POST', '/users/refresh', { body: { refreshToken: token } }).then((r) => ({
-                ...r,
-                group: g
-            }))
-        )
+    const winners = results.filter((response) => response.status === 200)
+    const conflicts = results.filter(
+        (response) => response.status === 409 && response.body?.code === REPLACED_ERROR_CODE
     )
-
-    const results = await Promise.all(requests)
-
-    const replicaSet = new Set()
-    const byGroup = new Map()
-    for (const r of results) {
-        if (r.replicaId) replicaSet.add(r.replicaId)
-        const g = byGroup.get(r.group) ?? { ok: [], concurrent: [], unauthorized: [], other: [] }
-        if (r.status === 200) g.ok.push(r)
-        else if (r.status === 409 && r.body?.code === REPLACED_ERROR_CODE) {
-            g.concurrent.push(r)
-        } else if (r.status === 401) g.unauthorized.push(r)
-        else g.other.push(r)
-        byGroup.set(r.group, g)
-    }
-
-    for (const [groupIdx, g] of byGroup) {
-        if (g.other.length > 0) {
-            const sample = g.other[0]
-            throw new Error(
-                `iter ${iteration} group ${groupIdx}: ${g.other.length} unexpected, ` +
-                    `e.g., status=${sample.status} replica=${sample.replicaId} ` +
-                    `body=${JSON.stringify(sample.body).slice(0, 120)}`
-            )
-        }
-        if (g.ok.length !== 1 || g.concurrent.length !== CLIENTS_PER_USER - 1) {
-            throw new Error(
-                `iter ${iteration} group ${groupIdx}: expected 1 × 200 and ` +
-                    `${CLIENTS_PER_USER - 1} × 409/${REPLACED_ERROR_CODE}, got ` +
-                    `${g.ok.length} × 200, ${g.concurrent.length} × concurrent 409, ` +
-                    `${g.unauthorized.length} × 401`
-            )
-        }
-
-        const winner = g.ok[0]
-        const winnerToken = winner.body?.refreshToken
-        if (typeof winnerToken !== 'string' || winnerToken.length === 0) {
-            throw new Error(
-                `iter ${iteration} group ${groupIdx}: winner from replica=${winner.replicaId} ` +
-                    `did not return a refresh token, body=${JSON.stringify(winner.body).slice(0, 120)}`
-            )
-        }
-
-        const followup = await request('POST', '/users/refresh', {
-            body: { refreshToken: winnerToken }
-        })
-        if (followup.status !== 200) {
-            throw new Error(
-                `iter ${iteration} group ${groupIdx}: winner token followup expected 200, ` +
-                    `got status=${followup.status} replica=${followup.replicaId} ` +
-                    `body=${JSON.stringify(followup.body).slice(0, 120)} — current login session could not be refreshed`
-            )
-        }
-    }
-
-    // 이번 회차의 전체 응답에 여러 복제본이 참여했는지만 확인한다.
-    // 같은 대상을 두고 경쟁한 각 요청 묶음이 여러 복제본에 분산됐는지까지 확인하지는 않는다.
-    if (replicaSet.size < 2) {
+    if (winners.length !== 1 || conflicts.length !== CLIENTS_PER_USER - 1) {
+        const outcomes = results.map(responseDiagnostic)
         throw new Error(
-            `iter ${iteration}: only 1 replica served (got ${[...replicaSet]}) — cross-replica unverified`
+            `user ${user.userId}: expected one 200 and all other tokens replaced, got ${JSON.stringify(outcomes)}`
         )
     }
-
-    return { groups: USER_GROUPS, total: results.length, replicas: replicaSet.size }
+    const replicas = competingReplicas(results, user.userId)
+    const nextToken = winners[0].body?.refreshToken
+    if (typeof nextToken !== 'string' || !nextToken || nextToken === user.refreshToken) {
+        throw new Error(
+            `user ${user.userId}: successful rotation on ${winners[0].replicaId} must issue a new refresh token`
+        )
+    }
+    const followup = await refresh(nextToken)
+    if (followup.status !== 200)
+        throw new Error(
+            `user ${user.userId}: next refresh returned ${JSON.stringify(responseDiagnostic(followup))}`
+        )
+    return replicas
 }
 
-test('같은 리프레시 토큰으로 동시에 갱신하면 한 요청만 성공하고 세션을 유지한다', async () => {
-    console.log(
-        `[race] server=${SERVER_URL} groups=${USER_GROUPS} clients/user=${CLIENTS_PER_USER} inner=${INNER_ITERATIONS}`
-    )
-
-    for (let i = 1; i <= INNER_ITERATIONS; i++) {
-        const result = await runInner(i)
+test('같은 토큰을 여러 복제본에서 동시에 갱신하면 한 요청만 200을 반환하고 새 토큰으로 다시 갱신할 수 있다', async () => {
+    for (let iteration = 1; iteration <= INNER_ITERATIONS; iteration++) {
+        const users = await waitForAll(
+            Array.from({ length: USER_GROUPS }, (_, index) =>
+                createAndLoginUser({ prefix: 'refresh-race', index })
+            )
+        )
+        const replicas = await waitForAll(users.map(verifySession))
         console.log(
-            `[race] iter ${i}/${INNER_ITERATIONS} OK — ${result.groups} groups × ${CLIENTS_PER_USER} clients (${result.total} reqs, ${result.replicas} replicas)`
+            `[refresh] ${iteration}/${INNER_ITERATIONS}: ${users.length} users, ${CLIENTS_PER_USER} clients per user, min ${Math.min(...replicas)} replicas per user`
         )
     }
-
-    console.log(
-        `[race] PASS: ${INNER_ITERATIONS} iters × ${USER_GROUPS} groups × ${CLIENTS_PER_USER} clients`
-    )
 })

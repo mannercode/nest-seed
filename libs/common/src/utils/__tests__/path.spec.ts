@@ -10,10 +10,10 @@ describe('PathUtil', () => {
             beforeEach(() => {
                 relativePath = `.${PathUtil.sep()}file.txt`
             })
-            it('경로를 변환하면 절대 경로를 반환한다', () => {
+            it('경로를 변환하면 현재 디렉터리를 기준으로 한 파일의 절대 경로를 반환한다', () => {
                 const absolutePath = PathUtil.getAbsolute(relativePath)
 
-                expect(p.isAbsolute(absolutePath)).toBe(true)
+                expect(absolutePath).toBe(p.join(process.cwd(), 'file.txt'))
             })
         })
 
@@ -299,14 +299,17 @@ describe('PathUtil', () => {
                 })
             })
 
-            describe('내용이 다른 파일 두 개가 존재하면', () => {
+            describe.each([
+                { condition: '크기가 같고 내용이 다른 파일이면', contents: 'Hello, world!' },
+                { condition: '크기가 다른 파일이면', contents: 'This is different' }
+            ])('$condition', ({ contents }) => {
                 let original: string
                 let different: string
                 beforeEach(async () => {
                     original = PathUtil.join(tempDir, 'original.txt')
                     different = PathUtil.join(tempDir, 'different.txt')
                     await fs.writeFile(original, 'Hello, World!')
-                    await fs.writeFile(different, 'This is different')
+                    await fs.writeFile(different, contents)
                 })
                 it('비교하면 false를 반환한다', async () => {
                     expect(await PathUtil.areEqual(original, different)).toBe(false)

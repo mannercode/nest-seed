@@ -1,5 +1,7 @@
 import { expect, request, test, type BrowserContext, type Page } from '@playwright/test'
 import { randomUUID } from 'node:crypto'
+import { mock } from 'node:test'
+import { NextRequest } from 'next/server.js'
 
 import {
     API_BASE_URL,
@@ -9,6 +11,7 @@ import {
     WORKSPACE_ROOT
 } from '../playwright.config'
 import { photoUrl } from '../../src/lib/photos'
+import { GET } from '../../src/app/api/[...path]/route'
 
 const PASSWORD = 'DevPassword1234!'
 const ACCESS_COOKIE = 'nest-seed-user-access'
@@ -37,6 +40,15 @@ async function getSessionCookie(context: BrowserContext, name: string) {
     return cookies.find((cookie) => cookie.name === name)
 }
 
+async function createProtectedRequest(context: BrowserContext) {
+    const cookies = await context.cookies(WEB_BASE_URL)
+    const cookie = cookies.map(({ name, value }) => name + '=' + value).join('; ')
+    return () =>
+        GET(new NextRequest(new URL('/api/users/me', WEB_BASE_URL), { headers: { cookie } }), {
+            params: Promise.resolve({ path: ['users', 'me'] })
+        })
+}
+
 const storage = new URL(S3_ENDPOINT)
 const otherBucket = S3_BUCKET + '-other'
 for (const [condition, target] of [
@@ -59,7 +71,19 @@ for (const { condition, password } of [
 ]) {
     test.describe(`가입할 비밀번호가 ${condition}이면`, () => {
         test('가입과 로그인 화면에서 원문을 그대로 사용할 수 있다', async ({ page }) => {
-            const email = await signupAndLogin(page, password)
+            const [signup, login, email] = await Promise.all([
+                page.waitForRequest(
+                    (req) => req.method() === 'POST' && new URL(req.url()).pathname === '/api/users'
+                ),
+                page.waitForRequest(
+                    (req) =>
+                        req.method() === 'POST' &&
+                        new URL(req.url()).pathname === '/api/users/login'
+                ),
+                signupAndLogin(page, password)
+            ])
+            expect(signup.postDataJSON().password).toBe(password)
+            expect(login.postDataJSON().password).toBe(password)
             const result = await page.evaluate(async () => {
                 const response = await fetch('/api/users/me')
                 return { status: response.status, body: await response.json() }
@@ -83,7 +107,9 @@ for (const { name, pathname } of [
                 await page.goto(`${WEB_BASE_URL}${pathname}`)
                 await page.getByLabel('비밀번호').fill(password)
             })
-            test('입력 원문을 유지하면서 길이 오류를 표시한다', async ({ page }) => {
+            test('비밀번호 원문을 유지하고 브라우저의 길이 검사를 통과하지 못한다', async ({
+                page
+            }) => {
                 const input = page.getByLabel('비밀번호')
                 await expect(input).toHaveValue(password)
                 expect(
@@ -305,6 +331,81 @@ test.describe('사용자로 로그인했으면', () => {
         test.beforeEach(async ({ context }) => {
             await context.addCookies([{ ...accessCookie!, value: 'invalid-access-token' }])
         })
+        test.describe('보호 API의 401을 받은 뒤 갱신 서비스에 연결할 수 없으면', () => {
+            let sendRequest: Awaited<ReturnType<typeof createProtectedRequest>>
+            test.beforeEach(async ({ context }) => {
+                sendRequest = await createProtectedRequest(context)
+                const fetchApi = globalThis.fetch
+                mock.method(globalThis, 'fetch', (url: URL, init: RequestInit) => {
+                    if (url.href === new URL('/users/refresh', API_BASE_URL).href)
+                        throw new TypeError('Refresh service unavailable')
+                    return fetchApi(url, init)
+                })
+            })
+            test.afterEach(() => mock.restoreAll())
+            test('프록시는 502를 반환하고 같은 쿠키로 서비스 복구 후 다시 요청할 수 있다', async () => {
+                const failed = await sendRequest()
+                expect(failed.status).toBe(502)
+                expect(await failed.json()).toEqual({
+                    message: 'Authentication service unavailable'
+                })
+                expect(failed.headers.has('set-cookie')).toBe(false)
+
+                mock.restoreAll()
+                const recovered = await sendRequest()
+                expect(recovered.status).toBe(200)
+                expect(await recovered.json()).toMatchObject({ email })
+                expect(recovered.cookies.get(REFRESH_COOKIE)?.value).toEqual(expect.any(String))
+                expect(recovered.cookies.get(REFRESH_COOKIE)?.value).not.toBe(
+                    refreshCookieBefore!.value
+                )
+            })
+        })
+        test('토큰 회전이 끝난 뒤 같은 이전 쿠키로 다시 요청하면 한 번 갱신한 두 토큰을 재사용한다', async ({
+            context
+        }) => {
+            const sendRequest = await createProtectedRequest(context)
+            const fetchApi = globalThis.fetch
+            let refreshCalls = 0
+            const refreshUrl = new URL('/users/refresh', API_BASE_URL).href
+            const observedFetch = mock.method(
+                globalThis,
+                'fetch',
+                (url: URL, init: RequestInit) => {
+                    if (url.href === refreshUrl) refreshCalls++
+                    return fetchApi(url, init)
+                }
+            )
+
+            // 첫 응답을 끝까지 읽은 뒤에도 갱신 결과의 보관 기한이 지나지 않게 한다.
+            mock.timers.enable({ apis: ['setTimeout'] })
+            try {
+                const first = await sendRequest()
+                expect(first.status).toBe(200)
+                expect(await first.json()).toMatchObject({ email })
+                const firstAccess = first.cookies.get(ACCESS_COOKIE)?.value
+                const firstRefresh = first.cookies.get(REFRESH_COOKIE)?.value
+                expect(firstAccess).toEqual(expect.stringMatching(/\S/))
+                expect(firstRefresh).toEqual(expect.stringMatching(/\S/))
+                expect(firstAccess === 'invalid-access-token').toBe(false)
+                expect(firstRefresh === refreshCookieBefore!.value).toBe(false)
+                expect(refreshCalls).toBe(1)
+
+                const late = await sendRequest()
+                expect(late.status).toBe(200)
+                expect(await late.json()).toMatchObject({ email })
+                expect(late.cookies.get(ACCESS_COOKIE)?.value === firstAccess).toBe(true)
+                expect(late.cookies.get(REFRESH_COOKIE)?.value === firstRefresh).toBe(true)
+                expect(refreshCalls).toBe(1)
+            } finally {
+                try {
+                    mock.timers.runAll()
+                } finally {
+                    mock.timers.reset()
+                    observedFetch.mock.restore()
+                }
+            }
+        })
         test.describe('두 브라우저가 같은 갱신 쿠키를 가지고 있으면', () => {
             let otherPage: Page
             test.beforeEach(async ({ browser, context }) => {
@@ -389,7 +490,7 @@ test.describe('사용자로 로그인했으면', () => {
     })
 })
 
-test.describe('사진을 첨부해 가입하면', () => {
+test.describe('가입 양식에 사진을 첨부했으면', () => {
     let email: string
     test.beforeEach(async ({ page }) => {
         email = `photo-${randomUUID()}@example.com`
@@ -401,7 +502,7 @@ test.describe('사진을 첨부해 가입하면', () => {
             .getByLabel('사진 (선택)')
             .setInputFiles(`${WORKSPACE_ROOT}/apps/api/api-docs/assets/image.png`)
     })
-    test('로그인 후 본인 정보와 업로드한 사진을 표시한다', async ({ page }) => {
+    test('가입하고 로그인하면 본인 정보와 업로드한 사진을 표시한다', async ({ page }) => {
         await page.getByRole('button', { name: '회원가입' }).click()
         await expect(page).toHaveURL(`${WEB_BASE_URL}/login`)
         await page.getByRole('textbox', { name: '이메일' }).fill(email)

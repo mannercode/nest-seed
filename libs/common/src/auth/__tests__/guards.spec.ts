@@ -1,5 +1,8 @@
+import { verify } from 'argon2'
 import { PasswordHasher } from '../index.js'
 import { createGuardsFixture, type GuardsFixture } from './guards.fixture.js'
+
+vi.mock('argon2', { spy: true })
 
 describe('AuthGuard', () => {
     let fix: GuardsFixture
@@ -279,9 +282,17 @@ describe('PasswordHasher', () => {
         beforeEach(() => {
             hash = undefined
         })
-        it('비밀번호를 검증하면 false를 반환한다', async () => {
-            expect(await PasswordHasher.verify('wrong', hash)).toBe(false)
-            expect(await PasswordHasher.verify('timing-equalization-only', hash)).toBe(false)
-        })
+        it.each(['wrong', 'timing-equalization-only'])(
+            '"%s"를 검증하면 실제 해시와 비교하고 false를 반환한다',
+            async (password) => {
+                const compare = vi.mocked(verify)
+                compare.mockClear()
+                expect(await PasswordHasher.verify(password, hash)).toBe(false)
+                expect(compare).toHaveBeenCalledExactlyOnceWith(
+                    expect.stringMatching(/^\$argon2id\$/),
+                    password
+                )
+            }
+        )
     })
 })

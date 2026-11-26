@@ -1,4 +1,4 @@
-import { DateUtil, ensure, objectId, S3ObjectService } from '@mannercode/common'
+import { ensure, S3ObjectService } from '@mannercode/common'
 import { UserRegistrationService } from '#application'
 import { UserSchema, UsersRepository, UsersService } from '#core'
 import { AssetsService, AssetPresignedUploadSchema } from '#infrastructure'
@@ -10,6 +10,7 @@ import {
     loginUser,
     uploadAsset,
     testAssets,
+    overrideConfigGetter,
     type AppTestContext
 } from '../helpers/index.js'
 
@@ -31,19 +32,20 @@ describe('UserRegistrationService', () => {
         })
         expect(await fix.module.get(UsersRepository).collection.countDocuments()).toBe(0)
     })
-    describe.each([
-        { condition: '이미지가 아닌 형식', metadata: { mimeType: 'text/plain' } },
-        { condition: '5 MiB보다 큰 파일', metadata: { size: 5 * 1024 * 1024 + 1 } }
-    ])('$condition을 요청하면', ({ metadata }) => {
-        it('업로드 요청을 거절하고 자산 기록을 만들지 않는다', async () => {
+    it.each([
+        { file: '이미지가 아닌 파일의', metadata: { mimeType: 'text/plain' } },
+        { file: '5 MiB보다 큰 파일의', metadata: { size: 5 * 1024 * 1024 + 1 } }
+    ])(
+        '$file 업로드 URL을 요청하면 400을 반환하고 자산 기록을 만들지 않는다',
+        async ({ metadata }) => {
             await fix.httpClient
                 .post('/users/photo-upload')
                 .body({ ...buildCreateAssetDto(), mimeType: 'image/png', ...metadata })
                 .badRequest()
             expect(await fix.module.get(AssetsRepository).collection.countDocuments()).toBe(0)
-        })
-    })
-    describe('삭제를 요청했지만 파일 삭제에 실패한 사진이면', () => {
+        }
+    )
+    describe('사진에 삭제 요청이 기록돼 있으면', () => {
         let assetId: string
         beforeEach(async () => {
             assetId = (
@@ -53,7 +55,7 @@ describe('UserRegistrationService', () => {
             ).assetId
             await fix.module.get(AssetsRepository).requestDeletion([assetId])
         })
-        it('가입을 거절하고 계정을 만들지 않는다', async () => {
+        it('그 사진으로 가입을 요청하면 404를 반환하고 계정을 만들지 않는다', async () => {
             await fix.httpClient
                 .post('/users')
                 .body({ ...buildCreateUserDto(), photoAssetId: assetId })
@@ -88,7 +90,13 @@ describe('UserRegistrationService', () => {
             await fix.httpClient
                 .post('/users')
                 .body({ ...buildCreateUserDto(), photoAssetId: assetId })
-                .unprocessableEntity()
+                .unprocessableEntity({
+                    expected: {
+                        code: 'ERR_REGISTRATION_PHOTO_INCOMPLETE',
+                        message: 'Photo upload is not complete.',
+                        assetId
+                    }
+                })
             expect(
                 await fix.module
                     .get(UsersRepository)
@@ -139,17 +147,21 @@ describe('UserRegistrationService', () => {
                 entityId: created.id
             })
         })
-        describe('사진 소유권 저장에 실패하도록 설정하면', () => {
+        describe('사진 소유권을 쓴 뒤 다운로드 URL 발급이 실패하면', () => {
             beforeEach(() => {
-                vi.spyOn(fix.module.get(AssetsRepository), 'assignOwner').mockRejectedValueOnce(
-                    new Error('write failed')
-                )
+                vi.spyOn(
+                    fix.module.get<S3ObjectService>(S3ObjectService.getName()),
+                    'presignDownload'
+                ).mockRejectedValueOnce(new Error('signing failed'))
             })
-            it('가입 오류를 반환하고 계정 생성과 소유권 변경을 롤백한다', async () => {
+            it('가입 요청에 500을 반환하고 계정 생성과 소유권 변경을 모두 되돌린다', async () => {
                 await fix.httpClient
                     .post('/users')
                     .body({ ...buildCreateUserDto(), photoAssetId: assetId })
                     .internalServerError()
+                expect(
+                    fix.module.get<S3ObjectService>(S3ObjectService.getName()).presignDownload
+                ).toHaveBeenCalledOnce()
                 expect(
                     await fix.module
                         .get(UsersRepository)
@@ -185,14 +197,9 @@ describe('UserRegistrationService', () => {
         })
         describe('업로드 유효기간이 지났으면', () => {
             beforeEach(async () => {
-                await fix.module
-                    .get(AssetsRepository)
-                    .collection.updateOne(
-                        { _id: objectId(assetId) },
-                        { $set: { createdAt: DateUtil.toDate(DateUtil.add({ hours: -2 })) } }
-                    )
+                await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
             })
-            it('가입을 거절하고 계정을 만들지 않는다', async () => {
+            it('그 사진으로 가입을 요청하면 404를 반환하고 계정을 만들지 않는다', async () => {
                 await fix.httpClient
                     .post('/users')
                     .body({ ...buildCreateUserDto(), photoAssetId: assetId })
@@ -234,19 +241,18 @@ describe('UserRegistrationService', () => {
             })
         })
     })
-    it('정리 작업을 실행하면 만료된 임시 사진을 제거한다', async () => {
-        const registration = fix.module.get(UserRegistrationService)
-        const upload = await registration.createPhotoUpload({
-            ...buildCreateAssetDto(),
-            mimeType: 'image/png' as const
+    describe('소유자가 없는 임시 사진의 업로드 기한이 지났으면', () => {
+        let assetId: string
+        beforeEach(async () => {
+            const upload = await fix.module
+                .get(UserRegistrationService)
+                .createPhotoUpload({ ...buildCreateAssetDto(), mimeType: 'image/png' })
+            assetId = upload.assetId
+            await overrideConfigGetter(fix.module, 'asset', { uploadExpiresInSec: 0 })
         })
-        await fix.module
-            .get(AssetsRepository)
-            .collection.updateOne(
-                { _id: objectId(upload.assetId) },
-                { $set: { createdAt: DateUtil.toDate(DateUtil.add({ hours: -2 })) } }
-            )
-        await registration.cleanupExpiredPhotos()
-        expect(await fix.module.get(AssetsService).findOwner(upload.assetId)).toBeUndefined()
+        it('정리 작업을 실행하면 만료된 임시 사진을 제거한다', async () => {
+            await fix.module.get(UserRegistrationService).cleanupExpiredPhotos()
+            expect(await fix.module.get(AssetsService).findOwner(assetId)).toBeUndefined()
+        })
     })
 })

@@ -13,3 +13,4 @@ export type VitestLifecycleOptions = {
 
 export function setupVitestLifecycle(options: VitestLifecycleOptions): void
 export function getVitestWorkerId(): string
+export function waitForCleanup(operations: Iterable<Promise<unknown>>): Promise<void>

@@ -6,6 +6,16 @@ const {
     ListObjectsV2Command
 } = require('@aws-sdk/client-s3')
 const { randomInt } = require('node:crypto')
+const { once } = require('node:events')
+
+async function waitForCleanup(operations) {
+    const results = await Promise.allSettled(operations)
+    const failures = results
+        .filter((result) => result.status === 'rejected')
+        .map((result) => result.reason)
+    if (failures.length === 1) throw failures[0]
+    if (failures.length > 1) throw new AggregateError(failures, 'Test resource cleanup failed')
+}
 
 function getVitestWorkerId() {
     const id = process.env.VITEST_POOL_ID
@@ -31,7 +41,7 @@ async function cleanCollections(mongoClient, dbName) {
 async function dropMatchingDatabases(mongoClient, pattern) {
     const { databases } = await mongoClient.db().admin().listDatabases()
     const targets = databases.filter((d) => pattern.test(d.name))
-    await Promise.all(targets.map((d) => mongoClient.db(d.name).dropDatabase()))
+    await waitForCleanup(targets.map((d) => mongoClient.db(d.name).dropDatabase()))
 }
 
 async function ensureBucket(s3Client, bucket) {
@@ -100,6 +110,7 @@ function setupVitestLifecycle({
     afterMongoConnect,
     onBeforeEach
 }) {
+    const connections = new AsyncDisposableStack()
     let mongoClient
     let s3Client
     let dbName
@@ -110,21 +121,19 @@ function setupVitestLifecycle({
 
         const m = await connectMongo(workerId)
         mongoClient = m.client
+        connections.defer(() => mongoClient.close())
         dbName = m.dbName
         if (afterMongoConnect) await afterMongoConnect(mongoClient, dbName)
 
         s3Client = createS3Client()
+        connections.defer(() => s3Client.destroy())
         bucket = bucketName(workerId)
         await ensureBucket(s3Client, bucket)
 
-        await Promise.all([cleanCollections(mongoClient, dbName), emptyBucket(s3Client, bucket)])
+        await waitForCleanup([cleanCollections(mongoClient, dbName), emptyBucket(s3Client, bucket)])
     })
 
-    afterAll(async () => {
-        // beforeAll이 중간에 실패하면 일부 핸들이 비어 있다.
-        // undefined에 close를 호출해 TypeError로 원인(beforeAll 실패)을 가리지 않게 한다.
-        await Promise.all([mongoClient?.close(), s3Client?.destroy()])
-    })
+    afterAll(() => connections.disposeAsync())
 
     beforeEach(async () => {
         const currentTestId = generateTestId()
@@ -133,7 +142,7 @@ function setupVitestLifecycle({
     })
 
     afterEach(async () => {
-        await Promise.all([cleanCollections(mongoClient, dbName), emptyBucket(s3Client, bucket)])
+        await waitForCleanup([cleanCollections(mongoClient, dbName), emptyBucket(s3Client, bucket)])
     })
 }
 
@@ -164,7 +173,7 @@ function createGlobalTeardown({
     assertScopedRedisKeyPattern(redisKeyPattern, redisKeyScope)
 
     return async function globalTeardown() {
-        await Promise.all([
+        await waitForCleanup([
             cleanupMongoMatching(connectMongo, databasePattern),
             cleanupS3Matching(createS3Client, bucketPattern),
             cleanupRedisMatching(connectRedis, redisKeyPattern, redisKeyScope)
@@ -174,32 +183,26 @@ function createGlobalTeardown({
 
 async function cleanupMongoMatching(connectMongo, pattern) {
     const client = await connectMongo()
-    try {
-        await dropMatchingDatabases(client, pattern)
-    } finally {
-        await client.close()
-    }
+    await using cleanup = new AsyncDisposableStack()
+    cleanup.defer(() => client.close())
+    await dropMatchingDatabases(client, pattern)
 }
 
 async function cleanupS3Matching(createS3Client, pattern) {
     const client = createS3Client()
-    try {
-        await dropMatchingBuckets(client, pattern)
-    } finally {
-        client.destroy()
-    }
+    await using cleanup = new AsyncDisposableStack()
+    cleanup.defer(() => client.destroy())
+    await dropMatchingBuckets(client, pattern)
 }
 
 async function cleanupRedisMatching(connectRedis, keyPattern, redisKeyScope) {
     assertScopedRedisKeyPattern(keyPattern, redisKeyScope)
 
     const redis = connectRedis()
-    try {
-        const targets = await redisWriteTargets(redis)
-        await Promise.all(targets.map((target) => deleteMatchingRedisKeys(target, keyPattern)))
-    } finally {
-        await redis.quit()
-    }
+    await using cleanup = new AsyncDisposableStack()
+    cleanup.defer(() => redis.quit())
+    const targets = await redisWriteTargets(redis)
+    await waitForCleanup(targets.map((target) => deleteMatchingRedisKeys(target, keyPattern)))
 }
 
 function assertScopedRedisKeyPattern(keyPattern, redisKeyScope) {
@@ -225,10 +228,7 @@ async function redisWriteTargets(redis) {
     // Redis Cluster 연결 직후에는 nodes()가 빈 배열을 반환할 수 있다.
     // 삭제할 노드를 하나도 찾지 못한 채 정리를 끝내지 않도록 ready를 기다린다.
     if (redis.status !== 'ready') {
-        await new Promise((resolve, reject) => {
-            redis.once('ready', resolve)
-            redis.once('error', reject)
-        })
+        await once(redis, 'ready')
     }
     const masters = redis.nodes('master')
     if (masters.length === 0) {
@@ -242,7 +242,7 @@ async function deleteMatchingRedisKeys(redis, keyPattern) {
 
     do {
         const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', keyPattern, 'COUNT', '100')
-        await Promise.all(keys.map((key) => redis.unlink(key)))
+        await waitForCleanup(keys.map((key) => redis.unlink(key)))
         cursor = nextCursor
     } while (cursor !== '0')
 }
@@ -257,5 +257,6 @@ module.exports = {
     ensureBucket,
     generateTestId,
     getVitestWorkerId,
-    setupVitestLifecycle
+    setupVitestLifecycle,
+    waitForCleanup
 }

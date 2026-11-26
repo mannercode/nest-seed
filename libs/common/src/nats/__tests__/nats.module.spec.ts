@@ -43,7 +43,8 @@ describe('getNatsConnectionToken', () => {
 })
 
 describe('NatsConnectionRegistry', () => {
-    describe('drain이 실패하는 연결이 등록되어 있으면', () => {
+    describe('종료할 두 연결 중 하나가 첫 종료에 실패하면', () => {
+        let closeSuccessful: ReturnType<typeof vi.fn>
         let registry: NatsConnectionRegistry
         let connection: { isClosed: () => boolean; drain: ReturnType<typeof vi.fn> }
         beforeEach(() => {
@@ -52,15 +53,20 @@ describe('NatsConnectionRegistry', () => {
                 isClosed: () => false,
                 drain: vi.fn().mockRejectedValueOnce(new Error('boom')).mockResolvedValue(undefined)
             }
+            closeSuccessful = vi.fn().mockResolvedValue(undefined)
+            registry.add({ isClosed: () => false, drain: closeSuccessful } as any)
             registry.add(connection as any)
         })
-        it('종료 오류를 전달하고 다음 종료 때 실패한 연결을 다시 닫는다', async () => {
+        it('동시에 종료해도 오류를 공유하고 다시 종료하면 실패했던 연결만 닫는다', async () => {
             const first = registry.onModuleDestroy()
             expect(registry.onModuleDestroy()).toBe(first)
+            await expect(first).rejects.toBeInstanceOf(AggregateError)
             await expect(first).rejects.toMatchObject({ errors: [new Error('boom')] })
+            expect(closeSuccessful).toHaveBeenCalledTimes(1)
             await registry.onModuleDestroy()
             await registry.onModuleDestroy()
             expect(connection.drain).toHaveBeenCalledTimes(2)
+            expect(closeSuccessful).toHaveBeenCalledTimes(1)
         })
     })
 })

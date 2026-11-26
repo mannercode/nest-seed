@@ -19,12 +19,14 @@ describe('InstantFromInputSchema, PlainDateFromInputSchema', () => {
     )
 
     it('UTC 시각 문자열을 Instant로 변환한다', () => {
-        expect(InstantFromInputSchema.parse('2023-06-18T12:12:34.567Z')).toBeInstanceOf(
-            Temporal.Instant
-        )
+        const instant = InstantFromInputSchema.parse('2023-06-18T12:12:34.567Z')
+        expect(instant).toBeInstanceOf(Temporal.Instant)
+        expect(instant.toString()).toBe('2023-06-18T12:12:34.567Z')
     })
     it('날짜 문자열을 PlainDate로 변환한다', () => {
-        expect(PlainDateFromInputSchema.parse('2023-06-18')).toBeInstanceOf(Temporal.PlainDate)
+        const date = PlainDateFromInputSchema.parse('2023-06-18')
+        expect(date).toBeInstanceOf(Temporal.PlainDate)
+        expect(date.toString()).toBe('2023-06-18')
     })
 
     describe.each([

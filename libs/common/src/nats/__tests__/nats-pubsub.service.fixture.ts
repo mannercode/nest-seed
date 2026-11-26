@@ -1,4 +1,5 @@
 import { createTestContext } from '@mannercode/testing'
+import { waitForCleanup } from '@mannercode/tools/vitest-helpers'
 import {
     getNatsConnectionToken,
     NatsModule,
@@ -21,11 +22,7 @@ export type NatsPubSubServiceFixture = {
  */
 export async function createNatsPubSubServiceFixture(): Promise<NatsPubSubServiceFixture> {
     const contexts: Array<Awaited<ReturnType<typeof createTestContext>>> = []
-    const teardown = async () => {
-        const results = await Promise.allSettled(contexts.map((context) => context.close()))
-        const failure = results.find((result) => result.status === 'rejected')
-        if (failure) throw failure.reason
-    }
+    const teardown = () => waitForCleanup(contexts.map((context) => context.close()))
 
     try {
         const contextA = await createTestContext({

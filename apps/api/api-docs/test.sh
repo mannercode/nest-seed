@@ -21,6 +21,15 @@ run_examples() {
         fi
     fi
     start_services api
+    if (( $# == 0 )); then
+        status=0
+        SERVER_URL="${SERVER_URL}/missing-route" bash "${docs_dir}/run.sh" health.spec >"${docs_dir}/mismatch.log" 2>&1 || status=$?
+        if (( status != 3 )) || ! grep -Fq '| `200` | `404` | `FAIL` |' "${report_dir}/summary.md"; then
+            cat "${docs_dir}/mismatch.log" >&2
+            echo '예제 실행기가 기대 상태 200과 실제 상태 404의 불일치를 보고하지 않았습니다.' >&2
+            exit 1
+        fi
+    fi
     bash "${docs_dir}/run.sh" "$@"
     grep -Fq '실행 완료 (종료 코드 0)' "${report_dir}/summary.md"
     if (( $# == 0 )) && ! grep -Fq '실행 실패 (종료 코드 1)' "${report_dir}"/*.md; then

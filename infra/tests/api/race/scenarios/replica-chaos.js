@@ -3,8 +3,9 @@
  * 장애 구간에 시작한 가입이 성공해야 한다. 전체 전송 오류와 5xx 응답의 비율은 1% 이하여야 하고 복구 구간에는 설정한 복제본이 모두 응답해야 한다.
  */
 
-import { execSync } from 'node:child_process'
+import { execFile, execSync } from 'node:child_process'
 import { test } from 'node:test'
+import { promisify } from 'node:util'
 import { readPositiveInt, request, secureRandomHex, secureRandomIndex } from '../race-common.js'
 
 const KILL_AT_MS = readPositiveInt('CHAOS_KILL_AT_MS', 30_000)
@@ -12,6 +13,7 @@ const RESTART_AFTER_MS = readPositiveInt('CHAOS_RESTART_AFTER_MS', 30_000)
 const POST_RECOVERY_MS = readPositiveInt('CHAOS_POST_RECOVERY_MS', 60_000)
 const HEALTH_TIMEOUT_MS = readPositiveInt('CHAOS_HEALTH_TIMEOUT_MS', 60_000)
 const PARALLELISM = readPositiveInt('CHAOS_PARALLELISM', 8)
+const execFileAsync = promisify(execFile)
 
 function sleep(ms) {
     return new Promise((r) => setTimeout(r, ms))
@@ -24,26 +26,38 @@ function dockerReplicaIds() {
     return out ? out.split('\n') : []
 }
 
-function inspectHealth(containerId) {
-    try {
-        return execSync(`docker inspect --format '{{.State.Health.Status}}' ${containerId}`, {
-            encoding: 'utf8'
-        }).trim()
-    } catch {
-        return 'missing'
-    }
+async function inspectHealth(containerId) {
+    const { stdout } = await execFileAsync('docker', [
+        'inspect',
+        '--format',
+        '{{.State.Health.Status}}',
+        containerId
+    ])
+    return stdout.trim()
 }
 
-function bucketFor(state) {
-    const b = state.byPhase[state.phase] ?? { byStatus: {}, replicas: {}, total: 0 }
-    state.byPhase[state.phase] = b
-    return b
+function beginPhase(state, name) {
+    const now = performance.now()
+    if (state.phase) state.byPhase[state.phase].end = now
+    state.phase = name
+    state.byPhase[name] = {
+        start: now,
+        lastSuccess: now,
+        maxGap: 0,
+        latencies: [],
+        byStatus: {},
+        replicas: {},
+        total: 0
+    }
 }
 
 async function trafficWorker(workerId, state) {
     while (!state.stop) {
         const startedPhase = state.phase
+        const startedAt = performance.now()
         const email = `chaos.${workerId}.${secureRandomHex()}@example.com`
+        let status = 'err'
+        let replicaId
         try {
             const r = await request('POST', '/users', {
                 body: {
@@ -53,27 +67,36 @@ async function trafficWorker(workerId, state) {
                     password: 'chaos password 123'
                 }
             })
-            const b = bucketFor(state)
-            b.total++
-            b.byStatus[r.status] = (b.byStatus[r.status] || 0) + 1
-            if (startedPhase === state.phase && r.status === 201 && r.replicaId) {
-                b.replicas[r.replicaId] = (b.replicas[r.replicaId] || 0) + 1
-            }
+            status = r.status
+            replicaId = r.replicaId
         } catch {
-            const b = bucketFor(state)
-            b.total++
-            b.byStatus['err'] = (b.byStatus['err'] || 0) + 1
+            // 소켓과 전송 오류도 해당 구간의 요청 수와 오류율에 포함한다.
+        }
+        const completedAt = performance.now()
+        const bucket = state.byPhase[state.phase]
+        bucket.total++
+        bucket.latencies.push(completedAt - startedAt)
+        bucket.byStatus[status] = (bucket.byStatus[status] ?? 0) + 1
+        if (status === 201) {
+            bucket.maxGap = Math.max(bucket.maxGap, completedAt - bucket.lastSuccess)
+            bucket.lastSuccess = completedAt
+            if (startedPhase === state.phase && replicaId) {
+                bucket.replicas[replicaId] = (bucket.replicas[replicaId] ?? 0) + 1
+            }
         }
     }
 }
 
 function summarize(label, bucket) {
-    if (!bucket || !bucket.total) return `${label}: no traffic`
+    const seconds = (bucket.end - bucket.start) / 1000
+    const maxGap = Math.max(bucket.maxGap, bucket.end - bucket.lastSuccess)
+    bucket.latencies.sort((a, b) => a - b)
+    const p95 = bucket.latencies[Math.ceil(bucket.total * 0.95) - 1]
     const status = Object.entries(bucket.byStatus)
         .map(([s, c]) => `${s}=${c}`)
         .join(' ')
     const replicas = Object.keys(bucket.replicas).length
-    return `${label}: total=${bucket.total} replicas=${replicas} | ${status}`
+    return `${label}: total=${bucket.total} replicas=${replicas} completed/s=${(bucket.total / seconds).toFixed(2)} p95_ms=${p95?.toFixed(1) ?? 'n/a'} max_signup_gap_ms=${maxGap.toFixed(1)} | ${status}`
 }
 
 test('복제본 하나를 재시작하면 중단 중에도 가입에 성공하고 전체 오류율은 1% 이하이며 복구 후 모든 복제본이 응답한다', async () => {
@@ -90,28 +113,29 @@ test('복제본 하나를 재시작하면 중단 중에도 가입에 성공하�
     const target = replicas[secureRandomIndex(replicas.length)]
     console.log(`[chaos] target=${target.slice(0, 12)} alive=${replicas.length}`)
 
-    const state = { stop: false, phase: 'warmup', byPhase: {} }
+    const state = { stop: false, byPhase: {} }
+    beginPhase(state, 'warmup')
     const workers = Array.from({ length: PARALLELISM }, (_, i) => trafficWorker(i, state))
 
     try {
         await sleep(KILL_AT_MS)
 
-        state.phase = 'after-kill'
         console.log(`[chaos] t=${KILL_AT_MS}ms killing ${target.slice(0, 12)}`)
-        execSync(`docker kill ${target}`)
+        await execFileAsync('docker', ['kill', target])
+        beginPhase(state, 'after-kill')
         await sleep(RESTART_AFTER_MS)
 
-        state.phase = 'after-restart'
+        beginPhase(state, 'after-restart')
         console.log(
             `[chaos] t=${KILL_AT_MS + RESTART_AFTER_MS}ms restarting ${target.slice(0, 12)}`
         )
-        execSync(`docker start ${target}`)
+        await execFileAsync('docker', ['start', target])
 
         const healStart = performance.now()
         const healDeadline = healStart + HEALTH_TIMEOUT_MS
         let healthyAt = null
         while (performance.now() < healDeadline) {
-            if (inspectHealth(target) === 'healthy') {
+            if ((await inspectHealth(target)) === 'healthy') {
                 healthyAt = performance.now()
                 break
             }
@@ -122,11 +146,12 @@ test('복제본 하나를 재시작하면 중단 중에도 가입에 성공하�
         }
         console.log(`[chaos] healthy after ${Math.round((healthyAt - healStart) / 1000)}s`)
 
-        state.phase = 'recovered'
+        beginPhase(state, 'recovered')
         await sleep(POST_RECOVERY_MS)
     } finally {
         state.stop = true
         await Promise.all(workers)
+        state.byPhase[state.phase].end = performance.now()
     }
 
     const phases = ['warmup', 'after-kill', 'after-restart', 'recovered']

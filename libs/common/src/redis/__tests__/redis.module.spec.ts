@@ -11,7 +11,8 @@ import {
 import { RedisConnectionRegistry } from '../index.js'
 
 describe('RedisConnectionRegistry', () => {
-    describe('quit이 실패하는 연결이 등록되어 있으면', () => {
+    describe('종료할 두 연결 중 하나가 첫 종료에 실패하면', () => {
+        let closeSuccessful: ReturnType<typeof vi.fn>
         let registry: RedisConnectionRegistry
         let connection: { quit: ReturnType<typeof vi.fn> }
         beforeEach(() => {
@@ -19,15 +20,20 @@ describe('RedisConnectionRegistry', () => {
             connection = {
                 quit: vi.fn().mockRejectedValueOnce(new Error('boom')).mockResolvedValue(undefined)
             }
+            closeSuccessful = vi.fn().mockResolvedValue(undefined)
+            registry.add({ quit: closeSuccessful } as any)
             registry.add(connection as any)
         })
-        it('종료 오류를 전달하고 다음 종료 때 실패한 연결을 다시 닫는다', async () => {
+        it('동시에 종료해도 오류를 공유하고 다시 종료하면 실패했던 연결만 닫는다', async () => {
             const first = registry.onModuleDestroy()
             expect(registry.onModuleDestroy()).toBe(first)
+            await expect(first).rejects.toBeInstanceOf(AggregateError)
             await expect(first).rejects.toMatchObject({ errors: [new Error('boom')] })
+            expect(closeSuccessful).toHaveBeenCalledTimes(1)
             await registry.onModuleDestroy()
             await registry.onModuleDestroy()
             expect(connection.quit).toHaveBeenCalledTimes(2)
+            expect(closeSuccessful).toHaveBeenCalledTimes(1)
         })
     })
 })
@@ -122,7 +128,7 @@ describe('RedisModule', () => {
         })
         afterEach(() => fix.teardown())
 
-        it('비동기로 연결할 수 있다', async () => {
+        it('비동기로 만든 연결에 PING을 보내면 PONG을 반환한다', async () => {
             const result = await fix.redis.ping()
             expect(result).toBe('PONG')
         })

@@ -1,4 +1,4 @@
-import { type DurableMessages, type DurableMessage } from '@mannercode/common'
+import { JetStreamChannel, type DurableMessages, type DurableMessage } from '@mannercode/common'
 import { Logger } from '@nestjs/common'
 import { HttpTestClient } from '@mannercode/testing'
 import { EventDemoService, eventDemoResources, MessageConsumer } from '#infrastructure'
@@ -70,45 +70,64 @@ describe('EventDemoService', () => {
                 .badRequest()
         })
     })
+    describe('JetStream이 메시지 접수를 거절하면', () => {
+        beforeEach(() => {
+            vi.spyOn(JetStreamChannel.prototype, 'publish').mockRejectedValueOnce(
+                new Error('publish rejected')
+            )
+        })
+        it('메시지를 발행하면 500을 반환한다', async () => {
+            await fix.httpClient
+                .post('/event-demo/messages')
+                .headers({ Authorization: 'Bearer ' + session.accessToken })
+                .body({ message: 'hello' })
+                .internalServerError()
+        })
+    })
     describe.each([
         { condition: '전달이 가능하면', failFirst: false },
         { condition: '첫 전달이 실패하면', failFirst: true }
     ])('$condition', ({ failFirst }) => {
-        let received: ReturnType<typeof Promise.withResolvers<{ id: string; message: string }>>
-        let messages: unknown[]
+        let waitForDelivery: () => Promise<void>
+        let messages: string[]
         beforeEach(async () => {
             const ready = Promise.withResolvers<void>()
-            received = Promise.withResolvers<{ id: string; message: string }>()
+            const received = Promise.withResolvers<void>()
+            const failed = Promise.withResolvers<never>()
             messages = []
             stream = new HttpTestClient(fix.httpClient.serverUrl)
                 .get('/event-demo/event-stream')
                 .headers({ Authorization: 'Bearer ' + session.accessToken })
                 .sse(
                     (data) => {
-                        const event = JSON.parse(data)
-                        messages.push(event)
-                        received.resolve(event)
+                        messages.push(data)
+                        received.resolve()
                     },
-                    received.reject,
+                    failed.reject,
                     ready.resolve
                 )
-            await ready.promise
+            await Promise.race([ready.promise, failed.promise])
             const events = fix.module.get(EventDemoService)
             await events.deliver({ id: 'other', message: 'not mine', userId: 'other-user' })
             if (failFirst)
                 vi.spyOn(events, 'deliver').mockRejectedValueOnce(
                     new Error('NATS temporarily unavailable')
                 )
+            waitForDelivery = () => Promise.race([received.promise, failed.promise])
         })
-        it('메시지를 발행하면 JetStream 소비 후 본인의 SSE로 같은 메시지를 받는다', async () => {
-            const { body } = await fix.httpClient
-                .post('/event-demo/messages')
-                .headers({ Authorization: 'Bearer ' + session.accessToken })
-                .body({ message: 'hello event' })
-                .accepted()
-            const event = await received.promise
-            expect(event).toEqual({ id: body.id, message: 'hello event' })
-            expect(messages).toEqual([event])
+        it('메시지를 발행하면 202와 이벤트 ID를 반환하고 본인의 SSE에서 같은 ID와 메시지를 받는다', async () => {
+            const [, { body }] = await Promise.all([
+                waitForDelivery(),
+                fix.httpClient
+                    .post('/event-demo/messages')
+                    .headers({ Authorization: 'Bearer ' + session.accessToken })
+                    .body({ message: 'hello event' })
+                    .accepted()
+            ])
+            expect(body).toEqual({ id: expect.stringMatching(/\S/) })
+            for (const data of messages) {
+                expect(JSON.parse(data)).toEqual({ id: body.id, message: 'hello event' })
+            }
         })
     })
     describe('메시지 소비자의 입력과 종료', () => {

@@ -869,6 +869,7 @@ describe('CrudRepository', () => {
                 await expect(
                     fix.soft.withTransaction(async (transaction) => {
                         const created = await fix.soft.create('uncommitted', { transaction })
+                        const second = await fix.soft.create('also-uncommitted', { transaction })
                         await fix.soft.delete({ id: committed.id, transaction })
 
                         const result = await fix.soft.findWithPagination({
@@ -876,7 +877,9 @@ describe('CrudRepository', () => {
                             transaction
                         })
 
-                        expect(result).toEqual({ items: [created], page: 1, size: 3, total: 1 })
+                        expect(result.items).toHaveLength(2)
+                        expect(result.items).toEqual(expect.arrayContaining([created, second]))
+                        expect(result).toMatchObject({ page: 1, size: 3, total: 2 })
                         expect(count).toHaveBeenCalledTimes(1)
                         throw new Error('rollback pagination changes')
                     })

@@ -1,18 +1,22 @@
+import { setImmediate as nextTurn } from 'node:timers/promises'
 import { connect, type NatsConnection } from '@nats-io/transport-node'
 import { jetstreamManager } from '@nats-io/jetstream'
 import type { MockInstance } from 'vitest'
 import { withTestId } from '@mannercode/testing'
+import { waitForCleanup } from '@mannercode/tools/vitest-helpers'
 import * as testing from '@mannercode/testing'
 import { ensure } from '../../utils/index.js'
 import {
     type NatsPubSubServiceFixture,
     createNatsPubSubServiceFixture
 } from './nats-pubsub.service.fixture.js'
-import { Logger as NestLogger } from '@nestjs/common'
+import { Injectable, Logger as NestLogger } from '@nestjs/common'
 import {
     InjectNatsPubSub,
     getNatsConnectionToken,
+    NatsModule,
     NatsPubSubModule,
+    NatsPubSubService,
     JetStreamChannel,
     type DurableMessages,
     type DurableMessage
@@ -80,11 +84,12 @@ describe('NatsPubSubService', () => {
             expect(received2).toEqual(['payload'])
         })
 
-        it('한 핸들러를 해제해도 나머지 핸들러는 메시지를 수신한다', async () => {
+        it('한 핸들러를 해제하고 발행하면 남은 핸들러만 메시지를 수신한다', async () => {
             await fix.pubSubB.unsubscribe(subject, firstHandler)
 
             await fix.pubSubA.publish(subject, 'still-listening')
             await waitFor(() => received2.length > 0)
+            expect(received1).toEqual([])
             expect(received2).toEqual(['still-listening'])
         })
     })
@@ -476,8 +481,47 @@ describe('createNatsPubSubServiceFixture', () => {
         createContext = testing.createTestContext
         contexts = []
     })
-    afterEach(async () => {
-        await Promise.allSettled(contexts.map((context) => context.close()))
+    afterEach(() => waitForCleanup(contexts.map((context) => context.close())))
+
+    describe('첫 번째 앱의 종료가 실패하고 두 번째 앱의 종료는 진행 중이면', () => {
+        let fixture: NatsPubSubServiceFixture
+        let firstError: Error
+        let secondError: Error
+        let finishSecond: PromiseWithResolvers<void>
+        beforeEach(async () => {
+            firstError = new Error('first app cleanup failed')
+            secondError = new Error('second app cleanup failed')
+            finishSecond = Promise.withResolvers<void>()
+            vi.spyOn(testing, 'createTestContext').mockImplementation(async (options) => {
+                const context = await createContext(options)
+                const close = context.close.bind(context)
+                contexts.push({ close, closeSpy: vi.spyOn(context, 'close') })
+                return context
+            })
+            fixture = await createNatsPubSubServiceFixture()
+            ensure(contexts[0]).closeSpy.mockRejectedValueOnce(firstError)
+            ensure(contexts[1]).closeSpy.mockImplementationOnce(async () => {
+                await finishSecond.promise
+                throw secondError
+            })
+        })
+
+        it('픽스처 종료는 두 번째 앱을 기다리고 두 종료 오류를 모두 전달한다', async () => {
+            const cleanup = fixture.teardown()
+            const rejected = vi.fn()
+            const observed = cleanup.catch(rejected)
+            try {
+                // 첫 번째 거절의 반응까지 실행된 뒤에도 종료가 진행 중인지 확인한다.
+                await nextTurn()
+                expect(rejected).not.toHaveBeenCalled()
+                expect(ensure(contexts[1]).closeSpy).toHaveBeenCalledTimes(1)
+            } finally {
+                finishSecond.resolve()
+                await observed
+            }
+            await expect(cleanup).rejects.toBeInstanceOf(AggregateError)
+            await expect(cleanup).rejects.toMatchObject({ errors: [firstError, secondError] })
+        })
     })
 
     describe('두 번째 앱 생성이 실패하면', () => {
@@ -572,23 +616,33 @@ describe('createNatsPubSubServiceFixture', () => {
 })
 
 describe('InjectNatsPubSub', () => {
-    describe('연결 이름을 지정하지 않았으면', () => {
-        let name: Parameters<typeof InjectNatsPubSub>[0]
-        beforeEach(() => {
-            name = undefined
+    describe('기본 서비스와 이름이 지정된 서비스가 함께 등록되어 있으면', () => {
+        @Injectable()
+        class Subscriber {
+            constructor(
+                @InjectNatsPubSub() readonly defaultBus: NatsPubSubService,
+                @InjectNatsPubSub('my-bus') readonly namedBus: NatsPubSubService
+            ) {}
+        }
+        let context: Awaited<ReturnType<typeof testing.createTestContext>>
+        beforeEach(async () => {
+            context = await testing.createTestContext({
+                imports: [
+                    NatsModule.forRoot(JSON.parse(process.env.TESTLIB_NATS_OPTIONS!)),
+                    NatsPubSubModule.register(),
+                    NatsPubSubModule.register({ name: 'my-bus' })
+                ],
+                providers: [Subscriber]
+            })
         })
-        it('주입 데코레이터를 만들면 파라미터 데코레이터를 반환한다', async () => {
-            expect(typeof InjectNatsPubSub(name)).toBe('function')
-        })
-    })
-
-    describe('연결 이름이 지정되어 있으면', () => {
-        let name: Parameters<typeof InjectNatsPubSub>[0]
-        beforeEach(() => {
-            name = 'my-bus'
-        })
-        it('주입 데코레이터를 만들면 파라미터 데코레이터를 반환한다', async () => {
-            expect(typeof InjectNatsPubSub(name)).toBe('function')
+        afterEach(() => context.close())
+        it('구독자를 조회하면 각 주입 이름에 맞는 서비스를 받는다', () => {
+            const subscriber = context.module.get(Subscriber)
+            expect(subscriber.defaultBus).toBe(context.module.get(NatsPubSubService.getName()))
+            expect(subscriber.namedBus).toBe(
+                context.module.get(NatsPubSubService.getName('my-bus'))
+            )
+            expect(subscriber.defaultBus).not.toBe(subscriber.namedBus)
         })
     })
 })

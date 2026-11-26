@@ -41,7 +41,9 @@ Dev Container의 저장소 루트에서 실행한다.
 
 `pnpm -C infra run apps:up`은 새 인프라에 API와 웹 앱을 띄운다. 명령 끝에 `api`를 붙이면 API와 그 의존 서비스를, `nginx`를 붙이면 NGINX와 API 복제본 및 그 의존 서비스를 띄운다. 구성은 명령을 실행할 때마다 교체된다. 수동 검증을 끝내면 `pnpm -C infra run apps:down`으로 빈 기본 인프라를 복구한다. NGINX는 호스트 포트를 점유하므로 같은 Docker 호스트에서는 한 프로젝트씩 복제본을 띄운다. [Compose 설정](infra/compose.yml)
 
-`pnpm -C infra run race`는 실행할 수 있는 시나리오와 명령을 출력한다. `pnpm -C infra run benchmark`는 본인 정보 읽기·수정의 처리량과 지연 시간을 측정한다. 결과를 비교할 때는 머신·이미지·데이터 조건을 맞춘다. [Race 시나리오](infra/tests/api/race/scenarios/) · [벤치마크 요청과 지표](infra/tests/api/benchmark/crud.js)
+`pnpm -C infra run race`는 실행할 수 있는 시나리오와 명령을 출력한다. 가입과 토큰 갱신은 같은 이메일 또는 토큰으로 보낸 각 요청 묶음에 복제본이 둘 이상 참여해야 통과한다. SSE는 대조 계정의 첫 메시지를 받은 뒤 주 계정이 발행한 메시지를 여러 복제본에서 모두 받는다. 대조 계정의 마지막 메시지를 받을 때까지 관찰한 각 연결에 상대 계정의 메시지가 섞이면 실패한다. 복제본 장애 테스트는 각 구간에 완료된 요청의 초당 건수와 p95 지연시간, 가입 성공이 없었던 최장 시간을 출력한다. [Race 시나리오](infra/tests/api/race/scenarios/)
+
+`pnpm -C infra run benchmark`는 가상 사용자별 계정 생성과 로그인을 마친 뒤 본인 정보 읽기·수정을 측정한다. 압축 비교에는 같은 크기의 프로필을 사용한다. 워밍업이 끝난 뒤 측정 구간 안에 응답이 완료된 요청으로 처리량·실패율·지연시간을 계산한다. 워밍업과 종료 유예 때 받은 응답도 상태와 압축 검사를 통과해야 한다. 측정 도중 만료될 세션은 워밍업에서 먼저 갱신한다. 측정 구간과 겹친 갱신 횟수는 `authRenewalsOverlappingWindow`로, 시나리오 전체에서 시작했지만 응답 처리를 끝내지 못한 본인 정보 요청 수는 `unfinishedRequests`로 확인한다. 각 실행의 `summary.json`에서 커밋·미커밋 변경 여부·Docker 실행 환경·이미지를 확인하고 같은 조건에서 반복한 결과를 비교한다. [벤치마크 요청과 지표](infra/tests/api/benchmark/crud.js)
 
 ### Restate 배포 주소
 

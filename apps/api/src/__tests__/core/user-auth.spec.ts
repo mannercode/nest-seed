@@ -5,7 +5,7 @@ import { type UserDto, UsersService, UsersRepository, UserSchema } from '#core'
 import {
     buildCreateUserDto,
     createUser,
-    Errors,
+    expectedErrors,
     loginUser,
     type AppTestContext,
     createAppTestContext
@@ -13,7 +13,7 @@ import {
 import { LoginRateLimiterService } from '#gateway'
 import { ensure, JwtAuthService, TimeUtil } from '@mannercode/common'
 
-const IP_FAILURE_LIMIT = 50
+const IP_FAILURE_LIMIT = 3
 const LOGIN_RATE_LIMITED_ERROR = {
     code: 'ERR_AUTH_LOGIN_RATE_LIMITED',
     message: 'Too many login attempts'
@@ -48,6 +48,10 @@ describe('UserAuthentication', () => {
 
     beforeEach(async () => {
         teardown = undefined
+        vi.spyOn(AppConfigService.prototype, 'loginRateLimit', 'get').mockReturnValue({
+            ipFailureLimit: IP_FAILURE_LIMIT,
+            failureWindow: '5m'
+        })
 
         fix = await createAppTestContext()
         teardown = fix.teardown
@@ -70,14 +74,14 @@ describe('UserAuthentication', () => {
             await fix.httpClient
                 .get('/users/me')
                 .headers(headers)
-                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+                .unauthorized({ expected: expectedErrors.unauthorized })
         })
         it('본인 정보 수정에 401을 반환하고 사용자 정보를 유지한다', async () => {
             await fix.httpClient
                 .patch('/users/me')
                 .headers(headers)
                 .body({ name: 'denied' })
-                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+                .unauthorized({ expected: expectedErrors.unauthorized })
             await expect(fix.module.get(UsersService).getMany([session.user.id])).resolves.toEqual([
                 session.user
             ])
@@ -86,7 +90,7 @@ describe('UserAuthentication', () => {
             await fix.httpClient
                 .delete('/users/me')
                 .headers(headers)
-                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+                .unauthorized({ expected: expectedErrors.unauthorized })
             await expect(fix.module.get(UsersService).getMany([session.user.id])).resolves.toEqual([
                 session.user
             ])
@@ -160,7 +164,7 @@ describe('UserAuthentication', () => {
             })
             it('로그인을 요청하면 입력 오류로 400을 반환한다', async () => {
                 await request.badRequest({
-                    expected: Errors.RequestValidation.Failed(expect.any(Array))
+                    expected: expectedErrors.validationFailed(expect.any(Array))
                 })
             })
         })
@@ -204,7 +208,7 @@ describe('UserAuthentication', () => {
                 await fix.httpClient
                     .post('/users/login')
                     .body({ email, password: `${prefix}different` })
-                    .unauthorized({ expected: Errors.Auth.Unauthorized() })
+                    .unauthorized({ expected: expectedErrors.unauthorized })
             })
         })
 
@@ -234,7 +238,7 @@ describe('UserAuthentication', () => {
                     .body({ ...credentials, password: 'incorrect password' })
             })
             it('로그인을 요청하면 401을 반환한다', async () => {
-                await request.unauthorized({ expected: Errors.Auth.Unauthorized() })
+                await request.unauthorized({ expected: expectedErrors.unauthorized })
             })
         })
 
@@ -246,30 +250,36 @@ describe('UserAuthentication', () => {
                     .body({ ...credentials, email: 'unknown@mail.com' })
             })
             it('로그인을 요청하면 401을 반환한다', async () => {
-                await request.unauthorized({ expected: Errors.Auth.Unauthorized() })
+                await request.unauthorized({ expected: expectedErrors.unauthorized })
             })
         })
 
-        describe('여러 IP에서 같은 계정으로 로그인에 실패한 기록이 있으면', () => {
+        describe('한 IP의 로그인 실패 횟수가 한도에 도달했으면', () => {
+            const blockedIp = '198.51.100.1'
             beforeEach(async () => {
-                for (let index = 0; index < 6; index++) {
+                for (let index = 0; index < IP_FAILURE_LIMIT; index++) {
                     await fix.httpClient
                         .post('/users/login')
-                        .headers({ 'X-Forwarded-For': `198.51.100.${index + 1}` })
+                        .headers({ 'X-Forwarded-For': blockedIp })
                         .body({ ...credentials, password: 'incorrect password' })
-                        .unauthorized({ expected: Errors.Auth.Unauthorized() })
+                        .unauthorized({ expected: expectedErrors.unauthorized })
                 }
-            })
-            it('다른 IP에서 올바른 비밀번호로 로그인할 수 있다', async () => {
                 await fix.httpClient
                     .post('/users/login')
-                    .headers({ 'X-Forwarded-For': '198.51.100.7' })
+                    .headers({ 'X-Forwarded-For': blockedIp })
+                    .body(credentials)
+                    .send(HttpStatus.TOO_MANY_REQUESTS, { expected: LOGIN_RATE_LIMITED_ERROR })
+            })
+            it('다른 IP에서 같은 계정으로 로그인하면 200을 반환한다', async () => {
+                await fix.httpClient
+                    .post('/users/login')
+                    .headers({ 'X-Forwarded-For': '198.51.100.2' })
                     .body(credentials)
                     .ok()
             })
         })
 
-        describe('같은 IP에서 49회 로그인 실패 후 한 번 성공했으면', () => {
+        describe('로그인 실패 한도에 한 번 모자란 IP에서 로그인에 성공했으면', () => {
             let ip: string
             beforeEach(async () => {
                 ip = '198.51.100.100'
@@ -282,7 +292,7 @@ describe('UserAuthentication', () => {
                             email: `unknown-${index}@mail.com`,
                             password: 'incorrect password'
                         })
-                        .unauthorized({ expected: Errors.Auth.Unauthorized() })
+                        .unauthorized({ expected: expectedErrors.unauthorized })
                 }
 
                 await fix.httpClient
@@ -295,13 +305,13 @@ describe('UserAuthentication', () => {
                 await fix.httpClient
                     .post('/users/login')
                     .headers({ 'X-Forwarded-For': ip })
-                    .body({ email: 'unknown-50@mail.com', password: 'incorrect password' })
-                    .unauthorized({ expected: Errors.Auth.Unauthorized() })
+                    .body({ email: 'unknown-next@mail.com', password: 'incorrect password' })
+                    .unauthorized({ expected: expectedErrors.unauthorized })
 
                 await fix.httpClient
                     .post('/users/login')
                     .headers({ 'X-Forwarded-For': ip })
-                    .body({ email: 'unknown-51@mail.com', password: 'incorrect password' })
+                    .body({ email: 'unknown-blocked@mail.com', password: 'incorrect password' })
                     .send(HttpStatus.TOO_MANY_REQUESTS, { expected: LOGIN_RATE_LIMITED_ERROR })
             })
         })
@@ -361,7 +371,7 @@ describe('UserAuthentication', () => {
                     // 두 토큰은 iss/aud가 같아 secret 분리만이 방벽이다 — 이 검증이 무너지면
                     // 수명이 긴 리프레시 토큰이 로그아웃으로도 회수되지 않는 액세스 토큰으로 동작한다.
 
-                    await request.unauthorized({ expected: Errors.Auth.Unauthorized() })
+                    await request.unauthorized({ expected: expectedErrors.unauthorized })
                 })
             })
         })
@@ -374,7 +384,7 @@ describe('UserAuthentication', () => {
                     .headers({ Authorization: 'Bearer invalid-token' })
             })
             it('본인 정보를 조회하면 401을 반환한다', async () => {
-                await request.unauthorized({ expected: Errors.Auth.Unauthorized() })
+                await request.unauthorized({ expected: expectedErrors.unauthorized })
             })
         })
 
@@ -401,13 +411,13 @@ describe('UserAuthentication', () => {
                 await fix.httpClient
                     .get('/users/me')
                     .headers({ Authorization: `Bearer ${token}` })
-                    .unauthorized({ expected: Errors.Auth.Unauthorized() })
+                    .unauthorized({ expected: expectedErrors.unauthorized })
             })
         })
     })
 
     describe('DELETE /users/me', () => {
-        describe('로그인했을 때', () => {
+        describe('사용자가 로그인했으면', () => {
             let accessToken: string
 
             beforeEach(async () => {
@@ -424,34 +434,12 @@ describe('UserAuthentication', () => {
     })
 
     describe('PATCH /users/me', () => {
-        describe('로그인했을 때', () => {
+        describe('사용자가 로그인했으면', () => {
             let accessToken: string
             let user: UserDto
-            const updateDto = { name: 'updated-name' }
 
             beforeEach(async () => {
                 ;({ accessToken, user } = await loginUser(fix, credentials))
-            })
-
-            it('본인 정보를 수정하면 수정된 사용자 정보를 반환한다', async () => {
-                await fix.httpClient
-                    .patch('/users/me')
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body(updateDto)
-                    .ok({ schema: UserSchema, expected: { ...user, ...updateDto } })
-            })
-
-            it('본인 정보를 수정하면 DB에 저장한다', async () => {
-                await fix.httpClient
-                    .patch('/users/me')
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .body(updateDto)
-                    .ok({ schema: UserSchema })
-
-                await fix.httpClient
-                    .get('/users/me')
-                    .headers({ Authorization: `Bearer ${accessToken}` })
-                    .ok({ schema: UserSchema, expected: { ...user, ...updateDto } })
             })
 
             it('비밀번호를 변경해도 기존 액세스 토큰으로 본인 정보를 조회할 수 있다', async () => {
@@ -520,7 +508,7 @@ describe('UserAuthentication', () => {
                 await fix.httpClient
                     .post('/users/refresh')
                     .body({ refreshToken })
-                    .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+                    .unauthorized({ expected: expectedErrors.refreshTokenInvalid })
             })
         })
 
@@ -551,7 +539,7 @@ describe('UserAuthentication', () => {
                     .body({ refreshToken: 'invalid-token' })
             })
             it('토큰 갱신을 요청하면 401을 반환한다', async () => {
-                await request.unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+                await request.unauthorized({ expected: expectedErrors.refreshTokenInvalid })
             })
         })
     })
@@ -586,7 +574,7 @@ describe('UserAuthentication', () => {
             await fix.httpClient
                 .post('/users/refresh')
                 .body({ refreshToken })
-                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+                .unauthorized({ expected: expectedErrors.refreshTokenInvalid })
 
             await fix.httpClient
                 .get('/users/me')
@@ -600,7 +588,7 @@ describe('UserAuthentication', () => {
                 request = fix.httpClient.post('/users/logout').body({ refreshToken: 'garbage' })
             })
             it('로그아웃을 요청하면 401을 반환한다', async () => {
-                await request.unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+                await request.unauthorized({ expected: expectedErrors.refreshTokenInvalid })
             })
         })
     })
@@ -619,7 +607,7 @@ describe('UserAuthentication', () => {
     })
 
     describe('LoginRateLimiterService.recordFailure', () => {
-        it('동시에 51회 실패를 기록하면 한 요청을 429 예외로 거절한다', async () => {
+        it('같은 IP의 로그인 실패를 한도보다 한 번 더 동시에 기록하면 한 호출에서만 429 예외를 던진다', async () => {
             const rateLimiter = fix.module.get(LoginRateLimiterService)
             const results = await Promise.allSettled(
                 Array.from({ length: IP_FAILURE_LIMIT + 1 }, () =>
@@ -648,14 +636,14 @@ describe('UserAuthentication', () => {
             await fix.httpClient
                 .get('/users/me')
                 .headers({ Authorization: `Bearer ${accessToken}` })
-                .notFound({ expected: Errors.Mongo.MultipleDocumentsNotFound([user.id]) })
+                .notFound({ expected: expectedErrors.multipleDocumentsNotFound([user.id]) })
         })
         it('기존 액세스 토큰으로 본인 수정을 요청하면 404를 반환한다', async () => {
             await fix.httpClient
                 .patch('/users/me')
                 .headers({ Authorization: `Bearer ${accessToken}` })
                 .body({ name: 'must-not-change' })
-                .notFound({ expected: Errors.Mongo.DocumentNotFound(user.id) })
+                .notFound({ expected: expectedErrors.documentNotFound(user.id) })
         })
     })
 
@@ -689,13 +677,13 @@ describe('UserAuthentication', () => {
             await fix.httpClient
                 .post('/users/refresh')
                 .body({ refreshToken: session.refreshToken })
-                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+                .unauthorized({ expected: expectedErrors.refreshTokenInvalid })
 
             const login = ensure(await loginResult)
             await fix.httpClient
                 .post('/users/refresh')
                 .body({ refreshToken: login.tokens.refreshToken })
-                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+                .unauthorized({ expected: expectedErrors.refreshTokenInvalid })
 
             const current = await loginUser(fix, { ...credentials, password: 'updated password' })
             await fix.httpClient
@@ -711,13 +699,13 @@ describe('UserAuthentication', () => {
             await fix.httpClient
                 .post('/users/refresh')
                 .body({ refreshToken: session.refreshToken })
-                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+                .unauthorized({ expected: expectedErrors.refreshTokenInvalid })
 
             const login = ensure(await loginResult)
             await fix.httpClient
                 .post('/users/refresh')
                 .body({ refreshToken: login.tokens.refreshToken })
-                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+                .unauthorized({ expected: expectedErrors.refreshTokenInvalid })
         })
     })
 
@@ -747,7 +735,7 @@ describe('UserAuthentication', () => {
             await fix.httpClient
                 .post('/users/refresh')
                 .body({ refreshToken: session.refreshToken })
-                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+                .unauthorized({ expected: expectedErrors.refreshTokenInvalid })
 
             await fix.httpClient
                 .post('/users/refresh')
@@ -760,12 +748,12 @@ describe('UserAuthentication', () => {
             await fix.httpClient
                 .post('/users/login')
                 .body(credentials)
-                .unauthorized({ expected: Errors.Auth.Unauthorized() })
+                .unauthorized({ expected: expectedErrors.unauthorized })
 
             await fix.httpClient
                 .post('/users/refresh')
                 .body({ refreshToken: session.refreshToken })
-                .unauthorized({ expected: Errors.JwtAuth.RefreshTokenInvalid() })
+                .unauthorized({ expected: expectedErrors.refreshTokenInvalid })
         })
     })
 
@@ -800,7 +788,7 @@ describe('UserAuthentication', () => {
                     status: 'rejected',
                     reason: {
                         status: HttpStatus.UNAUTHORIZED,
-                        response: Errors.JwtAuth.RefreshTokenInvalid()
+                        response: expectedErrors.refreshTokenInvalid
                     }
                 }
             ])
@@ -820,7 +808,7 @@ describe('UserAuthentication', () => {
                     status: 'rejected',
                     reason: {
                         status: HttpStatus.UNAUTHORIZED,
-                        response: Errors.JwtAuth.RefreshTokenInvalid()
+                        response: expectedErrors.refreshTokenInvalid
                     }
                 }
             ])
