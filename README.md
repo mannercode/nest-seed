@@ -1,7 +1,5 @@
 # nest-seed
 
-[English](README.en.md)
-
 NestJS 백엔드 프로젝트를 시작하기 위한 템플릿이다. 사진을 첨부해 가입하면 브라우저에서 시작한 요청이 웹 프록시와 API를 거쳐 사용자 계정과 사진 소유권으로 저장되는 흐름을 따라갈 수 있다. 이벤트 예제는 연결된 사용자에게 메시지를 보내고, 비동기 작업 예제는 요청이 끝난 뒤에도 작업 결과를 조회할 수 있게 한다. [API 설계](apps/api/README.md#sola의-모듈-의존-방향) · [웹 앱의 역할](apps/web/README.md)
 
 함께 제공하는 인프라는 개발·검증용이다. 포크할 때는 프로젝트명 `nest-seed`와 조직명 `mannercode`(패키지 scope `@mannercode` 포함)를 바꾼다.
