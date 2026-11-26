@@ -34,7 +34,9 @@ services:
               format: raw
         environment: &api-environment
             NODE_ENV: production
+            HTTP_REQUEST_PAYLOAD_LIMIT: ${HTTP_REQUEST_PAYLOAD_LIMIT:?}
             PROJECT_ID: ${PROJECT_ID:?}
+            S3_ENDPOINT: ${S3_ENDPOINT:?}
             RESTATE_DEPLOYMENT_URI: http://api:${RESTATE_SERVICE_PORT:?}
         logging: { driver: json-file, options: { max-size: '10m', max-file: '3' } }
         healthcheck:
@@ -88,11 +90,14 @@ services:
         ports: ['127.0.0.1:3000:80']
         environment:
             API_PORT: ${API_PORT:?}
+            HTTP_REQUEST_PAYLOAD_LIMIT: ${HTTP_REQUEST_PAYLOAD_LIMIT:?}
             RESTATE_SERVICE_PORT: ${RESTATE_SERVICE_PORT:?}
             NGINX_RESTATE_PORT: ${NGINX_RESTATE_PORT:?}
             NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
-            NGINX_ENVSUBST_FILTER: '^(API_PORT|RESTATE_SERVICE_PORT|NGINX_RESTATE_PORT)$$'
-        volumes: ['./nginx.conf:/etc/nginx/templates/nginx.conf.template:ro']
+            NGINX_ENVSUBST_FILTER: '^(API_PORT|RESTATE_SERVICE_PORT|NGINX_RESTATE_PORT|HTTP_REQUEST_PAYLOAD_LIMIT_BYTES)$$'
+        volumes:
+            - ./nginx.conf:/etc/nginx/templates/nginx.conf.template:ro
+            - ./nginx-body-limit.sh:/docker-entrypoint.d/19-body-limit.envsh:ro
         depends_on:
             replica-api: { condition: service_started }
         logging: { driver: json-file, options: { max-size: '10m', max-file: '3' } }
