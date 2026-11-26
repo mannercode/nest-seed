@@ -49,7 +49,7 @@
         "@testcontainers/mongodb": "12.2.2",
         "@testcontainers/nats": "12.2.2",
         "argon2": "0.45.2",
-        "ioredis": "6.0.0",
+        "ioredis": "6.1.0",
         "mongodb": "7.9.1",
         "npm-run-all": "4.1.5",
         "testcontainers": "12.2.2",

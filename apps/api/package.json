@@ -31,7 +31,7 @@
         "argon2": "0.45.2",
         "compression": "1.8.2",
         "express": "5.3.0",
-        "ioredis": "6.0.0",
+        "ioredis": "6.1.0",
         "mongodb": "7.9.1",
         "reflect-metadata": "0.2.2",
         "rxjs": "7.8.2",
