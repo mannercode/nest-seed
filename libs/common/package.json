@@ -36,6 +36,8 @@
     },
     "dependencies": {
         "@elastic/ecs-winston-format": "1.5.3",
+        "@types/express": "5.0.6",
+        "@types/redis-errors": "1.2.3",
         "winston": "3.19.0"
     },
     "peerDependencies": {

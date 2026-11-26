@@ -20,15 +20,16 @@
         "test": "vitest run"
     },
     "dependencies": {
+        "@types/superagent": "8.1.11",
         "superagent": "10.4.2"
     },
     "peerDependencies": {
         "@nestjs/common": "^12.0.0",
+        "@nestjs/platform-express": "^12.0.0",
         "@nestjs/testing": "^12.0.0"
     },
     "devDependencies": {
         "@mannercode/tools": "workspace:*",
-        "@types/superagent": "8.1.11",
         "npm-run-all": "4.1.5",
         "vitest": "5.1.1"
     }
