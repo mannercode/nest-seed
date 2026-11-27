@@ -1,4 +1,6 @@
 import { createHash } from 'node:crypto'
+import { isErrored } from 'node:stream'
+import { ReadableStream } from 'node:stream/web'
 import { type NextRequest, NextResponse } from 'next/server.js'
 import { hasSameOrigin, resolveForwardedClientIp, type AuthTokens } from '@/lib/bff-proxy'
 
@@ -98,6 +100,13 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<NextR
 
     if (upstream.status === 401 && refreshToken && !isLogin) {
         const refreshed = await refreshAuthTokens(authPath, refreshToken)
+        if (!refreshed.tokens && !refreshed.conflict && refreshed.status < 500) {
+            const response = await copyResponse(upstream)
+            clearAuthCookies(response)
+            return response
+        }
+
+        await discardResponseBody(upstream)
         if (refreshed.tokens) {
             const tokens = refreshed.tokens
             let response: NextResponse
@@ -116,13 +125,7 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<NextR
         if (refreshed.conflict) {
             return jsonResponse(refreshed.conflict, refreshed.status)
         }
-        if (refreshed.status >= 500) {
-            return jsonResponse({ message: 'Authentication service unavailable' }, 502)
-        }
-
-        const response = await copyResponse(upstream)
-        clearAuthCookies(response)
-        return response
+        return jsonResponse({ message: 'Authentication service unavailable' }, 502)
     }
 
     return copyResponse(upstream)
@@ -206,6 +209,8 @@ async function callApi(
         method: request.method,
         headers,
         body,
+        // Next.js가 GET 응답 본문을 복제하면 프록시가 원본 연결을 닫을 수 없다.
+        signal: request.signal,
         cache: 'no-store',
         redirect: 'manual'
     })
@@ -243,7 +248,10 @@ async function performRefresh(authPath: string, refreshToken: string): Promise<R
                 return { status: 502, tokens: null }
             return { status: response.status, tokens: null, conflict: { code, message } }
         }
-        if (!response.ok) return { status: response.status, tokens: null }
+        if (!response.ok) {
+            await discardResponseBody(response)
+            return { status: response.status, tokens: null }
+        }
 
         const tokens = await parseTokens(response)
         return tokens ? { status: response.status, tokens } : { status: 502, tokens: null }
@@ -253,10 +261,7 @@ async function performRefresh(authPath: string, refreshToken: string): Promise<R
 }
 
 async function parseTokens(response: Response): Promise<AuthTokens | null> {
-    const value = (await response
-        .clone()
-        .json()
-        .catch(() => null)) as Partial<AuthTokens> | null
+    const value = (await response.json().catch(() => null)) as Partial<AuthTokens> | null
     if (!value || typeof value.accessToken !== 'string' || typeof value.refreshToken !== 'string') {
         return null
     }
@@ -267,6 +272,11 @@ async function parseTokens(response: Response): Promise<AuthTokens | null> {
     } catch {
         return null
     }
+}
+
+async function discardResponseBody({ body }: Response): Promise<void> {
+    if (body instanceof ReadableStream && isErrored(body)) return
+    await body?.cancel()
 }
 
 async function copyResponse(upstream: Response): Promise<NextResponse> {

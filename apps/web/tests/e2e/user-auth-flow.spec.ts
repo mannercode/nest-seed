@@ -159,6 +159,29 @@ test.describe('로그인 전', () => {
     })
 })
 
+test.describe('보호 API가 401을 반환하고 토큰 갱신이 503을 반환하면', () => {
+    test.afterEach(() => mock.restoreAll())
+    test('502를 반환하고 두 API 응답 본문을 닫는다', async () => {
+        const closed: number[] = []
+        mock.method(globalThis, 'fetch', async (url: URL) => {
+            const status = url.pathname === '/users/refresh' ? 503 : 401
+            const body = new ReadableStream({
+                cancel: () => {
+                    closed.push(status)
+                }
+            })
+            return new Response(body, { status })
+        })
+
+        const request = new NextRequest(new URL('/api/users/me', WEB_BASE_URL), {
+            headers: { cookie: REFRESH_COOKIE + '=expired' }
+        })
+        const response = await GET(request, { params: Promise.resolve({ path: ['users', 'me'] }) })
+        expect(response.status).toBe(502)
+        expect(closed.sort()).toEqual([401, 503])
+    })
+})
+
 test.describe('로그인 후', () => {
     let email: string
     let accessCookie: Awaited<ReturnType<typeof getSessionCookie>>

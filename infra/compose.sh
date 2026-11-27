@@ -6,9 +6,6 @@ export COMPOSE_FILE="$base_compose_file"
 test_pid=
 
 clear_stack() {
-    # 기본 Compose 파일에 없는 실행 중인 E2E 컨테이너도 함께 정리한다.
-    docker ps -aq --filter "label=com.docker.compose.project=${COMPOSE_PROJECT_NAME:?}" \
-        --filter 'label=com.docker.compose.oneoff=True' | xargs -r docker rm --force --volumes || return "$?"
     docker compose down --volumes --remove-orphans --timeout 0
 }
 
@@ -31,10 +28,12 @@ finish_stack() {
     trap '' HUP INT TERM
     if [[ -n $test_pid ]] && kill -TERM -- "-$test_pid" 2>/dev/null; then
         wait "$test_pid" || :
+        # pnpm이 먼저 종료돼도 자식의 Compose 정리가 끝난 뒤 개발 인프라를 복구한다.
+        pidwait -g "$test_pid" || [[ $? == 1 ]] || exit 1
     fi
     if ((status)); then stack_diagnostics; fi
-    export COMPOSE_FILE="$base_compose_file"
     clear_stack || exit 1
+    export COMPOSE_FILE="$base_compose_file"
     if [[ ${2-} == restore ]] && ! start_services infra-setup; then
         stack_diagnostics
         clear_stack
