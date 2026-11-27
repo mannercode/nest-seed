@@ -9,8 +9,8 @@
         "build": "nest build -b rspack --rspackPath rspack.config.cjs",
         "predev": "pnpm --filter-prod 'api^...' --fail-if-no-match run build",
         "dev": "nest start --watch",
-        "test": "bash \"${WORKSPACE_ROOT:?}/infra/test.sh\" -- run-s test:**",
-        "test:vitest": "bash \"${WORKSPACE_ROOT:?}/infra/test.sh\" infra-setup vitest run --coverage",
+        "test": "bash \"${WORKSPACE_ROOT:?}/infra/compose.sh\" test -- run-s test:**",
+        "test:vitest": "bash \"${WORKSPACE_ROOT:?}/infra/compose.sh\" test infra-setup vitest run --coverage",
         "test:api-docs": "bash api-docs/test.sh"
     },
     "dependencies": {

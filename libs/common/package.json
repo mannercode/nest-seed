@@ -29,7 +29,7 @@
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
         "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
-        "test": "bash \"${WORKSPACE_ROOT:?}/infra/test.sh\" -- vitest run --coverage",
+        "test": "bash \"${WORKSPACE_ROOT:?}/infra/compose.sh\" test -- vitest run --coverage",
         "lint": "run-p lint:**",
         "lint:build": "tsc --noEmit -p tsconfig.build.json",
         "lint:test": "tsc --noEmit -p tsconfig.test.json"

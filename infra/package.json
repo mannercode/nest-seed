@@ -7,12 +7,12 @@
         "#race-common": "./tests/api/race/race-common.js"
     },
     "scripts": {
-        "apps:up": "bash up.sh",
-        "apps:down": "pnpm run reset",
-        "reset": "bash up.sh --reset",
-        "test": "bash test.sh restate node --test --test-concurrency=1 --test-reporter=spec",
+        "apps:up": "bash compose.sh up",
+        "apps:down": "bash compose.sh reset",
+        "reset": "bash compose.sh reset",
+        "test": "bash compose.sh test restate node --test --test-concurrency=1 --test-reporter=spec",
         "race": "bash tests/api/race/runner.sh",
-        "benchmark": "bash test.sh nginx bash tests/api/benchmark/run.sh"
+        "benchmark": "bash compose.sh test nginx bash tests/api/benchmark/run.sh"
     },
     "devDependencies": {
         "@mannercode/testing": "workspace:*",

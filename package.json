@@ -10,7 +10,7 @@
         "prepare": "husky",
         "build:libs": "pnpm -F './libs/**' --fail-if-no-match build",
         "pretest": "pnpm run build:libs",
-        "test": "bash infra/test.sh -- pnpm -r --workspace-concurrency=1 run --if-present test",
+        "test": "bash infra/compose.sh test -- pnpm -r --workspace-concurrency=1 run --if-present test",
         "prelint": "pnpm run build:libs",
         "lint": "run-p lint:**",
         "lint:workspaces": "pnpm -r run --if-present lint",
