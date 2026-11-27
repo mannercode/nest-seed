@@ -89,6 +89,7 @@ describe('RestateEndpoint', () => {
         beforeEach(() => {
             endpoint = createEndpoint()
         })
+        afterEach(() => endpoint.onApplicationShutdown())
         it('서버를 시작하면 사용 가능한 포트를 쓰고 종료하면 연결도 닫는다', async () => {
             await endpoint.onApplicationBootstrap()
             expect(endpoint.port).toBeGreaterThan(0)
@@ -107,22 +108,18 @@ describe('RestateEndpoint', () => {
         })
 
         it('시작 시 Restate 로그를 주입한 로거에 기록한다', async () => {
-            try {
-                await endpoint.onApplicationBootstrap()
-                expect(endpoint.port).toBeGreaterThan(0)
-                expect(records).toContainEqual(
-                    expect.objectContaining({
-                        level: 'warn',
-                        message: expect.stringContaining(
-                            'Accepting requests without validating request signatures'
-                        ),
-                        contextType: 'restate',
-                        restate: expect.objectContaining({ source: 'SYSTEM' })
-                    })
-                )
-            } finally {
-                await endpoint.onApplicationShutdown()
-            }
+            await endpoint.onApplicationBootstrap()
+            expect(endpoint.port).toBeGreaterThan(0)
+            expect(records).toContainEqual(
+                expect.objectContaining({
+                    level: 'warn',
+                    message: expect.stringContaining(
+                        'Accepting requests without validating request signatures'
+                    ),
+                    contextType: 'restate',
+                    restate: expect.objectContaining({ source: 'SYSTEM' })
+                })
+            )
         })
     })
 
