@@ -20,9 +20,7 @@ function sleep(ms) {
 }
 
 function dockerReplicaIds() {
-    const out = execSync('docker compose --profile replicas ps -q replica-api', {
-        encoding: 'utf8'
-    }).trim()
+    const out = execSync('docker compose ps -q replica-api', { encoding: 'utf8' }).trim()
     return out ? out.split('\n') : []
 }
 
@@ -101,7 +99,7 @@ function summarize(label, bucket) {
 
 test('복제본 하나를 재시작하면 중단 중에도 가입에 성공하고 전체 오류율은 1% 이하이며 복구 후 모든 복제본이 응답한다', async () => {
     const { services } = JSON.parse(
-        execSync('docker compose --profile replicas config --format json', { encoding: 'utf8' })
+        execSync('docker compose config --format json', { encoding: 'utf8' })
     )
     const expectedReplicas = services['replica-api'].deploy.replicas
     const replicas = dockerReplicaIds()

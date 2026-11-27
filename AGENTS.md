@@ -79,7 +79,7 @@
 | 같은 앱·라이브러리의 다른 모듈                                  | 공개 진입점을 가리키는 별칭                      | `import { AssetsService } from '#infrastructure'`           |
 | 같은 모듈의 이웃 파일                                           | 상대 경로 사용 가능                              | `import { RegistrationErrors } from './errors.js'`          |
 
-[Compose 파일 경로](infra/stack.sh) · [가입 서비스의 import](apps/api/src/services/application/user-registration/user-registration.service.ts)
+[Compose 파일 경로](infra/up.sh) · [가입 서비스의 import](apps/api/src/services/application/user-registration/user-registration.service.ts)
 
 ## 테스트는 한 행동의 결과를 검증한다
 

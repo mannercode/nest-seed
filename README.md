@@ -28,7 +28,7 @@ Dev Container의 저장소 루트에서 실행한다.
 | API 문서의 전체 curl 예제   | `pnpm -C apps/api run test:api-docs`           |
 | 웹 브라우저 E2E             | `pnpm -C apps/web test`                        |
 
-API와 웹을 컨테이너로 띄우려면 `pnpm -C infra run apps:up`을, 개발 환경으로 돌아가려면 `pnpm -C infra run apps:down`을 실행한다. [복제본 검증과 벤치마크 명령](infra/package.json)
+`pnpm -C infra run apps:up`은 API와 웹을 컨테이너로 띄운다. API만 띄우려면 `pnpm -C infra run apps:up api`를, 개발 인프라로 돌아가려면 `pnpm -C infra run apps:down`을 실행한다. [복제본 검증과 벤치마크 명령](infra/package.json)
 
 ## 프로젝트 구조
 

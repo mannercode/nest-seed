@@ -36,7 +36,7 @@ jobs:
               with:
                   push: never
                   runCmd: |
-                      bash infra/stack.sh group bash -ec '
+                      bash infra/test.sh -- bash -ec '
                           for ((run = 1; run <= 25; run++)); do
                               echo "[Run ${run}/25]"
                               pnpm -C infra run race ${{ matrix.scenario }}

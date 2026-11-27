@@ -21,7 +21,6 @@ services:
         command: ['true']
 
     api: &api
-        profiles: [apps]
         depends_on:
             infra-setup: { condition: service_completed_successfully }
         build:
@@ -46,7 +45,6 @@ services:
             start_period: 10s
 
     web:
-        profiles: [apps]
         build:
             context: ${WORKSPACE_ROOT:?}
             dockerfile: apps/web/Dockerfile
@@ -73,7 +71,6 @@ services:
 
     replica-api:
         <<: *api
-        profiles: [replicas]
         environment:
             <<: *api-environment
             PROJECT_ID: ${PROJECT_ID:?}-replicas
@@ -83,7 +80,6 @@ services:
         deploy: { replicas: 4 }
 
     nginx:
-        profiles: [replicas]
         hostname: replica-nginx
         image: nginx:1.31.9-alpine@sha256:fb4658584bd9a916ffb6f6e365f97c25cfdb2923801f551ea08356e695f14ff7
         ports: ['127.0.0.1:3000:80']
@@ -105,7 +101,6 @@ services:
         restart: unless-stopped
 
     k6:
-        profiles: [benchmark]
         image: grafana/k6:2.4.0@sha256:d41bb79cd8de5a7ad619b53570e3712633e8bff0937010a5c6c57a4747e7a276
         working_dir: ${WORKSPACE_ROOT:?}
         environment:

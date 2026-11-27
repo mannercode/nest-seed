@@ -45,5 +45,5 @@ run_examples() {
     fi
 }
 
-source "${WORKSPACE_ROOT}/infra/stack.sh"
-with_stack test -- run_examples
+source "${WORKSPACE_ROOT}/infra/test.sh"
+with_test_stack -- run_examples

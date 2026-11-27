@@ -16,11 +16,11 @@ jobs:
                 include:
                     - name: libs
                       repeat: 38
-                      group: bash infra/stack.sh group
+                      group: bash infra/test.sh --
                       command: pnpm --recursive --filter "./libs/**" --fail-if-no-match run test --coverage.enabled=false
                     - name: api
                       repeat: 30
-                      group: bash infra/stack.sh group
+                      group: bash infra/test.sh --
                       setup: pnpm run pretest
                       command: |
                           pnpm --dir apps/api run test:vitest --coverage.enabled=false

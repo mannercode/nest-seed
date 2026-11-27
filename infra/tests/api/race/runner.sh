@@ -35,14 +35,14 @@ dump_diagnostics() {
     echo ""
     echo "=== container diagnostics ==="
     date --utc --iso-8601=seconds
-    docker compose --profile replicas ps -a nginx replica-api || true
+    docker compose ps -a nginx replica-api || true
 
     for service in nginx replica-api; do
-        timeout --kill-after=2s 10s docker compose --profile replicas stats --all --no-stream --format json "${service}" \
+        timeout --kill-after=2s 10s docker compose stats --all --no-stream --format json "${service}" \
             || echo "[diagnostics] container resource collection failed: ${service}" >&2
     done
 
-    for cid in $(docker compose --profile replicas ps -aq nginx replica-api 2>/dev/null); do
+    for cid in $(docker compose ps -aq nginx replica-api 2>/dev/null); do
         cname=$(docker inspect --format '{{.Name}} ({{.State.Status}})' "${cid}" 2>/dev/null || echo "${cid}")
         docker inspect --format 'name={{.Name}} state={{json .State}} restarts={{.RestartCount}}' "${cid}" \
             || echo "[diagnostics] container state collection failed: ${cid}" >&2
@@ -105,5 +105,5 @@ run_scenario() {
 if [[ $TEST_NAME == sse-fanout-race ]]; then
     pnpm --filter @mannercode/testing run build
 fi
-source "${WORKSPACE_ROOT:?}/infra/stack.sh"
-with_stack test -- run_scenario
+source "${WORKSPACE_ROOT:?}/infra/test.sh"
+with_test_stack -- run_scenario
