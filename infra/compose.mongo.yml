@@ -12,28 +12,15 @@ x-mongo-base: &mongo-base
         --replSet mongo
         --bind_ip_all
         --wiredTigerCacheSizeGB 1.0
+    healthcheck:
+        test: >
+            mongosh "mongodb://localhost:27017/?directConnection=true"
+            --eval "db.adminCommand('ping')"
 
 services:
-    mongo1:
-        <<: *mongo-base
-        healthcheck:
-            test: >
-                mongosh "mongodb://localhost:27017/?directConnection=true"
-                --eval "db.adminCommand('ping')"
-
-    mongo2:
-        <<: *mongo-base
-        healthcheck:
-            test: >
-                mongosh "mongodb://localhost:27017/?directConnection=true"
-                --eval "db.adminCommand('ping')"
-
-    mongo3:
-        <<: *mongo-base
-        healthcheck:
-            test: >
-                mongosh "mongodb://localhost:27017/?directConnection=true"
-                --eval "db.adminCommand('ping')"
+    mongo1: *mongo-base
+    mongo2: *mongo-base
+    mongo3: *mongo-base
 
     mongo-setup:
         extends: { file: ./compose.common.yml, service: common-options }
