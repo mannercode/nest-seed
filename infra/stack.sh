@@ -4,7 +4,6 @@ set -euo pipefail
 base_compose_file="${WORKSPACE_ROOT:?}/infra/compose.yml"
 stack_test_pid=
 
-# 호출한 workspace에서 명령을 실행하고, 환경을 복구할 때까지 같은 잠금을 유지한다.
 with_stack() {
     local mode=$1
     shift
@@ -33,15 +32,15 @@ with_stack() {
         group)
             : "${1:?test group command required}"
             if [[ ${NEST_SEED_TEST_WORKSPACE-} == "$WORKSPACE_ROOT" ]]; then exec "$@"; fi
-            # 순차 실행기는 자식 테스트에 잠금을 소유한 워크스페이스를 전달한다.
+            # 자식 테스트는 컨테이너만 정리하고, 그룹이 끝나면 개발 인프라를 복구한다.
             set -- env "NEST_SEED_TEST_WORKSPACE=$WORKSPACE_ROOT" "$@"
             mode='test'
             ;;
         *) echo "Unknown stack command: $mode" >&2; return 2 ;;
     esac
 
+    validate_stack "${services[@]}"
     if [[ $mode == test && ${NEST_SEED_TEST_WORKSPACE-} == "$WORKSPACE_ROOT" ]]; then
-        validate_stack "${services[@]}"
         # 본문이 실패해도 컨테이너를 정리한 뒤 그 종료 코드를 실행기에 돌려준다.
         set +e
         (
@@ -56,10 +55,6 @@ with_stack() {
         exit "$status"
     fi
 
-    exec 9<"${WORKSPACE_ROOT}/infra"
-    flock 9
-    validate_stack "${services[@]}"
-
     trap 'finish_stack "$?" restore' EXIT
     trap 'exit 130' INT
     trap 'exit 143' TERM
@@ -70,7 +65,7 @@ with_stack() {
     if [[ $mode == test ]]; then
         # 작업 그룹 전체가 종료된 뒤에만 Compose 환경을 교체한다.
         set -m
-        "$@" </dev/null 9<&- &
+        "$@" </dev/null &
         stack_test_pid=$!
         wait "$stack_test_pid"
         stack_test_pid=
