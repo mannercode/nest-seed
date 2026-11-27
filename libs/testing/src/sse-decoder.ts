@@ -2,11 +2,17 @@ type SseMessage = { data?: string; event?: string; id?: number }
 
 export class SseDecoder {
     private buffer = ''
+    private atStreamStart = true
     private previousChunkEndedWithCR = false
 
     constructor(private readonly onMessage: (message: SseMessage) => void) {}
 
     write(chunk: string) {
+        if (chunk.length === 0) return
+        if (this.atStreamStart) {
+            chunk = chunk.replace(/^\uFEFF/, '')
+            this.atStreamStart = false
+        }
         // CR은 즉시 줄바꿈으로 처리하고, 다음 청크의 LF가 이어지면 한 번만 센다.
         if (this.previousChunkEndedWithCR && chunk.startsWith('\n')) chunk = chunk.slice(1)
         this.previousChunkEndedWithCR = chunk.endsWith('\r')
@@ -22,8 +28,9 @@ export class SseDecoder {
     }
 
     end() {
-        if (this.buffer) this.dispatch(this.buffer)
         this.buffer = ''
+        this.atStreamStart = true
+        this.previousChunkEndedWithCR = false
     }
 
     private dispatch(frame: string) {

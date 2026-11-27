@@ -24,7 +24,7 @@ run_examples() {
     fi
 
     start_services api
-    bash "${docs_dir}/run.sh"
+    SERVER_URL="${SERVER_URL}/" bash "${docs_dir}/run.sh"
     grep -Fq '실행 완료 (종료 코드 0)' "${report_dir}/summary.md"
     if ! grep -Fq '실행 실패 (종료 코드 1)' "${report_dir}"/*.md; then
         echo '정상 실행 후 이전 실행의 실패 보고서를 찾을 수 없습니다.' >&2

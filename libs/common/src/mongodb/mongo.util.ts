@@ -23,7 +23,10 @@ export function mongoToPublic<T>(doc: null | Document): null | T {
     const { _id, ...fields } = doc
     const result = decodeMongoValues(fields) as Document
     // projection으로 ID를 제외한 결과에는 id를 추가하지 않는다.
-    if (_id !== undefined) result.id = _id.toHexString()
+    if (_id !== undefined) {
+        result.id =
+            typeof _id?.toHexString === 'function' ? _id.toHexString() : decodeMongoValues(_id)
+    }
     return result as T
 }
 

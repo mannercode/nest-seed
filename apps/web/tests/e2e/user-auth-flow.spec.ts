@@ -12,6 +12,7 @@ import {
 } from '../playwright.config'
 import { photoUrl } from '@/lib/photos'
 import { GET } from '@/app/api/[...path]/route'
+import { GET as downloadPhoto } from '@/app/storage/route'
 
 const PASSWORD = 'DevPassword1234!'
 const ACCESS_COOKIE = 'nest-seed-user-access'
@@ -41,6 +42,19 @@ async function getSessionCookie(context: BrowserContext, name: string) {
 }
 
 const storage = new URL(S3_ENDPOINT)
+test.describe('사진 다운로드를 취소하면', () => {
+    test('저장소 요청도 중단된다', async () => {
+        const controller = new AbortController()
+        const target = `${storage.href.replace(/\/$/, '')}/${S3_BUCKET}/photo.png`
+        const request = new NextRequest(new URL(photoUrl(target), WEB_BASE_URL), {
+            signal: controller.signal
+        })
+        const download = downloadPhoto(request)
+        controller.abort()
+        await expect(download).rejects.toMatchObject({ name: 'AbortError' })
+    })
+})
+
 const otherBucket = S3_BUCKET + '-other'
 for (const [condition, target] of [
     ['다른 저장소', 'https://other-storage.example/photo.png'],

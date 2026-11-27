@@ -1,7 +1,7 @@
 import { assignIfDefined, mapDocToDto } from '#common/utils'
 import { z } from 'zod'
 import { BadRequestException, Logger } from '@nestjs/common'
-import { Decimal128, ObjectId } from 'mongodb'
+import { Decimal128, ObjectId, UUID } from 'mongodb'
 import {
     decodeMongoValues,
     encodeMongoDocument,
@@ -113,6 +113,15 @@ describe('mongoToPublic, mongoArrayToPublic, withoutPublicId, encodeMongoValues,
         expect(mapped).toEqual({ id: _id.toHexString(), name: 'sample' })
         expect(doc).toEqual({ _id, name: 'sample' })
         expect(doc._id).toBe(_id)
+    })
+
+    it('_id가 BSON UUID이면 UUID 문자열을 반환한다', () => {
+        const uuid = new UUID()
+        expect(mongoToPublic({ _id: uuid })).toEqual({ id: uuid.toHexString() })
+    })
+
+    it('투영된 _id가 null이면 id에 null을 유지한다', () => {
+        expect(mongoToPublic({ _id: null })).toEqual({ id: null })
     })
 
     describe('변환할 문서가 null이면', () => {

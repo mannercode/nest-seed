@@ -662,6 +662,7 @@ describe('NatsPubSubModule.register', () => {
 })
 
 describe('JetStreamChannel', () => {
+    let cleanup: AsyncDisposableStack
     let connection: NatsConnection
     let channel: JetStreamChannel
     let manager: Awaited<ReturnType<typeof jetstreamManager>>
@@ -670,10 +671,26 @@ describe('JetStreamChannel', () => {
     const consumerName = 'consumer'
 
     beforeEach(async () => {
+        cleanup = new AsyncDisposableStack()
         connection = await connect(JSON.parse(process.env.TESTLIB_NATS_OPTIONS!))
+        cleanup.defer(() => connection.close())
         manager = await jetstreamManager(connection)
         streamName = withTestId('durable').replaceAll(/[^a-zA-Z0-9_-]/g, '_')
+        cleanup.defer(async () => {
+            try {
+                await manager.streams.delete(streamName)
+            } catch (error) {
+                if (
+                    error instanceof JetStreamApiError &&
+                    error.code === JetStreamApiCodes.StreamNotFound
+                ) {
+                    return
+                }
+                throw error
+            }
+        })
         messages = undefined
+        cleanup.defer(() => messages?.close())
         channel = new JetStreamChannel(connection, {
             streamName,
             consumerName,
@@ -685,21 +702,7 @@ describe('JetStreamChannel', () => {
             ackWaitMs: 30_000
         })
     })
-    afterEach(async () => {
-        try {
-            await messages?.close()
-            await manager.streams.delete(streamName).catch((error: unknown) => {
-                if (!(
-                    error instanceof JetStreamApiError &&
-                    error.code === JetStreamApiCodes.StreamNotFound
-                )) {
-                    throw error
-                }
-            })
-        } finally {
-            await connection.close()
-        }
-    })
+    afterEach(() => cleanup.disposeAsync())
 
     it('동시에 초기화한 뒤 같은 ID로 두 번 발행해도 메시지 한 건만 저장한다', async () => {
         await Promise.all([channel.initialize(), channel.initialize()])

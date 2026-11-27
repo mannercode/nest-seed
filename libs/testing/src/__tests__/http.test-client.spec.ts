@@ -3,7 +3,21 @@ import {
     createHttpTestClientFixture,
     receiveRawEvents
 } from './http.test-client.fixture.js'
-import { HttpTestClient } from '#testing'
+import { HttpTestClient, SseDecoder } from '#testing'
+
+describe('SseDecoder', () => {
+    describe('마지막 이벤트가 빈 줄 없이 끝나면', () => {
+        it('완료된 이벤트만 전달한다', () => {
+            const messages: unknown[] = []
+            const decoder = new SseDecoder((message) => messages.push(message))
+
+            decoder.write('data: complete\n\ndata: partial')
+            decoder.end()
+
+            expect(messages).toEqual([{ data: 'complete' }])
+        })
+    })
+})
 
 describe('HttpTestClient', () => {
     let fix: HttpTestClientFixture
@@ -220,6 +234,12 @@ describe('HttpTestClient', () => {
 
         describe.each([
             {
+                name: '첫 이벤트의 데이터를 전달한다',
+                condition: '응답이 UTF-8 BOM으로 시작하면',
+                content: '\uFEFFdata: first\n\n',
+                expected: ['first']
+            },
+            {
                 name: '줄바꿈으로 이어 한 이벤트로 전달한다',
                 condition: 'data 줄이 여러 개인 응답이면',
                 content: 'data: first\ndata: second\n\n',
@@ -294,8 +314,7 @@ describe('HttpTestClient', () => {
         ])('$condition', ({ content, expected, name }) => {
             beforeEach(() => fix.setRawEvents({ content, contentType: 'text/event-stream' }))
             it(name, async () => {
-                const result = await receiveRawEvents(fix)
-                expect(result).toEqual({ events: expected, errors: [] })
+                expect(await receiveRawEvents(fix)).toEqual(expected)
             })
         })
 
@@ -330,8 +349,7 @@ describe('HttpTestClient', () => {
                 fix.setRawEvents({ content: first, contentType: 'text/event-stream', continuation })
             )
             it('한 이벤트로 연결한다', async () => {
-                const result = await receiveRawEvents(fix)
-                expect(result).toEqual({ events: ['first\nsecond'], errors: [] })
+                expect(await receiveRawEvents(fix)).toEqual(['first\nsecond'])
             })
         })
 

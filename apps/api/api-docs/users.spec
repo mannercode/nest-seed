@@ -80,9 +80,7 @@ TEST "로그아웃한 세션의 리프레시 토큰으로 갱신하면 401을 �
 login_user
 
 TEST "회원 탈퇴를 요청한다" \
-	204 DELETE /users/me \
-	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
+	204 DELETE /users/me
 
 TEST "탈퇴 후 같은 토큰으로 내 정보를 조회하면 404를 반환한다" \
-	404 GET /users/me \
-	-H "Authorization: Bearer ${USER_ACCESS_TOKEN}"
+	404 GET /users/me

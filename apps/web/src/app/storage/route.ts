@@ -29,6 +29,7 @@ async function proxy(request: NextRequest): Promise<Response> {
         method: request.method,
         headers,
         body: request.body,
+        signal: request.signal,
         duplex: 'half',
         cache: 'no-store',
         redirect: 'manual'

@@ -136,6 +136,13 @@ describe('CrudRepository', () => {
                 expect(await fix.soft.distinctValues<string>('_id', filter)).toEqual([created.id])
             })
 
+            it('이름을 _id로 투영하면 그 값을 id로 반환한다', async () => {
+                const found = await fix.soft.findDocument(fix.soft.idFilter(created.id), {
+                    projection: { _id: '$name', name: 1 }
+                })
+                expect(found).toEqual({ id: 'sample', name: 'sample' })
+            })
+
             it('문서 ID와 문자열 그룹 키로 각각 집계하면 ObjectId 결과도 문자열로 반환한다', async () => {
                 expect(
                     await fix.soft.aggregateDocuments([

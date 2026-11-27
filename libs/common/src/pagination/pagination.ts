@@ -34,6 +34,7 @@ function parseOrderBy(value: unknown): null | OrderBy | undefined {
         if (
             Array.isArray(value) ||
             typeof name !== 'string' ||
+            name.length === 0 ||
             !Object.values(OrderDirection).includes(direction as OrderDirection)
         ) {
             throw new BadRequestException(PaginationErrors.FormatInvalid())

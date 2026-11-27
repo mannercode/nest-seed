@@ -177,35 +177,29 @@ class HttpTestClientController {
     }
 }
 
-export async function receiveRawEvents({
-    httpClient
-}: HttpTestClientFixture): Promise<{ events: string[]; errors: unknown[] }> {
+export async function receiveRawEvents({ httpClient }: HttpTestClientFixture): Promise<string[]> {
     const completion = Promise.withResolvers<void>()
     const events: string[] = []
-    const errors: unknown[] = []
     let continuationRequest: Promise<unknown> | undefined
 
-    httpClient.post('/raw-events').sse(
-        (data) => {
-            if (data === 'fixture-ready') {
-                // 첫 청크를 실제로 수신한 뒤 나머지를 보내 TCP 분할을 보장한다.
-                continuationRequest = new HttpTestClient(httpClient.serverUrl)
-                    .post('/complete-raw-events')
-                    .created()
-                void continuationRequest.catch(completion.reject)
-            } else if (data === 'fixture-complete') {
-                completion.resolve()
-            } else {
-                events.push(data)
-            }
-        },
-        (reason) => errors.push(reason)
-    )
+    httpClient.post('/raw-events').sse((data) => {
+        if (data === 'fixture-ready') {
+            // 첫 청크를 실제로 수신한 뒤 나머지를 보내 TCP 분할을 보장한다.
+            continuationRequest = new HttpTestClient(httpClient.serverUrl)
+                .post('/complete-raw-events')
+                .created()
+            void continuationRequest.catch(completion.reject)
+        } else if (data === 'fixture-complete') {
+            completion.resolve()
+        } else {
+            events.push(data)
+        }
+    }, completion.reject)
 
     try {
         await completion.promise
         await continuationRequest
-        return { events, errors }
+        return events
     } finally {
         httpClient.abort()
     }

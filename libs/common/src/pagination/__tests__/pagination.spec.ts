@@ -118,6 +118,16 @@ describe('PaginationDto', () => {
         })
     })
 
+    describe('orderby 객체의 필드 이름이 빈 문자열이면', () => {
+        const input = { orderby: { direction: 'asc', name: '' } }
+
+        it('형식 오류를 담은 BadRequestException을 던진다', () => {
+            expect(() => PaginationSchema.parse(input)).toThrow(
+                expect.objectContaining({ status: 400, response: PaginationErrors.FormatInvalid() })
+            )
+        })
+    })
+
     describe('orderby 객체에 name과 direction이 없으면', () => {
         let input: unknown
         beforeEach(() => {
