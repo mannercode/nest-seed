@@ -33,6 +33,27 @@
 ## 설계와 구현
 
 - 문제가 생기는 조건과 영향을 확인하고 원인을 해결하는 데 필요한 만큼만 고친다. 구조 변경으로 막을 오류와 늘어나는 의존성·실행 단계·호환성 유지 비용을 비교한다. 기존 기능이나 작은 수정으로 충분하면 그 방법을 택하고 이유를 설명한다.
+- 자원을 만든 쪽이 종료와 정리까지 책임진다. 정리 대상은 자신이 만든 자원으로 한정한다.
+
+    > ```sh
+    > docker compose run --rm --no-deps --use-aliases --user "$(id -u):$(id -g)" e2e "$@"
+    > ```
+    >
+    > `--rm`은 컨테이너가 종료되면 삭제한다. 테스트 중단 시에는 웹 E2E 실행기가 자신이 띄운 컨테이너를 멈춰야 한다. [웹 E2E 실행](apps/web/tests/run-e2e.sh)
+    >
+    > ```js
+    > await using setup = new AsyncDisposableStack()
+    > // ...
+    > const results = await Promise.allSettled(
+    >     definitions.map(async (container) => setup.use(await container.start()))
+    > )
+    > // ...
+    > const containers = setup.move()
+    > return () => containers.disposeAsync()
+    > ```
+    >
+    > [시작한 컨테이너를 등록하고 정리 함수를 반환하는 common의 Vitest 전역 설정](libs/common/vitest.global.cjs)
+
 - 주소·경로·ID는 정한 쪽에서 받아 쓴다. 같은 자원을 가리키는 값을 여러 곳에서 계산해야 하면 생성 함수를 공유한다.
 
     > ```ts
