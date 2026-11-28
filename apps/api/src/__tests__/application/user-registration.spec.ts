@@ -1,4 +1,5 @@
 import { DateUtil, ensure, S3ObjectService } from '@mannercode/common'
+import { SchedulerRegistry } from '@nestjs/schedule'
 import { ClientSession } from 'mongodb'
 import { UserRegistrationService } from '#application'
 import { type CreateUserDto, UserSchema } from '#core'
@@ -340,6 +341,29 @@ describe('UserRegistrationService', () => {
         })
         it('소유자 없는 사진을 삭제한다', async () => {
             await fix.module.get(UserRegistrationService).cleanupExpiredPhotos()
+            expect(await fix.module.get(AssetsService).findOwner(assetId)).toBeUndefined()
+        })
+
+        it('작업 도중 앱을 종료해도 사진을 삭제한다', async () => {
+            const assets = fix.module.get(AssetsService)
+            const job = fix.module
+                .get(SchedulerRegistry)
+                .getCronJob('registration.cleanupExpiredPhotos')
+            const stopping = Promise.withResolvers<void>()
+            const stop = job.stop.bind(job)
+            vi.spyOn(job, 'stop').mockImplementationOnce(() => {
+                const completion = stop()
+                stopping.resolve()
+                return completion
+            })
+            const cleanup = assets.cleanupExpiredUploads.bind(assets)
+            // 예약이 중단된 뒤 Redis 락을 얻도록 종료와 정리를 겹친다.
+            vi.spyOn(assets, 'cleanupExpiredUploads').mockImplementationOnce(() =>
+                stopping.promise.then(cleanup)
+            )
+            await Promise.all([job.fireOnTick(), fix.teardown()])
+
+            fix = await createAppTestContext()
             expect(await fix.module.get(AssetsService).findOwner(assetId)).toBeUndefined()
         })
     })

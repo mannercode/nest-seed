@@ -1,6 +1,6 @@
 import { ensure } from '@mannercode/common'
-import { Injectable, UnprocessableEntityException } from '@nestjs/common'
-import { Cron, CronExpression } from '@nestjs/schedule'
+import { Injectable, OnModuleDestroy, UnprocessableEntityException } from '@nestjs/common'
+import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule'
 import { UsersService } from '#core'
 import { AssetsService } from '#infrastructure'
 import {
@@ -12,12 +12,15 @@ import {
 import { RegistrationErrors } from './errors.js'
 import { RegistrationTransactionRepository } from './registration-transaction.repository.js'
 
+const PHOTO_CLEANUP_JOB = 'registration.cleanupExpiredPhotos'
+
 @Injectable()
-export class UserRegistrationService {
+export class UserRegistrationService implements OnModuleDestroy {
     constructor(
         private readonly users: UsersService,
         private readonly assets: AssetsService,
-        private readonly transaction: RegistrationTransactionRepository
+        private readonly transaction: RegistrationTransactionRepository,
+        private readonly scheduler: SchedulerRegistry
     ) {}
 
     async createPhotoUpload(input: CreateRegistrationPhotoDto) {
@@ -49,8 +52,13 @@ export class UserRegistrationService {
         await this.users.deleteMany([userId])
     }
 
-    @Cron(CronExpression.EVERY_10_MINUTES, { name: 'registration.cleanupExpiredPhotos' })
+    @Cron(CronExpression.EVERY_10_MINUTES, { name: PHOTO_CLEANUP_JOB, waitForCompletion: true })
     async cleanupExpiredPhotos() {
         await this.assets.cleanupExpiredUploads()
+    }
+
+    onModuleDestroy() {
+        // 스케줄러의 종료 훅은 저장소 연결이 닫힌 뒤 실행된다.
+        return this.scheduler.getCronJobs().get(PHOTO_CLEANUP_JOB)?.stop()
     }
 }
