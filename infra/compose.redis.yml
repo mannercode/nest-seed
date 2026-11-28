@@ -4,10 +4,12 @@ x-redis-base: &redis-base
     healthcheck:
         test: 'redis-cli -p "$$REDIS_PORT" ping | grep -qx PONG'
     # 클라이언트가 클러스터를 탐색할 때 각 노드의 Docker 호스트명과 실제 수신 포트로 접속한다.
+    # 클러스터 버스는 프로젝트의 개발 네트워크 안에서만 평문으로 통신한다.
     command: |
         sh -euc '
           exec redis-server --port "$$REDIS_PORT" \
           --cluster-enabled yes \
+          --cluster-bus-port-protected-mode no \
           --cluster-config-file nodes.conf \
           --cluster-announce-hostname "$$HOSTNAME" \
           --cluster-preferred-endpoint-type hostname \

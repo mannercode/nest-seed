@@ -12,7 +12,7 @@
         "./vitest-helpers": "./vitest-helpers/index.js"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "3.1175.0",
+        "@aws-sdk/client-s3": "3.1178.0",
         "ioredis": "6.1.0",
         "mongodb": "7.9.1",
         "typescript": "6.0.3"
